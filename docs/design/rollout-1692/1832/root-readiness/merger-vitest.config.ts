@@ -1,0 +1,4 @@
+import {resolve} from 'node:path';
+import original from '../../apps/webapp/vitest.config';
+const app=resolve(__dirname,'../../apps/webapp');
+export default {...original,root:resolve(__dirname,'../..'),test:{...original.test,alias:{...original.test?.alias,react:resolve(app,'node_modules/react'),'react-dom':resolve(app,'node_modules/react-dom'),vitest:resolve(app,'node_modules/vitest'),'@testing-library/react':resolve(app,'node_modules/@testing-library/react'),'@tolgee/react':resolve(app,'node_modules/@tolgee/react'),'next-intl':resolve(app,'node_modules/next-intl'),'sonner':resolve(app,'node_modules/sonner'),'effect':resolve(app,'node_modules/effect'),'next':resolve(app,'node_modules/next')},projects:[{extends:true,test:{name:'audit',include:['.tmp/merge1832-audit/*public.test.tsx','.tmp/merge1832-audit/*action.test.ts'],setupFiles:[resolve(app,'src/test/unit-setup.ts')],env:{Z8_TEST_PROJECT:'unit'}}}]}};

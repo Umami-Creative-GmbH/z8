@@ -1,0 +1,187 @@
+{
+  "head": "9894ea4e9718ea3188388d80a90d25cc51e10047",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx",
+      "canonicalSha256": "187243892f5d45474a77ae01a8c538248826805c7d833e42b64668c99cfb5a54"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+      "canonicalSha256": "4c3e1351f60e51308a5be45053d2a582f66063d0a78890a6cbfcedc6a636d7f5"
+    }
+  ],
+  "checks": [
+    "Held real initialization offers one heading and no continuation",
+    "Failed initialization retains persisted progress",
+    "Real initialization retry reaches the joined organization task",
+    "Held real summary offers no continuation",
+    "Summary retry reuses successful initialization",
+    "Actual failed Enter continuation retains route and progress",
+    "Pending real pointer retry sends exactly one command",
+    "Real continuation persists the original profile destination",
+    "No browser exceptions"
+  ],
+  "captures": [
+    {
+      "file": "initialization-desktop.png",
+      "path": "/en/onboarding/welcome",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Welcome to Z8!"
+      ],
+      "actions": [],
+      "sha256": "86216e0c687c4230125a1e27dc63b22df078f3bb5299ca6609f9d817595bbc9d",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx",
+          "canonicalSha256": "187243892f5d45474a77ae01a8c538248826805c7d833e42b64668c99cfb5a54"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+          "canonicalSha256": "4c3e1351f60e51308a5be45053d2a582f66063d0a78890a6cbfcedc6a636d7f5"
+        }
+      ]
+    },
+    {
+      "file": "initialization-phone.png",
+      "path": "/en/onboarding/welcome",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "headings": [
+        "Welcome to Z8!"
+      ],
+      "actions": [],
+      "sha256": "2294eef8cf5bf9280564b07c0c527253c45996fc5190feeccd5b85177fdddb74",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx",
+          "canonicalSha256": "187243892f5d45474a77ae01a8c538248826805c7d833e42b64668c99cfb5a54"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+          "canonicalSha256": "4c3e1351f60e51308a5be45053d2a582f66063d0a78890a6cbfcedc6a636d7f5"
+        }
+      ]
+    },
+    {
+      "file": "ready-desktop.png",
+      "path": "/en/onboarding/welcome",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Welcome to Z8!"
+      ],
+      "actions": [
+        {
+          "name": "Continue Setup",
+          "disabled": false
+        }
+      ],
+      "sha256": "93c45ea722e61d5b91e6c99f7db8375dcd48ee6b5852f2a7d677fab3993e75ca",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx",
+          "canonicalSha256": "187243892f5d45474a77ae01a8c538248826805c7d833e42b64668c99cfb5a54"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+          "canonicalSha256": "4c3e1351f60e51308a5be45053d2a582f66063d0a78890a6cbfcedc6a636d7f5"
+        }
+      ]
+    },
+    {
+      "file": "ready-phone.png",
+      "path": "/en/onboarding/welcome",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "headings": [
+        "Welcome to Z8!"
+      ],
+      "actions": [
+        {
+          "name": "Continue Setup",
+          "disabled": false
+        }
+      ],
+      "sha256": "fcb52bb256333772c0d2eddd7ffa881dab1d4c6e0075c484fdb8b1dda86e7224",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx",
+          "canonicalSha256": "187243892f5d45474a77ae01a8c538248826805c7d833e42b64668c99cfb5a54"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+          "canonicalSha256": "4c3e1351f60e51308a5be45053d2a582f66063d0a78890a6cbfcedc6a636d7f5"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "counts": {
+    "startOnboarding": 3,
+    "getOnboardingSummary": 3,
+    "updateOnboardingStep": 2
+  },
+  "step": {
+    "aborted": 1,
+    "held": 1,
+    "responses": [
+      200
+    ]
+  },
+  "qualification": "Current-source continuity through real Next public actions. Original requests are held/aborted before transport; no server result or authority mocked. Immediate Activity-return and retained pending-session races remain public assembled-component evidence, not physical-browser race claims. Normal private fixture sign-in uses ephemeral memory, no cookie/state transfer or persistence.",
+  "actions": {
+    "startOnboarding": "0030fff48d1e69ff44caed273d406ccb78914347df",
+    "getOnboardingSummary": "00bae95e0d88644683f721c9996ba44289c07a77f1",
+    "updateOnboardingStep": "40adcf915551cf302b61fb3dc9aec322f9274e10d8"
+  },
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

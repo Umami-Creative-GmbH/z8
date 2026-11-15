@@ -1,0 +1,32 @@
+﻿{
+    "head":  "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+    "tree":  "ac8447eb99fb6254651c65c76e00b1839148dddb",
+    "parents":  [
+                    {
+                        "path":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules",
+                        "physical":  true
+                    },
+                    {
+                        "path":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\node_modules",
+                        "physical":  true
+                    },
+                    {
+                        "path":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm",
+                        "physical":  true
+                    }
+                ],
+    "leafLinks":  158,
+    "changedLinks":  [
+
+                     ],
+    "lock":  "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "status":  [
+
+               ],
+    "trackedChanges":  [
+
+                       ],
+    "stagedChanges":  [
+
+                      ]
+}

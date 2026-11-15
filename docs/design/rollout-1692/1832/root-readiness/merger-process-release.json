@@ -1,0 +1,11 @@
+{
+  "checked": "2026-11-15T22:15:24.4888837Z",
+  "scope": "Root checkout package/runtime process paths and own merge1832 audit command lines",
+  "ownPackageRuntimeProcesses": [],
+  "ownFixtureGenerations": 0,
+  "ownBrowsers": 0,
+  "ownNativeSessions": 0,
+  "ownListenersStarted": 0,
+  "stopActions": [],
+  "qualification": "Initial sandbox CIM query was denied; its zero observation was unverified and is retained separately. This successful query is the release evidence."
+}

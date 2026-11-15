@@ -1,0 +1,54 @@
+{
+  "sourceCommit": "9894ea4e9718ea3188388d80a90d25cc51e10047",
+  "base": "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/welcome/page-client.tsx": "187243892f5d45474a77ae01a8c538248826805c7d833e42b64668c99cfb5a54",
+    "apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx": "4c3e1351f60e51308a5be45053d2a582f66063d0a78890a6cbfcedc6a636d7f5"
+  },
+  "runs": [
+    {
+      "name": "compatibility",
+      "files": 176,
+      "passed": 1830
+    },
+    {
+      "name": "independent",
+      "files": 4,
+      "passed": 55
+    },
+    {
+      "name": "final-focused",
+      "files": 1,
+      "passed": 43
+    }
+  ],
+  "unitFiles": 180,
+  "unitCases": 1885,
+  "postgres": {
+    "files": 3,
+    "passed": 78
+  },
+  "doctor": {
+    "scannedRevision": "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+    "commandSourcePinsExactlyMatch": "9894ea4e9718ea3188388d80a90d25cc51e10047",
+    "errors": 0,
+    "warnings": 0,
+    "exceptions": 0
+  },
+  "runtime": {
+    "checks": 9,
+    "captures": 4,
+    "qualification": "Current committed-source continuity, not a physical reproduction of immediate Activity-return or retained pending-session races. Holds/aborts are actual original Next requests before transport. Current pending/ready desktop and phone captures are not a new historical before/after comparison; worker historical comparisons remain separately source-pinned. Native actual WelcomeArrival/WelcomeFrame is fresh. Normal transient sign-in, no cookie/state transfer, restore or persistence."
+  },
+  "qualifications": [
+    "Both permanent regressions fail against the incoming client and pass after correction: immediate Activity return cannot pair a new lifetime with its old summary, and pending session with retained identity must retire continuation.",
+    "A lifetime now owns its own summary and retry-attempt generation. Initialization remains reused after a successful start when only summary Retry is needed. Existing progress, destinations and server owners remain unchanged.",
+    "One intermediate lint scan reported attempt as an unnecessary effect dependency after the first summary-token patch; the explicit retry-attempt guard resolves it. Intermediate passing checks and failed lint remain archived separately; final commands have exact source pins and exit0.",
+    "Doctor scanned while HEAD was the provisional merge and final bytes were dirty; both command canonical pins equal the subsequently committed source. No diagnostic or suppression was added.",
+    "The two files are intentionally formatted with the explicit webapp100-column CRLF profile. Historical ordinary-discovery and archive whitespace findings remain separate; no blanket all-profile/archive pass is claimed.",
+    "Merger deduplication initially collapsed repeated same-name cases; the failed fullname-only summary attempt is retained. Final occurrence-aware accounting is180 files/1885 passing cases, with PG78 counted separately.",
+    "Original worker dependency-junction incident and later own-copy recovery remain unchanged. Earlier PG command metadata lacked the CLI dependency guard; the fresh root run includes both environment and explicit CLI guard and succeeds.",
+    "Historical59 PNG/503 artifact checks include old/current worker and earlier snapshots with CRLF reconstruction/source qualifiers. Those do not become current runtime evidence. Root has four current-source PNGs.",
+    "No new action/service/permission/date/calculation changes. No live account/org revocation, physical queued Activity timing, full production generation, remote catalog/provider/device/true-zoom or exhaustive transition acceptance claim."
+  ]
+}
