@@ -1,0 +1,176 @@
+{
+  "observations": [
+    {
+      "grouping": "By Team",
+      "columns": [
+        "Team",
+        "Current Overtime",
+        "Previous Overtime",
+        "Week-over-Week",
+        "Trend Direction"
+      ],
+      "rows": [
+        "Fixture team 1\t0.0h\t0.0h\t0.0h\tFlat",
+        "Fixture team 0\t0.0h\t0.0h\t0.0h\tFlat",
+        "Unassigned\t0.0h\t0.0h\t0.0h\tFlat"
+      ]
+    },
+    {
+      "grouping": "By Cost Center",
+      "columns": [
+        "Cost Center",
+        "Current Overtime",
+        "Previous Overtime",
+        "Week-over-Week",
+        "Trend Direction"
+      ],
+      "rows": [
+        "Unassigned\t0.0h\t0.0h\t0.0h\tFlat"
+      ]
+    },
+    {
+      "grouping": "By Manager",
+      "columns": [
+        "Manager",
+        "Current Overtime",
+        "Previous Overtime",
+        "Week-over-Week",
+        "Trend Direction"
+      ],
+      "rows": [
+        "Unassigned\t0.0h\t0.0h\t0.0h\tFlat",
+        "Person 1\t0.0h\t0.0h\t0.0h\tFlat"
+      ]
+    },
+    {
+      "export": "CSV",
+      "data": [
+        {
+          "dimension": "Fixture team 0",
+          "currentOvertime": 0,
+          "previousOvertime": 0,
+          "weekOverWeek": 0,
+          "trendDirection": "Flat"
+        }
+      ],
+      "headers": [
+        {
+          "key": "dimension",
+          "label": "Team"
+        },
+        {
+          "key": "currentOvertime",
+          "label": "Current Overtime"
+        },
+        {
+          "key": "previousOvertime",
+          "label": "Previous Overtime"
+        },
+        {
+          "key": "weekOverWeek",
+          "label": "Week-over-Week"
+        },
+        {
+          "key": "trendDirection",
+          "label": "Trend Direction"
+        }
+      ],
+      "filename": "overtime-burndown-team-2025-01-01",
+      "bytes": 117
+    },
+    {
+      "export": "Excel",
+      "data": [
+        {
+          "dimension": "Fixture team 0",
+          "currentOvertime": 0,
+          "previousOvertime": 0,
+          "weekOverWeek": 0,
+          "trendDirection": "Flat"
+        }
+      ],
+      "headers": [
+        {
+          "key": "dimension",
+          "label": "Team"
+        },
+        {
+          "key": "currentOvertime",
+          "label": "Current Overtime"
+        },
+        {
+          "key": "previousOvertime",
+          "label": "Previous Overtime"
+        },
+        {
+          "key": "weekOverWeek",
+          "label": "Week-over-Week"
+        },
+        {
+          "key": "trendDirection",
+          "label": "Trend Direction"
+        }
+      ],
+      "filename": "overtime-burndown-team-2025-01-01",
+      "bytes": 6600
+    },
+    {
+      "refresh": "Held genuine filtered 2025 read retained records, range and team; aborted read showed retry; real retry recovered"
+    },
+    {
+      "filter": "Cost center filter",
+      "choice": "Unassigned",
+      "records": [
+        "Fixture team 1\t0.0h\t0.0h\t0.0h\tFlat",
+        "Fixture team 0\t0.0h\t0.0h\t0.0h\tFlat",
+        "Unassigned\t0.0h\t0.0h\t0.0h\tFlat"
+      ]
+    },
+    {
+      "filter": "Manager filter",
+      "choice": "Person 1",
+      "records": [
+        "Fixture team 1\t0.0h\t0.0h\t0.0h\tFlat"
+      ]
+    },
+    {
+      "preferences": "Real saved Dark/Large survived reload (18px), reduced motion, drawer Escape, collapsed shell and zoom-equivalent layout",
+      "comparisonScroll": {
+        "width": 298,
+        "scrollWidth": 740,
+        "scrollLeft": 442
+      }
+    },
+    {
+      "keyboard": "Native focus and Enter opened weekly values"
+    },
+    {
+      "actor": "small-manager",
+      "h1": [
+        "Overtime Burn-Down"
+      ],
+      "restricted": false,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "actor": "small-employee",
+      "h1": [
+        "Overtime Burn-Down"
+      ],
+      "restricted": true,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "actor": "small-restricted",
+      "h1": [
+        "Overtime Burn-Down"
+      ],
+      "restricted": true,
+      "width": 390,
+      "documentWidth": 390
+    }
+  ],
+  "errors": []
+}

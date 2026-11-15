@@ -1,0 +1,40 @@
+{
+  "mode": "before",
+  "scope": "same small-admin / Performance small / Last Year 2025; original synthetic fixture history; no data mutations",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Analytics",
+        "Analytics",
+        "Overtime Burn-Down"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\n01:09\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nOvertime Burn-Down\n\nTrack weekly overtime reduction across teams.\n\nLast Year\nJan 1, 2025 - Dec 31, 2025\n\nTeam\n\nAll teams\n\nCost Center\n\nAll cost centers\n\nManager\n\nAll managers\n\nBreakdown\n\nBy Team\nExport\nCurrent Overtime\n0.0h\n\nFor selected date range and filters\n\nWeek-over-Week\n0.0h\n\nCompared with previous period\n\nImproving Groups\n0\n\nGroups with decreasing overtime\n\nTrend Direction\nFlat\n\nOverall overtime trajectory\n\nWeekly Burn-Down Trend\nWeekly overtime reduction trend\nDec 30\nJan 13\nJan 27\nFeb 10\nFeb 24\nMar 10\nMar 24\nApr 07\nApr 21\nMay 05\nMay 19\nJun 02\nJun 16\nJun 30\nJul 14\nJul 28\nAug 11\nAug 25\nSep 08\nSep 22\nOct 06\nOct 20\nNov 03\nNov 17\nDec 01\nDec 15\nDec 29\n0\n1\n2\n3\n4\nBreakdown\nTeam level overtime burn-down details\nTeam\tCurrent Overtime\tPrevious Overtime\tWeek-over-Week\tTrend Direction\n\nFixture team 0\n\t\n0.0h\n\t\n0.0h\n\t\n0.0h\n\t\nFlat\n\n\nFixture team 1\n\t\n0.0h\n\t\n0.0h\n\t\n0.0h\n\t\nFlat"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Analytics",
+        "Analytics",
+        "Overtime Burn-Down"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\nMore actions\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nOvertime Burn-Down\n\nTrack weekly overtime reduction across teams.\n\nLast Year\nJan 1, 2025 - Dec 31, 2025\n\nTeam\n\nAll teams\n\nCost Center\n\nAll cost centers\n\nManager\n\nAll managers\n\nBreakdown\n\nBy Team\nExport\nCurrent Overtime\n0.0h\n\nFor selected date range and filters\n\nWeek-over-Week\n0.0h\n\nCompared with previous period\n\nImproving Groups\n0\n\nGroups with decreasing overtime\n\nTrend Direction\nFlat\n\nOverall overtime trajectory\n\nWeekly Burn-Down Trend\nWeekly overtime reduction trend\nJan 13\nMar 17\nMay 26\nJul 28\nOct 06\nDec 29\n0\n1\n2\n3\n4\nBreakdown\nTeam level overtime burn-down details\nTeam\nCurrent Overtime\nPrevious Overtime\nWeek-over-Week\nTrend Direction\nFixture team 0\n0.0h\n0.0h\n0.0h\nFlat\nFixture team 1\n0.0h\n0.0h\n0.0h\nFlat"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Analytics",
+        "Analytics",
+        "Overtime Burn-Down"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\n01:09\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nOvertime Burn-Down\n\nTrack weekly overtime reduction across teams.\n\nLast Year\nJan 1, 2025 - Dec 31, 2025\n\nTeam\n\nAll teams\n\nCost Center\n\nAll cost centers\n\nManager\n\nAll managers\n\nBreakdown\n\nBy Team\nExport\nCurrent Overtime\n0.0h\n\nFor selected date range and filters\n\nWeek-over-Week\n0.0h\n\nCompared with previous period\n\nImproving Groups\n0\n\nGroups with decreasing overtime\n\nTrend Direction\nFlat\n\nOverall overtime trajectory\n\nWeekly Burn-Down Trend\nWeekly overtime reduction trend\nDec 30\nJan 13\nJan 27\nFeb 10\nFeb 24\nMar 10\nMar 24\nApr 07\nApr 21\nMay 05\nMay 19\nJun 02\nJun 16\nJun 30\nJul 07\nJul 14\nJul 21\nJul 28\nAug 11\nAug 25\nSep 08\nSep 22\nOct 06\nOct 20\nNov 03\nNov 17\nDec 01\nDec 15\nDec 29\n0\n1\n2\n3\n4\nBreakdown\nTeam level overtime burn-down details\nTeam\tCurrent Overtime\tPrevious Overtime\tWeek-over-Week\tTrend Direction\n\nFixture team 0\n\t\n0.0h\n\t\n0.0h\n\t\n0.0h\n\t\nFlat\n\n\nFixture team 1\n\t\n0.0h\n\t\n0.0h\n\t\n0.0h\n\t\nFlat"
+    }
+  ],
+  "errors": []
+}
