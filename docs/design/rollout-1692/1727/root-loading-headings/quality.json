@@ -1,0 +1,152 @@
+{
+  "sourceCommit": "b4cef3a126fd16563cb0bbddfd5872a2aeb4e530",
+  "provisionalMerge": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.test.tsx": "bfeffea1a6c07d3f8a1099af380f403a103c3cbc005278f47eb14970b5d4cc5b",
+    "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx": "61d99d4004ea9b17ba3db95bebb6a13a087fc0f07305daa995bc3c0d3cfeec2a",
+    "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx": "b5891c15a5dc261d2998a36afc553a3e1f0ed3ee2a7f54334563ea305ca7b844",
+    "apps/webapp/src/components/payroll/employee-balance-loading-heading.tsx": "d15a3b96b625c4eedd370e09ec13cd240a41398b8e6dc33b3e3fcf4446d8d836",
+    "apps/webapp/src/components/payroll/employee-balance-workspace.test.tsx": "12271a56cb6b13ebb80c6758cfc3b3004774fe64c56ec6d63bed812d27ee179c",
+    "apps/webapp/src/components/payroll/employee-balance-workspace.tsx": "fa50925207276d042dbb684787ea50006305a3ba21aa9682e1b56b9da0a8ee62"
+  },
+  "units": {
+    "selections": [
+      {
+        "name": "exact-unit.json",
+        "files": 11,
+        "tests": 169
+      },
+      {
+        "name": "compatibility-unit.json",
+        "files": 115,
+        "tests": 1204
+      },
+      {
+        "name": "adversarial-unit.json",
+        "files": 1,
+        "tests": 9
+      }
+    ],
+    "uniqueFiles": 116,
+    "uniqueTests": 1213
+  },
+  "tdd": {
+    "newPermanentCases": 4,
+    "exactOldConsumers": {
+      "passed": 13,
+      "failed": 4
+    },
+    "firstFallbackFailed": 1,
+    "scopeVariantsFailed": 3
+  },
+  "types": {
+    "exitCode": 0,
+    "profiles": [
+      "next typegen",
+      "application",
+      "workflow contracts",
+      "smoke"
+    ]
+  },
+  "biome": {
+    "uniqueSourceFiles": 17,
+    "explicitWebappCRLF": 0,
+    "ordinaryLintImport": 0,
+    "explicitLintImport": 0,
+    "defaultFormat": 1,
+    "ordinaryCRLFFormat": 1
+  },
+  "doctor": {
+    "errors": 0,
+    "warnings": 1,
+    "files": 17,
+    "recordedRevision": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+    "qualification": "Scan ran on the final dirty source bytes before the code commit; those bytes are pinned canonically to sourceCommit. One retained EmployeeBalanceArrival complexity advisory, no suppression."
+  },
+  "runtime": {
+    "baselineChecks": 2,
+    "finalChecks": 2,
+    "acceptedCaptures": 4,
+    "actualHeldCoverageReadsEachPhase": 1,
+    "baselineMainHeadings": 0,
+    "finalMainHeadings": 1,
+    "loadedEmployeeHeadingUnchanged": true,
+    "browserExceptions": 0,
+    "compilationIssues": 0,
+    "configErrors": 0,
+    "sessionErrors": 0,
+    "qualification": "Actual admitted route, same fixture and current infrastructure; exact two consumer overlay only. New safe heading module exists but is unused before. Disposable database read table lock, released in finally; no diagnostic business-row write or ledger action. Account/org mismatch cases are assembled evidence. No actual speculative prefetch was aborted."
+  },
+  "native": {
+    "freshTargetTree": true,
+    "qualification": "Actual loaded EmployeeBalanceWorkspace/EmployeeBalanceArrival, using normal synthetic BetterAuth login over private stdin. Not a native probe of pending or mismatch headings. Recorded HEAD is provisional because final code was dirty; canonical source pins identify the actual bytes."
+  },
+  "postgres": {
+    "freshOfficialSuite": false,
+    "inheritedTests": 35,
+    "qualification": "Worker transaction evidence inherited. Root held one real disposable coverage read for streaming acceptance; no new domain/authority/calculation owner."
+  },
+  "dependency": {
+    "incident": "158 root package junctions unexpectedly pointed into another checkout after pnpm automatic dependency verification through borrowed directories. Earlier pre-repair unit runs are not counted again.",
+    "repair": "Both positively identified physical dependency directories preserved within this checkout, followed by one offline frozen-lockfile integrity-checked copy install with ignore-scripts and verification-before-run disabled. All158 direct/scoped links resolve within this workspace; lock and tracked configuration unchanged.",
+    "qualification": "Earlier deep postinstall changes cannot be certified retrospectively. Ignore-scripts is not production postinstall acceptance; no whole dependency-directory borrowing is permitted. First topology inspection incorrectly indexed a PowerShell string; corrected inspection found zero external targets."
+  },
+  "reviews": {
+    "guidelines": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "outcome": "One generic semantic h1 outside the status region, existing F1 typography/tokens and translation key, no old employee identity in scope mismatch. Static private composition, no new state or command."
+  },
+  "cleanup": {
+    "portClosed": true,
+    "ownedContainers": 3,
+    "diagnosticReadLocksReleased": true,
+    "remainingOwnedContainers": 0,
+    "stoppedPids": [
+      32212,
+      110628,
+      61668,
+      56648,
+      18592,
+      89068,
+      89804,
+      96008,
+      46276,
+      92216,
+      93648,
+      98608,
+      106816,
+      110676,
+      95228,
+      49612,
+      51344,
+      108252,
+      66948,
+      103964,
+      110588,
+      106524,
+      93120,
+      57304,
+      63348,
+      65192,
+      95376,
+      104604,
+      96492,
+      76204,
+      77688
+    ],
+    "puppetBrowsersClosed": true,
+    "ownedNextStopped": true,
+    "nativeBrowserClosed": true,
+    "ownedNextIdentityVerified": true,
+    "port": 53965
+  },
+  "limits": [
+    "full production static generation",
+    "remote Tolgee synchronization",
+    "providers",
+    "physical devices and true zoom",
+    "held browser organization/account switching",
+    "exhaustive role/domain/locale/accessibility/performance acceptance",
+    "global transitions",
+    "retained formatter differences and literal log whitespace"
+  ]
+}
