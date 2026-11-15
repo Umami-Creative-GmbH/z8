@@ -1,0 +1,97 @@
+src\components\kiosk\kiosk-paired-screen.tsx:485:5 lint/complexity/noUselessFragments  FIXABLE  ━━━━━━━━━━
+
+  i This fragment is unnecessary.
+  
+    483 │ 			/>
+    484 │ 			{flow.step === "home" ? (
+  > 485 │ 				<>
+        │ 				^^
+  > 486 │ 					<KioskHome
+         ...
+  > 520 │ 					/>
+  > 521 │ 				</>
+        │ 				^^^
+    522 │ 			) : (
+    523 │ 				<KioskTurnScreen
+  
+  i A fragment is redundant if it contains only one child, or if it is the child of a html element, and is not a keyed fragment.
+  
+  i Unsafe fix: Remove the Fragment
+  
+    483 483 │         />
+    484 484 │         {flow.step === "home" ? (
+    485     │ - → → → → <>
+    486     │ - → → → → → <KioskHome
+        485 │ + → → → → <KioskHome
+    487 486 │               token={token}
+    488 487 │               kiosk={kiosk}
+    ······· │ 
+    518 517 │               }}
+    519 518 │               onKioskRefused={kioskRefused}
+    520     │ - → → → → → />
+    521     │ - → → → → </>
+        519 │ + → → → → → />
+    522 520 │         ) : (
+    523 521 │           <KioskTurnScreen
+  
+
+src\components\kiosk\kiosk-home.tsx:104:2 lint/correctness/noUnusedFunctionParameters ━━━━━━━━━━━━━━
+
+  ! This parameter locale is unused.
+  
+    102 │ 	contacts = 0,
+    103 │ 	offline = false,
+  > 104 │ 	locale,
+        │ 	^^^^^^
+    105 │ 	notice = null,
+    106 │ 	onBadge,
+  
+  i Unused parameters might be the result of an incomplete refactoring.
+  
+
+src\components\kiosk\kiosk-queue-status.tsx:20:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: reloadKey.
+  
+    18 │ 	const { t } = useTranslate();
+    19 │ 	const [waiting, setWaiting] = useState(0);
+  > 20 │ 	useEffect(() => {
+       │ 	^^^^^^^^^
+    21 │ 		let active = true;
+    22 │ 		async function read() {
+  
+  i Outer scope values aren't valid dependencies because mutating them doesn't re-render the component.
+  
+    33 │ 			window.clearInterval(timer);
+    34 │ 		};
+  > 35 │ 	}, [kioskId, reloadKey]);
+       │ 	             ^^^^^^^^^
+    36 │ 	if (waiting === 0 && unresolved === 0) return null;
+    37 │ 	return (
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    35 │ → },·[kioskId,·reloadKey]);
+       │              -----------   
+
+Skipped 3 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 16 files in 41ms. Fixed 16 files.
+Found 1 error.
+Found 1 warning.
+Found 1 info.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-dbeec437-
+  │ 4b86e5438cc205a1\apps\webapp
+

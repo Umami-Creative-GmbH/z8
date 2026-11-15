@@ -374,8 +374,12 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "65b74963b69e9536af5e862199fa43a8583473cc",
+                        "integrationCommit":  "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+                        "evidenceCorrectionCommit":  "af7a187418e1cdef7ab35044fb91c226d56ba7ef",
+                        "evidence":  "docs/design/rollout-1692/1823.md",
+                        "integrationVerification":  "Independent merge 1ab2a066 and evidence-only qualification verified at 65b74963. Fresh 90 unique suites/824 tests (10/73 + 80/751 disjoint; full-name multisets), full combined types, six-file default/strict CRLF Biome and explicit lint/import pass. Explicit webapp formatting differs in five files; Doctor retains one reviewed async-effect advisory. All 28 verified ancestors, 1197 prior rollout and 11412 unaffected paths preserved; 40 PNG fully decoded,12 JSON,3 scripts,24 links,5 matched metrics and final/continuation/branding/readback production pins validate. Early dirty after-form hash matches no known committed feature blob; historical observation only. CSS viewport390 and some PNG380 are separate recorded dimensions. Root removes4 blank EOF lines; application bytes/raw captures unchanged. Existing archive/static172=153+19 checks pass. PG3/78 and browser/Next are inherited; native tree/build/catalog/provider/device/truezoom and wider limits remain unpassed."
                     },
                     {
                         "id":  "R025",
@@ -384,8 +388,12 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+                        "integrationCommit":  "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+                        "evidenceCorrectionCommit":  "e1dddc1dcaff1216f2ef5bf8d16ad25a46191ed6",
+                        "evidence":  "docs/design/rollout-1692/1824.md",
+                        "integrationVerification":  "Independent native merge ebfb7d8e and evidence-only qualification verified at fe2bed7c. Fresh129 unique suites/1144 tests (34/264+97/896 less2/16 by full-name multisets),full combined types,17-file Doctor zero and strict lint/import pass. Formatting remains unpassed:17raw,15CRLF baseline-matching file list,10explicit-webapp files. All29 prior verified ancestors,1256rollout/11462unaffected paths and shared join/session bytes preserved. Organization name is scoped optional display data; queue summary and unresolved counts read existing owners only; frozen capture/offset/sealing/status-before-replay/per-employee/revocation owner bytes preserved.35PNGfullydecoded,13JSON/10scripts/56links and35final+combined/latest pins pass. Early compiler error/five unmatched dirty pins historical only. Raw terminal whitespace230 (215trailing+15EOF) and13JSON missingLF preserved; whole-change whitespace not passed. PG16/331 and2/39 overlap and predate finaljoin; browser/Next inherited, failed discarded unsent synthetic command retained as harness failure. Accepted durable queue settled; native tree/hardware/zoom/build/catalog/provider/wider limits remain unpassed. All original raw artifacts byte-identical; app source unchanged by root qualification."
                     },
                     {
                         "id":  "R026",
@@ -394,8 +402,12 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+                        "integrationCommit":  "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+                        "evidenceCorrectionCommit":  "11c5c2c22568eb7126f8a06bfff00b359104320b",
+                        "evidence":  "docs/design/rollout-1692/1825.md",
+                        "integrationVerification":  "Independent native merge006aff632 plus evidence-only qualification verified at254ccef5. Fresh33 unique suites/140 tests (15/46+23/101 less5/7 by full-name multisets),full combined types,four-file Doctor zero,CRLF-aware Biome and strict lint/import pass. Default4 and explicit3 formatting findings retained. All30 prior verified ancestors,1344rollout/11564unaffected paths/19aliases and all58incoming paths preserved.38PNGdecoded,9JSON/3scripts/17links/76capture pins/12 labelled CSS-scope pairs validate. Last-record PNGs show first records; before/final duplicate link-focus hashes. Action logs separately report zustand visible; root qualifies images without app/raw artifact changes. Runtime9da645441 inherited despite source equality; two-consumer baseline only. Fonts16/18 measured,family unrecorded,CSS/PNG dimensions differ. Native selected tree usable,a11y zero evaluated rules inconclusive. Unknown assembled-only; actual125packages/12licenses/zeroUnknown.8JSON+2TXT lackLF preserved. No DB suite appropriate to static report; fullbuild/catalog/device/truezoom/provider/alllocale/wider limits remain unpassed."
                     },
                     {
                         "id":  "R027",
@@ -404,7 +416,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -414,7 +426,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -424,7 +436,7 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

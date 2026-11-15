@@ -1,0 +1,135 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-dbeec437-4b86e5438cc205a1/apps/webapp
+
+ ❯ |unit| src/components/kiosk/kiosk-app.test.tsx (7 tests | 1 failed) 202ms
+   ❯ KioskApp (7)
+     × explains a refused code and stays unpaired 25ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/kiosk/kiosk-app.test.tsx > KioskApp > explains a refused code and stays unpaired
+AssertionError: expected <body><div>…(1)</div></body> to be <input …(11)></input> // Object.is equality
+
+- Expected
++ Received
+
+@@ -1,5 +1,62 @@
++ <body>
++   <div>
++     <main
++       class="flex min-h-svh flex-col bg-muted/30 p-4 text-foreground sm:p-8 [padding-bottom:max(1rem,env(safe-area-inset-bottom))] [padding-left:max(1rem,env(safe-area-inset-left))] [padding-right:max(1rem,env(safe-area-inset-right))] [padding-top:max(1rem,env(safe-area-inset-top))] [&_button]:touch-manipulation [&_button]:whitespace-normal"
++     >
++       <div
++         class="m-auto w-full max-w-md space-y-8"
++       >
++         <div
++           class="space-y-3 text-center"
++         >
++           <svg
++             aria-hidden="true"
++             class="tabler-icon tabler-icon-device-tablet mx-auto size-14 text-primary"
++             fill="none"
++             height="24"
++             stroke="currentColor"
++             stroke-linecap="round"
++             stroke-linejoin="round"
++             stroke-width="2"
++             viewBox="0 0 24 24"
++             width="24"
++             xmlns="http://www.w3.org/2000/svg"
++           >
++             <path
++               d="M5 4a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v16a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1v-16"
++             />
++             <path
++               d="M11 17a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"
++             />
++           </svg>
++           <h1
++             class="text-3xl font-semibold"
++           >
++             Set up this kiosk
++           </h1>
++           <p
++             class="text-muted-foreground"
++           >
++             An owner or admin creates the kiosk in Settings › Kiosks and gives you a pairing code.
++           </p>
++         </div>
++         <form
++           class="space-y-6"
++           novalidate=""
++         >
++           <div
++             class="grid content-start gap-2"
++             data-slot="form-item"
++           >
++             <label
++               class="flex select-none items-center gap-2 font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 data-[error=true]:text-destructive text-base"
++               data-slot="form-label"
++               for="_r_9_-form-item"
++             >
++               Pairing code
++             </label>
+              <input
+                aria-describedby="_r_9_-form-item-description _r_9_-form-item-message"
+                aria-invalid="true"
+                autocapitalize="characters"
+                autocomplete="off"
+@@ -9,5 +66,31 @@
+                id="_r_9_-form-item"
+                placeholder="ABCDE-FGHJK"
+                spellcheck="false"
+                value="ZZZZZ-ZZZZZ"
+              />
++             <p
++               class="text-muted-foreground text-sm"
++               data-slot="form-description"
++               id="_r_9_-form-item-description"
++             >
++               The code works once and expires 10 minutes after it was issued.
++             </p>
++           </div>
++           <p
++             class="text-center text-sm text-destructive"
++             role="alert"
++           >
++             This code is invalid or has expired. Ask your admin for a new pairing code.
++           </p>
++           <button
++             class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 rounded-md px-6 has-[>svg]:px-4 h-14 w-full text-lg"
++             data-slot="button"
++             type="submit"
++           >
++             Pair this device
++           </button>
++         </form>
++       </div>
++     </main>
++   </div>
++ </body>
+
+ ❯ src/components/kiosk/kiosk-app.test.tsx:94:34
+     92|   const input = screen.getByLabelText("Pairing code") as HTMLInputElem…
+     93|   expect(input.value).toBe("ZZZZZ-ZZZZZ");
+     94|   expect(document.activeElement).toBe(input);
+       |                                  ^
+     95|   const described = input.getAttribute("aria-describedby")?.split(" ")…
+     96|   expect(described).toContain("invalid or has expired");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  08:27:41
+   Duration  1.10s (environment 34%, import 34%, tests 20%, transform 10%, setup 2%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-dbeec437-
+  │ 4b86e5438cc205a1\apps\webapp
+

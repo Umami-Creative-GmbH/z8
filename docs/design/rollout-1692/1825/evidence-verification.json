@@ -1,0 +1,93 @@
+{
+  "source": {
+    "head": "7a2060a5cf13b4d840983b8c8f8e01fab276437b",
+    "integration": "900a70a8a1991ee60b18888e9137764c34a6bb40",
+    "dirty": "",
+    "hashes": {
+      "apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx": "379c811d9c9364741f96d8dde13766b9ace9abe8c72723bd464173f992fa3d28",
+      "apps/webapp/src/components/licenses/license-table.tsx": "9000f09dd6006a2ac237f328f3a6929c7da922f0c7734c6708827acec9a61173"
+    }
+  },
+  "modes": [
+    {
+      "mode": "before",
+      "captures": 12,
+      "actions": 3,
+      "pageErrors": 0,
+      "sourceHeads": [
+        "9da64544197944f40481095b8c05636b2875490c"
+      ]
+    },
+    {
+      "mode": "final",
+      "captures": 13,
+      "actions": 4,
+      "pageErrors": 0,
+      "sourceHeads": [
+        "9da64544197944f40481095b8c05636b2875490c"
+      ]
+    },
+    {
+      "mode": "combined",
+      "captures": 13,
+      "actions": 4,
+      "pageErrors": 0,
+      "sourceHeads": [
+        "9da64544197944f40481095b8c05636b2875490c"
+      ]
+    }
+  ],
+  "matchedPairs": [
+    "desktop-light",
+    "phone-light",
+    "package-search",
+    "license-search",
+    "empty-search",
+    "license-descending",
+    "keyboard",
+    "link-focus",
+    "last-record",
+    "locale-de",
+    "wide-dark",
+    "phone-dark-large"
+  ],
+  "actualInput": {
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "packages": 125,
+    "licenses": [
+      "Apache-2.0",
+      "MIT",
+      "SEE LICENSE IN LICENSE.md",
+      "BSD-3-Clause",
+      "ISC",
+      "(ISC AND CC-BY-SA-4.0)",
+      "BSD-2-Clause",
+      "(MIT OR GPL-3.0-or-later)",
+      "MIT-0",
+      "(Apache-2.0 AND MIT)",
+      "n/a",
+      "MPL-2.0"
+    ],
+    "emptyLicenseRecords": 0
+  },
+  "restoredComparisonBytes": true,
+  "quality": {
+    "typecheckStages": 4,
+    "suites": 15,
+    "tests": 46,
+    "strictBiomeFiles": 4,
+    "doctorNewDiagnostics": 0,
+    "doctorScore": "unavailable"
+  },
+  "cleanup": {
+    "containersRemoved": 3,
+    "containersRemaining": 0,
+    "portListenersRemaining": 0
+  },
+  "limits": [
+    "no generated empty-license fixture: Unknown is assembled-only",
+    "axe zero evaluated rules: inconclusive",
+    "production static generation/remote Tolgee/physical devices/true zoom/provider/exhaustive locales remain root limits"
+  ],
+  "status": "implementation evidence; issue OPEN; root owns readiness"
+}

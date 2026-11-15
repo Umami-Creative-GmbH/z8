@@ -155,5 +155,5 @@ export function useKioskUncertainActions(input: {
 		};
 	}, [pending, input.online]);
 
-	return { pendingFor, hold, track };
+	return { pendingFor, hold, track, unresolvedCount: pending.filter(entry => !entry.attempt.resolved).length };
 }

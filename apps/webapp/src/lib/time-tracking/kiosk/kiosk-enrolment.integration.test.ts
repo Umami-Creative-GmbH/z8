@@ -272,6 +272,7 @@ describe("kiosk enrolment on PostgreSQL", () => {
 			kiosk: {
 				id: created.kioskId,
 				name: "Front door",
+				organizationName: "T859 kiosks",
 				locationId: ids.store,
 				locationName: "Store",
 				timezone: "Europe/Berlin",

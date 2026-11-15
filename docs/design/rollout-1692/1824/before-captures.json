@@ -1,0 +1,178 @@
+{
+  "phase": "before",
+  "head": "a9b472e5864f386d881604605d593cffc189d61a",
+  "dirty": " M apps/webapp/src/components/kiosk/kiosk-clocking.test.tsx\n?? docs/design/rollout-1692/1824.md\n?? docs/design/rollout-1692/1824/\n",
+  "source": {
+    "apps/webapp/src/components/kiosk/kiosk-action-request.ts": "02fc56bec790e253c4330ee3346d650d59b29c5177f471822d8e90329e40b85e",
+    "apps/webapp/src/components/kiosk/kiosk-app.tsx": "4c9f5a37e74974a86db9a8acd86a37fe9bb6fb367763dbe7da8b902f3a1246e6",
+    "apps/webapp/src/components/kiosk/kiosk-attribution-step.tsx": "a0dea62e6ae4b2a20a9e9600ffb2a56f7c1cf3b1b16a623e26f59f25b4b56d05",
+    "apps/webapp/src/components/kiosk/kiosk-attribution.ts": "8eb9fdd890a1a9affc17487d21812d486b96df1ea629842465439a1a54b01320",
+    "apps/webapp/src/components/kiosk/kiosk-badge-check.tsx": "f3d3225fb2093746d12f4eff1f8cc7f6658546bb7347b3dbc14664f922bc3d99",
+    "apps/webapp/src/components/kiosk/kiosk-camera-scan.tsx": "fddb48b0827b90dfaf5c775334df56cdf55f63a4aa09efb081e8c3e86e641259",
+    "apps/webapp/src/components/kiosk/kiosk-confirmation.tsx": "b23217aeade789fee216bd1b7939090734691598781da21d302c887d3301018a",
+    "apps/webapp/src/components/kiosk/kiosk-contact.ts": "dd0502eb01bd8f48fcbbe05702b4708dc0dd70404d22bf7e98f010b9c502a0ad",
+    "apps/webapp/src/components/kiosk/kiosk-employee-panel.tsx": "0678299460ae33cef4b6431fe36813bebedefc4504f1cd1b2f626f6ced32e4dd",
+    "apps/webapp/src/components/kiosk/kiosk-fob-registration.tsx": "33a5403c1ddf39380e07c08e7b9c365d51245df9b05cb34054159dbc0066ef88",
+    "apps/webapp/src/components/kiosk/kiosk-fob.test-utils.tsx": "c77adf73d4c22abd4e27f1ca9ad39b0b31818b06d98c8c22eeeadc57d8367488",
+    "apps/webapp/src/components/kiosk/kiosk-home.tsx": "df6707f8a40bf1774d3125d6f5778b2a5d4cfa829c3553e11ebfbf9d0353e3a2",
+    "apps/webapp/src/components/kiosk/kiosk-language.tsx": "1035a37f6603f7c7212e4bc5f3638af9efa68cde8f9c076ac7c16e7ac4a3ac75",
+    "apps/webapp/src/components/kiosk/kiosk-messages.ts": "b2c55c17e80f18788e365a241b3bf072168446de47631d554e74dd1ec8a42173",
+    "apps/webapp/src/components/kiosk/kiosk-name-grid.tsx": "cf106a900a171bec66eb2a103bf1308e36b93e236bdf685f09e96ad191be472c",
+    "apps/webapp/src/components/kiosk/kiosk-paired-screen.tsx": "15c58632992ccb5d81f996290edef0792623f3f134f56a5a616b84291c1bfa9e",
+    "apps/webapp/src/components/kiosk/kiosk-pairing-form.tsx": "da232b38f6793bf893bc2cd9414e0f0504ecaa5bf8415c5050a7e452c4c6dcb5",
+    "apps/webapp/src/components/kiosk/kiosk-pin-pad.tsx": "71fcfc77d7a0c62181f8ffa4b47675ae079829f02ec983ed004034141417f58a",
+    "apps/webapp/src/components/kiosk/kiosk-queue-notices.tsx": "26c342715726277381f4439c5a1bc1339bfdc5d434be850990a834af7fea5202",
+    "apps/webapp/src/components/kiosk/kiosk-revoked-screen.tsx": "995e4a511bb435807ca292a599c16429e283733ece5e57035f60ed5bf7238c0a",
+    "apps/webapp/src/components/kiosk/kiosk-timing.ts": "1a45397ddbc1c1dd0376356672283d969bc048692512c5e1e2c78f801aa14588",
+    "apps/webapp/src/components/kiosk/kiosk-turn-flow.ts": "3f0e48b4e9c38cc64dee81e85758986745bb5fed10987078977dfe245a192c5b",
+    "apps/webapp/src/components/kiosk/kiosk-turn-screen.tsx": "67ecc4173213b33a7a6d1d13fbbe8b03d7327d9e198f6f06b0a9966e450db0b2",
+    "apps/webapp/src/components/kiosk/kiosk-uncertain-screen.tsx": "4b2abf379832b895bab5ba87d9c1d3c1ea4755cdb01393fe8b1fc73b83fe25d5",
+    "apps/webapp/src/components/kiosk/kiosk-vehicle-use-step.tsx": "b49c3954d1c448a7ea8812a70de70a5c3054931b4a6cf80546dc7584a2b4fea3",
+    "apps/webapp/src/components/kiosk/kiosk-vehicle-use.ts": "36fa72f070ede879b2dc9631d60f5326b462d5824070c828398ba082eed9411f",
+    "apps/webapp/src/components/kiosk/kiosk-who-is-in-board.tsx": "0f3c669e3e669366feaaae2afd97eec3a506bb4df16125d913082db153e0c27c",
+    "apps/webapp/src/components/kiosk/use-kiosk-idle-return.ts": "ad6b778eea85cf568bbc86a025c842025945d59c3903979fa684222646b7d77a",
+    "apps/webapp/src/components/kiosk/use-kiosk-offline-mode.ts": "7e41c661e66c788ac8af08ade96505004c72177f4b12c8687f7ed30df8d7e0c7",
+    "apps/webapp/src/components/kiosk/use-kiosk-reader-input.ts": "0e72fc813dd26ff7aefc0db47e4e523efaa796d7135efde28a3aa420234fd3c9",
+    "apps/webapp/src/components/kiosk/use-kiosk-uncertain-actions.ts": "ce2a7a83583be6034261fac7ebf985fa77342da07f403fa86c5abd3a0a4de8d9",
+    "apps/webapp/src/lib/time-tracking/kiosk/kiosk-store.ts": "479d16385e9142526867e615732f33cfbdc3c4000c1cd9d73889fa80887e81a8",
+    "apps/webapp/src/lib/time-tracking/kiosk/protocol.ts": "07f374231656f51d9a06b573095107db4454253c3c1da1e8e464861f5bb82d57"
+  },
+  "fixture": "ticket-owned disposable synthetic small organization",
+  "scope": "R025 Berlin workshop / R025 entrance kiosk / assigned Fixture Person 2",
+  "actor": "device without account session",
+  "views": [
+    {
+      "name": "desktop-light",
+      "headings": [
+        "R025 entrance kiosk"
+      ],
+      "width": 1600,
+      "viewport": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "dark": false,
+      "buttons": [
+        {
+          "text": "English",
+          "w": 160,
+          "h": 36
+        },
+        {
+          "text": "Scan badge",
+          "w": 168.890625,
+          "h": 64
+        },
+        {
+          "text": "F2\nFixture Person 2",
+          "w": 261.328125,
+          "h": 80
+        },
+        {
+          "text": "F3\nFixture Person 3",
+          "w": 261.328125,
+          "h": 80
+        }
+      ]
+    },
+    {
+      "name": "phone-light",
+      "headings": [
+        "R025 entrance kiosk"
+      ],
+      "width": 390,
+      "viewport": 390,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "dark": false,
+      "buttons": [
+        {
+          "text": "English",
+          "w": 160,
+          "h": 36
+        },
+        {
+          "text": "Scan badge",
+          "w": 168.890625,
+          "h": 64
+        },
+        {
+          "text": "F2\nFixture Person 2",
+          "w": 358,
+          "h": 80
+        },
+        {
+          "text": "F3\nFixture Person 3",
+          "w": 358,
+          "h": 80
+        }
+      ]
+    },
+    {
+      "name": "tablet-light",
+      "headings": [
+        "R025 entrance kiosk"
+      ],
+      "width": 1024,
+      "viewport": 1024,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "dark": false,
+      "buttons": [
+        {
+          "text": "English",
+          "w": 160,
+          "h": 36
+        },
+        {
+          "text": "Scan badge",
+          "w": 168.890625,
+          "h": 64
+        },
+        {
+          "text": "F2\nFixture Person 2",
+          "w": 302,
+          "h": 80
+        },
+        {
+          "text": "F3\nFixture Person 3",
+          "w": 302,
+          "h": 80
+        }
+      ]
+    },
+    {
+      "name": "wide-dark",
+      "headings": [
+        "R025 entrance kiosk"
+      ],
+      "width": 2400,
+      "viewport": 2400,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "dark": true,
+      "buttons": [
+        {
+          "text": "English",
+          "w": 160,
+          "h": 36
+        },
+        {
+          "text": "Scan badge",
+          "w": 168.890625,
+          "h": 64
+        },
+        {
+          "text": "F2\nFixture Person 2",
+          "w": 261.328125,
+          "h": 80
+        },
+        {
+          "text": "F3\nFixture Person 3",
+          "w": 261.328125,
+          "h": 80
+        }
+      ]
+    }
+  ],
+  "errors": []
+}
