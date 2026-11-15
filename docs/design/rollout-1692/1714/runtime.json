@@ -1,0 +1,166 @@
+{
+  "results": [
+    {
+      "name": "one task heading",
+      "value": [
+        "Compliance"
+      ]
+    },
+    {
+      "name": "critical sources precede unconfigured evidence",
+      "value": [
+        "Workforce compliance",
+        "Access controls",
+        "Audit evidence"
+      ]
+    },
+    {
+      "name": "real source counts",
+      "value": true
+    },
+    {
+      "name": "Open Compliance Settings destination",
+      "value": "/en/settings/compliance"
+    },
+    {
+      "name": "Open Audit Log destination",
+      "value": "/en/settings/audit-export?tab=activity"
+    },
+    {
+      "name": "Open Audit Export destination",
+      "value": "/en/settings/audit-export"
+    },
+    {
+      "name": "refresh keeps heading DOM and real findings",
+      "value": true
+    },
+    {
+      "name": "partial source feedback and retained findings",
+      "value": true
+    },
+    {
+      "name": "unavailable context follows events",
+      "value": true
+    },
+    {
+      "name": "all unavailable never says no critical events",
+      "value": true
+    },
+    {
+      "name": "three unavailable destinations retained",
+      "value": 3
+    },
+    {
+      "name": "recovery restores all real sources",
+      "value": true
+    },
+    {
+      "name": "saved collapsed sidebar",
+      "value": "false"
+    },
+    {
+      "name": "search shortcut opens dialog",
+      "value": true
+    },
+    {
+      "name": "dark persists",
+      "value": true
+    },
+    {
+      "name": "wide fits",
+      "value": {
+        "document": 2400,
+        "viewport": 2400
+      }
+    },
+    {
+      "name": "large font persists",
+      "value": {
+        "saved": "large",
+        "size": "18px"
+      }
+    },
+    {
+      "name": "phone large fits",
+      "value": {
+        "document": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "drawer escape returns focus",
+      "value": true
+    },
+    {
+      "name": "enlarged reduced-motion phone fits",
+      "value": {
+        "document": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "zoom-equivalent fits",
+      "value": {
+        "document": 800,
+        "viewport": 800
+      }
+    },
+    {
+      "name": "streamed first load never invents findings",
+      "value": true
+    },
+    {
+      "name": "small-manager refused",
+      "value": "/en/settings"
+    },
+    {
+      "name": "small-manager no compliance findings",
+      "value": true
+    },
+    {
+      "name": "small-employee refused",
+      "value": "/en/settings"
+    },
+    {
+      "name": "small-employee no compliance findings",
+      "value": true
+    },
+    {
+      "name": "small-restricted refused",
+      "value": "/en/settings"
+    },
+    {
+      "name": "small-restricted no compliance findings",
+      "value": true
+    },
+    {
+      "name": "signed-out returns to sign-in",
+      "value": "/en/sign-in"
+    },
+    {
+      "name": "independent large-organization counts",
+      "value": true
+    },
+    {
+      "name": "organization switch during pending read never retains old findings",
+      "value": true
+    },
+    {
+      "name": "permission loss removes protected findings",
+      "value": true
+    },
+    {
+      "name": "permission loss observed refusal destination",
+      "value": "/en/"
+    },
+    {
+      "name": "read refresh does not reevaluate policy findings",
+      "value": 1
+    },
+    {
+      "name": "browser uncaught errors",
+      "value": []
+    }
+  ],
+  "errors": []
+}
