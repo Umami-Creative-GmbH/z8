@@ -3,6 +3,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Activity } from "react";
+import { flushSync } from "react-dom";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -69,6 +70,37 @@ describe("WellnessPage", () => {
 			},
 			isPending: false,
 		});
+	});
+
+	it("discards a Save queued before Activity returns and retains the goal for a fresh Continue", async () => {
+		configureWellnessOnboardingMock.mockResolvedValue({ success: true });
+		const content = (mode: "visible" | "hidden") => (
+			<Activity mode={mode}>
+				<WellnessPage />
+			</Activity>
+		);
+		const view = render(content("visible"));
+		fireEvent.keyDown(screen.getByRole("slider", { name: "Daily Goal" }), { key: "End" });
+		act(() => {
+			fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+			flushSync(() => view.rerender(content("hidden")));
+			flushSync(() => view.rerender(content("visible")));
+		});
+		await act(async () => {});
+		expect(configureWellnessOnboardingMock).not.toHaveBeenCalled();
+		expect(pushMock).not.toHaveBeenCalled();
+		expect(screen.getByRole("slider", { name: "Daily Goal" }).getAttribute("aria-valuenow")).toBe(
+			"20",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+		await waitFor(() => expect(configureWellnessOnboardingMock).toHaveBeenCalledOnce());
+		expect(configureWellnessOnboardingMock).toHaveBeenCalledWith({
+			enableWaterReminder: true,
+			waterReminderPreset: "moderate",
+			waterReminderIntervalMinutes: 45,
+			waterReminderDailyGoal: 20,
+		});
+		expect(pushMock).toHaveBeenCalledExactlyOnceWith("/onboarding/notifications");
 	});
 
 	it.each(

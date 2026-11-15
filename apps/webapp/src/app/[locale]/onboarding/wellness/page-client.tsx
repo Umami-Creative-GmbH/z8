@@ -38,6 +38,7 @@ import { runOnboardingAction } from "../run-onboarding-action";
 import { configureWellnessOnboarding, skipWellnessSetup } from "./actions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+const defaultSubmitMeta: { arrival: object | null } = { arrival: null };
 
 // The /onboarding route only loads the common and onboarding namespaces, so the
 // settings.wellness.presets.* keys on WATER_PRESETS would render in English here.
@@ -112,10 +113,11 @@ function useWellnessForm({
 }) {
 	return useForm({
 		defaultValues,
-		onSubmit: async ({ value }) => {
-			if (!arrival.current || !draft.tryStart()) return;
+		onSubmitMeta: defaultSubmitMeta,
+		onSubmit: async ({ value, meta }) => {
+			if (!meta.arrival || arrival.current !== meta.arrival || !draft.tryStart()) return;
 			setError(null);
-			const submittedArrival = arrival.current;
+			const submittedArrival = meta.arrival;
 			await runOnboardingAction({
 				action: () => configureWellnessOnboarding(value),
 				onResult: (result) => {
@@ -490,7 +492,7 @@ function WellnessStep({
 				<div className="p-5 sm:px-8 sm:pb-8">
 					<form
 						action={() => {
-							if (!draft.isPending()) void form.handleSubmit();
+							if (!draft.isPending()) void form.handleSubmit({ arrival: arrival.current });
 						}}
 						aria-busy={loading}
 						className="space-y-6"
