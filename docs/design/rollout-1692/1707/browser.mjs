@@ -14,4 +14,3 @@ const c=await browser.createBrowserContext();await c.setPermission(runtime.origi
 const page=await c.newPage();await page.goto(runtime.origin+'/en/approvals',{waitUntil:'networkidle0',timeout:120000});
 await writeFile(join(dir,'cdp-private.json'),JSON.stringify({endpoint:browser.wsEndpoint()}));
 console.log('Owned authenticated Chrome ready for worktree-scoped agent-browser attach.');
-

@@ -30,5 +30,3 @@ try{
  await writeFile(join(dir,'r009-private.json'),JSON.stringify({organizationId:org,ids,correction,periodId:period.id}));
  console.log('Prepared 12 synthetic pending absences and one metadata correction in the assigned manager scope.');
 }catch(e){await db.query('rollback');throw e;}finally{await db.end();}
-
-

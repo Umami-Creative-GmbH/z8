@@ -164,9 +164,11 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "ee0b441d9fbe6496421636d47bc03e48b820bdfe"
+                        "status":  "integrated",
+                        "verifiedCommit":  "6fa8147fae492939056a76e83e327e520d921ae1",
+                        "implementationCommit":  "ee0b441d9fbe6496421636d47bc03e48b820bdfe",
+                        "evidence":  "docs/design/rollout-1692/1707.md",
+                        "integrationVerification":  "Fresh24 unique suites/303 tests, full combined types,14-file CRLF-aware Biome zero errors/eight existing warnings; Doctor zero errors/two reviewed warnings. Exact tree/parents,13 ancestry checks,all541 prior rollout paths/92 root-exclusive files,artifacts/paired scopes preserved. Root trimmed four incoming whitespace findings and checked syntax. PG228pass/1skip and real runtime/native inherited. Held org-switch mutation/mobile Escape/transition/catalog/build/device/provider limits retained."
                     },
                     {
                         "id":  "R010",
