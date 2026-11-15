@@ -700,6 +700,7 @@ export class AnalyticsService extends Context.Service<
 								allocated,
 								taken,
 								remaining: allocated - taken,
+								allowanceConfigured: Boolean(allowance),
 								utilizationRate: allocated > 0 ? (taken / allocated) * 100 : 0,
 							};
 						});
@@ -733,6 +734,7 @@ export class AnalyticsService extends Context.Service<
 								allocated: e.allocated,
 								taken: e.taken,
 								remaining: e.remaining,
+								allowanceConfigured: e.allowanceConfigured,
 								utilizationRate: Math.round(e.utilizationRate * 100) / 100,
 							})),
 							monthlyUsage: byMonth.map((m) => ({
