@@ -520,8 +520,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "df375cecd17c6d28e2621ee630a8bc19edb91f09"
                     },
                     {
                         "id":  "R036",
@@ -530,8 +531,9 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "5c083d2a4301672ec610d96b08be6ebc0d0f7588"
                     },
                     {
                         "id":  "R037",
@@ -540,8 +542,9 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "pending",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "5a96bbad942c4fd29deb31dbce77a08002d4011b"
                     },
                     {
                         "id":  "R038",
@@ -550,7 +553,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -560,7 +563,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -625,9 +628,13 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "67f5442ffe53990ea10b575a6fd5ab2389f9a5bf"
+                        "status":  "integrated",
+                        "verifiedCommit":  "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+                        "implementationCommit":  "67f5442ffe53990ea10b575a6fd5ab2389f9a5bf",
+                        "integrationCommit":  "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+                        "correctionCommit":  "b4cef3a126fd16563cb0bbddfd5872a2aeb4e530",
+                        "evidence":  "docs/design/rollout-1692/1727.md",
+                        "integrationVerification":  "Employee work balance #1727 is verified at `c6b9cdef` after safe server/client loading headings and the independent directory-heading assertion reconciliation. Four new cases fail on exact old consumers; fresh116 unique files/1213 tests, full types,17-file explicit CRLF/lint profiles pass. Doctor zero errors/one reviewed complexity warning; precommit dirty-byte scan is canonically pinned. Actual held coverage read shows zero baseline main headings and one safe heading after correction, then the unchanged employee heading/action. Four decoded PNGs, clean accepted Next/browser probes and actual loaded native React target are recorded. All39 prior verified ancestors and83 original raw artifact paths survive. Dependency-link incident repaired with isolated physical copy install; lock/config unchanged, deeper prior postinstall integrity unproven. Formatter/raw-log/snapshot whitespace and production/catalog/provider/device/zoom/global acceptance limits remain open. Independent tree51c0624a57604f31f39f90019e38402e3215e936; 12550 prior paths unchanged outside six source/test paths and qualified report. Worker35 PostgreSQL tests remain inherited; root performed actual disposable streaming read acceptance only. Scope mismatch regressions assembled-only. Owned Next53965, private browsers and three label-owned services cleaned."
                     },
                     {
                         "id":  "R045",
