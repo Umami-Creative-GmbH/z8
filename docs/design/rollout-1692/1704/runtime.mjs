@@ -1,4 +1,4 @@
-// pnpm node docs/design/rollout-1692/1704/runtime.mjs <private-fixture-directory> before|after
+﻿// pnpm node docs/design/rollout-1692/1704/runtime.mjs <private-fixture-directory> before|after
 // Before runs untouched base source, before implementation. No response substitution.
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
