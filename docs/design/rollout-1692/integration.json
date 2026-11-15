@@ -546,9 +546,13 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "5c083d2a4301672ec610d96b08be6ebc0d0f7588"
+                        "status":  "integrated",
+                        "verifiedCommit":  "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+                        "implementationCommit":  "5c083d2a4301672ec610d96b08be6ebc0d0f7588",
+                        "integrationCommit":  "699a1a782ca8f0ab2def50b31e4921fd6d17a073",
+                        "correctionCommit":  "0e73859dd1f78ea5f89f139dca34fae9489b6971",
+                        "evidence":  "docs/design/rollout-1692/1831.md",
+                        "integrationVerification":  "Vacation policy #1831 is verified at `059ddd58`. Root corrected eight authority/admission failures and two missing loading headings using existing canonical settings access; Save/Skip also bind the requesting actor/organization before server writes. Old-service member writes and old026 dual-admin scope drift fail real PostgreSQL regressions and pass after correction. Final 178 unique unit files / 1,822 cases plus three PostgreSQL files / 99 cases, full types, scoped CRLF/lint and Doctor zero diagnostics pass; two existing Doctor exceptions and dirty-revision provenance remain qualified. Real current-source Save/retry/one-command/default readback passes nine checks, then a network-idle harness timeout is retained; a separate four-check continuation proves settled member redirect, actual typed create/skip refusals and no writes. Five old-client comparison checks, four source-pinned desktop/phone PNGs, fresh native pending-owner inspection and clean connected Next arrays pass. Current runtime uses normal ephemeral sign-in without cookie/state transfer. Both root fixture generations, six services and owned browsers/Next trees are cleaned. Existing calculations/history/default constraints remain; no atomic concurrent revocation or default replacement claim. Original source-hash/formatting/raw-log and wider production/catalog/provider/device/zoom/transition limits remain explicit. Independent tree 09d8596bf38810d0f5da492463b1238116bd268e; all44 prior verified ancestors and 13294 prior paths preserved outside eight source/test paths and qualified report; 67 original incoming artifact paths byte-preserved."
                     },
                     {
                         "id":  "R037",
@@ -705,8 +709,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "df20c5d11bda382ccbe9104398600c6278a5038e"
                     },
                     {
                         "id":  "R050",
@@ -715,8 +720,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "258c18d2f7f87658f816f5276301297e9eaa60da"
                     },
                     {
                         "id":  "R051",
@@ -725,8 +731,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "e194f9f367ff747ecab779ebd47c2ba34c684b84"
                     },
                     {
                         "id":  "R052",
@@ -825,7 +832,7 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
