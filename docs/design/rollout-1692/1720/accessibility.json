@@ -1,0 +1,17 @@
+{
+    "axeVersion":  "4.12.1",
+    "counts":  {
+                   "inapplicable":  62,
+                   "incomplete":  0,
+                   "passes":  26,
+                   "violations":  0
+               },
+    "incomplete":  [
+
+                   ],
+    "lifecycle":  null,
+    "url":  "http://localhost:55252/en/my-documents",
+    "violations":  [
+
+                   ]
+}

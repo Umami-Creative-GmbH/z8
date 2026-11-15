@@ -1,0 +1,5 @@
+{
+  "checks": [
+    "Actual read failure shows Retry; restored DB table plus native Retry refetches the real empty record."
+  ]
+}

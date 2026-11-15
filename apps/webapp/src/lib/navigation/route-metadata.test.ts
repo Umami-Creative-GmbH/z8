@@ -6,6 +6,11 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts the personal documents heading without officer descendants", () => {
+		expect(appPageOwnsHeading("/de/my-documents")).toBe(true);
+		expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);
+		expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);
+	});
 	it("adopts equipment overview and exact assignment headings, keeping other descendants independent", () => {
 		expect(appPageOwnsHeading("/de/equipment")).toBe(true);
 		expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);

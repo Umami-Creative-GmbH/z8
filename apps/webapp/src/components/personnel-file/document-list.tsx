@@ -60,9 +60,9 @@ export function DocumentList({
 			{documents.map((document) => (
 				<li key={document.id} className="flex flex-wrap items-center gap-3 p-3 sm:flex-nowrap">
 					<DocumentThumbnail document={document} />
-					<div className="min-w-0 flex-1 space-y-1">
+					<div className="min-w-0 flex-1 space-y-1 break-words [overflow-wrap:anywhere]">
 						<div className="flex flex-wrap items-center gap-2">
-							<span className="truncate font-medium">{document.title}</span>
+							<span className="min-w-0 font-medium">{document.title}</span>
 							<Badge variant="secondary">{labels.categories[document.category]}</Badge>
 							{showVisibility ? (
 								<Badge variant={document.visibility === "shared" ? "outline" : "secondary"}>

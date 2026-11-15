@@ -1,0 +1,165 @@
+{
+  "checks": [
+    {
+      "name": "collapse shortcut preserves current route",
+      "actual": "/en/my-documents"
+    },
+    {
+      "name": "actual saved 18px dark preference survives phone reload",
+      "actual": {
+        "font": "large",
+        "computed": "18px",
+        "dark": true
+      }
+    },
+    {
+      "name": "saved-large phone has no document overflow",
+      "actual": true
+    },
+    {
+      "name": "current-route first Escape closes phone navigation and returns focus",
+      "actual": true
+    },
+    {
+      "name": "upload panel first Escape returns focus",
+      "actual": true
+    },
+    {
+      "name": "reduced-motion media is active",
+      "actual": true
+    },
+    {
+      "name": "wide saved-large dark layout fits",
+      "actual": true
+    },
+    {
+      "name": "feature-off arrival hides shared records and upload",
+      "actual": true
+    },
+    {
+      "name": "manager own empty state keeps permitted upload",
+      "actual": true
+    },
+    {
+      "name": "manager cannot read another employee certificate",
+      "actual": 404
+    },
+    {
+      "name": "scoped officer may read covered HR certificate",
+      "actual": 200
+    },
+    {
+      "name": "scoped officer cannot read uncovered payslip category",
+      "actual": 404
+    },
+    {
+      "name": "scoped officer cannot read uncovered employee",
+      "actual": 404
+    },
+    {
+      "name": "officer personal route still shows only own empty file",
+      "actual": true
+    },
+    {
+      "name": "revoked scoped officer loses document access",
+      "actual": 404
+    },
+    {
+      "name": "held read and account change cannot restore former employee records or panel",
+      "actual": true
+    },
+    {
+      "name": "no client exceptions in variant journey",
+      "actual": []
+    }
+  ],
+  "errors": [],
+  "captures": [
+    {
+      "file": "after-saved-18px-phone-dark.png",
+      "css": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "font": "18px",
+      "theme": "dark bprogress-busy",
+      "width": 390,
+      "png": [
+        390,
+        844
+      ]
+    },
+    {
+      "file": "after-current-route-focus.png",
+      "css": [
+        390,
+        844
+      ],
+      "dpr": 1,
+      "font": "18px",
+      "theme": "dark bprogress-busy",
+      "width": 390,
+      "png": [
+        390,
+        844
+      ]
+    },
+    {
+      "file": "after-saved-18px-wide-dark.png",
+      "css": [
+        2200,
+        1100
+      ],
+      "dpr": 1,
+      "font": "18px",
+      "theme": "dark bprogress-busy",
+      "width": 2200,
+      "png": [
+        2200,
+        1100
+      ]
+    },
+    {
+      "file": "after-feature-off.png",
+      "css": [
+        2200,
+        1100
+      ],
+      "dpr": 1,
+      "font": "18px",
+      "theme": "dark bprogress-busy",
+      "width": 2200,
+      "png": [
+        2200,
+        1100
+      ]
+    },
+    {
+      "file": "after-account-switch.png",
+      "css": [
+        2200,
+        1100
+      ],
+      "dpr": 1,
+      "font": "18px",
+      "theme": "dark",
+      "width": 2200,
+      "png": [
+        2200,
+        1100
+      ]
+    }
+  ],
+  "source": {
+    "head": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+    "hashes": {
+      "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx": "5657f236c6398f7e3b5a0dc71613e0d41dbce23a391e61acdfee4e84b32f5603",
+      "apps/webapp/src/components/personnel-file/requested-documents.tsx": "c2edbbe80ed3d931cc1918a307d40326a6f95d1f553ae89b1db7b909b9759107",
+      "apps/webapp/src/components/personnel-file/my-documents-list.tsx": "615038d8fd8833e9018a7fbf6854a5d80a39f555826615632d3a93bed676c5f2",
+      "apps/webapp/src/components/personnel-file/my-documents-scope.tsx": "5df2781073c2008033dbd4283c4402ff57b2f70f296a493ad2eb9b7cd464d79a",
+      "apps/webapp/src/components/personnel-file/document-dialog.tsx": "1ec81e38f608df8859fc858171b201d9e066617c0b4a2084c6904bf9b384d9a1",
+      "apps/webapp/src/components/personnel-file/submit-document-request-dialog.tsx": "25d4dcc5f85b0936781bd1b43f31e57c6d98ab7add1b85ee7cefedf9a327f8bb"
+    }
+  }
+}
