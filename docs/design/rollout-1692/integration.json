@@ -330,9 +330,12 @@
                         "blockedBy":  [
                                           1717
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "63d8a75d52a1c24dabfd8c2397b76fabf8310607"
+                        "status":  "integrated",
+                        "verifiedCommit":  "a9b472e5864f386d881604605d593cffc189d61a",
+                        "implementationCommit":  "63d8a75d52a1c24dabfd8c2397b76fabf8310607",
+                        "integrationCommit":  "a9b472e5864f386d881604605d593cffc189d61a",
+                        "evidence":  "docs/design/rollout-1692/1719.md",
+                        "integrationVerification":  "Fresh143 unique suites/1182 tests includes exact35/277 fullycontained;multisetparameterizedmultiplicity retained. Complete combined types,eight-file actualCRLF Biome,eight-file explicitlint/import,eight-fileDoctor zero. Additionalwebappformat remainsunpassed sevenformat-only files,no rewrite. Independenttree/parents,all25 verified ancestors,1011 priorrollout/11224 unaffected paths,59nonmetadata incoming exact;onlymetadata combines.29PNG fullydecoded,13JSON,10scripts,31links,five sourcepins;equipment/Calendar archives/static172=153+19/whitespace validate. No source/EOF/provenanceblocker. R019historicalpasses,currentmetadata diagnosticfailurequalified. PG6/47,browser28+6+8/runtime switch/native/Next inherited,not rerun. Keyboardmenu/Renderinglayer/transitions/build/catalog/provider/device/zoom/performance/exhaustive limits retained."
                     },
                     {
                         "id":  "R022",
@@ -374,7 +377,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
