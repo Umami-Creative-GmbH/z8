@@ -132,7 +132,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 						<div className="flex flex-wrap gap-x-3 gap-y-1">
 							{repoUrl && (
 								<a
-									className="inline-flex min-h-9 items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+									className="inline-flex min-h-9 items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring dark:text-foreground"
 									href={repoUrl}
 									rel="noopener noreferrer"
 									target="_blank"
@@ -143,7 +143,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 							)}
 							{homepage && homepage !== repoUrl && (
 								<a
-									className="inline-flex min-h-9 items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+									className="inline-flex min-h-9 items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring dark:text-foreground"
 									href={homepage}
 									rel="noopener noreferrer"
 									target="_blank"
