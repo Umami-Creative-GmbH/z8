@@ -298,4 +298,3 @@ try {
   await pool.end();
 }
 console.log(phase + ": " + checks.length + " runtime assertions passed.");
-

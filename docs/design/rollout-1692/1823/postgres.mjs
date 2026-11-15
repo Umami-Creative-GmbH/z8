@@ -30,5 +30,3 @@ try {
  }
  console.log('Owned migration verifier and three joining integration suites passed.');
 } finally { log.end(); }
-
-
