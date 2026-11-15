@@ -1,0 +1,27 @@
+{
+  "selections": [
+    {
+      "name": "exact",
+      "files": 34,
+      "cases": 264,
+      "passed": 264,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    },
+    {
+      "name": "compatibility",
+      "files": 97,
+      "cases": 896,
+      "passed": 896,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 2,
+      "overlapCases": 16
+    }
+  ],
+  "uniqueFiles": 129,
+  "uniqueCases": 1144,
+  "method": "File path and full test name multisets; equal-name parameterized cases retain multiplicity; repeated runs do not add cases."
+}
