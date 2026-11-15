@@ -66,8 +66,10 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+                        "evidence":  "docs/design/rollout-1692/1700.md",
+                        "integrationVerification":  "38 suites / 213 fresh tests, exact tree/parents/base/foundation/analytics/billing ancestry, artifacts and whitespace passed. Approved composition/preferences and shared clock owners preserved; heading and streamed PersonalDay fixes only. Shared-header timezone behavior remains unverified; claimed R163 #1745 follows up. Leave/offline/billing/catalog/build/device/native-React limits retained."
                     },
                     {
                         "id":  "R002",
@@ -1506,7 +1508,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
