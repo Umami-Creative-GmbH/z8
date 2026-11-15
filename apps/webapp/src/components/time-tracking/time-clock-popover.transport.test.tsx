@@ -308,9 +308,13 @@ it("retains a failed timezone save for retry and sends only after the saved pref
 	);
 });
 
-it.each([false, true])(
-	"does not resume after scope changes during preference saving (remount=%s)",
-	async (remount) => {
+it.each([
+	{ remount: false, restore: false },
+	{ remount: true, restore: false },
+	{ remount: false, restore: true },
+])(
+	"does not resume after scope changes during preference saving (remount=$remount, restore=$restore)",
+	async ({ remount, restore }) => {
 		let finish!: (value: { success: true }) => void;
 		boundary.updateTimezone.mockImplementation(
 			() =>
@@ -352,6 +356,19 @@ it.each([false, true])(
 				}),
 			).toBeNull(),
 		);
+		if (restore) {
+			boundary.subject.organizationId = "org-a";
+			boundary.subject.employeeId = "employee-a";
+			await act(async () => {
+				client.setQueryData(queryKeys.timeClock.status(), live);
+			});
+			view.rerender(
+				<QueryClientProvider client={client}>
+					<input aria-label="Clock draft" defaultValue="Unsaved" />
+					<TimeClockPopover timeFormat="12h" />
+				</QueryClientProvider>,
+			);
+		}
 		await act(async () => finish({ success: true }));
 		expect(fetch).not.toHaveBeenCalled();
 		expect(screen.queryByRole("dialog", { name: "Confirm Timezone for This Entry" })).toBeNull();

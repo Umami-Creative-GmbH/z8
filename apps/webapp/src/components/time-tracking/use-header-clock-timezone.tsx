@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
@@ -9,7 +9,7 @@ import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import { TimezoneMismatchDialog } from "./timezone-mismatch-dialog";
 
 type Confirmation = {
-	scope: string;
+	scope: { key: string };
 	savedTimezone: string;
 	browserTimezone: string;
 	submit: (timezone: string | null) => Promise<void>;
@@ -29,20 +29,22 @@ export function useHeaderClockTimezone({
 	const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
 	const [pending, setPending] = useState(false);
 	const continuing = useRef(false);
-	const currentScope = useRef<string | null>(scope);
-	useEffect(() => {
-		currentScope.current = scope;
+	// Returning to a scope must not revive an earlier confirmation.
+	const scopeLifetime = useMemo(() => ({ key: scope }), [scope]);
+	const currentScope = useRef<Confirmation["scope"] | null>(scopeLifetime);
+	useLayoutEffect(() => {
+		currentScope.current = scopeLifetime;
 		return () => {
 			currentScope.current = null;
 		};
-	}, [scope]);
+	}, [scopeLifetime]);
 
 	async function confirm(submit: Confirmation["submit"]) {
 		if (continuing.current) return;
 		const browserTimezone = getBrowserTimezone();
 		// Offline capture keeps its event-time context and existing review/queue contract.
 		if (!isOffline && browserTimezone && browserTimezone !== savedTimezone) {
-			setConfirmation({ scope, savedTimezone, browserTimezone, submit });
+			setConfirmation({ scope: scopeLifetime, savedTimezone, browserTimezone, submit });
 			return;
 		}
 		await submit(browserTimezone);
@@ -86,7 +88,7 @@ export function useHeaderClockTimezone({
 		confirm,
 		pending,
 		prompt:
-			confirmation?.scope === scope ? (
+			confirmation?.scope === scopeLifetime ? (
 				<TimezoneMismatchDialog
 					open
 					savedTimezone={confirmation.savedTimezone}
