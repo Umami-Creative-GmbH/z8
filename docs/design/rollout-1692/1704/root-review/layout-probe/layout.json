@@ -1,0 +1,34 @@
+{
+  "boundary": "Exact actual failed-refresh/held-Retry boundary, saved 18px, original motion preference; all frames retained as distinct snapshots with frequencies.",
+  "frameCount": 120,
+  "snapshots": [
+    {
+      "count": 120,
+      "mainLeft": 256,
+      "sidebarRight": 256,
+      "titleLeft": 280,
+      "mainScrollLeft": 0,
+      "mainWidth": 1344,
+      "mainScrollWidth": 1344,
+      "transform": "none",
+      "parents": [
+        {
+          "tag": "DIV",
+          "role": null,
+          "scrollLeft": 0,
+          "width": 0,
+          "scrollWidth": 470,
+          "className": ""
+        },
+        {
+          "tag": "DIV",
+          "role": null,
+          "scrollLeft": 0,
+          "width": 0,
+          "scrollWidth": 1246,
+          "className": ""
+        }
+      ]
+    }
+  ]
+}

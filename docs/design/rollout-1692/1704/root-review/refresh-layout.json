@@ -1,0 +1,15 @@
+{
+  "boundary": "Actual shared refresh, original motion preference, saved18px. Frame sampling is diagnostic, not performance certification.",
+  "frameCount": 240,
+  "clippedFrameCount": 0,
+  "clippedFrames": [],
+  "events": [],
+  "steady": {
+    "frame": 239,
+    "mainLeft": 256,
+    "sidebarRight": 256,
+    "gapWidth": 256,
+    "transform": "none",
+    "animations": []
+  }
+}

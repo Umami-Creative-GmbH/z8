@@ -1,0 +1,51 @@
+{
+  "actor": "small-admin",
+  "organization": "Performance small",
+  "period": "Last Year",
+  "scopeRoundTrip": {
+    "start": "Last Year",
+    "away": "Current Month",
+    "return": "Last Year",
+    "oldResponse": 200,
+    "obsoleteDownloads": 0,
+    "currentResponse": 200,
+    "currentDownloads": 1
+  },
+  "retry": {
+    "rowsRetainedWhilePending": true,
+    "recoveredThroughRealRead": true,
+    "rows": [
+      "Fixture team 0\t8,352.0h\t2,088.0h\t4\tOn Track",
+      "Fixture team 1\t8,352.0h\t2,088.0h\t4\tOn Track"
+    ]
+  },
+  "errors": [],
+  "inducedFailureDiagnostics": {
+    "configErrors": [],
+    "sessionErrors": [
+      {
+        "url": "/en/analytics/team-performance",
+        "buildError": null,
+        "runtimeErrors": [
+          {
+            "type": "console",
+            "errorName": "TypeError",
+            "message": "Failed to fetch",
+            "stack": []
+          }
+        ]
+      }
+    ]
+  },
+  "probes": {
+    "get_compilation_issues": {
+      "issues": []
+    },
+    "get_errors": {
+      "configErrors": [],
+      "sessionErrors": []
+    }
+  },
+  "finalProbeContext": "Fresh connected page after retaining the deliberately aborted fetch diagnostic",
+  "boundary": "Actual authorized transports; the failed refresh was aborted and successful reads/exports were never replaced. This is desktop acceptance for the root corrections, not the full device/provider/transition matrix."
+}
