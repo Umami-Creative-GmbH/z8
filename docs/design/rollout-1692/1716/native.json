@@ -1,0 +1,33 @@
+{
+    "components":  [
+                       "204 5334 5333 Forget(DrivingLicencePageScope)",
+                       "206 5351 5335 Forget(DrivingLicenceCheckPanel) key=\"perf-small-8b085994790f:perf-small-0-8b085994790f:69529802-ec95-4a9f-a104-0645c15198e6\"",
+                       "210 5404 5403 Forget(OriginalDrivingCheckForm) key=\"69529802-ec95-4a9f-a104-0645c15198e6\"",
+                       "208 5749 5352 Forget(DrivingLicenceHistoryPanel) key=\"69529802-ec95-4a9f-a104-0645c15198e6\""
+                   ],
+    "treeSucceeded":  true,
+    "boundary":  "Fresh #1716 native agent-browser React DevTools, authenticated synthetic admin. Short development capability recording, not performance/remount certification.",
+    "renderSucceeded":  true,
+    "axe":  {
+                "counts":  {
+                               "inapplicable":  53,
+                               "incomplete":  0,
+                               "passes":  35,
+                               "violations":  0
+                           },
+                "incomplete":  [
+
+                               ],
+                "url":  "http://localhost:55294/en/driving-licence/checks/69529802-ec95-4a9f-a104-0645c15198e6",
+                "version":  "4.12.1",
+                "violations":  [
+
+                               ]
+            },
+    "renderSummary":  [
+                          "# Render Profile - 1.25s recording",
+                          "# 704 renders (141 mounts + 563 re-renders) across 196 components",
+                          "# FPS: avg 56, min 34, max 59, drops (\u003c30fps): 0"
+                      ],
+    "inspection":  "Forget(DrivingLicenceCheckPanel) #5351\nkey: \"perf-small-8b085994790f:perf-small-0-8b085994790f:69529802-ec95-4a9f-a104-0645c15198e6\"\nprops:\n  employeeId: \"69529802-ec95-4a9f-a104-0645c15198e6\"\n  name: \"Person 2\"\n  canVerify: true\nhooks:\n  Translate: undefined (2 sub)\n  QueryClient: undefined (1 sub)\n  Router: undefined (3 sub)\n  Session: undefined (1 sub)\n  Query: undefined (1 sub)\nrendered by: DrivingLicenceCheckContent \u003e DrivingLicenceCheckPage"
+}
