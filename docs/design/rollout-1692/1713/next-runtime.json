@@ -1,0 +1,19 @@
+{
+  "scope": "Connected selected Calendar, second owned fixture after stopped same-drive cache recovery",
+  "results": [
+    {
+      "name": "get_compilation_issues",
+      "data": {
+        "issues": []
+      }
+    },
+    {
+      "name": "get_errors",
+      "data": {
+        "configErrors": [],
+        "sessionErrors": []
+      }
+    }
+  ],
+  "sourceHead": "10673de8a632a7c31b2389bf905408277b99c5dd"
+}

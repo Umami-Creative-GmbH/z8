@@ -1,0 +1,21 @@
+{
+  "checks": [
+    {
+      "name": "denied arrival retains exactly one Calendar heading",
+      "passed": true
+    },
+    {
+      "name": "denied arrival exposes no calendar records or mutation form",
+      "passed": true
+    },
+    {
+      "name": "missing arrival retains exactly one Calendar heading",
+      "passed": true
+    },
+    {
+      "name": "missing arrival exposes no calendar records or mutation form",
+      "passed": true
+    }
+  ],
+  "errors": []
+}
