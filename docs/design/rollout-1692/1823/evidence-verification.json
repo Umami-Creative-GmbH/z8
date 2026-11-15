@@ -1,0 +1,327 @@
+{
+  "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe",
+  "currentApplicationMatchesFinalCaptureSources": true,
+  "codeGlyphsMaskedInPng": true,
+  "files": [
+    {
+      "name": "after-approved.png",
+      "sha256": "1d171f6e6433fe6ce3469c82b5d416762486e2bcda46405bd9269e61bb0ab041",
+      "width": 1600,
+      "height": 1000,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-desktop-light.png",
+      "sha256": "683a4303100aefeb47d58a44fa4209c142b3cb9a71b016c849800ed76525b6a4",
+      "width": 1600,
+      "height": 1000,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-keyboard.png",
+      "sha256": "2ad848385e2e8ee4ade5fb5ffd1696c49e684cec442fc8a85129818fcd597919",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-pending-action.png",
+      "sha256": "36309dde1ea86bda4b518170035651718b6ed1ae9002cea9d1b3094ccb748b67",
+      "width": 380,
+      "height": 881,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-phone-dark-large.png",
+      "sha256": "edc561679a7a19329378d806a3873d372f4e399353cc5cedf1b84bfc700e3473",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-phone-light.png",
+      "sha256": "58348dba3530f1ce4e0d104c29a69bbec193d069c72aa05ea3bfe0afe81c34bf",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-request-sent.png",
+      "sha256": "860fc6ef9cae3ae78d59ecb7b112fd03d0d29aa9066e116921484e82b68f588d",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-server-refusal.png",
+      "sha256": "2dc489e8333f5e0292234bbda309504f6f0b8420f05091061a0191effc3e2274",
+      "width": 380,
+      "height": 931,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-session-refusal.png",
+      "sha256": "8d5b2a1f3cea66d506b1dfc8070fa7e78253737c682623cf133dd1210eb4de18",
+      "width": 380,
+      "height": 931,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "after-wide-dark-large.png",
+      "sha256": "e27c38706600f6e4640d9b6b9897f7662e052a31fde984a648a3da984e220f93",
+      "width": 2400,
+      "height": 1200,
+      "sourceEvidence": "after-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "before-desktop-light.png",
+      "sha256": "04b42d046522c89e8b79f7f8b0015123e216c3c5c87b86324d28244980d3bf16",
+      "width": 1600,
+      "height": 1000,
+      "sourceEvidence": "before-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "before-keyboard.png",
+      "sha256": "cff130e0babe7515282fe0fa3a38bca783bbedfe55c65d53edeb1df3221dea1f",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "before-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "before-phone-dark-large.png",
+      "sha256": "d46be48e8fea75b4cedd166c263009cdd0dba281399cb93d0320ed6e2e8fff10",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "before-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "before-phone-light.png",
+      "sha256": "7b4ccf076a1975ce169371157f8beba934bf1cd81549facec83f06380f7980b3",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "before-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "before-wide-dark-large.png",
+      "sha256": "46808dded6c8c7e8768c41b4c7e8f93121c1ed39b2a8fe25adb8273040fb56f9",
+      "width": 2400,
+      "height": 1200,
+      "sourceEvidence": "before-runtime.json",
+      "head": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "name": "branding-branded-desktop.png",
+      "sha256": "6c3a138945bd181c870ba34008a9edea33ea154e3c3ad857d4d3989494a5d7a2",
+      "width": 1600,
+      "height": 1000,
+      "sourceEvidence": "branding-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "branding-branded-phone.png",
+      "sha256": "82113e52b2b1669addcb1bd6b02e5d1343124d540513f12e0d803bc538c1c8d8",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "branding-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "branding-desktop-light.png",
+      "sha256": "4bd6b63366a8c2168fdfb587bb7b2028ec864447d94510c429a89f5bfe11e984",
+      "width": 1600,
+      "height": 1000,
+      "sourceEvidence": "branding-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "branding-keyboard.png",
+      "sha256": "a3ba452b0997076654704f127fc26b0dccafb38202c7fc9dca0ccb99218dfa2b",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "branding-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "branding-phone-dark-large.png",
+      "sha256": "30815d0e47b372ae7597d10a0dfbe5b1d892c663dc7abdb0f3b635b2ccd12bdb",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "branding-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "branding-phone-light.png",
+      "sha256": "51b75163fb13318daef36789a1328f06628091294ede6b2f26cbc7ab612a1b44",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "branding-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "branding-wide-dark-large.png",
+      "sha256": "dc605a7c50e3f3cfc43abc12b886700088a46cc86514821d96434ad40df7c18a",
+      "width": 2400,
+      "height": 1200,
+      "sourceEvidence": "branding-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "continuation-desktop-light.png",
+      "sha256": "4e9ee7a8523d0aaa090fb1affb8b4404a6083eced28b842de5c14a3ac05ff3c0",
+      "width": 1600,
+      "height": 1000,
+      "sourceEvidence": "continuation-runtime.json",
+      "head": "1b2508717f5e42b12124c0b3845cc920741380e4"
+    },
+    {
+      "name": "continuation-inflight-account-switch.png",
+      "sha256": "37cb331b52bb5cea4d9f68b03e37543e3afca16d15b17c6a32ec557e3539e444",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "continuation-runtime.json",
+      "head": "1b2508717f5e42b12124c0b3845cc920741380e4"
+    },
+    {
+      "name": "continuation-inflight-organization-switch.png",
+      "sha256": "7e8aadd285f26c22968b7294bc069dfc2e45d9e79417b8932b788c40826f9154",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "continuation-runtime.json",
+      "head": "1b2508717f5e42b12124c0b3845cc920741380e4"
+    },
+    {
+      "name": "continuation-keyboard.png",
+      "sha256": "c17eba2b2c96da3b4e25efdcd00ff394f7ee5cdb142cd6597e2676f4ba993e6d",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "continuation-runtime.json",
+      "head": "1b2508717f5e42b12124c0b3845cc920741380e4"
+    },
+    {
+      "name": "continuation-phone-dark-large.png",
+      "sha256": "bfcca003b109305dc59d72e70ef7c7c9704330f4f33b44ab2c795e947cd2d4d1",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "continuation-runtime.json",
+      "head": "1b2508717f5e42b12124c0b3845cc920741380e4"
+    },
+    {
+      "name": "continuation-phone-light.png",
+      "sha256": "58348dba3530f1ce4e0d104c29a69bbec193d069c72aa05ea3bfe0afe81c34bf",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "continuation-runtime.json",
+      "head": "1b2508717f5e42b12124c0b3845cc920741380e4"
+    },
+    {
+      "name": "continuation-returned-from-sign-in.png",
+      "sha256": "95301f5eaac448e435673bb4580150db327732d17ffc0d4960fd55614b030838",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "continuation-runtime.json",
+      "head": "1b2508717f5e42b12124c0b3845cc920741380e4"
+    },
+    {
+      "name": "continuation-wide-dark-large.png",
+      "sha256": "39c3452fc3b015bc17599dea045d01c890f74ddb4fe44307d43c29d078544522",
+      "width": 2400,
+      "height": 1200,
+      "sourceEvidence": "continuation-runtime.json",
+      "head": "1b2508717f5e42b12124c0b3845cc920741380e4"
+    },
+    {
+      "name": "final-desktop-light.png",
+      "sha256": "e824b1c8fe5c35779e5b91f9d319032ba27f53ff0ec2572c030cd11388f9aeb4",
+      "width": 1600,
+      "height": 1000,
+      "sourceEvidence": "final-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "final-keyboard.png",
+      "sha256": "820c8254f777bf4c7b0d88c25fed85b551a6b4f9706b8ec31f48cc30e9a14081",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "final-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "final-phone-dark-large.png",
+      "sha256": "5d9c089511b2356cd5683ef1b25f752e01f7cc8f592108831ce3b2b7434d685a",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "final-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "final-phone-light.png",
+      "sha256": "f1d5537b37279919448a7132d28c8f6165d16e1f9905ebfeb25132f331e25736",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "final-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "final-wide-dark-large.png",
+      "sha256": "08074b7dc18cd6632dbfc90b33d6d54d1e319eff58abbcf7111a7eb0da505d01",
+      "width": 2400,
+      "height": 1200,
+      "sourceEvidence": "final-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "readback-desktop-light.png",
+      "sha256": "81149e0264f40914ea1fdad6daca73b93bbcfcc09cbe1ff1eaaf92e8393cf50a",
+      "width": 1600,
+      "height": 1000,
+      "sourceEvidence": "readback-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "readback-keyboard.png",
+      "sha256": "650e3a1689bd82d7a4c745396a44f0432d84fa5258f7cbbb64e6cb9bf2d4a9df",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "readback-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "readback-phone-dark-large.png",
+      "sha256": "430f4e375f823b7a4ecbdfe413e8b52098de738b9a3cdffff4ab0e78ea61113b",
+      "width": 380,
+      "height": 981,
+      "sourceEvidence": "readback-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "readback-phone-light.png",
+      "sha256": "2b63af18ea797de4a4c03ffbb96bae75668b8f53c74dfa99afc1dd71fc3bdb27",
+      "width": 390,
+      "height": 844,
+      "sourceEvidence": "readback-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    },
+    {
+      "name": "readback-wide-dark-large.png",
+      "sha256": "7ee8ad832fcfa5e67f5be7a8622381555243a397e550ba126e74201462e109ff",
+      "width": 2400,
+      "height": 1200,
+      "sourceEvidence": "readback-runtime.json",
+      "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe"
+    }
+  ]
+}

@@ -11,7 +11,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 const repo = process.cwd(), [directory, phase, baselineRef] = process.argv.slice(2);
-assert(["before", "after", "final", "continuation"].includes(phase));
+assert(["before", "after", "final", "continuation", "branding", "readback"].includes(phase));
 const output = join(repo, "docs/design/rollout-1692/1823");
 await mkdir(output, { recursive: true });
 const read = async name => JSON.parse(await readFile(join(directory, name), "utf8"));
@@ -94,6 +94,7 @@ try {
   };
   const capture = async (name, width, height) => {
     await page.setViewport({ width, height });
+    await page.evaluate(() => document.fonts.ready.then(() => true));
     await page.addStyleTag({ content: 'input[name="code"] { -webkit-text-security: disc !important; }' });
     await page.screenshot({ path: join(output, `${phase}-${name}.png`), fullPage: true });
     const info = await page.evaluate(() => ({
@@ -101,6 +102,7 @@ try {
       fontPreference: localStorage.getItem("z8-font-size"), theme: localStorage.getItem("theme"),
       rootFont: getComputedStyle(document.documentElement).fontSize,
       bodyFont: getComputedStyle(document.body).fontSize,
+      bodyFontFamily: getComputedStyle(document.body).fontFamily,
       headingFont: getComputedStyle(document.querySelector("h1") ?? document.body).fontSize,
       inputFont: getComputedStyle(document.querySelector("input") ?? document.body).fontSize,
       headingCount: document.querySelectorAll("h1").length,
@@ -262,12 +264,28 @@ try {
       page.removeAllListeners("request");
       await capture("inflight-"+scope+"-switch",390,844);
     }
+  }
+  if(phase === "continuation" || phase === "readback") {
     const readback=[];
     for(const [label,kind] of [["small-restricted","pending"],["small-employee","approved"]]) {
-      const result=await pool.query('select m.status,m.created_at as "membershipCreatedAt",(select count(*)::int from employee e where e.organization_id=m.organization_id and e.user_id=m.user_id) as employees,(select count(*)::int from invite_code_usage u where u.member_id=m.id) as "codeUses" from member m where m.user_id=$1 and m.organization_id=$2',[fixture.actors[label].userId,codes[kind].organizationId]);
+      const result=await pool.query('select m.status,to_char(m.created_at,\'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"\') as "membershipCreatedAtUtc",(select count(*)::int from employee e where e.organization_id=m.organization_id and e.user_id=m.user_id) as employees,(select count(*)::int from invite_code_usage u where u.member_id=m.id) as "codeUses" from member m where m.user_id=$1 and m.organization_id=$2',[fixture.actors[label].userId,codes[kind].organizationId]);
       readback.push({syntheticActor:label,target:"Performance large",...result.rows[0]});
     }
     await save("membership-readback.json",{source,readback});
+  }
+  if(phase === "branding") {
+    assert.equal(runtime.env.PLATFORM_DOMAIN,"localhost");
+    const org = (await pool.query("select slug from organization where id=$1",[codes.pending.organizationId])).rows[0];
+    await pool.query("insert into organization_branding (organization_id,app_name,primary_color,updated_at) values ($1,$2,$3,now()) on conflict (organization_id) do update set app_name=excluded.app_name,primary_color=excluded.primary_color,updated_at=now()",[codes.pending.organizationId,"R024 Fixture Workspace","#2563eb"]);
+    const brandedOrigin = "http://"+org.slug+".localhost:"+runtime.port;
+    await page.goto(new URL("/en/join/"+codes.pending.code,brandedOrigin).href,{waitUntil:"networkidle0",timeout:60000});
+    await waitText("R024 Fixture Workspace");
+    await waitText("Performance large");
+    check("real organization host resolves stored branding",await page.$eval("form",el=>el.innerText.includes("R024 Fixture Workspace")));
+    const styles=await page.$eval('button[type="submit"]',el=>({color:getComputedStyle(el).backgroundColor,root:getComputedStyle(document.documentElement).fontSize}));
+    check("stored primary color reaches real action",styles.color==="rgb(37, 99, 235)",{styles});
+    await capture("branded-desktop",1600,1000);
+    await capture("branded-phone",390,844);
   }
   await save(phase + "-runtime.json", { phase, source, syntheticFixture: "R024 owned disposable; same target organization and code in paired captures", codeMask: "Code glyphs masked only in PNG capture", checks, pageErrors: errors });
   await context.close();
