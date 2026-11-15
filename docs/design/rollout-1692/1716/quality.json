@@ -1,0 +1,16 @@
+{
+  "ticket": 1716,
+  "branch": "feat/1716-employee-licence-check",
+  "startingBase": "6bce36400e094702e650d6c24c38fc79a49623b6",
+  "latestLocalIntegration": "f780ef50207e9415c16a87d44c769b94602cc528",
+  "merge": "8433225ed9d5bb6eb18ecba7c20ca450cb9205e5",
+  "freshMergedUnit": {"suites": 33, "tests": 249, "passed": true},
+  "freshPreMergePostgreSQL": {"suites": 9, "tests": 87, "passed": true, "note": "Earlier 6/59 overlap, not additional tests. Separate guarded database."},
+  "freshMergedTypes": {"route": true, "application": true, "workflowContracts": true, "smoke": true},
+  "freshMergedDoctor": {"files": 8, "findings": 0, "scoreSupplyChainTelemetryDisabled": true},
+  "biome": {"normalSevenFiles": "passed", "explicitConfigEightFilesLintImports": "passed", "explicitConfigFormatting": "unpassed; seven-file run found formatting-only differences from normal configuration"},
+  "runtime": {"uniqueActionObservations": 17, "contextObservations": 8, "drawerVariants": 3, "nativeReactTreeInspectRenders": "fresh capability success", "axePasses": 35, "axeViolations": 0, "axeIncomplete": 0, "connectedNextIssues": 0, "connectedNextConfigErrors": 0, "connectedNextSessionErrors": 0},
+  "cleanup": {"previewClosed": true, "nativeBrowserClosed": true, "ownedPuppeteerClosed": true, "remainingOwnedLoopbackBrowsers": 0, "verifiedNextChildStopped": true, "fixtureServiceSetsRemoved": 2},
+  "explicitRootLimits": ["full production/static generation", "Tolgee/provider catalog synchronization", "physical devices/store wrapper/safe areas", "true browser/OS zoom", "exhaustive locales/contrast/screen reader", "provider/SSO/MFA/live email", "transition/hydration/cache certification", "explicit webapp-config formatting"],
+  "issue": {"state": "OPEN", "assignee": "KaiSoellch", "closurePushChildPrDevMergeDeploy": "none"}
+}

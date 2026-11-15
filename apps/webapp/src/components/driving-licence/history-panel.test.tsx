@@ -148,6 +148,18 @@ function show() {
 	);
 	return client;
 }
+it("retries unavailable history and reads current supplement rights before offering evidence actions", async () => {
+	remote.available = false;
+	const client = show();
+	await screen.findByRole("alert");
+	expect(screen.queryByRole("link", { name: "Download evidence PDF" })).toBeNull();
+	remote.available = true;
+	remote.canSupplement = false;
+	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+	await screen.findByRole("link", { name: "Download evidence PDF" });
+	expect(screen.queryByRole("button", { name: /Supplement original check/ })).toBeNull();
+	client.clear();
+});
 it("associates the UTC date-boundary guidance with each history control", () => {
 	show();
 	for (const label of ["From date (UTC)", "Before date (UTC)"]) {

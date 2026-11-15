@@ -209,6 +209,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 	const path = normalizeAppPath(pathname);
 	return (
 		/^\/equipment\/employees\/[^/]+$/.test(path) ||
+		/^\/driving-licence\/checks\/[^/]+$/.test(path) ||
 		/^\/approvals\/review\/[^/]+\/[^/]+\/[^/]+$/.test(path) ||
 		/^\/approvals\/deputy-decisions\/[^/]+$/.test(path) ||
 		path === "/" ||

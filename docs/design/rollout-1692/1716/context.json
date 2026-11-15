@@ -1,0 +1,50 @@
+{
+  "results": [
+    {
+      "name": "real applied period preserves inclusive/exclusive UTC boundaries",
+      "value": {
+        "employeeId": "69529802-ec95-4a9f-a104-0645c15198e6",
+        "from": "2026-11-01T00:00:00Z",
+        "to": "2026-11-16T00:00:00Z"
+      }
+    },
+    {
+      "name": "period PDF is the real authorized PDF",
+      "value": [
+        200,
+        "%PDF-"
+      ]
+    },
+    {
+      "name": "phone first trusted Escape closes drawer and restores trigger focus",
+      "value": "trigger"
+    },
+    {
+      "name": "layout fits 390",
+      "value": [
+        390,
+        390
+      ]
+    },
+    {
+      "name": "layout fits 1600",
+      "value": [
+        1600,
+        1600
+      ]
+    },
+    {
+      "name": "organization switch during held record read withdraws old check target",
+      "value": true
+    },
+    {
+      "name": "retry after load failure uses fresh verifier rights",
+      "value": true
+    },
+    {
+      "name": "context browser errors",
+      "value": []
+    }
+  ],
+  "errors": []
+}

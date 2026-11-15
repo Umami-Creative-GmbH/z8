@@ -16,11 +16,15 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);
 		expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);
 	});
-	it("adopts the licence role page while retaining independent check and settings headings", () => {
+	it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {
 		expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
 		expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
-			false,
+			true,
 		);
+		expect(
+			appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),
+		).toBe(false);
+		expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);
 		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);
 	});
 	it("retains independent approvals page headings", () => {

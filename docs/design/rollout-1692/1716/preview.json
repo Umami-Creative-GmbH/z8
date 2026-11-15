@@ -1,0 +1,130 @@
+{
+  "boundary": "Shared T3 Preview browser before mutations; same synthetic admin / Person 2 / Performance small",
+  "observations": [
+    {
+      "name": "refreshed desktop heading/action order/fields/scope",
+      "result": {
+        "headings": [
+          "Driving licence check for Person 2",
+          "Driving authorization active",
+          "Inspect Person 2's original licence",
+          "Original check evidence",
+          "Check and authorization history"
+        ],
+        "width": [
+          1600,
+          1600
+        ],
+        "dark": false,
+        "returnLink": "/en/driving-licence?tab=checks",
+        "fields": [
+          {
+            "name": "documentIssuedOn",
+            "type": "date"
+          },
+          {
+            "name": "documentExpiresOn",
+            "type": "date"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "text"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          },
+          {
+            "name": "",
+            "type": "checkbox"
+          }
+        ]
+      }
+    },
+    {
+      "name": "phone drawer first trusted Escape",
+      "result": {
+        "dialog": false,
+        "focus": "trigger",
+        "tooltips": 0,
+        "width": [
+          390,
+          390
+        ]
+      }
+    }
+  ],
+  "automationLimit": "Two valid-looking CSS submit selectors were rejected by Preview; neither click executed. Switched to own isolated Puppeteer; actual action observations are in runtime.json."
+}
