@@ -1,0 +1,21 @@
+{
+  "boundary": "Only no-organization title source changed; same real authenticated synthetic admin with its one membership temporarily removed. Exact source and membership restored in finally.",
+  "results": [
+    {
+      "phase": "before",
+      "h1": [],
+      "create": true,
+      "invitation": true,
+      "overflow": false
+    },
+    {
+      "phase": "after",
+      "h1": [
+        "No Organization Found"
+      ],
+      "create": true,
+      "invitation": true,
+      "overflow": false
+    }
+  ]
+}
