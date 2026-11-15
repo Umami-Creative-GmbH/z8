@@ -6,6 +6,12 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts the exact vacation route while retaining staged descendants", () => {
+		expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);
+		expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(
+			false,
+		);
+	});
 	it("adopts only refreshed analytics routes while retaining staged descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);
 		expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(

@@ -1,0 +1,253 @@
+{
+  "observations": [
+    {
+      "export": "CSV",
+      "data": [
+        {
+          "employeeId": "9584e13e-d891-4b1f-9a6c-d520a725be25",
+          "employeeName": "Person 1",
+          "allocated": 28,
+          "taken": 52,
+          "remaining": -24,
+          "allowanceConfigured": true,
+          "utilizationRate": 185.71
+        },
+        {
+          "employeeId": "dfe6841d-91cd-4776-a4d1-b819a4e61f64",
+          "employeeName": "Person 2",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "59bfb4f2-65b3-4075-9cf1-869bc573f82c",
+          "employeeName": "Person 4",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "36e8f028-6b33-4db5-8349-53500651b5a2",
+          "employeeName": "Person 5",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "423c461e-83ac-4f91-8b99-3f6a9d418bab",
+          "employeeName": "Person 6",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "7fa02196-d86d-4757-8ab8-de75843aa5de",
+          "employeeName": "Person 7",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "72e5bc54-8cb7-4a49-a477-5debc5286c89",
+          "employeeName": "Person 3",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "3fc8a267-13fd-42b2-a528-c2971d738246",
+          "employeeName": "Person 0",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": true,
+          "utilizationRate": 0
+        }
+      ],
+      "headers": [
+        {
+          "key": "employeeName",
+          "label": "Employee"
+        },
+        {
+          "key": "allocated",
+          "label": "Allocated"
+        },
+        {
+          "key": "taken",
+          "label": "Taken"
+        },
+        {
+          "key": "remaining",
+          "label": "Remaining"
+        },
+        {
+          "key": "utilizationRate",
+          "label": "Utilization %"
+        }
+      ],
+      "filename": "vacation-trends-2024-12-31",
+      "bytes": 312
+    },
+    {
+      "export": "Excel",
+      "data": [
+        {
+          "employeeId": "9584e13e-d891-4b1f-9a6c-d520a725be25",
+          "employeeName": "Person 1",
+          "allocated": 28,
+          "taken": 52,
+          "remaining": -24,
+          "allowanceConfigured": true,
+          "utilizationRate": 185.71
+        },
+        {
+          "employeeId": "dfe6841d-91cd-4776-a4d1-b819a4e61f64",
+          "employeeName": "Person 2",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "59bfb4f2-65b3-4075-9cf1-869bc573f82c",
+          "employeeName": "Person 4",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "36e8f028-6b33-4db5-8349-53500651b5a2",
+          "employeeName": "Person 5",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "423c461e-83ac-4f91-8b99-3f6a9d418bab",
+          "employeeName": "Person 6",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "7fa02196-d86d-4757-8ab8-de75843aa5de",
+          "employeeName": "Person 7",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "72e5bc54-8cb7-4a49-a477-5debc5286c89",
+          "employeeName": "Person 3",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": false,
+          "utilizationRate": 0
+        },
+        {
+          "employeeId": "3fc8a267-13fd-42b2-a528-c2971d738246",
+          "employeeName": "Person 0",
+          "allocated": 0,
+          "taken": 52,
+          "remaining": -52,
+          "allowanceConfigured": true,
+          "utilizationRate": 0
+        }
+      ],
+      "headers": [
+        {
+          "key": "employeeName",
+          "label": "Employee"
+        },
+        {
+          "key": "allocated",
+          "label": "Allocated"
+        },
+        {
+          "key": "taken",
+          "label": "Taken"
+        },
+        {
+          "key": "remaining",
+          "label": "Remaining"
+        },
+        {
+          "key": "utilizationRate",
+          "label": "Utilization %"
+        }
+      ],
+      "filename": "vacation-trends-2024-12-31",
+      "bytes": 6774
+    },
+    {
+      "refresh": "Held genuine 2025 read retained employee records and selected period; aborted read showed retry; real retry recovered"
+    },
+    {
+      "preferences": "Real saved Dark/Large survived reload (18px), reduced motion, drawer Escape, collapsed shell and zoom-equivalent layout",
+      "comparisonScroll": {
+        "width": 298,
+        "scrollWidth": 792,
+        "scrollLeft": 494
+      },
+      "stickyIdentity": {
+        "position": "sticky",
+        "left": 46,
+        "text": "Person 1"
+      }
+    },
+    {
+      "keyboard": "Native focus and Enter opened monthly values"
+    },
+    {
+      "actor": "small-manager",
+      "h1": [
+        "Vacation Trends"
+      ],
+      "restricted": false,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "actor": "small-employee",
+      "h1": [
+        "Vacation Trends"
+      ],
+      "restricted": true,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "actor": "small-restricted",
+      "h1": [
+        "Vacation Trends"
+      ],
+      "restricted": true,
+      "width": 390,
+      "documentWidth": 390
+    }
+  ],
+  "errors": []
+}
