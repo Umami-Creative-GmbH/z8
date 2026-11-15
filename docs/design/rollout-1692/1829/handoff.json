@@ -1,0 +1,35 @@
+{
+  "implementationHead": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+  "recordedBeforeFinalEvidenceCommit": true,
+  "branch": "feat/organization-onboarding",
+  "worktree": "X:\\t3-code\\worktrees\\z8\\t3-68580206-ef4b1aed885ca7f1",
+  "latestLocalIntegration": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "localMergeResult": "Already up to date",
+  "requiredAncestors": [
+    "02cc68035aa335505742b38178b06842bb233a3e",
+    "bfacad421ffe77f50729ea5895c546698ef28383",
+    "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+    "19862ee6586b4e07831c6f5a8b7e06d0f698cedd"
+  ],
+  "ownedSourceHashes": {
+    "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx": "bd6208bed5f20092ac626258c7f6f4bf189bcec266dd11e045fc6eeada009aad"
+  },
+  "postMergeUnit": {
+    "files": 37,
+    "tests": 349,
+    "failed": 0
+  },
+  "quality": "Next typegen, app/workflow/smoke types and three-file CRLF Biome passed",
+  "runtime": "real creation/readback, membership/skip/disabled policy, generated Next transport denial, held slug queue/retry, 24 matched theme/text/viewport captures, focus/contrast, clean connected MCP",
+  "cleanup": "owned Next stopped; port closed; all three owned containers absent; observed failed-harness PIDs absent",
+  "limits": [
+    "held-browser create across dev restart timed out (separate production policy transport pass)",
+    "native React tree unsupported by host PowerShell execution policy",
+    "runtime account/org/Activity mutation races assembled-only",
+    "full static generation, remote Tolgee, external providers/delivery, physical devices, true zoom and global transitions unpassed",
+    "presentation-only historical consumer replacement with current shared shell; earlier topology overlays preserved as provisional"
+  ],
+  "publication": "no push, PR, closure, dev merge, deployment or rollout-ledger changes"
+}
