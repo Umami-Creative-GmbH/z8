@@ -1,0 +1,97 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90mX:/t3-code/worktrees/z8/t3-eaa80aa0-d4431093adcdde65/apps/webapp[39m
+
+(node:103300) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m [30m[45m integration [49m[39m src/lib/personnel-file/document-request-review.integration.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 2524[2mms[22m[39m
+   [32m✓[39m document requests: submit, return and accept (#1402) [2m(19)[22m
+     [33m[2m✓[22m[39m applies exactly one of two concurrent decisions; the other conflicts and changes nothing[33m 397[2mms[22m[39m
+{"level":50,"time":1794736503191,"pid":41964,"hostname":"be-kai-et","component":"PersonnelFileDocument","error":{"type":"Error","message":"Stored document content does not match its recorded identity","stack":"Error: Stored document content does not match its recorded identity\n    at readVerifiedPrivateObject (X:/t3-code/worktrees/z8/t3-eaa80aa0-d4431093adcdde65/apps/webapp/src/lib/storage/verified-private-object.ts:36:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"},"msg":"Failed to retrieve employee document"}
+{"level":50,"time":1794736503198,"pid":41964,"hostname":"be-kai-et","component":"PersonnelFileDocument","error":{"type":"Error","message":"Stored document content does not match its recorded identity","stack":"Error: Stored document content does not match its recorded identity\n    at readVerifiedPrivateObject (X:/t3-code/worktrees/z8/t3-eaa80aa0-d4431093adcdde65/apps/webapp/src/lib/storage/verified-private-object.ts:36:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"},"msg":"Failed to retrieve employee document"}
+{"level":30,"time":1794736503560,"pid":41964,"hostname":"be-kai-et","component":"organization-cleanup","count":1,"msg":"Found organizations ready for permanent deletion"}
+{"level":30,"time":1794736503560,"pid":41964,"hostname":"be-kai-et","component":"organization-cleanup","organizationId":"t865-purged","msg":"Starting permanent deletion of organization"}
+{"level":30,"time":1794736503623,"pid":41964,"hostname":"be-kai-et","component":"organization-cleanup","organizationId":"t865-purged","msg":"Organization and all related data permanently deleted"}
+{"level":30,"time":1794736503623,"pid":41964,"hostname":"be-kai-et","component":"organization-cleanup","organizationId":"t865-purged","organizationName":"t865-purged","msg":"Organization permanently deleted"}
+ [32m✓[39m [30m[45m integration [49m[39m src/lib/personnel-file/personnel-file.integration.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 1461[2mms[22m[39m
+(node:111288) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m [30m[45m integration [49m[39m src/lib/personnel-file/document-requests.integration.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 1538[2mms[22m[39m
+   [32m✓[39m document requests: create and cancel (#1401) [2m(21)[22m
+     [32m✓[39m cancel [2m(5)[22m
+       [33m[2m✓[22m[39m applies exactly one of two concurrent cancels; the other conflicts[33m 343[2mms[22m[39m
+(node:110784) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m [30m[45m integration [49m[39m src/lib/personnel-file/document-request-officer.integration.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 1358[2mms[22m[39m
+stderr | src/lib/personnel-file/officer-grants.integration.test.ts > personnel file officer grants (#866) > grant administration > refuses empty category sets and lets only owners and admins administer grants
+[ServerAction Error] {
+  message: 'A personnel file officer needs at least one document category',
+  field: 'categories',
+  value: [],
+  _tag: 'ValidationError'
+}
+
+stderr | src/lib/personnel-file/officer-grants.integration.test.ts > personnel file officer grants (#866) > grant administration > refuses empty category sets and lets only owners and admins administer grants
+[ServerAction Error] {
+  message: 'You do not have access to this setting',
+  userId: 't866-officer',
+  resource: 'personnelFile.officerAdminData',
+  action: 'orgAdmin',
+  _tag: 'AuthorizationError'
+}
+
+stderr | src/lib/personnel-file/officer-grants.integration.test.ts > personnel file officer grants (#866) > grant administration > refuses empty category sets and lets only owners and admins administer grants
+[ServerAction Error] {
+  message: 'You do not have access to this setting',
+  userId: 't866-officer',
+  resource: 'personnelFile.saveOfficerGrant',
+  action: 'orgAdmin',
+  _tag: 'AuthorizationError'
+}
+
+stderr | src/lib/personnel-file/officer-grants.integration.test.ts > personnel file officer grants (#866) > grant administration > refuses empty category sets and lets only owners and admins administer grants
+[ServerAction Error] {
+  message: 'You do not have access to this setting',
+  userId: 't866-officer',
+  resource: 'personnelFile.revokeOfficerGrant',
+  action: 'orgAdmin',
+  _tag: 'AuthorizationError'
+}
+
+stderr | src/lib/personnel-file/officer-grants.integration.test.ts > personnel file officer grants (#866) > grant administration > refuses empty category sets and lets only owners and admins administer grants
+[ServerAction Error] {
+  message: 'You do not have access to this setting',
+  userId: 't866-payroll',
+  resource: 'personnelFile.officerAdminData',
+  action: 'orgAdmin',
+  _tag: 'AuthorizationError'
+}
+
+stderr | src/lib/personnel-file/officer-grants.integration.test.ts > personnel file officer grants (#866) > grant administration > refuses empty category sets and lets only owners and admins administer grants
+[ServerAction Error] {
+  message: 'You do not have access to this setting',
+  userId: 't866-payroll',
+  resource: 'personnelFile.saveOfficerGrant',
+  action: 'orgAdmin',
+  _tag: 'AuthorizationError'
+}
+
+stderr | src/lib/personnel-file/officer-grants.integration.test.ts > personnel file officer grants (#866) > grant administration > refuses empty category sets and lets only owners and admins administer grants
+[ServerAction Error] {
+  message: 'You do not have access to this setting',
+  userId: 't866-payroll',
+  resource: 'personnelFile.revokeOfficerGrant',
+  action: 'orgAdmin',
+  _tag: 'AuthorizationError'
+}
+
+ [32m✓[39m [30m[45m integration [49m[39m src/lib/personnel-file/officer-grants.integration.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 1295[2mms[22m[39m
+ [32m✓[39m [30m[45m integration [49m[39m src/lib/personnel-file/employee-uploads.integration.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 810[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m      Tests [22m [1m[32m112 passed[39m[22m[90m (112)[39m
+[2m   Start at [22m 09:54:58
+[2m   Duration [22m 14.16s[2m (tests 65%, import 30%, transform 3%, setup 1%)[22m
+

@@ -1,0 +1,28 @@
+{
+  "selections": [
+    {
+      "name": "exact",
+      "files": 16,
+      "cases": 59,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    },
+    {
+      "name": "compatibility",
+      "files": 29,
+      "cases": 191,
+      "overlapFiles": 11,
+      "overlapCases": 46
+    },
+    {
+      "name": "admission",
+      "files": 7,
+      "cases": 53,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    }
+  ],
+  "uniqueFiles": 41,
+  "uniqueCases": 257,
+  "method": "File plus fullName multisets; parameterized multiplicity retained"
+}

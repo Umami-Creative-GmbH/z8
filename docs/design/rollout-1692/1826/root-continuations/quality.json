@@ -1,0 +1,26 @@
+{
+  "applicationSourceMatchesCaptures": true,
+  "fullTypes": "next typegen + application/workflow-contract/smoke passed",
+  "biome": "two owned files CRLF-aware strict check passes",
+  "doctor": "two owned files, zero new diagnostics; original seven-file advisory count remains historical",
+  "native": "open and close EOF without response; no matching named-session process found",
+  "preview": "snapshot page changed; navigation timeout15000ms; closed before isolated fallback",
+  "runtime": [
+    "setup3checks",
+    "after7checks",
+    "anonymous sign-in visible/stable"
+  ],
+  "baseline": "actual query navigation remounted input; baseline cached bug not reproduced. Retained failed baseline assertion is not an application failure.",
+  "limitations": [
+    "SSO/social provider responses tested at assembled API boundary only; no external provider session",
+    "Cached React Activity regression is assembled-only; actual browser cachedInputRestored=false",
+    "No fresh full PostgreSQL suite, native tree, axe or phone/zoom certification",
+    "Build/catalog/device/provider/global-transition obligations remain"
+  ],
+  "failedHarness": [
+    "First comparison wrapper passed pnpm.exe to node; no browser ran, source restored",
+    "Baseline assertion expected cached reuse but actual input remounted",
+    "Initial dev reload loop; stopped exact Next and preserved dev output under checked same parent; never moved live"
+  ],
+  "correctionCommit": "4255ef7d6565d103a4b0887812b751db5bd08ad9"
+}

@@ -1,0 +1,65 @@
+{
+  "selections": [
+    {
+      "name": "exact",
+      "files": 15,
+      "cases": 53,
+      "passed": 53,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    },
+    {
+      "name": "compatibility",
+      "files": 29,
+      "cases": 191,
+      "passed": 191,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 11,
+      "overlapCases": 46
+    },
+    {
+      "name": "admission",
+      "files": 7,
+      "cases": 53,
+      "passed": 53,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    }
+  ],
+  "uniqueFiles": 40,
+  "uniqueCases": 251,
+  "method": "File path plus fullName multisets; parameterized test multiplicity retained. Repeated tests do not add coverage.",
+  "ignoredReproduction": {
+    "excludedFromPassingCoverage": true,
+    "files": 1,
+    "total": 3,
+    "passed": 1,
+    "failed": 2,
+    "cases": [
+      {
+        "fullName": "does not follow old SSO after keyed organization unmount",
+        "status": "failed",
+        "failureMessages": [
+          "AssertionError: expected 'https://idp.test/old-A' to be 'https://z8.test/en/mfa?organizationId…' // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1826-audit/late-continuation.test.tsx:20:24\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        ]
+      },
+      {
+        "fullName": "does not follow successful TOTP after ordinary keyed organization unmount",
+        "status": "passed",
+        "failureMessages": []
+      },
+      {
+        "fullName": "does not revive old successful TOTP on cached A to B to A arrival",
+        "status": "failed",
+        "failureMessages": [
+          "AssertionError: expected '/init?organizationId=A' to be 'https://z8.test/en/mfa?organizationId…' // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1826-audit/late-continuation.test.tsx:34:82\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+        ]
+      }
+    ]
+  }
+}

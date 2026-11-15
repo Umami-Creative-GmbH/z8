@@ -1,0 +1,24 @@
+✔ Select projects › desktop, docs, marketing, webapp
+Scanning 9 selected files
+
+No changed source files in X:\t3-code\worktrees\z8\t3-eaa80aa0-d4431093adcdde65\apps\desktop, skipping.
+
+No changed source files in X:\t3-code\worktrees\z8\t3-eaa80aa0-d4431093adcdde65\apps\docs, skipping.
+
+No changed source files in X:\t3-code\worktrees\z8\t3-eaa80aa0-d4431093adcdde65\apps\marketing, skipping.
+
+✔ Scanned 9 files in 2.1s
+
+React Doctor — t3-eaa80aa0-d4431093adcdde65
+Score: 92 / 100 Great
+
+2 issues
+Bugs: 2 warnings
+
+⚠ preventDefault on a form or link
+  react-doctor/no-prevent-default
+  src/components/personnel-file/document-dialog.tsx:305
+⚠ Form submit reloads the page around handleSubmit
+  react-doctor/tanstack-form-on-submit-requires-prevent-default
+  src/components/personnel-file/submit-document-request-dialog.tsx:93
+  Full diagnostics written to C:\Users\KAIHEN~1\AppData\Local\Temp\react-doctor-7ae6a3ac-1fc9-476a-b67d-b0f6c437c68d

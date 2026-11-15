@@ -1,0 +1,44 @@
+{
+  "commands": [
+    {
+      "command": "pnpm --filter webapp exec vitest run --project unit src/components/personnel-file src/lib/personnel-file src/lib/navigation/route-metadata.test.ts src/components/ui/action-panel.test.tsx src/components/ui/alert-dialog.test.tsx src/components/ui/page-header.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx",
+      "exitCode": 0,
+      "log": "unit.txt"
+    },
+    {
+      "command": "pnpm --filter webapp typecheck",
+      "exitCode": 0,
+      "log": "types.txt"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check src/app/[locale]/(app)/my-documents/page.tsx src/components/personnel-file/my-documents-list.tsx src/components/personnel-file/my-documents-scope.tsx src/components/personnel-file/my-documents-retry.tsx src/components/personnel-file/my-documents.test.tsx src/components/personnel-file/requested-documents.tsx src/components/personnel-file/document-dialog.tsx src/components/personnel-file/document-list.tsx src/components/personnel-file/document-request-list.tsx src/components/personnel-file/submit-document-request-dialog.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+      "exitCode": 1,
+      "log": "biome-default.txt"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --line-ending=crlf src/app/[locale]/(app)/my-documents/page.tsx src/components/personnel-file/my-documents-list.tsx src/components/personnel-file/my-documents-scope.tsx src/components/personnel-file/my-documents-retry.tsx src/components/personnel-file/my-documents.test.tsx src/components/personnel-file/requested-documents.tsx src/components/personnel-file/document-dialog.tsx src/components/personnel-file/document-list.tsx src/components/personnel-file/document-request-list.tsx src/components/personnel-file/submit-document-request-dialog.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+      "exitCode": 1,
+      "log": "biome-crlf-default.txt"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --config-path=biome.jsonc --line-ending=lf src/app/[locale]/(app)/my-documents/page.tsx src/components/personnel-file/my-documents-list.tsx src/components/personnel-file/my-documents-scope.tsx src/components/personnel-file/my-documents-retry.tsx src/components/personnel-file/my-documents.test.tsx src/components/personnel-file/requested-documents.tsx src/components/personnel-file/document-dialog.tsx src/components/personnel-file/document-list.tsx src/components/personnel-file/document-request-list.tsx src/components/personnel-file/submit-document-request-dialog.tsx",
+      "exitCode": 0,
+      "log": "biome-explicit.txt"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --config-path=biome.jsonc --line-ending=crlf src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+      "exitCode": 1,
+      "log": "biome-explicit-crlf.txt"
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --config-path=biome.jsonc --formatter-enabled=false src/app/[locale]/(app)/my-documents/page.tsx src/components/personnel-file/my-documents-list.tsx src/components/personnel-file/my-documents-scope.tsx src/components/personnel-file/my-documents-retry.tsx src/components/personnel-file/my-documents.test.tsx src/components/personnel-file/requested-documents.tsx src/components/personnel-file/document-dialog.tsx src/components/personnel-file/document-list.tsx src/components/personnel-file/document-request-list.tsx src/components/personnel-file/submit-document-request-dialog.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+      "exitCode": 0,
+      "log": "biome-explicit-lint-import.txt"
+    },
+    {
+      "command": "pnpm exec react-doctor apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx apps/webapp/src/components/personnel-file/my-documents-list.tsx apps/webapp/src/components/personnel-file/my-documents-scope.tsx apps/webapp/src/components/personnel-file/my-documents-retry.tsx apps/webapp/src/components/personnel-file/requested-documents.tsx apps/webapp/src/components/personnel-file/document-dialog.tsx apps/webapp/src/components/personnel-file/document-list.tsx apps/webapp/src/components/personnel-file/document-request-list.tsx apps/webapp/src/components/personnel-file/submit-document-request-dialog.tsx --verbose --no-supply-chain --no-cache",
+      "exitCode": 0,
+      "log": "doctor.txt"
+    }
+  ]
+}

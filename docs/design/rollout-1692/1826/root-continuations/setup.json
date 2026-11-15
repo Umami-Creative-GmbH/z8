@@ -1,0 +1,20 @@
+{
+  "phase": "setup",
+  "classification": "Real local auth and client navigation; held actual successful response, no provider requests",
+  "checks": [
+    {
+      "name": "synthetic actor reaches real MFA route",
+      "passed": true
+    },
+    {
+      "name": "actual password verification succeeds",
+      "passed": true
+    },
+    {
+      "name": "real synthetic authenticator enrollment is confirmed",
+      "passed": true
+    }
+  ],
+  "captures": [],
+  "pageErrors": []
+}

@@ -1,0 +1,100 @@
+{
+  "checks": [
+    {
+      "name": "one page title",
+      "actual": 1
+    },
+    {
+      "name": "open requests lead in deadline order",
+      "actual": true
+    },
+    {
+      "name": "shared access-checked download status",
+      "actual": 200
+    },
+    {
+      "name": "download returns actual stored PDF bytes",
+      "actual": "%PDF-1.4\nSynthetic shared\n%%EOF"
+    },
+    {
+      "name": "download disposition",
+      "actual": true
+    },
+    {
+      "name": "hr access-checked download status",
+      "actual": 404
+    },
+    {
+      "name": "foreign access-checked download status",
+      "actual": 404
+    },
+    {
+      "name": "employee has no visibility editor",
+      "actual": true
+    },
+    {
+      "name": "invalid file is refused before uploading",
+      "actual": true
+    },
+    {
+      "name": "permission loss refuses upload and retains panel/file",
+      "actual": "e789d654-d082-452a-b770-5478a8ca9f8b.pdf"
+    },
+    {
+      "name": "request upload is immediately a shared personnel-file document",
+      "actual": "shared"
+    },
+    {
+      "name": "real upload storage and database checksum agree",
+      "actual": "8e8efb7d6369d7ad8a4deb439b67a53fa35c9b7f06babfb1a1d064f69c5363f8"
+    },
+    {
+      "name": "real upload size agrees with database",
+      "actual": 44
+    },
+    {
+      "name": "cancelling submission retains uploaded personnel document",
+      "actual": 1
+    },
+    {
+      "name": "stale-version conflict retains note",
+      "actual": "Synthetic retained submission note"
+    },
+    {
+      "name": "pending command prevents duplicate native submissions and Escape",
+      "actual": true
+    },
+    {
+      "name": "exactly one server command on pending retry",
+      "actual": 1
+    },
+    {
+      "name": "submission status persists",
+      "actual": "submitted"
+    },
+    {
+      "name": "one persisted submission retains note",
+      "actual": [
+        "Synthetic retained submission note"
+      ]
+    },
+    {
+      "name": "submitted note reads back through actual page",
+      "actual": true
+    },
+    {
+      "name": "no client runtime exceptions",
+      "actual": []
+    }
+  ],
+  "errors": [],
+  "source": {
+    "head": "e8eebd1077dc1743e78e30885965a7eea05a4b9c",
+    "hashes": {
+      "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx": "40d8059022121e182dbf9f81f351162a5944c098943166cd59efadbc44607d8a",
+      "apps/webapp/src/components/personnel-file/requested-documents.tsx": "6f53517ffd666507bc734f4f86499dbcc95be9d2046295c375cda9de7379d2cf",
+      "apps/webapp/src/components/personnel-file/document-dialog.tsx": "bebd940d0bbd4c23768baea07b35eaf62b9fc04ad763b13c2c74efac3c1c4414",
+      "apps/webapp/src/components/personnel-file/submit-document-request-dialog.tsx": "3e64090b3595c16108a6f2f82c9b772a85d273b7bd07b392044e87bc09999b15"
+    }
+  }
+}

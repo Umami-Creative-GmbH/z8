@@ -1,0 +1,7 @@
+{
+  "baselineCommit": "877b12279ec992cf282e0ba775ac4849579aef86",
+  "path": "apps/webapp/src/components/organization-mfa/verification.tsx",
+  "beforeSha256": "610a1dcac0b41bb296696f7d3f3c16c73a6d4020b0d76444650758f186a94b87",
+  "afterSha256": "e8a3e1a301e2ae50db0028ae12dab32087b1d2561ecab22c33b0d22ccece80bd",
+  "scope": "Only this owned MFA consumer replaced; all other app bytes stay fixed"
+}

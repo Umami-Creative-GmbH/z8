@@ -118,7 +118,7 @@ export function DocumentRequestList<Request extends DocumentRequestView>({
 	return (
 		<ul className="divide-y rounded-md border">
 			{requests.map((request) => (
-				<li key={request.id} className="space-y-2 p-3">
+				<li key={request.id} className="min-w-0 space-y-2 break-words p-3 [overflow-wrap:anywhere]">
 					<div className="flex flex-wrap items-start justify-between gap-2">
 						<div className="min-w-0 space-y-1">
 							{subject ? subject(request) : null}
@@ -179,7 +179,11 @@ export function DocumentRequestList<Request extends DocumentRequestView>({
 										{t("settings.personnelFiles.requests.submission", "Submitted {date}", {
 											date: formatInstant(
 												parseInstant(submission.submittedAt),
-												{ locale, timezone, timeFormat: localeDefaultTimeFormat(locale) },
+												{
+													locale,
+													timezone,
+													timeFormat: localeDefaultTimeFormat(locale),
+												},
 												"dateMedium",
 											),
 										})}

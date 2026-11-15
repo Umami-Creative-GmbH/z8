@@ -3,7 +3,7 @@
 import { IconKey, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -124,23 +124,34 @@ export function MfaVerification({
 	} | null>(null);
 	const [pending, setPending] = useState(false);
 	const running = useRef(false);
-	const active = useRef(true);
-	useEffect(() => {
-		active.current = true;
+	const arrival = useRef<symbol | null>(null);
+	useLayoutEffect(() => {
+		arrival.current = Symbol("MFA arrival");
 		return () => {
-			active.current = false;
+			arrival.current = null;
+			running.current = false;
+			setPending(false);
 		};
 	}, []);
-	const run = async (work: () => Promise<void>, recovery = false) => {
-		if (running.current) return false;
+	const run = async (
+		work: () => Promise<undefined | (() => void)>,
+		recovery = false,
+	) => {
+		if (running.current || !arrival.current) return false;
+		const requestArrival = arrival.current;
 		running.current = true;
 		setPending(true);
 		setMessage(null);
 		return Promise.resolve()
-			.then(work)
+			.then(() => (arrival.current === requestArrival ? work() : undefined))
 			.then(
-				() => true,
+				(continueCurrent) => {
+					if (arrival.current !== requestArrival) return false;
+					continueCurrent?.();
+					return true;
+				},
 				(error: unknown) => {
+					if (arrival.current !== requestArrival) return false;
 					setMessage({
 						text:
 							error instanceof Error
@@ -153,12 +164,13 @@ export function MfaVerification({
 				},
 			)
 			.finally(() => {
+				if (arrival.current !== requestArrival) return;
 				running.current = false;
 				setPending(false);
 			});
 	};
 	const continueToOrganization = () => {
-		if (!active.current) return;
+		if (!arrival.current) return;
 		const query = new URLSearchParams();
 		if (organizationId) query.set("organizationId", organizationId);
 		if (callbackUrl) query.set("callbackUrl", callbackUrl);
@@ -178,13 +190,14 @@ export function MfaVerification({
 				throw new Error(
 					t("mfa.password.failed", "Password verification failed"),
 				);
-			setMessage({
-				text: t(
-					"mfa.password.verified",
-					"Password verified. You can enroll your first authenticator, or verify an existing authenticator or backup code below.",
-				),
-				error: false,
-			});
+			return () =>
+				setMessage({
+					text: t(
+						"mfa.password.verified",
+						"Password verified. You can enroll your first authenticator, or verify an existing authenticator or backup code below.",
+					),
+					error: false,
+				});
 		});
 	return (
 		<>
@@ -221,7 +234,7 @@ export function MfaVerification({
 								trustDevice: false,
 							});
 							if (result.error) throw new Error(result.error.message);
-							continueToOrganization();
+							return continueToOrganization;
 						})
 					}
 				/>
@@ -233,7 +246,7 @@ export function MfaVerification({
 						void run(async () => {
 							const result = await authClient.signIn.passkey();
 							if (result.error) throw new Error(result.error.message);
-							continueToOrganization();
+							return continueToOrganization;
 						})
 					}
 				>
@@ -272,8 +285,22 @@ export function MfaVerification({
 											const result = await authClient.signIn.social({
 												provider,
 												callbackURL: window.location.href,
+												disableRedirect: true,
 											});
 											if (result.error) throw new Error(result.error.message);
+											if (result.data?.url) {
+												const destination = new URL(
+													result.data.url,
+													window.location.href,
+												);
+												if (!["https:", "http:"].includes(destination.protocol))
+													throw new Error(
+														t("mfa.verification.failed", "Verification failed"),
+													);
+												return () => {
+													window.location.href = destination.href;
+												};
+											}
 										})
 									}
 								>
@@ -291,6 +318,13 @@ export function MfaVerification({
 									className="h-auto min-h-9 max-w-full whitespace-normal"
 									onClick={() =>
 										void run(async () => {
+											const failure = () =>
+												new Error(
+													t(
+														"mfa.sso.failed",
+														"Organization SSO could not be started",
+													),
+												);
 											const response = await fetch("/api/organizations/sso", {
 												method: "POST",
 												headers: { "content-type": "application/json" },
@@ -300,15 +334,12 @@ export function MfaVerification({
 														window.location.pathname + window.location.search,
 												}),
 											});
+											if (!response.ok) throw failure();
 											const result = await response.json();
-											if (!response.ok || !result.url)
-												throw new Error(
-													t(
-														"mfa.sso.failed",
-														"Organization SSO could not be started",
-													),
-												);
-											window.location.href = result.url;
+											if (!result.url) throw failure();
+											return () => {
+												window.location.href = result.url;
+											};
 										})
 									}
 								>
@@ -382,14 +413,15 @@ export function MfaVerification({
 											code,
 										});
 										if (result.error) throw new Error(result.error.message);
-										setMessage({
-											text: t(
-												"mfa.recovery.success",
-												"Recovery permits replacement enrollment only. Verify an authenticator before returning to your organization.",
-											),
-											error: false,
-											recovery: true,
-										});
+										return () =>
+											setMessage({
+												text: t(
+													"mfa.recovery.success",
+													"Recovery permits replacement enrollment only. Verify an authenticator before returning to your organization.",
+												),
+												error: false,
+												recovery: true,
+											});
 									}, true)
 								}
 							/>
