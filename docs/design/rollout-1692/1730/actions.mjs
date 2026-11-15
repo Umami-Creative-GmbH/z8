@@ -73,6 +73,3 @@ try {
  const restricted=await browser.createBrowserContext();await prepareFixtureBrowserContext(restricted,runtime.origin);await restricted.setCookie(...auth['small-restricted'].cookies);const denied=await restricted.newPage();await denied.goto(runtime.origin+'/en/personnel-files/document-requests',{waitUntil:'networkidle2'});
  await check('employee with no officer coverage cannot read the officer queue',await denied.evaluate(()=>!document.body.innerText.includes('R047 record')&&!document.body.innerText.includes('Request from several')));
 }catch(error){result.failure=error.message;throw error;}finally{await save();await browser.close();await pool.end();}
-
-
-

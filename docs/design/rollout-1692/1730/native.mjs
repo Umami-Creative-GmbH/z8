@@ -29,5 +29,3 @@ try{
  await save('native-source.json',{head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),session,source,targetDocumentRequestsWorkspacePresent:true,qualification:'Loaded actual document requests tree; pending/session heading has component coverage; no held-session browser proof was performed.'});
  console.log('Actual native target tree includes DocumentRequestsWorkspace.');
 }finally{await save('native-close.json',await run(['close']));}
-
-

@@ -31,4 +31,3 @@ try {
   const path=join(out,stage+'-'+name+'.png');await page.screenshot({path,fullPage:true});result.captures.push({name,path:stage+'-'+name+'.png',width,height,theme,font,actor:'synthetic small-admin (owner)',scope:'fixture organization / other employee, all statuses, pageSize=10',...observation});
  }
 }catch(error){result.failure=error.message;throw error;}finally{await writeFile(join(out,stage+'-runtime.json'),JSON.stringify(result,null,2)+'\n');await browser.close();}
-

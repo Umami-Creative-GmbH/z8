@@ -30,4 +30,3 @@ try {
  await page.focus('button[data-sidebar="trigger"]');await page.keyboard.press('Enter');await page.waitForSelector('[role="dialog"] a');await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));assert(await page.evaluate(()=>document.activeElement?.matches('button[data-sidebar="trigger"]')));result.checks.push('Phone drawer Escape returns focus to trigger');
  await page.screenshot({path:join(out,'saved18px-phone.png')});
 }catch(error){result.failure=error.message;throw error;}finally{await writeFile(join(out,'variants-runtime.json'),JSON.stringify(result,null,2)+'\n');await browser.close();await pool.end();}
-
