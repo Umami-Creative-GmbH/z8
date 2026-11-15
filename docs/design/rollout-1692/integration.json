@@ -444,8 +444,12 @@
                         "blockedBy":  [
                                           1693
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+                        "integrationCommit":  "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+                        "evidenceCorrectionCommit":  "424fa42af3c0ef06f30b16c7ab9ed69b9386062b",
+                        "evidence":  "docs/design/rollout-1692/1721.md",
+                        "integrationVerification":  "Independent native mergefb6a2c18 plus report-only qualification verified ata068cdd9. Fresh59unique suites/418tests (25/198+50/386 less16/166 by fullName multisets); worker24/191 subset plusMFA6/documentsheading1 retained. Fulltypes,8-file Doctorzero,CRLF-awareBiome/explicitlint pass; raw8/explicit6formatting failures qualified.33verified ancestors,1532rollout/11757unaffected/70incoming paths and bothheadingoptins preserved.34PNGfull decode,19JSON/8scripts/11links/148pins/3pairs validate. Personal currentorg/user/employee/staffView=false and all handover/correction/exception/outstanding/calendardomain owners unchanged; no operational authority/source blocker. Runtime24assertions/20captures pre-workermerge, finalmatched/native/Next atb89c9e9c; all inherited, PG10/118 notrerun. Org-switchHTTP200/old-recordabsence ends in skeleton/fontsloading, no settleddestination pass. Matchedphone tail not leadcomposition; separate18px operational captures show obligations. Baselineonlydesktop/sidebarclipping, toolingoverlays and former/unassignedloginvsdomainrefusal boundaries retained. Native38passes/51inapplicable/0incomplete/0violations primaryview only. Current-parent/source whitespacepasses; incomingparent158prior documents archivefindings unchanged. Alloriginalrawartifacts/appsources unchanged by rootqualification. Fullbuild/Tolgee/device/truezoom/provider/alllocale/globalacceptance limits remain."
                     },
                     {
                         "id":  "R030",
@@ -454,7 +458,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
+                        "status":  "awaiting-integration",
                         "verifiedCommit":  null
                     },
                     {
@@ -564,7 +568,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
