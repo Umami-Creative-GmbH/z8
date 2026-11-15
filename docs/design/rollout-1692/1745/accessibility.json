@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "axeVersion": "4.12.1",
+  "counts": {
+    "inapplicable": 47,
+    "incomplete": 0,
+    "passes": 42,
+    "violations": 0
+  },
+  "url": "http://localhost:57673/en/time-tracking",
+  "violations": [],
+  "incomplete": []
+}

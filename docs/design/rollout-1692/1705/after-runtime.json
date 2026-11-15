@@ -1,0 +1,34 @@
+{
+  "mode": "after",
+  "scope": "same small-admin / Performance small / Last Year 2025; original synthetic fixture history; no data mutations",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Vacation Trends"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n02:08\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nVacation Trends\nCompare vacation usage and employee balances for the selected organization period.\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nSome employees have no stored allowance. Totals use the existing stored allowances only.\nVacation Utilization\nOverall vacation days usage across organization\nOverall Utilization\n0.0%\nAllocated\n0 days\nTaken\n416 days\nRemaining\n-416 days\nx\nVacation Balance\nDays allocated, taken, and remaining by employee\nEmployee\tAllocated\tTaken\tRemaining\tUtilization\nPerson 1\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 2\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 4\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 5\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 6\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 7\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 3\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 0\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\nMonthly Vacation Usage\nVacation days taken per month\n2025-02\n2025-04\n2025-06\n2025-08\n2025-10\n2025-12\n0\n10\n20\n30\n40\nView monthly values\nPeak Vacation Months\nMonths with highest vacation activity\n2025-04\n2025-07\n2025-09\n0\n10\n20\n30\n40\nView monthly values"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Vacation Trends"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\nMore actions\nAnalytics\nVacation Trends\nCompare vacation usage and employee balances for the selected organization period.\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nSome employees have no stored allowance. Totals use the existing stored allowances only.\nVacation Utilization\nOverall vacation days usage across organization\nOverall Utilization\n0.0%\nAllocated\n0 days\nTaken\n416 days\nRemaining\n-416 days\nx\nVacation Balance\nDays allocated, taken, and remaining by employee\nEmployee\tAllocated\tTaken\tRemaining\tUtilization\nPerson 1\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 2\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 4\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 5\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 6\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 7\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 3\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 0\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\nMonthly Vacation Usage\nVacation days taken per month\n2025-02\n2025-05\n2025-08\n2025-12\n0\n10\n20\n30\n40\nView monthly values\nPeak Vacation Months\nMonths with highest vacation activity\n2025-04\n2025-07\n2025-09\n0\n10\n20\n30\n40\nView monthly values"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Vacation Trends"
+      ],
+      "main": "Toggle Sidebar\n\nAnalytics\n\n02:08\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nVacation Trends\nCompare vacation usage and employee balances for the selected organization period.\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nSome employees have no stored allowance. Totals use the existing stored allowances only.\nVacation Utilization\nOverall vacation days usage across organization\nOverall Utilization\n0.0%\nAllocated\n0 days\nTaken\n416 days\nRemaining\n-416 days\nx\nVacation Balance\nDays allocated, taken, and remaining by employee\nEmployee\tAllocated\tTaken\tRemaining\tUtilization\nPerson 1\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 2\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 4\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 5\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 6\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 7\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 3\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\n\nPerson 0\n\nAllowance not configured\n\n\t0\t52\t-52\t\nx\n0%\nMonthly Vacation Usage\nVacation days taken per month\n2025-01\n2025-02\n2025-03\n2025-04\n2025-05\n2025-06\n2025-07\n2025-08\n2025-09\n2025-10\n2025-11\n2025-12\n0\n10\n20\n30\n40\nView monthly values\nPeak Vacation Months\nMonths with highest vacation activity\n2025-04\n2025-07\n2025-09\n0\n10\n20\n30\n40\nView monthly values"
+    }
+  ],
+  "errors": []
+}

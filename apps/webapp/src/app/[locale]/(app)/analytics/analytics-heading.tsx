@@ -27,6 +27,23 @@ export function AnalyticsHeading(props: ComponentProps<typeof PageHeader>) {
 			/>
 		);
 	}
+	if (normalizeAppPath(pathname) === "/analytics/vacation-trends") {
+		return (
+			<PageHeader
+				{...props}
+				scope={props.title}
+				title={t("analytics.layout.tabs.vacationTrends", "Vacation Trends")}
+				description={
+					props.description
+						? t(
+								"analytics.vacationTrends.description",
+								"Compare vacation usage and employee balances for the selected organization period.",
+							)
+						: undefined
+				}
+			/>
+		);
+	}
 	if (normalizeAppPath(pathname) !== "/analytics/overtime-burn-down") {
 		return <PageHeader {...props} />;
 	}

@@ -1,0 +1,304 @@
+{
+  "phase": "after",
+  "actor": "small-manager",
+  "browserTimezone": "America/New_York",
+  "personalSavedTimezone": "Europe/Berlin",
+  "fullWidgetPrompt": true,
+  "sameActiveWorkFullWidgetPrompt": true,
+  "cancel": true,
+  "pendingDuplicateGuard": true,
+  "continueOnce": true,
+  "updateThenClockIn": true,
+  "requests": [
+    {
+      "action": "clock_in",
+      "workLocationType": "office",
+      "browserTimezone": "Europe/Berlin",
+      "submissionId": "2dbd6b0f-3a65-485c-9835-d70b53374efd"
+    },
+    {
+      "action": "clock_out",
+      "browserTimezone": "America/New_York",
+      "submissionId": "4c8821ec-e085-49b7-834b-1cfc5f558137"
+    },
+    {
+      "action": "clock_in",
+      "workLocationType": "office",
+      "browserTimezone": "America/New_York",
+      "submissionId": "156344f7-2303-4e74-8c8a-3c763cd0e29f"
+    },
+    {
+      "action": "clock_out",
+      "browserTimezone": "America/New_York",
+      "submissionId": "dc16b297-d193-4db9-a9fc-8c86036019a5"
+    }
+  ],
+  "persistedEntries": [
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:38:33.722Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:39:30.489Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:40:14.466Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:40:15.253Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:41:52.848Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:43:03.780Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:44:15.615Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:44:16.807Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:45:07.309Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:45:08.606Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:46:17.474Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:46:18.562Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:46:20.098Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:47:18.487Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:47:20.451Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:47:21.677Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:47:22.992Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:47:24.620Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:59:58.123Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:59:59.636Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-15T00:00:00.990Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-15T00:00:02.336Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    }
+  ],
+  "persistedPeriods": [
+    {
+      "start_time": "2026-11-14T23:38:33.722Z",
+      "end_time": "2026-11-14T23:39:30.489Z",
+      "duration_minutes": 1,
+      "start_zone": "Europe/Berlin",
+      "start_offset": 60,
+      "end_zone": "Europe/Berlin",
+      "end_offset": 60,
+      "elapsed_seconds": "56.767000"
+    },
+    {
+      "start_time": "2026-11-14T23:40:14.466Z",
+      "end_time": "2026-11-14T23:40:15.253Z",
+      "duration_minutes": 0,
+      "start_zone": "Europe/Berlin",
+      "start_offset": 60,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "0.787000"
+    },
+    {
+      "start_time": "2026-11-14T23:41:52.848Z",
+      "end_time": "2026-11-14T23:43:03.780Z",
+      "duration_minutes": 1,
+      "start_zone": "Europe/Berlin",
+      "start_offset": 60,
+      "end_zone": "Europe/Berlin",
+      "end_offset": 60,
+      "elapsed_seconds": "70.932000"
+    },
+    {
+      "start_time": "2026-11-14T23:44:15.615Z",
+      "end_time": "2026-11-14T23:44:16.807Z",
+      "duration_minutes": 0,
+      "start_zone": "Europe/Berlin",
+      "start_offset": 60,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "1.192000"
+    },
+    {
+      "start_time": "2026-11-14T23:45:07.309Z",
+      "end_time": "2026-11-14T23:45:08.606Z",
+      "duration_minutes": 0,
+      "start_zone": "Europe/Berlin",
+      "start_offset": 60,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "1.297000"
+    },
+    {
+      "start_time": "2026-11-14T23:46:17.474Z",
+      "end_time": "2026-11-14T23:46:18.562Z",
+      "duration_minutes": 0,
+      "start_zone": "Europe/Berlin",
+      "start_offset": 60,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "1.088000"
+    },
+    {
+      "start_time": "2026-11-14T23:46:20.098Z",
+      "end_time": "2026-11-14T23:47:18.487Z",
+      "duration_minutes": 1,
+      "start_zone": "America/New_York",
+      "start_offset": -300,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "58.389000"
+    },
+    {
+      "start_time": "2026-11-14T23:47:20.451Z",
+      "end_time": "2026-11-14T23:47:21.677Z",
+      "duration_minutes": 0,
+      "start_zone": "Europe/Berlin",
+      "start_offset": 60,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "1.226000"
+    },
+    {
+      "start_time": "2026-11-14T23:47:22.992Z",
+      "end_time": "2026-11-14T23:47:24.620Z",
+      "duration_minutes": 0,
+      "start_zone": "America/New_York",
+      "start_offset": -300,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "1.628000"
+    },
+    {
+      "start_time": "2026-11-14T23:59:58.123Z",
+      "end_time": "2026-11-14T23:59:59.636Z",
+      "duration_minutes": 0,
+      "start_zone": "Europe/Berlin",
+      "start_offset": 60,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "1.513000"
+    },
+    {
+      "start_time": "2026-11-15T00:00:00.990Z",
+      "end_time": "2026-11-15T00:00:02.336Z",
+      "duration_minutes": 0,
+      "start_zone": "America/New_York",
+      "start_offset": -300,
+      "end_zone": "America/New_York",
+      "end_offset": -300,
+      "elapsed_seconds": "1.346000"
+    }
+  ]
+}

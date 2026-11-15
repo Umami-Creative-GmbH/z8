@@ -58,6 +58,8 @@ export type VacationTrendsData = {
 	byEmployee: Array<{
 		employeeId: string;
 		employeeName: string;
+		/** Presence of the existing stored allowance source, independent of its numeric value. */
+		allowanceConfigured?: boolean;
 		allocated: number;
 		taken: number;
 		remaining: number;

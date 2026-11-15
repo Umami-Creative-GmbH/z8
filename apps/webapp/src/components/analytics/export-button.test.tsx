@@ -74,3 +74,53 @@ it("downloads the existing payload after a successful current-scope export", asy
 	});
 	expect(createUrl).toHaveBeenCalledOnce();
 });
+
+it("does not revive an old download after leaving and returning to its scope", async () => {
+	const pending = Promise.withResolvers<Response>();
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(() => pending.promise),
+	);
+	const view = render(<ExportButton data={data} exportScope="org-1/2025" />);
+	await start();
+	view.rerender(<ExportButton data={data} exportScope="org-1/2026" />);
+	view.rerender(<ExportButton data={data} exportScope="org-1/2025" />);
+	await act(async () => pending.resolve(new Response("Team\nOperations")));
+	expect(createUrl).not.toHaveBeenCalled();
+});
+
+it("does not revive an old download after export eligibility is lost and restored", async () => {
+	const pending = Promise.withResolvers<Response>();
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(() => pending.promise),
+	);
+	const view = render(<ExportButton data={data} />);
+	await start();
+	view.rerender(<ExportButton data={data} disabled />);
+	view.rerender(<ExportButton data={data} />);
+	await act(async () => pending.resolve(new Response("Team\nOperations")));
+	expect(createUrl).not.toHaveBeenCalled();
+});
+
+it("keeps default exports working without a scope opt-in", async () => {
+	vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async () => new Response("Team\nOperations")),
+	);
+	render(<ExportButton data={data} />);
+	await act(start);
+	expect(createUrl).toHaveBeenCalledOnce();
+});
+
+it("keeps custom export ownership and the selected format", async () => {
+	const customExport = vi.fn(async () => {});
+	const fetcher = vi.fn();
+	vi.stubGlobal("fetch", fetcher);
+	render(<ExportButton data={data} onExport={customExport} />);
+	await act(start);
+	expect(customExport).toHaveBeenCalledExactlyOnceWith("csv");
+	expect(fetcher).not.toHaveBeenCalled();
+	expect(createUrl).not.toHaveBeenCalled();
+});

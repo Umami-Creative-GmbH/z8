@@ -173,6 +173,20 @@ it("retains usable rows during failed background refresh, blocks export, and rep
 	expect(
 		screen.getByRole("button", { name: "Export" }).hasAttribute("disabled"),
 	).toBe(true);
+	const retry = Promise.withResolvers();
+	read.mockReturnValueOnce(retry.promise);
+	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+	expect(screen.getByText("Operations")).toBeTruthy();
+	expect(
+		screen.getByRole("button", { name: "Export" }).hasAttribute("disabled"),
+	).toBe(true);
+	await act(async () =>
+		retry.resolve({ success: false, error: "Still unavailable" }),
+	);
+	expect(screen.getByText("Operations")).toBeTruthy();
+	expect(
+		screen.getByRole("button", { name: "Retry" }).hasAttribute("disabled"),
+	).toBe(false);
 	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 	await waitFor(() =>
 		expect(

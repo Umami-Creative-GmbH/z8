@@ -1,0 +1,27 @@
+{
+  "get_project_metadata": {
+    "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-7a251ccd-c738046b7c4ace18\\apps\\webapp",
+    "devServerUrl": "http://localhost:57673"
+  },
+  "get_routes": {
+    "observed": true,
+    "responseKeys": [
+      "appRouter"
+    ],
+    "routeReported": true
+  },
+  "get_page_metadata": {
+    "observed": true,
+    "responseKeys": [
+      "sessions"
+    ],
+    "routeReported": true
+  },
+  "get_compilation_issues": {
+    "issues": []
+  },
+  "get_errors": {
+    "configErrors": [],
+    "sessionErrors": []
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "phase": "before",
+  "actor": "small-manager",
+  "browserTimezone": "America/New_York",
+  "personalSavedTimezone": "Europe/Berlin",
+  "fullWidgetPrompt": true,
+  "headerPrompt": false,
+  "headerSentWithoutConfirmation": true,
+  "requests": [
+    {
+      "action": "clock_in",
+      "workLocationType": "office",
+      "browserTimezone": "Europe/Berlin",
+      "submissionId": "95547284-19d2-40fd-ac1f-43c3bf1cf9d1"
+    },
+    {
+      "action": "clock_out",
+      "browserTimezone": "America/New_York",
+      "submissionId": "da235dd7-93e3-4eac-b617-1277e820161f"
+    }
+  ],
+  "persistedEntries": [
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:38:33.722Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:39:30.489Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_in",
+      "timestamp": "2026-11-14T23:40:14.466Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "type": "clock_out",
+      "timestamp": "2026-11-14T23:40:15.253Z",
+      "timezone": "America/New_York",
+      "utc_offset_minutes": -300,
+      "timezone_source": "browser"
+    }
+  ]
+}
