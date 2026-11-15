@@ -53,12 +53,15 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 	const pendingLoads = useRef(new Map<string, Promise<void>>());
 	// Pages on their way, so a second click does not ask for the same page again.
 	const pendingPages = useRef(new Set<string>());
-	useEffect(() => () => {
-		generation.current += 1;
-		// Effect replay / cached-route return must not wait on a discarded generation.
-		pendingLoads.current.clear();
-		pendingPages.current.clear();
-	}, []);
+	useEffect(
+		() => () => {
+			generation.current += 1;
+			// Effect replay / cached-route return must not wait on a discarded generation.
+			pendingLoads.current.clear();
+			pendingPages.current.clear();
+		},
+		[],
+	);
 	const [unknownIds, setUnknownIds] = useState<ReadonlySet<string>>(
 		() => new Set(),
 	);
@@ -162,7 +165,8 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 	function fetchPeople(missing: string[], options?: { withPaths: true }) {
 		const load = fetchPeopleBatches(missing, options).finally(() => {
 			for (const id of missing) {
-				if (pendingLoads.current.get(id) === load) pendingLoads.current.delete(id);
+				if (pendingLoads.current.get(id) === load)
+					pendingLoads.current.delete(id);
 			}
 		});
 		return load;

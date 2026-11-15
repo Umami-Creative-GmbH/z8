@@ -794,8 +794,14 @@ describe("OrgExplorerClient", () => {
 
 		it("settles a lazy deep link when the mounted app replays effects", async () => {
 			mocks.people.mockResolvedValue({ success: true, data: [people[4]] });
-			await renderExplorer({ initialData: partial, search: "?employee=deb", strict: true });
-			expect(await screen.findByRole("heading", { name: "Deb Dev" })).toBeTruthy();
+			await renderExplorer({
+				initialData: partial,
+				search: "?employee=deb",
+				strict: true,
+			});
+			expect(
+				await screen.findByRole("heading", { name: "Deb Dev" }),
+			).toBeTruthy();
 			expect(query().get("employee")).toBe("deb");
 		});
 

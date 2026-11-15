@@ -1,0 +1,15 @@
+[
+  {
+    "diagnostics": {
+      "issues": []
+    },
+    "name": "get_compilation_issues"
+  },
+  {
+    "diagnostics": {
+      "configErrors": [],
+      "sessionErrors": []
+    },
+    "name": "get_errors"
+  }
+]
