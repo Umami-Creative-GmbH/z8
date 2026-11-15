@@ -1,0 +1,155 @@
+{
+  "checks": [
+    {
+      "name": "real submission captured immutable evidence",
+      "passed": true
+    },
+    {
+      "name": "captured unchanged request has decision rights",
+      "passed": true
+    },
+    {
+      "name": "material change disables both decisions",
+      "passed": true
+    },
+    {
+      "name": "material change refuses real decision without fallback",
+      "passed": true
+    }
+  ],
+  "decisionStatus": 409,
+  "sections": [
+    {
+      "type": "key_value",
+      "title": {
+        "key": "approvals:approvals.request",
+        "fallback": "Request"
+      },
+      "rows": [
+        {
+          "label": {
+            "key": "approvals:approvals.requestType",
+            "fallback": "Type"
+          },
+          "value": "Time Correction"
+        },
+        {
+          "label": {
+            "key": "approvals:approvals.requestSummary",
+            "fallback": "Summary"
+          },
+          "value": "8h on Mar 3, 2025"
+        },
+        {
+          "label": {
+            "key": "approvals:approvals.requestStatus",
+            "fallback": "Status"
+          },
+          "value": {
+            "key": "approvals:approvals.requestStatusPending",
+            "fallback": "Awaiting review"
+          }
+        }
+      ]
+    },
+    {
+      "type": "callout",
+      "title": "Entry changed after submission",
+      "body": "The entry no longer matches what was submitted for approval. A decision cannot be recorded; the request needs review.",
+      "tone": "danger"
+    },
+    {
+      "type": "time_comparison",
+      "action": "delete",
+      "original": {
+        "start": {
+          "at": "2025-03-03T08:00:00Z",
+          "utcOffsetMinutes": 60
+        },
+        "end": {
+          "at": "2025-03-03T16:00:00Z",
+          "utcOffsetMinutes": 60
+        }
+      },
+      "requested": {
+        "start": null,
+        "end": null
+      }
+    },
+    {
+      "type": "key_value",
+      "title": {
+        "key": "approvals:approvals.evidence.requestedCorrectionTitle",
+        "fallback": "Requested correction"
+      },
+      "rows": [
+        {
+          "label": {
+            "key": "approvals:approvals.employee",
+            "fallback": "Employee"
+          },
+          "value": "Person 3"
+        },
+        {
+          "label": {
+            "key": "approvals:approvals.evidence.request",
+            "fallback": "Request"
+          },
+          "value": {
+            "key": "approvals:approvals.evidence.correctionDelete",
+            "fallback": "Delete this entry"
+          }
+        },
+        {
+          "label": {
+            "key": "approvals:approvals.evidence.entry",
+            "fallback": "Entry"
+          },
+          "value": "2025-03-03 09:00 (UTC+01:00) – 2025-03-03 17:00 (UTC+01:00)"
+        },
+        {
+          "label": {
+            "key": "approvals:approvals.evidence.durationBefore",
+            "fallback": "Duration before"
+          },
+          "value": "8 h 0 min"
+        }
+      ]
+    },
+    {
+      "type": "timeline",
+      "title": "Evidence history",
+      "events": [
+        {
+          "id": "evidence-submitted-2333f794-817f-44e4-816c-ab8200d4b2e4",
+          "label": "Submitted",
+          "at": "2026-11-15T02:45:12.417Z",
+          "actorName": "Person 3"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "title": {
+        "key": "approvals:approvals.submittedReason",
+        "fallback": "Submitted reason"
+      },
+      "body": "R011 owned duplicate record 2025-03-03\nSubmitted deletion evidence."
+    },
+    {
+      "type": "timeline",
+      "title": {
+        "key": "approvals:approvals.timeline",
+        "fallback": "Timeline"
+      },
+      "events": [
+        {
+          "id": "a4380bce-79c9-4c96-a4d3-da34e4cafba9-created",
+          "label": "Person 3 requested time correction",
+          "at": "2026-11-15T02:45:12.417Z",
+          "actorName": "Person 3"
+        }
+      ]
+    }
+  ]
+}

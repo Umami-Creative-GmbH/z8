@@ -1,0 +1,40 @@
+{
+  "actor": "small-manager",
+  "scope": "unique owned disposable fixture; actual calendar submissions and real inbox decisions",
+  "checks": [
+    {
+      "name": "real manager sees submitted requests",
+      "passed": true
+    },
+    {
+      "name": "all request reasons persisted by actual submission",
+      "passed": true
+    },
+    {
+      "name": "mixed bulk returns one actual success and one stale failure",
+      "passed": true
+    },
+    {
+      "name": "bulk rejection reason persists",
+      "passed": true
+    }
+  ],
+  "bulk": {
+    "succeeded": [
+      {
+        "id": "f748b523-0b0b-4022-badc-7ced65556b86",
+        "type": "time_entry",
+        "status": "rejected"
+      }
+    ],
+    "failed": [
+      {
+        "id": "78755219-143c-43ff-bc4d-3455f71676f4",
+        "code": "stale",
+        "message": "Request is already rejected"
+      }
+    ]
+  },
+  "errors": [],
+  "reasonReadBack": "Previously captured in after-submitted-reason.png"
+}

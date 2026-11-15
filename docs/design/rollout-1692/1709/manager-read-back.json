@@ -1,0 +1,15 @@
+{
+  "actor": "small-manager",
+  "scope": "same owned organization and actual submitted Jan 13 request",
+  "status": 200,
+  "reasonExposed": true,
+  "actualSubmittedReason": "R011 owned duplicate record 2025-01-13\nSubmitted deletion evidence.",
+  "displaySection": {
+    "type": "text",
+    "title": {
+      "key": "approvals:approvals.submittedReason",
+      "fallback": "Submitted reason"
+    },
+    "body": "R011 owned duplicate record 2025-01-13\nSubmitted deletion evidence."
+  }
+}
