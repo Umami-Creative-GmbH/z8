@@ -1,0 +1,171 @@
+{
+  "base": "11671b30d78f9bc12be6f991ed4638218cc75777",
+  "incoming": "67f5442ffe53990ea10b575a6fd5ab2389f9a5bf",
+  "merge": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "standards": {
+    "hardViolations": [],
+    "advisories": [
+      {
+        "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+        "line": 81,
+        "source": "React Doctor 0.9.22 / maintainability",
+        "message": "EmployeeBalanceArrival complexity14/cognitive16/depth2; reviewed advisory, zero errors. No score/supply-chain/whole-application claim."
+      }
+    ],
+    "sources": [
+      "AGENTS.md",
+      "docs/refs/agent-workflow.md",
+      "docs/refs/project-conventions.md",
+      "docs/refs/timekeeping.md",
+      "docs/refs/design-context.md",
+      "docs/refs/ux-language.md",
+      "docs/refs/forms.md",
+      "docs/refs/dates.md",
+      "apps/webapp/src/lib/time-tracking/CONTEXT.md",
+      "apps/webapp/src/lib/time-tracking/docs/adr/0008-balance-adjustments-are-a-cancellable-ledger-and-an-opening-balance-replaces-earlier-time.md",
+      "apps/webapp/src/lib/payroll-export/GLOSSARY.md",
+      "apps/webapp/src/lib/payroll-export/docs/adr/",
+      "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md"
+    ]
+  },
+  "spec": {
+    "source": "docs/design/2026-11-14-webapp-ui-ux-spec.md shared contract, R044 and approved Testing Decisions",
+    "findings": [
+      {
+        "id": "R044-heading-loading",
+        "axis": "Spec",
+        "severity": "required reconciliation",
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+        "line": 36,
+        "problem": "The actual Suspense fallback renders a named status region and two aria-hidden skeletons, with zero h1s, while R044 opts out of the shell h1.",
+        "requirement": "Canonical shared spec: each persistent page has one semantic main heading; title ownership is staged atomically. F1/report also retains headings for pending arrivals.",
+        "evidence": {
+          "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+          "fullName": "retains the R044 task main heading during its actual server suspense fallback",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected [] to have a length of 1 but got +0"
+          ]
+        },
+        "suggestedRootCorrection": "Use a safe translated Work balance main heading in the loading composition; retain the named loading region and no old employee identity."
+      },
+      {
+        "id": "R044-heading-scope",
+        "axis": "Spec",
+        "severity": "required reconciliation",
+        "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+        "line": 63,
+        "problem": "The loading/current-actor/current-organization mismatch branch renders only a status paragraph and no h1. It correctly hides old identity but leaves the converted route without a task heading.",
+        "requirement": "Canonical shared spec: one semantic main heading and honest scoped arrivals; keep task context without disclosing the prior employee.",
+        "evidence": {
+          "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+          "fullName": "retains a safe task main heading while the R044 server arrival mismatches current actor scope",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected [] to have a length of 1 but got +0"
+          ]
+        },
+        "suggestedRootCorrection": "Keep a generic translated Work balance h1 beside the scope-loading status while retaining all actor/org mismatch gates."
+      }
+    ],
+    "preserved": [
+      "Covered current/former identity, locale-aware directory return, signed balance and computed-through date; projection-null remains unavailable rather than zero.",
+      "Full immutable history retains kind/signed minutes/day/reason/actor/recorded instant and cancellation evidence; no total edit or external payment.",
+      "Opening replacement, payout bounds/conflicts, cancellation reasons and existing transaction/audit/time owners unchanged.",
+      "Refresh uses the real query owner and shared employee-prefix invalidation; stale database failures retain ledger/drafts and disable writes. Authorization refusal removes ledger/panels.",
+      "Scope gate compares authenticated user and active organization with server props; arrival key includes org/user/employee plus per-arrival query identity and query abort guard. Existing A→B→A/read-Activity cases pass.",
+      "Forms keep actual TanStack validation/typed defaults, per-request command lock, hidden/departed completion guard, failure recovery and pending close protection. Seven fresh additional lifecycle/legacy Dialog probes pass.",
+      "Existing settings and offboarding callers retain Dialog exports and final-payout initial day/amount/title payload; current suites and direct compatibility probe pass.",
+      "Independent current-member payroll grant/employee coverage stays separate from personnel/expense grants and manager/settings authority. Route refresh rechecks payroll coverage before the old authorized reader. Every public mutation still enters organizationAction/current-org authority and the insert-only store.",
+      "Seven authoritative domain owners are byte-equivalent after line-ending normalization to original baseline. UTC instants/captured offsets, employee-local dates, projection, closed-month and export meanings unchanged.",
+      "All prior heading opt-ins and both payroll directory/employee opt-ins are retained."
+    ]
+  },
+  "integrationFindings": [
+    {
+      "id": "R043-inherited-heading-expectation",
+      "axis": "Integration compatibility",
+      "severity": "required reconciliation",
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+      "line": 35,
+      "problem": "The prior directory test still expects the employee route to be shell-owned. R044 now legitimately adopts it. The test title also says only this route.",
+      "evidence": {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+        "fullName": "keeps the task heading during a pending directory read and adopts only this route",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected true to be false // Object.is equality"
+        ]
+      },
+      "suggestedRootCorrection": "Reconcile the title/employee expectation while keeping directory=true, employee=true and deeper descendants=false. Root explicitly reserved this correction for its dedicated branch."
+    }
+  ],
+  "inspectionLimits": [
+    "No subagents, per explicit grant; standards and spec axes reviewed directly.",
+    "No new runtime, PostgreSQL, browser, provider or physical-device work; raw worker runtime evidence is inherited.",
+    "Full production/static generation, remote Tolgee catalogs/all locales, providers, wrapper/devices, true zoom and global transitions remain unpassed.",
+    "Held-request browser org/account A→B→A remains unpassed, distinct from the passing component and inherited PostgreSQL seams.",
+    "Root1726 archive validator remains nativeTarget:false; both before/after Equipment AuthorizationError is historical and not globally clean."
+  ],
+  "findings": [
+    {
+      "id": "R044-heading-loading",
+      "axis": "Spec",
+      "severity": "required reconciliation",
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+      "line": 36,
+      "problem": "The actual Suspense fallback renders a named status region and two aria-hidden skeletons, with zero h1s, while R044 opts out of the shell h1.",
+      "requirement": "Canonical shared spec: each persistent page has one semantic main heading; title ownership is staged atomically. F1/report also retains headings for pending arrivals.",
+      "evidence": {
+        "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+        "fullName": "retains the R044 task main heading during its actual server suspense fallback",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected [] to have a length of 1 but got +0"
+        ]
+      },
+      "suggestedRootCorrection": "Use a safe translated Work balance main heading in the loading composition; retain the named loading region and no old employee identity."
+    },
+    {
+      "id": "R044-heading-scope",
+      "axis": "Spec",
+      "severity": "required reconciliation",
+      "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+      "line": 63,
+      "problem": "The loading/current-actor/current-organization mismatch branch renders only a status paragraph and no h1. It correctly hides old identity but leaves the converted route without a task heading.",
+      "requirement": "Canonical shared spec: one semantic main heading and honest scoped arrivals; keep task context without disclosing the prior employee.",
+      "evidence": {
+        "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+        "fullName": "retains a safe task main heading while the R044 server arrival mismatches current actor scope",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected [] to have a length of 1 but got +0"
+        ]
+      },
+      "suggestedRootCorrection": "Keep a generic translated Work balance h1 beside the scope-loading status while retaining all actor/org mismatch gates."
+    },
+    {
+      "id": "R043-inherited-heading-expectation",
+      "axis": "Integration compatibility",
+      "severity": "required reconciliation",
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+      "line": 35,
+      "problem": "The prior directory test still expects the employee route to be shell-owned. R044 now legitimately adopts it. The test title also says only this route.",
+      "evidence": {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+        "fullName": "keeps the task heading during a pending directory read and adopts only this route",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected true to be false // Object.is equality"
+        ]
+      },
+      "suggestedRootCorrection": "Reconcile the title/employee expectation while keeping directory=true, employee=true and deeper descendants=false. Root explicitly reserved this correction for its dedicated branch."
+    }
+  ]
+}

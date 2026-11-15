@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EmployeeBalanceLoadingHeading } from "@/components/payroll/employee-balance-loading-heading";
 import { EmployeeBalanceWorkspace } from "@/components/payroll/employee-balance-workspace";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,17 +36,18 @@ async function PayrollWorkBalanceContent({ params }: PayrollWorkBalancePageProps
 
 function PayrollWorkBalanceLoading() {
 	return (
-		<LoadingRegion
-			label={{
-				labelKey: "payroll.workBalances.loadingEmployee",
-				labelDefault: "Loading the work balance",
-			}}
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
-			role="status"
-		>
-			<Skeleton aria-hidden="true" className="h-8 w-48" />
-			<Skeleton aria-hidden="true" className="h-64 w-full" />
-		</LoadingRegion>
+		<div className="@container/main mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:p-6">
+			<EmployeeBalanceLoadingHeading />
+			<LoadingRegion
+				label={{
+					labelKey: "payroll.workBalances.loadingEmployee",
+					labelDefault: "Loading the work balance",
+				}}
+				role="status"
+			>
+				<Skeleton aria-hidden="true" className="h-64 w-full" />
+			</LoadingRegion>
+		</div>
 	);
 }
 

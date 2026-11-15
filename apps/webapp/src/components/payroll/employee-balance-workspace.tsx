@@ -33,6 +33,7 @@ import {
 } from "@/lib/work-balance/adjustments/types";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import { Link } from "@/navigation";
+import { EmployeeBalanceLoadingHeading } from "./employee-balance-loading-heading";
 import { EmployeeBalanceProjection } from "./employee-balance-projection";
 
 type Props = { employee: BalanceAdjustmentGrantEmployee; organizationId: string; userId: string };
@@ -66,9 +67,12 @@ export function EmployeeBalanceWorkspace(props: Props) {
 		scope.activeOrganizationId !== props.organizationId
 	)
 		return (
-			<p role="status">
-				{t("payroll.workBalances.scopeChanged", "Loading the current payroll scope…")}
-			</p>
+			<div className="@container/main mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 md:p-6">
+				<EmployeeBalanceLoadingHeading />
+				<p role="status">
+					{t("payroll.workBalances.scopeChanged", "Loading the current payroll scope…")}
+				</p>
+			</div>
 		);
 	return (
 		<EmployeeBalanceArrival

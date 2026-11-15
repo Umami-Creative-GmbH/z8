@@ -1,0 +1,17 @@
+src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts
+src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts
+src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.test.tsx
+src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx
+src/app/[locale]/(app)/payroll/work-balances/page.test.tsx
+src/components/payroll/employee-balance-loading-heading.tsx
+src/components/payroll/employee-balance-projection.tsx
+src/components/payroll/employee-balance-workspace.test.tsx
+src/components/payroll/employee-balance-workspace.tsx
+src/components/settings/work-balance/balance-form-panel.tsx
+src/components/settings/work-balance/balance-form-surface.ts
+src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx
+src/components/settings/work-balance/record-overtime-payout-dialog.tsx
+src/components/settings/work-balance/set-opening-balance-dialog.tsx
+src/components/settings/work-balance/use-balance-form-request.ts
+src/lib/navigation/route-metadata.test.ts
+src/lib/navigation/route-metadata.ts
