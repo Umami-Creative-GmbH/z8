@@ -12,6 +12,13 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/equipment/employees/id")).toBe(false);
 		expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);
 	});
+	it("adopts the licence role page while retaining independent check and settings headings", () => {
+		expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
+		expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
+			false,
+		);
+		expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);
+	});
 	it("retains independent approvals page headings", () => {
 		expect(appPageOwnsHeading("/de/approvals")).toBe(true);
 		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);

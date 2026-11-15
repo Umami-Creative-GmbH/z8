@@ -267,8 +267,11 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+                        "implementationCommit":  "7844510f2a47671b4d90153ef805ba7642213311",
+                        "evidence":  "docs/design/rollout-1692/1715.md",
+                        "integrationVerification":  "126 unique suites /973 fresh tests:31/215 exact+99/791 compatibility-10 repeated files/75 cases+6/42 retained root fixes. Full combined types and14-file Doctor zero. Normal10-file Biome+four legacy lint/import checks pass; extra forced webapp config remains unpassed with10 formatting-only differences. Exact conflict-free merge tree equals incoming; all21 previous verified ancestors,753 rollout paths and10954 unaffected paths preserved.48 PNGs fully decoded/12JSON/7scripts/16links/seven pairs checked. Current-route3 Escape variants/native tree-inspect-render/axe31-0-0/Next and PG6/59 are inherited; build/catalog/provider/device/true-zoom/transition/domain limits retained."
                     },
                     {
                         "id":  "R018",
@@ -277,7 +280,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

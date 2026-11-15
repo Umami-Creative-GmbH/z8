@@ -27,10 +27,12 @@ vi.mock("@tolgee/react", () => ({
 const remote = vi.hoisted(() => ({
 	rows: [] as unknown[],
 	worklist: vi.fn(),
+	fail: false,
 }));
 vi.mock("@/lib/organization/driving-licence/check-actions", () => ({
 	getDrivingLicenceCheckWorklistAction: async (query: unknown) => {
 		remote.worklist(query);
+		if (remote.fail) throw new Error("Offline");
 		return { success: true, data: remote.rows };
 	},
 	getDrivingLicenceEmployeeRecordAction: async () => ({
@@ -100,9 +102,39 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	remote.worklist.mockReset();
+	remote.fail = false;
 });
 
 describe("the verifier's Checks table", () => {
+	it("retains records and search through a failed refresh and retries the actual reader", async () => {
+		const user = userEvent.setup();
+		renderWorklist();
+		await screen.findByRole("table");
+		await user.type(
+			screen.getByRole("searchbox", { name: "Search by name" }),
+			"bru",
+		);
+		await waitFor(() =>
+			expect(remote.worklist).toHaveBeenLastCalledWith(
+				expect.objectContaining({ search: "bru" }),
+			),
+		);
+		remote.fail = true;
+		await user.click(
+			screen.getByRole("button", { name: "Refresh check worklist" }),
+		);
+		await screen.findByRole("alert");
+		expect(screen.getByRole("table")).toBeTruthy();
+		expect(screen.getByRole<HTMLInputElement>("searchbox").value).toBe("bru");
+		remote.fail = false;
+		const calls = remote.worklist.mock.calls.length;
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+		await waitFor(() =>
+			expect(remote.worklist.mock.calls.length).toBeGreaterThan(calls),
+		);
+		await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+	});
+
 	it("lists the server's rows in its order, with status, next deadline and team", async () => {
 		renderWorklist();
 		const table = await screen.findByRole("table");

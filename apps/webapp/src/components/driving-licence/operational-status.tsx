@@ -26,9 +26,14 @@ export function DrivingAuthorizationAdvisory({
 	const organizationId = session?.session.activeOrganizationId;
 	const userId = session?.user.id;
 	const query = useQuery({
-		queryKey: queryKeys.drivingLicence.statusFor(organizationId, userId, employeeId),
+		queryKey: queryKeys.drivingLicence.statusFor(
+			organizationId,
+			userId,
+			employeeId,
+		),
 		// Let an already started advisory read finish after its UI unmounts.
-		queryFn: () => loadDrivingAuthorizationStatus(organizationId ?? "", employeeId),
+		queryFn: () =>
+			loadDrivingAuthorizationStatus(organizationId ?? "", employeeId),
 		enabled: !!organizationId && !!userId,
 		staleTime: 0,
 		refetchInterval: 60_000,
@@ -38,7 +43,8 @@ export function DrivingAuthorizationAdvisory({
 	// The server answers `null` unless the visibility reader shows the advisory (feature on,
 	// intended driver). Render nothing until it has answered, so others never see a flash.
 	if (query.isPending) return null;
-	if (!query.isError && query.data?.success && query.data.data === null) return null;
+	if (!query.isError && query.data?.success && query.data.data === null)
+		return null;
 	const data = !query.isError && query.data?.success ? query.data.data : null;
 	return (
 		<aside
@@ -137,25 +143,73 @@ function OperationalDrivingEmployees({
 	const [selected, setSelected] = useState<string | null>(null);
 	const deferredSearch = useDeferredValue(search);
 	const query = useQuery({
-		queryKey: queryKeys.drivingLicence.operationalEmployees(organizationId, userId, deferredSearch),
+		queryKey: queryKeys.drivingLicence.operationalEmployees(
+			organizationId,
+			userId,
+			deferredSearch,
+		),
 		queryFn: ({ signal }) =>
 			loadOperationalDrivingEmployees(organizationId, deferredSearch, signal),
 		placeholderData: (previous) => previous,
 		refetchInterval: 60_000,
 		retry: false,
 	});
-	// No independent operational permission means no roster and no additional inspection access.
-	if (query.isError || !query.data?.success) return null;
+	// A refusal withdraws the roster and selected status; never retain inspection access.
+	const employees =
+		!query.isError && query.data?.success ? query.data.data : null;
 	return (
-		<Card role="region" aria-labelledby={`${id}-title`} aria-busy={query.isFetching}>
+		<Card
+			className="min-w-0"
+			role="region"
+			aria-labelledby={`${id}-title`}
+			aria-busy={query.isFetching}
+		>
 			<CardHeader>
 				<CardTitle>
 					<h2 id={`${id}-title`} className="text-lg font-semibold">
-						{t("drivingLicence.operational.title", "Driving status for planning")}
+						{t(
+							"drivingLicence.operational.title",
+							"Driving status for planning",
+						)}
 					</h2>
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-3">
+				{query.isPending ? (
+					<p role="status">
+						{t(
+							"drivingLicence.operational.loadingEmployees",
+							"Loading employees for planning…",
+						)}
+					</p>
+				) : null}
+				{!query.isPending && !employees ? (
+					<div role="alert" className="space-y-2 text-sm">
+						<p>
+							{t(
+								"drivingLicence.operational.rosterUnavailable",
+								"Planning employees are unavailable. Check your current organization access and retry.",
+							)}
+						</p>
+						<Button
+							variant="outline"
+							disabled={query.isFetching}
+							onClick={() => void query.refetch()}
+						>
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
+				) : null}
+				<Button
+					variant="outline"
+					disabled={query.isFetching}
+					onClick={() => void query.refetch()}
+				>
+					{t(
+						"drivingLicence.operational.refreshEmployees",
+						"Refresh planning employees",
+					)}
+				</Button>
 				<Label htmlFor={id}>
 					{t("drivingLicence.operational.search", "Find employee")}
 				</Label>
@@ -178,12 +232,15 @@ function OperationalDrivingEmployees({
 					)}
 				</p>
 				<ul className="flex flex-wrap gap-2">
-					{query.data.data.map((entry) => (
-						<li key={entry.employeeId}>
+					{employees?.map((entry) => (
+						<li key={entry.employeeId} className="min-w-0 max-w-full">
 							<Button
 								type="button"
-								variant={selected === entry.employeeId ? "secondary" : "outline"}
+								variant={
+									selected === entry.employeeId ? "secondary" : "outline"
+								}
 								aria-pressed={selected === entry.employeeId}
+								className="h-auto min-h-9 max-w-full whitespace-normal break-words text-left"
 								onClick={() => setSelected(entry.employeeId)}
 							>
 								{entry.name}
@@ -191,7 +248,7 @@ function OperationalDrivingEmployees({
 						</li>
 					))}
 				</ul>
-				{!query.data.data.length ? (
+				{employees && !employees.length ? (
 					<p>
 						{t(
 							"drivingLicence.operational.noEmployees",
@@ -199,7 +256,10 @@ function OperationalDrivingEmployees({
 						)}
 					</p>
 				) : null}
-				{selected ? <DrivingAuthorizationAdvisory employeeId={selected} /> : null}
+				{selected &&
+				employees?.some((entry) => entry.employeeId === selected) ? (
+					<DrivingAuthorizationAdvisory employeeId={selected} />
+				) : null}
 			</CardContent>
 		</Card>
 	);
