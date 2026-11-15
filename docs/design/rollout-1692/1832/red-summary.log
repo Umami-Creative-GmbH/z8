@@ -1,0 +1,47 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-394c4cda-6b16d8d73f89b377/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/welcome/page.test.tsx (1 test | 1 failed) 123ms
+   ❯ WelcomePage (1)
+     × waits for the summary before offering the correct next step 122ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/welcome/page.test.tsx > WelcomePage > waits for the summary before offering the correct next step
+AssertionError: expected <button …(2)></button> to be null
+
+- Expected:
+null
+
++ Received:
+<button
+  class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-10 rounded-md px-6 has-[>svg]:px-4 w-full sm:w-auto"
+  data-slot="button"
+>
+  Get Started
+</button>
+
+ ❯ src/app/[locale]/onboarding/welcome/page.test.tsx:41:65
+     39|   render(<WelcomePage />);
+     40|   await waitFor(() => expect(mocks.summary).toHaveBeenCalledOnce());
+     41|   expect(screen.queryByRole("button", { name: "Get Started" })).toBeNu…
+       |                                                                 ^
+     42|   expect(mocks.step).not.toHaveBeenCalled();
+     43|   await act(async () => held.resolve(joined));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  15:47:11
+   Duration  1.25s (environment 50%, import 21%, tests 15%, transform 10%, setup 3%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-394c4cda-
+  │ 6b16d8d73f89b377\apps\webapp
+
