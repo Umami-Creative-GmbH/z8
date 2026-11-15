@@ -177,9 +177,11 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "7f4e83507fb3c3222a990c79be8f58fb7c72c52d"
+                        "status":  "integrated",
+                        "verifiedCommit":  "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+                        "implementationCommit":  "7f4e83507fb3c3222a990c79be8f58fb7c72c52d",
+                        "evidence":  "docs/design/rollout-1692/1708.md",
+                        "integrationVerification":  "Fresh34 unique suites/374 tests, full combined types, seven-file CRLF-aware Biome/scoped+explicit Doctor zero findings. Sole heading-test conflict retains both complete1707/1708 cases. Exact tree/parents,24 ancestries,all572 prior rollout/66 root-exclusive files,JSON/scripts/16PNG/four matched pairs preserved. One EOF corrected. PG3/21 and actual local retry/browser/native inherited; four shared reset wrappers remain a root correction. Catalog/build/device/provider/transition limits retained."
                     },
                     {
                         "id":  "R011",

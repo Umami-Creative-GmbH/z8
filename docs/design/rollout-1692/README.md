@@ -27,9 +27,10 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - R006 #1704 (team performance), R007 #1705 (vacation trends) and R163 #1745 (time-tracking conformance): integrated and verified on combined tip `f9769a74353ac6670c4a36401029faf805b2a899`. Fresh merger review and root corrections preserve all prior work. See [team/export/Retry evidence](1704.md), [vacation comparison and allowance evidence](1705.md), and [controlled timezone proof and scope lifetime](1745.md).
 - R008 #1706 (work hours): integrated and verified at `62f92f0447a35b30b9806bca0a480f03a8f3c896`; root corrected the pinned employee column covering phone status values. See [paired real-browser regression and limits](1706.md).
 - R009 #1707 (legacy approvals): integrated and verified at `6fa8147fae492939056a76e83e327e520d921ae1`; both queues, decision owners and refusal drafts remain. See [fresh merger checks and retained acceptance limits](1707.md).
-- R010 #1708 (deputy decision history) and R011 #1709 (Unified Inbox): implementations committed, awaiting fresh serial merger review; no verified integration SHA yet.
+- R010 #1708 (deputy decision history): integrated and verified at `3f86b1d7e17025e89f314638a042aa1eed378ed1`; retained history/rights and real local data-refetch recovery. See [fresh merged checks and shared-boundary finding](1708.md).
+- R011 #1709 (Unified Inbox): implementation committed, awaiting fresh merger review; no verified integration SHA yet.
 - R014 #1712 (calendar) and R016 #1714 (compliance): implementing in isolated worktrees based on the verified foundation frontier.
-- Frontier counts: **16 integrated, two awaiting integration, two implementing, 137 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
+- Frontier counts: **17 integrated, one awaiting integration, two implementing, 137 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
 - R002 #1701 (absences): integrated and verified at `a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc`; organization/year/zone, records and existing absence action owners preserved. See [capabilities and remaining checks](1701.md).
 - R005 #1703 (overtime burn-down): integrated and verified at `2bc30e88f63d9db3d547353f49077db0c0ee7805`; root corrected both Unassigned manager queries and active analytics navigation. See [capabilities, corrections and remaining checks](1703.md).
 - R001 #1700 (dashboard conformance): integrated and verified at `8eed0aa58bcae1dd19be7e6d7d78303208a3ddde`; approved composition/preferences preserved, no-organization heading and streamed clock hydration corrected. See [capabilities and remaining checks](1700.md).
@@ -40,6 +41,8 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - Remaining pages: select from eligible prerequisites in `integration.json`. Foundation readiness is verified; route-specific shared-output dependencies still apply.
 
 ## Verification
+
+- #1708 merge `3f86b1d7e`: **34 unique suites / 374 fresh tests**, full combined types, seven-file Biome and scoped/explicit Doctor zero findings. Both #1707/#1708 heading tests, all572 prior rollout paths/66 root-exclusive files and actual local retry owner survive. Four matched pairs/16 PNGs and other artifacts checked; one incoming blank EOF corrected. PostgreSQL3/21 and real browser/native evidence are inherited. Wider shared error wrappers still use reset instead of refetching retry and require root correction; other limits remain in [the report](1708.md).
 
 - #1707 merge `6fa8147fa`: **24 unique suites / 303 fresh tests**, full combined types, fourteen-file Biome with eight existing warnings and Doctor with two reviewed warnings passed. Exact tree/13 ancestries, all541 prior rollout paths/92 root-exclusive files and paired scopes/artifacts preserved. Root corrected four whitespace findings and checked scripts. PG228pass/1skip and real runtime/native are inherited; held org-switch/mobile Escape/build/catalog/device/transition limits remain explicit in [the report](1707.md).
 
