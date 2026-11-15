@@ -2,7 +2,7 @@ import {spawn} from 'node:child_process';
 import {writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 const repo=process.cwd(),out=join(repo,'docs/design/rollout-1692/1720');
-const files=['src/app/[locale]/(app)/my-documents/page.tsx',...['my-documents-list','my-documents-scope','my-documents-retry','my-documents.test','requested-documents','document-dialog','document-list','document-request-list','submit-document-request-dialog'].map(n=>`src/components/personnel-file/${n}.${n.endsWith('.test')?'tsx':'tsx'}`),'src/lib/navigation/route-metadata.ts','src/lib/navigation/route-metadata.test.ts'];
+const files=['src/app/[locale]/(app)/my-documents/page.tsx',...['my-documents-list','my-documents-scope','my-documents-retry','my-documents.test','requested-documents','document-dialog','document-list','document-request-list','submit-document-request-dialog'].map(n=>`src/components/personnel-file/${n}.tsx`),'src/lib/navigation/route-metadata.ts','src/lib/navigation/route-metadata.test.ts'];
 const prefix=['--filter','webapp','exec'];
 const commands=[
  ['unit',[...prefix,'vitest','run','--project','unit','src/components/personnel-file','src/lib/personnel-file','src/lib/navigation/route-metadata.test.ts','src/components/ui/action-panel.test.tsx','src/components/ui/alert-dialog.test.tsx','src/components/ui/page-header.test.tsx','src/components/data-table-server/data-table-toolbar.test.tsx']],

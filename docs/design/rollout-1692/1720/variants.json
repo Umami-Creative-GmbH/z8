@@ -143,7 +143,7 @@
       ],
       "dpr": 1,
       "font": "18px",
-      "theme": "dark",
+      "theme": "dark bprogress-busy",
       "width": 2200,
       "png": [
         2200,
@@ -152,14 +152,14 @@
     }
   ],
   "source": {
-    "head": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+    "head": "e8eebd1077dc1743e78e30885965a7eea05a4b9c",
     "hashes": {
-      "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx": "5657f236c6398f7e3b5a0dc71613e0d41dbce23a391e61acdfee4e84b32f5603",
-      "apps/webapp/src/components/personnel-file/requested-documents.tsx": "c2edbbe80ed3d931cc1918a307d40326a6f95d1f553ae89b1db7b909b9759107",
-      "apps/webapp/src/components/personnel-file/my-documents-list.tsx": "615038d8fd8833e9018a7fbf6854a5d80a39f555826615632d3a93bed676c5f2",
+      "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx": "40d8059022121e182dbf9f81f351162a5944c098943166cd59efadbc44607d8a",
+      "apps/webapp/src/components/personnel-file/requested-documents.tsx": "6f53517ffd666507bc734f4f86499dbcc95be9d2046295c375cda9de7379d2cf",
+      "apps/webapp/src/components/personnel-file/my-documents-list.tsx": "fcef5820a4135babb64be9f3a454946afcc91baacecd4a2f68f14787000131ee",
       "apps/webapp/src/components/personnel-file/my-documents-scope.tsx": "5df2781073c2008033dbd4283c4402ff57b2f70f296a493ad2eb9b7cd464d79a",
-      "apps/webapp/src/components/personnel-file/document-dialog.tsx": "1ec81e38f608df8859fc858171b201d9e066617c0b4a2084c6904bf9b384d9a1",
-      "apps/webapp/src/components/personnel-file/submit-document-request-dialog.tsx": "25d4dcc5f85b0936781bd1b43f31e57c6d98ab7add1b85ee7cefedf9a327f8bb"
+      "apps/webapp/src/components/personnel-file/document-dialog.tsx": "bebd940d0bbd4c23768baea07b35eaf62b9fc04ad763b13c2c74efac3c1c4414",
+      "apps/webapp/src/components/personnel-file/submit-document-request-dialog.tsx": "3e64090b3595c16108a6f2f82c9b772a85d273b7bd07b392044e87bc09999b15"
     }
   }
 }

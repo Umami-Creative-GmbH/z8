@@ -1,25 +1,25 @@
 {
-    "command":  "agent-browser.cmd --session r028-1d538068114f --restore --headed --enable react-devtools open \u003cowned-cookie-bridge\u003e; react tree --json; react inspect 1247 --json",
+    "command":  "agent-browser.cmd --session r028-1d538068114f --restore --headed --enable react-devtools open \u003cowned-cookie-bridge\u003e; react tree --json; react inspect 730 --json",
     "version":  "0.39.1",
-    "head":  "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+    "head":  "e8eebd1077dc1743e78e30885965a7eea05a4b9c",
     "tree":  [
-                 "142 1195 1194 Prerender(MyDocumentsLayout)",
-                 "167 1227 1225 Prerender(MyDocumentsPage)",
-                 "169 1240 1228 Forget(MyDocumentsScope) ",
-                 "171 1242 1241 Server(PageHeader)",
-                 "171 1247 1241 Forget(RequestedDocuments)",
-                 "171 1352 1241 Forget(MyDocumentsList)",
-                 "176 1379 1378 Forget(MyDocumentsUpload)",
-                 "177 1387 1379 Forget(DocumentDialog)",
-                 "177 2222 1379 Forget(DocumentDialog)",
-                 "173 1397 1353 Forget(DocumentList)"
+                 "142 678 677 Prerender(MyDocumentsLayout)",
+                 "167 710 708 Prerender(MyDocumentsPage)",
+                 "169 723 711 Forget(MyDocumentsScope) ",
+                 "171 725 724 Server(PageHeader)",
+                 "171 730 724 Forget(RequestedDocuments)",
+                 "171 899 724 Forget(MyDocumentsList)",
+                 "176 926 925 Forget(MyDocumentsUpload)",
+                 "177 934 926 Forget(DocumentDialog)",
+                 "173 944 900 Forget(DocumentList)"
              ],
     "inspectSucceeded":  true,
     "inspectHasRequests":  true,
     "inspectHasCapability":  true,
     "source":  [
                    "http://localhost:55252/_next/static/chunks/apps_webapp_src_1tj1uwy5_x7hw._.js?dpl=ebfb7d8e042f227855aee0ee5e831576db91aff3",
-                   4023,
+                   4155,
                    307
-               ]
+               ],
+    "note":  "The fixture NEXT_DEPLOYMENT_ID was fixed at initial base. Bundle dpl is not a claim of current Git source; final captures pin current production hashes."
 }
