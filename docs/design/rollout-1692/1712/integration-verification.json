@@ -1,0 +1,61 @@
+{
+    "integration":  "eaf8aa1ef97029cd4327ba7f2568383f63d2b40c",
+    "preservedPriorExactHeadingOptIns":  [
+                                             "/",
+                                             "/time-tracking",
+                                             "/absences",
+                                             "/approvals",
+                                             "/approvals/inbox",
+                                             "/analytics",
+                                             "/analytics/overtime-burn-down",
+                                             "/analytics/team-performance",
+                                             "/analytics/work-hours",
+                                             "/analytics/vacation-trends",
+                                             "/reports",
+                                             "/reports/projects",
+                                             "/billing/suspended"
+                                         ],
+    "unexpectedSourcePaths":  [
+
+                              ],
+    "prerequisites":  [
+                          {
+                              "verifiedCommit":  "ac30ff285814644b08fc918eafa1013f3ecb7897",
+                              "id":  "F1",
+                              "ancestor":  true
+                          },
+                          {
+                              "verifiedCommit":  "382b8f5be837dad724d3a54274d3050b0104881f",
+                              "id":  "F2",
+                              "ancestor":  true
+                          },
+                          {
+                              "verifiedCommit":  "bfacad421ffe77f50729ea5895c546698ef28383",
+                              "id":  "F3",
+                              "ancestor":  true
+                          },
+                          {
+                              "verifiedCommit":  "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+                              "id":  "H1",
+                              "ancestor":  true
+                          }
+                      ],
+    "deputyHeadingPatternPreserved":  true,
+    "sourcePaths":  [
+                        "apps/webapp/src/app/[locale]/(app)/calendar/page.tsx",
+                        "apps/webapp/src/components/calendar/calendar-controls.test.tsx",
+                        "apps/webapp/src/components/calendar/calendar-controls.tsx",
+                        "apps/webapp/src/components/calendar/calendar-main-content.tsx",
+                        "apps/webapp/src/components/calendar/calendar-page-header.tsx",
+                        "apps/webapp/src/components/calendar/calendar-view.test.tsx",
+                        "apps/webapp/src/components/calendar/calendar-view.tsx",
+                        "apps/webapp/src/components/calendar/schedule-x-calendar.test.tsx",
+                        "apps/webapp/src/components/calendar/schedule-x-calendar.tsx",
+                        "apps/webapp/src/components/calendar/use-schedule-x-dom-lifecycle.ts",
+                        "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+                        "apps/webapp/src/lib/navigation/route-metadata.ts"
+                    ],
+    "testedHead":  "de8e69f892599c4273769d906b2a230030a53550",
+    "integrationAncestor":  true,
+    "ledgerAndReadmeUnchangedRelativeToIntegration":  true
+}

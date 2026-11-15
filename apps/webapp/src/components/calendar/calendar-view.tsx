@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import type { SelectableEmployee } from "@/components/employee-select/types";
 import { useTimeFormat, useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { Button } from "@/components/ui/button";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useLiveWorkNow } from "@/hooks/use-live-work-now";
@@ -564,10 +565,22 @@ function CalendarViewContent({
 		<div className="flex flex-1 flex-col gap-4 p-4 overflow-hidden min-h-0">
 			{/* Error message */}
 			{error && (
-				<div className="bg-destructive/10 text-destructive px-4 py-2 rounded-md text-sm shrink-0">
-					{t("calendar.loadEventsError", "Failed to load calendar events: {message}", {
-						message: error.message,
-					})}
+				<div
+					role="alert"
+					className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive"
+				>
+					<p>
+						{t(
+							"calendar.loadEventsError",
+							"Failed to load calendar events: {message}",
+							{
+								message: error.message,
+							},
+						)}
+					</p>
+					<Button type="button" variant="outline" size="sm" onClick={refetch}>
+						{t("common.retry", "Retry")}
+					</Button>
 				</div>
 			)}
 
