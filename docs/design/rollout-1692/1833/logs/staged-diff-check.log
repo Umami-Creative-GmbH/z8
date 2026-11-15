@@ -1,0 +1,47 @@
+docs/design/rollout-1692/1833/logs/biome-verification.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/biome-verification.log:14: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/biome-verification.log:21: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/biome-verification.log:21: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/doctor-final.log:3: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/doctor-final.log:35: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/doctor-second.log:3: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/doctor-second.log:50: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/doctor-source-final.log:3: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/doctor-source-final.log:35: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/doctor-third.log:3: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/doctor-third.log:40: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/doctor.log:3: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/format.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/format.log:11: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/format.log:13: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/format.log:15: trailing whitespace.
++  
+docs/design/rollout-1692/1833/logs/full-lifetime-matrix.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/green-account-pending.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/green-duplicate.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/green-inline.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/green-return-navigation.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/green-scope.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/lifecycle-green.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/lifecycle-tests.log:42: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/postgres-integration.log:14: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/presets.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/red-account-pending.log:43: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/red-duplicate.log:72: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/red-inline.log:270: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/red-return-navigation.log:37: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/red-scope.log:44: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/regressions-final.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/regressions-pending-store.log:12: new blank line at EOF.
+docs/design/rollout-1692/1833/logs/regressions.log:12: new blank line at EOF.

@@ -1,0 +1,270 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-d7b19cbd-602e451f63c096f8/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/wellness/page.test.tsx (9 tests | 1 failed) 1318ms
+   ❯ WellnessPage (9)
+     × shows save refusal beside the retained draft and allows retry 1021ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/wellness/page.test.tsx > WellnessPage > shows save refusal beside the retained draft and allows retry
+TestingLibraryElementError: Unable to find role="alert"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="mx-auto max-w-2xl"
+    >
+      <div
+        class="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75"
+      >
+        <div
+          class="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20"
+        >
+          <svg
+            class="tabler-icon tabler-icon-droplet size-8 text-blue-600 dark:text-blue-400"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546"
+            />
+          </svg>
+        </div>
+        <h1
+          class="mb-4 text-3xl font-bold tracking-tight"
+        >
+          Stay Hydrated
+        </h1>
+        <p
+          class="text-muted-foreground"
+        >
+          Set up water reminders to stay healthy during your workday. You'll receive gentle notifications to drink water while clocked in.
+        </p>
+      </div>
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <div
+            class="min-w-0 break-words font-semibold leading-none flex items-center gap-2"
+            data-slot="card-title"
+          >
+            <svg
+              class="tabler-icon tabler-icon-droplet size-5"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546"
+              />
+            </svg>
+            Water Reminders
+          </div>
+          <div
+            class="text-muted-foreground text-sm"
+            data-slot="card-description"
+          >
+            Enable optional hydration reminders while you work. You can always adjust these settings later.
+          </div>
+        </div>
+        <div
+          class="min-w-0 px-6"
+          data-slot="card-content"
+        >
+          <form
+            action="javascript:throw new Error('A React form was unexpectedly submitted. If you called form.submit() manually, consider using form.requestSubmit() instead. If you\\'re trying to use event.stopPropagation() in a submit event handler, consider also calling event.preventDefault().')"
+            class="space-y-6"
+          >
+            <div
+              class="flex flex-row items-center justify-between gap-4 rounded-lg border bg-white dark:bg-background p-4"
+            >
+              <div
+                class="min-w-0 space-y-0.5"
+              >
+                <label
+                  class="flex select-none items-center gap-2 font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 text-base"
+                  data-slot="label"
+                  for="wellness-enable-reminder"
+                >
+                  Enable Water Reminders
+                </label>
+                <p
+                  class="text-sm text-muted-foreground"
+                  id="wellness-enable-reminder-description"
+                >
+                  Receive gentle reminders to drink water during work hours.
+                </p>
+              </div>
+              <button
+                aria-checked="true"
+                aria-describedby="wellness-enable-reminder-description"
+                class="peer data-checked:bg-primary data-unchecked:bg-input focus-visible:border-ring focus-visible:ring-ring/50 dark:data-unchecked:bg-input/80 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-[background-color,border-color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+                data-checked=""
+                data-slot="switch"
+                id="wellness-enable-reminder"
+                role="switch"
+                tabindex="0"
+                type="button"
+              >
+                <span
+                  class="bg-background dark:data-unchecked:bg-foreground dark:data-checked...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="mx-auto max-w-2xl"
+    >
+      <div
+        class="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75"
+      >
+        <div
+          class="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20"
+        >
+          <svg
+            class="tabler-icon tabler-icon-droplet size-8 text-blue-600 dark:text-blue-400"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546"
+            />
+          </svg>
+        </div>
+        <h1
+          class="mb-4 text-3xl font-bold tracking-tight"
+        >
+          Stay Hydrated
+        </h1>
+        <p
+          class="text-muted-foreground"
+        >
+          Set up water reminders to stay healthy during your workday. You'll receive gentle notifications to drink water while clocked in.
+        </p>
+      </div>
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <div
+            class="min-w-0 break-words font-semibold leading-none flex items-center gap-2"
+            data-slot="card-title"
+          >
+            <svg
+              class="tabler-icon tabler-icon-droplet size-5"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546"
+              />
+            </svg>
+            Water Reminders
+          </div>
+          <div
+            class="text-muted-foreground text-sm"
+            data-slot="card-description"
+          >
+            Enable optional hydration reminders while you work. You can always adjust these settings later.
+          </div>
+        </div>
+        <div
+          class="min-w-0 px-6"
+          data-slot="card-content"
+        >
+          <form
+            action="javascript:throw new Error('A React form was unexpectedly submitted. If you called form.submit() manually, consider using form.requestSubmit() instead. If you\\'re trying to use event.stopPropagation() in a submit event handler, consider also calling event.preventDefault().')"
+            class="space-y-6"
+          >
+            <div
+              class="flex flex-row items-center justify-between gap-4 rounded-lg border bg-white dark:bg-background p-4"
+            >
+              <div
+                class="min-w-0 space-y-0.5"
+              >
+                <label
+                  class="flex select-none items-center gap-2 font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 text-base"
+                  data-slot="label"
+                  for="wellness-enable-reminder"
+                >
+                  Enable Water Reminders
+                </label>
+                <p
+                  class="text-sm text-muted-foreground"
+                  id="wellness-enable-reminder-description"
+                >
+                  Receive gentle reminders to drink water during work hours.
+                </p>
+              </div>
+              <button
+                aria-checked="true"
+                aria-describedby="wellness-enable-reminder-description"
+                class="peer data-checked:bg-primary data-unchecked:bg-input focus-visible:border-ring focus-visible:ring-ring/50 dark:data-unchecked:bg-input/80 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-[background-color,border-color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+                data-checked=""
+                data-slot="switch"
+                id="wellness-enable-reminder"
+                role="switch"
+                tabindex="0"
+                type="button"
+              >
+                <span
+                  class="bg-background dark:data-unchecked:bg-foreground dark:data-checked...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/[locale]/onboarding/wellness/page.test.tsx:109:23
+    107|   fireEvent.keyDown(screen.getByRole("slider", { name: "Daily Goal" })…
+    108|   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    109|   expect(await screen.findByRole("alert")).toHaveProperty("textContent…
+       |                       ^
+    110|   expect(screen.getByRole("slider", { name: "Daily Goal" }).getAttribu…
+    111|   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  16:23:43
+   Duration  2.05s (tests 67%, environment 16%, import 14%, transform 2%, setup 1%)
+
