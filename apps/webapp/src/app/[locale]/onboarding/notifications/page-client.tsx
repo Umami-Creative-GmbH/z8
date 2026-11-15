@@ -66,13 +66,19 @@ export default function NotificationsPage() {
 	const { data: session, isPending } = useSession();
 	if (isPending)
 		return (
-			<LoadingRegion
-				role="status"
-				label={{
-					labelKey: "onboarding.notifications.loading",
-					labelDefault: "Loading your notification setup",
-				}}
-			/>
+			<div className="mx-auto max-w-2xl space-y-6">
+				<PageHeader
+					className="onboarding-heading-panel rounded-xl border bg-card p-6 sm:p-8"
+					title={t("onboarding.notifications.title", "Set up notifications")}
+				/>
+				<LoadingRegion
+					role="status"
+					label={{
+						labelKey: "onboarding.notifications.loading",
+						labelDefault: "Loading your notification setup",
+					}}
+				/>
+			</div>
 		);
 	if (!session?.user.id)
 		return (

@@ -1,0 +1,12 @@
+{
+  "head": "bfbfe29c5685e2de8e981ba76fd833bf48e782bf",
+  "session": "next-dev-loop-1828-t3-36de3f4a-69b59b59b97cbc3d",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+      "canonicalSha256": "2504d46d6cb68610a310660d0480ce598e5de92a3778e7c43d8a8cc82e661509"
+    }
+  ],
+  "targetNotificationSetupPresent": true,
+  "qualification": "Loaded actual notification setup tree; pending heading is checked separately through the actual held-session browser."
+}

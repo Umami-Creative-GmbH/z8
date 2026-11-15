@@ -1,0 +1,24 @@
+{
+  "phase": "before",
+  "source": {
+    "path": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+    "sha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7",
+    "canonicalSha256": "36a62f3c23ea28a997a5693238c6fc5bd73b77b7378fa46f61041169d48cd4e7"
+  },
+  "checks": [],
+  "captures": [],
+  "sessionResponses": [],
+  "errors": [],
+  "heldSessionRequests": 0,
+  "navigations": [
+    "/en/onboarding/notifications",
+    "/en/onboarding/notifications",
+    "/en/onboarding/notifications",
+    "/en/onboarding/notifications",
+    "/en/onboarding/notifications",
+    "/en/onboarding/notifications",
+    "/en/onboarding/notifications",
+    "/en/onboarding/notifications"
+  ],
+  "failure": "Actual client session request must be held"
+}

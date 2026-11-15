@@ -1,0 +1,33 @@
+failed to load config from X:\t3-code\worktrees\z8\t3-36de3f4a-69b59b59b97cbc3d\.tmp\merge1828-audit\vitest-adversarial.config.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+Error: Build failed with 1 error:
+
+[UNRESOLVED_IMPORT] Could not resolve '../../apps/webapp/node_modules/vitest/config' in ../../.tmp/merge1828-audit/vitest-adversarial.config.ts
+   ╭─[ ../../.tmp/merge1828-audit/vitest-adversarial.config.ts:2:30 ]
+   │
+ 2 │ import { defineConfig } from '../../apps/webapp/node_modules/vitest/config';
+   │                              ───────────────────────┬──────────────────────  
+   │                                                     ╰──────────────────────── Module not found.
+───╯
+
+    at aggregateBindingErrorsIntoJsError (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/rolldown@1.2.19/node_modules/rolldown/dist/shared/error-CLo6EJKG.mjs:50:18)
+    at unwrapBindingResult (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/rolldown@1.2.19/node_modules/rolldown/dist/shared/error-CLo6EJKG.mjs:20:128)
+    at #build (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/rolldown@1.2.19/node_modules/rolldown/dist/shared/rolldown-AohEFLrh.mjs:146:34)
+    at async bundleConfigFile (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:38122:12)
+    at async bundleAndLoadConfigFile (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:38018:18)
+    at async loadConfigFromFile (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:37979:42)
+    at async resolveConfig (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vite@8.3.8_@types+node@26.6_c9880f5427828f6fa6dc3301bf646805/node_modules/vite/dist/node/chunks/node.js:37580:22)
+    at async resolveConfig (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.Di8au7q4.js:9300:25)
+    at async createVitest (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/cli-api.COfZo8lK.js:13938:17)
+    at async prepareVitest (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/cli-api.COfZo8lK.js:14625:14) {
+  errors: [Getter/Setter]
+}
+
+
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+
