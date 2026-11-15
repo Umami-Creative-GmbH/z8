@@ -374,8 +374,12 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "65b74963b69e9536af5e862199fa43a8583473cc",
+                        "integrationCommit":  "1ab2a066a767b26d0e28cbf223b0d5338f8e22d6",
+                        "evidenceCorrectionCommit":  "af7a187418e1cdef7ab35044fb91c226d56ba7ef",
+                        "evidence":  "docs/design/rollout-1692/1823.md",
+                        "integrationVerification":  "Independent merge 1ab2a066 and evidence-only qualification verified at 65b74963. Fresh 90 unique suites/824 tests (10/73 + 80/751 disjoint; full-name multisets), full combined types, six-file default/strict CRLF Biome and explicit lint/import pass. Explicit webapp formatting differs in five files; Doctor retains one reviewed async-effect advisory. All 28 verified ancestors, 1197 prior rollout and 11412 unaffected paths preserved; 40 PNG fully decoded,12 JSON,3 scripts,24 links,5 matched metrics and final/continuation/branding/readback production pins validate. Early dirty after-form hash matches no known committed feature blob; historical observation only. CSS viewport390 and some PNG380 are separate recorded dimensions. Root removes4 blank EOF lines; application bytes/raw captures unchanged. Existing archive/static172=153+19 checks pass. PG3/78 and browser/Next are inherited; native tree/build/catalog/provider/device/truezoom and wider limits remain unpassed."
                     },
                     {
                         "id":  "R025",
@@ -384,7 +388,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "implementing",
+                        "status":  "awaiting-integration",
                         "verifiedCommit":  null
                     },
                     {
@@ -404,7 +408,7 @@
                         "blockedBy":  [
                                           1695
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
