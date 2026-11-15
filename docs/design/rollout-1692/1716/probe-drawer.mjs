@@ -47,7 +47,7 @@ try {
   const state=()=>page.evaluate(()=>{
    const d=document.querySelector('[role=dialog][data-sheet-open]');
    const describe=e=>e?{tag:e.tagName,slot:e.getAttribute('data-slot'),role:e.getAttribute('role'),text:e.textContent.trim().slice(0,60),hidden:e.hidden,ariaHidden:e.getAttribute('aria-hidden'),display:getComputedStyle(e).display}:null;
-   return {expanded:document.querySelector('[data-slot=sidebar-trigger]')?.getAttribute('aria-expanded'),sheet:d?{visualOpen:d.getAttribute('data-sheet-open'),left:d.getBoundingClientRect().left,right:d.getBoundingClientRect().right,transform:getComputedStyle(d).transform}:null,focus:describe(document.activeElement),tooltips:[...document.querySelectorAll('[data-slot=tooltip-content]')].map(describe),dialogs:[...document.querySelectorAll('[role=dialog]')].map(describe),font:getComputedStyle(document.documentElement).fontSize,notification:Notification.permission};
+   return {bounds:{document:document.documentElement.scrollWidth,viewport:innerWidth},expanded:document.querySelector('[data-slot=sidebar-trigger]')?.getAttribute('aria-expanded'),sheet:d?{visualOpen:d.getAttribute('data-sheet-open'),left:d.getBoundingClientRect().left,right:d.getBoundingClientRect().right,transform:getComputedStyle(d).transform}:null,focus:describe(document.activeElement),tooltips:[...document.querySelectorAll('[data-slot=tooltip-content]')].map(describe),dialogs:[...document.querySelectorAll('[role=dialog]')].map(describe),font:getComputedStyle(document.documentElement).fontSize,notification:Notification.permission};
   });
   const before=await state();await page.screenshot({path:join(out,variant.name+'-before.png')});
   await page.evaluate(()=>{window.escapeEvents=[];for(const capture of [true,false])document.addEventListener('keydown',e=>{if(e.key==='Escape')window.escapeEvents.push({capture,defaultPrevented:e.defaultPrevented,target:e.target?.getAttribute('data-slot'),trusted:e.isTrusted});},{capture});});
@@ -55,6 +55,7 @@ try {
   const immediate=await state();
   const closed=await page.waitForFunction(()=>!document.querySelector('[role=dialog][data-sheet-open]'),{timeout:2500}).then(()=>true,()=>false);
   const after=await state();await page.screenshot({path:join(out,variant.name+'-after-first.png')});
+  assert.equal(after.bounds.document,after.bounds.viewport,'Enlarged phone content fits');
   let second=null;
   if(!closed){await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('[role=dialog][data-sheet-open]'),{timeout:2500}).catch(()=>{});second=await state();}
   results.push({variant,before,immediate,closedAfterFirst:closed,after,second,events:await page.evaluate(()=>window.escapeEvents)});

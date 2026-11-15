@@ -10,6 +10,10 @@
         "reduce": false
       },
       "before": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "true",
         "sheet": {
           "visualOpen": "true",
@@ -42,6 +46,10 @@
         "notification": "denied"
       },
       "immediate": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "false",
         "sheet": {
           "visualOpen": "true",
@@ -75,6 +83,10 @@
       },
       "closedAfterFirst": true,
       "after": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "false",
         "sheet": null,
         "focus": {
@@ -109,6 +121,10 @@
         "reduce": true
       },
       "before": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "true",
         "sheet": {
           "visualOpen": "true",
@@ -141,6 +157,10 @@
         "notification": "denied"
       },
       "immediate": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "false",
         "sheet": {
           "visualOpen": "false",
@@ -174,6 +194,10 @@
       },
       "closedAfterFirst": true,
       "after": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "false",
         "sheet": null,
         "focus": {
@@ -208,6 +232,10 @@
         "reduce": false
       },
       "before": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "true",
         "sheet": {
           "visualOpen": "true",
@@ -240,6 +268,10 @@
         "notification": "denied"
       },
       "immediate": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "false",
         "sheet": {
           "visualOpen": "true",
@@ -273,6 +305,10 @@
       },
       "closedAfterFirst": true,
       "after": {
+        "bounds": {
+          "document": 390,
+          "viewport": 390
+        },
         "expanded": "false",
         "sheet": null,
         "focus": {

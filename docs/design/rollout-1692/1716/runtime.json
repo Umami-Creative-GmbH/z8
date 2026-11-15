@@ -1,84 +1,80 @@
 {
-    "boundary":  "Fresh #1716 isolated real application; no mocked successes",
-    "results":  [
-                    {
-                        "name":  "one selected-employee heading",
-                        "value":  [
-                                      "Driving licence check for Person 2"
-                                  ]
-                    },
-                    {
-                        "name":  "actual revoked grant refuses submitted draft",
-                        "value":  "Corrective lenses"
-                    },
-                    {
-                        "name":  "retried original persists through reader reload",
-                        "value":  true
-                    },
-                    {
-                        "name":  "new successful original does not reinstate reported suspension",
-                        "value":  true
-                    },
-                    {
-                        "name":  "explicit reinstatement persists and disappears when no longer needed",
-                        "value":  true
-                    },
-                    {
-                        "name":  "supplement readback preserves immutable original",
-                        "value":  true
-                    },
-                    {
-                        "name":  "real authorized native evidence PDF",
-                        "value":  {
-                                      "status":  200,
-                                      "type":  "application/pdf",
-                                      "prefix":  "%PDF-"
-                                  }
-                    },
-                    {
-                        "name":  "failed real record refresh withdraws original and evidence",
-                        "value":  true
-                    },
-                    {
-                        "name":  "real retry restores authorized record",
-                        "value":  true
-                    },
-                    {
-                        "name":  "missing intended driver retains no-check path",
-                        "value":  true
-                    },
-                    {
-                        "name":  "former ended evidence readable without a new check",
-                        "value":  true
-                    },
-                    {
-                        "name":  "self-check excluded by actual route guard",
-                        "value":  true
-                    },
-                    {
-                        "name":  "small-manager has no independent verifier route access",
-                        "value":  true
-                    },
-                    {
-                        "name":  "small-restricted has no independent verifier route access",
-                        "value":  true
-                    },
-                    {
-                        "name":  "small-employee has no independent verifier route access",
-                        "value":  true
-                    },
-                    {
-                        "name":  "feature off refuses check route",
-                        "value":  true
-                    },
-                    {
-                        "name":  "uncaught browser errors",
-                        "value":  [
-
-                                  ]
-                    }
-                ],
-    "errors":  [
-
-               ]
+  "boundary": "Fresh #1716 isolated real application; no mocked successes",
+  "results": [
+    {
+      "name": "actual revoked grant refuses submitted draft",
+      "value": "Corrective lenses"
+    },
+    {
+      "name": "explicit reinstatement persists and disappears when no longer needed",
+      "value": true
+    },
+    {
+      "name": "failed real record refresh withdraws original and evidence",
+      "value": true
+    },
+    {
+      "name": "feature off refuses check route",
+      "value": true
+    },
+    {
+      "name": "former ended evidence readable without a new check",
+      "value": true
+    },
+    {
+      "name": "missing intended driver retains no-check path",
+      "value": true
+    },
+    {
+      "name": "new successful original does not reinstate reported suspension",
+      "value": true
+    },
+    {
+      "name": "one selected-employee heading",
+      "value": [
+        "Driving licence check for Person 2"
+      ]
+    },
+    {
+      "name": "real authorized native evidence PDF",
+      "value": {
+        "status": 200,
+        "type": "application/pdf",
+        "prefix": "%PDF-"
+      }
+    },
+    {
+      "name": "real retry restores authorized record",
+      "value": true
+    },
+    {
+      "name": "retried original persists through reader reload",
+      "value": true
+    },
+    {
+      "name": "self-check excluded by actual route guard",
+      "value": true
+    },
+    {
+      "name": "small-employee has no independent verifier route access",
+      "value": true
+    },
+    {
+      "name": "small-manager has no independent verifier route access",
+      "value": true
+    },
+    {
+      "name": "small-restricted has no independent verifier route access",
+      "value": true
+    },
+    {
+      "name": "supplement readback preserves immutable original",
+      "value": true
+    },
+    {
+      "name": "uncaught browser errors",
+      "value": []
+    }
+  ],
+  "errors": []
 }
