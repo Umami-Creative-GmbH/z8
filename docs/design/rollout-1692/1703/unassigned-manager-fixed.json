@@ -1,0 +1,56 @@
+{
+  "actor": "small-admin",
+  "route": "/en/analytics/overtime-burn-down",
+  "viewport": {
+    "width": 1600,
+    "height": 1000
+  },
+  "action": {
+    "httpStatus": 200,
+    "success": true
+  },
+  "observed": {
+    "headings": [
+      "Overtime Burn-Down"
+    ],
+    "organization": "Switch Organization: Performance small",
+    "period": "Current Month",
+    "manager": "Unassigned",
+    "columns": [
+      "Team",
+      "Current Overtime",
+      "Previous Overtime",
+      "Week-over-Week",
+      "Trend Direction"
+    ],
+    "rows": [
+      "Fixture team 0\t0.0h\t0.0h\t0.0h\tFlat",
+      "Fixture team 1\t0.0h\t0.0h\t0.0h\tFlat"
+    ],
+    "retryVisible": false,
+    "selectedTabs": [
+      "Overtime Burn-Down"
+    ]
+  },
+  "navigation": [
+    {
+      "pathname": "/en/analytics",
+      "selectedTab": "Overview"
+    },
+    {
+      "pathname": "/en/analytics/overtime-burn-down",
+      "selectedTab": "Overtime Burn-Down"
+    }
+  ],
+  "pageErrors": [],
+  "probes": {
+    "get_compilation_issues": {
+      "issues": []
+    },
+    "get_errors": {
+      "configErrors": [],
+      "sessionErrors": []
+    }
+  },
+  "boundary": "Real authorized action and unchanged generated fixture data; no response substitution. Native browser inspection also observed the prior visibility-query failure. Native React inspection timed out; this does not certify React performance or the broader transition matrix."
+}

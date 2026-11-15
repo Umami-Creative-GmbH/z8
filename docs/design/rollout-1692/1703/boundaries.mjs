@@ -53,4 +53,3 @@ try{
  if(restoreUser)await db.query('update employee set user_id=$1 where id=$2 and organization_id=$3',[restricted.userId,restricted.employeeId,restricted.organizationId]);
  await browser.close();await db.end();
 }
-

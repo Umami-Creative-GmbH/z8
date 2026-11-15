@@ -583,6 +583,63 @@ describe("overtime range evidence on PostgreSQL", () => {
 			);
 		}
 	});
+	it("separates unassigned and assigned managers within the selected team", async () => {
+		const unassigned = await personWithTerms();
+		const assigned = await personWithTerms();
+		await fixture.pool.query(`update employee set team_id=$1 where id=$2`, [
+			unassigned.teamId,
+			assigned.employeeId,
+		]);
+		await fixture.pool.query(
+			`insert into employee_managers (employee_id,manager_id,is_primary,assigned_by) values ($1,$2,true,$3)`,
+			[assigned.employeeId, fixture.ownerEmployeeId, fixture.ownerUserId],
+		);
+		await addWork(
+			unassigned.employeeId,
+			"2026-03-02T08:00:00Z",
+			"2026-03-02T10:00:00Z",
+			120,
+		);
+		await addWork(
+			assigned.employeeId,
+			"2026-03-02T08:00:00Z",
+			"2026-03-02T11:00:00Z",
+			180,
+		);
+
+		expect(
+			(
+				await read(undefined, {
+					teamId: unassigned.teamId,
+					managerId: "unassigned",
+				})
+			).result.weeklySeries,
+		).toEqual([{ weekStart: "2026-03-02", overtimeHours: 2 }]);
+		expect(
+			(
+				await read(undefined, {
+					teamId: unassigned.teamId,
+					managerId: fixture.ownerEmployeeId,
+				})
+			).result.weeklySeries,
+		).toEqual([{ weekStart: "2026-03-02", overtimeHours: 3 }]);
+		expect(
+			(await read(undefined, { teamId: unassigned.teamId })).result
+				.weeklySeries,
+		).toEqual([{ weekStart: "2026-03-02", overtimeHours: 5 }]);
+		caller.userId = fixture.ownerUserId;
+		caller.organizationId = fixture.organizationId;
+		expect(
+			await getOvertimeBurnDownData(range, {
+				teamId: unassigned.teamId,
+				managerId: "unassigned",
+			}),
+		).toMatchObject({
+			success: true,
+			data: { weeklySeries: [{ weekStart: "2026-03-02", overtimeHours: 2 }] },
+		});
+	});
+
 	it("retains inclusive cost-center week-start assignments and manager/team filters", async () => {
 		const person = await personWithTerms();
 		await addWork(

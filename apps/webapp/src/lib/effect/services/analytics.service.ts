@@ -6,7 +6,18 @@
  * absence patterns, and manager effectiveness metrics.
  */
 
-import { and, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
+import {
+	and,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	isNull,
+	lte,
+	notExists,
+	or,
+	sql,
+} from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -1493,7 +1504,18 @@ export class AnalyticsService extends Context.Service<
 											? managerPredicate(scope.managerEmployeeId)
 											: undefined,
 										filters?.managerId
-											? managerPredicate(filters.managerId)
+											? filters.managerId === UNASSIGNED_GROUP.id
+												? notExists(
+														dbService.db
+															.select({
+																employeeId: employeeManagers.employeeId,
+															})
+															.from(employeeManagers)
+															.where(
+																eq(employeeManagers.employeeId, employee.id),
+															),
+													)
+												: managerPredicate(filters.managerId)
 											: undefined,
 									),
 									columns: {

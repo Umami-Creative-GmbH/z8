@@ -9,7 +9,7 @@ import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
@@ -17,6 +17,7 @@ import { Link } from "@/navigation";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
 import { AnalyticsHeading } from "./analytics-heading";
+import { AnalyticsTabs } from "./analytics-tabs";
 import { findAnalyticsEmployeeByUserId } from "./current-employee-scope";
 
 export default function AnalyticsLayout({
@@ -119,7 +120,7 @@ async function AnalyticsLayoutContent({
 
 			{/* Sub-navigation Tabs */}
 			<div className="px-4 lg:px-6">
-				<Tabs defaultValue="overview" className="w-full">
+				<AnalyticsTabs>
 					<TabsList className="h-auto max-w-full flex-wrap justify-start gap-1">
 						<TabsTrigger value="overview" asChild>
 							<Link href="/analytics">
@@ -155,7 +156,7 @@ async function AnalyticsLayoutContent({
 							</Link>
 						</TabsTrigger>
 					</TabsList>
-				</Tabs>
+				</AnalyticsTabs>
 			</div>
 
 			{/* Page Content */}

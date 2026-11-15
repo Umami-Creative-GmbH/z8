@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, notExists, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { employee, employeeManagers } from "@/db/schema";
 import {
@@ -82,7 +82,16 @@ export const loadRecentAnalyticsIdentity = Effect.fn(
 					scope.role === "manager"
 						? managedBy(scope.managerEmployeeId)
 						: undefined,
-					manager ? managedBy(manager) : undefined,
+					manager
+						? manager === "unassigned"
+							? notExists(
+									database.db
+										.select({ id: employeeManagers.employeeId })
+										.from(employeeManagers)
+										.where(eq(employeeManagers.employeeId, employee.id)),
+								)
+							: managedBy(manager)
+						: undefined,
 					teamId ? eq(employee.teamId, teamId) : undefined,
 					employeeId ? eq(employee.id, employeeId) : undefined,
 				),
