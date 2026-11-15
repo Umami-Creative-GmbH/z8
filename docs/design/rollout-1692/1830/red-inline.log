@@ -1,0 +1,262 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-1d3ddad0-a8c3c14087dbaeee/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/profile/page.test.tsx (8 tests | 1 failed) 1408ms
+   ❯ ProfilePage (8)
+     × retains the draft and offers inline recovery after an authoritative refusal 1018ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/profile/page.test.tsx > ProfilePage > retains the draft and offers inline recovery after an authoritative refusal
+TestingLibraryElementError: Unable to find role="alert"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="mx-auto max-w-2xl"
+    >
+      <div
+        class="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75"
+      >
+        <div
+          class="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10"
+        >
+          <svg
+            class="tabler-icon tabler-icon-user size-8 text-primary"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"
+            />
+            <path
+              d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"
+            />
+          </svg>
+        </div>
+        <h1
+          class="mb-4 text-3xl font-bold tracking-tight"
+        >
+          Complete your profile
+        </h1>
+        <p
+          class="text-muted-foreground"
+        >
+          Help your team recognize you by adding some personal information.
+        </p>
+      </div>
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <div
+            class="min-w-0 break-words font-semibold leading-none"
+            data-slot="card-title"
+          >
+            Personal Information
+          </div>
+          <div
+            class="text-muted-foreground text-sm"
+            data-slot="card-description"
+          >
+            This information will be visible to your team members.
+          </div>
+        </div>
+        <div
+          class="min-w-0 px-6"
+          data-slot="card-content"
+        >
+          <form
+            action="javascript:throw new Error('A React form was unexpectedly submitted. If you called form.submit() manually, consider using form.requestSubmit() instead. If you\\'re trying to use event.stopPropagation() in a submit event handler, consider also calling event.preventDefault().')"
+            class="space-y-6"
+          >
+            <div
+              class="flex flex-col gap-y-2"
+            >
+              <label
+                class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50"
+                data-slot="label"
+                for="profile-first-name"
+              >
+                First Name
+              </label>
+              <input
+                class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                data-slot="input"
+                id="profile-first-name"
+                placeholder="John"
+                value="Ada"
+              />
+            </div>
+            <div
+              class="flex flex-col gap-y-2"
+            >
+              <label
+                class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50"
+                data-slot="label"
+                for="profile-last-name"
+              >
+                Last Name
+              </label>
+              <input
+                class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                data-slot="input"
+                id="profile-last-name"
+                placeholder="Doe"
+                value="Lovelace"
+              />
+            </div>
+            <div
+              class="flex flex-col gap-y-2"
+            >
+              <label
+                class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabl...
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body>
+    <div>
+      <div
+        class="mx-auto max-w-2xl"
+      >
+        <div
+          class="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75"
+        >
+          <div
+            class="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-primary/10"
+          >
+            <svg
+              class="tabler-icon tabler-icon-user size-8 text-primary"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"
+              />
+              <path
+                d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"
+              />
+            </svg>
+          </div>
+          <h1
+            class="mb-4 text-3xl font-bold tracking-tight"
+          >
+            Complete your profile
+          </h1>
+          <p
+            class="text-muted-foreground"
+          >
+            Help your team recognize you by adding some personal information.
+          </p>
+        </div>
+        <div
+          class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+          data-slot="card"
+        >
+          <div
+            class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+            data-slot="card-header"
+          >
+            <div
+              class="min-w-0 break-words font-semibold leading-none"
+              data-slot="card-title"
+            >
+              Personal Information
+            </div>
+            <div
+              class="text-muted-foreground text-sm"
+              data-slot="card-description"
+            >
+              This information will be visible to your team members.
+            </div>
+          </div>
+          <div
+            class="min-w-0 px-6"
+            data-slot="card-content"
+          >
+            <form
+              action="javascript:throw new Error('A React form was unexpectedly submitted. If you called form.submit() manually, consider using form.requestSubmit() instead. If you\\'re trying to use event.stopPropagation() in a submit event handler, consider also calling event.preventDefault().')"
+              class="space-y-6"
+            >
+              <div
+                class="flex flex-col gap-y-2"
+              >
+                <label
+                  class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50"
+                  data-slot="label"
+                  for="profile-first-name"
+                >
+                  First Name
+                </label>
+                <input
+                  class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                  data-slot="input"
+                  id="profile-first-name"
+                  placeholder="John"
+                  value="Ada"
+                />
+              </div>
+              <div
+                class="flex flex-col gap-y-2"
+              >
+                <label
+                  class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50"
+                  data-slot="label"
+                  for="profile-last-name"
+                >
+                  Last Name
+                </label>
+                <input
+                  class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                  data-slot="input"
+                  id="profile-last-name"
+                  placeholder="Doe"
+                  value="Lovelace"
+                />
+              </div>
+            ...
+ ❯ Proxy.waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ src/app/[locale]/onboarding/profile/page.test.tsx:184:9
+    182|   fireEvent.change(screen.getByLabelText("Last Name"), { target: { val…
+    183|   fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    184|   await waitFor(() => expect(screen.getByRole("alert").textContent).to…
+       |         ^
+    185|   expect(screen.getByLabelText("First Name")).toHaveProperty("value", …
+    186|   updateProfileOnboardingMock.mockResolvedValue({ success: true, data:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  15:02:07
+   Duration  4.24s (environment 39%, tests 34%, import 23%, transform 4%, setup 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-1d3ddad0-
+  │ a8c3c14087dbaeee\apps\webapp
+

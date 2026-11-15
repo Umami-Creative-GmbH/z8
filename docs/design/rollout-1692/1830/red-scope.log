@@ -1,0 +1,49 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-1d3ddad0-a8c3c14087dbaeee/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/profile/page.test.tsx (10 tests | 2 failed) 352ms
+   ❯ ProfilePage (10)
+     × ignores a held skip across an account A to B to A round trip 30ms
+     × ignores a held skip across an organization A to B to A round trip 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/profile/page.test.tsx > ProfilePage > ignores a held skip across an account A to B to A round trip
+ FAIL  |unit| src/app/[locale]/onboarding/profile/page.test.tsx > ProfilePage > ignores a held skip across an organization A to B to A round trip
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "/onboarding/wellness",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/[locale]/onboarding/profile/page.test.tsx:196:24
+    194|   view.rerender(<ProfilePage />);
+    195|   await act(async () => finish({ success: true, data: { nextStep: "/on…
+    196|   expect(pushMock).not.toHaveBeenCalled();
+       |                        ^
+    197|   expect(toastSuccessMock).not.toHaveBeenCalled();
+    198|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  15:04:05
+   Duration  1.29s (tests 34%, environment 31%, import 29%, transform 4%, setup 2%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-1d3ddad0-
+  │ a8c3c14087dbaeee\apps\webapp
+

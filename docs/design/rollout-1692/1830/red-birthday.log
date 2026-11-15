@@ -1,0 +1,86 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-1d3ddad0-a8c3c14087dbaeee/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/profile/actions.test.ts (7 tests | 2 failed) 16ms
+   ❯ updateProfileOnboarding (7)
+     × refuses an out-of-range or non-calendar birthday 1899-12-31 10ms
+     × refuses an out-of-range or non-calendar birthday 2999-01-01 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/profile/actions.test.ts > updateProfileOnboarding > refuses an out-of-range or non-calendar birthday 1899-12-31
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "birthday": 1899-12-31T00:00:00.000Z,
+        "firstName": "Ada",
+        "helpImproveProduct": true,
+        "lastName": "Lovelace",
+        "timeFormat": "24h",
+        "weekStartDay": "sunday",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/[locale]/onboarding/profile/actions.test.ts:92:33
+     90|   const result = await updateProfileOnboarding({ firstName: "Ada", las…
+     91|   expect(result.success).toBe(false);
+     92|   expect(updateProfileMock).not.toHaveBeenCalled();
+       |                                 ^
+     93|  });
+     94| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/profile/actions.test.ts > updateProfileOnboarding > refuses an out-of-range or non-calendar birthday 2999-01-01
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "birthday": 2999-01-01T00:00:00.000Z,
+        "firstName": "Ada",
+        "helpImproveProduct": true,
+        "lastName": "Lovelace",
+        "timeFormat": "24h",
+        "weekStartDay": "sunday",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/[locale]/onboarding/profile/actions.test.ts:92:33
+     90|   const result = await updateProfileOnboarding({ firstName: "Ada", las…
+     91|   expect(result.success).toBe(false);
+     92|   expect(updateProfileMock).not.toHaveBeenCalled();
+       |                                 ^
+     93|  });
+     94| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  15:05:43
+   Duration  1.22s (transform 55%, import 40%, setup 3%, tests 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-1d3ddad0-
+  │ a8c3c14087dbaeee\apps\webapp
+
