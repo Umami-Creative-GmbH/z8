@@ -1,0 +1,1590 @@
+{
+  "sourceHead": "13470da28d28597c0e9ef9d4ebd7c8989eefc55b",
+  "sources": {
+    "apps/webapp/src/components/payroll/payroll-workspace.tsx": {
+      "headBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+      "normalizedBlob": "f755968de75d74d2e443dfa18c8fcbdf632b3491",
+      "rawBlob": "d0d612fee6941272d311eb9541324ec03141f1f6",
+      "rawSha256": "6b9ae031a1193042ac8630138100ed63bd67aeb7558d6643449e25aab17cec7d",
+      "lineEndings": "CRLF working copy / LF repository normalization"
+    },
+    "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx": {
+      "headBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+      "normalizedBlob": "55a541b48e34f2391557b6c67f75c7b943243fda",
+      "rawBlob": "f049762bebacada08eb1455acffb11ef3b2aaccf",
+      "rawSha256": "ee35622b8406a7041d93c2704a05b6e3d9784ff184578ff4fdbd82281a7d853f",
+      "lineEndings": "CRLF working copy / LF repository normalization"
+    },
+    "apps/webapp/src/app/[locale]/(app)/payroll/payroll-failure-state.tsx": {
+      "headBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+      "normalizedBlob": "b177cd046a9cd2404ecaa59c4e897ca7e966b25d",
+      "rawBlob": "77ab9639b07f0c134e8ea1cd9144813a75c5eb07",
+      "rawSha256": "02d77c3b2d80e5c325ea8f1a36633042719f94d062d7c96c8de71d5d1d85722f",
+      "lineEndings": "CRLF working copy / LF repository normalization"
+    },
+    "apps/webapp/src/lib/navigation/route-metadata.ts": {
+      "headBlob": "4ec692a4ba9d6cb257ebc0cc930aa92afacec80f",
+      "normalizedBlob": "4ec692a4ba9d6cb257ebc0cc930aa92afacec80f",
+      "rawBlob": "6c1380a16dea742013c1edb31ff95b21c05ac847",
+      "rawSha256": "c83f441390901378018b0a59b45ae568bd83db0b9f897f1cf328c6263a742302",
+      "lineEndings": "CRLF working copy / LF repository normalization"
+    }
+  },
+  "imageCount": 79,
+  "images": [
+    {
+      "path": "actions-1/failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "0c510a0595b49773c15a33744b6339e6af651118b2b1e9c673d4da1c884aee00",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-1/small-employee-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "5957575929caa0f2aa50db5e600c19fbf28c2eec3250303236b005e17647b18e",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-1/small-restricted-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "86b7a47d882864573200ab89e7140be92945150f885632e17e7802a92e20819f",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-2/failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "844d616e299c76ab46805e2aa57eac2fae8c4a8462f970aebd6d5409f89b7ab5",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-2/small-employee-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "f74f04e1e75b0df50b04d14e53f76a42d7bb850f3a6974e55b14541937f10c78",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-2/small-restricted-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "1600b4e3ef0c08f25ed03a3c33649d565ebd5580e9c164f948da1c88f3f6aa72",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-3/failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "71624e94dd07e801cd2d785cbcd9fc7362919d0ebe4bd1bc3ad491f6d93ce300",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-3/small-employee-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "ca7d051f350f286c275eb0c54cd1b1c2634abcef3d9cb2c4fd9e27082623c31d",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-3/small-restricted-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "95a5b3ae378b4349c8f3e062f91cd7705b798d7c84a2efc3911888fe6a4fa459",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-4/failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "96e430cbce94bc3b521606064f1918540f8ebd04f689b1cc37be16eecdadcbb7",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-4/small-employee-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "6f00907ecb8b39b62c8bb1c093110ead803e47df354c7ed57557e75323a552a2",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-4/small-restricted-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "089e63c612f39efd56b1cc169b12c78fd241f8cc6c09e978ab7293dcb5cf5aad",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-5/failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "e1b4de0314aec2b817648f7844f7bd631e2e398f957f86a782308acc22b59918",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-5/reader-failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "7314692af605d567f7da2c217b53f72bef1d7202e6927f679cbde2e5b905d64a",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-5/reviewed-comparison.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "ab26a444db7697e55375101d30f26be491e33b1f1d360b2888d80cdd42b26fa8",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-5/small-employee-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "675396ac8b4e6ee0896205517ff8be580ca9a72e67fe3f8f69aba5ded3153c21",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-5/small-restricted-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "ccb1f2cfe6f70317afc17c8ccd552d7212aa677d3ff54eecc2cb1ad742436b16",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-6/failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "42c542def8b380a87963f615e68cda4b49d654a2082125d99109595d16ed2c76",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-6/reader-failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "a0c10da934544f13c97a05ee52614d7206e052ae6e5abdb71a54121b58cafcbe",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-6/reviewed-comparison.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "a6ec2e28c6e7df64d298215759ae8f6d424806e5cb72fe8aaaa99195497e04a7",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-6/revoked-filter-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "0d33ca3e7a05e194874ea195b03da05b1e9f09009064e9e94abd2161e83a1250",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-6/small-employee-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "cbc2bb8f9c6829d656c6f9377a4c2f6fe54bf5eba3ec3cb974723deaee659292",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-6/small-restricted-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "fde83d130d9d593582cb246fff4e416ac7561e91323747db79e62e74f770db6e",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-7/failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "bc22208c863cd0b689a30865d9f7ef61c11588c588a22c18bd0e650100ddb035",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-7/reader-failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "e0e10151132de2795db0445a290032c8047ae58f0bbe98d5211c9b20b00cb235",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-7/reviewed-comparison.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "7de978b6208d4e6a5d7e5c76473a12eeb2975381588debadbb4b1715cdac4a0d",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-7/revoked-filter-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "3af9d167cf7b01e7eda2263afed2a7545a8fd0aba22fe6dc78d9324d6e1eb654",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-7/small-employee-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "2a737e111882455f2ac9bc11e06781df3f40887dfb435fa374b7cce669ec8c5c",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-7/small-restricted-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "edae0d44efab0a69f34fbaf58388c8db25089889521be069a12d09a4f9eb97ef",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-8/reader-failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "3c18d6ca8b28d0aa5d82346bf7be71090dbae67c8541dd470de13968256ab9e7",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-8/reviewed-comparison.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "a19189062b633f3c2dc3f9e9b6af793a668e19614f5f4372d49bf31f64ab8dc5",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-8/revoked-filter-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "0a5f36da39d9f2c274398a3855d1755d08cc0578746bd5eaaf5343a573f3ac87",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-8/small-employee-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "8d1954ae0345def45d88645d6151b0aebd2eaf66a81f6b680409712ba4ca842b",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "actions-8/small-restricted-refusal.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "8ab8ff1646b60f11a38ce2724909a0eaa81591e833db6a13f0c702b211af87b1",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "attempt-1/after-desktop-light.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "945a1adef872b65ab22ba3178fc315711622593153dca41390ca6fa31facd038",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "default",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/after-phone-dark-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "e1b9ac42be46db6a2f755bdb2a365c51016583639221753d42b26f4d2ffaa065",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/after-phone-dark-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "7a7bac743caa239289b553385eb75edc387a7c7efd718ea86cd640f2de44b30c",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/after-phone-drawer-closed.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "61afc4308c24b0849a6303348eb9aeccb8de5313f33d2e2f55e18bb8f9b92446",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/after-phone-light-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "41aa6387365df1525ccbe6f4f92e06eaee8b60ef85df07339a21e9fb27c2dc5a",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/after-phone-light-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "c6bf86f5560bd771d00b84bed61d1e7ba13a03e8da6c81ee32ce3114c41aeaa5",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/after-team-panel.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "e867064933114488a5a19262cf0e88a91a5790c3a8003ca94c2301596484cb84",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/after-wide-dark-saved18.png",
+      "decodedWidth": 2200,
+      "decodedHeight": 1100,
+      "decodedBytes": 7260000,
+      "sha256": "ddfe41d457c38d08c5d5a26419cf604a02303df0adb8f695b80aaa4a1e205d3d",
+      "measurement": {
+        "cssViewport": {
+          "width": 2200,
+          "height": 1100
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/before-desktop-light.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "d52a01d436f1b62deee2bf67937e8417fe01458ab4ec945631a741d690354f2d",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "default",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/before-phone-dark-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "5ae0146709d3101ff9d0d74ba37d8550820e9eb2a388500d5a33165541ac9e5c",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/before-phone-dark-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "8db00fae0043290c73c2da3b97ecf40ac738e928dc81600e944d07ff2d67c1bb",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/before-phone-light-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "0c7b6cb0ffd24a81243036b3259bf841862a0f6f09fc07b84ac5c0050c62f639",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/before-phone-light-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "0df59f65947a642c3296f2d8c7cd2738d8acaa308cd29b4a9d60aa40d1894b5b",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "attempt-1/before-wide-dark-saved18.png",
+      "decodedWidth": 2200,
+      "decodedHeight": 1100,
+      "decodedBytes": 7260000,
+      "sha256": "13bb9dff2c3dd92fd0f0431ed9abc070700bda258a7fa15fd53682f79912a16c",
+      "measurement": {
+        "cssViewport": {
+          "width": 2200,
+          "height": 1100
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "05c66b101e16b98d678a66bf2256f0e875eb9b73"
+      },
+      "provenance": "Early source-overlay matrix: attempt-1/runtime.json; before final compact layout and nonempty March scope"
+    },
+    {
+      "path": "final-comparison/failed.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "93ce8a9e13e18740cc9cd8120dec86405fd386d7268a0c7c8a014d882985f62b",
+      "measurement": {
+        "cssViewport": null,
+        "font": null,
+        "theme": null,
+        "configuredViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "qualification": "Failure capture: actual computed CSS/font/theme were not measured, remain unknown; do not treat configured viewport as measured."
+      },
+      "provenance": "Failure/partial-action evidence, not accepted final layout."
+    },
+    {
+      "path": "final-integrated/after-desktop-light.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "a4767ab99b1b8f2bae003c10b26644df5be284839f2b31f16ab237ccd86fb45d",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "default",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/after-phone-dark-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "fcaeabd3313792fc489b88285eaa5c3d74bc2c3ecace970158fe7756dfc7f61d",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/after-phone-dark-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "09b8c0c6f8df30508e1cf8d8f38d8260805c5dfac0e522c22f43a22c6e318f48",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/after-phone-drawer-closed.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "6fe3c3f01cba849bb8051d0fd1cb48bf1df417f8c6d678ce59de323040f7d505",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/after-phone-keyboard-report.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "3142ec77f6f64d64310326f3edd2524b19a5254dc07b01774a03ad3015828c44",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/after-phone-light-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "8a13cad214887f845bc9246c7d5dccf7d925a325907e6c37870d760e630f5364",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/after-phone-light-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "0c44e164b4cdc16e6b7d3a18c3234c9d53c115f4bed987a061fd07804f39af2c",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/after-team-panel.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "a316e5484d4ec38d1be1d6f2126759698762eb0c1f76ca0a005a7fcdf2799629",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/after-wide-dark-saved18.png",
+      "decodedWidth": 2200,
+      "decodedHeight": 1100,
+      "decodedBytes": 7260000,
+      "sha256": "b98d11489b79dd4e20cfbafdbf9cd298b5281386d58fdf69e8e60551304f56b7",
+      "measurement": {
+        "cssViewport": {
+          "width": 2200,
+          "height": 1100
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/before-desktop-light.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "97363fab0e067a891b1e9e7cb194daf2cb564632a6633137d750773bc4a03397",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "default",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/before-phone-dark-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "7f75d605d332e08f3e89518c16028979cd4842446fd101e2a053e0c94c57c432",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/before-phone-dark-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "181ceaeafe60dced946854d37f4b65fc165161c710fcebf7817dbe29baa724a7",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/before-phone-light-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "ebeadbb794cb8276c65057bdac9261e6e6e1e87642a17143a58b00273292572f",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/before-phone-light-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "f56d6746eb5c933df14df954ff1d95802ae686175734255009eba7d078627e84",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-integrated/before-wide-dark-saved18.png",
+      "decodedWidth": 2200,
+      "decodedHeight": 1100,
+      "decodedBytes": 7260000,
+      "sha256": "6d9f24a64c9003b0ea74375e406831a39c528ec7ef06151feba030ee52f7ebe9",
+      "measurement": {
+        "cssViewport": {
+          "width": 2200,
+          "height": 1100
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "59c974ce06966119fb20cd4036982f5a60f8f186"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-desktop-light.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "96e4454346a91b08e957918bf2492da47737497760a820ae4aeb56fdfc10cdd8",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "default",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-phone-dark-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "1162d74d0c5a66ed36ec956f7aa622d7a0c0ada484ed094bd522ad8e6bc4137a",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-phone-dark-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "712d0d27cb306e6f4c775b8dab5660b927f2c98f0ceab3c266e7ca706f6ad834",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-phone-drawer-closed.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "43261556acf13f182f20e88157f47b9fe4d66077fc41b6e4a93972b904fcf8bb",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-phone-keyboard-report.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "8e82431bb790b0e6fba615cbf93920f2265b0464c984bbf099b7cca87f87b47c",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-phone-light-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "7bd6656aa4344c1cff009f182d7fbabf34bfeae09adda2252d0ec5443186c6a2",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-phone-light-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "ce88cc702cd6f2c5e45b23d5bbffa8d694d6389001b294acf43e5bfbe3e44764",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-team-panel.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "d2301dcf085649a57941792d6658e21133449cf9c8a434a4c32917a1fe59a710",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/after-wide-dark-saved18.png",
+      "decodedWidth": 2200,
+      "decodedHeight": 1100,
+      "decodedBytes": 7260000,
+      "sha256": "09a5dd0b373d3aaf019c244426ba70c8bddcb9c271e5491af55f97696f41a399",
+      "measurement": {
+        "cssViewport": {
+          "width": 2200,
+          "height": 1100
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/before-desktop-light.png",
+      "decodedWidth": 1600,
+      "decodedHeight": 1000,
+      "decodedBytes": 4800000,
+      "sha256": "80f59e9ad76a1557c40d096d30bf2d888a0c28a4589fbf051b6a114deffbf2a4",
+      "measurement": {
+        "cssViewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "default",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/before-phone-dark-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "447b69867d289958d3fa03bed2ebfe6ad61a80d36165198d71a8459dedc763ec",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/before-phone-dark-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "ebd1e5c2c164cfd4456b54dda3adad0bb2bebaa73d74636aad3346082756ea0e",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/before-phone-light-saved18-totals.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "b9e98953bcd715a9f9caa4baf7f34346a8b2f3deee09f166f43b0d58a5aa5d8c",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/before-phone-light-saved18.png",
+      "decodedWidth": 390,
+      "decodedHeight": 844,
+      "decodedBytes": 987480,
+      "sha256": "4544e07b20b1900f9b698d6022ef47751f3f3fe43fb59b0712673bf105d05da7",
+      "measurement": {
+        "cssViewport": {
+          "width": 390,
+          "height": 844
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "light",
+        "theme": "light bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    },
+    {
+      "path": "final-matched/before-wide-dark-saved18.png",
+      "decodedWidth": 2200,
+      "decodedHeight": 1100,
+      "decodedBytes": 7260000,
+      "sha256": "2341c11bcff965896fab026f74ce9fe859ed0d5741aa637cce47efa4962436fb",
+      "measurement": {
+        "cssViewport": {
+          "width": 2200,
+          "height": 1100
+        },
+        "font": "18px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontStatus": "loaded",
+        "savedFont": "large",
+        "savedTheme": "dark",
+        "theme": "dark bprogress-busy",
+        "head": "cd10523dafb0b92be337d2d58a42dc016dbd7b1d"
+      },
+      "provenance": "Measured CSS viewport, computed font/theme, actor/org, Git source blobs and assertion record in the sibling runtime.json"
+    }
+  ]
+}

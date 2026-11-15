@@ -1,0 +1,369 @@
+{
+  "checks": [
+    {
+      "name": "held actual payroll action before delivery",
+      "actual": true
+    },
+    {
+      "name": "Next manifest identifies the held action as startScopedPayrollExportAction",
+      "action": {
+        "actionId": "404bdbe63a7bba2e4a57c5488b97c20faf4c9da238",
+        "filename": "apps/webapp/src/app/[locale]/(app)/payroll/actions.ts",
+        "functionName": "startScopedPayrollExportAction"
+      }
+    },
+    {
+      "name": "real set-active B accepted",
+      "actual": true
+    },
+    {
+      "name": "delivered with current B cookies; server refused and created no job in either organization",
+      "actual": true
+    },
+    {
+      "name": "settled B safe destination (no employee profile for this actor in B)",
+      "actual": {
+        "path": "/en/sign-in",
+        "headings": [
+          "Login to your account"
+        ],
+        "emailForm": true
+      }
+    },
+    {
+      "name": "return set-active status after B admission refusal",
+      "actual": 401
+    },
+    {
+      "name": "B admission ended the session; A return uses real synthetic reauthentication",
+      "actual": true
+    },
+    {
+      "name": "A return settles with one Payroll heading and eight authorized employee rows",
+      "actual": true
+    }
+  ],
+  "requests": [
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "owner": {
+        "actionId": "40ca0d29b8982105af927766d5a7f3d6b5070c8205",
+        "filename": "apps/webapp/src/app/[locale]/(app)/payroll/actions.ts",
+        "functionName": "getPayrollRunReadinessAction"
+      }
+    },
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "owner": {
+        "actionId": "009d21a2135d1f12429da3a5d05d4b3429ab0f7ca8",
+        "filename": "apps/webapp/src/app/[locale]/(app)/payroll/actions.ts",
+        "functionName": "getScopedPayrollRunsAction"
+      }
+    },
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "owner": {
+        "actionId": "4015a3f96523c8c4057dc2d4f579aa93c1d91bdb42",
+        "filename": "apps/webapp/src/app/[locale]/(app)/payroll/baseline-actions.ts",
+        "functionName": "listPayrollBaselinesAction"
+      }
+    },
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "owner": {
+        "actionId": "401fb06e72b9e4a7cd022090de7a766dce2ef7d542",
+        "filename": "apps/webapp/src/app/[locale]/(app)/payroll/comparison-actions.ts",
+        "functionName": "listCompatiblePayrollBaselinesAction"
+      }
+    },
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "owner": {
+        "actionId": "404bdbe63a7bba2e4a57c5488b97c20faf4c9da238",
+        "filename": "apps/webapp/src/app/[locale]/(app)/payroll/actions.ts",
+        "functionName": "startScopedPayrollExportAction"
+      }
+    },
+    {
+      "path": "/api/auth/organization/set-active",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "referer",
+        "user-agent",
+        "sec-ch-ua",
+        "content-type",
+        "sec-ch-ua-mobile",
+        "accept",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/en/sign-in",
+      "headerNames": [
+        "user-agent",
+        "referer",
+        "accept",
+        "content-type",
+        "cookie",
+        "origin",
+        "next-action",
+        "next-router-state-tree",
+        "x-deployment-id",
+        "x-nextjs-html-request-id",
+        "x-nextjs-request-id"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/__nextjs_original-stack-frames",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "referer",
+        "user-agent",
+        "sec-ch-ua",
+        "content-type",
+        "sec-ch-ua-mobile",
+        "accept",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/__nextjs_original-stack-frames",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "referer",
+        "user-agent",
+        "sec-ch-ua",
+        "content-type",
+        "sec-ch-ua-mobile",
+        "accept",
+        "cookie",
+        "origin"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/api/auth/organization/set-active",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "referer",
+        "user-agent",
+        "sec-ch-ua",
+        "content-type",
+        "sec-ch-ua-mobile"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/api/auth/sign-in/email",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "referer",
+        "user-agent",
+        "sec-ch-ua",
+        "x-captcha-response",
+        "content-type",
+        "sec-ch-ua-mobile"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/api/auth/organization/set-active",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "referer",
+        "user-agent",
+        "sec-ch-ua",
+        "content-type",
+        "sec-ch-ua-mobile"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id",
+        "accept-encoding",
+        "accept-language",
+        "connection",
+        "content-length",
+        "cookie",
+        "host",
+        "origin",
+        "sec-fetch-dest",
+        "sec-fetch-mode",
+        "sec-fetch-site"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id"
+      ],
+      "bodyPresent": true
+    },
+    {
+      "path": "/en/payroll",
+      "headerNames": [
+        "sec-ch-ua-platform",
+        "next-action",
+        "x-nextjs-request-id",
+        "referer",
+        "sec-ch-ua",
+        "sec-ch-ua-mobile",
+        "next-router-state-tree",
+        "user-agent",
+        "accept",
+        "x-nextjs-html-request-id",
+        "content-type",
+        "x-deployment-id"
+      ],
+      "bodyPresent": true
+    }
+  ],
+  "organizationA": "perf-small-d39b40cca73b",
+  "organizationB": "perf-large-d39b40cca73b",
+  "qualification": "Real held dispatch with current cookies and server readback; does not certify already-produced late responses or automatic no-reload scope recognition."
+}

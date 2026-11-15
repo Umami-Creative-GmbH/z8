@@ -1,0 +1,27 @@
+{
+  "checks": [
+    {
+      "name": "small-employee has no payroll controls",
+      "actual": true
+    },
+    {
+      "name": "small-restricted has no payroll controls",
+      "actual": true
+    },
+    {
+      "name": "small-manager with actual payroll grant admitted",
+      "actual": true
+    },
+    {
+      "name": "small-admin with actual payroll grant admitted",
+      "actual": true
+    },
+    {
+      "name": "eight employee rows from authorized reader",
+      "actual": 8
+    }
+  ],
+  "errors": [],
+  "fixture": "disposable",
+  "organization": "perf-small-d39b40cca73b"
+}
