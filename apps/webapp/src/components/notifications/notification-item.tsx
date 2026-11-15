@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 
 interface NotificationItemProps {
+	disabled?: boolean;
 	notification: NotificationWithMeta;
 	onMarkAsRead?: (id: string) => void;
 	onDelete?: (id: string) => void;
@@ -239,6 +240,7 @@ function getNotificationStyle(type: NotificationType): {
 }
 
 export function NotificationItem({
+	disabled = false,
 	notification,
 	onMarkAsRead,
 	onDelete,
@@ -284,6 +286,7 @@ export function NotificationItem({
 		>
 			<button
 				type="button"
+				disabled={disabled}
 				onClick={activateNotification}
 				className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
@@ -302,7 +305,7 @@ export function NotificationItem({
 					<span className="flex items-start justify-between gap-2">
 						<span
 							className={cn(
-								"text-sm line-clamp-2 sm:line-clamp-1",
+								"text-sm break-words",
 								!notification.isRead && "font-medium",
 							)}
 						>
@@ -314,11 +317,15 @@ export function NotificationItem({
 							</span>
 						)}
 					</span>
-					<span className="mt-0.5 line-clamp-3 text-muted-foreground text-xs sm:line-clamp-2">
+					<span className="mt-0.5 block break-words text-muted-foreground text-sm">
 						{localized.message}
 					</span>
 					<span className="text-muted-foreground text-xs mt-1 block">
 						{localized.timeAgo}
+						{" · "}
+						{notification.isRead
+							? t("common:notifications.filters.read", "Read")
+							: t("common:notifications.filters.unread", "Unread")}
 					</span>
 				</span>
 			</button>
@@ -328,6 +335,11 @@ export function NotificationItem({
 			<div className="flex shrink-0 items-center justify-end gap-3 transition-opacity sm:gap-1 sm:opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:gap-4 pointer-coarse:opacity-100">
 				{!notification.isRead && (
 					<Button
+						disabled={disabled}
+						aria-label={t(
+							"common:notifications.actions.markAsRead",
+							"Mark as read",
+						)}
 						size="icon"
 						variant="ghost"
 						className="size-7"
@@ -338,6 +350,8 @@ export function NotificationItem({
 					</Button>
 				)}
 				<Button
+					disabled={disabled}
+					aria-label={t("common:actions.delete", "Delete")}
 					size="icon"
 					variant="ghost"
 					className="size-7 text-muted-foreground hover:text-destructive"

@@ -6,6 +6,11 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the notification timeline heading, retaining settings and descendants", () => {
+		expect(appPageOwnsHeading("/de/notifications")).toBe(true);
+		expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);
+	});
 	it("adopts equipment overview and exact assignment headings, keeping other descendants independent", () => {
 		expect(appPageOwnsHeading("/de/equipment")).toBe(true);
 		expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);

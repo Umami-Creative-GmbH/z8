@@ -1,0 +1,204 @@
+{
+  "sourceCommit": null,
+  "pngs": [
+    {
+      "name": "accepted-after-desktop-light.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "accepted-after-phone-dark.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "accepted-after-phone-light.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "accepted-after-wide-dark.png",
+      "width": 2400,
+      "height": 1200
+    },
+    {
+      "name": "after-desktop-light.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "after-final-desktop-light.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "after-final-phone-dark.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "after-final-phone-light.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "after-final-wide-dark.png",
+      "width": 2400,
+      "height": 1200
+    },
+    {
+      "name": "after-large-desktop-light.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "after-large-phone-dark.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "after-large-phone-light.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "after-large-wide-dark.png",
+      "width": 2400,
+      "height": 1200
+    },
+    {
+      "name": "after-phone-dark.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "after-phone-light.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "after-wide-dark.png",
+      "width": 2400,
+      "height": 1200
+    },
+    {
+      "name": "attempt-1-no-match.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "attempt-2-no-match.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "attempt-3-failure.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "before-desktop-light.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "before-large-desktop-light.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "before-large-phone-dark.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "before-large-phone-light.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "before-large-wide-dark.png",
+      "width": 2400,
+      "height": 1200
+    },
+    {
+      "name": "before-phone-dark.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "before-phone-light.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "before-wide-dark.png",
+      "width": 2400,
+      "height": 1200
+    },
+    {
+      "name": "task-failed-refresh.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "task-failure-attempt.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "task-last-record-phone-dark.png",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "task-no-match.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "task-partial-delete.png",
+      "width": 1600,
+      "height": 1000
+    }
+  ],
+  "pairs": [
+    {
+      "label": "desktop-light",
+      "css": {
+        "width": 1600,
+        "height": 1000,
+        "documentWidth": 1600
+      },
+      "fontSize": "16px"
+    },
+    {
+      "label": "wide-dark",
+      "css": {
+        "width": 2400,
+        "height": 1200,
+        "documentWidth": 2400
+      },
+      "fontSize": "16px"
+    },
+    {
+      "label": "phone-light",
+      "css": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      "fontSize": "18px"
+    },
+    {
+      "label": "phone-dark",
+      "css": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      "fontSize": "18px"
+    }
+  ],
+  "sources": []
+}
