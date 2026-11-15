@@ -1,7 +1,13 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { CalendarView } from "./calendar-view";
 
@@ -12,6 +18,7 @@ const {
 	mockIsManagerOrAbove,
 	onScheduleXWrapperRender,
 	push,
+	navigationCompletions,
 	refetch,
 	toastError,
 	toastSuccess,
@@ -22,6 +29,7 @@ const {
 	mockIsManagerOrAbove: vi.fn(() => true),
 	onScheduleXWrapperRender: vi.fn(),
 	push: vi.fn(),
+	navigationCompletions: [] as Array<() => void>,
 	refetch: vi.fn(),
 	toastError: vi.fn(),
 	toastSuccess: vi.fn(),
@@ -524,12 +532,23 @@ describe("CalendarView", () => {
 		preferences.locale = "en-US";
 		preferences.weekStartDay = "monday";
 		onScheduleXWrapperRender.mockReset();
-		push.mockClear();
+		push.mockReset().mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					navigationCompletions.push(resolve);
+				}),
+		);
 		refetch.mockClear();
 		toastError.mockClear();
 		toastSuccess.mockClear();
 		vi.stubGlobal("fetch", vi.fn());
 		setMobileViewport(false);
+	});
+
+	afterEach(async () => {
+		await act(async () => {
+			for (const finish of navigationCompletions.splice(0)) finish();
+		});
 	});
 
 	it.each([
@@ -892,6 +911,35 @@ describe("CalendarView", () => {
 				.getByTestId("employee-selector")
 				.getAttribute("data-selected-employee-id"),
 		).toBe("employee-1");
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-1",
+		});
+		expect(screen.queryByTestId("work-period-edit")).toBeNull();
+	});
+
+	it("restores the cached route after its navigation completes without a prop acknowledgement", async () => {
+		let finish!: () => void;
+		push.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			}),
+		);
+		const initial = {
+			organizationId: "org-1",
+			currentEmployeeId: "employee-1",
+			initialDateKey: "2025-01-06",
+			initialTimezone: "Europe/Berlin",
+		};
+		const page = render(<CalendarView {...initial} />);
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 2" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Select completed period" }),
+		);
+		expect(screen.getByTestId("work-period-edit")).toBeTruthy();
+		await act(async () => {
+			finish();
+		});
+		page.rerender(<CalendarView {...initial} />);
 		expect(capturedCalendarFilters.at(-1)).toMatchObject({
 			employeeId: "employee-1",
 		});
