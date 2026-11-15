@@ -1,0 +1,186 @@
+{
+  "head": "e11b26fa9eb0782fe02696d99d2225185a3b4d37",
+  "dirtySource": [
+    "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "latestLocalAI": "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+      "sha256": "0f33220c8e304ab2fe1cd29ce3f1989419e5a129f0227ab783bfce8132f30997"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+      "sha256": "73d94a1217232ac007ad429ea9d6874dfe2a9da96e998786d68e3085ab6a4a05"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+      "sha256": "fca04e13701149cc7c7bbe84e0a73eec1063410219aaab4804e7bbe207972a19"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+      "sha256": "9172d265397fe536833483c1da5cdb04ff3777f479a3585977b1471a01e4b0c1"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+      "sha256": "e9602ad9c3d03888b1c580f14c8bcacf6e5bd0a811b58b9033becc80b13fc272"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+      "sha256": "4f4e321ce3059ed4944d24cefafec39517387eb59055004ab008baf91d8e1ac3"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+      "sha256": "92615bc9b8db531cc7de4f08630480a53ef6541ed72c75b7097bfb045d6e707d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+      "sha256": "754680145ebcb0c076bf7d9a55e02cbd0d7913f2a0e218ee7aba60ffb81fff27"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/page.tsx",
+      "sha256": "cfa4917438f3b8e0ec9961552bb4177ea5e08515b4e7998a56c3ff867a2e873f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+      "sha256": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "86d9d6dd35bf50dd5303d5ec00442d0c3bf92124d36d623fc6e70fe8e8f0c5f5"
+    }
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false",
+    "node": "26.9.0",
+    "next": "16.4.6",
+    "agentBrowser": "0.39.1"
+  },
+  "units": {
+    "command": "pnpm --filter webapp exec vitest run --project unit 'src/app/[locale]/(app)/organization' 'src/app/[locale]/(app)/my-requests/my-requests-client.test.tsx' src/lib/navigation/route-metadata.test.ts src/components/ui/page-header.test.tsx src/components/ui/sheet.test.tsx src/components/ui/action-panel.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx src/lib/async/map-concurrently.test.ts src/components/app-sidebar.test.tsx src/components/site-header.test.tsx src/components/ui/sidebar.test.tsx src/components/font-size-preference.test.tsx src/components/font-size-toggle.test.tsx src/components/providers/view-refresh-provider.test.tsx src/components/providers/view-refresh-migrated.test.tsx",
+    "suites": 19,
+    "tests": 234,
+    "exit": 0
+  },
+  "types": {
+    "command": "pnpm --filter webapp typecheck",
+    "profiles": [
+      "next typegen",
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ],
+    "exit": 0
+  },
+  "postgres": {
+    "standardRunnerExit": 1,
+    "reason": "/bin/bash missing",
+    "nativeCommands": [
+      "pnpm --filter webapp exec tsx scripts/verify-approval-migration-recovery.ts",
+      "pnpm --filter webapp exec vitest run --project integration 'src/app/[locale]/(app)/organization/org-explorer.integration.test.ts'"
+    ],
+    "suites": 1,
+    "tests": 18,
+    "exit": 0,
+    "repeatedAfterIntegration": true
+  },
+  "biome": [
+    {
+      "command": "pnpm --filter webapp exec biome check",
+      "exit": 0,
+      "paths": [
+        "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+        "src/app/[locale]/(app)/organization/page.tsx",
+        "src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ]
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --config-path=biome.jsonc",
+      "exit": 1,
+      "formatErrors": 10,
+      "paths": [
+        "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+        "src/app/[locale]/(app)/organization/page.tsx",
+        "src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ]
+    },
+    {
+      "command": "pnpm --filter webapp exec biome lint --config-path=biome.jsonc",
+      "exit": 0,
+      "paths": [
+        "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+        "src/app/[locale]/(app)/organization/page.tsx",
+        "src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ]
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check --line-ending=crlf",
+      "exit": 1,
+      "formatErrors": 11,
+      "paths": [
+        "src/app/[locale]/(app)/organization/org-explorer-client.test.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-client.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-header.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-load-error.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-person-panel.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-reporting-lines.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-teams-view.tsx",
+        "src/app/[locale]/(app)/organization/org-explorer-toolbar.tsx",
+        "src/app/[locale]/(app)/organization/page.tsx",
+        "src/app/[locale]/(app)/organization/use-org-explorer-people.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ]
+    }
+  ],
+  "doctor": {
+    "command": "pnpm exec react-doctor apps/webapp --verbose --scope changed --base ai/1692-app-wide-ui-refresh --no-supply-chain",
+    "files": 11,
+    "score": 100,
+    "diagnostics": 0,
+    "exit": 0
+  },
+  "cleanup": {
+    "browser": "closed only named owned session",
+    "next": "verified parent + one descendant stopped",
+    "bridge": "verified exact PID stopped",
+    "ownedPortsRemaining": 0,
+    "fixture": "three label-verified containers removed",
+    "integrationDatabases": "each exact owned database dropped"
+  },
+  "notClaimed": [
+    "full production build/static generation",
+    "remote Tolgee/catalog synchronization",
+    "every locale",
+    "physical device/store wrapper",
+    "true browser zoom",
+    "global transition acceptance",
+    "provider acceptance",
+    "complete contrast/screen-reader audit"
+  ]
+}

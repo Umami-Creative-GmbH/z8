@@ -1,0 +1,100 @@
+[
+  {
+    "name": "desktop-light",
+    "actor": "small-admin",
+    "scope": "Performance small / 8 current employees / unchanged fixture",
+    "url": "/en/organization",
+    "width": 1600,
+    "height": 1000,
+    "documentWidth": 1600,
+    "theme": "light bprogress-busy",
+    "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "rootFont": "16px",
+    "headings": [
+      "Org Explorer",
+      "Org Explorer",
+      "Org Explorer"
+    ],
+    "cards": 4,
+    "outline": false,
+    "dialogs": [],
+    "png": {
+      "width": 1600,
+      "height": 1000
+    },
+    "pin": {
+      "head": "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+      "dirtySource": "diff --git a/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx b/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\nindex 5e9e61135..5713775eb 100644\n--- a/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\n+++ b/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\n@@ -739,6 +739,19 @@ describe(\"OrgExplorerClient\", () => {\n \t\t\tnoTeamCount: 120,\n \t\t};\n \n+\t\tit(\"recovers a failed deep-linked person without losing the selected URL or showing a different person\", async () => {\n+\t\t\tmocks.people.mockResolvedValueOnce({ success: false, error: \"Unavailable\" });\n+\t\t\tawait renderExplorer({ initialData: partial, search: \"?employee=deb\" });\n+\t\t\tconst panel = await screen.findByRole(\"dialog\");\n+\t\t\texpect(await within(panel).findByRole(\"alert\")).toBeTruthy();\n+\t\t\texpect(within(panel).queryByRole(\"heading\", { name: \"Ada Analyst\" })).toBeNull();\n+\t\t\texpect(query().get(\"employee\")).toBe(\"deb\");\n+\t\t\tmocks.people.mockResolvedValue({ success: true, data: [people[4]] });\n+\t\t\tfireEvent.click(within(panel).getByRole(\"button\", { name: \"Retry\" }));\n+\t\t\texpect(await within(panel).findByRole(\"heading\", { name: \"Deb Dev\" })).toBeTruthy();\n+\t\t\texpect(query().get(\"employee\")).toBe(\"deb\");\n+\t\t});\n+\n \t\tit(\"loads a subtree on demand when it is expanded\", async () => {\n \t\t\tmocks.people.mockResolvedValueOnce({ success: true, data: [people[4]] });\n \t\t\tawait renderExplorer({ initialData: partial });\n"
+    }
+  },
+  {
+    "name": "wide-dark",
+    "actor": "small-admin",
+    "scope": "Performance small / 8 current employees / unchanged fixture",
+    "url": "/en/organization",
+    "width": 2200,
+    "height": 1100,
+    "documentWidth": 2200,
+    "theme": "dark bprogress-busy",
+    "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "rootFont": "16px",
+    "headings": [
+      "Org Explorer",
+      "Org Explorer",
+      "Org Explorer"
+    ],
+    "cards": 4,
+    "outline": false,
+    "dialogs": [],
+    "png": {
+      "width": 2200,
+      "height": 1100
+    },
+    "pin": {
+      "head": "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+      "dirtySource": "diff --git a/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx b/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\nindex 5e9e61135..5713775eb 100644\n--- a/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\n+++ b/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\n@@ -739,6 +739,19 @@ describe(\"OrgExplorerClient\", () => {\n \t\t\tnoTeamCount: 120,\n \t\t};\n \n+\t\tit(\"recovers a failed deep-linked person without losing the selected URL or showing a different person\", async () => {\n+\t\t\tmocks.people.mockResolvedValueOnce({ success: false, error: \"Unavailable\" });\n+\t\t\tawait renderExplorer({ initialData: partial, search: \"?employee=deb\" });\n+\t\t\tconst panel = await screen.findByRole(\"dialog\");\n+\t\t\texpect(await within(panel).findByRole(\"alert\")).toBeTruthy();\n+\t\t\texpect(within(panel).queryByRole(\"heading\", { name: \"Ada Analyst\" })).toBeNull();\n+\t\t\texpect(query().get(\"employee\")).toBe(\"deb\");\n+\t\t\tmocks.people.mockResolvedValue({ success: true, data: [people[4]] });\n+\t\t\tfireEvent.click(within(panel).getByRole(\"button\", { name: \"Retry\" }));\n+\t\t\texpect(await within(panel).findByRole(\"heading\", { name: \"Deb Dev\" })).toBeTruthy();\n+\t\t\texpect(query().get(\"employee\")).toBe(\"deb\");\n+\t\t});\n+\n \t\tit(\"loads a subtree on demand when it is expanded\", async () => {\n \t\t\tmocks.people.mockResolvedValueOnce({ success: true, data: [people[4]] });\n \t\t\tawait renderExplorer({ initialData: partial });\n"
+    }
+  },
+  {
+    "name": "phone-light",
+    "actor": "small-admin",
+    "scope": "Performance small / 8 current employees / unchanged fixture",
+    "url": "/en/organization",
+    "width": 390,
+    "height": 844,
+    "documentWidth": 390,
+    "theme": "light bprogress-busy",
+    "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "rootFont": "16px",
+    "headings": [
+      "Org Explorer",
+      "Org Explorer"
+    ],
+    "cards": 0,
+    "outline": true,
+    "dialogs": [],
+    "png": {
+      "width": 390,
+      "height": 844
+    },
+    "pin": {
+      "head": "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+      "dirtySource": "diff --git a/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx b/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\nindex 5e9e61135..5713775eb 100644\n--- a/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\n+++ b/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\n@@ -739,6 +739,19 @@ describe(\"OrgExplorerClient\", () => {\n \t\t\tnoTeamCount: 120,\n \t\t};\n \n+\t\tit(\"recovers a failed deep-linked person without losing the selected URL or showing a different person\", async () => {\n+\t\t\tmocks.people.mockResolvedValueOnce({ success: false, error: \"Unavailable\" });\n+\t\t\tawait renderExplorer({ initialData: partial, search: \"?employee=deb\" });\n+\t\t\tconst panel = await screen.findByRole(\"dialog\");\n+\t\t\texpect(await within(panel).findByRole(\"alert\")).toBeTruthy();\n+\t\t\texpect(within(panel).queryByRole(\"heading\", { name: \"Ada Analyst\" })).toBeNull();\n+\t\t\texpect(query().get(\"employee\")).toBe(\"deb\");\n+\t\t\tmocks.people.mockResolvedValue({ success: true, data: [people[4]] });\n+\t\t\tfireEvent.click(within(panel).getByRole(\"button\", { name: \"Retry\" }));\n+\t\t\texpect(await within(panel).findByRole(\"heading\", { name: \"Deb Dev\" })).toBeTruthy();\n+\t\t\texpect(query().get(\"employee\")).toBe(\"deb\");\n+\t\t});\n+\n \t\tit(\"loads a subtree on demand when it is expanded\", async () => {\n \t\t\tmocks.people.mockResolvedValueOnce({ success: true, data: [people[4]] });\n \t\t\tawait renderExplorer({ initialData: partial });\n"
+    }
+  },
+  {
+    "name": "detail",
+    "actor": "small-admin",
+    "scope": "same fixture, manager selection",
+    "url": "http://localhost:51175/en/organization?employee=48c69dfd-2861-456a-bed4-4e876e82b00d",
+    "text": "Person 1Reporting lines and teamsManagersNo managerDirect reportsPerson 3Person 5Person 7Team membershipsNo team membershipsEmailperf-small-1-717681b237a6@example.testEdit employeeManage teamsClose",
+    "png": {
+      "width": 1600,
+      "height": 1000
+    },
+    "pin": {
+      "head": "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+      "dirtySource": "diff --git a/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx b/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\nindex 5e9e61135..5713775eb 100644\n--- a/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\n+++ b/apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.test.tsx\n@@ -739,6 +739,19 @@ describe(\"OrgExplorerClient\", () => {\n \t\t\tnoTeamCount: 120,\n \t\t};\n \n+\t\tit(\"recovers a failed deep-linked person without losing the selected URL or showing a different person\", async () => {\n+\t\t\tmocks.people.mockResolvedValueOnce({ success: false, error: \"Unavailable\" });\n+\t\t\tawait renderExplorer({ initialData: partial, search: \"?employee=deb\" });\n+\t\t\tconst panel = await screen.findByRole(\"dialog\");\n+\t\t\texpect(await within(panel).findByRole(\"alert\")).toBeTruthy();\n+\t\t\texpect(within(panel).queryByRole(\"heading\", { name: \"Ada Analyst\" })).toBeNull();\n+\t\t\texpect(query().get(\"employee\")).toBe(\"deb\");\n+\t\t\tmocks.people.mockResolvedValue({ success: true, data: [people[4]] });\n+\t\t\tfireEvent.click(within(panel).getByRole(\"button\", { name: \"Retry\" }));\n+\t\t\texpect(await within(panel).findByRole(\"heading\", { name: \"Deb Dev\" })).toBeTruthy();\n+\t\t\texpect(query().get(\"employee\")).toBe(\"deb\");\n+\t\t});\n+\n \t\tit(\"loads a subtree on demand when it is expanded\", async () => {\n \t\t\tmocks.people.mockResolvedValueOnce({ success: true, data: [people[4]] });\n \t\t\tawait renderExplorer({ initialData: partial });\n"
+    }
+  }
+]
