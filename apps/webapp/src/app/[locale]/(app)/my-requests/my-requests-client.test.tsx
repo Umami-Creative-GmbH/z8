@@ -1,13 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,10 +18,7 @@ vi.mock("next/navigation", () => ({
 
 // Counts readiness invalidations; still invalidates for real when a query client is provided.
 vi.mock("@/lib/query/period-submission-readiness", async (importOriginal) => {
-	const actual =
-		await importOriginal<
-			typeof import("@/lib/query/period-submission-readiness")
-		>();
+	const actual = await importOriginal<typeof import("@/lib/query/period-submission-readiness")>();
 	const { QueryClientContext } = await import("@tanstack/react-query");
 	const { use } = await import("react");
 	return {
@@ -36,9 +27,7 @@ vi.mock("@/lib/query/period-submission-readiness", async (importOriginal) => {
 			const client = use(QueryClientContext);
 			return () => {
 				invalidateReadinessMock();
-				return client
-					? actual.invalidatePeriodSubmissionReadiness(client)
-					: Promise.resolve();
+				return client ? actual.invalidatePeriodSubmissionReadiness(client) : Promise.resolve();
 			};
 		},
 	};
@@ -68,12 +57,9 @@ vi.mock("@tabler/icons-react", () => ({
 	IconInfoCircle: () => <span aria-hidden="true" />,
 }));
 
-vi.mock(
-	"@/app/[locale]/(app)/time-tracking/actions/period-submissions",
-	() => ({
-		readPeriodReadiness: vi.fn(),
-	}),
-);
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/period-submissions", () => ({
+	readPeriodReadiness: vi.fn(),
+}));
 
 vi.mock("./actions", () => ({
 	cancelMyAbsenceRequest: cancelMyAbsenceRequestMock,
@@ -82,9 +68,7 @@ vi.mock("./actions", () => ({
 
 import { MyRequestsClient } from "./my-requests-client";
 
-function createResult(
-	overrides: Partial<SelfServiceRequestResult> = {},
-): SelfServiceRequestResult {
+function createResult(overrides: Partial<SelfServiceRequestResult> = {}): SelfServiceRequestResult {
 	return {
 		counts: { pending: 1, requiredFixes: 1, recentDecisions: 2, total: 3 },
 		sourceErrors: [],
@@ -160,12 +144,8 @@ describe("MyRequestsClient", () => {
 		).toBeTruthy();
 		view.rerender(<MyRequestsClient initialResult={createResult()} />);
 		expect(screen.queryByRole("alert")).toBeNull();
-		expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe(
-			"Time",
-		);
-		expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe(
-			"pending",
-		);
+		expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe("Time");
+		expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe("pending");
 	});
 
 	it("does not call a failed source an empty request history", () => {
@@ -212,11 +192,9 @@ describe("MyRequestsClient", () => {
 			}),
 		).toBeTruthy();
 		expect(within(needsAttention).getByText("Coverage needed")).toBeTruthy();
-		expect(
-			within(needsAttention)
-				.getByRole("link", { name: "Fix" })
-				.getAttribute("href"),
-		).toBe("/absences");
+		expect(within(needsAttention).getByRole("link", { name: "Fix" }).getAttribute("href")).toBe(
+			"/absences",
+		);
 
 		const inReview = screen.getByRole("region", { name: "In review" });
 		expect(within(inReview).getByText("Time correction request")).toBeTruthy();
@@ -224,14 +202,10 @@ describe("MyRequestsClient", () => {
 		const recentlyDecided = screen.getByRole("region", {
 			name: "Recently decided",
 		});
-		expect(
-			within(recentlyDecided).getByText("Travel expense claim"),
-		).toBeTruthy();
+		expect(within(recentlyDecided).getByText("Travel expense claim")).toBeTruthy();
 
 		const allRequests = screen.getByRole("region", { name: "All requests" });
-		expect(
-			within(allRequests).getByText("Time correction request"),
-		).toBeTruthy();
+		expect(within(allRequests).getByText("Time correction request")).toBeTruthy();
 		expect(within(allRequests).getByText("Travel expense claim")).toBeTruthy();
 	});
 
@@ -241,16 +215,10 @@ describe("MyRequestsClient", () => {
 		const needsAttention = screen.getByRole("region", {
 			name: "Needs attention",
 		});
-		const vacationCard = within(needsAttention)
-			.getByText("Vacation")
-			.closest("article");
+		const vacationCard = within(needsAttention).getByText("Vacation").closest("article");
 		expect(vacationCard).not.toBeNull();
-		expect(
-			within(vacationCard as HTMLElement).getByText("Submitted: 18. Apr. 2026"),
-		).toBeTruthy();
-		expect(
-			within(vacationCard as HTMLElement).getByText("Decision: 22. Apr. 2026"),
-		).toBeTruthy();
+		expect(within(vacationCard as HTMLElement).getByText("Submitted: 18. Apr. 2026")).toBeTruthy();
+		expect(within(vacationCard as HTMLElement).getByText("Decision: 22. Apr. 2026")).toBeTruthy();
 	});
 
 	it("applies filters consistently to grouped sections and all-request history", () => {
@@ -262,17 +230,11 @@ describe("MyRequestsClient", () => {
 
 		const inReview = screen.getByRole("region", { name: "In review" });
 		expect(within(inReview).getByText("Time correction request")).toBeTruthy();
-		expect(
-			screen.queryByRole("region", { name: "Needs attention" }),
-		).toBeNull();
-		expect(
-			screen.queryByRole("region", { name: "Recently decided" }),
-		).toBeNull();
+		expect(screen.queryByRole("region", { name: "Needs attention" })).toBeNull();
+		expect(screen.queryByRole("region", { name: "Recently decided" })).toBeNull();
 
 		const allRequests = screen.getByRole("region", { name: "All requests" });
-		expect(
-			within(allRequests).getByText("Time correction request"),
-		).toBeTruthy();
+		expect(within(allRequests).getByText("Time correction request")).toBeTruthy();
 		expect(within(allRequests).queryByText("Vacation")).toBeNull();
 	});
 
@@ -302,17 +264,11 @@ describe("MyRequestsClient", () => {
 		);
 
 		const inReview = screen.getByRole("region", { name: "In review" });
-		expect(
-			within(inReview).getByRole("button", { name: "Cancel" }),
-		).toBeTruthy();
+		expect(within(inReview).getByRole("button", { name: "Cancel" })).toBeTruthy();
 
 		const allRequests = screen.getByRole("region", { name: "All requests" });
-		expect(
-			within(allRequests).queryByRole("button", { name: "Cancel" }),
-		).toBeNull();
-		expect(
-			within(allRequests).getByRole("link", { name: "View" }),
-		).toBeTruthy();
+		expect(within(allRequests).queryByRole("button", { name: "Cancel" })).toBeNull();
+		expect(within(allRequests).getByRole("link", { name: "View" })).toBeTruthy();
 	});
 
 	it("shows source error notices", () => {
@@ -330,9 +286,7 @@ describe("MyRequestsClient", () => {
 		);
 
 		expect(screen.getByText("Some requests could not be loaded.")).toBeTruthy();
-		expect(
-			screen.getByText("Travel expense requests could not be loaded."),
-		).toBeTruthy();
+		expect(screen.getByText("Travel expense requests could not be loaded.")).toBeTruthy();
 	});
 
 	it("distinguishes empty and filtered-empty states", () => {
@@ -362,13 +316,9 @@ describe("MyRequestsClient", () => {
 		render(<MyRequestsClient initialResult={createResult()} />);
 
 		const inReview = screen.getByRole("region", { name: "In review" });
-		const timeCard = within(inReview)
-			.getByText("Time correction request")
-			.closest("article");
+		const timeCard = within(inReview).getByText("Time correction request").closest("article");
 		expect(timeCard).not.toBeNull();
-		expect(
-			within(timeCard as HTMLElement).queryByRole("link", { name: "Fix" }),
-		).toBeNull();
+		expect(within(timeCard as HTMLElement).queryByRole("link", { name: "Fix" })).toBeNull();
 	});
 
 	it("does not dispatch cancellation for unsupported request source types", () => {
@@ -388,9 +338,7 @@ describe("MyRequestsClient", () => {
 		);
 
 		const inReview = screen.getByRole("region", { name: "In review" });
-		expect(
-			within(inReview).queryByRole("button", { name: "Cancel" }),
-		).toBeNull();
+		expect(within(inReview).queryByRole("button", { name: "Cancel" })).toBeNull();
 	});
 
 	it("dispatches pending cancellation by source type with neutral copy", async () => {
@@ -434,9 +382,7 @@ describe("MyRequestsClient", () => {
 		);
 
 		const inReview = screen.getByRole("region", { name: "In review" });
-		const absenceCard = within(inReview)
-			.getByText("Pending vacation")
-			.closest("article");
+		const absenceCard = within(inReview).getByText("Pending vacation").closest("article");
 		expect(absenceCard).not.toBeNull();
 		fireEvent.click(
 			within(absenceCard as HTMLElement).getByRole("button", {
@@ -446,27 +392,17 @@ describe("MyRequestsClient", () => {
 
 		expect(window.confirm).toHaveBeenCalledWith("Cancel this request?");
 		await waitFor(() => {
-			expect(cancelMyAbsenceRequestMock).toHaveBeenCalledWith(
-				"absence-pending",
-			);
+			expect(cancelMyAbsenceRequestMock).toHaveBeenCalledWith("absence-pending");
 		});
-		const timeCard = within(inReview)
-			.getByText("Time correction request")
-			.closest("article");
+		const timeCard = within(inReview).getByText("Time correction request").closest("article");
 		expect(timeCard).not.toBeNull();
-		fireEvent.click(
-			within(timeCard as HTMLElement).getByRole("button", { name: "Cancel" }),
-		);
+		fireEvent.click(within(timeCard as HTMLElement).getByRole("button", { name: "Cancel" }));
 		await waitFor(() => {
-			expect(cancelMyTimeCorrectionRequestMock).toHaveBeenCalledWith(
-				"period-1",
-			);
+			expect(cancelMyTimeCorrectionRequestMock).toHaveBeenCalledWith("period-1");
 		});
 		expect(cancelMyAbsenceRequestMock).toHaveBeenCalledOnce();
 		// Each cancelled request can reopen a period for submission (#1350).
-		await waitFor(() =>
-			expect(invalidateReadinessMock).toHaveBeenCalledTimes(2),
-		);
+		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledTimes(2));
 	});
 
 	it("does not cancel when confirmation is declined", () => {
@@ -518,18 +454,12 @@ describe("MyRequestsClient", () => {
 			sourceHref: "/absences",
 		};
 
-		function renderFocused(
-			focusRequest: string | undefined,
-			result = createResult(),
-		) {
+		function renderFocused(focusRequest: string | undefined, result = createResult()) {
 			const client = new QueryClient();
 			const invalidate = vi.spyOn(client, "invalidateQueries");
 			const view = render(
 				<QueryClientProvider client={client}>
-					<MyRequestsClient
-						initialResult={result}
-						focusRequest={focusRequest}
-					/>
+					<MyRequestsClient initialResult={result} focusRequest={focusRequest} />
 				</QueryClientProvider>,
 			);
 			const rerender = (next: string | undefined) =>
@@ -545,9 +475,7 @@ describe("MyRequestsClient", () => {
 			const { invalidate } = renderFocused("time_correction:period-1");
 
 			const inReview = screen.getByRole("region", { name: "In review" });
-			const card = within(inReview)
-				.getByText("Time correction request")
-				.closest("article");
+			const card = within(inReview).getByText("Time correction request").closest("article");
 			await waitFor(() => expect(document.activeElement).toBe(card));
 			expect(screen.queryByRole("status")).toBeNull();
 			expect(invalidate).not.toHaveBeenCalled();
@@ -560,13 +488,9 @@ describe("MyRequestsClient", () => {
 			);
 
 			const inReview = screen.getByRole("region", { name: "In review" });
-			const card = within(inReview)
-				.getByText("Pending vacation")
-				.closest("article");
+			const card = within(inReview).getByText("Pending vacation").closest("article");
 			await waitFor(() => expect(document.activeElement).toBe(card));
-			expect(
-				within(card as HTMLElement).getByRole("button", { name: "Cancel" }),
-			).toBeTruthy();
+			expect(within(card as HTMLElement).getByRole("button", { name: "Cancel" })).toBeTruthy();
 		});
 
 		it("selects the filters needed to reveal the focused request", async () => {
@@ -585,57 +509,40 @@ describe("MyRequestsClient", () => {
 			rerender("time_correction:period-1");
 
 			const inReview = await screen.findByRole("region", { name: "In review" });
-			const card = within(inReview)
-				.getByText("Time correction request")
-				.closest("article");
+			const card = within(inReview).getByText("Time correction request").closest("article");
 			await waitFor(() => expect(document.activeElement).toBe(card));
-			expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe(
-				"pending",
-			);
-			expect((screen.getByLabelText("Type") as HTMLSelectElement).value).toBe(
-				"time_correction",
-			);
-			expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe(
-				"",
-			);
+			expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe("pending");
+			expect((screen.getByLabelText("Type") as HTMLSelectElement).value).toBe("time_correction");
+			expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe("");
 		});
 
 		it.each([
 			["a request that is no longer pending", "absence:absence-1"],
 			["a missing or cancelled request", "absence:absence-gone"],
-			[
-				"another employee's or organization's request",
-				"time_correction:foreign-period",
-			],
-		])(
-			"explains %s without disclosing anything and re-checks readiness",
-			async (_name, focus) => {
-				const { invalidate } = renderFocused(focus);
+			["another employee's or organization's request", "time_correction:foreign-period"],
+		])("explains %s without disclosing anything and re-checks readiness", async (_name, focus) => {
+			const { invalidate } = renderFocused(focus);
 
-				const notice = await screen.findByRole("status");
-				expect(notice.textContent).toBe(
-					"This request is no longer pending, or it can't be shown here. Period readiness is being checked again.",
-				);
-				await waitFor(() => expect(document.activeElement).toBe(notice));
-				await waitFor(() =>
-					expect(invalidate).toHaveBeenCalledWith({
-						queryKey: ["period-submissions"],
-					}),
-				);
-				// Only the employee's own list renders, unchanged; no card is focused or marked.
-				expect(screen.getAllByRole("article")).toHaveLength(7);
-				expect(document.activeElement?.closest("article")).toBeNull();
-			},
-		);
+			const notice = await screen.findByRole("status");
+			expect(notice.textContent).toBe(
+				"This request is no longer pending, or it can't be shown here. Period readiness is being checked again.",
+			);
+			await waitFor(() => expect(document.activeElement).toBe(notice));
+			await waitFor(() =>
+				expect(invalidate).toHaveBeenCalledWith({
+					queryKey: ["period-submissions"],
+				}),
+			);
+			// Only the employee's own list renders, unchanged; no card is focused or marked.
+			expect(screen.getAllByRole("article")).toHaveLength(7);
+			expect(document.activeElement?.closest("article")).toBeNull();
+		});
 
 		it("does not take focus to the notice when the employee cancels the focused request here", async () => {
 			const client = new QueryClient();
 			const page = (result: SelfServiceRequestResult) => (
 				<QueryClientProvider client={client}>
-					<MyRequestsClient
-						initialResult={result}
-						focusRequest="absence:absence-pending"
-					/>
+					<MyRequestsClient initialResult={result} focusRequest="absence:absence-pending" />
 				</QueryClientProvider>
 			);
 			const pending = createResult({
@@ -705,26 +612,18 @@ describe("MyRequestsClient", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
-		expect((await screen.findByRole("alert")).textContent).toContain(
-			"Cannot cancel",
-		);
+		expect((await screen.findByRole("alert")).textContent).toContain("Cannot cancel");
 	});
 
 	it("retains the request and permits retry after a cancellation transport failure", async () => {
-		cancelMyTimeCorrectionRequestMock.mockRejectedValueOnce(
-			new Error("private transport"),
-		);
+		cancelMyTimeCorrectionRequestMock.mockRejectedValueOnce(new Error("private transport"));
 		const item = {
 			...createResult().items[1],
 			availableActions: ["view", "cancel"] as ("view" | "cancel")[],
 		};
-		render(
-			<MyRequestsClient initialResult={createResult({ items: [item] })} />,
-		);
+		render(<MyRequestsClient initialResult={createResult({ items: [item] })} />);
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-		expect((await screen.findByRole("alert")).textContent).toBe(
-			"Request could not be cancelled.",
-		);
+		expect((await screen.findByRole("alert")).textContent).toBe("Request could not be cancelled.");
 		expect(invalidateReadinessMock).not.toHaveBeenCalled();
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledOnce());

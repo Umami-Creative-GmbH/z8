@@ -14,20 +14,14 @@ interface MyRequestsPageProps {
 }
 
 async function MyRequestsPageContent({ searchParams }: MyRequestsPageProps) {
-	const [t, result, params] = await Promise.all([
-		getTranslate(),
-		getMyRequests(),
-		searchParams,
-	]);
+	const [t, result, params] = await Promise.all([getTranslate(), getMyRequests(), searchParams]);
 	const focusRequest = params[MY_REQUESTS_FOCUS_PARAM];
 
 	if (!result.success && result.error === "Employee profile not found") {
 		return (
 			<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
 				<PageHeader title={t("myRequests:myRequests.title", "My Requests")} />
-				<NoEmployeeError
-					feature={t("myRequests:myRequests.featureName", "view your requests")}
-				/>
+				<NoEmployeeError feature={t("myRequests:myRequests.featureName", "view your requests")} />
 			</div>
 		);
 	}
@@ -38,10 +32,7 @@ async function MyRequestsPageContent({ searchParams }: MyRequestsPageProps) {
 				<PageHeader title={t("myRequests:myRequests.title", "My Requests")} />
 				<Alert variant="destructive">
 					<AlertTitle>
-						{t(
-							"myRequests:myRequests.unavailableTitle",
-							"Requests unavailable",
-						)}
+						{t("myRequests:myRequests.unavailableTitle", "Requests unavailable")}
 					</AlertTitle>
 					<AlertDescription>{result.error}</AlertDescription>
 				</Alert>
