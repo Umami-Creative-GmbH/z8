@@ -1,0 +1,23 @@
+{
+    "name":  "biome-explicit",
+    "cwd":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+    "env":  {
+                "pnpm_config_verify_deps_before_run":  "false"
+            },
+    "argv":  [
+                 "pnpm",
+                 "--config.verify-deps-before-run=false",
+                 "--filter",
+                 "webapp",
+                 "exec",
+                 "biome",
+                 "check",
+                 "--error-on-warnings",
+                 "--config-path=biome.jsonc",
+                 "src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+                 "src/app/[locale]/onboarding/organization/page.tsx",
+                 "src/app/[locale]/onboarding/organization/page.test.tsx"
+             ],
+    "started":  "2026-11-15T18:07:19.5707646Z",
+    "exitCode":  1
+}

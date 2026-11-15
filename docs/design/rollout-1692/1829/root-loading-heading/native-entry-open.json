@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":4759075326389111361},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"missing\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"targetId\":\"F414836022E1622F6087D43DEF573256\",\"title\":\"Profile setup | Z8\",\"url\":\"http://localhost:62562/en/onboarding/profile\"},\"error\":null}\n",
+  "err": ""
+}

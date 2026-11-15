@@ -1,0 +1,2627 @@
+[
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-slug-available.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-slug-available.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-slug-available.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-slug-available.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-slug-available.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-tracking-boundary.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-tracking-boundary.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-tracking-boundary.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-tracking-boundary.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-tracking-boundary.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-creation-pending.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-creation-pending.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-creation-pending.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-creation-pending.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\actions-runtime.json",
+    "capture": "actions-creation-pending.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-light-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-desktop-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-light-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-wide-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-light-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-light-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-desktop-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-light-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-wide-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-light-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-default.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-default.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-default.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "73b333aead79eb0ed705d3540d9f9628df171aa38fe35b0c12ee792fdbebb7a5",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "5e556ff4c7d31792a37b21141473ad16426476ce09c51cca5f35af796bde7e2c",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "5e556ff4c7d31792a37b21141473ad16426476ce09c51cca5f35af796bde7e2c",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\broad-root-attempt\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "ff472d5bd081023cc41fde34e805c6b3e0debff58f0f455fc82c6dd5eeffea41",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\denial-runtime.json",
+    "capture": "denial-policy-refusal-readback.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "364377ab66a3106a6213d8abb487773202b865713ed685c7234e8467f279fd1e",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\denial-runtime.json",
+    "capture": "denial-policy-refusal-readback.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\denial-runtime.json",
+    "capture": "denial-policy-refusal-readback.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\denial-runtime.json",
+    "capture": "denial-policy-refusal-readback.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\denial-runtime.json",
+    "capture": "denial-policy-refusal-readback.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\disabled-runtime.json",
+    "capture": "disabled-creation-disabled.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "364377ab66a3106a6213d8abb487773202b865713ed685c7234e8467f279fd1e",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\disabled-runtime.json",
+    "capture": "disabled-creation-disabled.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\disabled-runtime.json",
+    "capture": "disabled-creation-disabled.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\disabled-runtime.json",
+    "capture": "disabled-creation-disabled.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\disabled-runtime.json",
+    "capture": "disabled-creation-disabled.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-desktop-light.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-wide-dark.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-light.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-phone-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "b518a3751fdb89c3c935addafdc5e18f7aa2d41e73893fb23712f7eb557e2fef",
+    "match": null
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\after-runtime.json",
+    "capture": "after-keyboard.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-desktop-light.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-wide-dark.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-light.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-phone-dark-large.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "bbe1e9ff2f6e9579edfb27acab8dfd198c3d8fa59fc3985b7aa4265da0256e58",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "3540ff07799c8f780772b49662066c2680985e97"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "e43f5eefed49e5acbcc2813d66e229a1fe03424adf75a75e0c118d9557783b29",
+    "match": {
+      "commit": "870e80954b61aa5f74d6da3b74136399ea9f871e",
+      "blob": "3b2273ba904d655ddc16797b84bbe2797149d19c"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\pre-instant-default\\before-runtime.json",
+    "capture": "before-keyboard.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-field-validation.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-field-validation.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-field-validation.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-field-validation.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-field-validation.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-held-slug-aba.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-held-slug-aba.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-held-slug-aba.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-held-slug-aba.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-held-slug-aba.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-slug-retry.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "35d026c59cb5e1a9636dfd5334e200981b14c8c3b3b90c0080afc94aa5ad4b4a",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "e3eb8dbedd615faa95da53fe68f212abbcf31f5a"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-slug-retry.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx",
+    "sha256": "9a6a3fea01eeb8124f95099d038724347893531555e9cb508d48bfa32e5eb2ca",
+    "match": {
+      "commit": "204cbe9880297ecfc9578f9e4bc8df0c8996ba72",
+      "blob": "26896bb0e441b42192da745f697352a496bd9f00"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-slug-retry.png",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "b825290fee33f1852f4288348561e2a7e329aa29",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-slug-retry.png",
+    "path": "apps/webapp/src/components/organization/organization-tracking-setup-fields.tsx",
+    "sha256": "802e9886ee4329f2a996ca1d9178d44afdc11ab6cce115587af0318e7b864442",
+    "match": {
+      "commit": "edc3bab416fdcaa86076f236482e48373e197706",
+      "blob": "0b6e90bf68120611f82424f138d54edd88fae63f"
+    }
+  },
+  {
+    "artifact": "docs\\design\\rollout-1692\\1829\\states-runtime.json",
+    "capture": "states-slug-retry.png",
+    "path": "apps/webapp/next.config.ts",
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "match": {
+      "commit": "92003f267cc1c7c20a6a5e9d9554bf6e79804438",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    }
+  }
+]

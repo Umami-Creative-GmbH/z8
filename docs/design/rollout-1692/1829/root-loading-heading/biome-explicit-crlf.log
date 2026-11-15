@@ -1,0 +1,365 @@
+src\app\[locale]\onboarding\organization\organization-page-client.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     20  20 │   import { Label } from "@/components/ui/label";␍
+     21  21 │   import { useSession } from "@/lib/auth-client";␍
+     22     │ - import·{␍
+     23     │ - → generateSlug,␍
+     24     │ - → organizationSchema,␍
+     25     │ - }·from·"@/lib/validations/organization";␍
+         22 │ + import·{·generateSlug,·organizationSchema·}·from·"@/lib/validations/organization";␍
+     26  23 │   import { useRouter } from "@/navigation";␍
+     27  24 │   import { runOnboardingAction } from "../run-onboarding-action";␍
+    ······· │ 
+    135 132 │         </header>␍
+    136 133 │         <div className="p-6">␍
+    137     │ - → → → → <Button␍
+    138     │ - → → → → → variant="outline"␍
+    139     │ - → → → → → onClick={onSkip}␍
+    140     │ - → → → → → disabled={loading}␍
+    141     │ - → → → → → className="w-full"␍
+    142     │ - → → → → >␍
+        134 │ + → → → → <Button·variant="outline"·onClick={onSkip}·disabled={loading}·className="w-full">␍
+    143 135 │             {t("onboarding.organization.skip", "Skip for now")}␍
+    144 136 │           </Button>␍
+    ······· │ 
+    231 223 │                     aria-invalid={field.state.meta.errors.length > 0}␍
+    232 224 │                     aria-describedby={␍
+    233     │ - → → → → → → → → → → field.state.meta.errors.length␍
+    234     │ - → → → → → → → → → → → ?·"organization-name-error"␍
+    235     │ - → → → → → → → → → → → :·undefined␍
+        225 │ + → → → → → → → → → → field.state.meta.errors.length·?·"organization-name-error"·:·undefined␍
+    236 226 │                     }␍
+    237 227 │                     value={field.state.value}␍
+    ······· │ 
+    245 235 │                     }}␍
+    246 236 │                     onBlur={field.handleBlur}␍
+    247     │ - → → → → → → → → → placeholder={t(␍
+    248     │ - → → → → → → → → → → "onboarding.organization.namePlaceholder",␍
+    249     │ - → → → → → → → → → → "Acme·Inc.",␍
+    250     │ - → → → → → → → → → )}␍
+        237 │ + → → → → → → → → → placeholder={t("onboarding.organization.namePlaceholder",·"Acme·Inc.")}␍
+    251 238 │                     disabled={status.loading}␍
+    252 239 │                   />␍
+    ······· │ 
+    270 257 │                   .min(␍
+    271 258 │                     2,␍
+    272     │ - → → → → → → → → → t(␍
+    273     │ - → → → → → → → → → → "onboarding.organization.slugErrors.min",␍
+    274     │ - → → → → → → → → → → "Slug·must·be·at·least·2·characters",␍
+    275     │ - → → → → → → → → → ),␍
+        259 │ + → → → → → → → → → t("onboarding.organization.slugErrors.min",·"Slug·must·be·at·least·2·characters"),␍
+    276 260 │                   )␍
+    277 261 │                   .max(␍
+    ······· │ 
+    289 273 │                     ),␍
+    290 274 │                   )␍
+    291     │ - → → → → → → → → .refine(␍
+    292     │ - → → → → → → → → → (value)·=>·!value.startsWith("-")·&&·!value.endsWith("-"),␍
+    293     │ - → → → → → → → → → {␍
+    294     │ - → → → → → → → → → → message:·t(␍
+    295     │ - → → → → → → → → → → → "onboarding.organization.slugErrors.hyphen",␍
+    296     │ - → → → → → → → → → → → "Slug·cannot·start·or·end·with·a·hyphen",␍
+    297     │ - → → → → → → → → → → ),␍
+    298     │ - → → → → → → → → → },␍
+    299     │ - → → → → → → → → ),␍
+        275 │ + → → → → → → → → .refine((value)·=>·!value.startsWith("-")·&&·!value.endsWith("-"),·{␍
+        276 │ + → → → → → → → → → message:·t(␍
+        277 │ + → → → → → → → → → → "onboarding.organization.slugErrors.hyphen",␍
+        278 │ + → → → → → → → → → → "Slug·cannot·start·or·end·with·a·hyphen",␍
+        279 │ + → → → → → → → → → ),␍
+        280 │ + → → → → → → → → }),␍
+    300 281 │               }}␍
+    301 282 │             >␍
+    ······· │ 
+    311 292 │                       autoComplete="off"␍
+    312 293 │                       spellCheck={false}␍
+    313     │ - → → → → → → → → → → aria-invalid={␍
+    314     │ - → → → → → → → → → → → !!status.slugErrorMessage·||␍
+    315     │ - → → → → → → → → → → → field.state.meta.errors.length·>·0␍
+    316     │ - → → → → → → → → → → }␍
+        294 │ + → → → → → → → → → → aria-invalid={!!status.slugErrorMessage·||·field.state.meta.errors.length·>·0}␍
+    317 295 │                       aria-describedby={`organization-slug-description organization-slug-status${status.slugErrorMessage ? " organization-slug-error" : ""}${field.state.meta.errors.length ? " organization-slug-validation" : ""}`}␍
+    318 296 │                       value={field.state.value}␍
+    ······· │ 
+    323 301 │                       }}␍
+    324 302 │                       onBlur={field.handleBlur}␍
+    325     │ - → → → → → → → → → → placeholder={t(␍
+    326     │ - → → → → → → → → → → → "onboarding.organization.slugPlaceholder",␍
+    327     │ - → → → → → → → → → → → "acme-inc",␍
+    328     │ - → → → → → → → → → → )}␍
+        303 │ + → → → → → → → → → → placeholder={t("onboarding.organization.slugPlaceholder",·"acme-inc")}␍
+    329 304 │                       disabled={status.loading}␍
+    330 305 │                     />␍
+    ······· │ 
+    335 310 │                     )}␍
+    336 311 │                   </div>␍
+    337     │ - → → → → → → → → <p␍
+    338     │ - → → → → → → → → → id="organization-slug-description"␍
+    339     │ - → → → → → → → → → className="text-sm·text-muted-foreground"␍
+    340     │ - → → → → → → → → >␍
+        312 │ + → → → → → → → → <p·id="organization-slug-description"·className="text-sm·text-muted-foreground">␍
+    341 313 │                     {t(␍
+    342 314 │                       "onboarding.organization.slugDescription",␍
+    ······· │ 
+    350 322 │                   >␍
+    351 323 │                     {status.checkingSlug␍
+    352     │ - → → → → → → → → → → ?·t(␍
+    353     │ - → → → → → → → → → → → → "onboarding.organization.checkingSlug",␍
+    354     │ - → → → → → → → → → → → → "Checking·availability…",␍
+    355     │ - → → → → → → → → → → → )␍
+        324 │ + → → → → → → → → → → ?·t("onboarding.organization.checkingSlug",·"Checking·availability…")␍
+    356 325 │                       : status.slugAvailable␍
+    357     │ - → → → → → → → → → → → ?·t(␍
+    358     │ - → → → → → → → → → → → → → "onboarding.organization.slugAvailable",␍
+    359     │ - → → → → → → → → → → → → → "This·slug·is·available.",␍
+    360     │ - → → → → → → → → → → → → )␍
+        326 │ + → → → → → → → → → → → ?·t("onboarding.organization.slugAvailable",·"This·slug·is·available.")␍
+    361 327 │                         : ""}␍
+    362 328 │                   </p>␍
+    ······· │ 
+    407 373 │               <Button␍
+    408 374 │                 type="submit"␍
+    409     │ - → → → → → → → disabled={␍
+    410     │ - → → → → → → → → status.loading·||␍
+    411     │ - → → → → → → → → status.checkingSlug·||␍
+    412     │ - → → → → → → → → !!status.slugErrorMessage␍
+    413     │ - → → → → → → → }␍
+        375 │ + → → → → → → → disabled={status.loading·||·status.checkingSlug·||·!!status.slugErrorMessage}␍
+    414 376 │                 className="flex-1"␍
+    415 377 │               >␍
+    416     │ - → → → → → → → {status.loading·&&·(␍
+    417     │ - → → → → → → → → <IconLoader2·className="mr-2·size-4·animate-spin"·/>␍
+    418     │ - → → → → → → → )}␍
+        378 │ + → → → → → → → {status.loading·&&·<IconLoader2·className="mr-2·size-4·animate-spin"·/>}␍
+    419 379 │                 {t("onboarding.organization.create", "Create Organization")}␍
+    420 380 │               </Button>␍
+    ······· │ 
+    426 386 │   }␍
+    427 387 │   ␍
+    428     │ - export·default·function·OrganizationPageClient(␍
+    429     │ - → props:·OrganizationPageClientProps,␍
+    430     │ - )·{␍
+        388 │ + export·default·function·OrganizationPageClient(props:·OrganizationPageClientProps)·{␍
+    431 389 │     const { data } = useSession();␍
+    432 390 │     const operations = useRef(new Set<string>());␍
+    ······· │ 
+    503 461 │             if (result.success) {␍
+    504 462 │               toast.success(␍
+    505     │ - → → → → → → → t(␍
+    506     │ - → → → → → → → → "onboarding.organization.createSuccess",␍
+    507     │ - → → → → → → → → "Organization·created·successfully!",␍
+    508     │ - → → → → → → → ),␍
+        463 │ + → → → → → → → t("onboarding.organization.createSuccess",·"Organization·created·successfully!"),␍
+    509 464 │               );␍
+    510 465 │               push("/onboarding/profile");␍
+    ······· │ 
+    513 468 │               showActionError(␍
+    514 469 │                 result.error ||␍
+    515     │ - → → → → → → → → t(␍
+    516     │ - → → → → → → → → → "onboarding.organization.createError",␍
+    517     │ - → → → → → → → → → "Failed·to·create·organization",␍
+    518     │ - → → → → → → → → ),␍
+        470 │ + → → → → → → → → t("onboarding.organization.createError",·"Failed·to·create·organization"),␍
+    519 471 │               );␍
+    520 472 │             }␍
+    ······· │ 
+    523 475 │             if (!requestLifetime || lifetime.current !== requestLifetime) return;␍
+  44 more lines truncated
+  
+
+src\app\[locale]\onboarding\organization\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   /* @vitest-environment jsdom */␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → act,␍
+      5     │ - → fireEvent,␍
+      6     │ - → render,␍
+      7     │ - → screen,␍
+      8     │ - → waitFor,␍
+      9     │ - }·from·"@testing-library/react";␍
+          3 │ + import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+     10   4 │   import { Activity, StrictMode } from "react";␍
+     11   5 │   import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";␍
+    ······· │ 
+    112 106 │       render(<OrganizationPageClient canCreateOrganizations />);␍
+    113 107 │   ␍
+    114     │ - → → expect(␍
+    115     │ - → → → screen.getByRole("status",·{·name:·"Checking·organization·membership"·}),␍
+    116     │ - → → ).toBeTruthy();␍
+        108 │ + → → expect(screen.getByRole("status",·{·name:·"Checking·organization·membership"·})).toBeTruthy();␍
+    117 109 │       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);␍
+    118 110 │       expect(␍
+    ······· │ 
+    122 114 │         }),␍
+    123 115 │       ).toBeTruthy();␍
+    124     │ - → → expect(␍
+    125     │ - → → → screen.queryByRole("button",·{·name:·"Create·Organization"·}),␍
+    126     │ - → → ).toBeNull();␍
+        116 │ + → → expect(screen.queryByRole("button",·{·name:·"Create·Organization"·})).toBeNull();␍
+    127 117 │       expect(skipOrganizationSetupMock).not.toHaveBeenCalled();␍
+    128 118 │   ␍
+    129     │ - → → await·act(async·()·=>␍
+    130     │ - → → → summary.resolve({·success:·true,·data:·{·hasOrganization:·false·}·}),␍
+    131     │ - → → );␍
+        119 │ + → → await·act(async·()·=>·summary.resolve({·success:·true,·data:·{·hasOrganization:·false·}·}));␍
+    132 120 │   ␍
+    133 121 │       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);␍
+    ······· │ 
+    138 126 │         }),␍
+    139 127 │       ).toBeTruthy();␍
+    140     │ - → → expect(␍
+    141     │ - → → → screen.getByRole("button",·{·name:·"Create·Organization"·}),␍
+    142     │ - → → ).toBeTruthy();␍
+        128 │ + → → expect(screen.getByRole("button",·{·name:·"Create·Organization"·})).toBeTruthy();␍
+    143 129 │     });␍
+    144 130 │   ␍
+    ······· │ 
+    153 139 │       });␍
+    154 140 │       render(<OrganizationPageClient canCreateOrganizations />);␍
+    155     │ - → → await·waitFor(()·=>␍
+    156     │ - → → → expect(skipOrganizationSetupMock).toHaveBeenCalledOnce(),␍
+    157     │ - → → );␍
+        141 │ + → → await·waitFor(()·=>·expect(skipOrganizationSetupMock).toHaveBeenCalledOnce());␍
+    158 142 │       expect(replaceMock).not.toHaveBeenCalled();␍
+    159     │ - → → expect(␍
+    160     │ - → → → await·screen.findByRole("button",·{·name:·"Skip·for·now"·}),␍
+    161     │ - → → ).toBeTruthy();␍
+        143 │ + → → expect(await·screen.findByRole("button",·{·name:·"Skip·for·now"·})).toBeTruthy();␍
+    162 144 │     });␍
+    163 145 │   ␍
+    ······· │ 
+    169 151 │       const request = deferred<{ success: true }>();␍
+    170 152 │       createOrganizationOnboardingMock.mockReturnValue(request.promise);␍
+    171     │ - → → const·{·unmount·}·=·render(␍
+    172     │ - → → → <OrganizationPageClient·canCreateOrganizations·/>,␍
+    173     │ - → → );␍
+        153 │ + → → const·{·unmount·}·=·render(<OrganizationPageClient·canCreateOrganizations·/>);␍
+    174 154 │       fireEvent.change(await screen.findByLabelText("Organization Name"), {␍
+    175 155 │         target: { value: "Acme Inc" },␍
+    176 156 │       });␍
+    177     │ - → → fireEvent.click(␍
+    178     │ - → → → screen.getByRole("button",·{·name:·"Create·Organization"·}),␍
+    179     │ - → → );␍
+    180     │ - → → await·waitFor(()·=>␍
+    181     │ - → → → expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce(),␍
+    182     │ - → → );␍
+        157 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·"Create·Organization"·}));␍
+        158 │ + → → await·waitFor(()·=>·expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce());␍
+    183 159 │       unmount();␍
+    184 160 │       await act(async () => request.resolve({ success: true }));␍
+    ······· │ 
+    196 172 │         const request = deferred<{ success: true }>();␍
+    197 173 │         createOrganizationOnboardingMock.mockReturnValue(request.promise);␍
+    198     │ - → → → const·{·rerender·}·=·render(␍
+    199     │ - → → → → <OrganizationPageClient·canCreateOrganizations·/>,␍
+    200     │ - → → → );␍
+        174 │ + → → → const·{·rerender·}·=·render(<OrganizationPageClient·canCreateOrganizations·/>);␍
+    201 175 │         fireEvent.change(await screen.findByLabelText("Organization Name"), {␍
+    202 176 │           target: { value: "Original draft" },␍
+    203 177 │         });␍
+    204     │ - → → → fireEvent.click(␍
+    205     │ - → → → → screen.getByRole("button",·{·name:·"Create·Organization"·}),␍
+    206     │ - → → → );␍
+    207     │ - → → → await·waitFor(()·=>␍
+    208     │ - → → → → expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce(),␍
+    209     │ - → → → );␍
+        178 │ + → → → fireEvent.click(screen.getByRole("button",·{·name:·"Create·Organization"·}));␍
+        179 │ + → → → await·waitFor(()·=>·expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce());␍
+    210 180 │         for (const value of ["b", scope === "account" ? "a" : ""]) {␍
+    211 181 │           sessionState[scope] = value;␍
+    ······· │ 
+    219 189 │         expect(pushMock).not.toHaveBeenCalled();␍
+    220 190 │         expect(toastSuccessMock).not.toHaveBeenCalled();␍
+    221     │ - → → → expect(screen.getByLabelText("Organization·Name")).toHaveProperty(␍
+    222     │ - → → → → "value",␍
+    223     │ - → → → → "New·draft",␍
+    224     │ - → → → );␍
+        191 │ + → → → expect(screen.getByLabelText("Organization·Name")).toHaveProperty("value",·"New·draft");␍
+    225 192 │       },␍
+    226 193 │     );␍
+    ······· │ 
+    238 205 │         </Activity>,␍
+    239 206 │       );␍
+    240     │ - → → fireEvent.click(␍
+    241     │ - → → → await·screen.findByRole("button",·{·name:·"Skip·for·now"·}),␍
+    242     │ - → → );␍
+        207 │ + → → fireEvent.click(await·screen.findByRole("button",·{·name:·"Skip·for·now"·}));␍
+    243 208 │       rerender(␍
+    244 209 │         <Activity mode="hidden">␍
+    ······· │ 
+    271 236 │         target: { value: "Original draft" },␍
+    272 237 │       });␍
+    273     │ - → → fireEvent.click(␍
+    274     │ - → → → screen.getByRole("button",·{·name:·"Create·Organization"·}),␍
+    275     │ - → → );␍
+    276     │ - → → await·waitFor(()·=>␍
+    277     │ - → → → expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce(),␍
+    278     │ - → → );␍
+        238 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·"Create·Organization"·}));␍
+        239 │ + → → await·waitFor(()·=>·expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce());␍
+    279 240 │       rerender(␍
+    280 241 │         <Activity mode="hidden">␍
+    ······· │ 
+    321 282 │       await act(async () => first.resolve(false));␍
+    322 283 │       expect(␍
+    323     │ - → → → screen.queryByText(␍
+    324     │ - → → → → "This·slug·is·already·taken.·Please·choose·a·different·one.",␍
+    325     │ - → → → ),␍
+        284 │ + → → → screen.queryByText("This·slug·is·already·taken.·Please·choose·a·different·one."),␍
+    326 285 │       ).toBeNull();␍
+    327 286 │       await act(async () => current.resolve(false));␍
+    328 287 │       await act(async () => second.resolve(true));␍
+    329 288 │       expect(␍
+    330     │ - → → → screen.getByText(␍
+    331     │ - → → → → "This·slug·is·already·taken.·Please·choose·a·different·one.",␍
+    332     │ - → → → ),␍
+        289 │ + → → → screen.getByText("This·slug·is·already·taken.·Please·choose·a·different·one."),␍
+    333 290 │       ).toBeTruthy();␍
+    334 291 │     });␍
+    ······· │ 
+    344 301 │         .mockResolvedValueOnce({ success: true });␍
+    345 302 │       render(␍
+    346     │ - → → → <OrganizationPageClient␍
+    347     │ - → → → → canCreateOrganizations␍
+    348     │ - → → → → trackingSuggestedAt="2026-05-20T23:30:00Z"␍
+    349     │ - → → → />,␍
+        303 │ + → → → <OrganizationPageClient·canCreateOrganizations·trackingSuggestedAt="2026-05-20T23:30:00Z"·/>,␍
+    350 304 │       );␍
+    351 305 │       fireEvent.change(await screen.findByLabelText("Organization Name"), {␍
+    ······· │ 
+    358 312 │       fireEvent.click(button);␍
+    359 313 │       fireEvent.click(button);␍
+    360     │ - → → await·waitFor(()·=>␍
+  137 more lines truncated
+  
+
+src\app\[locale]\onboarding\organization\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     7  7 │   export const metadata: Metadata = {␍
+     8  8 │     title: "Organization setup | Z8",␍
+     9    │ - → description:␍
+    10    │ - → → "Create·or·connect·your·organization·during·Z8·workspace·onboarding.",␍
+        9 │ + → description:·"Create·or·connect·your·organization·during·Z8·workspace·onboarding.",␍
+    11 10 │   };␍
+    12 11 │   ␍
+  
+
+Checked 3 files in 8ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

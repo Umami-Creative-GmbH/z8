@@ -1,0 +1,2 @@
+# Preserve exact overlay bytes as well as their canonical Git source hashes.
+source-*.tsx.txt -text
