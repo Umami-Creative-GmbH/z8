@@ -1,0 +1,1571 @@
+src\app\[locale]\(app)\organization\org-explorer-client.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/
+      2     │ - 
+      3     │ - import·{
+      4     │ - → act,
+      5     │ - → fireEvent,
+      6     │ - → screen,
+      7     │ - → waitFor,
+      8     │ - → within,
+      9     │ - }·from·"@testing-library/react";
+     10     │ - import·{·type·ReactNode,·useMemo,·useSyncExternalStore·}·from·"react";
+     11     │ - import·{
+     12     │ - → afterEach,
+     13     │ - → beforeAll,
+     14     │ - → beforeEach,
+     15     │ - → describe,
+     16     │ - → expect,
+     17     │ - → it,
+     18     │ - → vi,
+     19     │ - }·from·"vitest";
+     20     │ - import·{·render·}·from·"@/test/render-with-translations";
+     21     │ - import·type·{
+     22     │ - → OrgExplorerData,
+     23     │ - → OrgExplorerPerson,
+     24     │ - → OrgExplorerTeam,
+     25     │ - }·from·"./org-explorer-types";
+     26     │ - 
+     27     │ - const·mocks·=·vi.hoisted(()·=>·({
+     28     │ - → search:·vi.fn(),
+     29     │ - → people:·vi.fn(),
+     30     │ - → teamMembers:·vi.fn(),
+     31     │ - → group:·vi.fn(),
+     32     │ - → data:·vi.fn(),
+     33     │ - → setCenter:·vi.fn(),
+     34     │ - → fitView:·vi.fn(),
+     35     │ - → isMobile:·false,
+     36     │ - }));
+     37     │ - 
+     38     │ - vi.mock("./actions",·()·=>·({
+     39     │ - → searchOrgEmployees:·mocks.search,
+     40     │ - → getOrgExplorerPeople:·mocks.people,
+     41     │ - → getOrgExplorerTeamMembers:·mocks.teamMembers,
+     42     │ - → getOrgExplorerGroup:·mocks.group,
+     43     │ - → getOrgExplorerData:·mocks.data,
+     44     │ - }));
+     45     │ - 
+     46     │ - vi.mock("@/hooks/use-mobile",·()·=>·({·useIsMobile:·()·=>·mocks.isMobile·}));
+     47     │ - 
+     48     │ - vi.mock("@/components/providers/view-refresh-provider",·()·=>·({
+     49     │ - → useViewRefresh:·()·=>·{},
+     50     │ - }));
+     51     │ - 
+     52     │ - vi.mock("@/navigation",·()·=>·({
+     53     │ - → Link:·({
+     54     │ - → → href,
+     55     │ - → → children,
+     56     │ - → → ...props
+     57     │ - → }:·{
+     58     │ - → → href:·string;
+     59     │ - → → children:·ReactNode;
+     60     │ - → })·=>·(
+     61     │ - → → <a·href={href}·{...props}>
+     62     │ - → → → {children}
+     63     │ - → → </a>
+     64     │ - → ),
+     65     │ - }));
+     66     │ - 
+     67     │ - vi.mock("@/components/user-avatar",·()·=>·({
+     68     │ - → UserAvatar:·()·=>·<span·aria-hidden="true"·/>,
+     69     │ - }));
+     70     │ - 
+     71     │ - //·Next·keeps·useSearchParams·in·step·with·history.pushState;·this·stands·in·for·it.
+     72     │ - const·locationListeners·=·new·Set<()·=>·void>();
+     73     │ - function·subscribeToLocation(listener:·()·=>·void)·{
+     74     │ - → locationListeners.add(listener);
+     75     │ - → window.addEventListener("popstate",·listener);
+     76     │ - → return·()·=>·{
+     77     │ - → → locationListeners.delete(listener);
+     78     │ - → → window.removeEventListener("popstate",·listener);
+     79     │ - → };
+     80     │ - }
+     81     │ - 
+     82     │ - vi.mock("next/navigation",·()·=>·({
+     83     │ - → useSearchParams:·()·=>·{
+     84     │ - → → const·search·=·useSyncExternalStore(
+     85     │ - → → → subscribeToLocation,
+     86     │ - → → → ()·=>·window.location.search,
+     87     │ - → → );
+     88     │ - → → return·useMemo(()·=>·new·URLSearchParams(search),·[search]);
+     89     │ - → },
+     90     │ - }));
+     91     │ - 
+     92     │ - vi.mock("@xyflow/react",·()·=>·({
+     93     │ - → Background:·()·=>·null,
+     94     │ - → Controls:·()·=>·null,
+     95     │ - → Handle:·()·=>·null,
+     96     │ - → Position:·{·Bottom:·"bottom",·Top:·"top"·},
+     97     │ - → ReactFlow:·({
+     98     │ - → → nodes,
+     99     │ - → → edges,
+    100     │ - → → nodeTypes,
+    101     │ - → }:·{
+    102     │ - → → nodes:·Array<{
+    103     │ - → → → id:·string;
+    104     │ - → → → type:·string;
+    105     │ - → → → data:·unknown;
+    106     │ - → → → position:·{·x:·number;·y:·number·};
+    107     │ - → → }>;
+    108     │ - → → edges:·Array<{·source:·string;·target:·string·}>;
+    109     │ - → → nodeTypes:·Record<string,·(props:·{·data:·unknown·})·=>·ReactNode>;
+    110     │ - → })·=>·(
+    111     │ - → → <div·data-testid="react-flow">
+    112     │ - → → → <div·data-testid="flow-edges">
+    113     │ - → → → → {JSON.stringify(edges.map((edge)·=>·[edge.source,·edge.target]))}
+    114     │ - → → → </div>
+    115     │ - → → → {nodes.map((node)·=>·{
+    116     │ - → → → → const·NodeComponent·=·nodeTypes[node.type];
+    117     │ - → → → → return·NodeComponent·?·(
+    118     │ - → → → → → <div·data-node-y={node.position.y}·key={node.id}>
+    119     │ - → → → → → → <NodeComponent·data={node.data}·/>
+    120     │ - → → → → → </div>
+    121     │ - → → → → )·:·null;
+    122     │ - → → → })}
+    123     │ - → → </div>
+    124     │ - → ),
+    125     │ - → ReactFlowProvider:·({·children·}:·{·children:·ReactNode·})·=>·<>{children}</>,
+    126     │ - → useReactFlow:·()·=>·({·setCenter:·mocks.setCenter,·fitView:·mocks.fitView·}),
+    127     │ - }));
+    128     │ - 
+    129     │ - beforeAll(()·=>·{
+    130     │ - → vi.stubGlobal(
+    131     │ - → → "ResizeObserver",
+    132     │ - → → class·{
+    133     │ - → → → observe()·{}
+    134     │ - → → → unobserve()·{}
+    135     │ - → → → disconnect()·{}
+    136     │ - → → },
+    137     │ - → );
+    138     │ - → HTMLElement.prototype.scrollIntoView·=·vi.fn();
+    139     │ - → const·pushState·=·window.history.pushState.bind(window.history);
+    140     │ - → window.history.pushState·=·(...args:·Parameters<History["pushState"]>)·=>·{
+    141     │ - → → pushState(...args);
+    142     │ - → → for·(const·listener·of·locationListeners)·listener();
+    143     │ - → };
+    144     │ - });
+    145     │ - 
+    146     │ - function·person(
+    147     │ - → employeeId:·string,
+    148     │ - → overrides:·Partial<OrgExplorerPerson>·=·{},
+    149     │ - ):·OrgExplorerPerson·{
+    150     │ - → return·{
+  1775 more lines truncated
+  
+
+src\app\[locale]\(app)\organization\org-explorer-client.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      4     │ - import·{·ReactFlowProvider·}·from·"@xyflow/react";
+      5     │ - import·{·useEffect,·useEffectEvent·}·from·"react";
+      6     │ - import·{·DataTableToolbar·}·from·"@/components/data-table-server/data-table-toolbar";
+      7     │ - import·{·useIsMobile·}·from·"@/hooks/use-mobile";
+      8     │ - import·{·OrgExplorerLoadError·}·from·"./org-explorer-load-error";
+      9     │ - import·{·PersonPanel·}·from·"./org-explorer-person-panel";
+     10     │ - import·{
+     11     │ - → type·Highlight,
+     12     │ - → NoReportingLineGroup,
+     13     │ - → ReportingLinesCanvas,
+     14     │ - → ReportingLinesOutline,
+     15     │ - → type·ReportingLinesProps,
+     16     │ - }·from·"./org-explorer-reporting-lines";
+     17     │ - import·{·groupTeams·}·from·"./org-explorer-teams";
+     18     │ - import·{·TeamsView·}·from·"./org-explorer-teams-view";
+     19     │ - import·{·EmployeeSearch,·TeamFilter,·ViewSwitch·}·from·"./org-explorer-toolbar";
+     20     │ - import·{·buildReportingTree,·type·ReportingTree·}·from·"./org-explorer-tree";
+     21     │ - import·type·{·OrgExplorerData,·OrgExplorerPerson·}·from·"./org-explorer-types";
+     22     │ - import·type·{·OrgExplorerUrlState·}·from·"./org-explorer-url";
+     23     │ - import·{·useOrgExplorerLines·}·from·"./use-org-explorer-lines";
+     24     │ - import·{
+     25     │ - → type·OrgExplorerPeopleLoader,
+     26     │ - → useOrgExplorerPeople,
+     27     │ - }·from·"./use-org-explorer-people";
+     28     │ - import·{·useOrgExplorerUrlState·}·from·"./use-org-explorer-url-state";
+     29     │ - 
+     30     │ - type·OrgExplorerClientProps·=·{
+     31     │ - → initialData:·OrgExplorerData;
+     32     │ - → /**·Whether·the·viewer·is·an·organization·admin,·who·gets·links·to·the·settings·screens.·*/
+     33     │ - → canManage:·boolean;
+     34     │ - };
+     35     │ - 
+     36     │ - export·function·OrgExplorerClient(props:·OrgExplorerClientProps)·{
+     37     │ - → return·(
+     38     │ - → → <ReactFlowProvider>
+     39     │ - → → → <OrgExplorer·{...props}·/>
+     40     │ - → → </ReactFlowProvider>
+     41     │ - → );
+     42     │ - }
+     43     │ - 
+     44     │ - function·OrgExplorer({·initialData,·canManage·}:·OrgExplorerClientProps)·{
+     45     │ - → const·{·t·}·=·useTranslate();
+     46     │ - → const·isMobile·=·useIsMobile();
+     47     │ - → const·[url,·setUrl]·=·useOrgExplorerUrlState();
+     48     │ - → const·loader·=·useOrgExplorerPeople(initialData);
+     49     │ - → const·{·summary,·peopleById·}·=·loader;
+     50     │ - 
+     51     │ - → const·people·=·[...peopleById.values()];
+     52     │ - → const·tree·=·buildReportingTree(people);
+     53     │ - → const·teamNamesById·=·new·Map(
+     54     │ - → → summary.teams.map((entry)·=>·[entry.teamId,·entry.name]),
+     55     │ - → );
+     56     │ - → const·{·pathIds,·highlightOf·}·=·teamFilterHighlights(
+     57     │ - → → people,
+     58     │ - → → tree,
+     59     │ - → → url.teamIds,
+     60     │ - → );
+     61     │ - 
+     62     │ - → function·select(employeeId:·string)·{
+     63     │ - → → setUrl({·employeeId·});
+     64     │ - → }
+     65     │ - 
+     66     │ - → const·{·openIds,·centerRequest,·reveal,·toggle·}·=·useOrgExplorerLines({
+     67     │ - → → initialPeople:·initialData.people,
+     68     │ - → → tree,
+     69     │ - → → pathIds,
+     70     │ - → → selectedId:·url.employeeId,
+     71     │ - → → loader,
+     72     │ - → → onSelect:·select,
+     73     │ - → });
+     74     │ - → useOrgExplorerUrlLoads(url,·loader);
+     75     │ - 
+     76     │ - → if·(summary.employeeCount·===·0·&&·peopleById.size·===·0)·{
+     77     │ - → → return·(
+     78     │ - → → → <section·className="flex·min-h-[420px]·items-center·justify-center·rounded-lg·border·bg-card·text-card-foreground">
+     79     │ - → → → → <p·className="text-sm·text-muted-foreground">
+     80     │ - → → → → → {t("organization.explorer.empty",·"No·current·employees·found")}
+     81     │ - → → → → </p>
+     82     │ - → → → </section>
+     83     │ - → → );
+     84     │ - → }
+     85     │ - 
+     86     │ - → const·lineProps:·ReportingLinesProps·=·{
+     87     │ - → → tree,
+     88     │ - → → peopleById,
+     89     │ - → → teamNamesById,
+     90     │ - → → openIds,
+     91     │ - → → highlightOf,
+     92     │ - → → selectedId:·url.employeeId,
+     93     │ - → → loadingIds:·loader.loadingIds,
+     94     │ - → → centerRequest,
+     95     │ - → → onSelect:·select,
+     96     │ - → → onToggle:·toggle,
+     97     │ - → };
+     98     │ - 
+     99     │ - → return·(
+    100     │ - → → <section
+    101     │ - → → → aria-label={t("organization.title",·"Org·Explorer")}
+    102     │ - → → → className="flex·min-w-0·flex-col·gap-4"
+    103     │ - → → >
+    104     │ - → → → <div·className="border-b·pb-4">
+    105     │ - → → → → <DataTableToolbar
+    106     │ - → → → → → filterControls={
+    107     │ - → → → → → → <>
+    108     │ - → → → → → → → <ViewSwitch
+    109     │ - → → → → → → → → onChange={(view)·=>·setUrl({·view·})}
+    110     │ - → → → → → → → → view={url.view}
+    111     │ - → → → → → → → />
+    112     │ - → → → → → → → <TeamFilter
+    113     │ - → → → → → → → → onChange={(teamIds)·=>·setUrl({·teamIds·})}
+    114     │ - → → → → → → → → selectedIds={url.teamIds}
+    115     │ - → → → → → → → → teams={summary.teams}
+    116     │ - → → → → → → → />
+    117     │ - → → → → → → </>
+    118     │ - → → → → → }
+    119     │ - → → → → → actions={
+    120     │ - → → → → → → <>
+    121     │ - → → → → → → → <p·className="shrink-0·text-sm·text-muted-foreground·tabular-nums">
+    122     │ - → → → → → → → → {t(
+    123     │ - → → → → → → → → → "organization.explorer.employeeCount",
+    124     │ - → → → → → → → → → "{count,·plural,·one·{#·employee}·other·{#·employees}}",
+    125     │ - → → → → → → → → → {·count:·summary.employeeCount·},
+    126     │ - → → → → → → → → )}
+    127     │ - → → → → → → → </p>
+    128     │ - → → → → → → → <EmployeeSearch
+    129     │ - → → → → → → → → onSelect={(employeeId)·=>·void·reveal(employeeId)}
+    130     │ - → → → → → → → />
+    131     │ - → → → → → → </>
+    132     │ - → → → → → }
+    133     │ - → → → → />
+    134     │ - → → → </div>
+    135     │ - → → → {loader.hasFailedLoads·&&
+    136     │ - → → → (!url.employeeId·||·peopleById.has(url.employeeId))·?·(
+    137     │ - → → → → <OrgExplorerLoadError
+    138     │ - → → → → → retry={loader.retryFailed}
+    139     │ - → → → → → pending={loader.isRetrying}
+    140     │ - → → → → />
+    141     │ - → → → )·:·null}
+    142     │ - 
+    143     │ - → → → {summary.complete·?·null·:·(
+    144     │ - → → → → <p·className="rounded-md·border·border-dashed·bg-muted/40·px-3·py-2·text-sm·text-muted-foreground">
+    145     │ - → → → → → {t(
+    146     │ - → → → → → → "organization.explorer.partial",
+    147     │ - → → → → → → "This·is·a·large·organization,·so·people·load·as·you·open·reporting·lines·and·teams·or·search.",
+    148     │ - → → → → → )}
+    149     │ - → → → → </p>
+    150     │ - → → → )}
+  467 more lines truncated
+  
+
+src\app\[locale]\(app)\organization\org-explorer-header.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";
+     2    │ - 
+     3    │ - import·{·useTranslate·}·from·"@tolgee/react";
+     4    │ - import·{·useRouter·}·from·"next/navigation";
+     5    │ - import·{·useTransition·}·from·"react";
+     6    │ - import·{·Button·}·from·"@/components/ui/button";
+     7    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";
+     8    │ - 
+     9    │ - export·function·OrgExplorerHeader()·{
+    10    │ - → const·{·t·}·=·useTranslate();
+    11    │ - → return·(
+    12    │ - → → <PageHeader
+    13    │ - → → → title={t("organization.title",·"Org·Explorer")}
+    14    │ - → → → description={t(
+    15    │ - → → → → "organization.description",
+    16    │ - → → → → "Explore·direct·managers,·teams,·and·reporting·relationships·in·your·organization.",
+    17    │ - → → → )}
+    18    │ - → → />
+    19    │ - → );
+    20    │ - }
+    21    │ - 
+    22    │ - export·function·OrgExplorerRetry()·{
+    23    │ - → const·{·t·}·=·useTranslate();
+    24    │ - → const·router·=·useRouter();
+    25    │ - → const·[pending,·startTransition]·=·useTransition();
+    26    │ - → return·(
+    27    │ - → → <Button
+    28    │ - → → → type="button"
+    29    │ - → → → variant="outline"
+    30    │ - → → → disabled={pending}
+    31    │ - → → → aria-busy={pending}
+    32    │ - → → → onClick={()·=>·startTransition(()·=>·router.refresh())}
+    33    │ - → → >
+    34    │ - → → → {t("common.retry",·"Retry")}
+    35    │ - → → </Button>
+    36    │ - → );
+    37    │ - }
+        1 │ + "use·client";␍
+        2 │ + ␍
+        3 │ + import·{·useTranslate·}·from·"@tolgee/react";␍
+        4 │ + import·{·useRouter·}·from·"next/navigation";␍
+        5 │ + import·{·useTransition·}·from·"react";␍
+        6 │ + import·{·Button·}·from·"@/components/ui/button";␍
+        7 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+        8 │ + ␍
+        9 │ + export·function·OrgExplorerHeader()·{␍
+       10 │ + → const·{·t·}·=·useTranslate();␍
+       11 │ + → return·(␍
+       12 │ + → → <PageHeader␍
+       13 │ + → → → title={t("organization.title",·"Org·Explorer")}␍
+       14 │ + → → → description={t(␍
+       15 │ + → → → → "organization.description",␍
+       16 │ + → → → → "Explore·direct·managers,·teams,·and·reporting·relationships·in·your·organization.",␍
+       17 │ + → → → )}␍
+       18 │ + → → />␍
+       19 │ + → );␍
+       20 │ + }␍
+       21 │ + ␍
+       22 │ + export·function·OrgExplorerRetry()·{␍
+       23 │ + → const·{·t·}·=·useTranslate();␍
+       24 │ + → const·router·=·useRouter();␍
+       25 │ + → const·[pending,·startTransition]·=·useTransition();␍
+       26 │ + → return·(␍
+       27 │ + → → <Button␍
+       28 │ + → → → type="button"␍
+       29 │ + → → → variant="outline"␍
+       30 │ + → → → disabled={pending}␍
+       31 │ + → → → aria-busy={pending}␍
+       32 │ + → → → onClick={()·=>·startTransition(()·=>·router.refresh())}␍
+       33 │ + → → >␍
+       34 │ + → → → {t("common.retry",·"Retry")}␍
+       35 │ + → → </Button>␍
+       36 │ + → );␍
+       37 │ + }␍
+    38 38 │   
+  
+
+src\app\[locale]\(app)\organization\org-explorer-load-error.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";
+     2    │ - 
+     3    │ - import·{·useTranslate·}·from·"@tolgee/react";
+     4    │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";
+     5    │ - import·{·Button·}·from·"@/components/ui/button";
+     6    │ - 
+     7    │ - export·function·OrgExplorerLoadError({
+     8    │ - → retry,
+     9    │ - → pending,
+    10    │ - }:·{
+    11    │ - → retry:·()·=>·Promise<void>;
+    12    │ - → pending:·boolean;
+    13    │ - })·{
+    14    │ - → const·{·t·}·=·useTranslate();
+    15    │ - → return·(
+    16    │ - → → <Alert>
+    17    │ - → → → <AlertDescription·className="flex·flex-wrap·items-center·justify-between·gap-3">
+    18    │ - → → → → <span>
+    19    │ - → → → → → {t("organization.explorer.loadFailed",·"Could·not·load·people.")}
+    20    │ - → → → → </span>
+    21    │ - → → → → <Button
+    22    │ - → → → → → type="button"
+    23    │ - → → → → → variant="outline"
+    24    │ - → → → → → size="sm"
+    25    │ - → → → → → disabled={pending}
+    26    │ - → → → → → aria-busy={pending}
+    27    │ - → → → → → onClick={()·=>·void·retry()}
+    28    │ - → → → → >
+    29    │ - → → → → → {t("common.retry",·"Retry")}
+    30    │ - → → → → </Button>
+    31    │ - → → → </AlertDescription>
+    32    │ - → → </Alert>
+    33    │ - → );
+    34    │ - }
+        1 │ + "use·client";␍
+        2 │ + ␍
+        3 │ + import·{·useTranslate·}·from·"@tolgee/react";␍
+        4 │ + import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";␍
+        5 │ + import·{·Button·}·from·"@/components/ui/button";␍
+        6 │ + ␍
+        7 │ + export·function·OrgExplorerLoadError({␍
+        8 │ + → retry,␍
+        9 │ + → pending,␍
+       10 │ + }:·{␍
+       11 │ + → retry:·()·=>·Promise<void>;␍
+       12 │ + → pending:·boolean;␍
+       13 │ + })·{␍
+       14 │ + → const·{·t·}·=·useTranslate();␍
+       15 │ + → return·(␍
+       16 │ + → → <Alert>␍
+       17 │ + → → → <AlertDescription·className="flex·flex-wrap·items-center·justify-between·gap-3">␍
+       18 │ + → → → → <span>␍
+       19 │ + → → → → → {t("organization.explorer.loadFailed",·"Could·not·load·people.")}␍
+       20 │ + → → → → </span>␍
+       21 │ + → → → → <Button␍
+       22 │ + → → → → → type="button"␍
+       23 │ + → → → → → variant="outline"␍
+       24 │ + → → → → → size="sm"␍
+       25 │ + → → → → → disabled={pending}␍
+       26 │ + → → → → → aria-busy={pending}␍
+       27 │ + → → → → → onClick={()·=>·void·retry()}␍
+       28 │ + → → → → >␍
+       29 │ + → → → → → {t("common.retry",·"Retry")}␍
+       30 │ + → → → → </Button>␍
+       31 │ + → → → </AlertDescription>␍
+       32 │ + → → </Alert>␍
+       33 │ + → );␍
+       34 │ + }␍
+    35 35 │   
+  
+
+src\app\[locale]\(app)\organization\org-explorer-person-panel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·IconMail,·IconPencil,·IconUsersGroup·}·from·"@tabler/icons-react";
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      5     │ - import·{·useId·}·from·"react";
+      6     │ - import·{
+      7     │ - → ActionPanelBody,
+      8     │ - → ActionPanelHeader,
+      9     │ - }·from·"@/components/ui/action-panel";
+     10     │ - import·{·Badge·}·from·"@/components/ui/badge";
+     11     │ - import·{·buttonVariants·}·from·"@/components/ui/button-variants";
+     12     │ - import·{
+     13     │ - → Sheet,
+     14     │ - → SheetContent,
+     15     │ - → SheetDescription,
+     16     │ - → SheetHeader,
+     17     │ - → SheetTitle,
+     18     │ - }·from·"@/components/ui/sheet";
+     19     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";
+     20     │ - import·{·cn·}·from·"@/lib/utils";
+     21     │ - import·{·Link·}·from·"@/navigation";
+     22     │ - import·{·OrgExplorerLoadError·}·from·"./org-explorer-load-error";
+     23     │ - import·{·PersonAvatar,·PersonButton·}·from·"./org-explorer-person";
+     24     │ - import·{·personDisplayName·}·from·"./org-explorer-person-name";
+     25     │ - import·type·{·OrgExplorerPerson·}·from·"./org-explorer-types";
+     26     │ - 
+     27     │ - export·type·PersonPanelProps·=·{
+     28     │ - → employeeId:·string·|·null;
+     29     │ - → peopleById:·ReadonlyMap<string,·OrgExplorerPerson>;
+     30     │ - → teamNamesById:·ReadonlyMap<string,·string>;
+     31     │ - → canManage:·boolean;
+     32     │ - → side:·"right"·|·"bottom";
+     33     │ - → onSelect:·(employeeId:·string)·=>·void;
+     34     │ - → onClose:·()·=>·void;
+     35     │ - → loadError?:·{·retry:·()·=>·Promise<void>;·pending:·boolean·};
+     36     │ - };
+     37     │ - 
+     38     │ - /**
+     39     │ - ·*·A·person's·details:·managers·(primary·first),·direct·reports,·team
+     40     │ - ·*·memberships·with·the·primary·team·marked,·and·email.·Admins·also·get·links
+     41     │ - ·*·to·the·existing·settings·screens:·the·employee,·and·each·of·their·teams.
+     42     │ - ·*·Read-only.
+     43     │ - ·*/
+     44     │ - export·function·PersonPanel(props:·PersonPanelProps)·{
+     45     │ - → const·{·t·}·=·useTranslate();
+     46     │ - → const·person·=·props.employeeId
+     47     │ - → → ?·props.peopleById.get(props.employeeId)
+     48     │ - → → :·undefined;
+     49     │ - 
+     50     │ - → return·(
+     51     │ - → → <Sheet
+     52     │ - → → → onOpenChange={(open)·=>·{
+     53     │ - → → → → if·(!open)·props.onClose();
+     54     │ - → → → }}
+     55     │ - → → → open={props.employeeId·!==·null}
+     56     │ - → → >
+     57     │ - → → → <SheetContent
+     58     │ - → → → → className={cn(
+     59     │ - → → → → → "overflow-y-auto",
+     60     │ - → → → → → props.side·===·"bottom"
+     61     │ - → → → → → → ?·"max-h-[85dvh]·rounded-t-xl"
+     62     │ - → → → → → → :·"w-full·sm:max-w-md",
+     63     │ - → → → → )}
+     64     │ - → → → → side={props.side}
+     65     │ - → → → >
+     66     │ - → → → → {person·?·(
+     67     │ - → → → → → <PersonDetails·{...props}·person={person}·/>
+     68     │ - → → → → )·:·(
+     69     │ - → → → → → <SheetHeader>
+     70     │ - → → → → → → <SheetTitle>
+     71     │ - → → → → → → → {props.loadError
+     72     │ - → → → → → → → → ?·t(
+     73     │ - → → → → → → → → → → "organization.explorer.panel.description",
+     74     │ - → → → → → → → → → → "Reporting·lines·and·teams",
+     75     │ - → → → → → → → → → )
+     76     │ - → → → → → → → → :·t("organization.explorer.panel.loading",·"Loading·person…")}
+     77     │ - → → → → → → </SheetTitle>
+     78     │ - → → → → → → <SheetDescription·className="sr-only">
+     79     │ - → → → → → → → {t(
+     80     │ - → → → → → → → → "organization.explorer.panel.description",
+     81     │ - → → → → → → → → "Reporting·lines·and·teams",
+     82     │ - → → → → → → → )}
+     83     │ - → → → → → → </SheetDescription>
+     84     │ - → → → → → → {props.loadError·?·(
+     85     │ - → → → → → → → <OrgExplorerLoadError·{...props.loadError}·/>
+     86     │ - → → → → → → )·:·(
+     87     │ - → → → → → → → <Skeleton·className="h-24·w-full"·/>
+     88     │ - → → → → → → )}
+     89     │ - → → → → → </SheetHeader>
+     90     │ - → → → → )}
+     91     │ - → → → </SheetContent>
+     92     │ - → → </Sheet>
+     93     │ - → );
+     94     │ - }
+     95     │ - 
+     96     │ - function·PersonDetails({
+     97     │ - → person,
+     98     │ - → peopleById,
+     99     │ - → teamNamesById,
+    100     │ - → canManage,
+    101     │ - → onSelect,
+    102     │ - }:·PersonPanelProps·&·{·person:·OrgExplorerPerson·})·{
+    103     │ - → const·{·t·}·=·useTranslate();
+    104     │ - 
+    105     │ - → return·(
+    106     │ - → → <>
+    107     │ - → → → <ActionPanelHeader>
+    108     │ - → → → → <div·className="flex·items-center·gap-3">
+    109     │ - → → → → → <PersonAvatar·person={person}·size="md"·/>
+    110     │ - → → → → → <div·className="min-w-0">
+    111     │ - → → → → → → <SheetTitle·className="break-words·text-lg">
+    112     │ - → → → → → → → {personDisplayName(person)}
+    113     │ - → → → → → → </SheetTitle>
+    114     │ - → → → → → → <SheetDescription>
+    115     │ - → → → → → → → {person.position·??
+    116     │ - → → → → → → → → t(
+    117     │ - → → → → → → → → → "organization.explorer.panel.description",
+    118     │ - → → → → → → → → → "Reporting·lines·and·teams",
+    119     │ - → → → → → → → → )}
+    120     │ - → → → → → → </SheetDescription>
+    121     │ - → → → → → </div>
+    122     │ - → → → → </div>
+    123     │ - → → → </ActionPanelHeader>
+    124     │ - → → → <ActionPanelBody·className="flex·flex-col·gap-5">
+    125     │ - → → → → <PanelSection
+    126     │ - → → → → → title={t("organization.explorer.panel.managers",·"Managers")}
+    127     │ - → → → → >
+    128     │ - → → → → → <PeopleList
+    129     │ - → → → → → → empty={t("organization.explorer.panel.noManager",·"No·manager")}
+    130     │ - → → → → → → ids={person.managerIds}
+    131     │ - → → → → → → onSelect={onSelect}
+    132     │ - → → → → → → peopleById={peopleById}
+    133     │ - → → → → → → renderMark={(managerId)·=>
+    134     │ - → → → → → → → managerId·===·person.primaryManagerId·?·(
+    135     │ - → → → → → → → → <Badge·className="shrink-0"·variant="secondary">
+    136     │ - → → → → → → → → → {t(
+    137     │ - → → → → → → → → → → "organization.explorer.panel.primaryManager",
+    138     │ - → → → → → → → → → → "Primary·manager",
+    139     │ - → → → → → → → → → )}
+    140     │ - → → → → → → → → </Badge>
+    141     │ - → → → → → → → )·:·null
+    142     │ - → → → → → → }
+    143     │ - → → → → → />
+    144     │ - → → → → </PanelSection>
+    145     │ - → → → → <PanelSection
+    146     │ - → → → → → title={t(
+    147     │ - → → → → → → "organization.explorer.panel.directReports",
+    148     │ - → → → → → → "Direct·reports",
+    149     │ - → → → → → )}
+    150     │ - → → → → >
+  449 more lines truncated
+  
+
+src\app\[locale]\(app)\organization\org-explorer-reporting-lines.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{
+      4     │ - → IconChevronDown,
+      5     │ - → IconChevronRight,
+      6     │ - → IconUsers,
+      7     │ - }·from·"@tabler/icons-react";
+      8     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      9     │ - import·{
+     10     │ - → Background,
+     11     │ - → Controls,
+     12     │ - → type·Edge,
+     13     │ - → Handle,
+     14     │ - → type·Node,
+     15     │ - → type·NodeProps,
+     16     │ - → Position,
+     17     │ - → ReactFlow,
+     18     │ - → useReactFlow,
+     19     │ - }·from·"@xyflow/react";
+     20     │ - import·"@xyflow/react/dist/style.css";
+     21     │ - import·{·useEffect,·useId,·useRef·}·from·"react";
+     22     │ - import·{·Button·}·from·"@/components/ui/button";
+     23     │ - import·{·cn·}·from·"@/lib/utils";
+     24     │ - import·{
+     25     │ - → layoutReportingTree,
+     26     │ - → PERSON_CARD_HEIGHT,
+     27     │ - → PERSON_CARD_WIDTH,
+     28     │ - }·from·"./org-explorer-layout";
+     29     │ - import·{·PersonAvatar,·PersonButton,·TeamChips·}·from·"./org-explorer-person";
+     30     │ - import·{·personDisplayName·}·from·"./org-explorer-person-name";
+     31     │ - import·{·type·ReportingTree,·visibleTreeIds·}·from·"./org-explorer-tree";
+     32     │ - import·{·nextPageSize,·type·OrgExplorerPerson·}·from·"./org-explorer-types";
+     33     │ - 
+     34     │ - export·type·CenterRequest·=·{·employeeId:·string;·nonce:·number·};
+     35     │ - 
+     36     │ - /**·How·a·person·shows·while·the·team·filter·is·on.·*/
+     37     │ - export·type·Highlight·=·"none"·|·"match"·|·"path"·|·"dimmed";
+     38     │ - 
+     39     │ - export·type·ReportingLinesProps·=·{
+     40     │ - → tree:·ReportingTree;
+     41     │ - → peopleById:·ReadonlyMap<string,·OrgExplorerPerson>;
+     42     │ - → teamNamesById:·ReadonlyMap<string,·string>;
+     43     │ - → openIds:·ReadonlySet<string>;
+     44     │ - → highlightOf:·(employeeId:·string)·=>·Highlight;
+     45     │ - → selectedId:·string·|·null;
+     46     │ - → loadingIds:·ReadonlySet<string>;
+     47     │ - → /**·The·person·to·centre·on·once·they·are·laid·out.·A·new·nonce·asks·again.·*/
+     48     │ - → centerRequest:·CenterRequest·|·null;
+     49     │ - → onSelect:·(employeeId:·string)·=>·void;
+     50     │ - → onToggle:·(employeeId:·string)·=>·void;
+     51     │ - };
+     52     │ - 
+     53     │ - type·PersonNodeData·=·{
+     54     │ - → person:·OrgExplorerPerson;
+     55     │ - → isOpen:·boolean;
+     56     │ - → isLoading:·boolean;
+     57     │ - → isSelected:·boolean;
+     58     │ - → highlight:·Highlight;
+     59     │ - → teamNamesById:·ReadonlyMap<string,·string>;
+     60     │ - → onSelect:·(employeeId:·string)·=>·void;
+     61     │ - → onToggle:·(employeeId:·string)·=>·void;
+     62     │ - };
+     63     │ - 
+     64     │ - type·PersonFlowNode·=·Node<PersonNodeData,·"person">;
+     65     │ - 
+     66     │ - const·FLOW_PADDING·=·0.18;
+     67     │ - const·FLOW_MIN_ZOOM·=·0.2;
+     68     │ - const·FLOW_MAX_ZOOM·=·1.5;
+     69     │ - const·FLOW_CENTER_ZOOM·=·1.05;
+     70     │ - const·FLOW_CONTROLS_CLASSNAME·=
+     71     │ - → "border·border-border·bg-card·text-card-foreground·shadow-sm·[&_.react-flow__controls-button]:border-border·[&_.react-flow__controls-button]:bg-card·[&_.react-flow__controls-button]:text-card-foreground·[&_.react-flow__controls-button:hover]:bg-accent·[&_.react-flow__controls-button:hover]:text-accent-foreground·[&_.react-flow__controls-button_svg]:fill-current";
+     72     │ - 
+     73     │ - const·nodeTypes·=·{·person:·PersonFlowCard·};
+     74     │ - 
+     75     │ - /**·The·reporting·lines·as·a·pan-and-zoom·tree·of·cards.·*/
+     76     │ - export·function·ReportingLinesCanvas(props:·ReportingLinesProps)·{
+     77     │ - → const·{·t·}·=·useTranslate();
+     78     │ - → const·reactFlow·=·useReactFlow();
+     79     │ - → const·visibleIds·=·visibleTreeIds(props.tree,·props.openIds);
+     80     │ - → const·layout·=·layoutReportingTree(props.tree,·visibleIds);
+     81     │ - 
+     82     │ - → const·nodes·=·visibleIds.flatMap<PersonFlowNode>((id)·=>·{
+     83     │ - → → const·person·=·props.peopleById.get(id);
+     84     │ - → → const·position·=·layout.positions.get(id);
+     85     │ - → → if·(!person·||·!position)·return·[];
+     86     │ - → → return·[
+     87     │ - → → → {
+     88     │ - → → → → id,
+     89     │ - → → → → type:·"person",
+     90     │ - → → → → position,
+     91     │ - → → → → draggable:·false,
+     92     │ - → → → → connectable:·false,
+     93     │ - → → → → data:·{
+     94     │ - → → → → → person,
+     95     │ - → → → → → isOpen:·props.openIds.has(id),
+     96     │ - → → → → → isLoading:·props.loadingIds.has(id),
+     97     │ - → → → → → isSelected:·props.selectedId·===·id,
+     98     │ - → → → → → highlight:·props.highlightOf(id),
+     99     │ - → → → → → teamNamesById:·props.teamNamesById,
+    100     │ - → → → → → onSelect:·props.onSelect,
+    101     │ - → → → → → onToggle:·props.onToggle,
+    102     │ - → → → → },
+    103     │ - → → → },
+    104     │ - → → ];
+    105     │ - → });
+    106     │ - → const·edges·=·layout.edges.map<Edge>((edge)·=>·({
+    107     │ - → → id:·`${edge.source}->${edge.target}`,
+    108     │ - → → source:·edge.source,
+    109     │ - → → target:·edge.target,
+    110     │ - → → type:·"smoothstep",
+    111     │ - → → style:·{
+    112     │ - → → → stroke:·"var(--muted-foreground)",
+    113     │ - → → → strokeWidth:·1.5,
+    114     │ - → → → opacity:·props.highlightOf(edge.target)·===·"dimmed"·?·0.3·:·0.7,
+    115     │ - → → },
+    116     │ - → }));
+    117     │ - 
+    118     │ - → const·centerRequest·=·props.centerRequest;
+    119     │ - → const·centerPosition·=·centerRequest
+    120     │ - → → ?·layout.positions.get(centerRequest.employeeId)
+    121     │ - → → :·undefined;
+    122     │ - → const·centerX·=·centerPosition?.x;
+    123     │ - → const·centerY·=·centerPosition?.y;
+    124     │ - → const·centeredNonce·=·useRef<number·|·null>(null);
+    125     │ - → useEffect(()·=>·{
+    126     │ - → → if·(!centerRequest·||·centerX·===·undefined·||·centerY·===·undefined)
+    127     │ - → → → return;
+    128     │ - → → if·(centeredNonce.current·===·centerRequest.nonce)·return;
+    129     │ - → → const·frame·=·window.requestAnimationFrame(()·=>·{
+    130     │ - → → → centeredNonce.current·=·centerRequest.nonce;
+    131     │ - → → → reactFlow.setCenter(
+    132     │ - → → → → centerX·+·PERSON_CARD_WIDTH·/·2,
+    133     │ - → → → → centerY·+·PERSON_CARD_HEIGHT·/·2,
+    134     │ - → → → → {
+    135     │ - → → → → → zoom:·FLOW_CENTER_ZOOM,
+    136     │ - → → → → → duration:·window.matchMedia?.("(prefers-reduced-motion:·reduce)")
+    137     │ - → → → → → → ?.matches
+    138     │ - → → → → → → ?·0
+    139     │ - → → → → → → :·240,
+    140     │ - → → → → },
+    141     │ - → → → );
+    142     │ - → → });
+    143     │ - → → return·()·=>·window.cancelAnimationFrame(frame);
+    144     │ - → },·[centerRequest,·centerX,·centerY,·reactFlow]);
+    145     │ - 
+    146     │ - → return·(
+    147     │ - → → <div·className="h-[clamp(28rem,62dvh,48rem)]·overflow-hidden·rounded-lg·border·bg-card">
+    148     │ - → → → <ReactFlow
+    149     │ - → → → → aria-label={t(
+    150     │ - → → → → → "organization.explorer.reportingLines",
+  729 more lines truncated
+  
+
+src\app\[locale]\(app)\organization\org-explorer-teams-view.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      4     │ - import·{·useId·}·from·"react";
+      5     │ - import·{·Badge·}·from·"@/components/ui/badge";
+      6     │ - import·{·Button·}·from·"@/components/ui/button";
+      7     │ - import·{·PersonButton·}·from·"./org-explorer-person";
+      8     │ - import·type·{·GroupedTeams,·TeamCard·}·from·"./org-explorer-teams";
+      9     │ - import·{·nextPageSize,·type·OrgExplorerPerson·}·from·"./org-explorer-types";
+     10     │ - 
+     11     │ - export·type·TeamsViewProps·=·{
+     12     │ - → grouped:·GroupedTeams;
+     13     │ - → /**·Whether·every·person·is·loaded,·so·nothing·needs·loading·on·request.·*/
+     14     │ - → complete:·boolean;
+     15     │ - → noTeamCount:·number;
+     16     │ - → loadingTeamIds:·ReadonlySet<string>;
+     17     │ - → isNoTeamLoading:·boolean;
+     18     │ - → showNoTeam:·boolean;
+     19     │ - → /**·Whether·a·team·may·have·members·left·to·load.·*/
+     20     │ - → canLoadTeam:·(teamId:·string)·=>·boolean;
+     21     │ - → /**·Whether·the·No·team·group·may·have·people·left·to·load.·*/
+     22     │ - → canLoadNoTeam:·boolean;
+     23     │ - → onSelect:·(employeeId:·string)·=>·void;
+     24     │ - → /**·Loads·the·next·page·of·a·team's·members.·*/
+     25     │ - → onLoadTeam:·(teamId:·string)·=>·void;
+     26     │ - → /**·Loads·the·next·page·of·the·No·team·group.·*/
+     27     │ - → onLoadNoTeam:·()·=>·void;
+     28     │ - };
+     29     │ - 
+     30     │ - /**·A·responsive·grid·of·team·cards,·one·column·on·phones,·with·a·No·team·card·last.·*/
+     31     │ - export·function·TeamsView(props:·TeamsViewProps)·{
+     32     │ - → const·{·t·}·=·useTranslate();
+     33     │ - → const·{·cards,·noTeam·}·=·props.grouped;
+     34     │ - → if·(cards.length·===·0·&&·!props.showNoTeam)·{
+     35     │ - → → return·(
+     36     │ - → → → <p
+     37     │ - → → → → role="status"
+     38     │ - → → → → className="rounded-lg·border·border-dashed·p-6·text-center·text-sm·text-muted-foreground"
+     39     │ - → → → >
+     40     │ - → → → → {t("organization.explorer.noTeamsFound",·"No·teams·found")}
+     41     │ - → → → </p>
+     42     │ - → → );
+     43     │ - → }
+     44     │ - → const·noTeamTotal·=·props.complete
+     45     │ - → → ?·noTeam.length
+     46     │ - → → :·Math.max(props.noTeamCount,·noTeam.length);
+     47     │ - 
+     48     │ - → return·(
+     49     │ - → → <div·className="grid·gap-4·md:grid-cols-2·xl:grid-cols-3">
+     50     │ - → → → {cards.map((card)·=>·(
+     51     │ - → → → → <TeamCardView
+     52     │ - → → → → → card={card}
+     53     │ - → → → → → canLoad={
+     54     │ - → → → → → → !card.allMembersLoaded·&&·props.canLoadTeam(card.team.teamId)
+     55     │ - → → → → → }
+     56     │ - → → → → → isLoading={props.loadingTeamIds.has(card.team.teamId)}
+     57     │ - → → → → → key={card.team.teamId}
+     58     │ - → → → → → onLoad={()·=>·props.onLoadTeam(card.team.teamId)}
+     59     │ - → → → → → onSelect={props.onSelect}
+     60     │ - → → → → />
+     61     │ - → → → ))}
+     62     │ - → → → {props.showNoTeam·?·(
+     63     │ - → → → → <TeamShell
+     64     │ - → → → → → count={noTeamTotal}
+     65     │ - → → → → → description={t(
+     66     │ - → → → → → → "organization.explorer.noTeamDescription",
+     67     │ - → → → → → → "People·without·a·team·membership.",
+     68     │ - → → → → → )}
+     69     │ - → → → → → name={t("organization.explorer.noTeam",·"No·team")}
+     70     │ - → → → → → teamKey="none"
+     71     │ - → → → → >
+     72     │ - → → → → → <MemberList
+     73     │ - → → → → → → canLoad={props.canLoadNoTeam·&&·noTeam.length·<·noTeamTotal}
+     74     │ - → → → → → → isLoading={props.isNoTeamLoading}
+     75     │ - → → → → → → members={noTeam.map((person)·=>·({·person,·isPrimaryTeam:·false·}))}
+     76     │ - → → → → → → total={noTeamTotal}
+     77     │ - → → → → → → onLoad={props.onLoadNoTeam}
+     78     │ - → → → → → → onSelect={props.onSelect}
+     79     │ - → → → → → />
+     80     │ - → → → → </TeamShell>
+     81     │ - → → → )·:·null}
+     82     │ - → → </div>
+     83     │ - → );
+     84     │ - }
+     85     │ - 
+     86     │ - function·TeamCardView({
+     87     │ - → card,
+     88     │ - → canLoad,
+     89     │ - → isLoading,
+     90     │ - → onLoad,
+     91     │ - → onSelect,
+     92     │ - }:·{
+     93     │ - → card:·TeamCard;
+     94     │ - → canLoad:·boolean;
+     95     │ - → isLoading:·boolean;
+     96     │ - → onLoad:·()·=>·void;
+     97     │ - → onSelect:·(employeeId:·string)·=>·void;
+     98     │ - })·{
+     99     │ - → const·{·t·}·=·useTranslate();
+    100     │ - 
+    101     │ - → return·(
+    102     │ - → → <TeamShell
+    103     │ - → → → count={card.team.memberCount}
+    104     │ - → → → description={card.team.description}
+    105     │ - → → → header={
+    106     │ - → → → → <div
+    107     │ - → → → → → className="mt-3·rounded-md·bg-muted/50·p-2"
+    108     │ - → → → → → data-testid="team-lead"
+    109     │ - → → → → >
+    110     │ - → → → → → <p·className="px-2·text-xs·font-medium·text-muted-foreground">
+    111     │ - → → → → → → {t("organization.explorer.teamLead",·"Team·lead")}
+    112     │ - → → → → → </p>
+    113     │ - → → → → → {card.lead·?·(
+    114     │ - → → → → → → <PersonButton·onSelect={onSelect}·person={card.lead}·/>
+    115     │ - → → → → → )·:·(
+    116     │ - → → → → → → <p·className="px-2·py-1.5·text-sm·text-muted-foreground">
+    117     │ - → → → → → → → {t("organization.explorer.noTeamLead",·"No·team·lead")}
+    118     │ - → → → → → → </p>
+    119     │ - → → → → → )}
+    120     │ - → → → → </div>
+    121     │ - → → → }
+    122     │ - → → → name={card.team.name}
+    123     │ - → → → teamKey={card.team.teamId}
+    124     │ - → → >
+    125     │ - → → → <MemberList
+    126     │ - → → → → canLoad={canLoad}
+    127     │ - → → → → isLoading={isLoading}
+    128     │ - → → → → members={card.members}
+    129     │ - → → → → onLoad={onLoad}
+    130     │ - → → → → onSelect={onSelect}
+    131     │ - → → → → total={card.team.memberCount}
+    132     │ - → → → />
+    133     │ - → → </TeamShell>
+    134     │ - → );
+    135     │ - }
+    136     │ - 
+    137     │ - function·TeamShell({
+    138     │ - → teamKey,
+    139     │ - → name,
+    140     │ - → description,
+    141     │ - → count,
+    142     │ - → header,
+    143     │ - → children,
+    144     │ - }:·{
+    145     │ - → teamKey:·string;
+    146     │ - → name:·string;
+    147     │ - → description:·string·|·null;
+    148     │ - → count:·number;
+    149     │ - → header?:·React.ReactNode;
+    150     │ - → children:·React.ReactNode;
+  343 more lines truncated
+  
+
+src\app\[locale]\(app)\organization\org-explorer-toolbar.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·IconCheck,·IconFilter,·IconSearch,·IconX·}·from·"@tabler/icons-react";
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      5     │ - import·{·useEffect,·useRef,·useState·}·from·"react";
+      6     │ - import·{·toast·}·from·"sonner";
+      7     │ - import·{·Badge·}·from·"@/components/ui/badge";
+      8     │ - import·{·Button·}·from·"@/components/ui/button";
+      9     │ - import·{
+     10     │ - → Command,
+     11     │ - → CommandEmpty,
+     12     │ - → CommandGroup,
+     13     │ - → CommandInput,
+     14     │ - → CommandItem,
+     15     │ - → CommandList,
+     16     │ - }·from·"@/components/ui/command";
+     17     │ - import·{
+     18     │ - → Popover,
+     19     │ - → PopoverContent,
+     20     │ - → PopoverTrigger,
+     21     │ - }·from·"@/components/ui/popover";
+     22     │ - import·{·ToggleGroup,·ToggleGroupItem·}·from·"@/components/ui/toggle-group";
+     23     │ - import·{·UserAvatar·}·from·"@/components/user-avatar";
+     24     │ - import·{·cn·}·from·"@/lib/utils";
+     25     │ - import·{·searchOrgEmployees·}·from·"./actions";
+     26     │ - import·{·personDisplayName·}·from·"./org-explorer-person-name";
+     27     │ - import·type·{
+     28     │ - → OrgExplorerSearchResult,
+     29     │ - → OrgExplorerTeam,
+     30     │ - }·from·"./org-explorer-types";
+     31     │ - import·type·{·OrgExplorerView·}·from·"./org-explorer-url";
+     32     │ - 
+     33     │ - export·function·ViewSwitch({
+     34     │ - → view,
+     35     │ - → onChange,
+     36     │ - }:·{
+     37     │ - → view:·OrgExplorerView;
+     38     │ - → onChange:·(view:·OrgExplorerView)·=>·void;
+     39     │ - })·{
+     40     │ - → const·{·t·}·=·useTranslate();
+     41     │ - 
+     42     │ - → return·(
+     43     │ - → → <ToggleGroup
+     44     │ - → → → aria-label={t("organization.explorer.views",·"Views")}
+     45     │ - → → → onValueChange={(value)·=>·{
+     46     │ - → → → → if·(value·===·"reporting-lines"·||·value·===·"teams")·onChange(value);
+     47     │ - → → → }}
+     48     │ - → → → type="single"
+     49     │ - → → → value={view}
+     50     │ - → → → variant="outline"
+     51     │ - → → >
+     52     │ - → → → <ToggleGroupItem·value="reporting-lines">
+     53     │ - → → → → {t("organization.explorer.reportingLines",·"Reporting·lines")}
+     54     │ - → → → </ToggleGroupItem>
+     55     │ - → → → <ToggleGroupItem·value="teams">
+     56     │ - → → → → {t("organization.explorer.teams",·"Teams")}
+     57     │ - → → → </ToggleGroupItem>
+     58     │ - → → </ToggleGroup>
+     59     │ - → );
+     60     │ - }
+     61     │ - 
+     62     │ - /**·A·multi-select·of·teams.·*/
+     63     │ - export·function·TeamFilter({
+     64     │ - → teams,
+     65     │ - → selectedIds,
+     66     │ - → onChange,
+     67     │ - }:·{
+     68     │ - → teams:·OrgExplorerTeam[];
+     69     │ - → selectedIds:·string[];
+     70     │ - → onChange:·(teamIds:·string[])·=>·void;
+     71     │ - })·{
+     72     │ - → const·{·t·}·=·useTranslate();
+     73     │ - → const·selected·=·new·Set(selectedIds);
+     74     │ - 
+     75     │ - → return·(
+     76     │ - → → <div·className="flex·items-center·gap-1">
+     77     │ - → → → <Popover>
+     78     │ - → → → → <PopoverTrigger·asChild>
+     79     │ - → → → → → <Button·className="gap-2"·type="button"·variant="outline">
+     80     │ - → → → → → → <IconFilter·aria-hidden="true"·className="size-4"·/>
+     81     │ - → → → → → → {t("organization.explorer.filterByTeam",·"Filter·by·team")}
+     82     │ - → → → → → → {selected.size·>·0·?·(
+     83     │ - → → → → → → → <Badge
+     84     │ - → → → → → → → → className="h-5·min-w-5·justify-center·px-1.5"
+     85     │ - → → → → → → → → variant="secondary"
+     86     │ - → → → → → → → >
+     87     │ - → → → → → → → → {selected.size}
+     88     │ - → → → → → → → </Badge>
+     89     │ - → → → → → → )·:·null}
+     90     │ - → → → → → </Button>
+     91     │ - → → → → </PopoverTrigger>
+     92     │ - → → → → <PopoverContent·align="start"·className="w-72·p-0">
+     93     │ - → → → → → <Command>
+     94     │ - → → → → → → <CommandInput
+     95     │ - → → → → → → → placeholder={t(
+     96     │ - → → → → → → → → "organization.explorer.searchTeams",
+     97     │ - → → → → → → → → "Search·teams…",
+     98     │ - → → → → → → → )}
+     99     │ - → → → → → → />
+    100     │ - → → → → → → <CommandList>
+    101     │ - → → → → → → → <CommandEmpty>
+    102     │ - → → → → → → → → {t("organization.explorer.noTeamsFound",·"No·teams·found")}
+    103     │ - → → → → → → → </CommandEmpty>
+    104     │ - → → → → → → → <CommandGroup>
+    105     │ - → → → → → → → → {teams.map((team)·=>·{
+    106     │ - → → → → → → → → → const·isSelected·=·selected.has(team.teamId);
+    107     │ - → → → → → → → → → return·(
+    108     │ - → → → → → → → → → → <CommandItem
+    109     │ - → → → → → → → → → → → data-checked={isSelected}
+    110     │ - → → → → → → → → → → → key={team.teamId}
+    111     │ - → → → → → → → → → → → onSelect={()·=>
+    112     │ - → → → → → → → → → → → → onChange(
+    113     │ - → → → → → → → → → → → → → isSelected
+    114     │ - → → → → → → → → → → → → → → ?·selectedIds.filter((id)·=>·id·!==·team.teamId)
+    115     │ - → → → → → → → → → → → → → → :·[...selectedIds,·team.teamId],
+    116     │ - → → → → → → → → → → → → )
+    117     │ - → → → → → → → → → → → }
+    118     │ - → → → → → → → → → → → value={`${team.name}·${team.teamId}`}
+    119     │ - → → → → → → → → → → >
+    120     │ - → → → → → → → → → → → <IconCheck
+    121     │ - → → → → → → → → → → → → aria-hidden="true"
+    122     │ - → → → → → → → → → → → → className={cn(
+    123     │ - → → → → → → → → → → → → → "size-4",
+    124     │ - → → → → → → → → → → → → → isSelected·?·"opacity-100"·:·"opacity-0",
+    125     │ - → → → → → → → → → → → → )}
+    126     │ - → → → → → → → → → → → />
+    127     │ - → → → → → → → → → → → <span·className="truncate">{team.name}</span>
+    128     │ - → → → → → → → → → → </CommandItem>
+    129     │ - → → → → → → → → → );
+    130     │ - → → → → → → → → })}
+    131     │ - → → → → → → → </CommandGroup>
+    132     │ - → → → → → → </CommandList>
+    133     │ - → → → → → </Command>
+    134     │ - → → → → </PopoverContent>
+    135     │ - → → → </Popover>
+    136     │ - → → → {selected.size·>·0·?·(
+    137     │ - → → → → <Button
+    138     │ - → → → → → aria-label={t("organization.explorer.clearFilter",·"Clear·filter")}
+    139     │ - → → → → → onClick={()·=>·onChange([])}
+    140     │ - → → → → → size="icon"
+    141     │ - → → → → → type="button"
+    142     │ - → → → → → variant="ghost"
+    143     │ - → → → → >
+    144     │ - → → → → → <IconX·aria-hidden="true"·className="size-4"·/>
+    145     │ - → → → → </Button>
+    146     │ - → → → )·:·null}
+    147     │ - → → </div>
+    148     │ - → );
+    149     │ - }
+    150     │ - 
+  453 more lines truncated
+  
+
+src\app\[locale]\(app)\organization\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·connection·}·from·"next/server";
+     2    │ - import·{·Suspense·}·from·"react";
+     3    │ - import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";
+     4    │ - import·{·Alert,·AlertDescription,·AlertTitle·}·from·"@/components/ui/alert";
+     5    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";
+     6    │ - import·{·getCurrentSettingsAccessTier·}·from·"@/lib/auth-helpers";
+     7    │ - import·{·getTranslate·}·from·"@/tolgee/server";
+     8    │ - import·{·getOrgExplorerData·}·from·"./actions";
+     9    │ - import·{·OrgExplorerClient·}·from·"./org-explorer-client";
+    10    │ - import·{·OrgExplorerHeader,·OrgExplorerRetry·}·from·"./org-explorer-header";
+    11    │ - 
+    12    │ - async·function·OrganizationPageContent()·{
+    13    │ - → //·The·Effect·runtime·must·execute·per·request·outside·the·prerendered·shell.
+    14    │ - → await·connection();
+    15    │ - → const·[t,·result,·accessTier]·=·await·Promise.all([
+    16    │ - → → getTranslate(),
+    17    │ - → → getOrgExplorerData(),
+    18    │ - → → getCurrentSettingsAccessTier(),
+    19    │ - → ]);
+    20    │ - → if·(!result.success)·{
+    21    │ - → → if·(result.code·===·"NotFoundError")·{
+    22    │ - → → → return·(
+    23    │ - → → → → <NoEmployeeError
+    24    │ - → → → → → feature={t("organization.feature",·"explore·your·organization")}
+    25    │ - → → → → />
+    26    │ - → → → );
+    27    │ - → → }
+    28    │ - → → return·(
+    29    │ - → → → <Alert·variant="destructive"·className="max-w-xl">
+    30    │ - → → → → <AlertTitle>
+    31    │ - → → → → → {t("organization.error.title",·"Unable·to·load·organization")}
+    32    │ - → → → → </AlertTitle>
+    33    │ - → → → → <AlertDescription·className="space-y-3">
+    34    │ - → → → → → <p>
+    35    │ - → → → → → → {t(
+    36    │ - → → → → → → → "organization.error.description",
+    37    │ - → → → → → → → "The·organization·chart·could·not·be·loaded.·Please·try·again.",
+    38    │ - → → → → → → )}
+    39    │ - → → → → → </p>
+    40    │ - → → → → → <OrgExplorerRetry·/>
+    41    │ - → → → → </AlertDescription>
+    42    │ - → → → </Alert>
+    43    │ - → → );
+    44    │ - → }
+    45    │ - → return·(
+    46    │ - → → <OrgExplorerClient
+    47    │ - → → → key={result.data.viewerEmployeeId}
+    48    │ - → → → canManage={accessTier·===·"orgAdmin"}
+    49    │ - → → → initialData={result.data}
+    50    │ - → → />
+    51    │ - → );
+    52    │ - }
+    53    │ - 
+    54    │ - export·default·function·OrganizationPage()·{
+    55    │ - → return·(
+    56    │ - → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·px-4·py-4·md:py-6·lg:px-6">
+    57    │ - → → → <OrgExplorerHeader·/>
+    58    │ - → → → <Suspense
+    59    │ - → → → → fallback={
+    60    │ - → → → → → <div·role="status"·aria-busy="true"·className="space-y-4">
+    61    │ - → → → → → → <Skeleton·className="h-12·w-full"·/>
+    62    │ - → → → → → → <Skeleton·className="h-[60dvh]·w-full"·/>
+    63    │ - → → → → → </div>
+    64    │ - → → → → }
+    65    │ - → → → >
+    66    │ - → → → → <OrganizationPageContent·/>
+    67    │ - → → → </Suspense>
+    68    │ - → → </div>
+    69    │ - → );
+    70    │ - }
+        1 │ + import·{·connection·}·from·"next/server";␍
+        2 │ + import·{·Suspense·}·from·"react";␍
+        3 │ + import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";␍
+        4 │ + import·{·Alert,·AlertDescription,·AlertTitle·}·from·"@/components/ui/alert";␍
+        5 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+        6 │ + import·{·getCurrentSettingsAccessTier·}·from·"@/lib/auth-helpers";␍
+        7 │ + import·{·getTranslate·}·from·"@/tolgee/server";␍
+        8 │ + import·{·getOrgExplorerData·}·from·"./actions";␍
+        9 │ + import·{·OrgExplorerClient·}·from·"./org-explorer-client";␍
+       10 │ + import·{·OrgExplorerHeader,·OrgExplorerRetry·}·from·"./org-explorer-header";␍
+       11 │ + ␍
+       12 │ + async·function·OrganizationPageContent()·{␍
+       13 │ + → //·The·Effect·runtime·must·execute·per·request·outside·the·prerendered·shell.␍
+       14 │ + → await·connection();␍
+       15 │ + → const·[t,·result,·accessTier]·=·await·Promise.all([␍
+       16 │ + → → getTranslate(),␍
+       17 │ + → → getOrgExplorerData(),␍
+       18 │ + → → getCurrentSettingsAccessTier(),␍
+       19 │ + → ]);␍
+       20 │ + → if·(!result.success)·{␍
+       21 │ + → → if·(result.code·===·"NotFoundError")·{␍
+       22 │ + → → → return·(␍
+       23 │ + → → → → <NoEmployeeError␍
+       24 │ + → → → → → feature={t("organization.feature",·"explore·your·organization")}␍
+       25 │ + → → → → />␍
+       26 │ + → → → );␍
+       27 │ + → → }␍
+       28 │ + → → return·(␍
+       29 │ + → → → <Alert·variant="destructive"·className="max-w-xl">␍
+       30 │ + → → → → <AlertTitle>␍
+       31 │ + → → → → → {t("organization.error.title",·"Unable·to·load·organization")}␍
+       32 │ + → → → → </AlertTitle>␍
+       33 │ + → → → → <AlertDescription·className="space-y-3">␍
+       34 │ + → → → → → <p>␍
+       35 │ + → → → → → → {t(␍
+       36 │ + → → → → → → → "organization.error.description",␍
+       37 │ + → → → → → → → "The·organization·chart·could·not·be·loaded.·Please·try·again.",␍
+       38 │ + → → → → → → )}␍
+       39 │ + → → → → → </p>␍
+       40 │ + → → → → → <OrgExplorerRetry·/>␍
+       41 │ + → → → → </AlertDescription>␍
+       42 │ + → → → </Alert>␍
+       43 │ + → → );␍
+       44 │ + → }␍
+       45 │ + → return·(␍
+       46 │ + → → <OrgExplorerClient␍
+       47 │ + → → → key={result.data.viewerEmployeeId}␍
+       48 │ + → → → canManage={accessTier·===·"orgAdmin"}␍
+       49 │ + → → → initialData={result.data}␍
+       50 │ + → → />␍
+       51 │ + → );␍
+       52 │ + }␍
+       53 │ + ␍
+       54 │ + export·default·function·OrganizationPage()·{␍
+       55 │ + → return·(␍
+       56 │ + → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·px-4·py-4·md:py-6·lg:px-6">␍
+       57 │ + → → → <OrgExplorerHeader·/>␍
+       58 │ + → → → <Suspense␍
+       59 │ + → → → → fallback={␍
+       60 │ + → → → → → <div·role="status"·aria-busy="true"·className="space-y-4">␍
+       61 │ + → → → → → → <Skeleton·className="h-12·w-full"·/>␍
+       62 │ + → → → → → → <Skeleton·className="h-[60dvh]·w-full"·/>␍
+       63 │ + → → → → → </div>␍
+       64 │ + → → → → }␍
+       65 │ + → → → >␍
+       66 │ + → → → → <OrganizationPageContent·/>␍
+       67 │ + → → → </Suspense>␍
+       68 │ + → → </div>␍
+       69 │ + → );␍
+       70 │ + }␍
+    71 71 │   
+  
+
+src\app\[locale]\(app)\organization\use-org-explorer-people.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      4     │ - import·{·useEffect,·useRef,·useState·}·from·"react";
+      5     │ - import·{·toast·}·from·"sonner";
+      6     │ - import·{·useViewRefresh·}·from·"@/components/providers/view-refresh-provider";
+      7     │ - import·{·mapConcurrently·}·from·"@/lib/async/map-concurrently";
+      8     │ - import·type·{·ServerActionResult·}·from·"@/lib/effect/result";
+      9     │ - import·{
+     10     │ - → getOrgExplorerData,
+     11     │ - → getOrgExplorerGroup,
+     12     │ - → getOrgExplorerPeople,
+     13     │ - → getOrgExplorerTeamMembers,
+     14     │ - }·from·"./actions";
+     15     │ - import·{
+     16     │ - → ORG_EXPLORER_BATCH_LIMIT,
+     17     │ - → type·OrgExplorerData,
+     18     │ - → type·OrgExplorerGroup,
+     19     │ - → type·OrgExplorerPerson,
+     20     │ - }·from·"./org-explorer-types";
+     21     │ - 
+     22     │ - export·type·OrgExplorerSummary·=·Omit<OrgExplorerData,·"people">;
+     23     │ - 
+     24     │ - export·type·OrgExplorerPeopleLoader·=·ReturnType<typeof·useOrgExplorerPeople>;
+     25     │ - 
+     26     │ - /**
+     27     │ - ·*·Where·the·next·page·of·a·team's·members·or·of·a·group·starts:·absent·before
+     28     │ - ·*·the·first·page,·null·once·everything·is·loaded.
+     29     │ - ·*/
+     30     │ - type·NextOffsets<K>·=·ReadonlyMap<K,·number·|·null>;
+     31     │ - 
+     32     │ - /**
+     33     │ - ·*·The·people·the·Org·Explorer·has·loaded·and·what·is·loading.·A·complete
+     34     │ - ·*·organization·has·everyone·from·the·start.·A·large·one·loads·people·by·id,
+     35     │ - ·*·the·reports·below·a·person,·and·teams'·members·and·the·unplaced·groups·a
+     36     │ - ·*·page·at·a·time.
+     37     │ - ·*/
+     38     │ - export·function·useOrgExplorerPeople(initialData:·OrgExplorerData)·{
+     39     │ - → const·{·t·}·=·useTranslate();
+     40     │ - → const·generation·=·useRef(0);
+     41     │ - → const·[failedLoads,·setFailedLoads]·=·useState<
+     42     │ - → → ReadonlyMap<string,·()·=>·Promise<void>>
+     43     │ - → >(()·=>·new·Map());
+     44     │ - → const·[isRetrying,·setIsRetrying]·=·useState(false);
+     45     │ - → const·[summary,·setSummary]·=·useState<OrgExplorerSummary>(()·=>
+     46     │ - → → summaryOf(initialData),
+     47     │ - → );
+     48     │ - → const·[peopleById,·setPeopleById]·=·useState(()·=>
+     49     │ - → → toPeopleMap(initialData.people),
+     50     │ - → );
+     51     │ - → //·The·latest·people·between·renders,·so·loads·that·finish·one·after·another·all·merge.
+     52     │ - → const·peopleRef·=·useRef(peopleById);
+     53     │ - → const·pendingLoads·=·useRef(new·Map<string,·Promise<void>>());
+     54     │ - → //·Pages·on·their·way,·so·a·second·click·does·not·ask·for·the·same·page·again.
+     55     │ - → const·pendingPages·=·useRef(new·Set<string>());
+     56     │ - → useEffect(
+     57     │ - → → ()·=>·()·=>·{
+     58     │ - → → → generation.current·+=·1;
+     59     │ - → → → //·Effect·replay·/·cached-route·return·must·not·wait·on·a·discarded·generation.
+     60     │ - → → → pendingLoads.current.clear();
+     61     │ - → → → pendingPages.current.clear();
+     62     │ - → → },
+     63     │ - → → [],
+     64     │ - → );
+     65     │ - → const·[unknownIds,·setUnknownIds]·=·useState<ReadonlySet<string>>(
+     66     │ - → → ()·=>·new·Set(),
+     67     │ - → );
+     68     │ - → const·[loadingIds,·setLoadingIds]·=·useState<ReadonlySet<string>>(
+     69     │ - → → ()·=>·new·Set(),
+     70     │ - → );
+     71     │ - → const·[loadingTeamIds,·setLoadingTeamIds]·=·useState<ReadonlySet<string>>(
+     72     │ - → → ()·=>·new·Set(),
+     73     │ - → );
+     74     │ - → const·[loadingGroups,·setLoadingGroups]·=·useState<
+     75     │ - → → ReadonlySet<OrgExplorerGroup>
+     76     │ - → >(()·=>·new·Set());
+     77     │ - → const·[teamOffsets,·setTeamOffsets]·=·useState<NextOffsets<string>>(
+     78     │ - → → ()·=>·new·Map(),
+     79     │ - → );
+     80     │ - → const·[groupOffsets,·setGroupOffsets]·=·useState<
+     81     │ - → → NextOffsets<OrgExplorerGroup>
+     82     │ - → >(()·=>·new·Map());
+     83     │ - 
+     84     │ - → function·showFailure(message:·string·|·undefined)·{
+     85     │ - → → toast.error(
+     86     │ - → → → message·||
+     87     │ - → → → → t("organization.explorer.loadFailed",·"Could·not·load·people."),
+     88     │ - → → );
+     89     │ - → }
+     90     │ - 
+     91     │ - → function·mergePeople(incoming:·OrgExplorerPerson[])·{
+     92     │ - → → if·(incoming.length·===·0)·return;
+     93     │ - → → const·next·=·new·Map(peopleRef.current);
+     94     │ - → → for·(const·entry·of·incoming)·next.set(entry.employeeId,·entry);
+     95     │ - → → peopleRef.current·=·next;
+     96     │ - → → setPeopleById(next);
+     97     │ - → }
+     98     │ - 
+     99     │ - → /**·Only·the·current·mounted·roster·may·accept·a·response,·including·retries.·*/
+    100     │ - → async·function·readPeople<T>(
+    101     │ - → → key:·string,
+    102     │ - → → read:·()·=>·Promise<ServerActionResult<T>>,
+    103     │ - → → accept:·(data:·T)·=>·void,
+    104     │ - → )·{
+    105     │ - → → const·version·=·generation.current;
+    106     │ - → → await·settleRead(key,·async·()·=>·{
+    107     │ - → → → const·result·=·await·read();
+    108     │ - → → → if·(version·!==·generation.current)·return;
+    109     │ - → → → if·(!result.success)·throw·new·Error("Roster·read·failed");
+    110     │ - → → → accept(result.data);
+    111     │ - → → });
+    112     │ - → }
+    113     │ - 
+    114     │ - → const·settleRead·=·async·(key:·string,·read:·()·=>·Promise<void>)·=>·{
+    115     │ - → → const·version·=·generation.current;
+    116     │ - → → try·{
+    117     │ - → → → await·read();
+    118     │ - → → → if·(version·!==·generation.current)·return;
+    119     │ - → → → setFailedLoads((current)·=>·{
+    120     │ - → → → → const·next·=·new·Map(current);
+    121     │ - → → → → next.delete(key);
+    122     │ - → → → → return·next;
+    123     │ - → → → });
+    124     │ - → → }·catch·{
+    125     │ - → → → if·(version·!==·generation.current)·return;
+    126     │ - → → → setFailedLoads((current)·=>·new·Map(current).set(key,·read));
+    127     │ - → → → showFailure(undefined);
+    128     │ - → → }
+    129     │ - → };
+    130     │ - 
+    131     │ - → async·function·retryFailed()·{
+    132     │ - → → if·(isRetrying)·return;
+    133     │ - → → setIsRetrying(true);
+    134     │ - → → await·Promise.all(
+    135     │ - → → → [...failedLoads].map(([key,·read])·=>·settleRead(key,·read)),
+    136     │ - → → ).finally(()·=>·setIsRetrying(false));
+    137     │ - → }
+    138     │ - 
+    139     │ - → /**
+    140     │ - → ·*·Loads·the·people·not·loaded·yet,·and·waits·for·those·already·on·their·way.
+    141     │ - → ·*·A·complete·organization·has·everyone·already.
+    142     │ - → ·*/
+    143     │ - → async·function·loadPeople(
+    144     │ - → → employeeIds:·string[],
+    145     │ - → → options?:·{·withPaths:·true·},
+    146     │ - → )·{
+    147     │ - → → if·(summary.complete)·return;
+    148     │ - → → const·unique·=·[...new·Set(employeeIds)];
+    149     │ - → → const·waiting·=·unique.flatMap((id)·=>·pendingLoads.current.get(id)·??·[]);
+    150     │ - → → const·missing·=·unique.filter(
+  579 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";
+      3     │ - 
+      4     │ - export·type·AppRouteMetadata·=·{
+      5     │ - → id:·string;
+      6     │ - → href:·string;
+      7     │ - → titleKey:·string;
+      8     │ - → titleDefault:·string;
+      9     │ - };
+     10     │ - 
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[
+     12     │ - → {
+     13     │ - → → id:·"dashboard",
+     14     │ - → → href:·"/",
+     15     │ - → → titleKey:·"nav.dashboard",
+     16     │ - → → titleDefault:·"Dashboard",
+     17     │ - → },
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.
+     21     │ - → {
+     22     │ - → → id:·"equipment",
+     23     │ - → → href:·"/equipment",
+     24     │ - → → titleKey:·"nav.equipment",
+     25     │ - → → titleDefault:·"Equipment",
+     26     │ - → },
+     27     │ - → {
+     28     │ - → → id:·"my-equipment",
+     29     │ - → → href:·"/my-equipment",
+     30     │ - → → titleKey:·"nav.my-equipment",
+     31     │ - → → titleDefault:·"My·equipment",
+     32     │ - → },
+     33     │ - → {
+     34     │ - → → id:·"notifications",
+     35     │ - → → href:·"/notifications",
+     36     │ - → → titleKey:·"notifications.title",
+     37     │ - → → titleDefault:·"Notifications",
+     38     │ - → },
+     39     │ - → {
+     40     │ - → → id:·"calendar",
+     41     │ - → → href:·"/calendar",
+     42     │ - → → titleKey:·"nav.calendar",
+     43     │ - → → titleDefault:·"Calendar",
+     44     │ - → },
+     45     │ - → {
+     46     │ - → → id:·"time-tracking",
+     47     │ - → → href:·"/time-tracking",
+     48     │ - → → titleKey:·"nav.time-tracking",
+     49     │ - → → titleDefault:·"Time·Tracking",
+     50     │ - → },
+     51     │ - → {
+     52     │ - → → id:·"my-requests",
+     53     │ - → → href:·"/my-requests",
+     54     │ - → → titleKey:·"nav.my-requests",
+     55     │ - → → titleDefault:·"My·Requests",
+     56     │ - → },
+     57     │ - → {
+     58     │ - → → id:·"org-explorer",
+     59     │ - → → href:·"/organization",
+     60     │ - → → titleKey:·"nav.org-explorer",
+     61     │ - → → titleDefault:·"Org·Explorer",
+     62     │ - → },
+     63     │ - → {
+     64     │ - → → id:·"absences",
+     65     │ - → → href:·"/absences",
+     66     │ - → → titleKey:·"nav.absences",
+     67     │ - → → titleDefault:·"Absences",
+     68     │ - → },
+     69     │ - → {
+     70     │ - → → id:·"travel-expenses",
+     71     │ - → → href:·"/travel-expenses",
+     72     │ - → → titleKey:·"nav.travel-expenses",
+     73     │ - → → titleDefault:·"Travel·Expenses",
+     74     │ - → },
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.
+     77     │ - → {
+     78     │ - → → id:·"driving-licence",
+     79     │ - → → href:·"/driving-licence",
+     80     │ - → → titleKey:·"drivingLicence.myTitle",
+     81     │ - → → titleDefault:·"My·driving·authorization",
+     82     │ - → },
+     83     │ - → {
+     84     │ - → → id:·"reports-projects",
+     85     │ - → → href:·"/reports/projects",
+     86     │ - → → titleKey:·"reports.projects.title",
+     87     │ - → → titleDefault:·"Project·Reports",
+     88     │ - → },
+     89     │ - → {
+     90     │ - → → id:·"reports-vehicles",
+     91     │ - → → href:·"/reports/vehicles",
+     92     │ - → → titleKey:·"reports.vehicles.title",
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",
+     94     │ - → },
+     95     │ - → {
+     96     │ - → → id:·"reports",
+     97     │ - → → href:·"/reports",
+     98     │ - → → titleKey:·"nav.reports",
+     99     │ - → → titleDefault:·"Reports",
+    100     │ - → },
+    101     │ - → {
+    102     │ - → → id:·"team-absences",
+    103     │ - → → href:·"/team/absences",
+    104     │ - → → titleKey:·"nav.teamAbsences",
+    105     │ - → → titleDefault:·"Team·Absences",
+    106     │ - → },
+    107     │ - → {
+    108     │ - → → id:·"team-presence",
+    109     │ - → → href:·"/team/presence",
+    110     │ - → → titleKey:·"nav.teamPresence",
+    111     │ - → → titleDefault:·"Who·Is·In",
+    112     │ - → },
+    113     │ - → {
+    114     │ - → → id:·"team-period-submissions",
+    115     │ - → → href:·"/team/period-submissions",
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",
+    117     │ - → → titleDefault:·"Period·Submissions",
+    118     │ - → },
+    119     │ - → {
+    120     │ - → → id:·"team-driving",
+    121     │ - → → href:·"/team/driving",
+    122     │ - → → titleKey:·"nav.teamDriving",
+    123     │ - → → titleDefault:·"Driving·Details",
+    124     │ - → },
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},
+    126     │ - → {
+    127     │ - → → id:·"approvals",
+    128     │ - → → href:·"/approvals",
+    129     │ - → → titleKey:·"nav.approvals",
+    130     │ - → → titleDefault:·"Approvals",
+    131     │ - → },
+    132     │ - → {
+    133     │ - → → id:·"analytics",
+    134     │ - → → href:·"/analytics",
+    135     │ - → → titleKey:·"nav.analytics",
+    136     │ - → → titleDefault:·"Analytics",
+    137     │ - → },
+    138     │ - → {
+    139     │ - → → id:·"payroll",
+    140     │ - → → href:·"/payroll",
+    141     │ - → → titleKey:·"nav.payroll",
+    142     │ - → → titleDefault:·"Payroll",
+    143     │ - → },
+    144     │ - → {
+    145     │ - → → id:·"scheduling",
+    146     │ - → → href:·"/scheduling",
+    147     │ - → → titleKey:·"nav.scheduling",
+    148     │ - → → titleDefault:·"Scheduling",
+    149     │ - → },
+    150     │ - → {
+  359 more lines truncated
+  
+
+Checked 11 files in 15ms. No fixes applied.
+Found 11 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-4d4f372e-
+  │ 9d60ee3defb0542c\apps\webapp
+

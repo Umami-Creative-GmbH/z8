@@ -43,9 +43,10 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - R028 #1720 (employee documents): integrated and verified at `ced095089163e69b232c2bce96a40cba800186d8`; [fresh checks and retained layout/provenance limits](1720.md#root-integration-verification-and-evidence-qualifications).
 - R029 #1721 (personal equipment): integrated and verified at `a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a`; employee read-only authority remains independent. [Fresh checks and qualified captures](1721.md#root-integration-verification-and-evidence-qualifications).
 - R030 #1722 (personal requests): integrated and verified at `3e6402eca006f74c4693fcdd90c31e4a914e5c27`, including pending/canonical correction reader fixes and actual cancellation. [Proof and exact limits](1722.md#root-integration-verification-and-correction-source-proof).
-- R031 #1723 (notifications) and R041 #1724 (organization view): committed implementations await serial fresh merger verification.
+- R031 #1723 (notifications): integrated and verified at `f15492e4bc5bee60293b22797d42eacdd8296190`. [Fresh checks and evidence limits](1723.md#root-integration-verification-and-evidence-limits).
+- R041 #1724 (organization view): committed implementation awaits fresh merger verification.
 - R042 #1725 (payroll) and R043 #1726 (work-balances directory): claimed and implementing from verified H1 ancestry.
-- Frontier counts: **35 integrated, two awaiting integration, two implementing, 118 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
+- Frontier counts: **36 integrated, one awaiting integration, two implementing, 118 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
 - R002 #1701 (absences): integrated and verified at `a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc`; organization/year/zone, records and existing absence action owners preserved. See [capabilities and remaining checks](1701.md).
 - R005 #1703 (overtime burn-down): integrated and verified at `2bc30e88f63d9db3d547353f49077db0c0ee7805`; root corrected both Unassigned manager queries and active analytics navigation. See [capabilities, corrections and remaining checks](1703.md).
 - R001 #1700 (dashboard conformance): integrated and verified at `8eed0aa58bcae1dd19be7e6d7d78303208a3ddde`; approved composition/preferences preserved, no-organization heading and streamed clock hydration corrected. See [capabilities and remaining checks](1700.md).
@@ -56,6 +57,8 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - Remaining pages: select from eligible prerequisites in `integration.json`. Foundation readiness is verified; route-specific shared-output dependencies still apply.
 
 ## Verification
+
+- Notifications #1723 is verified at `f15492e4`:41 unique suites/495 fresh tests,full types,eight-file Doctor zero,split6+2 Biome and eight-file lint pass. Broad formatter profiles remain unpassed. All35 previous verified ancestors,#1722 corrections/all91 original artifacts and heading opt-ins survive.32 PNGs/four accepted pairs,19 JSON/5 scripts/23 links/10 pins and six archive/static validators pass. No blocking source finding. Worker PG1/13,browser actions/held401+409/native/axe30passes0violations1incomplete/finalNextclean are inherited; earlier auth/Suspense,no live two-authorized-org switch,cachedActivity/build/catalog/provider/device/zoom/global acceptance remain qualified. [Report](1723.md#root-integration-verification-and-evidence-limits).
 
 - Personal requests #1722 is verified at `3e6402ec`, including real pending/canonical correction reader fixes. Fresh48 suites/1,086 unit tests,35 PostgreSQL cases,full types,eight-file Doctor zero and three-file lint/import pass; both whole-file formatting profiles remain unpassed. Actual Calendar proposal is hidden by the old reader and focused by the fix; native dismissal sends zero commands,confirmation sends one and preserves original work. Legacy cancellation deletes endpoint evidence,so its tombstone remains unlisted; retained history is adopted PostgreSQL evidence. Three accepted/two failed PNGs decode with source pins; final connected Next diagnostics clear. Worker/global acceptance limits remain explicit,all original raw artifacts preserved. [Report](1722.md#root-integration-verification-and-correction-source-proof).
 

@@ -3,6 +3,10 @@
 import { IconMail, IconPencil, IconUsersGroup } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useId } from "react";
+import {
+	ActionPanelBody,
+	ActionPanelHeader,
+} from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button-variants";
 import {
@@ -15,6 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { OrgExplorerLoadError } from "./org-explorer-load-error";
 import { PersonAvatar, PersonButton } from "./org-explorer-person";
 import { personDisplayName } from "./org-explorer-person-name";
 import type { OrgExplorerPerson } from "./org-explorer-types";
@@ -27,6 +32,7 @@ export type PersonPanelProps = {
 	side: "right" | "bottom";
 	onSelect: (employeeId: string) => void;
 	onClose: () => void;
+	loadError?: { retry: () => Promise<void>; pending: boolean };
 };
 
 /**
@@ -62,7 +68,12 @@ export function PersonPanel(props: PersonPanelProps) {
 				) : (
 					<SheetHeader>
 						<SheetTitle>
-							{t("organization.explorer.panel.loading", "Loading person…")}
+							{props.loadError
+								? t(
+										"organization.explorer.panel.description",
+										"Reporting lines and teams",
+									)
+								: t("organization.explorer.panel.loading", "Loading person…")}
 						</SheetTitle>
 						<SheetDescription className="sr-only">
 							{t(
@@ -70,7 +81,11 @@ export function PersonPanel(props: PersonPanelProps) {
 								"Reporting lines and teams",
 							)}
 						</SheetDescription>
-						<Skeleton className="h-24 w-full" />
+						{props.loadError ? (
+							<OrgExplorerLoadError {...props.loadError} />
+						) : (
+							<Skeleton className="h-24 w-full" />
+						)}
 					</SheetHeader>
 				)}
 			</SheetContent>
@@ -89,11 +104,11 @@ function PersonDetails({
 
 	return (
 		<>
-			<SheetHeader className="pr-12">
+			<ActionPanelHeader>
 				<div className="flex items-center gap-3">
 					<PersonAvatar person={person} size="md" />
 					<div className="min-w-0">
-						<SheetTitle className="truncate text-lg">
+						<SheetTitle className="break-words text-lg">
 							{personDisplayName(person)}
 						</SheetTitle>
 						<SheetDescription>
@@ -105,8 +120,8 @@ function PersonDetails({
 						</SheetDescription>
 					</div>
 				</div>
-			</SheetHeader>
-			<div className="flex flex-col gap-5 px-4 pb-6">
+			</ActionPanelHeader>
+			<ActionPanelBody className="flex flex-col gap-5">
 				<PanelSection
 					title={t("organization.explorer.panel.managers", "Managers")}
 				>
@@ -192,7 +207,7 @@ function PersonDetails({
 				</PanelSection>
 				<PanelSection title={t("organization.explorer.panel.email", "Email")}>
 					<a
-						className="inline-flex items-center gap-2 px-2 text-sm text-primary underline-offset-4 hover:underline"
+						className="inline-flex min-w-0 items-center gap-2 break-all px-2 text-sm text-primary underline-offset-4 hover:underline"
 						href={`mailto:${person.email}`}
 					>
 						<IconMail aria-hidden="true" className="size-4" />
@@ -220,7 +235,7 @@ function PersonDetails({
 						) : null}
 					</div>
 				) : null}
-			</div>
+			</ActionPanelBody>
 		</>
 	);
 }

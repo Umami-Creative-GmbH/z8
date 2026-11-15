@@ -1,9 +1,11 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+import { mapConcurrently } from "@/lib/async/map-concurrently";
+import type { ServerActionResult } from "@/lib/effect/result";
 import {
 	getOrgExplorerData,
 	getOrgExplorerGroup,
@@ -35,6 +37,11 @@ type NextOffsets<K> = ReadonlyMap<K, number | null>;
  */
 export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 	const { t } = useTranslate();
+	const generation = useRef(0);
+	const [failedLoads, setFailedLoads] = useState<
+		ReadonlyMap<string, () => Promise<void>>
+	>(() => new Map());
+	const [isRetrying, setIsRetrying] = useState(false);
 	const [summary, setSummary] = useState<OrgExplorerSummary>(() =>
 		summaryOf(initialData),
 	);
@@ -46,6 +53,15 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 	const pendingLoads = useRef(new Map<string, Promise<void>>());
 	// Pages on their way, so a second click does not ask for the same page again.
 	const pendingPages = useRef(new Set<string>());
+	useEffect(
+		() => () => {
+			generation.current += 1;
+			// Effect replay / cached-route return must not wait on a discarded generation.
+			pendingLoads.current.clear();
+			pendingPages.current.clear();
+		},
+		[],
+	);
 	const [unknownIds, setUnknownIds] = useState<ReadonlySet<string>>(
 		() => new Set(),
 	);
@@ -80,6 +96,46 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 		setPeopleById(next);
 	}
 
+	/** Only the current mounted roster may accept a response, including retries. */
+	async function readPeople<T>(
+		key: string,
+		read: () => Promise<ServerActionResult<T>>,
+		accept: (data: T) => void,
+	) {
+		const version = generation.current;
+		await settleRead(key, async () => {
+			const result = await read();
+			if (version !== generation.current) return;
+			if (!result.success) throw new Error("Roster read failed");
+			accept(result.data);
+		});
+	}
+
+	const settleRead = async (key: string, read: () => Promise<void>) => {
+		const version = generation.current;
+		try {
+			await read();
+			if (version !== generation.current) return;
+			setFailedLoads((current) => {
+				const next = new Map(current);
+				next.delete(key);
+				return next;
+			});
+		} catch {
+			if (version !== generation.current) return;
+			setFailedLoads((current) => new Map(current).set(key, read));
+			showFailure(undefined);
+		}
+	};
+
+	async function retryFailed() {
+		if (isRetrying) return;
+		setIsRetrying(true);
+		await Promise.all(
+			[...failedLoads].map(([key, read]) => settleRead(key, read)),
+		).finally(() => setIsRetrying(false));
+	}
+
 	/**
 	 * Loads the people not loaded yet, and waits for those already on their way.
 	 * A complete organization has everyone already.
@@ -107,34 +163,46 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 
 	// `.finally` rather than `try … finally`, which React Compiler cannot lower.
 	function fetchPeople(missing: string[], options?: { withPaths: true }) {
-		return fetchPeopleBatches(missing, options).finally(() => {
-			for (const id of missing) pendingLoads.current.delete(id);
+		const load = fetchPeopleBatches(missing, options).finally(() => {
+			for (const id of missing) {
+				if (pendingLoads.current.get(id) === load)
+					pendingLoads.current.delete(id);
+			}
 		});
+		return load;
 	}
 
 	async function fetchPeopleBatches(
 		missing: string[],
 		options?: { withPaths: true },
 	) {
+		const version = generation.current;
+		const chunks: string[][] = [];
 		for (
 			let start = 0;
 			start < missing.length;
 			start += ORG_EXPLORER_BATCH_LIMIT
 		) {
-			const chunk = missing.slice(start, start + ORG_EXPLORER_BATCH_LIMIT);
-			const result = options
-				? await getOrgExplorerPeople(chunk, options)
-				: await getOrgExplorerPeople(chunk);
-			if (!result.success) {
-				showFailure(result.error);
-				return;
-			}
-			mergePeople(result.data);
-			// Nobody comes back for an id that is not on the current roster.
-			const notFound = chunk.filter((id) => !peopleRef.current.has(id));
-			if (notFound.length > 0)
-				setUnknownIds((current) => withIds(current, notFound));
+			chunks.push(missing.slice(start, start + ORG_EXPLORER_BATCH_LIMIT));
 		}
+		// Keep the existing one-request bound; cancelled scopes start no further batches.
+		await mapConcurrently(chunks, 1, async (chunk) => {
+			if (version !== generation.current) return;
+			await readPeople(
+				`people:${chunk.join(",")}`,
+				() =>
+					options
+						? getOrgExplorerPeople(chunk, options)
+						: getOrgExplorerPeople(chunk),
+				(incoming) => {
+					mergePeople(incoming);
+					// Nobody comes back for an id that is not on the current roster.
+					const notFound = chunk.filter((id) => !peopleRef.current.has(id));
+					if (notFound.length > 0)
+						setUnknownIds((current) => withIds(current, notFound));
+				},
+			);
+		});
 	}
 
 	/** Loads the line reports below a person that are not loaded yet. */
@@ -158,17 +226,18 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 			return;
 		pendingPages.current.add(key);
 		setLoadingTeamIds((current) => withIds(current, [teamId]));
-		const result = await getOrgExplorerTeamMembers(teamId, offset ?? 0);
+		await readPeople(
+			key,
+			() => getOrgExplorerTeamMembers(teamId, offset ?? 0),
+			(data) => {
+				mergePeople(data.people);
+				setTeamOffsets((current) =>
+					new Map(current).set(teamId, data.nextOffset),
+				);
+			},
+		);
 		pendingPages.current.delete(key);
 		setLoadingTeamIds((current) => withoutIds(current, [teamId]));
-		if (!result.success) {
-			showFailure(result.error);
-			return;
-		}
-		mergePeople(result.data.people);
-		setTeamOffsets((current) =>
-			new Map(current).set(teamId, result.data.nextOffset),
-		);
 	}
 
 	/** Loads the first page of each team that has none yet. */
@@ -186,21 +255,25 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 			return;
 		pendingPages.current.add(key);
 		setLoadingGroups((current) => withIds(current, [group]));
-		const result = await getOrgExplorerGroup(group, offset ?? 0);
+		await readPeople(
+			key,
+			() => getOrgExplorerGroup(group, offset ?? 0),
+			(data) => {
+				mergePeople(data.people);
+				setGroupOffsets((current) =>
+					new Map(current).set(group, data.nextOffset),
+				);
+			},
+		);
 		pendingPages.current.delete(key);
 		setLoadingGroups((current) => withoutIds(current, [group]));
-		if (!result.success) {
-			showFailure(result.error);
-			return;
-		}
-		mergePeople(result.data.people);
-		setGroupOffsets((current) =>
-			new Map(current).set(group, result.data.nextOffset),
-		);
 	}
 
 	useViewRefresh(async () => {
+		const version = ++generation.current;
+		setFailedLoads(new Map());
 		const result = await getOrgExplorerData();
+		if (version !== generation.current) return;
 		if (!result.success) throw new Error(result.error);
 		const fresh = toPeopleMap(result.data.people);
 		const stillShown = [...peopleRef.current.keys()].filter(
@@ -219,12 +292,14 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 			const reloaded = await Promise.all(
 				chunks.map((chunk) => getOrgExplorerPeople(chunk)),
 			);
+			if (version !== generation.current) return;
 			for (const batch of reloaded) {
 				if (!batch.success) throw new Error(batch.error);
 				for (const entry of batch.data) fresh.set(entry.employeeId, entry);
 			}
 		}
 		setTeamOffsets(new Map());
+		setFailedLoads(new Map());
 		setGroupOffsets(new Map());
 		setUnknownIds(new Set());
 		peopleRef.current = fresh;
@@ -233,6 +308,9 @@ export function useOrgExplorerPeople(initialData: OrgExplorerData) {
 	});
 
 	return {
+		hasFailedLoads: failedLoads.size > 0,
+		isRetrying,
+		retryFailed,
 		summary,
 		peopleById,
 		/** The latest people, also before the next render. */
