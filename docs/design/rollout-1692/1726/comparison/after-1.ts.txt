@@ -210,12 +210,14 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		/^\/calendar\/[^/]+$/.test(path) ||
 		path === "/" ||
 		path === "/time-tracking" ||
+		path === "/notifications" ||
 		path === "/absences" ||
 		path === "/my-requests" ||
 		path === "/my-documents" ||
 		path === "/payroll/work-balances" ||
 		path === "/equipment" ||
 		path === "/my-equipment" ||
+		path === "/organization" ||
 		path === "/compliance" ||
 		path === "/driving-licence" ||
 		path === "/calendar" ||

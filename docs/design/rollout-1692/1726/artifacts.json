@@ -1,6 +1,6 @@
 {
-  "head": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
-  "jsonFiles": 21,
+  "head": "ae5197ed88fe97e13d1b7b52974d339864188927",
+  "jsonFiles": 26,
   "images": [
     {
       "path": "actions\\committed.png",
@@ -105,6 +105,12 @@
       "channels": 3
     },
     {
+      "path": "saved-ui-preferences-fixed.png",
+      "decodedWidth": 1264,
+      "decodedHeight": 625,
+      "channels": 3
+    },
+    {
       "path": "saved-ui-preferences.png",
       "decodedWidth": 1264,
       "decodedHeight": 625,
@@ -150,53 +156,87 @@
   "sources": [
     {
       "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.tsx",
+      "snapshot": "final-source-0.txt",
       "sha256": "080cdb186c00c6c01d01d5659712f026639e4a4c03d71c3005ebcef18add877b",
-      "rawBlob": "f0a08fc79ed497392f388383b0b68d0b035305cf"
+      "rawBlob": "f0a08fc79ed497392f388383b0b68d0b035305cf",
+      "canonicalGitBlob": "33089413f5fc1dbe9890784ab26e71a9f3d53ba4"
     },
     {
-      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
-      "sha256": "924205303947a744d5d80798302bd392e069bdb9699e6c52abad121ee759e174",
-      "rawBlob": "e1fc208d48ac8605cc0d396ea7f00f320783912f"
-    },
-    {
-      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-table.tsx",
-      "sha256": "f37fcc6a5d0f01d11179b7fc66a5320eb0ab07934c5e7a60f1fac71472810714",
-      "rawBlob": "fd8aa669cf4c07ea5f815195c5b567ff237d20c7"
-    },
-    {
-      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
-      "sha256": "109761a664873985d24e12465ae3d7094ad213df9ccbbf8418100cf981838c28",
-      "rawBlob": "65981ed793f9a1c17e6bcfc1e68f68e8f1e83d6c"
-    },
-    {
-      "path": "apps/webapp/src/lib/work-balance/adjustments/payroll-grant-adjustments.integration.test.ts",
-      "sha256": "e88010e00da7d29e6f640ef95e8bb8202cd1e2938d276c2c086c9ae17a8f2704",
-      "rawBlob": "a3875316a4faa11a2fa4f689f7123a7a288f2307"
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+      "snapshot": "final-source-1.txt",
+      "sha256": "67e5e940047b3cc4e4935e9791b21c6c373cd0ad765ffc8f8fb62243618aacb3",
+      "rawBlob": "c7d067325e0532eb619d7be45d5126a27b13cacc",
+      "canonicalGitBlob": "465b62831d7808b60be8dd4513b7ba42a81f33da"
     },
     {
       "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/work-balances-view.tsx",
-      "sha256": "2410d806a36867a8289eda7e439466f184d563faca95ba676207b6cdc6dff99a",
-      "rawBlob": "fe2cb65eb21a2173e51422d8ffbdbc5f8b5cac23"
+      "snapshot": "final-source-2.txt",
+      "sha256": "5b92931a0100487f6b2275f3c3bd8885d8d432c61dafba08e70f1e0d9d5228c8",
+      "rawBlob": "4144fae9311d22e9b9c3fd4900be1b068ccaebd3",
+      "canonicalGitBlob": "a5fba4bf1a09bd02a609a050d367cbfe0536d349"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+      "snapshot": "final-source-3.txt",
+      "sha256": "7fb1249ba18bf417155fd84f4f93473b232aaec90ce8fd4d17b46c6b40d54be4",
+      "rawBlob": "47850faaf238b67191f580117d5c29ed42967e3e",
+      "canonicalGitBlob": "003aa8326f9234eb839cca66afe67cefad323f30"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx",
+      "snapshot": "final-source-4.txt",
+      "sha256": "41f926f08bc13bddeb7f5320bd0ae24f87896f5993918e4eef09801c88a4c562",
+      "rawBlob": "e9ea62409053f6cad26cd5c2e6400fb30bcc1397",
+      "canonicalGitBlob": "b6517007c475e3499b05a336814284965923a9c7"
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-table.tsx",
+      "snapshot": "final-source-5.txt",
+      "sha256": "f37fcc6a5d0f01d11179b7fc66a5320eb0ab07934c5e7a60f1fac71472810714",
+      "rawBlob": "fd8aa669cf4c07ea5f815195c5b567ff237d20c7",
+      "canonicalGitBlob": "805110659d57ac0374765bbc0a712ee5cff11a39"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "snapshot": "final-source-6.txt",
+      "sha256": "de817d21dc3ed1314aaa73885ea9801ff43b40b08e8f83c0b62827da8f08b7f1",
+      "rawBlob": "1eb522c3701e66ac9e280d5ce98015924a868343",
+      "canonicalGitBlob": "af0da2fc0cd608edbb026e773c98d4b955c2ecd9"
+    },
+    {
+      "path": "apps/webapp/src/lib/work-balance/adjustments/payroll-grant-adjustments.integration.test.ts",
+      "snapshot": "final-source-7.txt",
+      "sha256": "54c6cbd40671ea0eb20bae41e03f601bcb36be929f20214552adbe4a3c0b2a31",
+      "rawBlob": "5e6c5484d86dc0f90ce6275eb4062b083f9fa9da",
+      "canonicalGitBlob": "cce069b7d9e45556ea91ce3b3c44553b2f3c1f77"
     },
     {
       "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/coverage.ts",
+      "snapshot": "final-source-8.txt",
       "sha256": "2059589415f4ea05cf091d1a49626318ee27ac9615e5c1154638adf1d02fe031",
-      "rawBlob": "adb8a992e9bec2f85b441de242f65a488002775b"
+      "rawBlob": "adb8a992e9bec2f85b441de242f65a488002775b",
+      "canonicalGitBlob": "80789f7fdccc6e91c82a78badadce3c41747f155"
     },
     {
       "path": "apps/webapp/src/lib/payroll-access/adjustment-coverage.ts",
+      "snapshot": "final-source-9.txt",
       "sha256": "72b089ccffd089b3aceb69b19d1a690b48aa5448926a55c87eaff0622812b4a7",
-      "rawBlob": "7d4b85a5d1413299eac66c450e4a2da4e28d264f"
+      "rawBlob": "7d4b85a5d1413299eac66c450e4a2da4e28d264f",
+      "canonicalGitBlob": "4278748e41836ce2383c2d3457fc8e00b9bfa708"
     },
     {
       "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/opening-balance-upload-actions.ts",
+      "snapshot": "final-source-10.txt",
       "sha256": "52f7d68fd69df105319b25a90320b41cb34152f410c903986484cde7f7b94cb8",
-      "rawBlob": "c31acf350e5adbdbc0d31a7f5ac383faf0201236"
+      "rawBlob": "c31acf350e5adbdbc0d31a7f5ac383faf0201236",
+      "canonicalGitBlob": "304e33771a4654cb99326b26d357ddb2db31bd4c"
     },
     {
       "path": "apps/webapp/src/lib/work-balance/adjustments/opening-balance-upload.ts",
+      "snapshot": "final-source-11.txt",
       "sha256": "3a021fe25706f0892c6082b27aea7994d8c74047bbdd4b34e2bee8ea3a29f684",
-      "rawBlob": "4b9d22926a7e29db5e13b9c7b045bab97b63dbe3"
+      "rawBlob": "4b9d22926a7e29db5e13b9c7b045bab97b63dbe3",
+      "canonicalGitBlob": "212fbf302c415ac85e3dedf57203e7e46d2b0acb"
     }
   ],
   "comparisonScope": "Before/after only four exact baseline consumer sources; new WorkBalancesView used only after. Infrastructure remains integration baseline. PNGs fully decoded via sharp; matched CSS dimensions checked.",

@@ -1,0 +1,20 @@
+{
+  "preservedAttempts": [
+    "Initial sandbox pnpm commands could not open the shared store lock; authorized escalation used offline frozen dependencies.",
+    "Automatic approval review rejected a whole-page Set-Content replacement because no concurrent-change preservation check was shown. Verified page diff empty and used exact-context apply_patch instead; no action remains blocked.",
+    "The first heading harness lacked a Tolgee mock and tried to render async RSC through client React. Corrected the harness to render the actual Suspense fallback; then observed the intended missing-heading failure before the fix.",
+    "The first upload harness lacked useTolgee; corrected the translation adapter and reproduced unlocked file reading, missing Retry and stale pending dialog.",
+    "Initial fixture grant insert lacked updated_at; transaction rolled back, corrected fixture setup and reran. No business upload was seeded by SQL.",
+    "Standard fixture authenticate lacked the development CAPTCHA token and was refused. Actual Better Auth with the public development dummy token succeeded; no auth bypass.",
+    "Preview snapshot failed twice with Preview automation snapshot timed out after 15000ms. Navigation had succeeded. Closed the owned tab and used the permitted fallback.",
+    "Initial full types failed on absent generated ignored licenses.json; standard generate-licenses resolved it and all profiles were rerun.",
+    "Initial Doctor reported two compiler errors for try/finally. Changed to promise finalization; final Doctor has zero errors and three reviewed warnings.",
+    "Runtime driver initially had a syntax error before execution; corrected it. First scope driver used an unavailable Windows pnpm executable; corrected to the active Node executable. A subsequent request-interception teardown race was corrected. Scope/failed.json retains the earlier failure; successful checks are separate.",
+    "Initial readback SQL alias day was invalid; corrected read-only query and confirmed real UI records.",
+    "Native browser initially had a real notifications prompt; its early selector audit had one applicable rule and does not certify route content. Dismissed Not Now and audited main separately. PowerShell ref/quote mistakes were corrected; one verified empty owned artifact was removed.",
+    "An initial template click did not produce a file in the default browser context; recovery run selected the actual incognito context, downloaded and checked 183 bytes with a UTF-8 BOM.",
+    "Initial dark18 main audit found 3.63:1 contrast in three new action labels. Corrected to the semantic foreground token; fresh audit has zero violations. Initial failing audit is retained.",
+    "Merged metadata carried a different formatting profile. Exact explicit-config CRLF Biome failed only on that formatting, then the owned file was formatted with all root opt-ins preserved."
+  ],
+  "historicalLimits": "Clean final connected Next probes do not erase deliberate upload transport failure, earlier auth/setup failures, editing/HMR compiler errors or inherited root transition/diagnostic qualifications. Earlier comparison source/photos remain available in implementation commit ec3b60ca3ad2c14ba74e9baeb3051f8add60c8c7; current comparison is merged-source evidence."
+}

@@ -69,6 +69,9 @@ it("locks selection before file reading, prevents duplicates and keeps pending d
 	);
 	render(<OpeningBalanceUploadDialog />);
 	const user = await open();
+	const describedBy = screen.getByLabelText("CSV file").getAttribute("aria-describedby");
+	expect(describedBy).toBeTruthy();
+	for (const id of describedBy?.split(" ") ?? []) expect(document.getElementById(id)).toBeTruthy();
 	fireEvent.change(screen.getByLabelText("CSV file"), { target: { files: [file(read)] } });
 	expect((screen.getByLabelText("CSV file") as HTMLInputElement).disabled).toBe(true);
 	fireEvent.change(screen.getByLabelText("CSV file"), { target: { files: [file(read)] } });

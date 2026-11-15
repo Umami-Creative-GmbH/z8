@@ -1,0 +1,11 @@
+{
+  "qualification": "The capture helper initially hardcoded actor and organizationId fields. These corrections follow the driver's real sign-in/set-active and settled-record assertions; they do not infer admission from loading or absent old records.",
+  "captures": {
+    "revoked-open-preview": { "actor": "small-employee", "organization": "Performance small", "authority": "grant revoked after preview; commit refused; preview retained" },
+    "settled-B": { "actor": "small-employee", "organization": "Performance large", "records": 1, "recordNumber": "B-R043" },
+    "settled-return-A": { "actor": "small-employee", "organization": "Performance small", "records": 3, "draftDiscarded": true },
+    "small-manager-denied": { "actor": "small-manager", "organization": "Performance small", "result": "Page not found" },
+    "small-restricted-denied": { "actor": "small-restricted", "organization": "Performance small", "result": "Page not found" }
+  },
+  "limit": "Held outgoing preview dispatch and real reload boundaries are exercised. An already-produced late RSC read and automatic no-reload detection of an externally changed session are not certified. The assembled form separately verifies A-to-B-to-A late previews and changed-actor late commit suppression."
+}

@@ -23,7 +23,12 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+} from "@/components/ui/tanstack-form";
 import {
 	MAX_OPENING_BALANCE_UPLOAD_CHARACTERS,
 	openingBalanceCsvTemplate,
@@ -248,6 +253,12 @@ function ScopedOpeningBalanceUploadDialog() {
 											}}
 										/>
 									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.employees.workBalance.upload.fileHelp",
+											"Choose a CSV (UTF-8) file. Check every row before setting opening balances.",
+										)}
+									</TFormDescription>
 								</TFormItem>
 							)}
 						</form.Field>
@@ -342,7 +353,10 @@ function ScopedOpeningBalanceUploadDialog() {
 						</Button>
 						<Button type="submit" disabled={outcome?.status !== "ready" || pending !== null}>
 							{pending === "commit" ? (
-								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+								<IconLoader2
+									aria-hidden="true"
+									className="size-4 animate-spin motion-reduce:animate-none"
+								/>
 							) : (
 								<IconFileUpload aria-hidden="true" className="size-4" />
 							)}

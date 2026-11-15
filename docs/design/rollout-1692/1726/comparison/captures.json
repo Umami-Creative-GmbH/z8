@@ -37,7 +37,7 @@
     "png": {
       "width": 1600,
       "height": 1000,
-      "sha256": "6a142c9fca574dd12dd554dda90cb65663e895603615a20a958ade849ea79d91"
+      "sha256": "1684a47381571fd8a7b7b151bb4d7d44dea838c67b36cd1061316d038e3d5bbd"
     }
   },
   {
@@ -78,7 +78,7 @@
     "png": {
       "width": 2560,
       "height": 1200,
-      "sha256": "5adb1908b1a751328ae4ef9e26d4097e27c357f38b4c6a0687866288bb8b9084"
+      "sha256": "f5cc4aae552d2620428c44abbc46ab6fdbeaea79a32b91d8e3fda0cb025779ad"
     }
   },
   {
@@ -119,7 +119,7 @@
     "png": {
       "width": 390,
       "height": 844,
-      "sha256": "1e4f705e2e361d2c5fb5f4c8b8f395cdf0cd169b57c95364be3d7c4d047c98e7"
+      "sha256": "1103e9052f85eda1b518b37531caf11786d23a09f9cc9d5ff599cda40ec399f0"
     }
   },
   {
@@ -157,11 +157,11 @@
         "text": "Fixture Person 0\nR043-3\nFormer employee"
       }
     ],
-    "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\nDownload template\n\nAll 2 rows are ready; none replaces an opening balance in effect.\n\nRow\tEmployee\tDay\tBalance\tReason\tStatus\n2\t\nFixture Person 4\nR043-1\n\tMar 31, 2026\t+2:30h\tOpening carry forward\t\nReady\n\n3\t\nFixture Person 0\nR043-3\nFormer employee\n\tMar 31, 2026\t-1:15h\tFormer opening carry forward\t\nReady\nCancel\nSet 2 opening balances\nClose",
+    "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\nDownload template\n\nAll 2 rows are ready; 2 replace an opening balance in effect.\n\nRow\tEmployee\tDay\tBalance\tReason\tStatus\n2\t\nFixture Person 4\nR043-1\n\tMar 31, 2026\t+2:30h\tOpening carry forward\t\nReplaces the opening balance of +3:00h on Mar 31, 2026\n\n3\t\nFixture Person 0\nR043-3\nFormer employee\n\tMar 31, 2026\t-1:15h\tFormer opening carry forward\t\nReplaces the opening balance of -1:15h on Mar 31, 2026\nCancel\nSet 2 opening balances\nClose",
     "png": {
       "width": 390,
       "height": 844,
-      "sha256": "83a322b2f66ec5b218743503d26dc93dc0430deb3b5908a940c41638edd52444"
+      "sha256": "3872ad9ee8e2b91a04a446043c459690e194adb5b1b95cf7819fc05c452b3327"
     }
   },
   {
@@ -201,7 +201,7 @@
     "png": {
       "width": 1600,
       "height": 1000,
-      "sha256": "04ec72abc8bd200cc2db9aaf39b537a8e45a04dbdb872370319f897156dc4739"
+      "sha256": "a4733552ce2eb6b9e9e4bfbea98671ca88918ded18f1271b3a4d133d23db79d4"
     }
   },
   {
@@ -241,7 +241,7 @@
     "png": {
       "width": 2560,
       "height": 1200,
-      "sha256": "0880ebc566393cc31e1bd449c60b9f7023f71a51646c342de59969de78295246"
+      "sha256": "2b6810d8c88e5b7e563389d37cb6e36b1e0354cd40c0499d77f0ee8b58c74e87"
     }
   },
   {
@@ -281,7 +281,7 @@
     "png": {
       "width": 390,
       "height": 844,
-      "sha256": "c4f63d75b7609a56dcdecd5aae19061f7f633d455ac11c9f6ded2e895b810139"
+      "sha256": "39b4b2adbfffbc38a69f1003af8d8686e819aeb02582a64876bf2de3cf2617c6"
     }
   },
   {
@@ -318,11 +318,11 @@
         "text": "Fixture Person 0\nR043-3\nFormer employee\nOpen employee balance"
       }
     ],
-    "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\nDownload template\n\nAll 2 rows are ready; none replaces an opening balance in effect.\n\nRow\nEmployee\nDay\nBalance\nReason\nStatus\n2\nFixture Person 4\nR043-1\nMar 31, 2026\n+2:30h\nOpening carry forward\nReady\n3\nFixture Person 0\nR043-3\nFormer employee\nMar 31, 2026\n-1:15h\nFormer opening carry forward\nReady\nCancel\nSet 2 opening balances\nClose",
+    "dialog": "Upload opening balances\n\nSet the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.\n\nCSV file\n\nChoose a CSV (UTF-8) file. Check every row before setting opening balances.\n\nDownload template\n\nAll 2 rows are ready; 2 replace an opening balance in effect.\n\nRow\nEmployee\nDay\nBalance\nReason\nStatus\n2\nFixture Person 4\nR043-1\nMar 31, 2026\n+2:30h\nOpening carry forward\nReplaces the opening balance of +3:00h on Mar 31, 2026\n3\nFixture Person 0\nR043-3\nFormer employee\nMar 31, 2026\n-1:15h\nFormer opening carry forward\nReplaces the opening balance of -1:15h on Mar 31, 2026\nCancel\nSet 2 opening balances\nClose",
     "png": {
       "width": 390,
       "height": 844,
-      "sha256": "6307870133821e4f3b661b65437c84f41b2023d03db133fe6a1159c538e3256a"
+      "sha256": "b8b0a501bbfe628ccfd487c1e10583fbc1fa71265c1da4614fd6c332b51462e4"
     }
   }
 ]
