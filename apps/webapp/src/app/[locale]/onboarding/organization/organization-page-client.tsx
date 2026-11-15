@@ -671,15 +671,21 @@ function OrganizationSetup({
 		return (
 			<>
 				<ProgressIndicator currentStep="organization" />
-				<div
-					role="status"
-					aria-label={t(
-						"onboarding.organization.checkingMembership",
-						"Checking organization membership",
-					)}
-					className="mx-auto flex max-w-2xl justify-center py-12"
-				>
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+				<div className="mx-auto max-w-4xl">
+					<OrganizationSetupHeader
+						canCreateOrganizations={canCreateOrganizations}
+						t={t}
+					/>
+					<div
+						role="status"
+						aria-label={t(
+							"onboarding.organization.checkingMembership",
+							"Checking organization membership",
+						)}
+						className="mx-auto flex max-w-2xl justify-center py-12"
+					>
+						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+					</div>
 				</div>
 			</>
 		);
