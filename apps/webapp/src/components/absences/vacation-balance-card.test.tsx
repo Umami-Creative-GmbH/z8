@@ -6,8 +6,8 @@ import { render } from "@/test/render-with-translations";
 import { VacationBalanceCard } from "./vacation-balance-card";
 
 describe("VacationBalanceCard", () => {
-	it("uses a single-column default layout for narrow mobile screens", () => {
-		const { container } = render(
+	it("keeps the balance year, available days and usage visible together", () => {
+		render(
 			<VacationBalanceCard
 				now="2026-07-14T10:00:00Z"
 				timezone="Europe/Berlin"
@@ -23,9 +23,12 @@ describe("VacationBalanceCard", () => {
 			/>,
 		);
 
-		const grid = container.querySelector(".\\@container\\/card");
-		expect(grid?.className).toContain("grid-cols-1");
-		expect(grid?.className).toContain("sm:grid-cols-2");
+		expect(
+			screen.getByRole("heading", { name: "Vacation Balance 2026", level: 2 }),
+		).toBeTruthy();
+		expect(screen.getByText("23")).toBeTruthy();
+		expect(screen.getByText("5")).toBeTruthy();
+		expect(screen.getByText("2")).toBeTruthy();
 	});
 
 	it("formats carryover expiry in the organization timezone", () => {
@@ -84,7 +87,9 @@ describe("VacationBalanceCard", () => {
 		);
 
 		expect(
-			screen.getByText("8 of 30 days, prorated: started Oct 1, 2026, 3 full employment months"),
+			screen.getByText(
+				"8 of 30 days, prorated: started Oct 1, 2026, 3 full employment months",
+			),
 		).toBeTruthy();
 		expect(screen.queryByText(/overdrawn/u)).toBeNull();
 	});

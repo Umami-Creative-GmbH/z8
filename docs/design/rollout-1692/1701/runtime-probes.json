@@ -1,0 +1,30 @@
+{
+    "nativeReactTree":  true,
+    "probes":  [
+                   {
+                       "completed":  true,
+                       "name":  "get_compilation_issues",
+                       "resultHasError":  false
+                   },
+                   {
+                       "completed":  true,
+                       "name":  "get_errors",
+                       "resultHasError":  false
+                   },
+                   {
+                       "completed":  true,
+                       "name":  "get_routes",
+                       "resultHasError":  false
+                   },
+                   {
+                       "completed":  true,
+                       "name":  "get_page_metadata",
+                       "resultHasError":  false
+                   }
+               ],
+    "agentBrowser":  "0.39.1",
+    "note":  "Native inspection used a fresh tree ID; no render-profile or full-build claim.",
+    "component":  "AbsencesViewContainer",
+    "nativeReactInspection":  true,
+    "next":  "16.4.6 Turbopack"
+}

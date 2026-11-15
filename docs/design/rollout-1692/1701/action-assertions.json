@@ -1,0 +1,29 @@
+{
+  "scope": "small-employee, synthetic December 2026 request; real failed transport/retry/pending/cancel lifecycle",
+  "results": [
+    {
+      "name": "real transport failure was injected at the mutation boundary",
+      "passed": true
+    },
+    {
+      "name": "failure keeps request input",
+      "passed": true
+    },
+    {
+      "name": "retry persists real personal request and deputy",
+      "passed": true
+    },
+    {
+      "name": "cancel confirmation leaves record",
+      "passed": true
+    },
+    {
+      "name": "confirmed cancellation refreshes actual records",
+      "passed": true
+    },
+    {
+      "name": "sick detail remains available",
+      "passed": true
+    }
+  ]
+}
