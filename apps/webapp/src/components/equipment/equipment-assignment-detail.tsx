@@ -3,9 +3,7 @@ import {
 	IconArrowsExchange,
 	IconChevronDown,
 	IconCircleX,
-	IconPackage,
 	IconPackageImport,
-	IconStack2,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
@@ -18,6 +16,7 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { PageHeader } from "@/components/ui/page-header";
 import type {
 	EquipmentAssignmentView,
 	EquipmentCorrectionView,
@@ -171,16 +170,26 @@ function AssignmentActions({
 	transferable,
 	pending,
 	open,
+	children,
 }: {
 	assignment: EquipmentAssignmentView;
 	transferable: boolean;
 	pending: boolean;
 	open: (selection: EquipmentPanelSelection) => void;
+	children: ReactNode;
 }) {
 	const { t } = useTranslate();
 	return (
 		<div className="flex flex-wrap items-center gap-2">
-			<EquipmentRefreshButton />
+			{assignment.canReceive ? (
+				<Button
+					disabled={pending}
+					onClick={() => open({ kind: "receipt", assignmentId: assignment.id })}
+				>
+					<IconPackageImport className="size-4" aria-hidden="true" />
+					{t("settings.equipment.handover.receive", "Record receipt")}
+				</Button>
+			) : null}
 			{assignment.canCloseException ? (
 				<Button
 					variant="outline"
@@ -203,15 +212,7 @@ function AssignmentActions({
 					{t("settings.equipment.list.transfer", "Transfer")}
 				</Button>
 			) : null}
-			{assignment.canReceive ? (
-				<Button
-					disabled={pending}
-					onClick={() => open({ kind: "receipt", assignmentId: assignment.id })}
-				>
-					<IconPackageImport className="size-4" aria-hidden="true" />
-					{t("settings.equipment.handover.receive", "Record receipt")}
-				</Button>
-			) : null}
+			{children}
 		</div>
 	);
 }
@@ -270,6 +271,7 @@ export function EquipmentAssignmentDetail({
 }) {
 	const { t } = useTranslate();
 	const { open, panel, pending, submit } = useEquipmentPanels(data);
+	const dates = useEquipmentDates(data.timezone);
 	const assignment = data.assignments[0];
 	if (!assignment) return null;
 	const transferable = canTransfer(data, assignment);
@@ -280,8 +282,6 @@ export function EquipmentAssignmentDetail({
 		canCorrectReceipt: data.canManage && assignment.canCorrectReceipt,
 		canCorrectException: data.canManage && assignment.canCorrectException,
 	};
-	const ItemIcon =
-		assignment.trackingMode === "quantity" ? IconStack2 : IconPackage;
 	const detailLine = [
 		assignment.typeName,
 		assignment.trackingMode === "quantity"
@@ -300,36 +300,39 @@ export function EquipmentAssignmentDetail({
 					{t("settings.equipment.detail.back", "Back to equipment")}
 				</BackLink>
 			</div>
-			<div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-start sm:justify-between lg:px-6">
-				<div className="flex min-w-0 items-center gap-3.5">
-					<span
-						aria-hidden="true"
-						className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground"
-					>
-						<ItemIcon className="size-5" />
-					</span>
-					<div className="min-w-0 space-y-1">
-						<div className="flex flex-wrap items-center gap-2.5">
-							<h1
-								className="break-words text-2xl font-semibold tracking-tight"
-								translate="no"
-							>
-								{assignment.identifier}
-							</h1>
-							<AssignmentStatusBadge assignment={assignment} />
-						</div>
-						<p className="break-words text-sm text-muted-foreground">
-							{detailLine.join(" · ")}
+			<PageHeader
+				className="px-4 lg:px-6"
+				title={<span translate="no">{assignment.identifier}</span>}
+				scope={
+					<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+						<HolderIdentity
+							employeeId={assignment.employeeId}
+							name={assignment.holderName}
+							image={assignment.holderImage}
+							former={assignment.former}
+							href={
+								data.canManage
+									? `/equipment/employees/${assignment.employeeId}`
+									: undefined
+							}
+						/>
+						<AssignmentStatusBadge assignment={assignment} />
+					</div>
+				}
+				description={
+					<div className="space-y-1">
+						<p>{detailLine.join(" · ")}</p>
+						<p className="tabular-nums">
+							{t(
+								"settings.equipment.overview.asOf",
+								"As of {date} ({timezone})",
+								{ date: dates.date(data.today), timezone: data.timezone },
+							)}
 						</p>
 					</div>
-				</div>
-				<AssignmentActions
-					assignment={assignment}
-					transferable={transferable}
-					pending={pending}
-					open={open}
-				/>
-			</div>
+				}
+				actions={<EquipmentRefreshButton />}
+			/>
 			<div className="grid items-start gap-6 px-4 lg:px-6 @5xl/main:grid-cols-[minmax(0,1fr)_20rem]">
 				<div className="flex min-w-0 flex-col gap-6">
 					<AssignmentFacts
@@ -337,22 +340,29 @@ export function EquipmentAssignmentDetail({
 						today={data.today}
 						timezone={data.timezone}
 					/>
+					<AssignmentActions
+						assignment={assignment}
+						transferable={transferable}
+						pending={pending}
+						open={open}
+					>
+						<CorrectionMenu
+							assignment={correctable}
+							disabled={pending}
+							onSelect={(target) =>
+								open({
+									kind: "correction",
+									assignmentId: assignment.id,
+									target,
+								})
+							}
+						/>
+					</AssignmentActions>
 					<Card className="gap-4">
 						<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
 							<h2 className="font-semibold leading-none">
 								{t("settings.equipment.custody.history", "Handover history")}
 							</h2>
-							<CorrectionMenu
-								assignment={correctable}
-								disabled={pending}
-								onSelect={(target) =>
-									open({
-										kind: "correction",
-										assignmentId: assignment.id,
-										target,
-									})
-								}
-							/>
 						</CardHeader>
 						<CardContent>
 							<EquipmentHistory
@@ -381,25 +391,6 @@ export function EquipmentAssignmentDetail({
 					) : null}
 				</div>
 				<div className="flex min-w-0 flex-col gap-4">
-					<Card className="gap-3">
-						<CardContent className="space-y-3">
-							<p className="text-xs text-muted-foreground">
-								{t("settings.equipment.filters.holder", "Holder")}
-							</p>
-							<HolderIdentity
-								employeeId={assignment.employeeId}
-								name={assignment.holderName}
-								image={assignment.holderImage}
-								former={assignment.former}
-								size="md"
-								href={
-									data.canManage
-										? `/equipment/employees/${assignment.employeeId}`
-										: undefined
-								}
-							/>
-						</CardContent>
-					</Card>
 					<EquipmentRetention
 						key={`retention:${assignment.id}:${assignment.revision}`}
 						assignment={assignment}
