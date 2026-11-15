@@ -26,7 +26,10 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
-import type { OnboardingVacationPolicyFormValues } from "@/lib/validations/onboarding";
+import type {
+	OnboardingOrganizationExpectation,
+	OnboardingVacationPolicyFormValues,
+} from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import { checkIsAdmin, createVacationPolicyOnboarding, skipVacationPolicySetup } from "./actions";
@@ -367,22 +370,44 @@ function VacationPolicyForm({
 
 export default function VacationPolicyPage() {
 	const arrival = usePolicyArrival();
-	if (!arrival.ready) return <PolicyAccessLoading />;
-	return <VacationPolicyArrival key={arrival.key} epoch={arrival.epoch} />;
-}
-
-function PolicyAccessLoading() {
+	if (!arrival.ready || !arrival.expectation) return <PolicyAccessLoading />;
 	return (
-		<LoadingRegion
-			className="flex min-h-[50vh] items-center justify-center"
-			label={{ labelKey: "common.loading", labelDefault: "Loading…" }}
-		>
-			<IconLoader2 aria-hidden="true" className="size-6 animate-spin motion-reduce:animate-none" />
-		</LoadingRegion>
+		<VacationPolicyArrival
+			key={arrival.key}
+			epoch={arrival.epoch}
+			expectation={arrival.expectation}
+		/>
 	);
 }
 
-function VacationPolicyArrival({ epoch }: { epoch: RefObject<number> }) {
+function PolicyAccessLoading() {
+	const { t } = useTranslate();
+	return (
+		<>
+			<ProgressIndicator currentStep="vacation_policy" />
+			<div className="mx-auto w-full max-w-2xl min-w-0">
+				<VacationPolicyHeader t={t} />
+				<LoadingRegion
+					className="flex min-h-[50vh] items-center justify-center"
+					label={{ labelKey: "common.loading", labelDefault: "Loading…" }}
+				>
+					<IconLoader2
+						aria-hidden="true"
+						className="size-6 animate-spin motion-reduce:animate-none"
+					/>
+				</LoadingRegion>
+			</div>
+		</>
+	);
+}
+
+function VacationPolicyArrival({
+	epoch,
+	expectation,
+}: {
+	epoch: RefObject<number>;
+	expectation: OnboardingOrganizationExpectation;
+}) {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
@@ -445,7 +470,10 @@ function VacationPolicyArrival({ epoch }: { epoch: RefObject<number> }) {
 			);
 		};
 		await runOnboardingAction({
-			action: () => (value ? createVacationPolicyOnboarding(value) : skipVacationPolicySetup()),
+			action: () =>
+				value
+					? createVacationPolicyOnboarding(value, expectation)
+					: skipVacationPolicySetup(expectation),
 			onResult: (result) => {
 				if (!current()) return;
 				if (!result.success) {

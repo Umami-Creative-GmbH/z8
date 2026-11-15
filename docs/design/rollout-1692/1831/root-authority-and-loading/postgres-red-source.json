@@ -1,0 +1,9 @@
+{
+  "base": "699a1a782ca8f0ab2def50b31e4921fd6d17a073",
+  "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+  "beforeSHA256": "a3de88d67c868fcf2156f750ca65341d5d897dd57f5a490e16855cd93e8189cf",
+  "afterSHA256": "396d1fbd443713a92b3562612fb2a0969c9deed17d82eada9c5047df1c5ad7fc",
+  "expectedFailedCases": 1,
+  "observedFailedAssertions": 3,
+  "qualification": "Actual exported actions, production service and real PostgreSQL policy/progress records; request/auth boundary fakes only. Not a live browser exploit or atomic concurrent-revocation claim."
+}

@@ -29,11 +29,16 @@ import {
 	normalizeOrganizationCreationFlag,
 } from "@/lib/organization/creation-policy";
 import { withOrganizationTrackingSetup } from "@/lib/organization/tracking-setup";
+import {
+	meetsSettingsAccess,
+	resolveCallerSettingsAccess,
+} from "@/lib/organization-action/settings-access";
 import { isTimeFormat } from "@/lib/user-preferences/time-format";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
 	OnboardingNotificationsFormValues,
+	OnboardingOrganizationExpectation,
 	OnboardingProfileFormValues,
 	OnboardingStep,
 	OnboardingVacationPolicyFormValues,
@@ -120,10 +125,13 @@ export class OnboardingService extends Context.Service<
 		// Admin setup - Vacation Policy
 		readonly createVacationPolicy: (
 			data: OnboardingVacationPolicyFormValues,
-		) => Effect.Effect<void, AuthenticationError | DatabaseError>;
-		readonly skipVacationPolicySetup: () => Effect.Effect<
+			expected?: OnboardingOrganizationExpectation,
+		) => Effect.Effect<void, AuthenticationError | AuthorizationError | DatabaseError>;
+		readonly skipVacationPolicySetup: (
+			expected?: OnboardingOrganizationExpectation,
+		) => Effect.Effect<
 			void,
-			AuthenticationError | DatabaseError
+			AuthenticationError | AuthorizationError | DatabaseError
 		>;
 
 		// Admin setup - Work Schedule Templates
@@ -187,6 +195,41 @@ export const OnboardingServiceLive = Layer.effect(
 					.getSession(organizationId)
 					.pipe(Effect.provideService(DatabaseService, dbService)),
 		};
+		const settingsCaller = () =>
+			resolveCallerSettingsAccess().pipe(
+				Effect.provideService(AuthService, authentication),
+				Effect.provideService(DatabaseService, dbService),
+			);
+		const requireVacationPolicyAdmin = (expected?: OnboardingOrganizationExpectation) =>
+			Effect.gen(function* () {
+				const caller = yield* settingsCaller();
+				if (!meetsSettingsAccess(caller.settingsAccess, "orgAdmin")) {
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "You do not have access to this setting",
+							resource: "vacation_policy",
+							action: "manage",
+							userId: caller.userId,
+						}),
+					);
+				}
+				if (
+					expected !== undefined &&
+					(!expected ||
+						expected.userId !== caller.userId ||
+						expected.organizationId !== caller.organizationId)
+				) {
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "The active account or organization changed. Please try again.",
+							resource: "vacation_policy",
+							action: "manage",
+							userId: caller.userId,
+						}),
+					);
+				}
+				return caller;
+			});
 		const requireWorkTemplateAdmin = (
 			userId: string,
 			activeOrganizationId: string | null,
@@ -569,20 +612,12 @@ export const OnboardingServiceLive = Layer.effect(
 				}),
 
 			// Admin setup - Create vacation policy
-			createVacationPolicy: (data: OnboardingVacationPolicyFormValues) =>
+			createVacationPolicy: (data: OnboardingVacationPolicyFormValues, expected) =>
 				Effect.gen(function* () {
-					const session = yield* authService.getSession();
-					const activeOrgId = session.session.activeOrganizationId;
+					const caller = yield* requireVacationPolicyAdmin(expected);
+					const activeOrgId = caller.organizationId;
 
 					yield* dbService.query("createVacationPolicy", async () => {
-						if (!activeOrgId) {
-							// Skip if no active organization
-							await writeUserSettings(dbService.db, session.user.id, {
-								onboardingStep: "work_templates",
-							});
-							return;
-						}
-
 						// Get current date as start date
 						const today = new Date().toISOString().split("T")[0];
 
@@ -605,23 +640,23 @@ export const OnboardingServiceLive = Layer.effect(
 							statutoryMinimumDays: defaultStatutoryMinimumDays(
 								data.defaultAnnualDays.toString(),
 							),
-							createdBy: session.user.id,
+							createdBy: caller.userId,
 						});
 
 						// Update onboarding step in userSettings
-						await writeUserSettings(dbService.db, session.user.id, {
+						await writeUserSettings(dbService.db, caller.userId, {
 							onboardingStep: "work_templates",
 						});
 					});
 				}),
 
 			// Skip vacation policy setup
-			skipVacationPolicySetup: () =>
+			skipVacationPolicySetup: (expected) =>
 				Effect.gen(function* () {
-					const session = yield* authService.getSession();
+					const caller = yield* requireVacationPolicyAdmin(expected);
 
 					yield* dbService.query("skipVacationPolicySetup", async () => {
-						await writeUserSettings(dbService.db, session.user.id, {
+						await writeUserSettings(dbService.db, caller.userId, {
 							onboardingStep: "work_templates",
 						});
 					});
@@ -852,26 +887,10 @@ export const OnboardingServiceLive = Layer.effect(
 
 			// Check if user is admin of their organization
 			isUserAdmin: () =>
-				Effect.gen(function* () {
-					const session = yield* authService.getSession();
-					const activeOrgId = session.session.activeOrganizationId;
-
-					if (!activeOrgId) {
-						return false;
-					}
-
-					const isAdmin = yield* dbService.query("isUserAdmin", async () => {
-						const membership = await dbService.db.query.member.findFirst({
-							where: and(
-								eq(member.userId, session.user.id),
-								eq(member.organizationId, activeOrgId),
-							),
-						});
-						return membership?.role === "owner" || membership?.role === "admin";
-					});
-
-					return isAdmin;
-				}),
+				settingsCaller().pipe(
+					Effect.map((caller) => meetsSettingsAccess(caller.settingsAccess, "orgAdmin")),
+					Effect.catchTag("AuthorizationError", () => Effect.succeed(false)),
+				),
 
 			// Get onboarding summary
 			getOnboardingSummary: () =>

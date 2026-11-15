@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {execFileSync,spawnSync} from 'node:child_process';
+import {readFile,writeFile} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+const dir=resolve(process.argv[2]),json=async n=>JSON.parse(await readFile(join(dir,n),'utf8'));
+const r=await json('runtime-private.json'),f=await json('fixture-private.json'),s=await json('services.json');assert.equal(f.kind,'disposable');assert.equal(r.env.POSTGRES_HOST,'127.0.0.1');assert.match(r.env.POSTGRES_DB,/^approval_workflow_repository_test_perf_[a-f0-9]{12}$/);assert.equal(s.label,'z8-performance-fixture-1450');for(const c of s.containers)assert.equal(execFileSync('docker',['inspect','--format','{{ index .Config.Labels "z8.agent-owned" }}',c],{encoding:'utf8',windowsHide:true}).trim(),s.label);
+const e=r.env,url=`postgresql://${encodeURIComponent(e.POSTGRES_USER)}:${encodeURIComponent(e.POSTGRES_PASSWORD)}@127.0.0.1:${e.POSTGRES_PORT}/${e.POSTGRES_DB}`;
+const cli=process.env.npm_execpath,baseline=process.argv[3]==='baseline',scopeRed=process.argv[3]==='scope-red',name=baseline?'postgres-baseline':scopeRed?'postgres-scope-red':'postgres',out=resolve('.tmp/1831-root-checks/'+name+'.json');
+const suites=baseline||scopeRed?['src/app/[locale]/onboarding/vacation-policy/actions.integration.test.ts','-t',scopeRed?'refuses an A draft':'refuses member admission']:['src/app/[locale]/onboarding/vacation-policy/actions.integration.test.ts','src/lib/employee-lifecycle/access.integration.test.ts','src/lib/organization-action/organization-action.integration.test.ts'];
+const args=['--config.verify-deps-before-run=false','--filter','webapp','exec','vitest','run','--project','integration','--maxWorkers','1',...suites,'--reporter=json','--outputFile='+out];
+const result=spawnSync(cli.endsWith('.exe')?cli:process.execPath,cli.endsWith('.exe')?args:[cli,...args],{encoding:'utf8',windowsHide:true,maxBuffer:32*1024*1024,env:{...process.env,...e,NODE_ENV:'test',pnpm_config_verify_deps_before_run:'false',APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL:url,APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL:'approval-workflow-repository-test'}});
+await writeFile('.tmp/1831-root-checks/'+name+'.log',(result.stdout??'')+(result.stderr??''));await writeFile('.tmp/1831-root-checks/'+name+'-command.json',JSON.stringify({argv:['pnpm',...args],exitCode:result.status,environment:'Own label-verified generated loopback database; standard integration gate and sentinel. No credentials are recorded.'},null,2)+'\n');
+console.log(JSON.stringify({exitCode:result.status,reportWritten:result.status!==null}));process.exitCode=result.status??1;

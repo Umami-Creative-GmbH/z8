@@ -1,0 +1,26 @@
+{
+  "onlyOwnedLoopbackEndpoints": true,
+  "bindings": [
+    {
+      "key": "POSTGRES_PORT",
+      "oldPort": "59940",
+      "newPort": "51962"
+    },
+    {
+      "key": "REDIS_PORT",
+      "oldPort": "59943",
+      "newPort": "51965"
+    },
+    {
+      "key": "S3_PUBLIC_ENDPOINT",
+      "oldPort": "59944",
+      "newPort": "51966"
+    },
+    {
+      "key": "S3_PUBLIC_URL",
+      "oldPort": "59944",
+      "newPort": "51966"
+    }
+  ],
+  "qualification": "Docker reallocated ephemeral host ports on restart. Earlier connection refusal happened before tests and is not product or red-regression evidence. Credentials, data and app origin are unchanged."
+}

@@ -83,6 +83,11 @@ export type OnboardingProfileFormValues = z.infer<typeof onboardingProfileSchema
 export type OnboardingProfileFormInput = z.input<typeof onboardingProfileSchema>;
 export type OnboardingWorkScheduleFormValues = z.infer<typeof onboardingWorkScheduleSchema>;
 export type OnboardingVacationPolicyFormValues = z.infer<typeof onboardingVacationPolicySchema>;
+/** Compared with fresh server-selected scope; never an organization selector or permission grant. */
+export interface OnboardingOrganizationExpectation {
+	userId: string;
+	organizationId: string | null;
+}
 export type OnboardingWorkTemplateFormValues = z.infer<typeof onboardingWorkTemplateSchema>;
 export type OnboardingNotificationsFormValues = z.infer<typeof onboardingNotificationsSchema>;
 
