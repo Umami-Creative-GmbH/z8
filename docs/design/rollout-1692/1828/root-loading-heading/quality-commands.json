@@ -1,0 +1,97 @@
+[
+  {
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=biome.jsonc",
+      "--error-on-warnings",
+      "--line-ending=crlf",
+      "src/app/[locale]/onboarding/notifications/page-client.tsx",
+      "src/app/[locale]/onboarding/notifications/page.test.tsx",
+      "src/app/[locale]/onboarding/notifications/actions.integration.test.ts"
+    ],
+    "name": "explicit-crlf",
+    "exitCode": 0
+  },
+  {
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=biome.jsonc",
+      "--error-on-warnings",
+      "--formatter-enabled=false",
+      "src/app/[locale]/onboarding/notifications/page-client.tsx",
+      "src/app/[locale]/onboarding/notifications/page.test.tsx",
+      "src/app/[locale]/onboarding/notifications/actions.integration.test.ts"
+    ],
+    "name": "explicit-lint",
+    "exitCode": 0
+  },
+  {
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--error-on-warnings",
+      "src/app/[locale]/onboarding/notifications/page-client.tsx",
+      "src/app/[locale]/onboarding/notifications/page.test.tsx",
+      "src/app/[locale]/onboarding/notifications/actions.integration.test.ts"
+    ],
+    "name": "default",
+    "exitCode": 1
+  },
+  {
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "--filter",
+      "webapp",
+      "exec",
+      "biome",
+      "check",
+      "--error-on-warnings",
+      "--line-ending=crlf",
+      "src/app/[locale]/onboarding/notifications/page-client.tsx",
+      "src/app/[locale]/onboarding/notifications/page.test.tsx",
+      "src/app/[locale]/onboarding/notifications/actions.integration.test.ts"
+    ],
+    "name": "ordinary-crlf",
+    "exitCode": 1
+  },
+  {
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "exec",
+      "react-doctor",
+      "apps/webapp",
+      "--scope",
+      "changed",
+      "--base",
+      "383c64f06a86bf94b89b980f9ec1091c6040d554",
+      "--verbose",
+      "--no-supply-chain",
+      "--no-telemetry",
+      "--no-score",
+      "--max-duration",
+      "90",
+      "--json"
+    ],
+    "name": "doctor",
+    "exitCode": 0
+  }
+]

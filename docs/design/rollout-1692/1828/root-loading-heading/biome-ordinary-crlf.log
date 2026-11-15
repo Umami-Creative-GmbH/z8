@@ -1,0 +1,510 @@
+src\app\[locale]\onboarding\notifications\actions.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      8   8 │     sso: false,␍
+      9   9 │   }));␍
+     10     │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+         10 │ + vi.mock("next/headers",·async·()·=>␍
+         11 │ + → (await·import("@/test/integration-harness")).nextHeaders(),␍
+         12 │ + );␍
+     11  13 │   vi.mock("next/server", async (original) =>␍
+     12  14 │     (await import("@/test/integration-harness")).nextServer(original),␍
+    ······· │ 
+     19  21 │             ? {␍
+     20  22 │                 user: { id: actor.userId, role: "user" },␍
+     21     │ - → → → → → → → session:·{·id:·"r033-session",·userId:·actor.userId,·activeOrganizationId:·null·},␍
+         23 │ + → → → → → → → session:·{␍
+         24 │ + → → → → → → → → id:·"r033-session",␍
+         25 │ + → → → → → → → → userId:·actor.userId,␍
+         26 │ + → → → → → → → → activeOrganizationId:·null,␍
+         27 │ + → → → → → → → },␍
+     22  28 │                 mfaRequired: actor.mfa,␍
+     23  29 │                 ssoRequired: actor.sso,␍
+    ······· │ 
+     27  33 │     },␍
+     28  34 │   }));␍
+     29     │ - const·{·configureNotificationsOnboarding,·skipNotificationsSetup·}·=·await·import("./actions");␍
+         35 │ + const·{·configureNotificationsOnboarding,·skipNotificationsSetup·}·=␍
+         36 │ + → await·import("./actions");␍
+     30  37 │   const pool = integrationAdminPool();␍
+     31  38 │   const values = {␍
+    ······· │ 
+     56  63 │       await pool.query(␍
+     57  64 │         'INSERT INTO "user" (id,name,email,email_verified,created_at,updated_at) VALUES ($1,$1,$2,true,now(),now()),($3,$3,$4,true,now(),now())',␍
+     58     │ - → → → ["r033-account-a",·"r033-a@example.test",·"r033-account-b",·"r033-b@example.test"],␍
+         65 │ + → → → [␍
+         66 │ + → → → → "r033-account-a",␍
+         67 │ + → → → → "r033-a@example.test",␍
+         68 │ + → → → → "r033-account-b",␍
+         69 │ + → → → → "r033-b@example.test",␍
+         70 │ + → → → ],␍
+     59  71 │       );␍
+     60  72 │     });␍
+    ······· │ 
+     68  80 │       expect((await configureNotificationsOnboarding(values)).success).toBe(true);␍
+     69  81 │       expect(await read()).toEqual([␍
+     70     │ - → → → {·notification_type:·"approval_request_approved",·channel:·"email",·enabled:·true·},␍
+     71     │ - → → → {·notification_type:·"approval_request_approved",·channel:·"in_app",·enabled:·true·},␍
+     72     │ - → → → {·notification_type:·"approval_request_approved",·channel:·"push",·enabled:·false·},␍
+     73     │ - → → → {·notification_type:·"approval_request_rejected",·channel:·"email",·enabled:·true·},␍
+     74     │ - → → → {·notification_type:·"approval_request_rejected",·channel:·"in_app",·enabled:·true·},␍
+     75     │ - → → → {·notification_type:·"approval_request_rejected",·channel:·"push",·enabled:·false·},␍
+     76     │ - → → → {·notification_type:·"approval_request_submitted",·channel:·"email",·enabled:·false·},␍
+     77     │ - → → → {·notification_type:·"approval_request_submitted",·channel:·"in_app",·enabled:·false·},␍
+     78     │ - → → → {·notification_type:·"approval_request_submitted",·channel:·"push",·enabled:·false·},␍
+     79     │ - → → → {·notification_type:·"team_member_added",·channel:·"email",·enabled:·false·},␍
+     80     │ - → → → {·notification_type:·"team_member_added",·channel:·"in_app",·enabled:·false·},␍
+     81     │ - → → → {·notification_type:·"team_member_added",·channel:·"push",·enabled:·false·},␍
+     82     │ - → → → {·notification_type:·"team_member_removed",·channel:·"email",·enabled:·false·},␍
+     83     │ - → → → {·notification_type:·"team_member_removed",·channel:·"in_app",·enabled:·false·},␍
+     84     │ - → → → {·notification_type:·"team_member_removed",·channel:·"push",·enabled:·false·},␍
+         82 │ + → → → {␍
+         83 │ + → → → → notification_type:·"approval_request_approved",␍
+         84 │ + → → → → channel:·"email",␍
+         85 │ + → → → → enabled:·true,␍
+         86 │ + → → → },␍
+         87 │ + → → → {␍
+         88 │ + → → → → notification_type:·"approval_request_approved",␍
+         89 │ + → → → → channel:·"in_app",␍
+         90 │ + → → → → enabled:·true,␍
+         91 │ + → → → },␍
+         92 │ + → → → {␍
+         93 │ + → → → → notification_type:·"approval_request_approved",␍
+         94 │ + → → → → channel:·"push",␍
+         95 │ + → → → → enabled:·false,␍
+         96 │ + → → → },␍
+         97 │ + → → → {␍
+         98 │ + → → → → notification_type:·"approval_request_rejected",␍
+         99 │ + → → → → channel:·"email",␍
+        100 │ + → → → → enabled:·true,␍
+        101 │ + → → → },␍
+        102 │ + → → → {␍
+        103 │ + → → → → notification_type:·"approval_request_rejected",␍
+        104 │ + → → → → channel:·"in_app",␍
+        105 │ + → → → → enabled:·true,␍
+        106 │ + → → → },␍
+        107 │ + → → → {␍
+        108 │ + → → → → notification_type:·"approval_request_rejected",␍
+        109 │ + → → → → channel:·"push",␍
+        110 │ + → → → → enabled:·false,␍
+        111 │ + → → → },␍
+        112 │ + → → → {␍
+        113 │ + → → → → notification_type:·"approval_request_submitted",␍
+        114 │ + → → → → channel:·"email",␍
+        115 │ + → → → → enabled:·false,␍
+        116 │ + → → → },␍
+        117 │ + → → → {␍
+        118 │ + → → → → notification_type:·"approval_request_submitted",␍
+        119 │ + → → → → channel:·"in_app",␍
+        120 │ + → → → → enabled:·false,␍
+        121 │ + → → → },␍
+        122 │ + → → → {␍
+        123 │ + → → → → notification_type:·"approval_request_submitted",␍
+        124 │ + → → → → channel:·"push",␍
+        125 │ + → → → → enabled:·false,␍
+        126 │ + → → → },␍
+        127 │ + → → → {␍
+        128 │ + → → → → notification_type:·"team_member_added",␍
+        129 │ + → → → → channel:·"email",␍
+        130 │ + → → → → enabled:·false,␍
+        131 │ + → → → },␍
+        132 │ + → → → {␍
+        133 │ + → → → → notification_type:·"team_member_added",␍
+        134 │ + → → → → channel:·"in_app",␍
+        135 │ + → → → → enabled:·false,␍
+        136 │ + → → → },␍
+        137 │ + → → → {␍
+        138 │ + → → → → notification_type:·"team_member_added",␍
+        139 │ + → → → → channel:·"push",␍
+        140 │ + → → → → enabled:·false,␍
+        141 │ + → → → },␍
+        142 │ + → → → {␍
+        143 │ + → → → → notification_type:·"team_member_removed",␍
+        144 │ + → → → → channel:·"email",␍
+        145 │ + → → → → enabled:·false,␍
+        146 │ + → → → },␍
+        147 │ + → → → {␍
+        148 │ + → → → → notification_type:·"team_member_removed",␍
+        149 │ + → → → → channel:·"in_app",␍
+        150 │ + → → → → enabled:·false,␍
+        151 │ + → → → },␍
+        152 │ + → → → {␍
+        153 │ + → → → → notification_type:·"team_member_removed",␍
+        154 │ + → → → → channel:·"push",␍
+        155 │ + → → → → enabled:·false,␍
+        156 │ + → → → },␍
+     85 157 │       ]);␍
+     86 158 │       expect(␍
+     87 159 │         (␍
+     88     │ - → → → → await·pool.query("SELECT·onboarding_step·FROM·user_settings·WHERE·user_id=$1",·[␍
+     89     │ - → → → → → actor.userId,␍
+     90     │ - → → → → ])␍
+        160 │ + → → → → await·pool.query(␍
+        161 │ + → → → → → "SELECT·onboarding_step·FROM·user_settings·WHERE·user_id=$1",␍
+        162 │ + → → → → → [actor.userId],␍
+        163 │ + → → → → )␍
+     91 164 │         ).rows,␍
+     92 165 │       ).toEqual([{ onboarding_step: "complete" }]);␍
+     93 166 │       expect(await read("r033-account-b")).toEqual([]);␍
+     94 167 │       expect(␍
+     95     │ - → → → (await·configureNotificationsOnboarding({·...values,·enablePush:·true,·enableEmail:·false·}))␍
+     96     │ - → → → → .success,␍
+        168 │ + → → → (␍
+        169 │ + → → → → await·configureNotificationsOnboarding({␍
+        170 │ + → → → → → ...values,␍
+        171 │ + → → → → → enablePush:·true,␍
+        172 │ + → → → → → enableEmail:·false,␍
+        173 │ + → → → → })␍
+  52 more lines truncated
+  
+
+src\app\[locale]\onboarding\notifications\page-client.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     15  15 │   import { useSession } from "@/lib/auth-client";␍
+     16  16 │   import { Link, useRouter } from "@/navigation";␍
+     17     │ - import·{·configureNotificationsOnboarding,·skipNotificationsSetup·}·from·"./actions";␍
+         17 │ + import·{␍
+         18 │ + → configureNotificationsOnboarding,␍
+         19 │ + → skipNotificationsSetup,␍
+         20 │ + }·from·"./actions";␍
+     18  21 │   ␍
+     19  22 │   const defaultValues = {␍
+    ······· │ 
+    111 114 │     const [pending, setPending] = useState<Pending>(null);␍
+    112 115 │     const [error, setError] = useState<string | null>(null);␍
+    113     │ - → const·[pushFeedback,·setPushFeedback]·=·useState<{·error:·boolean;·message:·string·}·|·null>(␍
+    114     │ - → → null,␍
+    115     │ - → );␍
+        116 │ + → const·[pushFeedback,·setPushFeedback]·=·useState<{␍
+        117 │ + → → error:·boolean;␍
+        118 │ + → → message:·string;␍
+        119 │ + → }·|·null>(null);␍
+    116 120 │     const arrival = useRef<symbol | null>(null);␍
+    117 121 │     const running = useRef<symbol | null>(null);␍
+    ······· │ 
+    164 168 │   ) {␍
+    165 169 │     if (browser.isLoading)␍
+    166     │ - → → return·t("onboarding.notifications.checkingBrowser",·"Checking·push·availability…");␍
+        170 │ + → → return·t(␍
+        171 │ + → → → "onboarding.notifications.checkingBrowser",␍
+        172 │ + → → → "Checking·push·availability…",␍
+        173 │ + → → );␍
+    167 174 │     if (!browser.isSupported)␍
+    168 175 │       return t(␍
+    ······· │ 
+    171 178 │       );␍
+    172 179 │     if (browser.permission === "denied")␍
+    173     │ - → → return·t("onboarding.notifications.permissionBlocked",·"Permission·blocked");␍
+        180 │ + → → return·t(␍
+        181 │ + → → → "onboarding.notifications.permissionBlocked",␍
+        182 │ + → → → "Permission·blocked",␍
+        183 │ + → → );␍
+    174 184 │     if (browser.permission === "granted")␍
+    175     │ - → → return·t("onboarding.notifications.permissionAllowed",·"Permission·allowed");␍
+    176     │ - → return·t("onboarding.notifications.permissionNotRequested",·"Permission·not·granted");␍
+        185 │ + → → return·t(␍
+        186 │ + → → → "onboarding.notifications.permissionAllowed",␍
+        187 │ + → → → "Permission·allowed",␍
+        188 │ + → → );␍
+        189 │ + → return·t(␍
+        190 │ + → → "onboarding.notifications.permissionNotRequested",␍
+        191 │ + → → "Permission·not·granted",␍
+        192 │ + → );␍
+    177 193 │   }␍
+    178 194 │   ␍
+    ······· │ 
+    195 211 │           <h2 className="flex items-center gap-2 text-lg font-semibold">␍
+    196 212 │             <IconBell aria-hidden="true" className="size-5 text-primary" />␍
+    197     │ - → → → → → {t("onboarding.notifications.browserTitle",·"Browser·push·permission")}␍
+        213 │ + → → → → → {t(␍
+        214 │ + → → → → → → "onboarding.notifications.browserTitle",␍
+        215 │ + → → → → → → "Browser·push·permission",␍
+        216 │ + → → → → → )}␍
+    198 217 │           </h2>␍
+    199 218 │           <p className="text-sm text-muted-foreground">␍
+    ······· │ 
+    221 240 │               variant="outline"␍
+    222 241 │               onClick={() => void onRequest()}␍
+    223     │ - → → → → → → disabled={busy·||·browser.permission·===·"denied"·||·browser.permission·===·"granted"}␍
+        242 │ + → → → → → → disabled={␍
+        243 │ + → → → → → → → busy·||␍
+        244 │ + → → → → → → → browser.permission·===·"denied"·||␍
+        245 │ + → → → → → → → browser.permission·===·"granted"␍
+        246 │ + → → → → → → }␍
+    224 247 │             >␍
+    225 248 │               {pending === "push" && (␍
+    ······· │ 
+    230 253 │               )}␍
+    231 254 │               {browser.permission === "granted"␍
+    232     │ - → → → → → → → ?·t("onboarding.notifications.permissionAllowed",·"Permission·allowed")␍
+    233     │ - → → → → → → → :·t("onboarding.notifications.requestPermission",·"Request·permission")}␍
+        255 │ + → → → → → → → ?·t(␍
+        256 │ + → → → → → → → → → "onboarding.notifications.permissionAllowed",␍
+        257 │ + → → → → → → → → → "Permission·allowed",␍
+        258 │ + → → → → → → → → )␍
+        259 │ + → → → → → → → :·t(␍
+        260 │ + → → → → → → → → → "onboarding.notifications.requestPermission",␍
+        261 │ + → → → → → → → → → "Request·permission",␍
+        262 │ + → → → → → → → → )}␍
+    234 263 │             </Button>␍
+    235 264 │           )}␍
+    ······· │ 
+    244 273 │           {pending === "push" && (␍
+    245 274 │             <p role="status" className="text-sm">␍
+    246     │ - → → → → → → {t("onboarding.notifications.requestingPermission",·"Waiting·for·browser·permission…")}␍
+        275 │ + → → → → → → {t(␍
+        276 │ + → → → → → → → "onboarding.notifications.requestingPermission",␍
+        277 │ + → → → → → → → "Waiting·for·browser·permission…",␍
+        278 │ + → → → → → → )}␍
+    247 279 │             </p>␍
+    248 280 │           )}␍
+    ······· │ 
+    251 283 │               role={pushFeedback.error ? "alert" : "status"}␍
+    252 284 │               className={␍
+    253     │ - → → → → → → → pushFeedback.error·?·"text-sm·text-destructive"·:·"text-sm·text-muted-foreground"␍
+        285 │ + → → → → → → → pushFeedback.error␍
+        286 │ + → → → → → → → → ?·"text-sm·text-destructive"␍
+        287 │ + → → → → → → → → :·"text-sm·text-muted-foreground"␍
+    254 288 │               }␍
+    255 289 │             >␍
+    ······· │ 
+    262 296 │   }␍
+    263 297 │   ␍
+    264     │ - function·NotificationSetup({·organizationId·}:·{·organizationId:·string·|·null·})·{␍
+        298 │ + function·NotificationSetup({␍
+        299 │ + → organizationId,␍
+        300 │ + }:·{␍
+        301 │ + → organizationId:·string·|·null;␍
+        302 │ + })·{␍
+    265 303 │     const { t } = useTranslate();␍
+    266 304 │     const { push } = useRouter();␍
+    267 305 │     const browser = usePushNotifications();␍
+    268     │ - → const·{·pending,·error,·setError,·pushFeedback,·setPushFeedback,·isCurrent,·finish,·begin·}·=␍
+    269     │ - → → useNotificationActions(organizationId);␍
+        306 │ + → const·{␍
+        307 │ + → → pending,␍
+        308 │ + → → error,␍
+        309 │ + → → setError,␍
+        310 │ + → → pushFeedback,␍
+        311 │ + → → setPushFeedback,␍
+        312 │ + → → isCurrent,␍
+        313 │ + → → finish,␍
+        314 │ + → → begin,␍
+        315 │ + → }·=·useNotificationActions(organizationId);␍
+    270 316 │   ␍
+    271 317 │     const form = useForm({␍
+    ······· │ 
+    276 322 │     });␍
+    277 323 │   ␍
+    278     │ - → async·function·saveOrSkip(kind:·"save"·|·"skip",·action:·typeof·skipNotificationsSetup)·{␍
+        324 │ + → async·function·saveOrSkip(␍
+        325 │ + → → kind:·"save"·|·"skip",␍
+        326 │ + → → action:·typeof·skipNotificationsSetup,␍
+        327 │ + → )·{␍
+    279 328 │       const owner = begin(kind);␍
+    280 329 │       if (!owner) return;␍
+    ······· │ 
+    282 331 │       const fallback =␍
+    283 332 │         kind === "save"␍
+    284     │ - → → → → ?·t("onboarding.notifications.error",·"Failed·to·save·notification·preferences")␍
+    285     │ - → → → → :·t("onboarding.notifications.skipError",·"Failed·to·skip·notification·setup");␍
+        333 │ + → → → → ?·t(␍
+        334 │ + → → → → → → "onboarding.notifications.error",␍
+        335 │ + → → → → → → "Failed·to·save·notification·preferences",␍
+        336 │ + → → → → → )␍
+        337 │ + → → → → :·t(␍
+        338 │ + → → → → → → "onboarding.notifications.skipError",␍
+        339 │ + → → → → → → "Failed·to·skip·notification·setup",␍
+        340 │ + → → → → → );␍
+    286 341 │       try {␍
+    287 342 │         const result = await action();␍
+    ······· │ 
+    375 430 │               <h2 className="flex items-center gap-2 text-lg font-semibold">␍
+    376 431 │                 <IconMail aria-hidden="true" className="size-5 text-primary" />␍
+    377     │ - → → → → → → → {t("onboarding.notifications.preferencesTitle",·"Notification·Preferences")}␍
+  100 more lines truncated
+  
+
+src\app\[locale]\onboarding\notifications\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   /* @vitest-environment jsdom */␍
+      2   2 │   ␍
+      3     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+          3 │ + import·{␍
+          4 │ + → act,␍
+          5 │ + → fireEvent,␍
+          6 │ + → render,␍
+          7 │ + → screen,␍
+          8 │ + → waitFor,␍
+          9 │ + }·from·"@testing-library/react";␍
+      4  10 │   import { Activity } from "react";␍
+      5  11 │   import { beforeEach, describe, expect, it, vi } from "vitest";␍
+    ······· │ 
+     32  38 │   vi.mock("@/navigation", () => ({␍
+     33  39 │     useRouter: () => ({ push: mocks.push }),␍
+     34     │ - → Link:·({·children,·href·}:·{·children:·import("react").ReactNode;·href:·string·})·=>·(␍
+     35     │ - → → <a·href={href}>{children}</a>␍
+     36     │ - → ),␍
+         40 │ + → Link:·({␍
+         41 │ + → → children,␍
+         42 │ + → → href,␍
+         43 │ + → }:·{␍
+         44 │ + → → children:·import("react").ReactNode;␍
+         45 │ + → → href:·string;␍
+         46 │ + → })·=>·<a·href={href}>{children}</a>,␍
+     37  47 │   }));␍
+     38  48 │   ␍
+    ······· │ 
+     64  74 │       vi.clearAllMocks();␍
+     65  75 │       mocks.useSession.mockReturnValue({␍
+     66     │ - → → → data:·{·user:·{·id:·"account-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+         76 │ + → → → data:·{␍
+         77 │ + → → → → user:·{·id:·"account-a"·},␍
+         78 │ + → → → → session:·{·activeOrganizationId:·"org-a"·},␍
+         79 │ + → → → },␍
+     67  80 │         isPending: false,␍
+     68  81 │       });␍
+    ······· │ 
+     79  92 │       const view = render(<NotificationsPage />);␍
+     80  93 │   ␍
+     81     │ - → → expect(screen.getByRole("status",·{·name:·"Loading·your·notification·setup"·})).toBeTruthy();␍
+         94 │ + → → expect(␍
+         95 │ + → → → screen.getByRole("status",·{·name:·"Loading·your·notification·setup"·}),␍
+         96 │ + → → ).toBeTruthy();␍
+     82  97 │       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);␍
+     83     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Set·up·notifications"·})).toBeTruthy();␍
+         98 │ + → → expect(␍
+         99 │ + → → → screen.getByRole("heading",·{·level:·1,·name:·"Set·up·notifications"·}),␍
+        100 │ + → → ).toBeTruthy();␍
+     84 101 │       expect(screen.queryByRole("switch")).toBeNull();␍
+     85 102 │       expect(mocks.configureNotificationsOnboarding).not.toHaveBeenCalled();␍
+    ······· │ 
+     87 104 │   ␍
+     88 105 │       mocks.useSession.mockReturnValue({␍
+     89     │ - → → → data:·{·user:·{·id:·"account-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+        106 │ + → → → data:·{␍
+        107 │ + → → → → user:·{·id:·"account-a"·},␍
+        108 │ + → → → → session:·{·activeOrganizationId:·"org-a"·},␍
+        109 │ + → → → },␍
+     90 110 │         isPending: false,␍
+     91 111 │       });␍
+    ······· │ 
+     93 113 │   ␍
+     94 114 │       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);␍
+     95     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Set·up·notifications"·})).toBeTruthy();␍
+     96     │ - → → expect(screen.getByRole("switch",·{·name:·"Email·Notifications"·})).toBeTruthy();␍
+        115 │ + → → expect(␍
+        116 │ + → → → screen.getByRole("heading",·{·level:·1,·name:·"Set·up·notifications"·}),␍
+        117 │ + → → ).toBeTruthy();␍
+        118 │ + → → expect(␍
+        119 │ + → → → screen.getByRole("switch",·{·name:·"Email·Notifications"·}),␍
+        120 │ + → → ).toBeTruthy();␍
+     97 121 │     });␍
+     98 122 │   ␍
+    ······· │ 
+    107 131 │         });␍
+    108 132 │         mocks.requestPermission.mockResolvedValue(permission);␍
+    109     │ - → → → mocks.configureNotificationsOnboarding.mockResolvedValue({·success:·true·});␍
+        133 │ + → → → mocks.configureNotificationsOnboarding.mockResolvedValue({␍
+        134 │ + → → → → success:·true,␍
+        135 │ + → → → });␍
+    110 136 │         render(<NotificationsPage />);␍
+    111     │ - → → → fireEvent.click(screen.getByRole("button",·{·name:·/^(Enable|Request·permission)$/·}));␍
+    112     │ - → → → await·waitFor(()·=>·expect(mocks.requestPermission).toHaveBeenCalledOnce());␍
+        137 │ + → → → fireEvent.click(␍
+        138 │ + → → → → screen.getByRole("button",·{·name:·/^(Enable|Request·permission)$/·}),␍
+        139 │ + → → → );␍
+        140 │ + → → → await·waitFor(()·=>␍
+        141 │ + → → → → expect(mocks.requestPermission).toHaveBeenCalledOnce(),␍
+        142 │ + → → → );␍
+    113 143 │         fireEvent.click(␍
+    114     │ - → → → → screen.getByRole("button",·{·name:·/^(Continue|Save·preferences·and·continue)$/·}),␍
+        144 │ + → → → → screen.getByRole("button",·{␍
+        145 │ + → → → → → name:·/^(Continue|Save·preferences·and·continue)$/,␍
+        146 │ + → → → → }),␍
+    115 147 │         );␍
+    116 148 │         await waitFor(() =>␍
+    ······· │ 
+    134 166 │       fireEvent.click(enabled);␍
+    135 167 │       expect(mocks.requestPermission).not.toHaveBeenCalled();␍
+    136     │ - → → expect(screen.queryByRole("button",·{·name:·"Request·permission"·})).toBeNull();␍
+        168 │ + → → expect(␍
+        169 │ + → → → screen.queryByRole("button",·{·name:·"Request·permission"·}),␍
+        170 │ + → → ).toBeNull();␍
+    137 171 │     });␍
+    138 172 │   ␍
+    ······· │ 
+    157 191 │       render(<NotificationsPage />);␍
+    158 192 │   ␍
+    159     │ - → → const·continueButton·=·screen.getByRole("button",·{·name:·"Save·preferences·and·continue"·});␍
+        193 │ + → → const·continueButton·=·screen.getByRole("button",·{␍
+        194 │ + → → → name:·"Save·preferences·and·continue",␍
+        195 │ + → → });␍
+    160 196 │       fireEvent.click(continueButton);␍
+    161 197 │   ␍
+    162     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledWith("/onboarding/complete"));␍
+        198 │ + → → await·waitFor(()·=>␍
+        199 │ + → → → expect(mocks.push).toHaveBeenCalledWith("/onboarding/complete"),␍
+        200 │ + → → );␍
+    163 201 │       expect(mocks.push).toHaveBeenCalledOnce();␍
+    164 202 │       expect(continueButton).toHaveProperty("disabled", true);␍
+    ······· │ 
+    169 207 │       render(<NotificationsPage />);␍
+    170 208 │   ␍
+    171     │ - → → fireEvent.click(screen.getByRole("switch",·{·name:·"Email·Notifications"·}));␍
+        209 │ + → → fireEvent.click(␍
+        210 │ + → → → screen.getByRole("switch",·{·name:·"Email·Notifications"·}),␍
+        211 │ + → → );␍
+    172 212 │       fireEvent.click(screen.getByRole("switch", { name: "Approval requests" }));␍
+    173 213 │       fireEvent.click(screen.getByRole("switch", { name: "Team changes" }));␍
+    174     │ - → → fireEvent.click(screen.getByRole("button",·{·name:·"Save·preferences·and·continue"·}));␍
+        214 │ + → → fireEvent.click(␍
+        215 │ + → → → screen.getByRole("button",·{·name:·"Save·preferences·and·continue"·}),␍
+        216 │ + → → );␍
+    175 217 │   ␍
+    176 218 │       await waitFor(() =>␍
+    ······· │ 
+    205 247 │       fireEvent.click(skipButton);␍
+    206 248 │   ␍
+    207     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledWith("/onboarding/complete"));␍
+        249 │ + → → await·waitFor(()·=>␍
+        250 │ + → → → expect(mocks.push).toHaveBeenCalledWith("/onboarding/complete"),␍
+        251 │ + → → );␍
+    208 252 │       expect(mocks.push).toHaveBeenCalledOnce();␍
+    209 253 │       expect(skipButton).toHaveProperty("disabled", true);␍
+    ······· │ 
+    215 259 │       render(<NotificationsPage />);␍
+    216 260 │   ␍
+    217     │ - → → const·continueButton·=·screen.getByRole("button",·{·name:·"Save·preferences·and·continue"·});␍
+        261 │ + → → const·continueButton·=·screen.getByRole("button",·{␍
+        262 │ + → → → name:·"Save·preferences·and·continue",␍
+        263 │ + → → });␍
+    218 264 │       fireEvent.click(continueButton);␍
+    219     │ - → → await·waitFor(()·=>·expect(continueButton).toHaveProperty("disabled",·true));␍
+        265 │ + → → await·waitFor(()·=>␍
+        266 │ + → → → expect(continueButton).toHaveProperty("disabled",·true),␍
+        267 │ + → → );␍
+    220 268 │   ␍
+    221     │ - → → await·act(async·()·=>·request.reject(new·Error("private·configuration·failure")));␍
+        269 │ + → → await·act(async·()·=>␍
+        270 │ + → → → request.reject(new·Error("private·configuration·failure")),␍
+  298 more lines truncated
+  
+
+Checked 3 files in 10ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

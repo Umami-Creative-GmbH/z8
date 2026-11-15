@@ -74,6 +74,28 @@ describe("NotificationsPage busy state", () => {
 		});
 	});
 
+	it("keeps one safe task heading while account loading settles into notification setup", () => {
+		mocks.useSession.mockReturnValue({ data: null, isPending: true });
+		const view = render(<NotificationsPage />);
+
+		expect(screen.getByRole("status", { name: "Loading your notification setup" })).toBeTruthy();
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(screen.getByRole("heading", { level: 1, name: "Set up notifications" })).toBeTruthy();
+		expect(screen.queryByRole("switch")).toBeNull();
+		expect(mocks.configureNotificationsOnboarding).not.toHaveBeenCalled();
+		expect(mocks.skipNotificationsSetup).not.toHaveBeenCalled();
+
+		mocks.useSession.mockReturnValue({
+			data: { user: { id: "account-a" }, session: { activeOrganizationId: "org-a" } },
+			isPending: false,
+		});
+		view.rerender(<NotificationsPage />);
+
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(screen.getByRole("heading", { level: 1, name: "Set up notifications" })).toBeTruthy();
+		expect(screen.getByRole("switch", { name: "Email Notifications" })).toBeTruthy();
+	});
+
 	it.each(["default", "denied"])(
 		"never stores a %s permission response as push consent",
 		async (permission) => {

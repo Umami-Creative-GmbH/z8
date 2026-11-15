@@ -1,0 +1,13 @@
+{
+  "portClosed": true,
+  "port": 59169,
+  "stoppedPids": [
+    6004,
+    75100,
+    54240,
+    14600
+  ],
+  "ownedNextIdentityVerified": true,
+  "cacheMoved": false,
+  "ownedNextStopped": true
+}
