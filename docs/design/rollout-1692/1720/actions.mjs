@@ -37,7 +37,7 @@ try{
  await page.waitForSelector('[role="dialog"] [role="alert"]');await check('invalid file is refused before uploading',true);
  const file=join(dir,fileName);await writeFile(file,'%PDF-1.4\nSynthetic real request upload\n%%EOF');
  await (await page.$('[role="dialog"] input[type="file"]')).uploadFile(file);
- 
+
  await pool.query('update organization set personnel_files_enabled=false where id=$1',[actor.organizationId]);
  await click('[role="dialog"] button[type="submit"]');await page.waitForSelector('[role="dialog"] [role="alert"]');
  await check('permission loss refuses upload and retains panel/file',await page.$eval('[role="dialog"] input[type="file"]',n=>n.files[0]?.name),fileName);

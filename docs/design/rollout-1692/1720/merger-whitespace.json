@@ -1,0 +1,43 @@
+{
+  "results": [
+    {
+      "scope": "whole-diff",
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+        "HEAD"
+      ],
+      "exitCode": 2,
+      "files": {
+        "docs/design/rollout-1692/1720/actions.mjs": 1,
+        "docs/design/rollout-1692/1720/biome-crlf-default.txt": 63,
+        "docs/design/rollout-1692/1720/biome-default.txt": 75,
+        "docs/design/rollout-1692/1720/biome-explicit-crlf.txt": 13,
+        "docs/design/rollout-1692/1720/biome-explicit-lint-import.txt": 2,
+        "docs/design/rollout-1692/1720/biome-explicit.txt": 2,
+        "docs/design/rollout-1692/1720/combined-postgres.txt": 1,
+        "docs/design/rollout-1692/1720/combined-unit.txt": 1,
+        "docs/design/rollout-1692/1720/unit.txt": 1
+      },
+      "diagnosticLines": 159
+    },
+    {
+      "scope": "application-source",
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "ff41086d134135f4b217f9d9cb63c2cb714a4f3d",
+        "HEAD",
+        "--",
+        "apps/webapp/src"
+      ],
+      "exitCode": 0,
+      "files": {},
+      "diagnosticLines": 0
+    }
+  ],
+  "classification": "Inherited raw evidence retained byte-for-byte. No formatting normalization/source edits by merger."
+}
