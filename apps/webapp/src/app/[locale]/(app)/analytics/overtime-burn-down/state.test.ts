@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { ALL_FILTER_VALUE, overtimeBurnDownInitialState, overtimeBurnDownReducer } from "./state";
+import type { OvertimeBurnDownData } from "@/lib/analytics/types";
+import {
+	ALL_FILTER_VALUE,
+	overtimeBurnDownInitialState,
+	overtimeBurnDownReducer,
+} from "./state";
 
 describe("overtimeBurnDownReducer", () => {
 	it("updates related filters without changing the selected breakdown", () => {
@@ -16,7 +21,18 @@ describe("overtimeBurnDownReducer", () => {
 	});
 
 	it("sets fetch data and loading together from one transition", () => {
-		const data = { summary: null } as never;
+		const data: OvertimeBurnDownData = {
+			summary: {
+				currentOvertimeHours: 0,
+				wowDeltaHours: 0,
+				improvingGroups: 0,
+				trendDirection: "flat",
+			},
+			weeklySeries: [],
+			byTeam: [],
+			byCostCenter: [],
+			byManager: [],
+		};
 		const loadingState = overtimeBurnDownReducer(overtimeBurnDownInitialState, {
 			type: "loadingStarted",
 		});

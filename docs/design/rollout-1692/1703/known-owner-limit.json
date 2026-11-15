@@ -1,0 +1,7 @@
+{
+  "control": "Manager filter: Unassigned",
+  "observed": "Real getOvertimeBurnDownData read returns DatabaseError: PostgreSQL invalid input syntax for type uuid: unassigned. The refreshed route exposes unavailable/retry, retaining the selected range/filter. Selecting All managers or an assigned manager recovers through a genuine successful read.",
+  "owner": "apps/webapp/src/lib/effect/services/analytics.service.ts, getOvertimeBurnDown managerPredicate",
+  "boundary": "Service/action/calculation/export files are byte-identical to required integration base 551b94f0d22e755217929ac4aa4b56cba5650056. This presentation ticket does not alter sentinel filtering or claim this option succeeds.",
+  "nextTransition": "During guarded revocation/missing-profile/org-switch checks, Next logged instant-unrendered-segment and instant validation prevented messages. The inspected cause chain included NEXT_REDIRECT in requireAppSession at app-layout-content.tsx:94. Final connected probes were clean. Baseline versus regression and complete transition validation remain unresolved; no instant=false opt-out or weakened guard was introduced."
+}

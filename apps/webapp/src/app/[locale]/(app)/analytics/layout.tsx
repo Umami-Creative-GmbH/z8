@@ -8,7 +8,6 @@ import {
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { LoadingRegion } from "@/components/ui/loading-region";
-import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
@@ -17,6 +16,7 @@ import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { Link } from "@/navigation";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
+import { AnalyticsHeading } from "./analytics-heading";
 import { findAnalyticsEmployeeByUserId } from "./current-employee-scope";
 
 export default function AnalyticsLayout({
@@ -47,7 +47,7 @@ async function AnalyticsLayoutLoading() {
 			}}
 		>
 			<div className="space-y-2 px-4 lg:px-6">
-				<PageHeader title={t("analytics.layout.title", "Analytics")} />
+				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
 			</div>
 			<div className="px-4 lg:px-6">
@@ -76,7 +76,7 @@ async function AnalyticsLayoutContent({
 	if (!currentEmployee) {
 		return (
 			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
-				<PageHeader title={t("analytics.layout.title", "Analytics")} />
+				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<NoEmployeeError
 					feature={t("analytics.access.noEmployeeFeature", "view analytics")}
 				/>
@@ -88,7 +88,7 @@ async function AnalyticsLayoutContent({
 	if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
 		return (
 			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
-				<PageHeader title={t("analytics.layout.title", "Analytics")} />
+				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<div className="text-center">
 					<h2 className="text-2xl font-bold">
 						{t("analytics.access.restrictedTitle", "Access Restricted")}
@@ -108,7 +108,7 @@ async function AnalyticsLayoutContent({
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Page Header */}
 			<div className="px-4 lg:px-6">
-				<PageHeader
+				<AnalyticsHeading
 					title={t("analytics.layout.title", "Analytics")}
 					description={t(
 						"analytics.layout.description",

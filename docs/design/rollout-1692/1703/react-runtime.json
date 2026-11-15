@@ -1,0 +1,15 @@
+{
+    "tree":  [
+                 "154 5846 5845 Forget(AnalyticsHeading)",
+                 "188 5960 5959 Forget(OvertimeBurnDownPage)",
+                 "189 5961 5960 Forget(OvertimeBurnDown) key=\"perf-small-e55f454a0839\"",
+                 "191 5963 5962 Forget(AnalyticsToolbar)",
+                 "192 5964 5963 Forget(DataTableToolbar)",
+                 "191 6100 5962 Forget(SummaryCards)",
+                 "191 6122 5962 Forget(WeeklyTrendCard)",
+                 "191 6432 5962 Forget(BreakdownCard)"
+             ],
+    "inspection":  "Forget(OvertimeBurnDown) #5961\nkey: \"perf-small-e55f454a0839\"\nhooks:\n  Translate: undefined (2 sub)\n  Shallow: undefined (1 sub)\n  OrganizationSettingsStore: undefined (2 sub)\n  [10] Ref: false\n  [11] State: {start: Sun Nov 01 2026 00:00:00 GMT+0100 (Mitteleuropäische Normalzeit), end: Mon Nov 30 2026 23:59:59 GMT+0100 (Mitteleuropäische Normalzeit), startDate: \"2026-11-01\", endDate: \"2026-11-30\", timezone: \"Europe/Berlin\"}\n  [12] Reducer: {loading: false, refreshing: false, failed: false, requestKey: \"[1793487600000,1796079599999,\\\"all\\\",\\\"all\\\",\\\"all\\\"]\", data: {byCostCenter: Array(1), byManager: Array(2), byTea…}, choices: {byCostCenter: Array(1), byManager: Array(2), byTea…}, teamId: \"all\", costCenterId: \"all\", managerId: \"all\", breakdownDimension: \"team\"}\n  [13] Effect: OvertimeBurnDown.useEffect() {}\n  [14] Ref: 5\n  [15] Callback: OvertimeBurnDown.useCallback[runAnalyticsLoad]() {}\n  ViewRefresh: undefined (2 sub)\n  [17] Effect: OvertimeBurnDown.useEffect() {}\nrendered by: Forget(OvertimeBurnDownPage) \u003e ClientPageRoot",
+    "nativeTool":  "agent-browser 0.39.1 --enable react-devtools --json",
+    "limits":  "Native tree/state inspection only; no render-count, remount or performance improvement claim."
+}
