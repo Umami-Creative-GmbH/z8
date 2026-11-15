@@ -5,10 +5,10 @@ import { AppErrorState } from "@/components/errors/app-error-state";
 
 export default function AdminError({
 	error,
-	reset,
+	retry,
 }: {
 	error: Error & { digest?: string };
-	reset: () => void;
+	retry: () => void;
 }) {
 	useEffect(() => {
 		console.error("Admin error:", error);
@@ -22,7 +22,7 @@ export default function AdminError({
 			descriptionKey="errors.unexpected.description"
 			descriptionDefault="We couldn't load this page right now. Please try again or return to a safe place in the app."
 			digest={error.digest}
-			onRetry={reset}
+			onRetry={retry}
 		/>
 	);
 }

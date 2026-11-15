@@ -21,12 +21,12 @@ vi.mock("@/navigation", () => ({
 }));
 
 it("keeps Settings retry and recovery without displaying internal error messages", () => {
-	const reset = vi.fn();
+	const retry = vi.fn();
 	vi.spyOn(console, "error").mockImplementation(() => {});
 	render(
 		<SettingsError
 			error={new Error("private database detail")}
-			reset={reset}
+			retry={retry}
 		/>,
 	);
 	expect(
@@ -37,38 +37,54 @@ it("keeps Settings retry and recovery without displaying internal error messages
 		screen.getByRole("link", { name: "Back to Settings" }).getAttribute("href"),
 	).toBe("/settings");
 	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-	expect(reset).toHaveBeenCalledOnce();
+	expect(retry).toHaveBeenCalledOnce();
 });
 
-it("keeps one main heading when workspace failure replaces a converted or unconverted page", () => {
-	vi.spyOn(console, "error").mockImplementation(() => {});
-	pathname = "/de/calendar";
-	const page = render(
-		<>
-			<h1>Calendar</h1>
-			<WorkspaceError error={new Error("internal")} reset={() => {}} />
-		</>,
-	);
-	expect(
-		screen
-			.getAllByRole("heading", { level: 1 })
-			.map((heading) => heading.textContent),
-	).toEqual(["Calendar"]);
-	expect(
-		screen.getByRole("link", { name: "Settings" }).getAttribute("href"),
-	).toBe("/settings");
-	pathname = "/de/reports";
-	page.rerender(<WorkspaceNotFound />);
-	expect(
-		screen.getByRole("heading", { level: 1, name: "Page not found" }),
-	).toBeTruthy();
-	expect(screen.queryByText("internal")).toBeNull();
-});
+it.each([
+	{
+		name: "a shell-owned unknown descendant",
+		path: "/de/calendar/unknown/descendant",
+		shellHeading: true,
+		expectedHeading: "Calendar",
+	},
+	{
+		name: "a converted page",
+		path: "/de/",
+		shellHeading: false,
+		expectedHeading: "Something went wrong",
+	},
+])(
+	"keeps one main heading for $name recovery",
+	({ path, shellHeading, expectedHeading }) => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		pathname = path;
+		const page = render(
+			<>
+				{shellHeading ? <h1>Calendar</h1> : null}
+				<WorkspaceError error={new Error("internal")} retry={() => {}} />
+			</>,
+		);
+		expect(
+			screen
+				.getAllByRole("heading", { level: 1 })
+				.map((heading) => heading.textContent),
+		).toEqual([expectedHeading]);
+		expect(
+			screen.getByRole("link", { name: "Settings" }).getAttribute("href"),
+		).toBe("/settings");
+		pathname = "/de/reports";
+		page.rerender(<WorkspaceNotFound />);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Page not found" }),
+		).toBeTruthy();
+		expect(screen.queryByText("internal")).toBeNull();
+	},
+);
 
 it("keeps admin error and not-found recovery inside its distinct shell", () => {
 	vi.spyOn(console, "error").mockImplementation(() => {});
 	const page = render(
-		<AdminError error={new Error("internal")} reset={() => {}} />,
+		<AdminError error={new Error("internal")} retry={() => {}} />,
 	);
 	expect(
 		screen.getByRole("link", { name: "Admin Console" }).getAttribute("href"),
