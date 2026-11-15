@@ -306,6 +306,7 @@ describe("offline kiosk clocking (#1292)", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Done" }));
 		fireEvent.click(await screen.findByRole("button", { name: /Ben Özdemir/ }));
+		expect(await screen.findByText("Clockings awaiting confirmation: 1")).toBeTruthy();
 		await enterPin("1357");
 		expect(await screen.findByText(/^Clocked in since 10:30\sAM$/)).toBeTruthy();
 		expect(screen.getByText(/includes clockings saved on this kiosk/)).toBeTruthy();

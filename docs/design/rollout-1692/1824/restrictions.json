@@ -1,0 +1,61 @@
+{
+  "checks": [
+    {
+      "check": "unpaired API refuses missing device token",
+      "detail": 401
+    },
+    {
+      "check": "consumed pairing code refuses reuse",
+      "detail": 401
+    },
+    {
+      "check": "foreign organization employee refused",
+      "detail": "employee_not_assigned"
+    },
+    {
+      "check": "five real wrong PIN attempts enforce lockout even with correct PIN",
+      "detail": {
+        "failures": [
+          {
+            "status": 403,
+            "code": "wrong_pin"
+          },
+          {
+            "status": 403,
+            "code": "wrong_pin"
+          },
+          {
+            "status": 403,
+            "code": "wrong_pin"
+          },
+          {
+            "status": 403,
+            "code": "wrong_pin"
+          },
+          {
+            "status": 423,
+            "code": "pin_locked"
+          }
+        ],
+        "correctAfterLock": {
+          "status": 423,
+          "code": "pin_locked"
+        }
+      }
+    },
+    {
+      "check": "restricted actual account cannot manage kiosk settings",
+      "detail": {
+        "path": "/en/settings"
+      }
+    },
+    {
+      "check": "actual authorized admin revocation removes device authority",
+      "detail": {
+        "status": 401,
+        "code": "kiosk_revoked",
+        "screen": "Kiosk revoked; pair with new code available"
+      }
+    }
+  ]
+}

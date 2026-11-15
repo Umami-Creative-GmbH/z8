@@ -1,0 +1,27 @@
+{
+  "classification": "Fresh live action assertions completed before later layout-driver hydration assertion failed; no action handler/response mocked.",
+  "checks": [
+    "real enrolled organization/location/device scope",
+    "search/no match/recovery",
+    "PIN clock in persists UTC/offset/device evidence",
+    "online badge proves without PIN and needs explicit action",
+    "registered fob selects; PIN still proves resume",
+    "lost clock reply blocks another action before status lookup",
+    "uncertain outcome resolves actual committed result",
+    "offline PIN command is unconfirmed and not yet persisted",
+    "queue remains visible during next identification",
+    "reconnect confirms original frozen command once"
+  ],
+  "records": "runtime.json",
+  "screenshots": [
+    "after-confirmed-clock-in.png",
+    "after-pending-clock-out.png",
+    "after-uncertain.png",
+    "after-offline-unconfirmed.png",
+    "after-queue-during-pin.png"
+  ],
+  "limitations": [
+    "The first historical fixture clock-in was refused append_review_required; fresh kiosk-only worker used without altering original history.",
+    "The full driver did not exit green as one run: action assertions passed; layout/keyboard/idle completed separately with --layout-only after mobile viewport hydration waits were corrected."
+  ]
+}

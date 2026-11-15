@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCamera, IconMapPin, IconNfc, IconQrcode } from "@tabler/icons-react";
+import { IconCamera, IconNfc, IconQrcode } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import type {
 	KioskEmployeesResponse,
 	KioskRefusalCode,
 } from "@/lib/time-tracking/kiosk/protocol";
-import { KioskLanguageSwitch } from "./kiosk-language";
+import { cn } from "@/lib/utils";
 import { useKioskHomeNoticeMessage } from "./kiosk-messages";
 import { type KioskNameListOutcome, KioskNamePicker, useKioskNameList } from "./kiosk-name-grid";
 import type { KioskHomeNotice } from "./kiosk-turn-flow";
@@ -52,7 +52,6 @@ interface KioskHomeProps {
 	contacts?: number;
 	/** An offline-mode kiosk without a connection: no language switch, whose page may not be cached. */
 	offline?: boolean;
-	locale: string;
 	/** Why the last badge scan or badge turn did not go through (#1366). */
 	notice?: KioskHomeNotice | null;
 	/**
@@ -72,7 +71,6 @@ interface KioskHomeProps {
 	 * camera input is on; the camera opens from this button alone.
 	 */
 	onScanBadge?: () => void;
-	onChooseLanguage: (language: string) => void;
 	onPick: (employee: KioskEmployeeListing) => void;
 	onKioskRefused: (code: KioskRefusalCode) => void;
 }
@@ -90,13 +88,11 @@ export function KioskHome({
 	kiosk,
 	contacts = 0,
 	offline = false,
-	locale,
 	notice = null,
 	onBadge,
 	onBadgeUnreadable,
 	onFob,
 	onScanBadge,
-	onChooseLanguage,
 	onPick,
 	onKioskRefused,
 }: KioskHomeProps) {
@@ -123,23 +119,28 @@ export function KioskHome({
 	});
 
 	return (
-		<div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6">
-			<header className="flex flex-wrap items-center justify-between gap-4">
-				<div className="min-w-0">
-					<h1 className="truncate text-3xl font-semibold">{kiosk.name}</h1>
-					<p className="flex items-center gap-1 text-lg text-muted-foreground">
-						<IconMapPin className="size-5 shrink-0" aria-hidden="true" />
-						<span className="truncate">{kiosk.locationName}</span>
-					</p>
-				</div>
-				<KioskLanguageSwitch locale={locale} disabled={offline} onChoose={onChooseLanguage} />
-			</header>
-
-			<div className="grid flex-1 content-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-				<section aria-labelledby="kiosk-employees" className="flex min-w-0 flex-col gap-4">
-					<h2 id="kiosk-employees" className="text-xl font-semibold">
-						{t("timeTracking.kiosk.home.title", "Tap your name to clock in or out")}
-					</h2>
+		<div className="flex w-full flex-1 flex-col gap-6">
+			<div
+				className={cn(
+					"grid flex-1 content-start gap-6",
+					kiosk.boardEnabled &&
+						!offline &&
+						"lg:grid-cols-[minmax(0,1fr)_20rem]",
+				)}
+			>
+				<section
+					aria-labelledby="kiosk-employees"
+					className="flex min-w-0 flex-col gap-5 rounded-xl border bg-card p-4 sm:p-6"
+				>
+					<h1
+						id="kiosk-employees"
+						className="text-2xl font-semibold text-balance sm:text-3xl"
+					>
+						{t(
+							"timeTracking.kiosk.home.title",
+							"Tap your name to clock in or out",
+						)}
+					</h1>
 					{onScanBadge ? (
 						<Button size="lg" className="h-16 self-start px-6 text-xl" onClick={onScanBadge}>
 							<IconCamera className="size-6" aria-hidden="true" />
@@ -147,13 +148,13 @@ export function KioskHome({
 						</Button>
 					) : null}
 					{onBadge ? (
-						<p className="-mt-2 flex items-center gap-2 text-lg text-muted-foreground">
+						<p className="flex items-center gap-2 text-lg text-muted-foreground">
 							<IconQrcode className="size-6 shrink-0" aria-hidden="true" />
 							{t("timeTracking.kiosk.home.scanHint", "Or scan your kiosk badge at the scanner.")}
 						</p>
 					) : null}
 					{onFob ? (
-						<p className="-mt-2 flex items-center gap-2 text-lg text-muted-foreground">
+						<p className="flex items-center gap-2 text-lg text-muted-foreground">
 							<IconNfc className="size-6 shrink-0" aria-hidden="true" />
 							{t("timeTracking.kiosk.home.fobHint", "Or tap your fob on the reader.")}
 						</p>

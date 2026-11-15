@@ -90,7 +90,7 @@ export function KioskLanguageSwitch({
 		<Select value={locale} onValueChange={onChoose} disabled={disabled}>
 			<SelectTrigger
 				aria-label={t("common.select-language", "Select language")}
-				className="h-12 min-w-40 text-base"
+				className="min-h-12 min-w-40 text-base"
 			>
 				<IconLanguage className="size-5" aria-hidden="true" />
 				<SelectValue />
