@@ -1,4 +1,4 @@
 # Preserve the exact bytes used for capture/action source hashes across checkouts.
-page-*.txt -text
-arrival-after.ts.txt -text
-resolver-overlay.config.ts.txt -text
+page-*.txt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+arrival-after.ts.txt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+resolver-overlay.config.ts.txt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
