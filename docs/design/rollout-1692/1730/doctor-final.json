@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 3,
+  "sourceRevision": "4309e2140350fc54c72ea33355fa6cca6d2eb410",
+  "mode": "diff",
+  "reactDetected": true,
+  "version": "0.9.22",
+  "ok": true,
+  "directory": "X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5",
+  "diff": {
+    "baseBranch": "pull request target",
+    "currentBranch": null,
+    "changedFileCount": 4,
+    "isCurrentChanges": false
+  },
+  "projects": [
+    {
+      "directory": "X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp",
+      "packageRoot": "X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp",
+      "sourceFilterConfigHash": "bccba9af786c396a5fb90c4b05d568dfa2361741e7b91c1c423877cbaa48bf12",
+      "framework": "nextjs",
+      "project": {
+        "rootDirectory": "X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp",
+        "projectName": "webapp",
+        "reactVersion": "19.3.1",
+        "reactMajorVersion": 19,
+        "tailwindVersion": "^4.3.5",
+        "zodVersion": "^4.6.7",
+        "zodMajorVersion": 4,
+        "mobxVersion": null,
+        "mobxMajorVersion": null,
+        "hasMobxReact": false,
+        "mobxReactVersion": null,
+        "hasMobxReactLite": false,
+        "mobxReactLiteVersion": null,
+        "hasMobxStateTree": false,
+        "hasMobxReactObserver": false,
+        "zustandVersion": "^5.1.0",
+        "zustandMajorVersion": 5,
+        "framework": "nextjs",
+        "hasTypeScript": true,
+        "hasReactCompiler": true,
+        "hasReactCompilerLintPlugin": false,
+        "hasTanStackQuery": true,
+        "hasI18nLibrary": true,
+        "hasRadixUi": false,
+        "hasBaseUi": true,
+        "hasReactAriaComponents": false,
+        "hasTanstackTable": true,
+        "hasTanstackVirtual": true,
+        "hasTanstackForm": true,
+        "tanstackQueryVersion": "^5.107.1",
+        "styledComponentsVersion": null,
+        "valtioVersion": null,
+        "valtioMajorVersion": null,
+        "hasRemotion": false,
+        "remotionVersion": null,
+        "remotionMajorVersion": null,
+        "hasThree": false,
+        "threeVersion": null,
+        "threeRelease": null,
+        "hasReactThreeFiber": false,
+        "reactThreeFiberVersion": null,
+        "reactThreeFiberMajorVersion": null,
+        "hasSsrDependency": false,
+        "preactVersion": "11.2.0",
+        "preactMajorVersion": 11,
+        "hasReactNativeWorkspace": false,
+        "nextjsVersion": "16.4.6",
+        "nextjsMajorVersion": 16,
+        "reactRouterVersion": null,
+        "hasReactRouterFramework": false,
+        "expoVersion": null,
+        "shopifyFlashListVersion": null,
+        "shopifyFlashListMajorVersion": null,
+        "hasReanimated": false,
+        "reanimatedVersion": null,
+        "hasShadcnUi": true,
+        "isPreES2023Target": true,
+        "isStaticExport": false,
+        "sourceFileCount": 7035
+      },
+      "diagnostics": [
+        {
+          "filePath": "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+          "plugin": "react-doctor",
+          "rule": "no-giant-component",
+          "severity": "warning",
+          "title": "Large component is hard to read and change",
+          "message": "Component \"BulkDocumentRequestsDialog\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components.",
+          "help": "Pull each section into its own component so the parent is easier to read, test, and change.",
+          "line": 70,
+          "column": 17,
+          "offset": 2412,
+          "length": 26,
+          "endLine": 70,
+          "category": "Maintainability",
+          "fingerprint": "c7d328cafe9bc9f94a7fafe81dff02b828d685ceb2a7e57fbc998f3ba689ef2b",
+          "id": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx::70:17::react-doctor/no-giant-component::09e4e4c08a82c09cd7dc1fe6b89896bfb13466d662316ed796681257bbd43a26",
+          "normalizedFilePath": "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+          "tags": [
+            "react-jsx-only",
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+          "plugin": "react-doctor",
+          "rule": "duplicate-jsx-subtree",
+          "severity": "warning",
+          "title": "Duplicated JSX structure",
+          "message": "3 copies of this 6-node JSX tree appear across 3 files, repeating about 40 lines. Composition path: BulkDocumentRequestsDialog > ActionPanel > ActionPanelContent > form > ActionPanelBody > fieldset > form.Field > TFormItem.",
+          "help": "Consider extracting a shared component if these trees represent the same UI concept. Keep them separate when the resemblance is incidental or the variants are likely to evolve independently.",
+          "line": 390,
+          "column": 11,
+          "endLine": 409,
+          "endColumn": 23,
+          "category": "Maintainability",
+          "relatedLocations": [
+            {
+              "filePath": "src/components/personnel-file/create-document-request-dialog.tsx",
+              "line": 265,
+              "column": 9,
+              "endLine": 284,
+              "endColumn": 21,
+              "message": "Matching JSX subtree (2 of 3) at CreateDocumentRequestDialog > ActionPanel > ActionPanelContent > form > ActionPanelBody > form.Field > TFormItem."
+            },
+            {
+              "filePath": "src/components/personnel-file/edit-document-request-dialog.tsx",
+              "line": 117,
+              "column": 9,
+              "endLine": 136,
+              "endColumn": 21,
+              "message": "Matching JSX subtree (3 of 3) at EditDocumentRequestDialog > ActionPanel > ActionPanelContent > form > ActionPanelBody > form.Field > TFormItem."
+            }
+          ],
+          "fingerprint": "identity:0f55522544a9275b750278fd124a48fff3d02fc007a7ca3363b2a0d9ff7aef93",
+          "id": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx::390:11::react-doctor/duplicate-jsx-subtree::672f50119e1446bc863ea86b5c34e67eb8eae2bfbfc5edbf9afc268072eff8df",
+          "normalizedFilePath": "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+          "tags": [
+            "project-analysis"
+          ]
+        },
+        {
+          "filePath": "src/components/personnel-file/document-requests-workspace.tsx",
+          "plugin": "react-doctor",
+          "rule": "no-high-complexity-react-function",
+          "severity": "warning",
+          "title": "React function has high control-flow complexity",
+          "message": "`DocumentRequestsWorkspace` has cyclomatic complexity 21, cognitive complexity 18, and maximum nesting depth 2, so its React logic is hard to understand and change. Extract independent branches into components or hooks.",
+          "help": "Extract independent render branches and state logic into focused components or hooks until the control flow is easy to follow.",
+          "line": 25,
+          "column": 8,
+          "offset": 1163,
+          "length": 2656,
+          "endLine": 107,
+          "category": "Maintainability",
+          "fingerprint": "383aa214edc41d7f6bf33c7f131b796d603c12c6750a1893148d34c4269bdee2",
+          "id": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx::25:8::react-doctor/no-high-complexity-react-function::b83d9e2db48f6664003252011fc3603bb97ffa3c966c9702e34f104d51f24930",
+          "normalizedFilePath": "src/components/personnel-file/document-requests-workspace.tsx",
+          "tags": [
+            "react-jsx-only",
+            "test-noise"
+          ]
+        }
+      ],
+      "score": null,
+      "skippedChecks": [],
+      "analyzedFiles": [
+        "src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+        "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+        "src/components/personnel-file/document-requests-overview.tsx",
+        "src/components/personnel-file/document-requests-workspace.tsx"
+      ],
+      "analyzedFileCount": 4,
+      "complete": true,
+      "scannedFileCount": 4,
+      "elapsedMilliseconds": 5822.2669
+    }
+  ],
+  "diagnostics": [
+    {
+      "filePath": "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "plugin": "react-doctor",
+      "rule": "no-giant-component",
+      "severity": "warning",
+      "title": "Large component is hard to read and change",
+      "message": "Component \"BulkDocumentRequestsDialog\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components.",
+      "help": "Pull each section into its own component so the parent is easier to read, test, and change.",
+      "line": 70,
+      "column": 17,
+      "offset": 2412,
+      "length": 26,
+      "endLine": 70,
+      "category": "Maintainability",
+      "fingerprint": "c7d328cafe9bc9f94a7fafe81dff02b828d685ceb2a7e57fbc998f3ba689ef2b",
+      "id": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx::70:17::react-doctor/no-giant-component::09e4e4c08a82c09cd7dc1fe6b89896bfb13466d662316ed796681257bbd43a26",
+      "normalizedFilePath": "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "tags": [
+        "react-jsx-only",
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "plugin": "react-doctor",
+      "rule": "duplicate-jsx-subtree",
+      "severity": "warning",
+      "title": "Duplicated JSX structure",
+      "message": "3 copies of this 6-node JSX tree appear across 3 files, repeating about 40 lines. Composition path: BulkDocumentRequestsDialog > ActionPanel > ActionPanelContent > form > ActionPanelBody > fieldset > form.Field > TFormItem.",
+      "help": "Consider extracting a shared component if these trees represent the same UI concept. Keep them separate when the resemblance is incidental or the variants are likely to evolve independently.",
+      "line": 390,
+      "column": 11,
+      "endLine": 409,
+      "endColumn": 23,
+      "category": "Maintainability",
+      "relatedLocations": [
+        {
+          "filePath": "src/components/personnel-file/create-document-request-dialog.tsx",
+          "line": 265,
+          "column": 9,
+          "endLine": 284,
+          "endColumn": 21,
+          "message": "Matching JSX subtree (2 of 3) at CreateDocumentRequestDialog > ActionPanel > ActionPanelContent > form > ActionPanelBody > form.Field > TFormItem."
+        },
+        {
+          "filePath": "src/components/personnel-file/edit-document-request-dialog.tsx",
+          "line": 117,
+          "column": 9,
+          "endLine": 136,
+          "endColumn": 21,
+          "message": "Matching JSX subtree (3 of 3) at EditDocumentRequestDialog > ActionPanel > ActionPanelContent > form > ActionPanelBody > form.Field > TFormItem."
+        }
+      ],
+      "fingerprint": "identity:0f55522544a9275b750278fd124a48fff3d02fc007a7ca3363b2a0d9ff7aef93",
+      "id": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx::390:11::react-doctor/duplicate-jsx-subtree::672f50119e1446bc863ea86b5c34e67eb8eae2bfbfc5edbf9afc268072eff8df",
+      "normalizedFilePath": "src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "tags": [
+        "project-analysis"
+      ]
+    },
+    {
+      "filePath": "src/components/personnel-file/document-requests-workspace.tsx",
+      "plugin": "react-doctor",
+      "rule": "no-high-complexity-react-function",
+      "severity": "warning",
+      "title": "React function has high control-flow complexity",
+      "message": "`DocumentRequestsWorkspace` has cyclomatic complexity 21, cognitive complexity 18, and maximum nesting depth 2, so its React logic is hard to understand and change. Extract independent branches into components or hooks.",
+      "help": "Extract independent render branches and state logic into focused components or hooks until the control flow is easy to follow.",
+      "line": 25,
+      "column": 8,
+      "offset": 1163,
+      "length": 2656,
+      "endLine": 107,
+      "category": "Maintainability",
+      "fingerprint": "383aa214edc41d7f6bf33c7f131b796d603c12c6750a1893148d34c4269bdee2",
+      "id": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx::25:8::react-doctor/no-high-complexity-react-function::b83d9e2db48f6664003252011fc3603bb97ffa3c966c9702e34f104d51f24930",
+      "normalizedFilePath": "src/components/personnel-file/document-requests-workspace.tsx",
+      "tags": [
+        "react-jsx-only",
+        "test-noise"
+      ]
+    }
+  ],
+  "summary": {
+    "errorCount": 0,
+    "warningCount": 3,
+    "affectedFileCount": 2,
+    "totalDiagnosticCount": 3,
+    "score": null,
+    "scoreLabel": null
+  },
+  "elapsedMilliseconds": 6204.3815,
+  "error": null
+}

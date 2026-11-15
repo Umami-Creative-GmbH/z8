@@ -1,0 +1,16 @@
+{
+  "text": "Cancel request?\n\nThe employee no longer has to upload \"R047 record 26\" and is told why. Documents already uploaded stay in the file.\n\nReason\n*\nKeep request\nCancel request",
+  "inputs": [
+    "<textarea data-slot=\"form-control\" class=\"border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-card px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm\" maxlength=\"2000\" id=\"_r_1c_-form-item\" aria-describedby=\"_r_1c_-form-item-description\" aria-invalid=\"false\"></textarea>"
+  ],
+  "buttons": [
+    {
+      "text": "Keep request",
+      "type": "button"
+    },
+    {
+      "text": "Cancel request",
+      "type": "submit"
+    }
+  ]
+}

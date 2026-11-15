@@ -1,0 +1,229 @@
+{
+  "repo": "X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5",
+  "port": 50151,
+  "processes": [
+    {
+      "ProcessId": 78564,
+      "ParentProcessId": 70304,
+      "CreationDate": "2026-11-15T20:02:55.239426+01:00",
+      "CommandLine": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\node_modules\\next\\dist\\bin\\next dev --turbopack --hostname localhost --port 50151"
+    },
+    {
+      "ProcessId": 49128,
+      "ParentProcessId": 78564,
+      "CreationDate": "2026-11-15T20:02:55.376393+01:00",
+      "CommandLine": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\lib\\start-server.js"
+    },
+    {
+      "ProcessId": 496,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.170413+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59704"
+    },
+    {
+      "ProcessId": 110652,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.23151+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59706"
+    },
+    {
+      "ProcessId": 85232,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.287997+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59708"
+    },
+    {
+      "ProcessId": 28248,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.355146+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59710"
+    },
+    {
+      "ProcessId": 26860,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.424791+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59712"
+    },
+    {
+      "ProcessId": 105248,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.48383+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59715"
+    },
+    {
+      "ProcessId": 72760,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.546123+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59717"
+    },
+    {
+      "ProcessId": 59712,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.61556+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59719"
+    },
+    {
+      "ProcessId": 98024,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.626667+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59720"
+    },
+    {
+      "ProcessId": 80208,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.679397+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59722"
+    },
+    {
+      "ProcessId": 27544,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.691489+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59724"
+    },
+    {
+      "ProcessId": 59516,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.702677+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59725"
+    },
+    {
+      "ProcessId": 108832,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.713406+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_postcss_ts_077d6xz6291wq._.js 59726"
+    },
+    {
+      "ProcessId": 102964,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.754625+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59729"
+    },
+    {
+      "ProcessId": 109144,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.767242+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59730"
+    },
+    {
+      "ProcessId": 54688,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.823883+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59734"
+    },
+    {
+      "ProcessId": 94608,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.837243+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59736"
+    },
+    {
+      "ProcessId": 99568,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.849819+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59737"
+    },
+    {
+      "ProcessId": 25424,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.865515+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_postcss_ts_077d6xz6291wq._.js 59738"
+    },
+    {
+      "ProcessId": 85880,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.924491+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59742"
+    },
+    {
+      "ProcessId": 107236,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.937495+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59743"
+    },
+    {
+      "ProcessId": 73452,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:33.949797+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59744"
+    },
+    {
+      "ProcessId": 87840,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.038997+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59748"
+    },
+    {
+      "ProcessId": 34732,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.053075+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59749"
+    },
+    {
+      "ProcessId": 35168,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.066276+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59750"
+    },
+    {
+      "ProcessId": 103068,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.079978+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59751"
+    },
+    {
+      "ProcessId": 95368,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.103579+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59753"
+    },
+    {
+      "ProcessId": 87836,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.160793+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59755"
+    },
+    {
+      "ProcessId": 106028,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.182959+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59757"
+    },
+    {
+      "ProcessId": 108628,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.197583+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59758"
+    },
+    {
+      "ProcessId": 56856,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.211105+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59759"
+    },
+    {
+      "ProcessId": 103568,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.230859+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59763"
+    },
+    {
+      "ProcessId": 106912,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.244014+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59764"
+    },
+    {
+      "ProcessId": 88604,
+      "ParentProcessId": 49128,
+      "CreationDate": "2026-11-15T20:04:34.256641+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 59765"
+    }
+  ],
+  "listener": [
+    {
+      "LocalPort": 50151,
+      "OwningProcess": 49128
+    }
+  ],
+  "portClosed": true
+}

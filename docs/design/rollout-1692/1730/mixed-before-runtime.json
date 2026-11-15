@@ -1,0 +1,100 @@
+{
+    "stage":  "before",
+    "head":  "9847f784dfcdca922fd41936493ea07d4b896675",
+    "source":  [
+                   {
+                       "path":  "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+                       "rawSha256":  "72eb708d598498d594b2257887e99541154fc4dccf9628e9c1ccdd9e408fc348",
+                       "canonicalLfSha256":  "f97cdaea4242fe129c96d0c5b182876d5cd226b46d06ae3cd548573c1ecc1e02"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+                       "rawSha256":  "a1723b6046d384dd3efa1989759f3c7c22fb30c5b3e6b6ba0c91638a4ac74e55",
+                       "canonicalLfSha256":  "195a04ed4a1945a4386142966a39b9a73602bf4ebe3a94e2b62ec17a5adf659b"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+                       "rawSha256":  "c943dbc6e6b07d818ed3d222fa06780ac94fe2c7425da80dc931661da8317915",
+                       "canonicalLfSha256":  "c943dbc6e6b07d818ed3d222fa06780ac94fe2c7425da80dc931661da8317915"
+                   },
+                   {
+                       "path":  "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+                       "rawSha256":  "5ec12212abafdb151c1b182862d5f3ef49b9d0db34e7b79ff6b7144bbdeb3c91",
+                       "canonicalLfSha256":  "aef1db6b7aa985fd9ec3ab51c05d67c4a1804b6fc01c58313814400296fe15c1"
+                   }
+               ],
+    "captures":  [
+                     {
+                         "name":  "desktop",
+                         "path":  "mixed-before-desktop.png",
+                         "width":  1600,
+                         "height":  1000,
+                         "theme":  "light",
+                         "font":  "16px",
+                         "actor":  "synthetic small-admin (owner)",
+                         "scope":  false,
+                         "h1":  [
+                                    "Z8",
+                                    "Document requests"
+                                ],
+                         "overflow":  false,
+                         "loadedFonts":  "loaded",
+                         "rows":  10
+                     },
+                     {
+                         "name":  "phone",
+                         "path":  "mixed-before-phone.png",
+                         "width":  390,
+                         "height":  844,
+                         "theme":  "light",
+                         "font":  "16px",
+                         "actor":  "synthetic small-admin (owner)",
+                         "scope":  false,
+                         "h1":  [
+                                    "Z8",
+                                    "Document requests"
+                                ],
+                         "overflow":  false,
+                         "loadedFonts":  "loaded",
+                         "rows":  10
+                     },
+                     {
+                         "name":  "wide-dark",
+                         "path":  "mixed-before-wide-dark.png",
+                         "width":  2400,
+                         "height":  1200,
+                         "theme":  "dark",
+                         "font":  "16px",
+                         "actor":  "synthetic small-admin (owner)",
+                         "scope":  false,
+                         "h1":  [
+                                    "Z8",
+                                    "Document requests"
+                                ],
+                         "overflow":  false,
+                         "loadedFonts":  "loaded",
+                         "rows":  10
+                     },
+                     {
+                         "name":  "phone-dark",
+                         "path":  "mixed-before-phone-dark.png",
+                         "width":  390,
+                         "height":  844,
+                         "theme":  "dark",
+                         "font":  "18px",
+                         "actor":  "synthetic small-admin (owner)",
+                         "scope":  false,
+                         "h1":  [
+                                    "Z8",
+                                    "Document requests"
+                                ],
+                         "overflow":  false,
+                         "loadedFonts":  "loaded",
+                         "rows":  10
+                     }
+                 ],
+    "errors":  [
+
+               ],
+    "archiveQualification":  "PNG filenames were prefixed when archived; capture paths normalized here. The original generated JSON is preserved in the adjacent runtime-raw.json file."
+}

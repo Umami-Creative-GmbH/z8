@@ -1,0 +1,76 @@
+{
+  "checks": [
+    {
+      "name": "one semantic route heading",
+      "actual": 1
+    },
+    {
+      "name": "organization calendar explicitly shown",
+      "actual": true
+    },
+    {
+      "name": "first server page has ten request records",
+      "actual": 10
+    },
+    {
+      "name": "next page retains filters",
+      "actual": "all"
+    },
+    {
+      "name": "overdue filter resets page",
+      "actual": null
+    },
+    {
+      "name": "overdue rows keep open distinction",
+      "actual": true
+    },
+    {
+      "name": "pending bulk cannot escape-dismiss",
+      "actual": true
+    },
+    {
+      "name": "one pending request admitted",
+      "actual": 1
+    },
+    {
+      "name": "bulk result gives actual counts",
+      "actual": true
+    },
+    {
+      "name": "public bulk action persisted real requests",
+      "actual": true
+    },
+    {
+      "name": "real return requires reason",
+      "actual": true
+    },
+    {
+      "name": "return reopens actual request",
+      "actual": "open"
+    },
+    {
+      "name": "returned event distinct from current open state",
+      "actual": true
+    },
+    {
+      "name": "cancel persists cancelled distinction",
+      "actual": "cancelled"
+    },
+    {
+      "name": "accept persists accepted distinction",
+      "actual": "accepted"
+    },
+    {
+      "name": "employee with no officer coverage cannot read the officer queue",
+      "actual": true
+    }
+  ],
+  "errors": [],
+  "publicBulk": {
+    "created": 3,
+    "statuses": [
+      "open"
+    ],
+    "qualification": "Readback after actual browser action; initial R047 records and enabled feature are SQL seeds."
+  }
+}
