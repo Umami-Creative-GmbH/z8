@@ -1,0 +1,37 @@
+{
+  "source": {
+    "head": "9da64544197944f40481095b8c05636b2875490c",
+    "integration": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+    "dirty": "",
+    "hashes": {
+      "apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx": "379c811d9c9364741f96d8dde13766b9ace9abe8c72723bd464173f992fa3d28",
+      "apps/webapp/src/components/licenses/license-table.tsx": "9000f09dd6006a2ac237f328f3a6929c7da922f0c7734c6708827acec9a61173"
+    }
+  },
+  "tools": [
+    "get_project_metadata",
+    "get_errors",
+    "get_page_metadata",
+    "get_logs",
+    "get_server_action_by_id",
+    "get_routes",
+    "get_request_insights",
+    "get_compilation_issues",
+    "compile_route"
+  ],
+  "results": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "issues": []
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "configErrors": [],
+        "sessionErrors": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "source": {
+    "head": "9da64544197944f40481095b8c05636b2875490c",
+    "integration": "ebfb7d8e042f227855aee0ee5e831576db91aff3",
+    "dirty": "",
+    "hashes": {
+      "apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx": "379c811d9c9364741f96d8dde13766b9ace9abe8c72723bd464173f992fa3d28",
+      "apps/webapp/src/components/licenses/license-table.tsx": "9000f09dd6006a2ac237f328f3a6929c7da922f0c7734c6708827acec9a61173"
+    }
+  },
+  "driver": "agent-browser 0.39.1 native --enable react-devtools",
+  "session": "r026-5b11e61fd47f",
+  "actualTreeEvidence": [
+    "113 42424 42423 Forget(AuthShellControls)",
+    "161 42516 42515 Forget(InfoHeader)",
+    "162 42536 42535 Forget(LicenseTable)",
+    "165 42539 42538 Forget(DataTableToolbar)",
+    "113 46558 46557 Forget(InfoFooter)"
+  ],
+  "outputSha256": "6e0cd413ab3439020e7d9b9e8d14cb92857315cdf74d1e22955db333c85dd0b2",
+  "axe": {
+    "counts": {
+      "inapplicable": 0,
+      "incomplete": 0,
+      "passes": 0,
+      "violations": 0
+    },
+    "conclusion": "inconclusive: zero evaluated rules, no automated a11y pass"
+  },
+  "previewFailures": [
+    "snapshot timed out after 15000ms",
+    "snapshot timed out after 15000ms"
+  ]
+}
