@@ -67,6 +67,7 @@ vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
 }));
 
 const baseSummary: PayrollWorkspaceSummary = {
+	organizationId: "organization-a",
 	organizationName: "Acme GmbH",
 	period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
 	generatedAt: "2026-06-30T12:00:00.000Z",
@@ -140,6 +141,15 @@ function expandPayrollBlockers(name: string | RegExp = /payroll blockers need re
 
 const summary = buildSummary();
 
+function arrivingScope(scope: "organization" | "actor" | "coverage") {
+	return buildSummary({
+		organizationId: scope === "organization" ? "organization-b" : baseSummary.organizationId,
+		generatedBy:
+			scope === "actor" ? { id: "other-actor", name: "Other actor" } : baseSummary.generatedBy,
+		employees: scope === "coverage" ? [baseSummary.employees[1]] : baseSummary.employees,
+	});
+}
+
 function deferred<T>() {
 	let resolve!: (value: T) => void;
 	let reject!: (reason?: unknown) => void;
@@ -152,6 +162,128 @@ function deferred<T>() {
 }
 
 describe("PayrollWorkspace", () => {
+	it("replaces records when another organization arrives for the same actor and organization name", () => {
+		const formats = [{ id: "datev_lohn", label: "DATEV" }];
+		const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+		view.rerender(
+			<PayrollWorkspace
+				initialSummary={buildSummary({
+					organizationId: "organization-b",
+					employees: [{ ...baseSummary.employees[0], id: "employee-b", name: "Scope B Employee" }],
+					blockers: [],
+					totals: { employeeCount: 1, totalWorkedHours: 16, blockerCount: 0 },
+				})}
+				exportFormats={formats}
+			/>,
+		);
+		expect(screen.queryByText("Ada Lovelace")).toBeNull();
+		expect(screen.getByText("Scope B Employee")).toBeTruthy();
+	});
+	it.each(["organization", "actor", "coverage"] as const)(
+		"discards a held summary after a %s scope leaves and returns",
+		async (scope) => {
+			const pending = deferred<{ success: true; data: PayrollWorkspaceSummary }>();
+			actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(pending.promise);
+			const formats = [{ id: "datev_lohn", label: "DATEV" }];
+			const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+			fireEvent.click(screen.getByRole("button", { name: "Next period" }));
+			view.rerender(
+				<PayrollWorkspace initialSummary={arrivingScope(scope)} exportFormats={formats} />,
+			);
+			view.rerender(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+			await act(async () =>
+				pending.resolve({
+					success: true,
+					data: buildSummary({
+						employees: [{ ...baseSummary.employees[0], name: "Late old employee" }],
+					}),
+				}),
+			);
+			expect(screen.queryByText("Late old employee")).toBeNull();
+			expect(screen.getByText("Ada Lovelace")).toBeTruthy();
+			expect(screen.getByRole("button", { name: "Next period" }).hasAttribute("disabled")).toBe(
+				false,
+			);
+		},
+	);
+	it.each(["organization", "actor", "coverage"] as const)(
+		"suppresses an old export after a %s scope leaves and returns, and permits a new export",
+		async (scope) => {
+			const pending = deferred<{ success: true; data: { jobId: string; isAsync: boolean } }>();
+			actionMocks.startScopedPayrollExportAction.mockReturnValueOnce(pending.promise);
+			const formats = [{ id: "datev_lohn", label: "DATEV" }];
+			const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+			fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
+			view.rerender(
+				<PayrollWorkspace initialSummary={arrivingScope(scope)} exportFormats={formats} />,
+			);
+			view.rerender(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+			await act(async () =>
+				pending.resolve({ success: true, data: { jobId: "old-export", isAsync: false } }),
+			);
+			expect(toastMocks.success).not.toHaveBeenCalled();
+			actionMocks.startScopedPayrollExportAction.mockResolvedValueOnce({
+				success: true,
+				data: { jobId: "new-export", isAsync: false },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Trigger export" }));
+			await waitFor(() =>
+				expect(toastMocks.success).toHaveBeenCalledExactlyOnceWith("Payroll export completed"),
+			);
+		},
+	);
+	it.each(["organization", "actor", "coverage"] as const)(
+		"suppresses an old PDF after a %s scope leaves and returns, and permits a new download",
+		async (scope) => {
+			const pending = deferred<{ success: true; data: { data: number[]; filename: string } }>();
+			actionMocks.exportPayrollPdfAction.mockReturnValueOnce(pending.promise);
+			const createObjectURL = vi.fn(() => "blob:current-payroll"),
+				click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+			vi.stubGlobal("URL", { createObjectURL, revokeObjectURL: vi.fn() });
+			try {
+				const formats = [{ id: "datev_lohn", label: "DATEV" }];
+				const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+				fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+				view.rerender(
+					<PayrollWorkspace initialSummary={arrivingScope(scope)} exportFormats={formats} />,
+				);
+				view.rerender(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+				await act(async () =>
+					pending.resolve({
+						success: true,
+						data: { data: [37, 80, 68, 70], filename: "old-payroll.pdf" },
+					}),
+				);
+				expect(createObjectURL).not.toHaveBeenCalled();
+				actionMocks.exportPayrollPdfAction.mockResolvedValueOnce({
+					success: true,
+					data: { data: [37, 80, 68, 70], filename: "current-payroll.pdf" },
+				});
+				fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+				await waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+				expect(createObjectURL).toHaveBeenCalledTimes(1);
+			} finally {
+				click.mockRestore();
+				vi.unstubAllGlobals();
+			}
+		},
+	);
+	it("preserves same-scope custom drafts when a new server snapshot reorders the covered roster", () => {
+		const formats = [{ id: "datev_lohn", label: "DATEV" }];
+		const view = render(<PayrollWorkspace initialSummary={summary} exportFormats={formats} />);
+		fireEvent.click(screen.getByRole("button", { name: "Custom" }));
+		fireEvent.change(screen.getByLabelText("Start"), { target: { value: "2026-05-07" } });
+		view.rerender(
+			<PayrollWorkspace
+				initialSummary={buildSummary({ employees: [...baseSummary.employees].reverse() })}
+				exportFormats={formats}
+			/>,
+		);
+		expect(screen.getByRole("button", { name: "Custom" }).getAttribute("aria-pressed")).toBe(
+			"true",
+		);
+		expect(screen.getByLabelText("Start").getAttribute("value")).toBe("2026-05-07");
+	});
 	it("discards a previous route lifetime's export when cached payroll becomes visible again", async () => {
 		const pending =
 			deferred<

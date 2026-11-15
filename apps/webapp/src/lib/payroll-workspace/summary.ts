@@ -81,6 +81,7 @@ export interface MissingClockOutBlockerRow {
 }
 
 export function buildPayrollSummaryFromRows(input: {
+	organizationId: string;
 	organizationName: string;
 	period: PayrollPeriod;
 	generatedAt: DateTime;
@@ -131,6 +132,7 @@ export function buildPayrollSummaryFromRows(input: {
 		.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 
 	return {
+		organizationId: input.organizationId,
 		organizationName: input.organizationName,
 		period: input.period,
 		generatedAt: input.generatedAt.toUTC().toISO() ?? input.generatedAt.toISO() ?? "",
@@ -368,6 +370,7 @@ export async function getPayrollWorkspaceSummary(input: {
 		.limit(1);
 
 	const summaryInput = {
+		organizationId: input.organizationId,
 		organizationName: organizationRow?.name ?? "",
 		period: toPayrollPeriod(input.period),
 		generatedAt: input.generatedAt ?? DateTime.utc(),

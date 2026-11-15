@@ -626,7 +626,18 @@ function PayrollSummaryCards({
 	);
 }
 
-export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
+export function PayrollWorkspace(props: PayrollWorkspaceProps) {
+	// A newly authorized organization, actor or covered roster owns a fresh UI
+	// lifetime. Ordinary same-scope server refreshes preserve the operator's drafts.
+	const scopeKey = JSON.stringify([
+		props.initialSummary.organizationId,
+		props.initialSummary.generatedBy.id,
+		props.initialSummary.employees.map((employee) => employee.id).toSorted(),
+	]);
+	return <PayrollWorkspaceContent key={scopeKey} {...props} />;
+}
+
+function PayrollWorkspaceContent({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
 		summary: initialSummary,
