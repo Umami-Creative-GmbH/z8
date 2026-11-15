@@ -321,7 +321,11 @@ export function EmployeeWorkHoursCard({
 						tabIndex={0}
 						className="max-w-full overflow-x-auto rounded-sm focus-visible:outline-2 focus-visible:outline-ring [&>div]:overflow-visible"
 					>
-						<Table className="min-w-[720px] tabular-nums [&_th:first-child]:sticky [&_td:first-child]:sticky [&_th:first-child]:left-0 [&_td:first-child]:left-0 [&_th:first-child]:bg-card [&_td:first-child]:bg-card [&_th:first-child]:z-10 [&_td:first-child]:z-10 [&_td:first-child]:whitespace-normal [&_td:first-child]:min-w-40">
+						<Table className="min-w-[720px] table-fixed tabular-nums [&_th:first-child]:sticky [&_td:first-child]:sticky [&_th:first-child]:left-0 [&_td:first-child]:left-0 [&_th:first-child]:bg-card [&_td:first-child]:bg-card [&_th:first-child]:z-10 [&_td:first-child]:z-10 [&_td:first-child]:whitespace-normal [&_td:first-child]:[overflow-wrap:anywhere] [&_th:last-child]:text-right [&_td:last-child]:text-right">
+							<colgroup>
+								<col className="w-[clamp(5rem,30vw,10rem)]" />
+								<col span={4} />
+							</colgroup>
 							<MetricsTableHeader
 								name={t("analytics.common.employee", "Employee")}
 								metrics={[
