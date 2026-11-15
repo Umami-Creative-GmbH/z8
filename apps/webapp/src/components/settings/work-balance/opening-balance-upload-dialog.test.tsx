@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Activity } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { OpeningBalanceUploadDialog } from "./opening-balance-upload-dialog";
 
@@ -57,6 +58,150 @@ beforeEach(() => {
 	harness.scope = { userId: "actor", activeOrganizationId: "A" };
 	harness.preview.mockResolvedValue(ready);
 	harness.commit.mockResolvedValue({ success: false, refusal: "not_permitted" });
+	harness.invalidate.mockResolvedValue(undefined);
+});
+
+it("unlocks a discarded preview that finishes while its cached view is hidden", async () => {
+	let finish!: (value: unknown) => void;
+	harness.preview.mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const content = <OpeningBalanceUploadDialog />;
+	const view = render(<Activity mode="visible">{content}</Activity>);
+	await open();
+	fireEvent.change(screen.getByLabelText("CSV file"), {
+		target: { files: [file(async () => "CSV")] },
+	});
+	await waitFor(() => expect(harness.preview).toHaveBeenCalledTimes(1));
+	view.rerender(<Activity mode="hidden">{content}</Activity>);
+	await act(async () => finish(ready));
+	view.rerender(<Activity mode="visible">{content}</Activity>);
+	await waitFor(() =>
+		expect((screen.getByLabelText("CSV file") as HTMLInputElement).disabled).toBe(false),
+	);
+	expect(screen.queryByText("Covered former employee")).toBeNull();
+	await userEvent.setup().click(screen.getByRole("button", { name: "Cancel" }));
+	expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("discards a preview from an earlier cached visit and accepts a fresh file after it settles", async () => {
+	let finish!: (value: unknown) => void;
+	harness.preview.mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const content = <OpeningBalanceUploadDialog />;
+	const view = render(<Activity mode="visible">{content}</Activity>);
+	await open();
+	fireEvent.change(screen.getByLabelText("CSV file"), {
+		target: { files: [file(async () => "OLD CSV")] },
+	});
+	await waitFor(() => expect(harness.preview).toHaveBeenCalledTimes(1));
+	view.rerender(<Activity mode="hidden">{content}</Activity>);
+	view.rerender(<Activity mode="visible">{content}</Activity>);
+	expect((screen.getByLabelText("CSV file") as HTMLInputElement).disabled).toBe(true);
+	fireEvent.change(screen.getByLabelText("CSV file"), {
+		target: { files: [file(async () => "BLOCKED CSV")] },
+	});
+	expect(harness.preview).toHaveBeenCalledTimes(1);
+	await act(async () => finish(ready));
+	expect(screen.queryByText("Covered former employee")).toBeNull();
+	expect((screen.getByLabelText("CSV file") as HTMLInputElement).disabled).toBe(false);
+	fireEvent.change(screen.getByLabelText("CSV file"), {
+		target: { files: [file(async () => "FRESH CSV")] },
+	});
+	await screen.findByText("Covered former employee");
+	expect(harness.preview).toHaveBeenNthCalledWith(2, { csv: "FRESH CSV" });
+});
+
+it.each([false, true])(
+	"requires a fresh preview after a commit crosses cached navigation (return before completion: %s)",
+	async (returnBeforeCompletion) => {
+		let finish!: (value: unknown) => void;
+		const committed = {
+			success: true,
+			data: { status: "committed", rows: [row], created: 1 },
+		};
+		harness.commit
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						finish = resolve;
+					}),
+			)
+			.mockResolvedValue(committed);
+		const content = <OpeningBalanceUploadDialog />;
+		const view = render(<Activity mode="visible">{content}</Activity>);
+		await open();
+		fireEvent.change(screen.getByLabelText("CSV file"), {
+			target: { files: [file(async () => "OLD CSV")] },
+		});
+		await screen.findByText("Covered former employee");
+		fireEvent.submit(screen.getByLabelText("CSV file").closest("form") as HTMLFormElement);
+		await waitFor(() => expect(harness.commit).toHaveBeenCalledTimes(1));
+		view.rerender(<Activity mode="hidden">{content}</Activity>);
+		if (returnBeforeCompletion) {
+			view.rerender(<Activity mode="visible">{content}</Activity>);
+			expect((screen.getByLabelText("CSV file") as HTMLInputElement).disabled).toBe(true);
+			fireEvent.submit(screen.getByLabelText("CSV file").closest("form") as HTMLFormElement);
+			expect(harness.commit).toHaveBeenCalledTimes(1);
+		}
+		await act(async () => finish(committed));
+		if (!returnBeforeCompletion) view.rerender(<Activity mode="visible">{content}</Activity>);
+		expect(harness.success).not.toHaveBeenCalled();
+		expect(harness.invalidate).not.toHaveBeenCalled();
+		expect(screen.queryByText("Covered former employee")).toBeNull();
+		expect((screen.getByLabelText("CSV file") as HTMLInputElement).disabled).toBe(false);
+		expect(
+			(screen.getByRole("button", { name: /Set.*opening balance/ }) as HTMLButtonElement).disabled,
+		).toBe(true);
+		fireEvent.change(screen.getByLabelText("CSV file"), {
+			target: { files: [file(async () => "FRESH CSV")] },
+		});
+		await screen.findByText("Covered former employee");
+		fireEvent.submit(screen.getByLabelText("CSV file").closest("form") as HTMLFormElement);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(harness.commit).toHaveBeenNthCalledWith(2, { csv: "FRESH CSV" });
+		expect(harness.success).toHaveBeenCalledTimes(1);
+		expect(harness.invalidate).toHaveBeenCalledTimes(1);
+	},
+);
+
+it("keeps the returned dialog open when an earlier commit's cache refresh finishes", async () => {
+	let finish!: () => void;
+	harness.commit.mockResolvedValue({
+		success: true,
+		data: { status: "committed", rows: [row], created: 1 },
+	});
+	harness.invalidate.mockImplementationOnce(
+		() =>
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const content = <OpeningBalanceUploadDialog />;
+	const view = render(<Activity mode="visible">{content}</Activity>);
+	await open();
+	fireEvent.change(screen.getByLabelText("CSV file"), {
+		target: { files: [file(async () => "CSV")] },
+	});
+	await screen.findByText("Covered former employee");
+	fireEvent.submit(screen.getByLabelText("CSV file").closest("form") as HTMLFormElement);
+	await waitFor(() => expect(harness.invalidate).toHaveBeenCalledTimes(1));
+	expect(harness.success).toHaveBeenCalledTimes(1);
+	view.rerender(<Activity mode="hidden">{content}</Activity>);
+	view.rerender(<Activity mode="visible">{content}</Activity>);
+	await act(async () => finish());
+	expect(screen.getByRole("dialog")).toBeTruthy();
+	expect(screen.queryByText("Covered former employee")).toBeNull();
+	expect((screen.getByLabelText("CSV file") as HTMLInputElement).disabled).toBe(false);
+	await userEvent.setup().click(screen.getByRole("button", { name: "Cancel" }));
+	expect(screen.queryByRole("dialog")).toBeNull();
 });
 
 it("locks selection before file reading, prevents duplicates and keeps pending dismissal blocked", async () => {
