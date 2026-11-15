@@ -1,0 +1,120 @@
+{
+  "mode": "before-large",
+  "head": "40492f6233feecfac214813f28e2f1f26b3175b2",
+  "sources": {
+    "apps/webapp/src/components/notifications/notifications-inbox.tsx": "ae579380b2a0187c98326de3d271afd3f0d51cff9de8be731085c07439aeadf9",
+    "apps/webapp/src/components/notifications/notification-item.tsx": "f07e37a20e3f297957c7d89f4255ec766f27ddea0a165401b4234b43b06d39cf",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "ff9144af8ac8aa2456a635a856e647f6cb745e14e32f1d968bd1e7793e88a3fe"
+  },
+  "captures": [
+    {
+      "label": "desktop-light",
+      "css": {
+        "width": 1600,
+        "height": 1000,
+        "documentWidth": 1600
+      },
+      "theme": "light bprogress-busy",
+      "fontSize": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsReady": "loaded",
+      "headings": [
+        "Notifications"
+      ],
+      "titles": [
+        "Select all visible notifications",
+        "Select Security update",
+        "Select Schedule published",
+        "Select Earlier update",
+        "Select Absence approved"
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "sha256": "9d6f9d85305cdfb7fb22cb6b4e7d3087dc33e6708637eac62706a0af6a9052cd"
+    },
+    {
+      "label": "wide-dark",
+      "css": {
+        "width": 2400,
+        "height": 1200,
+        "documentWidth": 2400
+      },
+      "theme": "dark bprogress-busy",
+      "fontSize": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsReady": "loaded",
+      "headings": [
+        "Notifications"
+      ],
+      "titles": [
+        "Select all visible notifications",
+        "Select Security update",
+        "Select Schedule published",
+        "Select Earlier update",
+        "Select Absence approved"
+      ],
+      "png": {
+        "width": 2400,
+        "height": 1200
+      },
+      "sha256": "fa44c851df7ccc4b8a8a5b0f6d14cd1f473f70968590ee9d36fb9dea98ce94ee"
+    },
+    {
+      "label": "phone-light",
+      "css": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      "theme": "light bprogress-busy",
+      "fontSize": "18px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsReady": "loaded",
+      "headings": [
+        "Notifications"
+      ],
+      "titles": [
+        "Select all visible notifications",
+        "Select Security update",
+        "Select Schedule published",
+        "Select Earlier update",
+        "Select Absence approved"
+      ],
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "sha256": "ffb70ba8e5d2496dd0409677c718fd81fe4a156af78f169a3089cdd85754542f"
+    },
+    {
+      "label": "phone-dark",
+      "css": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      "theme": "dark bprogress-busy",
+      "fontSize": "18px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontsReady": "loaded",
+      "headings": [
+        "Notifications"
+      ],
+      "titles": [
+        "Select all visible notifications",
+        "Select Security update",
+        "Select Schedule published",
+        "Select Earlier update",
+        "Select Absence approved"
+      ],
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "sha256": "cce4f96cd0824fc076da050f7101c3c96d41f6987f2e7091bd9ce4b5ecaccde9"
+    }
+  ],
+  "errors": []
+}

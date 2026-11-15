@@ -133,7 +133,10 @@ export function ReportingLinesCanvas(props: ReportingLinesProps) {
 				centerY + PERSON_CARD_HEIGHT / 2,
 				{
 					zoom: FLOW_CENTER_ZOOM,
-					duration: 240,
+					duration: window.matchMedia?.("(prefers-reduced-motion: reduce)")
+						?.matches
+						? 0
+						: 240,
 				},
 			);
 		});
@@ -141,7 +144,7 @@ export function ReportingLinesCanvas(props: ReportingLinesProps) {
 	}, [centerRequest, centerX, centerY, reactFlow]);
 
 	return (
-		<div className="h-[640px] min-h-[calc(100dvh-20rem)] overflow-hidden rounded-lg border bg-background">
+		<div className="h-[clamp(28rem,62dvh,48rem)] overflow-hidden rounded-lg border bg-card">
 			<ReactFlow
 				aria-label={t(
 					"organization.explorer.reportingLines",
@@ -150,7 +153,7 @@ export function ReportingLinesCanvas(props: ReportingLinesProps) {
 				edges={edges}
 				elementsSelectable={false}
 				fitView
-				fitViewOptions={{ padding: FLOW_PADDING }}
+				fitViewOptions={{ padding: FLOW_PADDING, maxZoom: 1 }}
 				maxZoom={FLOW_MAX_ZOOM}
 				minZoom={FLOW_MIN_ZOOM}
 				nodes={nodes}
@@ -178,7 +181,7 @@ function PersonFlowCard({ data }: NodeProps<PersonFlowNode>) {
 	return (
 		<div
 			className={cn(
-				"flex flex-col gap-2 rounded-xl border bg-card p-3 text-card-foreground shadow-sm transition-opacity",
+				"flex flex-col gap-2 rounded-lg border bg-card p-3 text-card-foreground shadow-sm motion-safe:transition-opacity",
 				data.isSelected && "border-primary ring-2 ring-primary/30",
 				data.highlight === "match" && "border-primary bg-primary/5",
 				data.highlight === "dimmed" && "opacity-40",
@@ -319,7 +322,7 @@ function OutlineItem({
 					highlight === "match" && "bg-primary/10",
 					highlight === "dimmed" && "opacity-40",
 				)}
-				style={{ paddingLeft: `${depth * 1.25}rem` }}
+				style={{ paddingLeft: `${Math.min(depth, 4) * 0.75}rem` }}
 			>
 				<PersonButton
 					className="flex-1"

@@ -31,6 +31,16 @@ export type TeamsViewProps = {
 export function TeamsView(props: TeamsViewProps) {
 	const { t } = useTranslate();
 	const { cards, noTeam } = props.grouped;
+	if (cards.length === 0 && !props.showNoTeam) {
+		return (
+			<p
+				role="status"
+				className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground"
+			>
+				{t("organization.explorer.noTeamsFound", "No teams found")}
+			</p>
+		);
+	}
 	const noTeamTotal = props.complete
 		? noTeam.length
 		: Math.max(props.noTeamCount, noTeam.length);

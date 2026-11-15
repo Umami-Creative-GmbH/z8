@@ -1,0 +1,116 @@
+{
+  "mode": "after",
+  "head": "40492f6233feecfac214813f28e2f1f26b3175b2",
+  "sources": {
+    "apps/webapp/src/components/notifications/notifications-inbox.tsx": "4ce69a001b37fa270c91b8b15247582b4923e9b8cd9c896c8e1cfac82c08c1f2",
+    "apps/webapp/src/components/notifications/notification-item.tsx": "19496a517d281191e612b2b5e92d192aee224b2ac41ae2bb6a5dee2f3b32080e",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "46a8c990586d9bdf3e04629af838ed1d789a62d777fa871cd4a7b253da983694"
+  },
+  "captures": [
+    {
+      "label": "desktop-light",
+      "css": {
+        "width": 1600,
+        "height": 1000,
+        "documentWidth": 1600
+      },
+      "theme": "light bprogress-busy",
+      "fontSize": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headings": [
+        "Notifications"
+      ],
+      "titles": [
+        "Select all visible notifications",
+        "Select Security update",
+        "Select Schedule published",
+        "Select Earlier update",
+        "Select Absence approved"
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "sha256": "fcb51dbf937d2c26f5ac2e56de8d6268004059d00fc254825eaf3baaba0113ee"
+    },
+    {
+      "label": "wide-dark",
+      "css": {
+        "width": 2400,
+        "height": 1200,
+        "documentWidth": 2400
+      },
+      "theme": "dark bprogress-busy",
+      "fontSize": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headings": [
+        "Notifications"
+      ],
+      "titles": [
+        "Select all visible notifications",
+        "Select Security update",
+        "Select Schedule published",
+        "Select Earlier update",
+        "Select Absence approved"
+      ],
+      "png": {
+        "width": 2400,
+        "height": 1200
+      },
+      "sha256": "6957db7fd9cdd06bab7240959e7beac8f975755374971248d74d078cebbb166c"
+    },
+    {
+      "label": "phone-light",
+      "css": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      "theme": "light bprogress-busy",
+      "fontSize": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headings": [
+        "Notifications"
+      ],
+      "titles": [
+        "Select all visible notifications",
+        "Select Security update",
+        "Select Schedule published",
+        "Select Earlier update",
+        "Select Absence approved"
+      ],
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "sha256": "eaf8e3fa02a154d31bcb0965ad7ef764f2a1ae72fae317b4db498949ac99770d"
+    },
+    {
+      "label": "phone-dark",
+      "css": {
+        "width": 390,
+        "height": 844,
+        "documentWidth": 390
+      },
+      "theme": "dark bprogress-busy",
+      "fontSize": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headings": [
+        "Notifications"
+      ],
+      "titles": [
+        "Select all visible notifications",
+        "Select Security update",
+        "Select Schedule published",
+        "Select Earlier update",
+        "Select Absence approved"
+      ],
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "sha256": "91ab6deeccbd0d75a107b71b61f9259b814450cdeb39539a1197578cf684ddef"
+    }
+  ],
+  "errors": []
+}
