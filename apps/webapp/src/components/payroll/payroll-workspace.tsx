@@ -248,7 +248,7 @@ async function clearPayrollBlockerAndRefresh({
 	blocker: DismissiblePayrollBlocker;
 	clickRequest: PayrollPeriodRequest;
 	isMountedRef: React.RefObject<boolean>;
-	onFinished: (blockerKey: PayrollBlockerIdentity) => void;
+	onFinished: (blockerKey: PayrollBlockerIdentity, dismissalSucceeded: boolean) => void;
 	onRemoved: (summary: PayrollWorkspaceSummary) => void;
 	refreshLatestSummary: (options: {
 		onError: (error?: string) => void;
@@ -306,7 +306,7 @@ async function clearPayrollBlockerAndRefresh({
 			);
 		}
 	} finally {
-		if (isMountedRef.current) onFinished(blockerKey);
+		if (isMountedRef.current) onFinished(blockerKey, dismissalSucceeded);
 	}
 }
 
@@ -345,6 +345,7 @@ function usePayrollBlockerClearing({
 		setClearingBlockerKeys((currentKeys) => new Set(currentKeys).add(blockerKey));
 		const currentClickRequest = clickRequest;
 		const blockerOrder = blockers.map(payrollBlockerIdentity);
+		const activatedControlHadFocus = document.activeElement === activatedControl;
 
 		clearBlockerQueueRef.current = (clearBlockerQueueRef.current ?? Promise.resolve()).then(() =>
 			isMountedRef.current
@@ -352,16 +353,32 @@ function usePayrollBlockerClearing({
 						blocker,
 						clickRequest: currentClickRequest,
 						isMountedRef,
-						onFinished: (finishedBlockerKey) => {
+						onFinished: (finishedBlockerKey, dismissalSucceeded) => {
 							clearingBlockerKeysRef.current.delete(finishedBlockerKey);
 							setClearingBlockerKeys((currentKeys) => {
 								const nextKeys = new Set(currentKeys);
 								nextKeys.delete(finishedBlockerKey);
 								return nextKeys;
 							});
+							if (
+								!dismissalSucceeded &&
+								activatedControlHadFocus &&
+								activatedControl.isConnected &&
+								document.activeElement === document.body
+							) {
+								focusRequestIdRef.current += 1;
+								setFocusRequest({
+									id: focusRequestIdRef.current,
+									targetBlockerKey: finishedBlockerKey,
+								});
+							}
 						},
 						onRemoved: (nextSummary) => {
-							if (document.activeElement !== activatedControl) return;
+							if (
+								document.activeElement !== activatedControl &&
+								!(activatedControlHadFocus && document.activeElement === document.body)
+							)
+								return;
 
 							const removedIndex = blockerOrder.indexOf(blockerKey);
 							const remainingBlockerKeys = new Set(

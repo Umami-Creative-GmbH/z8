@@ -1538,6 +1538,80 @@ describe("PayrollWorkspace", () => {
 		expect(screen.queryByRole("heading", { name: "0 payroll blockers need review" })).toBeNull();
 	});
 
+	it("restores the activated clear control after pending disablement loses focus and dismissal fails", async () => {
+		const dismissal = deferred<{ success: false; error: string }>();
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expandPayrollBlockers();
+		const clearButton = screen.getByRole("button", {
+			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+		});
+		clearButton.focus();
+		expect(document.activeElement).toBe(clearButton);
+		fireEvent.click(clearButton);
+		await waitFor(() => expect(clearButton).toHaveProperty("disabled", true));
+		await act(async () => {
+			await new Promise<void>((resolve) =>
+				requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+			);
+		});
+		expect(document.activeElement).toBe(document.body);
+		await act(async () => dismissal.resolve({ success: false, error: "Still blocked" }));
+		await waitFor(() => expect(toastMocks.error).toHaveBeenCalledWith("Still blocked"));
+		expect(clearButton).toHaveProperty("disabled", false);
+		expect(document.activeElement).toBe(clearButton);
+	});
+
+	it("moves to the next blocker after successful removal of a pending control that lost focus", async () => {
+		const dismissal = deferred<{ success: true; data: { dismissed: true } }>();
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce({
+			success: true,
+			data: buildSummary({ blockers: [baseSummary.blockers[1]] }),
+		});
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expandPayrollBlockers();
+		const clearButton = screen.getByRole("button", {
+			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+		});
+		clearButton.focus();
+		expect(document.activeElement).toBe(clearButton);
+		fireEvent.click(clearButton);
+		await waitFor(() => expect(clearButton).toHaveProperty("disabled", true));
+		await act(async () => {
+			await new Promise<void>((resolve) =>
+				requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+			);
+		});
+		expect(document.activeElement).toBe(document.body);
+		await act(async () => dismissal.resolve({ success: true, data: { dismissed: true } }));
+		await waitFor(() => expect(clearButton.isConnected).toBe(false));
+		const remainingRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
+		if (!remainingRow) throw new Error("Expected the remaining absence blocker");
+		expect(document.activeElement).toBe(
+			within(remainingRow as HTMLElement).getByRole("button", { name: /Clear false positive/ }),
+		);
+	});
+
+	it("preserves focus deliberately moved away while dismissal is refused", async () => {
+		const dismissal = deferred<{ success: false; error: string }>();
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+		expandPayrollBlockers();
+		const clearButton = screen.getByRole("button", {
+			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+		});
+		clearButton.focus();
+		fireEvent.click(clearButton);
+		await waitFor(() => expect(clearButton).toHaveProperty("disabled", true));
+		const chosenControl = screen.getByRole("button", { name: "Download PDF" });
+		chosenControl.focus();
+		expect(document.activeElement).toBe(chosenControl);
+		await act(async () => dismissal.resolve({ success: false, error: "Still blocked" }));
+		await waitFor(() => expect(clearButton).toHaveProperty("disabled", false));
+		expect(document.activeElement).toBe(chosenControl);
+	});
+
 	it("keeps focus on the activated clear control when dismissal fails", async () => {
 		const dismissal = deferred<{ success: false; error: string }>();
 		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
