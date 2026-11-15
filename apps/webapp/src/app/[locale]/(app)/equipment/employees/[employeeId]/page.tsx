@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { EquipmentLoading } from "@/components/equipment/equipment-loading";
+import { EquipmentEmployeeHeader } from "@/components/equipment/equipment-employee-header";
+import { EquipmentEmployeeLoading } from "@/components/equipment/equipment-employee-loading";
+import { EquipmentRefreshButton } from "@/components/equipment/equipment-header-actions";
 import { EmployeeEquipment } from "@/components/equipment/equipment-workspace";
 import { getEmployeeEquipment } from "@/lib/organization/equipment/actions";
 import { getTranslate } from "@/tolgee/server";
@@ -31,15 +33,16 @@ async function EquipmentEmployeeContent({
 				/>
 			) : (
 				<div className="space-y-2 px-4 lg:px-6">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.equipment.employee.title", "Employee equipment")}
-					</h1>
+					<EquipmentEmployeeHeader />
 					<p role="alert" className="text-sm text-destructive">
 						{t(
 							"settings.equipment.overview.failed",
 							"Equipment could not be loaded. Reload the page to try again.",
 						)}
 					</p>
+					<EquipmentRefreshButton>
+						{t("settings.equipment.custody.reload", "Reload equipment")}
+					</EquipmentRefreshButton>
 				</div>
 			)}
 		</div>
@@ -49,7 +52,7 @@ export default function EquipmentEmployeePage(props: {
 	params: Promise<{ employeeId: string }>;
 }) {
 	return (
-		<Suspense fallback={<EquipmentLoading variant="employee" />}>
+		<Suspense fallback={<EquipmentEmployeeLoading />}>
 			<EquipmentEmployeeContent {...props} />
 		</Suspense>
 	);

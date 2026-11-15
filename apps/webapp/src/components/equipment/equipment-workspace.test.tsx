@@ -753,6 +753,54 @@ describe("Employee equipment", () => {
 		);
 	}
 
+	it("keeps the employee totals independent of record filters and follows overdue work by keyboard", async () => {
+		const user = userEvent.setup();
+		employee(
+			{
+				...view,
+				assignments: [
+					heldAssignment,
+					{
+						...partialAssignment,
+						id: "partial-r021",
+						employeeId: ids.alex,
+						holderName: "Alex Current",
+						overdue: false,
+						effectiveDeadline: null,
+					},
+				],
+			},
+			ids.alex,
+		);
+		expect(
+			screen.getByText("Authorized equipment for this employee"),
+		).toBeTruthy();
+		expect(screen.getByText(/Nov 5, 2026.*Europe\/Berlin/)).toBeTruthy();
+		const summary = within(
+			screen.getByRole("region", { name: "Employee returns" }),
+		);
+		expect(
+			summary.getByRole("button", { name: "Show outstanding returns" })
+				.textContent,
+		).toContain("2");
+		const overdue = summary.getByRole("button", {
+			name: "Show overdue returns",
+		});
+		overdue.focus();
+		await user.keyboard("{Enter}");
+		expect(screen.queryByText("Shirt size M")).toBeNull();
+		expect(
+			screen.getByRole("link", { name: "L-02" }).getAttribute("href"),
+		).toContain(encodeURIComponent(`/equipment/employees/${ids.alex}`));
+		expect(
+			summary.getByRole("button", { name: "Show outstanding returns" })
+				.textContent,
+		).toContain("2");
+		await user.click(screen.getByRole("button", { name: "Clear filters" }));
+		expect(screen.getByText("Shirt size M")).toBeTruthy();
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+	});
+
 	it("heads the page with the holder and a summary, without a holder column", () => {
 		employee(
 			{
@@ -792,6 +840,41 @@ describe("Employee equipment", () => {
 		) as HTMLSelectElement;
 		expect(holder.value).toBe(ids.alex);
 		expect(holder.disabled).toBe(true);
+	});
+
+	it("retains a self holder's read-only records without staff actions or an overview back link", async () => {
+		const user = userEvent.setup();
+		employee(
+			{
+				...view,
+				canManage: false,
+				canAdminister: false,
+				assignments: [
+					{
+						...heldAssignment,
+						canReceive: false,
+						canCloseException: false,
+						transfer: undefined,
+					},
+				],
+			},
+			ids.alex,
+		);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Alex Current" }),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "Issue equipment" }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("link", { name: "Back to equipment" }),
+		).toBeNull();
+		await user.click(screen.getByRole("button", { name: "Actions for L-02" }));
+		expect(
+			within(await screen.findByRole("menu"))
+				.getAllByRole("menuitem")
+				.map((item) => item.textContent),
+		).toEqual(["View details"]);
 	});
 
 	it("keeps former employees usable for receipt and history without offering issuance", async () => {

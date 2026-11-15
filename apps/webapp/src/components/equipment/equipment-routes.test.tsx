@@ -103,6 +103,20 @@ it("reads the whole scope for the overview and hands the URL filters to the list
 	);
 });
 
+it("offers an employee read retry and keeps a named heading while streaming", async () => {
+	api.employee.mockResolvedValue({ success: false, code: "DatabaseError" });
+	const page = EmployeePage({
+		params: Promise.resolve({ employeeId: assignmentId }),
+	});
+	const html = await content(page);
+	expect(html).toContain('aria-label="Reload equipment"');
+	expect(html).toContain("Equipment could not be loaded.");
+	expect(html.match(/<h1\b/g)).toHaveLength(1);
+	const loading = renderToStaticMarkup(page.props.fallback);
+	expect(loading).toContain("Employee equipment");
+	expect(loading.match(/<h1\b/g)).toHaveLength(1);
+});
+
 it("keeps an unavailable overview distinct from zero holdings and offers a real read retry", async () => {
 	api.overview.mockResolvedValue({ success: false, code: "DatabaseError" });
 	const html = await content(

@@ -1,12 +1,13 @@
 "use client";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useState } from "react";
-import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
 import { BackLink } from "@/components/travel-expenses/back-link";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import type { EquipmentView } from "@/lib/organization/equipment/contracts";
 import { EquipmentAssignmentsCard } from "./equipment-assignments-card";
+import { EquipmentEmployeeHeader } from "./equipment-employee-header";
 import {
 	EquipmentIssueActions,
 	EquipmentRefreshButton,
@@ -58,6 +59,7 @@ export function EmployeeEquipment({
 }) {
 	const { t } = useTranslate();
 	const { open, panel, pending } = useEquipmentPanels(data);
+	const locale = useLocale();
 	const [filters, setFilters] = useState<AssignmentFilters>({
 		...DEFAULT_ASSIGNMENT_FILTERS,
 		status: "all",
@@ -142,8 +144,8 @@ export function EmployeeEquipment({
 					</BackLink>
 				</div>
 			) : null}
-			<div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-start sm:justify-between lg:px-6">
-				<div className="flex min-w-0 items-center gap-3.5">
+			<div className="flex items-start gap-3.5 px-4 lg:px-6">
+				<div className="shrink-0 pt-1">
 					<UserAvatar
 						seed={employeeId}
 						image={image}
@@ -151,25 +153,67 @@ export function EmployeeEquipment({
 						size="md"
 						showClockStatus={false}
 					/>
-					<div className="min-w-0 space-y-1">
-						<div className="flex flex-wrap items-center gap-2">
-							<h1 className="break-words text-2xl font-semibold tracking-tight">
-								{name ||
-									t("settings.equipment.employee.title", "Employee equipment")}
-							</h1>
-							{former ? <FormerEmployeeBadge /> : null}
-						</div>
-						<p className="text-sm text-muted-foreground tabular-nums">
-							{summary}
-						</p>
-					</div>
 				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<EquipmentRefreshButton />
-					{actions}
-				</div>
+				<EquipmentEmployeeHeader
+					name={name}
+					former={former}
+					calendar={data}
+					description={summary}
+					actions={
+						<>
+							<EquipmentRefreshButton />
+							{actions}
+						</>
+					}
+				/>
 			</div>
 			{formerHelp ? <div className="px-4 lg:px-6">{formerHelp}</div> : null}
+			<section
+				aria-label={t(
+					"settings.equipment.employee.returns",
+					"Employee returns",
+				)}
+				className="mx-4 grid grid-cols-1 overflow-hidden rounded-xl border bg-card text-card-foreground lg:mx-6 @sm/main:grid-cols-2"
+			>
+				<button
+					type="button"
+					aria-label={t(
+						"settings.equipment.kpi.showOutstanding",
+						"Show outstanding returns",
+					)}
+					aria-pressed={filters.status === "outstanding"}
+					onClick={() => setFilters({ ...filters, status: "outstanding" })}
+					className="flex min-w-0 flex-col items-start gap-2 p-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring aria-pressed:bg-primary/5 lg:p-5"
+				>
+					<span className="text-sm font-medium">
+						{t("settings.equipment.filters.outstanding", "Outstanding returns")}
+					</span>
+					<span className="text-2xl font-semibold tabular-nums">
+						{data.assignments
+							.filter((a) => a.outstanding)
+							.length.toLocaleString(locale)}
+					</span>
+				</button>
+				<button
+					type="button"
+					aria-label={t(
+						"settings.equipment.kpi.showOverdue",
+						"Show overdue returns",
+					)}
+					aria-pressed={filters.status === "overdue"}
+					onClick={() => setFilters({ ...filters, status: "overdue" })}
+					className="flex min-w-0 flex-col items-start gap-2 border-t p-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring aria-pressed:bg-primary/5 lg:p-5 @sm/main:border-t-0 @sm/main:border-l"
+				>
+					<span className="text-sm font-medium">
+						{t("settings.equipment.custody.overdue", "Overdue")}
+					</span>
+					<span className="text-2xl font-semibold tabular-nums">
+						{data.assignments
+							.filter((a) => a.outstanding && a.overdue)
+							.length.toLocaleString(locale)}
+					</span>
+				</button>
+			</section>
 			<div className="px-4 lg:px-6">{card}</div>
 			{panel}
 		</>
