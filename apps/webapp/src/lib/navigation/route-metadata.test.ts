@@ -13,6 +13,16 @@ describe("route metadata", () => {
 			false,
 		);
 	});
+	it("adopts only the deputy history record, preserving other approval headings", () => {
+		expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(
+			true,
+		);
+		expect(
+			appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),
+		).toBe(false);
+		expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);
+		expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(false);
+	});
 	it("adopts the exact vacation route while retaining staged descendants", () => {
 		expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);
 		expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(
