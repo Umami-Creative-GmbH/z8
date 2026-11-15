@@ -1,0 +1,84 @@
+{
+  "checks": [
+    {
+      "name": "small-admin actual inbox admission",
+      "passed": true
+    },
+    {
+      "name": "small-employee actual inbox admission",
+      "passed": true
+    },
+    {
+      "name": "small-restricted actual inbox admission",
+      "passed": true
+    },
+    {
+      "name": "small-manager actual inbox admission",
+      "passed": true
+    },
+    {
+      "name": "URL type arrival retained",
+      "passed": true
+    },
+    {
+      "name": "filtered empty differs from all clear",
+      "passed": true
+    },
+    {
+      "name": "failed refresh keeps the real search draft",
+      "passed": true
+    },
+    {
+      "name": "real saved dark and 18px preferences survive reload",
+      "passed": true
+    },
+    {
+      "name": "sidebar collapse persists",
+      "passed": true
+    },
+    {
+      "name": "sprint keyboard skip advances the current request",
+      "passed": true
+    },
+    {
+      "name": "after-phone-dark-large has no page overflow",
+      "passed": true
+    },
+    {
+      "name": "after-wide-dark-large has no page overflow",
+      "passed": true
+    },
+    {
+      "name": "phone evidence panel fits",
+      "passed": true
+    },
+    {
+      "name": "organization switch during read discards old request workspace",
+      "passed": true
+    },
+    {
+      "name": "old exact request is refused in new organization",
+      "passed": true
+    }
+  ],
+  "roles": [
+    {
+      "label": "small-admin",
+      "status": 200
+    },
+    {
+      "label": "small-employee",
+      "status": 403
+    },
+    {
+      "label": "small-restricted",
+      "status": 403
+    },
+    {
+      "label": "small-manager",
+      "status": 200
+    }
+  ],
+  "failedReads": 4,
+  "scope": "owned fixture; real role changes and shell preference controls; actual org switch with held GET"
+}

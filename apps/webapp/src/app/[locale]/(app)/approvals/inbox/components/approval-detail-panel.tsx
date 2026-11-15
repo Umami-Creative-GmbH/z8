@@ -26,7 +26,6 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
 import { isApprovalInboxDetailChange } from "@/lib/approvals/inbox/localized-text";
 import type {
@@ -46,6 +45,7 @@ import {
 } from "@/lib/time-tracking/correction-overlaps";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { ApprovalReasonForm } from "./approval-reason-form";
 import { ApprovalTriageReasons } from "./approval-triage-reasons";
 import {
 	getCoveringForTitle,
@@ -191,9 +191,9 @@ function renderDetailSection(
 			);
 		case "text":
 			return (
-				<section key={section.title}>
-					<SectionTitle>{section.title}</SectionTitle>
-					<p className="rounded-xl border bg-card/60 p-4 text-sm leading-6 shadow-sm">
+				<section key={text(section.title)}>
+					<SectionTitle>{text(section.title)}</SectionTitle>
+					<p className="whitespace-pre-wrap break-words rounded-md border bg-card p-4 text-sm leading-6">
 						{section.body}
 					</p>
 				</section>
@@ -325,65 +325,6 @@ function ApprovalDetailHeader({ item }: { item: ApprovalInboxItem }) {
 	);
 }
 
-function ApprovalRejectionForm({
-	reason,
-	onReasonChange,
-	onCancel,
-	onConfirm,
-	canReject,
-	isPending,
-	isRejectPending,
-}: {
-	reason: string;
-	onReasonChange: (reason: string) => void;
-	onCancel: () => void;
-	onConfirm: () => void;
-	canReject: boolean;
-	isPending: boolean;
-	isRejectPending: boolean;
-}) {
-	const { t } = useTranslate();
-	return (
-		<div className="w-full space-y-4">
-			<div>
-				<label className="text-sm font-medium" htmlFor="rejection-reason">
-					{t("approvals:approvals.rejectionReason", "Reason for rejection")}
-				</label>
-				<Textarea
-					id="rejection-reason"
-					value={reason}
-					onChange={(e) => onReasonChange(e.target.value)}
-					placeholder={t(
-						"approvals:approvals.rejectionReasonPlaceholder",
-						"Please provide a reason for rejecting this request…",
-					)}
-					className="mt-2"
-					rows={3}
-				/>
-			</div>
-			<div className="flex flex-wrap gap-2">
-				<Button variant="outline" onClick={onCancel} disabled={isPending}>
-					{t("common.cancel", "Cancel")}
-				</Button>
-				<Button
-					variant="destructive"
-					onClick={onConfirm}
-					disabled={!canReject || !reason.trim() || isPending}
-				>
-					{isRejectPending && (
-						<IconLoader2
-							className="mr-2 size-4 animate-spin"
-							aria-hidden="true"
-						/>
-					)}
-					<IconX className="mr-2 size-4" aria-hidden="true" />
-					{t("approvals:approvals.confirmReject", "Confirm Rejection")}
-				</Button>
-			</div>
-		</div>
-	);
-}
-
 function ApprovalDecisionFooter({
 	item,
 	approvalId,
@@ -459,12 +400,22 @@ function ApprovalDecisionFooter({
 }
 
 function useApprovalPanelDetail(approval: ApprovalInboxItem | null) {
-	const { data: detail } = useApprovalDetail(approval?.id ?? null);
+	const {
+		data: detail,
+		isError,
+		isFetching,
+		refetch,
+	} = useApprovalDetail(approval?.id ?? null);
 	const item = detail?.item ?? approval;
+	const available =
+		!!detail && !isError && !isFetching && detail.item.id === approval?.id;
 	return {
 		item,
-		actions: detail?.actions ?? item?.capabilities,
-		sections: detail?.sections ?? [],
+		actions: available ? detail.actions : undefined,
+		sections: available ? detail.sections : [],
+		available,
+		isFetching,
+		refetch,
 	};
 }
 
@@ -497,7 +448,8 @@ export function ApprovalDetailPanel({
 		itemIds: string[];
 	}>({ approvalId: null, itemIds: [] });
 
-	const { item, actions, sections } = useApprovalPanelDetail(approval);
+	const { item, actions, sections, available, isFetching, refetch } =
+		useApprovalPanelDetail(approval);
 	const approveMutation = useApproveApproval();
 	const rejectMutation = useRejectApproval();
 	const presence = useEmployeeClockStatuses(
@@ -583,6 +535,7 @@ export function ApprovalDetailPanel({
 	};
 
 	const handleClose = () => {
+		if (isPending) return;
 		if (revisionRejectedId.current === approval?.id) onActioned();
 		revisionRejectedId.current = null;
 		setOverlapFailure(null);
@@ -595,7 +548,12 @@ export function ApprovalDetailPanel({
 	if (!approval) return null;
 
 	const panelItem = item ?? approval;
-	const panelActions = actions ?? panelItem.capabilities;
+	const panelActions = actions ?? {
+		canApprove: false,
+		canReject: false,
+		canBulkApprove: false,
+		requiresRejectReason: true,
+	};
 
 	return (
 		<Sheet open={open} onOpenChange={handleClose}>
@@ -606,6 +564,31 @@ export function ApprovalDetailPanel({
 					data-slot="approval-detail-body"
 					className="flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6"
 				>
+					{!available && (
+						<div
+							role="status"
+							className="space-y-2 rounded-md border p-4 text-sm"
+						>
+							<p>
+								{isFetching
+									? t(
+											"approvals:approvals.loadingDecisionEvidence",
+											"Loading decision rights and evidence…",
+										)
+									: t(
+											"approvals:approvals.detailUnavailableDecision",
+											"Decision rights and evidence are unavailable. Retry before deciding.",
+										)}
+							</p>
+							<Button
+								variant="outline"
+								disabled={isFetching}
+								onClick={() => refetch()}
+							>
+								{t("common.retry", "Retry")}
+							</Button>
+						</div>
+					)}
 					<div>
 						<SectionTitle>
 							{t("approvals:approvals.requester", "Requester")}
@@ -680,7 +663,7 @@ export function ApprovalDetailPanel({
 					actions={panelActions}
 					rejectionForm={
 						isRejecting ? (
-							<ApprovalRejectionForm
+							<ApprovalReasonForm
 								reason={rejectionReason}
 								onReasonChange={setRejectionReason}
 								onCancel={() => {
@@ -690,7 +673,6 @@ export function ApprovalDetailPanel({
 								onConfirm={handleReject}
 								canReject={!!actions?.canReject}
 								isPending={isPending}
-								isRejectPending={rejectMutation.isPending}
 							/>
 						) : null
 					}

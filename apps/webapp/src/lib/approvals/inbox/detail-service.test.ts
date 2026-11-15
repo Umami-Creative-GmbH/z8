@@ -9,8 +9,13 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 
 // No submitted revision exists (capture inactive): the live detail stays as is.
 vi.mock("@/lib/approvals/presentation/time-review", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/approvals/presentation/time-review")>()),
-	prepareTimeReviewEvidence: vi.fn(async () => ({ status: "not_captured", held: false })),
+	...(await importOriginal<
+		typeof import("@/lib/approvals/presentation/time-review")
+	>()),
+	prepareTimeReviewEvidence: vi.fn(async () => ({
+		status: "not_captured",
+		held: false,
+	})),
 }));
 
 const request = {
@@ -83,7 +88,8 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [canonical]);
 
 		await expect(
-			getApprovalInboxDetail({ triagePolicy: { staleAfterHours: 72, smallCorrectionMinutes: 15 },
+			getApprovalInboxDetail({
+				triagePolicy: { staleAfterHours: 72, smallCorrectionMinutes: 15 },
 				approvalId: "assignment-1",
 				organizationId: "org-1",
 				approverId: "manager-1",
@@ -152,7 +158,9 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			approvalRequestId: "approval-1",
 			entityId: "absence-1",
 		});
-		const timeline = result.sections.find((section) => section.type === "timeline");
+		const timeline = result.sections.find(
+			(section) => section.type === "timeline",
+		);
 		expect(timeline).toMatchObject({
 			events: [
 				{ actorName: "Avery Employee" },
@@ -162,7 +170,10 @@ describe("getApprovalInboxDetailFromRequest", () => {
 	});
 
 	it("states the request's status, type and summary as translatable texts (#687)", async () => {
-		const result = await getApprovalInboxDetailFromRequest({ request, handler: createHandler() });
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler: createHandler(),
+		});
 		const [requestSection, , timeline] = result.sections;
 		expect(requestSection).toEqual({
 			type: "key_value",
@@ -173,13 +184,22 @@ describe("getApprovalInboxDetailFromRequest", () => {
 					value: "Absence Request",
 				},
 				{
-					label: { key: "approvals:approvals.requestSummary", fallback: "Summary" },
+					label: {
+						key: "approvals:approvals.requestSummary",
+						fallback: "Summary",
+					},
 					value: "1 day off",
 				},
 				{
-					label: { key: "approvals:approvals.requestStatus", fallback: "Status" },
+					label: {
+						key: "approvals:approvals.requestStatus",
+						fallback: "Status",
+					},
 					// The report pages' wording, never the raw status value.
-					value: { key: "approvals:approvals.requestStatusPending", fallback: "Awaiting review" },
+					value: {
+						key: "approvals:approvals.requestStatusPending",
+						fallback: "Awaiting review",
+					},
 				},
 			],
 		});
@@ -200,7 +220,12 @@ describe("getApprovalInboxDetailFromRequest", () => {
 					status: "rejected",
 					closedAs: "returned",
 					typeName: "Expense report",
-					display: { title: "Trip expense report", subtitle: "", summary: "", localized },
+					display: {
+						title: "Trip expense report",
+						subtitle: "",
+						summary: "",
+						localized,
+					},
 				}),
 			),
 		});
@@ -258,7 +283,11 @@ describe("getApprovalInboxDetailFromRequest", () => {
 	it("names the absence's deputy after the submitted facts, noting a contact only (#1011)", async () => {
 		const entity = {
 			id: "absence-1",
-			deputy: { id: "employee-2", name: "Ben Example", canDecideApprovals: false },
+			deputy: {
+				id: "employee-2",
+				name: "Ben Example",
+				canDecideApprovals: false,
+			},
 		};
 		const result = await getApprovalInboxDetailFromRequest({
 			request,
@@ -270,9 +299,18 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			type: "key_value",
 			title: { key: "approvals:approvals.deputy.title", fallback: "Cover" },
 			rows: [
-				{ label: { key: "approvals:approvals.deputy.label", fallback: "Deputy" }, value: "Ben Example" },
 				{
-					label: { key: "approvals:approvals.deputy.approvals", fallback: "Approvals" },
+					label: {
+						key: "approvals:approvals.deputy.label",
+						fallback: "Deputy",
+					},
+					value: "Ben Example",
+				},
+				{
+					label: {
+						key: "approvals:approvals.deputy.approvals",
+						fallback: "Approvals",
+					},
 					value: {
 						key: "approvals:approvals.deputy.contactOnly",
 						fallback: "Contact only: cannot decide approvals",
@@ -299,21 +337,36 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			loadAbsenceWorkBalance,
 		});
 
-		expect(loadAbsenceWorkBalance).toHaveBeenCalledWith({ organizationId: "org-1", entity });
+		expect(loadAbsenceWorkBalance).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			entity,
+		});
 		expect(result.sections).toContainEqual({
 			type: "key_value",
-			title: { key: "approvals:approvals.workBalance.title", fallback: "Work balance" },
+			title: {
+				key: "approvals:approvals.workBalance.title",
+				fallback: "Work balance",
+			},
 			rows: [
 				{
-					label: { key: "approvals:approvals.workBalance.current", fallback: "Current" },
+					label: {
+						key: "approvals:approvals.workBalance.current",
+						fallback: "Current",
+					},
 					value: "+4:00h",
 				},
 				{
-					label: { key: "approvals:approvals.workBalance.drawn", fallback: "Drawn by request" },
+					label: {
+						key: "approvals:approvals.workBalance.drawn",
+						fallback: "Drawn by request",
+					},
 					value: "-8:00h",
 				},
 				{
-					label: { key: "approvals:approvals.workBalance.after", fallback: "After approval" },
+					label: {
+						key: "approvals:approvals.workBalance.after",
+						fallback: "After approval",
+					},
 					value: "-4:00h",
 					tone: "warning",
 				},
@@ -722,5 +775,31 @@ describe("getApprovalInboxDetailFromRequest", () => {
 				handler: createHandler(createDetail({ approvalType: "time_entry" })),
 			}),
 		).rejects.toThrow("Approval detail mismatch");
+	});
+});
+
+it("shows the submitted deletion reason as entered in authorized detail", async () => {
+	const reason = "Duplicate shift\nPlease remove this entry.";
+	const detail = createDetail({
+		approvalType: "time_entry",
+		entityId: "period-1",
+	});
+	detail.entity = { timeApprovalKind: "time_correction" } as never;
+	const result = await getApprovalInboxDetailFromRequest({
+		request: {
+			...request,
+			entityType: "time_entry",
+			entityId: "period-1",
+			reason,
+		},
+		handler: createHandler(detail, "time_entry"),
+	});
+	expect(result.sections).toContainEqual({
+		type: "text",
+		title: {
+			key: "approvals:approvals.submittedReason",
+			fallback: "Submitted reason",
+		},
+		body: reason,
 	});
 });

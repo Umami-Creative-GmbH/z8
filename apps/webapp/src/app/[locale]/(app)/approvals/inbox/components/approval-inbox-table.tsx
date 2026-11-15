@@ -32,6 +32,7 @@ interface ApprovalInboxTableProps {
 	onSelectItem: (id: string, checked: boolean) => void;
 	onRowClick: (item: ApprovalInboxItem) => void;
 	isFetching: boolean;
+	filtered?: boolean;
 }
 
 const TYPE_ICONS: Record<
@@ -78,6 +79,7 @@ export function ApprovalInboxTable({
 	onSelectItem,
 	onRowClick,
 	isFetching,
+	filtered = false,
 }: ApprovalInboxTableProps) {
 	const { t } = useTranslate();
 	const text = useApprovalInboxText();
@@ -93,13 +95,23 @@ export function ApprovalInboxTable({
 			{items.length === 0 ? (
 				<div className="flex min-h-40 flex-col items-center justify-center gap-2 px-4 py-10 text-center">
 					<p className="font-medium text-sm">
-						{t("approvals:approvals.noRequests", "No pending requests")}
+						{filtered
+							? t(
+									"approvals:approvals.noMatchingRequests",
+									"No matching requests",
+								)
+							: t("approvals:approvals.noRequests", "No pending requests")}
 					</p>
 					<p className="max-w-sm text-muted-foreground text-sm">
-						{t(
-							"approvals:approvals.noRequestsDescription",
-							"New approval requests will appear here when they need manager review.",
-						)}
+						{filtered
+							? t(
+									"approvals:approvals.noMatchingRequestsHelp",
+									"Change or clear the search and type filters to see more requests.",
+								)
+							: t(
+									"approvals:approvals.noRequestsDescription",
+									"New approval requests will appear here when they need manager review.",
+								)}
 					</p>
 				</div>
 			) : (

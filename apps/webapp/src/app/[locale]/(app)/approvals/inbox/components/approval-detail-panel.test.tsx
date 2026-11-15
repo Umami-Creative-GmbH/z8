@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
 	ApprovalInboxDetailSection,
@@ -69,6 +75,7 @@ vi.mock("@/navigation", () => ({
 }));
 
 const mockState = vi.hoisted(() => ({
+	detailUnavailable: false,
 	detailItem: null as ApprovalInboxItem | null,
 	actions: {
 		canApprove: true,
@@ -85,11 +92,13 @@ const mockState = vi.hoisted(() => ({
 
 vi.mock("@/lib/query/use-approval-inbox", () => ({
 	useApprovalDetail: () => ({
-		data: {
-			item: mockState.detailItem ?? approvalItem,
-			sections: mockState.sections,
-			actions: mockState.actions,
-		},
+		data: mockState.detailUnavailable
+			? undefined
+			: {
+					item: mockState.detailItem ?? approvalItem,
+					sections: mockState.sections,
+					actions: mockState.actions,
+				},
 	}),
 	useApproveApproval: () => ({
 		isPending: mockState.approveIsPending,
@@ -205,6 +214,7 @@ describe("ApprovalDetailPanel", () => {
 	});
 
 	beforeEach(() => {
+		mockState.detailUnavailable = false;
 		localeState.locale = "en";
 		mockState.detailItem = null;
 		mockState.actions = { ...approvalItem.capabilities };
@@ -836,4 +846,56 @@ it("shows every assessment reason in detail review", () => {
 	);
 	expect(screen.getByText("Work category changes.")).toBeTruthy();
 	expect(screen.getByText("Coverage not verified.")).toBeTruthy();
+});
+
+it("never decides from list rights when fresh detail is unavailable", async () => {
+	mockState.detailUnavailable = true;
+	render(
+		<ApprovalDetailPanel
+			approval={approvalItem}
+			open
+			onOpenChange={vi.fn()}
+			onActioned={vi.fn()}
+		/>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: /^Approve$/ }));
+	expect(mockState.approveMutateAsync).not.toHaveBeenCalled();
+	expect(
+		screen.getByText(
+			"Decision rights and evidence are unavailable. Retry before deciding.",
+		),
+	).toBeTruthy();
+	mockState.detailUnavailable = false;
+});
+
+it("can retry the same rejection reason after a failed decision", async () => {
+	mockState.detailUnavailable = false;
+	mockState.detailItem = null;
+	mockState.actions = { ...approvalItem.capabilities };
+	mockState.rejectIsPending = false;
+	mockState.rejectMutateAsync.mockReset();
+	mockState.rejectMutateAsync
+		.mockResolvedValueOnce({ success: false, error: "Connection lost" })
+		.mockResolvedValueOnce({ success: true });
+	render(
+		<ApprovalDetailPanel
+			approval={approvalItem}
+			open
+			onOpenChange={vi.fn()}
+			onActioned={vi.fn()}
+		/>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+	fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+		target: { value: "Please correct" },
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Confirm Rejection" }));
+	await waitFor(() =>
+		expect(mockState.rejectMutateAsync).toHaveBeenCalledTimes(1),
+	);
+	await act(async () => {});
+	fireEvent.click(screen.getByRole("button", { name: "Confirm Rejection" }));
+	await waitFor(() =>
+		expect(mockState.rejectMutateAsync).toHaveBeenCalledTimes(2),
+	);
 });
