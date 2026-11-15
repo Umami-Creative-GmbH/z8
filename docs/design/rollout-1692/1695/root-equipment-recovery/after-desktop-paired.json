@@ -1,0 +1,187 @@
+{
+  "phase": "after",
+  "sourceCommit": "6a9189f867c6349961511cd9bc4f4db77f51e9e1",
+  "sourceHashes": {
+    "src/components/ui/sonner.tsx": "2b237901cf808e4b7d80302cc32179cfef1da42b89ebba4a358ece85878bcae0",
+    "src/components/ui/sonner-glass.css": "acce3911e8f47cf57480ef3ddb69fa1e5c964c10241e582d43831a1fbbc66837",
+    "src/components/ui/action-panel.tsx": "2bdd43bb77119a01410c1a84827b73af1a2015a5df566b7173d64a1a61b84f73",
+    "src/components/ui/sheet.tsx": "4bb2c4344ef1c961d4790c8045760e5f6e2f2af688d3ca5bb630081ac278df39",
+    "src/components/equipment/equipment-panels.tsx": "2404f84694e7962564463a7137bfb21ec731a682484c9c3f2a340bb263c93a6d",
+    "src/components/equipment/equipment-handovers.tsx": "0c54fe864085daced1978c128e06672e2549a51fd931ec32cbaf80f960fc871c"
+  },
+  "fixture": "Owned synthetic small-admin equipment scope",
+  "initialAssignments": 0,
+  "errors": [],
+  "navigations": [
+    "/en/equipment",
+    "/en/equipment",
+    "/en/equipment"
+  ],
+  "beforeFrameworkSettled": {
+    "point": {
+      "x": 1509.265625,
+      "y": 966
+    },
+    "button": {
+      "tag": "BUTTON",
+      "slot": "button",
+      "role": null,
+      "toast": false,
+      "text": "Record issuance",
+      "disabled": false
+    },
+    "buttonAtPoint": false,
+    "hitChain": [
+      {
+        "tag": "NEXTJS-PORTAL",
+        "slot": null,
+        "role": null,
+        "toast": false,
+        "text": "",
+        "disabled": null
+      },
+      {
+        "tag": "DIV",
+        "slot": null,
+        "role": null,
+        "toast": false,
+        "text": "Rendering (cold cache)...",
+        "disabled": null
+      }
+    ],
+    "toasts": [],
+    "inlineAlerts": [
+      {
+        "tag": "DIV",
+        "slot": "alert",
+        "role": "alert",
+        "toast": false,
+        "text": "The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
+        "disabled": null
+      }
+    ],
+    "dialogOpen": true
+  },
+  "beforePointer": {
+    "point": {
+      "x": 1509.265625,
+      "y": 966
+    },
+    "button": {
+      "tag": "BUTTON",
+      "slot": "button",
+      "role": null,
+      "toast": false,
+      "text": "Record issuance",
+      "disabled": false
+    },
+    "buttonAtPoint": true,
+    "hitChain": [
+      {
+        "tag": "BUTTON",
+        "slot": "button",
+        "role": null,
+        "toast": false,
+        "text": "Record issuance",
+        "disabled": false
+      }
+    ],
+    "toasts": [],
+    "inlineAlerts": [
+      {
+        "tag": "DIV",
+        "slot": "alert",
+        "role": "alert",
+        "toast": false,
+        "text": "The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
+        "disabled": null
+      }
+    ],
+    "dialogOpen": true
+  },
+  "hover": {
+    "point": {
+      "x": 1509.265625,
+      "y": 966
+    },
+    "button": {
+      "tag": "BUTTON",
+      "slot": "button",
+      "role": null,
+      "toast": false,
+      "text": "Record issuance",
+      "disabled": false
+    },
+    "buttonAtPoint": true,
+    "hitChain": [
+      {
+        "tag": "BUTTON",
+        "slot": "button",
+        "role": null,
+        "toast": false,
+        "text": "Record issuance",
+        "disabled": false
+      }
+    ],
+    "toasts": [],
+    "inlineAlerts": [
+      {
+        "tag": "DIV",
+        "slot": "alert",
+        "role": "alert",
+        "toast": false,
+        "text": "The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
+        "disabled": null
+      }
+    ],
+    "dialogOpen": true
+  },
+  "afterPointer": {
+    "point": {
+      "x": 1509.265625,
+      "y": 966
+    },
+    "button": null,
+    "buttonAtPoint": false,
+    "hitChain": [
+      {
+        "tag": "NEXTJS-PORTAL",
+        "slot": null,
+        "role": null,
+        "toast": false,
+        "text": "",
+        "disabled": null
+      },
+      {
+        "tag": "DIV",
+        "slot": null,
+        "role": null,
+        "toast": false,
+        "text": "Rendering...",
+        "disabled": null
+      }
+    ],
+    "toasts": [
+      {
+        "tag": "LI",
+        "slot": null,
+        "role": null,
+        "toast": true,
+        "text": "Handover recorded.",
+        "disabled": null,
+        "rect": {
+          "x": 1220,
+          "y": 922.5,
+          "width": 356,
+          "height": 53.5
+        },
+        "closeButtons": 0
+      }
+    ],
+    "inlineAlerts": [],
+    "dialogOpen": false
+  },
+  "pointerCommandRequests": 1,
+  "finalAssignments": 1,
+  "dialogAfterSettled": false
+}
