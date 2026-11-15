@@ -1,0 +1,44 @@
+{
+  "checks": [
+    {
+      "name": "real own request list and original destinations",
+      "links": [
+        "/en/travel-expenses",
+        "/en/absences",
+        "/en/time-tracking"
+      ]
+    },
+    {
+      "name": "declined native confirmation keeps pending absence"
+    },
+    {
+      "name": "held cancellation exposes pending control"
+    },
+    {
+      "name": "late cancellation refused under current other account; original correction still pending"
+    },
+    {
+      "name": "other account reload has no original employee requests"
+    },
+    {
+      "name": "return to original account restores own requests"
+    },
+    {
+      "name": "held absence cancellation refused after real organization switch",
+      "responseStatus": 200,
+      "refusalObserved": true
+    },
+    {
+      "name": "new organization arrival conceals old requests"
+    },
+    {
+      "name": "return to original organization restores own requests"
+    },
+    {
+      "name": "real partial-source recovery retains search and restores expense record"
+    },
+    {
+      "name": "confirmed absence cancellation removed owned pending source; actual reload readback excludes it"
+    }
+  ]
+}
