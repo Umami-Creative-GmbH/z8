@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts payroll without adopting work-balance descendants", () => {
+		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
+		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(false);
+		expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(false);
+	});
 	it("adopts only the personal requests page heading", () => {
 		expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
 		expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);
