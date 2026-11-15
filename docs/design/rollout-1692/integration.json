@@ -280,8 +280,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "c024c7a0f8f2b799cd54b3906c48344b84509bf0"
                     },
                     {
                         "id":  "R019",
@@ -291,12 +292,14 @@
                                           1853
                                       ],
                         "status":  "integrated",
-                        "verifiedCommit":  "a82dffeb4e56b91194ed0243f677c3d1933f4de0",
+                        "verifiedCommit":  "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
                         "integrationCommit":  "4d28de653613e84311c2af36b4f91d5766d1d9a0",
                         "implementationCommit":  "f043d581e481a984a54da81b967bf5e6cfdfcd5e",
                         "evidenceCorrectionCommit":  "4d42a191caa3f530ebc66c596058d4cc90b43154",
                         "evidence":  "docs/design/rollout-1692/1717.md",
-                        "integrationVerification":  "137 unique suites/1025 fresh tests includes exact34/267 with parameterized-case multiplicity retained;full combined types,ten-file actual-rootCRLF Biome and Doctor zero. Extra forced100-column and stdin config checks retain ten formatting-only failures. Independent tree equals incoming;all22 prior verified ancestors,824 rollout paths and11030 unaffected paths preserved.32 PNGs fully decoded/10JSON/7scripts/13links/three matched pairs checked. Raw artifact verifier fails before correction; pinned captured Git blobs accept only exact LF/CRLF encodings of retained hashes, and separate current canonical check passes; no app source changes in correction. PG6/47 and35 runtime observations/current-routeEscape/native/Next inherited. Toast interception/baseline inferred pending root hit-test; earlier menu/stackless transition/build/catalog/provider/device/zoom limits retained."
+                        "integrationVerification":  "137 unique suites/1025 fresh tests includes exact34/267 with parameterized-case multiplicity retained;full combined types,ten-file actual-rootCRLF Biome and Doctor zero. Extra forced100-column and stdin config checks retain ten formatting-only failures. Independent tree equals incoming;all22 prior verified ancestors,824 rollout paths and11030 unaffected paths preserved.32 PNGs fully decoded/10JSON/7scripts/13links/three matched pairs checked. Raw artifact verifier fails before correction; pinned captured Git blobs accept only exact LF/CRLF encodings of retained hashes, and separate current canonical check passes; no app source changes in correction. PG6/47 and35 runtime observations/current-routeEscape/native/Next inherited. Toast interception/baseline inferred pending root hit-test; earlier menu/stackless transition/build/catalog/provider/device/zoom limits retained. Root consumer correction verified at ce99de607: actual current baseline settled toast intercepts enabled Submit with0requests/0saved. Inline equipment panel Alert preserves retained inputs and identical retry identity; direct actions retain toasts. Permanent regression red before;14 suites/125 tests,full types,seven-file Biome/Doctor zero. Real desktop paired0->1 and trusted repeat1->2,real saved18px darkphone2->3,one pointer request and panel closes;contrast19.1/17.5 and viewport bounds pass. Six captures fully decoded/source-pinned hashes and clean fresh Next probes pass. All23 prior verified ancestors and 11083 unchanged tracked paths preserved; exact merge tree equals tested feature. Separate Next development-indicator interception/earlier setup and menu findings retained. No freshPG/native/full-build/catalog/device/provider certification; shared F3 API/verifiedSHA unchanged.",
+                        "artifactVerifiedCommit":  "a82dffeb4e56b91194ed0243f677c3d1933f4de0",
+                        "panelErrorCorrectionCommit":  "6a9189f867c6349961511cd9bc4f4db77f51e9e1"
                     },
                     {
                         "id":  "R020",
