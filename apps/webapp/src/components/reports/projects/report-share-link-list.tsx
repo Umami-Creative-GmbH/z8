@@ -3,7 +3,7 @@
 import { IconEye, IconLinkOff, IconLoader2 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import {
@@ -24,13 +24,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDisplayContext } from "@/hooks/use-display-context";
-import { formatInstant, formatPlainDateRange } from "@/lib/datetime/temporal-format";
+import { useOrganization } from "@/hooks/use-organization";
+import {
+	formatInstant,
+	formatPlainDateRange,
+} from "@/lib/datetime/temporal-format";
 import type {
 	ShareLinkStatus,
 	ShareLinkSummary,
 	ShareTarget,
 } from "@/lib/projects/report-share/report-share-links";
 import { queryKeys } from "@/lib/query/keys";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 
 function targetKey(target: ShareTarget | undefined) {
 	if (!target) return null;
@@ -52,12 +57,71 @@ interface ReportShareLinkListProps {
  * The server lists every link for owners and admins and the reader's own
  * otherwise; revoking stops a link at once and deletes its snapshot.
  */
-export function ReportShareLinkList({ target, showReport = false }: ReportShareLinkListProps) {
+type ShareReadScope = {
+	userId: string;
+	organizationId: string;
+	arrival: string;
+};
+
+function useOwnedShareKey(prefix: readonly unknown[], scope: ShareReadScope) {
+	const client = useQueryClient();
+	const hash = JSON.stringify([...prefix, scope]);
+	useLayoutEffect(
+		() => () => {
+			const queryKey: readonly unknown[] = JSON.parse(hash);
+			void client.cancelQueries({ queryKey, exact: true });
+			client.removeQueries({ queryKey, exact: true });
+		},
+		[client, hash],
+	);
+	return JSON.parse(hash) as readonly unknown[];
+}
+
+export function ReportShareLinkList(props: ReportShareLinkListProps) {
+	const scope = useOrganization();
+	const { t } = useTranslate();
+	if (scope.isLoading || !scope.userId || !scope.activeOrganizationId)
+		return (
+			<p role="status">
+				{t(
+					"reports.share.list.scopeLoading",
+					"Loading the current share-link scope\u2026",
+				)}
+			</p>
+		);
+	return (
+		<ReportShareLinkArrival
+			key={JSON.stringify([
+				scope.userId,
+				scope.activeOrganizationId,
+				targetKey(props.target),
+			])}
+			{...props}
+			userId={scope.userId}
+			organizationId={scope.activeOrganizationId}
+		/>
+	);
+}
+
+function ReportShareLinkArrival({
+	target,
+	showReport = false,
+	userId,
+	organizationId,
+}: ReportShareLinkListProps & { userId: string; organizationId: string }) {
+	const arrival = useId();
+	const scope = { userId, organizationId, arrival };
+	const queryKey = useOwnedShareKey(
+		queryKeys.reportShareLinks.list(targetKey(target)),
+		scope,
+	);
 	const { t } = useTranslate();
 	const query = useQuery({
-		queryKey: queryKeys.reportShareLinks.list(targetKey(target)),
-		queryFn: async () => {
+		queryKey,
+		retry: false,
+		queryFn: async ({ signal }) => {
 			const result = await listReportShareLinks(target);
+			signal.throwIfAborted();
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -65,7 +129,10 @@ export function ReportShareLinkList({ target, showReport = false }: ReportShareL
 
 	if (query.isPending) {
 		return (
-			<p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+			<p
+				className="flex items-center gap-2 text-sm text-muted-foreground"
+				role="status"
+			>
 				<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 				{t("reports.share.list.loading", "Loading share links…")}
 			</p>
@@ -73,9 +140,16 @@ export function ReportShareLinkList({ target, showReport = false }: ReportShareL
 	}
 	if (query.isError) {
 		return (
-			<p className="text-sm text-destructive" role="alert">
+			<div className="space-y-2 text-sm text-destructive" role="alert">
 				{t("reports.share.list.failed", "Share links could not be loaded.")}
-			</p>
+				<Button
+					variant="outline"
+					disabled={query.isFetching}
+					onClick={() => void query.refetch()}
+				>
+					{t("common.retry", "Retry")}
+				</Button>
+			</div>
 		);
 	}
 	if (query.data.length === 0) {
@@ -88,7 +162,12 @@ export function ReportShareLinkList({ target, showReport = false }: ReportShareL
 	return (
 		<ul className="divide-y rounded-lg border">
 			{query.data.map((link) => (
-				<ReportShareLinkRow key={link.id} link={link} showReport={showReport} />
+				<ReportShareLinkRow
+					key={link.id}
+					link={link}
+					showReport={showReport}
+					scope={scope}
+				/>
 			))}
 		</ul>
 	);
@@ -100,18 +179,45 @@ function StatusBadge({ status }: { status: ShareLinkStatus }) {
 		return <Badge>{t("reports.share.status.active", "Active")}</Badge>;
 	}
 	if (status === "expired") {
-		return <Badge variant="secondary">{t("reports.share.status.expired", "Expired")}</Badge>;
+		return (
+			<Badge variant="secondary">
+				{t("reports.share.status.expired", "Expired")}
+			</Badge>
+		);
 	}
-	return <Badge variant="outline">{t("reports.share.status.revoked", "Revoked")}</Badge>;
+	return (
+		<Badge variant="outline">
+			{t("reports.share.status.revoked", "Revoked")}
+		</Badge>
+	);
 }
 
-function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; showReport: boolean }) {
+function ReportShareLinkRow({
+	link,
+	showReport,
+	scope,
+}: {
+	link: ShareLinkSummary;
+	showReport: boolean;
+	scope: ShareReadScope;
+}) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const display = useDisplayContext();
 	const [showViews, setShowViews] = useState(false);
 	const [confirming, setConfirming] = useState(false);
 	const [revoking, setRevoking] = useState(false);
+	const lifetime = useRef<object | null>(null);
+	const pending = useRef<object | null>(null);
+	useLayoutEffect(() => {
+		lifetime.current = { link };
+		pending.current = null;
+		setRevoking(false);
+		return () => {
+			lifetime.current = null;
+			pending.current = null;
+		};
+	}, [link]);
 	const at = (instant: string) =>
 		formatInstant(Temporal.Instant.from(instant), display, "dateTimeMedium");
 	const period = formatPlainDateRange(
@@ -123,7 +229,9 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 
 	function statusLine(): string {
 		if (link.status === "active") {
-			return t("reports.share.list.expires", "Expires {date}", { date: at(link.expiresAt) });
+			return t("reports.share.list.expires", "Expires {date}", {
+				date: at(link.expiresAt),
+			});
 		}
 		const date = at(link.revokedAt ?? link.expiresAt);
 		if (link.status === "expired") {
@@ -143,18 +251,44 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 	}
 
 	async function revoke() {
+		const generation = lifetime.current;
+		if (!generation || pending.current) return;
+		pending.current = generation;
 		setRevoking(true);
-		const result = await revokeReportShareLink(link.id);
-		setRevoking(false);
-		setConfirming(false);
-		if (!result.success) {
-			toast.error(t("reports.share.revoke.failed", "The link could not be revoked"), {
-				description: result.error,
-			});
-			return;
-		}
-		toast.success(t("reports.share.revoke.done", "Link revoked"));
-		await queryClient.invalidateQueries({ queryKey: queryKeys.reportShareLinks.all });
+		await runWithCleanup(
+			async () => {
+				try {
+					const result = await revokeReportShareLink(link.id);
+					if (lifetime.current !== generation) return;
+					setRevoking(false);
+					setConfirming(false);
+					if (!result.success) {
+						toast.error(
+							t("reports.share.revoke.failed", "The link could not be revoked"),
+							{
+								description: result.error,
+							},
+						);
+						return;
+					}
+					toast.success(t("reports.share.revoke.done", "Link revoked"));
+					await queryClient.invalidateQueries({
+						queryKey: queryKeys.reportShareLinks.all,
+					});
+				} catch {
+					if (lifetime.current === generation)
+						toast.error(
+							t("reports.share.revoke.failed", "The link could not be revoked"),
+						);
+				}
+			},
+			() => {
+				if (pending.current === generation) {
+					pending.current = null;
+					setRevoking(false);
+				}
+			},
+		);
 	}
 
 	return (
@@ -163,7 +297,8 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 				<StatusBadge status={link.status} />
 				{showReport && (
 					<span className="font-medium">
-						{link.reportName ?? t("reports.share.list.deletedReport", "Deleted")}
+						{link.reportName ??
+							t("reports.share.list.deletedReport", "Deleted")}
 						{" · "}
 						{link.kind === "project"
 							? t("reports.share.kind.project", "Project report")
@@ -180,7 +315,10 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 					` · ${
 						link.includeEmployees
 							? t("reports.share.list.withEmployees", "With employee breakdown")
-							: t("reports.share.list.withoutEmployees", "Without employee breakdown")
+							: t(
+									"reports.share.list.withoutEmployees",
+									"Without employee breakdown",
+								)
 					}`}
 			</p>
 			<p className="text-muted-foreground">
@@ -199,20 +337,28 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 					aria-expanded={showViews}
 				>
 					<IconEye aria-hidden="true" className="size-4" />
-					{t("reports.share.list.views", "{count, plural, one {# view} other {# views}}", {
-						count: link.viewCount,
-					})}
+					{t(
+						"reports.share.list.views",
+						"{count, plural, one {# view} other {# views}}",
+						{
+							count: link.viewCount,
+						},
+					)}
 					{link.lastViewedAt &&
 						` · ${t("reports.share.list.lastViewed", "last {date}", { date: at(link.lastViewedAt) })}`}
 				</Button>
 				{link.status === "active" && link.canRevoke && (
-					<Button variant="outline" size="sm" onClick={() => setConfirming(true)}>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => setConfirming(true)}
+					>
 						<IconLinkOff aria-hidden="true" className="size-4" />
 						{t("reports.share.revoke.action", "Revoke")}
 					</Button>
 				)}
 			</div>
-			{showViews && <ReportShareLinkViews linkId={link.id} />}
+			{showViews && <ReportShareLinkViews linkId={link.id} scope={scope} />}
 			<AlertDialog open={confirming} onOpenChange={setConfirming}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -237,7 +383,12 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 								void revoke();
 							}}
 						>
-							{revoking && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
+							{revoking && (
+								<IconLoader2
+									aria-hidden="true"
+									className="size-4 animate-spin"
+								/>
+							)}
 							{t("reports.share.revoke.confirm", "Revoke link")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -247,13 +398,25 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 	);
 }
 
-function ReportShareLinkViews({ linkId }: { linkId: string }) {
+function ReportShareLinkViews({
+	linkId,
+	scope,
+}: {
+	linkId: string;
+	scope: ShareReadScope;
+}) {
+	const queryKey = useOwnedShareKey(
+		queryKeys.reportShareLinks.views(linkId),
+		scope,
+	);
 	const { t } = useTranslate();
 	const display = useDisplayContext();
 	const query = useQuery({
-		queryKey: queryKeys.reportShareLinks.views(linkId),
-		queryFn: async () => {
+		queryKey,
+		retry: false,
+		queryFn: async ({ signal }) => {
 			const result = await listReportShareLinkViews(linkId);
+			signal.throwIfAborted();
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -282,13 +445,22 @@ function ReportShareLinkViews({ linkId }: { linkId: string }) {
 					className="grid gap-x-3 sm:grid-cols-[auto_auto_1fr]"
 				>
 					<span className="tabular-nums">
-						{formatInstant(Temporal.Instant.from(view.viewedAt), display, "dateTimeMedium")}
+						{formatInstant(
+							Temporal.Instant.from(view.viewedAt),
+							display,
+							"dateTimeMedium",
+						)}
 					</span>
 					<span className="tabular-nums text-muted-foreground">
-						{view.ipAddress ?? t("reports.share.views.unknownIp", "Unknown IP address")}
+						{view.ipAddress ??
+							t("reports.share.views.unknownIp", "Unknown IP address")}
 					</span>
-					<span className="truncate text-muted-foreground" title={view.userAgent ?? undefined}>
-						{view.userAgent ?? t("reports.share.views.unknownAgent", "Unknown browser")}
+					<span
+						className="truncate text-muted-foreground"
+						title={view.userAgent ?? undefined}
+					>
+						{view.userAgent ??
+							t("reports.share.views.unknownAgent", "Unknown browser")}
 					</span>
 				</li>
 			))}

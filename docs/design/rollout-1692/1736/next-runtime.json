@@ -1,0 +1,11 @@
+{
+  "nextVersion": "16.4.6",
+  "nativeBrowserVersion": "0.39.1",
+  "turbopack": true,
+  "compilationIssues": 0,
+  "configErrors": 0,
+  "sessionErrors": 0,
+  "routesRead": true,
+  "pageMetadataRead": true,
+  "notes": "Raw errors from the earlier compiled PDF failure are preserved separately; this records the final connected page."
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "rawPrivatePath": ".tmp/1736-raw/retry-red.log",
+    "sha256": "63e67d8c286d52d162f4e964ab762c0a8c2db3fb709ea7fc87534a05b43b7fd0",
+    "reason": "Missing public Retry"
+  },
+  {
+    "rawPrivatePath": ".tmp/1736-raw/lifetime-original-red.log",
+    "sha256": "82443de1cc567e243f6767d329ca12c1b5831b1f6360c33d868fa52e11628ec4",
+    "reason": "Three late generations against exact historical consumer"
+  },
+  {
+    "rawPrivatePath": ".tmp/1736-raw/share-red.log",
+    "sha256": "bd38d89a7557e7a0ad251835219df02404f70ee08d54cc131273e255609185f2",
+    "reason": "Dismissed creation reveals an abandoned secret"
+  },
+  {
+    "rawPrivatePath": ".tmp/1736-raw/export-valid-red.log",
+    "sha256": "ad0b2cda4ab82b46b4aea54ce34eaff02bef279ec0e6337fddcf4392a488d54e",
+    "reason": "Three abandoned anonymous exports still download"
+  },
+  {
+    "rawPrivatePath": ".tmp/1736-raw/share-cache-valid-red.log",
+    "sha256": "9f2662f5b635e0329172f3974655fa36666b92df9770a5acda41de69a29daacc",
+    "reason": "Both actual QueryClient consumers expose the previous organization cache"
+  },
+  {
+    "rawPrivatePath": ".tmp/1736-compiled-pdf-red.log",
+    "sha256": "51f0a9eb34109364af793a41a59d89d5945b9d7eb2daf387da1875bdc21925d0",
+    "reason": "Real compiler and renderer: View undefined / null props"
+  },
+  {
+    "rawPrivatePath": ".tmp/1736-cleanup-first-failure.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reason": "Conservative native daemon session argument guard"
+  },
+  {
+    "rawPrivatePath": ".tmp/1736-cleanup-second-private.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reason": "Second browser already inactive guard"
+  }
+]
