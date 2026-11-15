@@ -1,0 +1,58 @@
+{
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+      "sha256": "26d67982df9a2d48dd347caaec4326b27fa70eb8ac8d02399660f46cde6e31c0"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+      "sha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+    }
+  ],
+  "pngs": [
+    {
+      "name": "after-desktop.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "after-phone-dark.png",
+      "width": 390,
+      "height": 1306
+    },
+    {
+      "name": "after-wide.png",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "before-desktop.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "before-phone-dark.png",
+      "width": 390,
+      "height": 1175
+    },
+    {
+      "name": "before-wide.png",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "failed-retained.png",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "name": "skip-failed-retained.png",
+      "width": 800,
+      "height": 866
+    }
+  ],
+  "files": 19,
+  "tests": 149,
+  "unchangedOwners": true,
+  "currentSourceMatched": true
+}

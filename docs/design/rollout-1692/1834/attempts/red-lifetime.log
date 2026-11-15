@@ -1,0 +1,42 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/work-schedule/page.test.tsx (12 tests | 1 failed) 554ms
+   ❯ WorkSchedulePage load effect (12)
+     × does not announce or navigate a save that finishes after unmount 17ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/work-schedule/page.test.tsx > WorkSchedulePage load effect > does not announce or navigate a save that finishes after unmount
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "/old-arrival",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/app/[locale]/onboarding/work-schedule/page.test.tsx:273:26
+    271|   view.unmount();
+    272|   await act(async () => request.resolve({ success: true, data: { nextS…
+    273|   expect(mocks.push).not.toHaveBeenCalled();
+       |                          ^
+    274|   expect(mocks.toastSuccess).not.toHaveBeenCalled();
+    275|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  16:51:39
+   Duration  1.38s (tests 43%, environment 27%, import 24%, transform 3%, setup 2%)
+

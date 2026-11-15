@@ -1,0 +1,76 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-fdc2d97a-f605ff250f82822d/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/work-schedule/page.test.tsx (11 tests | 1 failed) 1485ms
+   ❯ WorkSchedulePage load effect (11)
+     × keeps a refused automatic skip visible and retries the existing owner 1013ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/work-schedule/page.test.tsx > WorkSchedulePage load effect > keeps a refused automatic skip visible and retries the existing owner
+TestingLibraryElementError: Unable to find role="alert"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="flex min-h-[50vh] items-center justify-center"
+    >
+      <div
+        class="text-center"
+      >
+        <div
+          class="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"
+        />
+        <p
+          class="mt-4 text-muted-foreground"
+        >
+          Loading...
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="flex min-h-[50vh] items-center justify-center"
+    >
+      <div
+        class="text-center"
+      >
+        <div
+          class="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"
+        />
+        <p
+          class="mt-4 text-muted-foreground"
+        >
+          Loading...
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/[locale]/onboarding/work-schedule/page.test.tsx:253:23
+    251|   mocks.skipWorkScheduleSetup.mockResolvedValueOnce({ success: false, …
+    252|   render(<WorkSchedulePage />);
+    253|   expect(await screen.findByRole("alert")).toHaveProperty("textContent…
+       |                       ^
+    254|   expect(mocks.replace).not.toHaveBeenCalled();
+    255|   mocks.skipWorkScheduleSetup.mockResolvedValueOnce({ success: true, d…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  16:50:06
+   Duration  2.30s (tests 67%, environment 15%, import 13%, transform 3%, setup 1%)
+

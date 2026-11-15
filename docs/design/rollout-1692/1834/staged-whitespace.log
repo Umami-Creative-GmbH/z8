@@ -1,0 +1,130 @@
+docs/design/rollout-1692/1834/attempts/biome-write-2.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write-2.log:11: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write-2.log:13: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write-2.log:15: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write-2.log:20: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write-2.log:27: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write-2.log:29: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write-2.log:31: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write.log:6: trailing whitespace.
++    56 │ 
+docs/design/rollout-1692/1834/attempts/biome-write.log:11: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write.log:13: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write.log:18: trailing whitespace.
++    108 │ 
+docs/design/rollout-1692/1834/attempts/biome-write.log:20: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write.log:24: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write.log:26: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write.log:28: trailing whitespace.
++        │                ---------                               
+docs/design/rollout-1692/1834/attempts/biome-write.log:38: trailing whitespace.
++  
+docs/design/rollout-1692/1834/attempts/biome-write.log:38: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/green-auto-activity.log:12: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/green-fractional-lifetimes.log:12: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/green-lifetime.log:12: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/green-skip-2.log:12: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/green-skip.log:550: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/lifetimes-expanded.log:219: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/red-auto-activity.log:110: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/red-lifetime.log:42: new blank line at EOF.
+docs/design/rollout-1692/1834/attempts/red-skip-approved.log:76: new blank line at EOF.
+docs/design/rollout-1692/1834/biome-default.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/biome-default.log:156: trailing whitespace.
++  
+docs/design/rollout-1692/1834/biome-default.log:161: trailing whitespace.
++  
+docs/design/rollout-1692/1834/biome-default.log:313: trailing whitespace.
++  
+docs/design/rollout-1692/1834/biome-default.log:318: trailing whitespace.
++  
+docs/design/rollout-1692/1834/biome-default.log:470: trailing whitespace.
++  
+docs/design/rollout-1692/1834/biome-default.log:477: trailing whitespace.
++  
+docs/design/rollout-1692/1834/biome-default.log:477: new blank line at EOF.
+docs/design/rollout-1692/1834/doctor.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/doctor.log:42: new blank line at EOF.
+docs/design/rollout-1692/1834/prior-submit-guard/biome-default.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/prior-submit-guard/biome-default.log:156: trailing whitespace.
++  
+docs/design/rollout-1692/1834/prior-submit-guard/biome-default.log:161: trailing whitespace.
++  
+docs/design/rollout-1692/1834/prior-submit-guard/biome-default.log:313: trailing whitespace.
++  
+docs/design/rollout-1692/1834/prior-submit-guard/biome-default.log:318: trailing whitespace.
++  
+docs/design/rollout-1692/1834/prior-submit-guard/biome-default.log:470: trailing whitespace.
++  
+docs/design/rollout-1692/1834/prior-submit-guard/biome-default.log:477: trailing whitespace.
++  
+docs/design/rollout-1692/1834/prior-submit-guard/biome-default.log:477: new blank line at EOF.
+docs/design/rollout-1692/1834/prior-submit-guard/doctor.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/prior-submit-guard/doctor.log:42: new blank line at EOF.
+docs/design/rollout-1692/1834/quality-584/biome-default.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-584/biome-default.log:156: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-584/biome-default.log:161: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-584/biome-default.log:313: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-584/biome-default.log:318: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-584/biome-default.log:470: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-584/biome-default.log:477: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-584/biome-default.log:477: new blank line at EOF.
+docs/design/rollout-1692/1834/quality-584/doctor.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-584/doctor.log:42: new blank line at EOF.
+docs/design/rollout-1692/1834/quality-initial/biome-crlf.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-crlf.log:97: trailing whitespace.
++    ······· │ 
+docs/design/rollout-1692/1834/quality-initial/biome-crlf.log:106: trailing whitespace.
++    ······· │ 
+docs/design/rollout-1692/1834/quality-initial/biome-crlf.log:141: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-crlf.log:148: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-crlf.log:148: new blank line at EOF.
+docs/design/rollout-1692/1834/quality-initial/biome-default.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-default.log:156: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-default.log:161: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-default.log:313: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-default.log:318: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-default.log:470: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-default.log:477: trailing whitespace.
++  
+docs/design/rollout-1692/1834/quality-initial/biome-default.log:477: new blank line at EOF.
+docs/design/rollout-1692/1834/quality-initial/doctor.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1834/queued-submit-green.log:12: new blank line at EOF.
+docs/design/rollout-1692/1834/queued-submit.log:46: new blank line at EOF.
