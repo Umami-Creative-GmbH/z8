@@ -1,6 +1,7 @@
 "use client";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EquipmentEmployeeHeader } from "./equipment-employee-header";
 import { EquipmentOverviewHeader } from "./equipment-overview-header";
 
 const SHELL = "@container/main flex flex-1 flex-col gap-6 py-4 md:py-6";
@@ -39,6 +40,10 @@ export function EquipmentLoading({
 			) : null}
 			{variant === "overview" ? (
 				<EquipmentOverviewHeader />
+			) : variant === "employee" ? (
+				<div className="px-4 lg:px-6">
+					<EquipmentEmployeeHeader />
+				</div>
 			) : (
 				<HeaderSkeleton />
 			)}
