@@ -205,9 +205,11 @@
                         "blockedBy":  [
                                           1709
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null,
-                        "implementationCommit":  "1ae48924f54510c35c5fd9be0bdb61e120da6baf"
+                        "status":  "integrated",
+                        "verifiedCommit":  "273320a9376b4deb60b57ba3882fc17b37ae308a",
+                        "implementationCommit":  "1ae48924f54510c35c5fd9be0bdb61e120da6baf",
+                        "evidence":  "docs/design/rollout-1692/1710.md",
+                        "integrationVerification":  "134 unique suites / 1276 fresh tests (58/699 exact +95/736 compatibility less19 repeated files/159 cases), full combined types, seven-file Doctor zero. CRLF-aware Biome autodiscovery passes seven files; additional forced100-column config reports seven formatting-only files and is not passed. Exact conflict-free tree, all20 prior verified ancestors,10915 prior paths/709 rollout paths, seven-source-path scope and artifacts verified. Root removes incoming1714 report duplication only. PostgreSQL4/14 and41 runtime assertions are inherited; domain/build/catalog/provider/device/zoom/transition limits retained."
                     },
                     {
                         "id":  "R013",
@@ -284,7 +286,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
