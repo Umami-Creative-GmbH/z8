@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useEffect, useId, useState, useTransition } from "react";
 import { ArrivalNotice } from "@/components/time-tracking/arrival-focus";
@@ -9,8 +10,8 @@ import { focusArrivalTarget } from "@/components/time-tracking/arrival-focus-tar
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import type {
 	SelfServiceRequestItem,
@@ -23,7 +24,10 @@ import {
 	parseMyRequestsFocus,
 } from "@/lib/time-tracking/period-submissions/blocker-navigation";
 import { Link } from "@/navigation";
-import { cancelMyAbsenceRequest, cancelMyTimeCorrectionRequest } from "./actions";
+import {
+	cancelMyAbsenceRequest,
+	cancelMyTimeCorrectionRequest,
+} from "./actions";
 
 interface MyRequestsClientProps {
 	initialResult: SelfServiceRequestResult;
@@ -35,23 +39,28 @@ type StatusFilter = SelfServiceRequestStatus | "all";
 type SourceTypeFilter = SelfServiceRequestSourceType | "all";
 type Translate = (key: string, fallback: string) => string;
 
-const sourceTypeLabelKeys: Record<SelfServiceRequestSourceType, { key: string; fallback: string }> =
-	{
-		absence: {
-			key: "myRequests:myRequests.sourceTypes.absence",
-			fallback: "Absence",
-		},
-		time_correction: {
-			key: "myRequests:myRequests.sourceTypes.timeCorrection",
-			fallback: "Time",
-		},
-		travel_expense: {
-			key: "myRequests:myRequests.sourceTypes.travelExpense",
-			fallback: "Expense",
-		},
-	};
+const sourceTypeLabelKeys: Record<
+	SelfServiceRequestSourceType,
+	{ key: string; fallback: string }
+> = {
+	absence: {
+		key: "myRequests:myRequests.sourceTypes.absence",
+		fallback: "Absence",
+	},
+	time_correction: {
+		key: "myRequests:myRequests.sourceTypes.timeCorrection",
+		fallback: "Time",
+	},
+	travel_expense: {
+		key: "myRequests:myRequests.sourceTypes.travelExpense",
+		fallback: "Expense",
+	},
+};
 
-const statusLabelKeys: Record<SelfServiceRequestStatus, { key: string; fallback: string }> = {
+const statusLabelKeys: Record<
+	SelfServiceRequestStatus,
+	{ key: string; fallback: string }
+> = {
 	pending: { key: "myRequests:myRequests.status.pending", fallback: "Pending" },
 	approved: {
 		key: "myRequests:myRequests.status.approved",
@@ -85,7 +94,10 @@ function getTravelExpenseAmountFormatter(locale: string, currency: string) {
 	return formatter;
 }
 
-function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Translate) {
+function sourceErrorMessage(
+	sourceType: SelfServiceRequestSourceType,
+	t: Translate,
+) {
 	if (sourceType === "time_correction") {
 		return t(
 			"myRequests:myRequests.sourceError.timeCorrection",
@@ -100,16 +112,25 @@ function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Transla
 		);
 	}
 
-	return t("myRequests:myRequests.sourceError.absence", "Absence requests could not be loaded.");
+	return t(
+		"myRequests:myRequests.sourceError.absence",
+		"Absence requests could not be loaded.",
+	);
 }
 
 function requestTitle(item: SelfServiceRequestItem, t: Translate) {
 	if (item.sourceType === "time_correction") {
-		return t("myRequests:myRequests.requests.timeCorrection.title", "Time correction request");
+		return t(
+			"myRequests:myRequests.requests.timeCorrection.title",
+			"Time correction request",
+		);
 	}
 
 	if (item.sourceType === "travel_expense") {
-		return t("myRequests:myRequests.requests.travelExpense.title", "Travel expense claim");
+		return t(
+			"myRequests:myRequests.requests.travelExpense.title",
+			"Travel expense claim",
+		);
 	}
 
 	if (item.title === "absence") {
@@ -119,7 +140,11 @@ function requestTitle(item: SelfServiceRequestItem, t: Translate) {
 	return item.title;
 }
 
-function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Translate) {
+function requestSubtitle(
+	item: SelfServiceRequestItem,
+	locale: string,
+	t: Translate,
+) {
 	if (item.sourceType === "time_correction") {
 		return t(
 			"myRequests:myRequests.requests.timeCorrection.subtitle",
@@ -158,7 +183,9 @@ function formatStoredDateRange(value: string, locale: string) {
 
 function formatTravelExpenseSubtitle(value: string, locale: string) {
 	const separator = " · ";
-	const [prefix, amountPart] = value.includes(separator) ? value.split(separator) : [null, value];
+	const [prefix, amountPart] = value.includes(separator)
+		? value.split(separator)
+		: [null, value];
 	const amountMatch = /^(\d+(?:\.\d+)?) ([A-Z]{3})$/.exec(amountPart);
 
 	if (!amountMatch) {
@@ -167,13 +194,19 @@ function formatTravelExpenseSubtitle(value: string, locale: string) {
 
 	const amount = Number(amountMatch[1]);
 	const currency = amountMatch[2];
-	const formattedAmount = getTravelExpenseAmountFormatter(locale, currency).format(amount);
+	const formattedAmount = getTravelExpenseAmountFormatter(
+		locale,
+		currency,
+	).format(amount);
 
 	return prefix ? `${prefix}${separator}${formattedAmount}` : formattedAmount;
 }
 
 function isRecentlyDecided(item: SelfServiceRequestItem, now: Date) {
-	if ((item.status !== "approved" && item.status !== "rejected") || item.resolvedAt === null) {
+	if (
+		(item.status !== "approved" && item.status !== "rejected") ||
+		item.resolvedAt === null
+	) {
 		return false;
 	}
 
@@ -190,12 +223,20 @@ function groupRequestItems(items: SelfServiceRequestItem[], now: Date) {
 	};
 }
 
-function matchesSearch(item: SelfServiceRequestItem, search: string, locale: string, t: Translate) {
+function matchesSearch(
+	item: SelfServiceRequestItem,
+	search: string,
+	locale: string,
+	t: Translate,
+) {
 	const searchableText = [
 		requestTitle(item, t),
 		requestSubtitle(item, locale, t),
 		item.decisionReason ?? "",
-		t(sourceTypeLabelKeys[item.sourceType].key, sourceTypeLabelKeys[item.sourceType].fallback),
+		t(
+			sourceTypeLabelKeys[item.sourceType].key,
+			sourceTypeLabelKeys[item.sourceType].fallback,
+		),
 		t(statusLabelKeys[item.status].key, statusLabelKeys[item.status].fallback),
 	]
 		.join(" ")
@@ -209,7 +250,10 @@ function matchesSearch(item: SelfServiceRequestItem, search: string, locale: str
  * page already loaded for the signed-in employee. The link's identity is never looked up anywhere
  * else, so a forged, foreign, decided or unloaded identity finds nothing.
  */
-function findFocusedRequest(items: SelfServiceRequestItem[], focusRequest: string | undefined) {
+function findFocusedRequest(
+	items: SelfServiceRequestItem[],
+	focusRequest: string | undefined,
+) {
 	const focus = parseMyRequestsFocus(focusRequest);
 	if (!focus) return { requested: false, item: null } as const;
 	const item =
@@ -233,19 +277,25 @@ function useMyRequestsFilters(
 	t: Translate,
 ) {
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-	const [sourceTypeFilter, setSourceTypeFilter] = useState<SourceTypeFilter>("all");
+	const [sourceTypeFilter, setSourceTypeFilter] =
+		useState<SourceTypeFilter>("all");
 	const [search, setSearch] = useState("");
 	const focused = findFocusedRequest(items, focusRequest);
 	const focusedItem = focused.item;
 
 	// A newly focused request is revealed: any filter hiding it is set to show it.
-	const [revealedFocus, setRevealedFocus] = useState<string | undefined>(undefined);
+	const [revealedFocus, setRevealedFocus] = useState<string | undefined>(
+		undefined,
+	);
 	if (focusedItem && revealedFocus !== focusRequest) {
 		setRevealedFocus(focusRequest);
 		if (statusFilter !== "all" && statusFilter !== focusedItem.status) {
 			setStatusFilter(focusedItem.status);
 		}
-		if (sourceTypeFilter !== "all" && sourceTypeFilter !== focusedItem.sourceType) {
+		if (
+			sourceTypeFilter !== "all" &&
+			sourceTypeFilter !== focusedItem.sourceType
+		) {
 			setSourceTypeFilter(focusedItem.sourceType);
 		}
 		if (!matchesSearch(focusedItem, search, locale, t)) setSearch("");
@@ -254,18 +304,27 @@ function useMyRequestsFilters(
 	const focusedItemId = focusedItem?.id ?? null;
 	useEffect(() => {
 		if (!focusedItemId || revealedFocus !== focusRequest) return;
-		const target = document.getElementById(myRequestFocusTargetId(focusedItemId));
+		const target = document.getElementById(
+			myRequestFocusTargetId(focusedItemId),
+		);
 		if (target) focusArrivalTarget(target);
 	}, [focusedItemId, focusRequest, revealedFocus]);
 	// The notice is for an arrival only: a focused request the employee then cancels (or that is
 	// decided) while they stay here leaves no notice and takes no focus.
-	const arrivedUnavailable = focused.requested && !focusedItem && revealedFocus !== focusRequest;
+	const arrivedUnavailable =
+		focused.requested && !focusedItem && revealedFocus !== focusRequest;
 
 	const filteredItems = items.filter((item) => {
-		const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-		const matchesSourceType = sourceTypeFilter === "all" || item.sourceType === sourceTypeFilter;
+		const matchesStatus =
+			statusFilter === "all" || item.status === statusFilter;
+		const matchesSourceType =
+			sourceTypeFilter === "all" || item.sourceType === sourceTypeFilter;
 
-		return matchesStatus && matchesSourceType && matchesSearch(item, search, locale, t);
+		return (
+			matchesStatus &&
+			matchesSourceType &&
+			matchesSearch(item, search, locale, t)
+		);
 	});
 
 	return {
@@ -280,34 +339,40 @@ function useMyRequestsFilters(
 	};
 }
 
-export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClientProps) {
+export function MyRequestsClient({
+	initialResult,
+	focusRequest,
+}: MyRequestsClientProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const {
-		statusFilter,
-		setStatusFilter,
-		sourceTypeFilter,
-		setSourceTypeFilter,
-		search,
-		setSearch,
-		arrivedUnavailable,
-		filteredItems,
-	} = useMyRequestsFilters(initialResult.items, focusRequest, locale, t);
+	const router = useRouter();
+	const [isRefreshing, startRefresh] = useTransition();
+	const filters = useMyRequestsFilters(
+		initialResult.items,
+		focusRequest,
+		locale,
+		t,
+	);
+	const { arrivedUnavailable, filteredItems } = filters;
 	const groupedItems = groupRequestItems(filteredItems, new Date());
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<header className="px-4 lg:px-6">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("myRequests:myRequests.title", "My Requests")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"myRequests:myRequests.subtitle",
-						"Track pending requests, required fixes, and recent decisions in one place.",
-					)}
-				</p>
-			</header>
+		<div
+			className="@container/main mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 py-4 md:py-6"
+			aria-busy={isRefreshing}
+		>
+			<PageHeader
+				className="px-4 lg:px-6"
+				title={t("myRequests:myRequests.title", "My Requests")}
+				description={t(
+					"myRequests:myRequests.subtitle",
+					"Track pending requests, required fixes, and recent decisions in one place.",
+				)}
+				scope={t(
+					"myRequests:myRequests.scope",
+					"Your absence, time-correction and legacy expense requests in the active organization",
+				)}
+			/>
 
 			{arrivedUnavailable ? (
 				<section className="px-4 lg:px-6">
@@ -316,19 +381,28 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 			) : null}
 
 			<section
-				aria-label={t("myRequests:myRequests.summary.ariaLabel", "Request summary")}
-				className="grid gap-4 px-4 sm:grid-cols-2 lg:grid-cols-4 lg:px-6"
+				aria-label={t(
+					"myRequests:myRequests.summary.ariaLabel",
+					"Request summary",
+				)}
+				className="mx-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border lg:mx-6 lg:grid-cols-4"
 			>
 				<SummaryCard
 					label={t("myRequests:myRequests.summary.pending", "Pending")}
 					value={initialResult.counts.pending}
 				/>
 				<SummaryCard
-					label={t("myRequests:myRequests.summary.requiredFixes", "Required fixes")}
+					label={t(
+						"myRequests:myRequests.summary.requiredFixes",
+						"Required fixes",
+					)}
 					value={initialResult.counts.requiredFixes}
 				/>
 				<SummaryCard
-					label={t("myRequests:myRequests.summary.recentDecisions", "Recent decisions")}
+					label={t(
+						"myRequests:myRequests.summary.recentDecisions",
+						"Recent decisions",
+					)}
 					value={initialResult.counts.recentDecisions}
 				/>
 				<SummaryCard
@@ -336,12 +410,21 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 					value={initialResult.counts.total}
 				/>
 			</section>
+			<p className="px-4 text-sm text-muted-foreground lg:px-6">
+				{t(
+					"myRequests:myRequests.summary.loadedScope",
+					"Counts cover loaded requests before filters. Recent decisions cover the last 30 days.",
+				)}
+			</p>
 
 			{initialResult.sourceErrors.length > 0 ? (
 				<section className="px-4 lg:px-6">
 					<Alert variant="destructive">
 						<AlertTitle>
-							{t("myRequests:myRequests.sourceError.title", "Some requests could not be loaded.")}
+							{t(
+								"myRequests:myRequests.sourceError.title",
+								"Some requests could not be loaded.",
+							)}
 						</AlertTitle>
 						<AlertDescription>
 							<ul className="list-disc space-y-1 pl-4">
@@ -352,95 +435,46 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 								))}
 							</ul>
 						</AlertDescription>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="mt-3"
+							disabled={isRefreshing}
+							onClick={() => startRefresh(() => router.refresh())}
+						>
+							{isRefreshing
+								? t("common.refreshing", "Refreshing…")
+								: t("common.retry", "Retry")}
+						</Button>
 					</Alert>
 				</section>
 			) : null}
 
-			<section className="px-4 lg:px-6">
-				<Card>
-					<CardHeader>
-						<CardTitle>{t("myRequests:myRequests.filters.title", "Find requests")}</CardTitle>
-						<CardDescription>
-							{t(
-								"myRequests:myRequests.filters.description",
-								"Filter every request section by text, status, or request type.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px]">
-							<label htmlFor="request-search" className="grid gap-2 text-sm font-medium">
-								{t("myRequests:myRequests.filters.search", "Search")}
-								<Input
-									id="request-search"
-									name="request-search"
-									autoComplete="off"
-									value={search}
-									onChange={(event) => setSearch(event.target.value)}
-									placeholder={t(
-										"myRequests:myRequests.filters.searchPlaceholder",
-										"Search by title…",
-									)}
-								/>
-							</label>
-							<label className="grid gap-2 text-sm font-medium">
-								{t("myRequests:myRequests.filters.status", "Status")}
-								<select
-									className="h-9 rounded-md border border-input px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-									value={statusFilter}
-									onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-								>
-									<option value="all">
-										{t("myRequests:myRequests.filters.allStatuses", "All statuses")}
-									</option>
-									<option value="pending">
-										{t("myRequests:myRequests.filters.pendingRequests", "Pending requests")}
-									</option>
-									<option value="approved">
-										{t("myRequests:myRequests.filters.approvedRequests", "Approved requests")}
-									</option>
-									<option value="rejected">
-										{t("myRequests:myRequests.filters.rejectedRequests", "Rejected requests")}
-									</option>
-									<option value="cancelled">
-										{t("myRequests:myRequests.filters.cancelledRequests", "Cancelled requests")}
-									</option>
-								</select>
-							</label>
-							<label className="grid gap-2 text-sm font-medium">
-								{t("myRequests:myRequests.filters.type", "Type")}
-								<select
-									className="h-9 rounded-md border border-input px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-									value={sourceTypeFilter}
-									onChange={(event) => setSourceTypeFilter(event.target.value as SourceTypeFilter)}
-								>
-									<option value="all">
-										{t("myRequests:myRequests.filters.allTypes", "All types")}
-									</option>
-									<option value="absence">
-										{t("myRequests:myRequests.sourceTypes.absence", "Absence")}
-									</option>
-									<option value="time_correction">
-										{t("myRequests:myRequests.sourceTypes.timeCorrection", "Time")}
-									</option>
-									<option value="travel_expense">
-										{t("myRequests:myRequests.sourceTypes.travelExpense", "Expense")}
-									</option>
-								</select>
-							</label>
-						</div>
-					</CardContent>
-				</Card>
-			</section>
+			<RequestFilters filters={filters} />
 
 			{initialResult.items.length === 0 ? (
 				<section className="px-4 lg:px-6">
 					<EmptyState
-						title={t("myRequests:myRequests.empty.none.title", "No requests yet")}
-						description={t(
-							"myRequests:myRequests.empty.none.description",
-							"Requests will appear here when they are submitted or loaded.",
-						)}
+						title={
+							initialResult.sourceErrors.length
+								? t(
+										"myRequests:myRequests.empty.unavailable.title",
+										"No requests loaded",
+									)
+								: t("myRequests:myRequests.empty.none.title", "No requests yet")
+						}
+						description={
+							initialResult.sourceErrors.length
+								? t(
+										"myRequests:myRequests.empty.unavailable.description",
+										"Retry the unavailable sources to check your requests.",
+									)
+								: t(
+										"myRequests:myRequests.empty.none.description",
+										"Requests will appear here when they are submitted or loaded.",
+									)
+						}
 					/>
 				</section>
 			) : filteredItems.length === 0 ? (
@@ -459,7 +493,10 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 			) : (
 				<>
 					<RequestSection
-						title={t("myRequests:myRequests.needsAttention.title", "Needs attention")}
+						title={t(
+							"myRequests:myRequests.needsAttention.title",
+							"Needs attention",
+						)}
 						description={t(
 							"myRequests:myRequests.needsAttention.description",
 							"Rejected requests that may require a correction before resubmission.",
@@ -478,7 +515,10 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 						focusTargets
 					/>
 					<RequestSection
-						title={t("myRequests:myRequests.recentlyDecided.title", "Recently decided")}
+						title={t(
+							"myRequests:myRequests.recentlyDecided.title",
+							"Recently decided",
+						)}
 						description={t(
 							"myRequests:myRequests.recentlyDecided.description",
 							"Approved and rejected decisions from the last 30 days.",
@@ -497,6 +537,122 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 				</>
 			)}
 		</div>
+	);
+}
+
+function RequestFilters({
+	filters,
+}: {
+	filters: ReturnType<typeof useMyRequestsFilters>;
+}) {
+	const { t } = useTranslate();
+	const {
+		statusFilter,
+		setStatusFilter,
+		sourceTypeFilter,
+		setSourceTypeFilter,
+		search,
+		setSearch,
+	} = filters;
+	return (
+		<section className="px-4 lg:px-6">
+			<div className="space-y-4 border-y py-5">
+				<div className="space-y-1">
+					<h2 className="font-semibold">
+						{t("myRequests:myRequests.filters.title", "Find requests")}
+					</h2>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"myRequests:myRequests.filters.description",
+							"Filter every request section by text, status, or request type.",
+						)}
+					</p>
+				</div>
+				<div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,12rem)]">
+					<label
+						htmlFor="request-search"
+						className="grid gap-2 text-sm font-medium"
+					>
+						{t("myRequests:myRequests.filters.search", "Search")}
+						<Input
+							id="request-search"
+							name="request-search"
+							autoComplete="off"
+							value={search}
+							onChange={(event) => setSearch(event.target.value)}
+							placeholder={t(
+								"myRequests:myRequests.filters.searchPlaceholder",
+								"Search by title…",
+							)}
+						/>
+					</label>
+					<label className="grid gap-2 text-sm font-medium">
+						{t("myRequests:myRequests.filters.status", "Status")}
+						<select
+							className="h-9 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+							value={statusFilter}
+							onChange={(event) =>
+								setStatusFilter(event.target.value as StatusFilter)
+							}
+						>
+							<option value="all">
+								{t("myRequests:myRequests.filters.allStatuses", "All statuses")}
+							</option>
+							<option value="pending">
+								{t(
+									"myRequests:myRequests.filters.pendingRequests",
+									"Pending requests",
+								)}
+							</option>
+							<option value="approved">
+								{t(
+									"myRequests:myRequests.filters.approvedRequests",
+									"Approved requests",
+								)}
+							</option>
+							<option value="rejected">
+								{t(
+									"myRequests:myRequests.filters.rejectedRequests",
+									"Rejected requests",
+								)}
+							</option>
+							<option value="cancelled">
+								{t(
+									"myRequests:myRequests.filters.cancelledRequests",
+									"Cancelled requests",
+								)}
+							</option>
+						</select>
+					</label>
+					<label className="grid gap-2 text-sm font-medium">
+						{t("myRequests:myRequests.filters.type", "Type")}
+						<select
+							className="h-9 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+							value={sourceTypeFilter}
+							onChange={(event) =>
+								setSourceTypeFilter(event.target.value as SourceTypeFilter)
+							}
+						>
+							<option value="all">
+								{t("myRequests:myRequests.filters.allTypes", "All types")}
+							</option>
+							<option value="absence">
+								{t("myRequests:myRequests.sourceTypes.absence", "Absence")}
+							</option>
+							<option value="time_correction">
+								{t("myRequests:myRequests.sourceTypes.timeCorrection", "Time")}
+							</option>
+							<option value="travel_expense">
+								{t(
+									"myRequests:myRequests.sourceTypes.travelExpense",
+									"Expense",
+								)}
+							</option>
+						</select>
+					</label>
+				</div>
+			</div>
+		</section>
 	);
 }
 
@@ -526,25 +682,31 @@ function RequestSection({
 
 	return (
 		<section aria-labelledby={titleId} className="px-4 lg:px-6">
-			<Card className={tone === "attention" ? "border-destructive/30 bg-destructive/5" : undefined}>
-				<CardHeader>
-					<h2 id={titleId} className="font-semibold leading-none">
-						{title}
-					</h2>
-					<CardDescription>{description}</CardDescription>
-				</CardHeader>
-				<CardContent className="grid gap-3">
-					{items.map((item) => (
-						<RequestCard
-							key={item.id}
-							item={item}
-							allowCancel={allowCancel}
-							preferFix={preferFix}
-							targetId={focusTargets ? myRequestFocusTargetId(item.id) : undefined}
-						/>
-					))}
-				</CardContent>
-			</Card>
+			<div className="mb-3 space-y-1">
+				<h2 id={titleId} className="text-lg font-semibold">
+					{title}
+				</h2>
+				<p className="text-sm text-muted-foreground">{description}</p>
+			</div>
+			<div
+				className={
+					tone === "attention"
+						? "divide-y rounded-xl border border-destructive/30 bg-destructive/5"
+						: "divide-y rounded-xl border bg-card"
+				}
+			>
+				{items.map((item) => (
+					<RequestCard
+						key={item.id}
+						item={item}
+						allowCancel={allowCancel}
+						preferFix={preferFix}
+						targetId={
+							focusTargets ? myRequestFocusTargetId(item.id) : undefined
+						}
+					/>
+				))}
+			</div>
 		</section>
 	);
 }
@@ -569,7 +731,7 @@ function RequestCard({
 			id={targetId}
 			aria-labelledby={titleId}
 			tabIndex={targetId ? -1 : undefined}
-			className="rounded-lg border bg-background p-4 shadow-xs outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+			className="scroll-mt-24 p-4 outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 md:p-5"
 		>
 			<div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
 				<div className="min-w-0 space-y-3">
@@ -583,7 +745,10 @@ function RequestCard({
 						<StatusBadge status={item.status} />
 					</div>
 					<div className="space-y-1">
-						<h3 id={titleId} className="font-medium text-base leading-tight">
+						<h3
+							id={titleId}
+							className="break-words font-medium text-base leading-tight"
+						>
 							{requestTitle(item, t)}
 						</h3>
 						<p className="break-words text-muted-foreground text-sm">
@@ -598,7 +763,7 @@ function RequestCard({
 							</p>
 						) : null}
 					</div>
-					<div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
+					<div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-sm tabular-nums">
 						<span>
 							{t("myRequests:myRequests.card.submitted", "Submitted")}:{" "}
 							{formatDate(item.submittedAt, locale)}
@@ -611,7 +776,11 @@ function RequestCard({
 						) : null}
 					</div>
 				</div>
-				<RequestAction item={item} allowCancel={allowCancel} preferFix={preferFix} />
+				<RequestAction
+					item={item}
+					allowCancel={allowCancel}
+					preferFix={preferFix}
+				/>
 			</div>
 		</article>
 	);
@@ -619,12 +788,10 @@ function RequestCard({
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
 	return (
-		<Card>
-			<CardHeader className="pb-0">
-				<CardDescription>{label}</CardDescription>
-				<CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
-			</CardHeader>
-		</Card>
+		<div className="min-w-0 space-y-2 bg-card p-4 md:p-5">
+			<p className="text-sm text-muted-foreground">{label}</p>
+			<p className="text-2xl font-semibold tabular-nums">{value}</p>
+		</div>
 	);
 }
 
@@ -633,28 +800,39 @@ function StatusBadge({ status }: { status: SelfServiceRequestStatus }) {
 
 	if (status === "rejected") {
 		return (
-			<Badge variant="destructive">{t("myRequests:myRequests.status.rejected", "Rejected")}</Badge>
+			<Badge variant="destructive">
+				{t("myRequests:myRequests.status.rejected", "Rejected")}
+			</Badge>
 		);
 	}
 
 	if (status === "approved") {
 		return (
-			<Badge variant="default">{t("myRequests:myRequests.status.approved", "Approved")}</Badge>
+			<Badge variant="default">
+				{t("myRequests:myRequests.status.approved", "Approved")}
+			</Badge>
 		);
 	}
 
 	if (status === "pending") {
 		return (
-			<Badge variant="secondary">{t("myRequests:myRequests.status.inReview", "In review")}</Badge>
+			<Badge variant="secondary">
+				{t("myRequests:myRequests.status.inReview", "In review")}
+			</Badge>
 		);
 	}
 
 	return (
-		<Badge variant="outline">{t("myRequests:myRequests.status.cancelled", "Cancelled")}</Badge>
+		<Badge variant="outline">
+			{t("myRequests:myRequests.status.cancelled", "Cancelled")}
+		</Badge>
 	);
 }
 
-function getPrimaryRequestAction(item: SelfServiceRequestItem, preferFix: boolean) {
+function getPrimaryRequestAction(
+	item: SelfServiceRequestItem,
+	preferFix: boolean,
+) {
 	const canFix = item.availableActions.includes("fix");
 	if (preferFix && canFix) return "fix";
 	if (item.availableActions.includes("view")) return "view";
@@ -697,7 +875,10 @@ function RequestAction({
 	function handleCancel() {
 		if (
 			!window.confirm(
-				t("myRequests:myRequests.actions.cancelRequestConfirmation", "Cancel this request?"),
+				t(
+					"myRequests:myRequests.actions.cancelRequestConfirmation",
+					"Cancel this request?",
+				),
 			)
 		) {
 			return;
@@ -705,21 +886,33 @@ function RequestAction({
 
 		setCancelError(null);
 		startCancelTransition(async () => {
-			const result =
-				item.sourceType === "time_correction"
-					? await cancelMyTimeCorrectionRequest(item.sourceId)
-					: await cancelMyAbsenceRequest(item.sourceId);
-			if (result.success) {
-				setCancelError(null);
-				// A pending request keeps its submission period open (#1350).
-				void invalidateReadiness();
-				return;
-			}
+			try {
+				const result =
+					item.sourceType === "time_correction"
+						? await cancelMyTimeCorrectionRequest(item.sourceId)
+						: await cancelMyAbsenceRequest(item.sourceId);
+				if (result.success) {
+					setCancelError(null);
+					// A pending request keeps its submission period open (#1350).
+					void invalidateReadiness();
+					return;
+				}
 
-			setCancelError(
-				result.error ??
-					t("myRequests:myRequests.actions.cancelRequestError", "Request could not be cancelled."),
-			);
+				setCancelError(
+					result.error ??
+						t(
+							"myRequests:myRequests.actions.cancelRequestError",
+							"Request could not be cancelled.",
+						),
+				);
+			} catch {
+				setCancelError(
+					t(
+						"myRequests:myRequests.actions.cancelRequestError",
+						"Request could not be cancelled.",
+					),
+				);
+			}
 		});
 	}
 
@@ -727,7 +920,11 @@ function RequestAction({
 		<div className="grid justify-items-end gap-2">
 			<div className="flex flex-wrap justify-end gap-2">
 				{primaryActionLabel ? (
-					<Button asChild size="sm" variant={primaryAction === "fix" ? "default" : "outline"}>
+					<Button
+						asChild
+						size="sm"
+						variant={primaryAction === "fix" ? "default" : "outline"}
+					>
 						<Link href={item.sourceHref}>{primaryActionLabel}</Link>
 					</Button>
 				) : null}
@@ -777,7 +974,13 @@ function FocusedRequestUnavailable() {
 	);
 }
 
-function EmptyState({ title, description }: { title: string; description: string }) {
+function EmptyState({
+	title,
+	description,
+}: {
+	title: string;
+	description: string;
+}) {
 	return (
 		<div className="rounded-lg border border-dashed p-8 text-center">
 			<p className="font-medium">{title}</p>

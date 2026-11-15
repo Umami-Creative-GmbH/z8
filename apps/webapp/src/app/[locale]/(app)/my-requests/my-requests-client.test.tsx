@@ -16,10 +16,18 @@ import type { SelfServiceRequestResult } from "@/lib/self-service-requests/types
 const cancelMyAbsenceRequestMock = vi.hoisted(() => vi.fn());
 const cancelMyTimeCorrectionRequestMock = vi.hoisted(() => vi.fn());
 const invalidateReadinessMock = vi.hoisted(() => vi.fn());
+const refreshMock = vi.hoisted(() => vi.fn());
+
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ refresh: refreshMock }),
+}));
 
 // Counts readiness invalidations; still invalidates for real when a query client is provided.
 vi.mock("@/lib/query/period-submission-readiness", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/query/period-submission-readiness")>();
+	const actual =
+		await importOriginal<
+			typeof import("@/lib/query/period-submission-readiness")
+		>();
 	const { QueryClientContext } = await import("@tanstack/react-query");
 	const { use } = await import("react");
 	return {
@@ -28,7 +36,9 @@ vi.mock("@/lib/query/period-submission-readiness", async (importOriginal) => {
 			const client = use(QueryClientContext);
 			return () => {
 				invalidateReadinessMock();
-				return client ? actual.invalidatePeriodSubmissionReadiness(client) : Promise.resolve();
+				return client
+					? actual.invalidatePeriodSubmissionReadiness(client)
+					: Promise.resolve();
 			};
 		},
 	};
@@ -58,9 +68,12 @@ vi.mock("@tabler/icons-react", () => ({
 	IconInfoCircle: () => <span aria-hidden="true" />,
 }));
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/period-submissions", () => ({
-	readPeriodReadiness: vi.fn(),
-}));
+vi.mock(
+	"@/app/[locale]/(app)/time-tracking/actions/period-submissions",
+	() => ({
+		readPeriodReadiness: vi.fn(),
+	}),
+);
 
 vi.mock("./actions", () => ({
 	cancelMyAbsenceRequest: cancelMyAbsenceRequestMock,
@@ -127,6 +140,47 @@ function createResult(
 }
 
 describe("MyRequestsClient", () => {
+	it("retries a partial source without losing the current filters or usable records", () => {
+		const result = createResult({
+			sourceErrors: [{ sourceType: "absence", message: "private" }],
+		});
+		const view = render(<MyRequestsClient initialResult={result} />);
+		fireEvent.change(screen.getByLabelText("Search"), {
+			target: { value: "Time" },
+		});
+		fireEvent.change(screen.getByLabelText("Status"), {
+			target: { value: "pending" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		expect(refreshMock).toHaveBeenCalledOnce();
+		expect(
+			within(screen.getByRole("region", { name: "In review" })).getByText(
+				"Time correction request",
+			),
+		).toBeTruthy();
+		view.rerender(<MyRequestsClient initialResult={createResult()} />);
+		expect(screen.queryByRole("alert")).toBeNull();
+		expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe(
+			"Time",
+		);
+		expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe(
+			"pending",
+		);
+	});
+
+	it("does not call a failed source an empty request history", () => {
+		render(
+			<MyRequestsClient
+				initialResult={createResult({
+					items: [],
+					sourceErrors: [{ sourceType: "absence", message: "private" }],
+				})}
+			/>,
+		);
+		expect(screen.queryByText("No requests yet")).toBeNull();
+		expect(screen.getByText("No requests loaded")).toBeTruthy();
+	});
+
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.setSystemTime(new Date("2026-04-28T12:00:00.000Z"));
@@ -410,7 +464,9 @@ describe("MyRequestsClient", () => {
 		});
 		expect(cancelMyAbsenceRequestMock).toHaveBeenCalledOnce();
 		// Each cancelled request can reopen a period for submission (#1350).
-		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledTimes(2));
+		await waitFor(() =>
+			expect(invalidateReadinessMock).toHaveBeenCalledTimes(2),
+		);
 	});
 
 	it("does not cancel when confirmation is declined", () => {
@@ -462,12 +518,18 @@ describe("MyRequestsClient", () => {
 			sourceHref: "/absences",
 		};
 
-		function renderFocused(focusRequest: string | undefined, result = createResult()) {
+		function renderFocused(
+			focusRequest: string | undefined,
+			result = createResult(),
+		) {
 			const client = new QueryClient();
 			const invalidate = vi.spyOn(client, "invalidateQueries");
 			const view = render(
 				<QueryClientProvider client={client}>
-					<MyRequestsClient initialResult={result} focusRequest={focusRequest} />
+					<MyRequestsClient
+						initialResult={result}
+						focusRequest={focusRequest}
+					/>
 				</QueryClientProvider>,
 			);
 			const rerender = (next: string | undefined) =>
@@ -483,7 +545,9 @@ describe("MyRequestsClient", () => {
 			const { invalidate } = renderFocused("time_correction:period-1");
 
 			const inReview = screen.getByRole("region", { name: "In review" });
-			const card = within(inReview).getByText("Time correction request").closest("article");
+			const card = within(inReview)
+				.getByText("Time correction request")
+				.closest("article");
 			await waitFor(() => expect(document.activeElement).toBe(card));
 			expect(screen.queryByRole("status")).toBeNull();
 			expect(invalidate).not.toHaveBeenCalled();
@@ -496,56 +560,87 @@ describe("MyRequestsClient", () => {
 			);
 
 			const inReview = screen.getByRole("region", { name: "In review" });
-			const card = within(inReview).getByText("Pending vacation").closest("article");
+			const card = within(inReview)
+				.getByText("Pending vacation")
+				.closest("article");
 			await waitFor(() => expect(document.activeElement).toBe(card));
-			expect(within(card as HTMLElement).getByRole("button", { name: "Cancel" })).toBeTruthy();
+			expect(
+				within(card as HTMLElement).getByRole("button", { name: "Cancel" }),
+			).toBeTruthy();
 		});
 
 		it("selects the filters needed to reveal the focused request", async () => {
 			const { rerender } = renderFocused(undefined);
-			fireEvent.change(screen.getByLabelText("Status"), { target: { value: "rejected" } });
-			fireEvent.change(screen.getByLabelText("Type"), { target: { value: "absence" } });
-			fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Vacation" } });
+			fireEvent.change(screen.getByLabelText("Status"), {
+				target: { value: "rejected" },
+			});
+			fireEvent.change(screen.getByLabelText("Type"), {
+				target: { value: "absence" },
+			});
+			fireEvent.change(screen.getByLabelText("Search"), {
+				target: { value: "Vacation" },
+			});
 			expect(screen.queryByRole("region", { name: "In review" })).toBeNull();
 
 			rerender("time_correction:period-1");
 
 			const inReview = await screen.findByRole("region", { name: "In review" });
-			const card = within(inReview).getByText("Time correction request").closest("article");
+			const card = within(inReview)
+				.getByText("Time correction request")
+				.closest("article");
 			await waitFor(() => expect(document.activeElement).toBe(card));
-			expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe("pending");
-			expect((screen.getByLabelText("Type") as HTMLSelectElement).value).toBe("time_correction");
-			expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe("");
+			expect((screen.getByLabelText("Status") as HTMLSelectElement).value).toBe(
+				"pending",
+			);
+			expect((screen.getByLabelText("Type") as HTMLSelectElement).value).toBe(
+				"time_correction",
+			);
+			expect((screen.getByLabelText("Search") as HTMLInputElement).value).toBe(
+				"",
+			);
 		});
 
 		it.each([
 			["a request that is no longer pending", "absence:absence-1"],
 			["a missing or cancelled request", "absence:absence-gone"],
-			["another employee's or organization's request", "time_correction:foreign-period"],
-		])("explains %s without disclosing anything and re-checks readiness", async (_name, focus) => {
-			const { invalidate } = renderFocused(focus);
+			[
+				"another employee's or organization's request",
+				"time_correction:foreign-period",
+			],
+		])(
+			"explains %s without disclosing anything and re-checks readiness",
+			async (_name, focus) => {
+				const { invalidate } = renderFocused(focus);
 
-			const notice = await screen.findByRole("status");
-			expect(notice.textContent).toBe(
-				"This request is no longer pending, or it can't be shown here. Period readiness is being checked again.",
-			);
-			await waitFor(() => expect(document.activeElement).toBe(notice));
-			await waitFor(() =>
-				expect(invalidate).toHaveBeenCalledWith({ queryKey: ["period-submissions"] }),
-			);
-			// Only the employee's own list renders, unchanged; no card is focused or marked.
-			expect(screen.getAllByRole("article")).toHaveLength(7);
-			expect(document.activeElement?.closest("article")).toBeNull();
-		});
+				const notice = await screen.findByRole("status");
+				expect(notice.textContent).toBe(
+					"This request is no longer pending, or it can't be shown here. Period readiness is being checked again.",
+				);
+				await waitFor(() => expect(document.activeElement).toBe(notice));
+				await waitFor(() =>
+					expect(invalidate).toHaveBeenCalledWith({
+						queryKey: ["period-submissions"],
+					}),
+				);
+				// Only the employee's own list renders, unchanged; no card is focused or marked.
+				expect(screen.getAllByRole("article")).toHaveLength(7);
+				expect(document.activeElement?.closest("article")).toBeNull();
+			},
+		);
 
 		it("does not take focus to the notice when the employee cancels the focused request here", async () => {
 			const client = new QueryClient();
 			const page = (result: SelfServiceRequestResult) => (
 				<QueryClientProvider client={client}>
-					<MyRequestsClient initialResult={result} focusRequest="absence:absence-pending" />
+					<MyRequestsClient
+						initialResult={result}
+						focusRequest="absence:absence-pending"
+					/>
 				</QueryClientProvider>
 			);
-			const pending = createResult({ items: [...createResult().items, PENDING_ABSENCE] });
+			const pending = createResult({
+				items: [...createResult().items, PENDING_ABSENCE],
+			});
 			const view = render(page(pending));
 			const card = within(screen.getByRole("region", { name: "In review" }))
 				.getByText("Pending vacation")
@@ -613,5 +708,25 @@ describe("MyRequestsClient", () => {
 		expect((await screen.findByRole("alert")).textContent).toContain(
 			"Cannot cancel",
 		);
+	});
+
+	it("retains the request and permits retry after a cancellation transport failure", async () => {
+		cancelMyTimeCorrectionRequestMock.mockRejectedValueOnce(
+			new Error("private transport"),
+		);
+		const item = {
+			...createResult().items[1],
+			availableActions: ["view", "cancel"] as ("view" | "cancel")[],
+		};
+		render(
+			<MyRequestsClient initialResult={createResult({ items: [item] })} />,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect((await screen.findByRole("alert")).textContent).toBe(
+			"Request could not be cancelled.",
+		);
+		expect(invalidateReadinessMock).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		await waitFor(() => expect(invalidateReadinessMock).toHaveBeenCalledOnce());
 	});
 });
