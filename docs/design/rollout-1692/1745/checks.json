@@ -91,5 +91,15 @@
     "unitFailures": 0,
     "types": "Full webapp/application/workflow-contract/smoke typecheck passed",
     "runtime": "Fresh authenticated context: no page or console errors; Next issues/configErrors/sessionErrors empty"
+  },
+  "latestIntegration": {
+    "integration": "aeb40cb1d95d574724ee5a68d7402e6ee0757b43",
+    "merge": "de8a98393aa096611e028c491d15710edb1a4650",
+    "files": 6,
+    "tests": 131,
+    "failures": 0,
+    "types": "Complete application/workflow-contract/smoke typecheck passed",
+    "sourcePreservation": "Four ticket source/test files unchanged across both integration merges",
+    "runtimeBoundary": "Browser/database evidence is from the prior integrated snapshot; fixture already cleaned before the independent #1704 merge"
   }
 }
