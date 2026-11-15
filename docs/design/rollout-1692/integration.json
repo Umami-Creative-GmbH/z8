@@ -430,8 +430,12 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "ced095089163e69b232c2bce96a40cba800186d8",
+                        "integrationCommit":  "0a8247f6517714f2f51a74aa60f81914fa61771d",
+                        "evidenceCorrectionCommit":  "183cb120d5798a36ca19d4e11541107540e81658",
+                        "evidence":  "docs/design/rollout-1692/1720.md",
+                        "integrationVerification":  "Independent native merge0a8247f6 plus evidence qualification verified atced09508. Fresh68 unique suites/434 tests (46/269+62/414 less40/249; original45/263 subset plus6rootMFA cases),full combined types. Explicit100columnCRLF10consumers and12-filelint/import pass with1inherited suppressionwarning; raw12/CRLF8/navigation2 formattingfailures retained;Doctor9files0errors2reviewedwarnings, nofreshscore. All32verified ancestors,1455rollout/11674unaffected/84incoming paths, MFAcorrection andheadingoptins preserved.22PNGfullydecoded,25JSON/12scripts/46links/20pins validate. Canonical desktop/wide sidebar clipping exists before/after; operational captures align, no current runtime/cause established. Retain tooling overlap/transition limits and failed supplemental scope/read/locale repeat. Earlier scope/read report-attested; German content html.lang=en, not translatedUI pass. Root trims1action-driverblank; originalcaptures/JSON preserved; remaining158archive whitespace findings, appsourcecheckpass, wholecheckunpassed. PG6/112/actions21/variants17/native/axe/Next inherited, notrerun. Ownemployee/privacy/category/immediateupload/version/storage owners preserved; no source blocker. Fullbuild/Tolgee/provider/device/truezoom/globalacceptance obligations remain."
                     },
                     {
                         "id":  "R029",
