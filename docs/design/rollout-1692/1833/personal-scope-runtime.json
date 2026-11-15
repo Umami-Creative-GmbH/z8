@@ -1,0 +1,37 @@
+{
+  "classification": "real restricted fixture session, public organization/session endpoints and actual save/skip/settings actions; no membership mutation",
+  "checks": [
+    {
+      "name": "restricted actor cannot read unrelated organization before preferences",
+      "passed": true
+    },
+    {
+      "name": "real active organization can be cleared without membership mutation",
+      "passed": true
+    },
+    {
+      "name": "real no-organization skip continues to notifications",
+      "passed": true
+    },
+    {
+      "name": "real no-organization disabled save continues to notifications",
+      "passed": true
+    },
+    {
+      "name": "personal save does not assign an active organization",
+      "passed": true
+    },
+    {
+      "name": "personal save grants no unrelated organization access",
+      "passed": true
+    },
+    {
+      "name": "existing approved membership restores organization through its owner",
+      "passed": true
+    },
+    {
+      "name": "personal disabled preference survives organization restoration and public settings readback",
+      "passed": true
+    }
+  ]
+}

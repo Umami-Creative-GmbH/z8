@@ -1,0 +1,22 @@
+src\app\[locale]\onboarding\wellness\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    169 169 │   ␍
+    170 170 │     it("keeps personal preferences available without an active organization", async () => {␍
+    171     │ - → → sessionMock.mockReturnValue({·data:·{·user:·{·id:·"account-a"·},·session:·{·activeOrganizationId:·null·}·},·isPending:·false·});␍
+        171 │ + → → sessionMock.mockReturnValue({␍
+        172 │ + → → → data:·{·user:·{·id:·"account-a"·},·session:·{·activeOrganizationId:·null·}·},␍
+        173 │ + → → → isPending:·false,␍
+        174 │ + → → });␍
+    172 175 │       configureWellnessOnboardingMock.mockResolvedValue({ success: true });␍
+    173 176 │       render(<WellnessPage />);␍
+  
+
+Checked 2 files in 8ms. No fixes applied.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
