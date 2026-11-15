@@ -1,0 +1,78 @@
+{
+    "commands":  [
+                     "agent-browser --session next-dev-loop-8ad063fb5b7f --restore react tree --json",
+                     "agent-browser --session next-dev-loop-8ad063fb5b7f --restore a11y --selector main --json"
+                 ],
+    "a11y":  {
+                 "axeVersion":  "4.12.1",
+                 "counts":  {
+                                "inapplicable":  58,
+                                "incomplete":  1,
+                                "passes":  30,
+                                "violations":  0
+                            },
+                 "incomplete":  [
+                                    {
+                                        "help":  "ARIA toggle fields must have an accessible name",
+                                        "helpUrl":  "https://dequeuniversity.com/rules/axe/4.12/aria-toggle-field-name?application=axeAPI",
+                                        "id":  "aria-toggle-field-name",
+                                        "impact":  "serious",
+                                        "nodeCount":  1,
+                                        "nodes":  [
+                                                      {
+                                                          "failureSummary":  "Fix all of the following:\n  Check that the \u003clabel\u003e does not need be part of the ARIA checkbox field\u0027s name",
+                                                          "html":  "\u003cspan data-unchecked=\"\" role=\"checkbox\" tabindex=\"0\" id=\"base-ui-_r_g_\" aria-checked=\"false\" data-slot=\"checkbox\" aria-label=\"Select all visible n...\" class=\"relative pointer-coa...\"\u003e",
+                                                          "target":  [
+                                                                         "#base-ui-_r_g_"
+                                                                     ]
+                                                      }
+                                                  ],
+                                        "tags":  [
+                                                     "cat.aria",
+                                                     "wcag2a",
+                                                     "wcag412",
+                                                     "TTv5",
+                                                     "TT5.c",
+                                                     "EN-301-549",
+                                                     "EN-9.4.1.2",
+                                                     "ACT",
+                                                     "RGAAv4",
+                                                     "RGAA-7.1.1"
+                                                 ]
+                                    }
+                                ],
+                 "lifecycle":  {
+                                   "effectiveLaunch":  {
+                                                           "browserLaunched":  true,
+                                                           "engine":  "chrome",
+                                                           "launchHash":  4759075326389111361
+                                                       },
+                                   "launched":  false,
+                                   "relaunchedBrowser":  false,
+                                   "restartedBackground":  false,
+                                   "restoreStatus":  "loaded",
+                                   "reused":  true,
+                                   "saveStatus":  "saved"
+                               },
+                 "url":  "http://localhost:51375/en/notifications",
+                 "violations":  [
+
+                                ]
+             },
+    "native":  {
+                   "componentLines":  [
+                                          "169 5258 5257 Forget(NotificationsInbox)",
+                                          "170 5259 5258 Forget(ScopedNotificationsInbox) key=\"[\\\"perf-small-0-c406f3b656c6\\\",\\\"perf-small-c406f3b656c6\\\",\\\"perf-small-c406f3b656c6\\\",false]\"",
+                                          "172 5261 5260 Forget(PageHeader)",
+                                          "173 5286 5285 Forget(DataTableToolbar)",
+                                          "173 5314 5285 Forget(NotificationTimeline)",
+                                          "179 5328 5327 Forget(NotificationItem)",
+                                          "179 5369 5368 Forget(NotificationItem)",
+                                          "179 5410 5409 Forget(NotificationItem)",
+                                          "179 5448 5447 Forget(NotificationItem)"
+                                      ],
+                   "usableTree":  true,
+                   "success":  true
+               },
+    "note":  "Actual inbox audit after dismissing Not Now; the earlier hidden-background prompt audit is retained separately."
+}

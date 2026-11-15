@@ -5,38 +5,28 @@ import {
 	IconBellOff,
 	IconCheck,
 	IconRefresh,
-	IconSearch,
 	IconSettings,
 	IconTrash,
 } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
-import { useDeferredValue, useState } from "react";
-import { toast } from "sonner";
+import { useDeferredValue, useEffect, useId, useRef, useState } from "react";
+import { Temporal } from "temporal-polyfill";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardAction,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Empty,
-	EmptyContent,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
-import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOrganization } from "@/hooks/use-organization";
+import { useSession } from "@/lib/auth-client";
 import { getLocalizedNotificationContent } from "@/lib/notifications/localized-notification";
 import type { NotificationWithMeta } from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
@@ -44,221 +34,172 @@ import { Link } from "@/navigation";
 import { NotificationItem } from "./notification-item";
 
 type ReadFilter = "all" | "unread" | "read";
-type TimelineGroup = "Today" | "Yesterday" | "Earlier";
+const timelineGroups = ["Today", "Yesterday", "Earlier"] as const;
+type TimelineGroup = (typeof timelineGroups)[number];
 
-const timelineGroups: TimelineGroup[] = ["Today", "Yesterday", "Earlier"];
-
-function getGroupLabel(notification: NotificationWithMeta): TimelineGroup {
-	const createdAt = DateTime.fromJSDate(new Date(notification.createdAt));
-	const today = DateTime.now().startOf("day");
-	const notificationDay = createdAt.startOf("day");
-
-	if (notificationDay.equals(today)) {
-		return "Today";
-	}
-
-	if (notificationDay.equals(today.minus({ days: 1 }))) {
-		return "Yesterday";
-	}
-
-	return "Earlier";
-}
-
-function NotificationsInboxSkeleton() {
-	return (
-		<div className="space-y-3">
-			{Array.from({ length: 5 }).map((_, index) => (
-				<div
-					className="flex items-start gap-3 rounded-lg border p-3"
-					key={index.toString()}
-				>
-					<Skeleton className="mt-3 size-4" />
-					<Skeleton className="size-9 rounded-full" />
-					<div className="flex-1 space-y-2">
-						<Skeleton className="h-4 w-2/3" />
-						<Skeleton className="h-3 w-full" />
-						<Skeleton className="h-3 w-24" />
-					</div>
-				</div>
-			))}
-		</div>
+function groupFor(
+	notification: NotificationWithMeta,
+	today: Temporal.PlainDate,
+	zone: string,
+): TimelineGroup {
+	// Preserve local arrival-day semantics, with an explicit system zone. This
+	// timeline is not a source of work-record business dates or captured offsets.
+	const value = notification.createdAt;
+	const instant = Temporal.Instant.from(
+		value instanceof Date ? value.toISOString() : String(value),
 	);
+	const day = instant.toZonedDateTimeISO(zone).toPlainDate();
+	return day.equals(today)
+		? "Today"
+		: day.equals(today.subtract({ days: 1 }))
+			? "Yesterday"
+			: "Earlier";
 }
 
-function useNotificationsInboxViewModel() {
+function useInboxViewModel({
+	organizationId,
+}: {
+	organizationId: string | null;
+}) {
 	const { t } = useTranslate();
+	const selectAllId = useId();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() || "en";
-	const { organizationId } = useOrganization();
-	const hasOrganization = Boolean(organizationId);
-	const [search, setSearch] = useState("");
-	const [readFilter, setReadFilter] = useState<ReadFilter>("all");
-	const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
-	const deferredSearch = useDeferredValue(search);
-
-	const {
-		notifications,
-		isLoading,
-		isError,
-		isFetching,
-		unreadCount,
-		markAsRead,
-		deleteNotification,
-		isMarkingRead,
-		isDeleting,
-		refresh,
-	} = useNotifications({
-		enabled: hasOrganization,
+	const inbox = useNotifications({
+		enabled: Boolean(organizationId),
 		limit: 100,
 		organizationId,
 	});
-	const readFilters: { label: string; value: ReadFilter }[] = [
-		{ label: t("common:notifications.filters.all", "All"), value: "all" },
-		{
-			label: t("common:notifications.filters.unread", "Unread"),
-			value: "unread",
-		},
-		{ label: t("common:notifications.filters.read", "Read"), value: "read" },
-	];
-	const getTimelineGroupLabel = (group: TimelineGroup) => {
-		switch (group) {
-			case "Today":
-				return t("common:notifications.timeline.today", "Today");
-			case "Yesterday":
-				return t("common:notifications.timeline.yesterday", "Yesterday");
-			case "Earlier":
-				return t("common:notifications.timeline.earlier", "Earlier");
-		}
-	};
-
-	const filteredNotifications = (() => {
-		const normalizedSearch = deferredSearch.trim().toLowerCase();
-
-		return notifications.filter((notification) => {
-			if (readFilter === "unread" && notification.isRead) {
-				return false;
-			}
-
-			if (readFilter === "read" && !notification.isRead) {
-				return false;
-			}
-
-			if (!normalizedSearch) {
-				return true;
-			}
-
-			const localized = getLocalizedNotificationContent(
-				notification,
-				t,
-				locale,
-			);
-
-			return `${localized.title} ${localized.message}`
-				.toLowerCase()
-				.includes(normalizedSearch);
-		});
-	})();
-
-	const groupedNotifications = (() => {
-		const groups: Record<TimelineGroup, NotificationWithMeta[]> = {
-			Today: [],
-			Yesterday: [],
-			Earlier: [],
+	const [search, setSearch] = useState("");
+	const [readFilter, setReadFilter] = useState<ReadFilter>("all");
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+	const [pending, setPending] = useState(false);
+	const [feedback, setFeedback] = useState("");
+	const alive = useRef(true);
+	const busy = useRef(false);
+	useEffect(() => {
+		alive.current = true;
+		return () => {
+			alive.current = false;
 		};
-
-		for (const notification of filteredNotifications) {
-			groups[getGroupLabel(notification)].push(notification);
-		}
-
-		return groups;
-	})();
-
-	const visibleIds = filteredNotifications.map(
-		(notification) => notification.id,
+	}, []);
+	const deferredSearch = useDeferredValue(search)
+		.trim()
+		.toLocaleLowerCase(locale);
+	const localized = (n: NotificationWithMeta) =>
+		getLocalizedNotificationContent(n, t, locale);
+	const visible = inbox.notifications.filter(
+		(n) =>
+			(readFilter === "all" || n.isRead === (readFilter === "read")) &&
+			(!deferredSearch ||
+				`${localized(n).title} ${localized(n).message}`
+					.toLocaleLowerCase(locale)
+					.includes(deferredSearch)),
 	);
-	const hasSearch = deferredSearch.trim().length > 0;
-	const selectedVisibleIds = visibleIds.filter((id) => selectedIds.has(id));
-	const selectedUnreadVisibleIds = filteredNotifications.flatMap(
-		(notification) =>
-			selectedIds.has(notification.id) && !notification.isRead
-				? [notification.id]
-				: [],
-	);
-	const selectedVisibleCount = selectedVisibleIds.length;
-	const selectedUnreadVisibleCount = selectedUnreadVisibleIds.length;
-	const allVisibleSelected =
-		visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
-	const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
-	const hasSelection = selectedVisibleCount > 0;
-	const isMutating = isMarkingRead || isDeleting;
-
-	const setSelected = (notificationId: string, checked: boolean) => {
+	const selected = visible.filter((n) => selectedIds.has(n.id));
+	const selectedUnread = selected.filter((n) => !n.isRead);
+	const allSelected = visible.length > 0 && selected.length === visible.length;
+	const zone = Temporal.Now.timeZoneId();
+	const today = Temporal.Now.plainDateISO(zone);
+	const groups = { Today: [], Yesterday: [], Earlier: [] } as Record<
+		TimelineGroup,
+		NotificationWithMeta[]
+	>;
+	for (const n of visible) groups[groupFor(n, today, zone)].push(n);
+	const groupLabel = (group: TimelineGroup) =>
+		group === "Today"
+			? t("common:notifications.timeline.today", "Today")
+			: group === "Yesterday"
+				? t("common:notifications.timeline.yesterday", "Yesterday")
+				: t("common:notifications.timeline.earlier", "Earlier");
+	const filters: { value: ReadFilter; label: string }[] = [
+		{ value: "all", label: t("common:notifications.filters.all", "All") },
+		{
+			value: "unread",
+			label: t("common:notifications.filters.unread", "Unread"),
+		},
+		{ value: "read", label: t("common:notifications.filters.read", "Read") },
+	];
+	const setSelected = (ids: string[], checked: boolean) =>
 		setSelectedIds((current) => {
 			const next = new Set(current);
-			if (checked) {
-				next.add(notificationId);
-			} else {
-				next.delete(notificationId);
+			for (const id of ids) {
+				if (checked) next.add(id);
+				else next.delete(id);
 			}
 			return next;
 		});
-	};
-
-	const toggleSelectAllVisible = (checked: boolean) => {
-		setSelectedIds((current) => {
-			const next = new Set(current);
-			for (const id of visibleIds) {
-				if (checked) {
-					next.add(id);
-				} else {
-					next.delete(id);
-				}
-			}
-			return next;
+	const run = async (kind: "read" | "delete", ids: string[], bulk = false) => {
+		if (busy.current || !ids.length) return;
+		busy.current = true;
+		setPending(true);
+		setFeedback("");
+		const results = await Promise.allSettled(
+			ids.map((id) =>
+				kind === "read" ? inbox.markAsRead(id) : inbox.deleteNotification(id),
+			),
+		).finally(() => {
+			busy.current = false;
+			if (alive.current) setPending(false);
 		});
+		// A remounted scope has a separate lifetime, even after A -> B -> A.
+		if (!alive.current) return;
+		const succeeded = ids.filter((_, i) => results[i].status === "fulfilled");
+		const failed = ids.length - succeeded.length;
+		if (bulk && !failed) setSelectedIds(new Set());
+		else setSelected(succeeded, false);
+		setFeedback(
+			failed && !bulk
+				? kind === "delete"
+					? t(
+							"common:notifications.toasts.deleteFailed",
+							"Failed to delete notifications",
+						)
+					: t(
+							"common:notifications.toasts.markReadFailed",
+							"Failed to mark notifications as read",
+						)
+				: failed
+					? kind === "delete"
+						? t(
+								"common:notifications.toasts.deletePartial",
+								"{count} deleted; {failed} failed. Retry the remaining selection.",
+								{ count: succeeded.length, failed },
+							)
+						: t(
+								"common:notifications.toasts.readPartial",
+								"{count} marked read; {failed} failed. Retry the remaining selection.",
+								{ count: succeeded.length, failed },
+							)
+					: kind === "delete"
+						? t(
+								"common:notifications.toasts.deleted",
+								"Deleted {count} notifications",
+								{ count: succeeded.length },
+							)
+						: t(
+								"common:notifications.toasts.markedRead",
+								"Marked {count} notifications as read",
+								{ count: succeeded.length },
+							),
+		);
 	};
-
-	const clearSelection = () => setSelectedIds(new Set());
-
-	const handleBulkMarkRead = async () => {
-		try {
-			await Promise.all(selectedUnreadVisibleIds.map((id) => markAsRead(id)));
-			toast.success(
-				t(
-					"common:notifications.toasts.markedRead",
-					"Marked {count} notifications as read",
-					{
-						count: selectedUnreadVisibleCount,
-					},
-				),
-			);
-			clearSelection();
-		} catch {
-			toast.error(
-				t(
-					"common:notifications.toasts.markReadFailed",
-					"Failed to mark notifications as read",
-				),
-			);
-		}
-	};
-
 	const emptyTitle =
-		readFilter === "unread" && !hasSearch
+		readFilter === "unread" && !deferredSearch
 			? t("common:notifications.empty.unreadTitle", "No unread notifications")
-			: notifications.length === 0
+			: inbox.notifications.length === 0
 				? t("common:notifications.empty.title", "No notifications")
 				: t(
 						"common:notifications.empty.noMatchesTitle",
 						"No matching notifications",
 					);
 	const emptyDescription =
-		readFilter === "unread" && !hasSearch
+		readFilter === "unread" && !deferredSearch
 			? t(
 					"common:notifications.empty.unreadDescription",
 					"You are all caught up. New unread updates will appear here.",
 				)
-			: notifications.length === 0
+			: inbox.notifications.length === 0
 				? t(
 						"common:notifications.empty.inboxDescription",
 						"You are all caught up. New updates will appear here.",
@@ -268,197 +209,148 @@ function useNotificationsInboxViewModel() {
 						"Adjust the search or read filter to widen this inbox view.",
 					);
 
-	const handleBulkDelete = async () => {
-		try {
-			await Promise.all(selectedVisibleIds.map((id) => deleteNotification(id)));
-			toast.success(
-				t(
-					"common:notifications.toasts.deleted",
-					"Deleted {count} notifications",
-					{
-						count: selectedVisibleCount,
-					},
-				),
-			);
-			clearSelection();
-		} catch {
-			toast.error(
-				t(
-					"common:notifications.toasts.deleteFailed",
-					"Failed to delete notifications",
-				),
-			);
-		}
-	};
-
 	return {
-		allVisibleSelected,
-		clearSelection,
-		deleteNotification,
-		emptyDescription,
-		emptyTitle,
-		filteredNotifications,
-		getTimelineGroupLabel,
-		groupedNotifications,
-		handleBulkDelete,
-		handleBulkMarkRead,
-		hasSelection,
-		isError,
-		isFetching,
-		isLoading,
-		isMutating,
-		locale,
-		markAsRead,
-		readFilter,
-		readFilters,
-		refresh,
-		search,
-		selectedIds,
-		selectedUnreadVisibleCount,
-		selectedVisibleCount,
-		setReadFilter,
-		setSearch,
-		setSelected,
-		someVisibleSelected,
 		t,
-		toggleSelectAllVisible,
-		unreadCount,
+		selectAllId,
+		inbox,
+		search,
+		setSearch,
+		readFilter,
+		setReadFilter,
+		selectedIds,
+		setSelectedIds,
+		pending,
+		feedback,
+		visible,
+		selected,
+		selectedUnread,
+		allSelected,
+		localized,
+		groups,
+		groupLabel,
+		filters,
+		setSelected,
+		run,
+		emptyTitle,
+		emptyDescription,
 	};
 }
 
-function NotificationsInboxView({
-	viewModel,
+function ScopedNotificationsInbox({
+	organizationId,
 }: {
-	viewModel: ReturnType<typeof useNotificationsInboxViewModel>;
+	organizationId: string | null;
 }) {
+	const model = useInboxViewModel({ organizationId });
 	const {
-		allVisibleSelected,
-		clearSelection,
-		deleteNotification,
-		emptyDescription,
-		emptyTitle,
-		filteredNotifications,
-		getTimelineGroupLabel,
-		groupedNotifications,
-		handleBulkDelete,
-		handleBulkMarkRead,
-		hasSelection,
-		isError,
-		isFetching,
-		isLoading,
-		isMutating,
-		locale,
-		markAsRead,
-		readFilter,
-		readFilters,
-		refresh,
-		search,
-		selectedIds,
-		selectedUnreadVisibleCount,
-		selectedVisibleCount,
-		setReadFilter,
-		setSearch,
-		setSelected,
-		someVisibleSelected,
 		t,
-		toggleSelectAllVisible,
-		unreadCount,
-	} = viewModel;
-
+		selectAllId,
+		inbox,
+		search,
+		setSearch,
+		readFilter,
+		setReadFilter,
+		setSelectedIds,
+		pending,
+		feedback,
+		visible,
+		selected,
+		selectedUnread,
+		allSelected,
+		filters,
+		setSelected,
+		run,
+	} = model;
 	return (
-		<Card className="gap-0 overflow-hidden">
-			<CardHeader className="flex flex-col gap-4 border-b sm:grid">
-				<div className="space-y-1.5">
-					<div className="flex flex-wrap items-center gap-2">
-						<CardTitle className="text-2xl">
-							{t("common:notifications.title", "Notifications")}
-						</CardTitle>
-						{unreadCount > 0 && (
-							<Badge variant="secondary">
-								{t("common:notifications.unreadBadge", "{count} unread", {
-									count: unreadCount,
-								})}
-							</Badge>
-						)}
-					</div>
-					<CardDescription>
-						{t(
-							"common:notifications.description",
-							"Review updates, approvals, and system alerts in one timeline.",
-						)}
-					</CardDescription>
-				</div>
-				<CardAction className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-					<Button
-						disabled={isFetching}
-						onClick={refresh}
-						size="sm"
-						type="button"
-						variant="outline"
-					>
-						<IconRefresh
-							className={cn("size-4", isFetching && "animate-spin")}
-						/>
-						{t("common:actions.refresh", "Refresh")}
-					</Button>
-					<Button asChild size="sm" variant="outline">
-						<Link href="/settings/notifications">
-							<IconSettings className="size-4" />
-							{t("common:nav.settings", "Settings")}
-						</Link>
-					</Button>
-				</CardAction>
-			</CardHeader>
-
-			<CardContent className="space-y-4 py-4">
-				<div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-					<div className="relative md:w-80">
-						<IconSearch className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-						<Input
-							aria-label={t(
-								"common:notifications.search.ariaLabel",
-								"Search notifications",
-							)}
-							className="pl-9"
-							onChange={(event) => setSearch(event.target.value)}
-							placeholder={t(
-								"common:notifications.search.placeholder",
-								"Search notifications...",
-							)}
-							value={search}
-						/>
-					</div>
-
-					<fieldset
-						aria-label={t(
-							"common:notifications.filters.ariaLabel",
-							"Filter notifications by read status",
-						)}
-						className="m-0 inline-flex h-9 w-fit items-center justify-center rounded-lg border-0 bg-muted p-[3px] text-muted-foreground"
-					>
-						{readFilters.map((filter) => (
-							<Button
-								aria-pressed={readFilter === filter.value}
+		<div className="mx-auto w-full max-w-5xl space-y-6">
+			<PageHeader
+				title={t("common:notifications.title", "Notifications")}
+				description={
+					<span role="status" className="tabular-nums">
+						{inbox.isLoadingCount
+							? t("common:notifications.loadingCount", "Loading unread count…")
+							: inbox.isCountError
+								? t(
+										"common:notifications.countFailed",
+										"Unread count unavailable",
+									)
+								: t("common:notifications.unreadBadge", "{count} unread", {
+										count: inbox.unreadCount,
+									})}
+					</span>
+				}
+				actions={
+					<>
+						<Button
+							disabled={inbox.isFetching}
+							onClick={() => void inbox.refresh()}
+							variant="outline"
+							size="sm"
+						>
+							<IconRefresh
+								aria-hidden="true"
 								className={cn(
-									"h-[calc(100%-1px)] flex-1 rounded-md border border-transparent px-2 py-1 shadow-none",
-									readFilter === filter.value &&
-										"border-border bg-background text-foreground shadow-sm",
+									"size-4",
+									inbox.isFetching && "animate-spin motion-reduce:animate-none",
 								)}
-								key={filter.value}
-								onClick={() => setReadFilter(filter.value)}
-								size="sm"
-								type="button"
-								variant="ghost"
-							>
-								{filter.label}
-							</Button>
-						))}
-					</fieldset>
-				</div>
-
-				{isError && (
+							/>
+							{t("common:actions.refresh", "Refresh")}
+						</Button>
+						<Button asChild variant="outline" size="sm">
+							<Link href="/settings/notifications">
+								<IconSettings aria-hidden="true" className="size-4" />
+								{t("common:nav.settings", "Settings")}
+							</Link>
+						</Button>
+					</>
+				}
+			/>
+			<div className="space-y-4 rounded-xl border bg-card p-4 sm:p-5">
+				<DataTableToolbar
+					search={search}
+					onSearchChange={setSearch}
+					searchLabel={t(
+						"common:notifications.search.ariaLabel",
+						"Search notifications",
+					)}
+					searchPlaceholder={t(
+						"common:notifications.search.placeholder",
+						"Search notifications...",
+					)}
+					filterControls={
+						<fieldset
+							aria-label={t(
+								"common:notifications.filters.ariaLabel",
+								"Filter notifications by read status",
+							)}
+							className="flex flex-wrap gap-1"
+						>
+							{filters.map((filter) => (
+								<Button
+									key={filter.value}
+									size="sm"
+									variant={readFilter === filter.value ? "secondary" : "ghost"}
+									aria-pressed={readFilter === filter.value}
+									onClick={() => setReadFilter(filter.value)}
+								>
+									{filter.label}
+								</Button>
+							))}
+						</fieldset>
+					}
+				/>
+				{!inbox.isLoading && (!inbox.isError || visible.length > 0) && (
+					<p className="text-sm text-muted-foreground tabular-nums">
+						{t(
+							"common:notifications.visibleWindow",
+							"{count} visible · latest {limit} notifications",
+							{ count: visible.length, limit: 100 },
+						)}
+					</p>
+				)}
+				{inbox.isError && (
 					<Alert variant="destructive">
-						<IconBellOff className="size-4" />
+						<IconBellOff aria-hidden="true" />
 						<AlertTitle>
 							{t(
 								"common:notifications.error.title",
@@ -467,160 +359,214 @@ function NotificationsInboxView({
 						</AlertTitle>
 						<AlertDescription>
 							<Button
-								onClick={refresh}
-								size="sm"
-								type="button"
+								disabled={inbox.isFetching}
+								onClick={() => void inbox.refresh()}
 								variant="outline"
+								size="sm"
 							>
 								{t("common:common.retry", "Retry")}
 							</Button>
 						</AlertDescription>
 					</Alert>
 				)}
-
-				{hasSelection && (
-					<div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 md:flex-row md:items-center md:justify-between">
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"common:notifications.selection.visibleSelected",
-								"{count} visible selected",
-								{
-									count: selectedVisibleCount,
-								},
-							)}
-						</p>
-						<div className="flex flex-wrap gap-2">
-							<Button
-								disabled={isMutating}
-								onClick={clearSelection}
-								size="sm"
-								type="button"
-								variant="ghost"
-							>
-								{t("common:common.clear", "Clear")}
-							</Button>
-							<Button
-								disabled={isMutating || selectedUnreadVisibleCount === 0}
-								onClick={handleBulkMarkRead}
-								size="sm"
-								type="button"
-								variant="outline"
-							>
-								<IconCheck className="size-4" />
-								{t("common:notifications.actions.markRead", "Mark read")}
-							</Button>
-							<Button
-								disabled={isMutating}
-								onClick={handleBulkDelete}
-								size="sm"
-								type="button"
-								variant="destructive"
-							>
-								<IconTrash className="size-4" />
-								{t("common:actions.delete", "Delete")}
-							</Button>
-						</div>
-					</div>
-				)}
-
-				{isLoading ? (
-					<NotificationsInboxSkeleton />
-				) : filteredNotifications.length === 0 ? (
-					<Empty className="min-h-[360px] border">
-						<EmptyHeader>
-							<EmptyMedia variant="icon">
-								<IconBell className="size-5" />
-							</EmptyMedia>
-							<EmptyTitle>{emptyTitle}</EmptyTitle>
-							<EmptyDescription>{emptyDescription}</EmptyDescription>
-						</EmptyHeader>
-						<EmptyContent>
-							<Button onClick={refresh} type="button" variant="outline">
-								<IconRefresh className="size-4" />
-								{t("common:actions.refresh", "Refresh")}
-							</Button>
-						</EmptyContent>
-					</Empty>
-				) : (
-					<div className="space-y-6">
-						<div className="flex items-center gap-2 rounded-lg border px-3 py-2">
+				<p role="status" aria-atomic="true" className="text-sm empty:hidden">
+					{feedback}
+				</p>
+				{visible.length > 0 && (
+					<div className="flex flex-wrap items-center justify-between gap-3 border-y py-3">
+						<label
+							htmlFor={selectAllId}
+							className="flex min-h-9 cursor-pointer items-center gap-2 text-sm"
+						>
 							<Checkbox
+								id={selectAllId}
+								disabled={pending}
 								aria-label={t(
 									"common:notifications.selection.selectAllAria",
 									"Select all visible notifications",
 								)}
 								checked={
-									someVisibleSelected ? "indeterminate" : allVisibleSelected
+									selected.length > 0 && !allSelected
+										? "indeterminate"
+										: allSelected
 								}
 								onCheckedChange={(checked) =>
-									toggleSelectAllVisible(checked === true)
+									setSelected(
+										visible.map((n) => n.id),
+										checked === true,
+									)
 								}
 							/>
-							<span className="text-sm text-muted-foreground">
-								{t(
-									"common:notifications.selection.selectAll",
-									"Select all visible",
+							{t(
+								"common:notifications.selection.selectAll",
+								"Select all visible",
+							)}
+						</label>
+						{selected.length > 0 && (
+							<fieldset
+								className="flex flex-wrap items-center gap-2"
+								aria-label={t(
+									"common:notifications.selection.actions",
+									"Selected notifications",
 								)}
-							</span>
-						</div>
-
-						{timelineGroups.map((group) => {
-							const groupNotifications = groupedNotifications[group];
-							if (groupNotifications.length === 0) {
-								return null;
-							}
-
-							return (
-								<section className="space-y-2" key={group}>
-									<h2 className="font-medium text-muted-foreground text-sm">
-										{getTimelineGroupLabel(group)}
-									</h2>
-									<div className="divide-y rounded-lg border">
-										{groupNotifications.map((notification) => (
-											<div
-												className="flex items-start gap-2"
-												key={notification.id}
-											>
-												<div className="flex pt-6 pl-3">
-													<Checkbox
-														aria-label={t(
-															"common:notifications.selection.selectNamedAria",
-															"Select {title}",
-															{
-																title: getLocalizedNotificationContent(
-																	notification,
-																	t,
-																	locale,
-																).title,
-															},
-														)}
-														checked={selectedIds.has(notification.id)}
-														onCheckedChange={(checked) =>
-															setSelected(notification.id, checked === true)
-														}
-													/>
-												</div>
-												<div className="min-w-0 flex-1">
-													<NotificationItem
-														notification={notification}
-														onDelete={deleteNotification}
-														onMarkAsRead={markAsRead}
-													/>
-												</div>
-											</div>
-										))}
-									</div>
-								</section>
-							);
-						})}
+							>
+								<span className="text-sm text-muted-foreground tabular-nums">
+									{t(
+										"common:notifications.selection.visibleSelected",
+										"{count} visible selected",
+										{ count: selected.length },
+									)}
+								</span>
+								<Button
+									disabled={pending}
+									onClick={() => setSelectedIds(new Set())}
+									size="sm"
+									variant="ghost"
+								>
+									{t("common:common.clear", "Clear")}
+								</Button>
+								<Button
+									disabled={pending || !selectedUnread.length}
+									onClick={() =>
+										void run(
+											"read",
+											selectedUnread.map((n) => n.id),
+											true,
+										)
+									}
+									size="sm"
+									variant="outline"
+								>
+									<IconCheck aria-hidden="true" />
+									{t("common:notifications.actions.markRead", "Mark read")}
+								</Button>
+								<Button
+									disabled={pending}
+									onClick={() =>
+										void run(
+											"delete",
+											selected.map((n) => n.id),
+											true,
+										)
+									}
+									size="sm"
+									variant="destructive"
+								>
+									<IconTrash aria-hidden="true" />
+									{t("common:actions.delete", "Delete")}
+								</Button>
+							</fieldset>
+						)}
 					</div>
 				)}
-			</CardContent>
-		</Card>
+				<NotificationTimeline model={model} />
+			</div>
+		</div>
 	);
 }
 
 export function NotificationsInbox() {
-	const viewModel = useNotificationsInboxViewModel();
-	return <NotificationsInboxView viewModel={viewModel} />;
+	const { organizationId } = useOrganization();
+	const { data: session, isPending } = useSession();
+	const key = JSON.stringify([
+		session?.user.id,
+		session?.session.activeOrganizationId,
+		organizationId,
+		isPending,
+	]);
+	return <ScopedNotificationsInbox key={key} organizationId={organizationId} />;
+}
+
+function NotificationTimeline({
+	model,
+}: {
+	model: ReturnType<typeof useInboxViewModel>;
+}) {
+	const {
+		inbox,
+		pending,
+		t,
+		visible,
+		emptyTitle,
+		emptyDescription,
+		groups,
+		groupLabel,
+		selectedIds,
+		setSelected,
+		localized,
+		run,
+	} = model;
+	return (
+		<div aria-busy={inbox.isFetching || pending}>
+			{inbox.isLoading ? (
+				<div
+					role="status"
+					aria-label={t(
+						"common:notifications.loading",
+						"Loading notifications…",
+					)}
+					className="space-y-3"
+				>
+					{[0, 1, 2].map((i) => (
+						<Skeleton key={i} className="h-20 w-full" />
+					))}
+				</div>
+			) : visible.length === 0 ? (
+				!inbox.isError && (
+					<Empty className="min-h-64">
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<IconBell aria-hidden="true" />
+							</EmptyMedia>
+							<EmptyTitle>{emptyTitle}</EmptyTitle>
+							<EmptyDescription>{emptyDescription}</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
+				)
+			) : (
+				timelineGroups.map(
+					(group) =>
+						groups[group].length > 0 && (
+							<section
+								key={group}
+								aria-label={groupLabel(group)}
+								className="mt-5 first:mt-0"
+							>
+								<h2 className="mb-2 text-sm font-semibold">
+									{groupLabel(group)}
+								</h2>
+								<ul className="divide-y">
+									{groups[group].map((n) => (
+										<li key={n.id} className="flex min-w-0 items-start gap-1">
+											<div className="pl-1 pt-4">
+												<Checkbox
+													disabled={pending}
+													aria-label={t(
+														"common:notifications.selection.selectNamedAria",
+														"Select {title}",
+														{ title: localized(n).title },
+													)}
+													checked={selectedIds.has(n.id)}
+													onCheckedChange={(checked) =>
+														setSelected([n.id], checked === true)
+													}
+												/>
+											</div>
+											<div className="min-w-0 flex-1">
+												<NotificationItem
+													notification={n}
+													disabled={pending}
+													onDelete={(id) => void run("delete", [id])}
+													onMarkAsRead={(id) => void run("read", [id])}
+												/>
+											</div>
+										</li>
+									))}
+								</ul>
+							</section>
+						),
+				)
+			)}
+		</div>
+	);
 }

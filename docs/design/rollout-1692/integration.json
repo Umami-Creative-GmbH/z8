@@ -458,8 +458,13 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "awaiting-integration",
-                        "verifiedCommit":  null
+                        "status":  "integrated",
+                        "verifiedCommit":  "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+                        "integrationCommit":  "05c66b101e16b98d678a66bf2256f0e875eb9b73",
+                        "correctionCommit":  "8ba550c282727aec4548a217daa673b38137c883",
+                        "evidenceCorrectionCommit":  "5174ae3fe3a5b760e4a465c9263e383ebf784e03",
+                        "evidence":  "docs/design/rollout-1692/1722.md",
+                        "integrationVerification":  "Native independent merge05c66 plus root public-reader correction verified3e6402ec; exact tree4ed81f16 equals tested feature5174ae3. Native48unique/1086 units (exact11/140 wholly overlap); root repeats same48/1086,fulltypes,8-file Doctorzero and3-file lint/import on correction8ba550c28. Both final whole-file formatting profiles fail3files; no blanket pass. Root35 PostgreSQL cases through production clocking/edit/delete/list/readiness/cancel/replay across active-append legacy/shadow/canonical/complete;217 unrelated cases skipped, migration/owned cleanup pass. Foreign/malformed/replaced/ordinary/contradictory evidence and missing pending compatibility rows stay excluded; current approved corrections retained. Actual legacy non-adopted Calendar proposal: pre-fix reader unavailable, fixed same pending request focuses Cancel, native dismissal0commands/confirmation1command, persisted requester cancellation/original work unchanged, fresh unavailable arrival,zero browser exceptions/final Nextclean. Legacy endpoint deletion omits tombstone; retained Cancelled history is adopted PG only.9 named runtime checks include1fixture setup;3 accepted+2 failed PNGs decode/current pins pass. Missing-manager and wrong translated-label harness failures retained; worker original live causes remain inference. All34 prior verified ancestors and original raw artifacts retained; only3 root domain/test paths plus report intentionally change. Worker responsive/preferences/roles/native/axe/67PG remain inherited, not added. Full build/Tolgee/provider/device/zoom/native/global-transition limits remain open."
                     },
                     {
                         "id":  "R031",
@@ -468,8 +473,9 @@
                         "blockedBy":  [
                                           1694
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "e2d14e0bda12cb2920f7a38c8df935ae81da1b42"
                     },
                     {
                         "id":  "R032",
@@ -568,8 +574,9 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "implementing",
-                        "verifiedCommit":  null
+                        "status":  "awaiting-integration",
+                        "verifiedCommit":  null,
+                        "implementationCommit":  "796f49b212ec9688a9d89186cb7c59d0c427c781"
                     },
                     {
                         "id":  "R042",
@@ -578,7 +585,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {
@@ -588,7 +595,7 @@
                         "blockedBy":  [
                                           1853
                                       ],
-                        "status":  "pending",
+                        "status":  "implementing",
                         "verifiedCommit":  null
                     },
                     {

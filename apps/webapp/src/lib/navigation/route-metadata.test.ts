@@ -7,6 +7,11 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(false);
 		expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(false);
 	});
+	it("adopts only the notification timeline heading, retaining settings and descendants", () => {
+		expect(appPageOwnsHeading("/de/notifications")).toBe(true);
+		expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);
+	});
 	it("adopts only the personal requests page heading", () => {
 		expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
 		expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);

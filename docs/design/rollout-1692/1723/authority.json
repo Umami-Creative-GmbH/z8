@@ -1,0 +1,26 @@
+{
+  "observations": [
+    {
+      "variant": "authority",
+      "refusal": 401
+    },
+    {
+      "variant": "authority",
+      "status": 401,
+      "unchangedReadState": true,
+      "roundTripRecovered": true,
+      "keyboardSelection": true
+    },
+    {
+      "variant": "account",
+      "refusal": 409
+    },
+    {
+      "variant": "account",
+      "status": 409,
+      "unchangedReadState": true,
+      "roundTripRecovered": true,
+      "keyboardSelection": true
+    }
+  ]
+}

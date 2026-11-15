@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isApiError } from "@/lib/api-error";
 import { useSession } from "@/lib/auth-client";
 import { fetchApi } from "@/lib/fetch";
 import {
@@ -41,6 +42,13 @@ function useNotificationScope(organizationId: string | null | undefined) {
 
 type NotificationScope = ReturnType<typeof useNotificationScope>;
 
+function mayShowNotifications(scope: NotificationScope, error: unknown) {
+	return (
+		scope.matchesSession &&
+		!(isApiError(error) && [400, 401, 403, 409].includes(error.status))
+	);
+}
+
 function notificationRequestHeaders(
 	scope: NotificationScope,
 ): Record<string, string> {
@@ -59,8 +67,9 @@ function useUnreadCountQuery(scope: NotificationScope, enabled: boolean) {
 			scope.organizationId,
 			scope.userId,
 		),
-		queryFn: () =>
+		queryFn: ({ signal }) =>
 			fetchApi<UnreadCountResponse>("/api/notifications/count", {
+				signal,
 				headers: notificationRequestHeaders(scope),
 			}),
 		enabled: enabled && scope.matchesSession,
@@ -118,14 +127,14 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 	// Query for notifications list
 	const notificationsQuery = useQuery({
 		queryKey: queryKeys.notifications.list(listOptions),
-		queryFn: async (): Promise<NotificationsListResponse> => {
+		queryFn: async ({ signal }): Promise<NotificationsListResponse> => {
 			const params = new URLSearchParams({
 				limit: limit.toString(),
 				unreadOnly: unreadOnly.toString(),
 			});
 			return fetchApi<NotificationsListResponse>(
 				`/api/notifications?${params}`,
-				{ headers: notificationRequestHeaders(scope) },
+				{ signal, headers: notificationRequestHeaders(scope) },
 			);
 		},
 		enabled: enabled && scope.matchesSession,
@@ -222,7 +231,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 
 	return {
 		// List data
-		notifications: scope.matchesSession
+		notifications: mayShowNotifications(scope, notificationsQuery.error)
 			? (notificationsQuery.data?.notifications ?? [])
 			: [],
 		total: scope.matchesSession ? (notificationsQuery.data?.total ?? 0) : 0,
@@ -235,6 +244,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 		// Unread count
 		unreadCount: scope.matchesSession ? (unreadCountQuery.data?.count ?? 0) : 0,
 		isLoadingCount: enabled && (scope.isPending || unreadCountQuery.isLoading),
+		isCountError: unreadCountQuery.isError,
 
 		// Actions
 		markAsRead: (notificationId: string) =>
