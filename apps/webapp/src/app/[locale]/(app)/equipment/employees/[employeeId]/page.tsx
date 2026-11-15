@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { EquipmentEmployeeHeader } from "@/components/equipment/equipment-employee-header";
+import { EquipmentEmployeeLoading } from "@/components/equipment/equipment-employee-loading";
 import { EquipmentRefreshButton } from "@/components/equipment/equipment-header-actions";
-import { EquipmentLoading } from "@/components/equipment/equipment-loading";
 import { EmployeeEquipment } from "@/components/equipment/equipment-workspace";
 import { getEmployeeEquipment } from "@/lib/organization/equipment/actions";
 import { getTranslate } from "@/tolgee/server";
@@ -52,7 +52,7 @@ export default function EquipmentEmployeePage(props: {
 	params: Promise<{ employeeId: string }>;
 }) {
 	return (
-		<Suspense fallback={<EquipmentLoading variant="employee" />}>
+		<Suspense fallback={<EquipmentEmployeeLoading />}>
 			<EquipmentEmployeeContent {...props} />
 		</Suspense>
 	);
