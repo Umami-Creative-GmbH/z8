@@ -1,0 +1,1398 @@
+src\app\[locale]\(app)\my-documents\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·notFound·}·from·"next/navigation";
+     2    │ - import·{·Suspense·}·from·"react";
+     3    │ - import·{·MyDocumentsList·}·from·"@/components/personnel-file/my-documents-list";
+     4    │ - import·{·MyDocumentsRetry·}·from·"@/components/personnel-file/my-documents-retry";
+     5    │ - import·{·MyDocumentsScope·}·from·"@/components/personnel-file/my-documents-scope";
+     6    │ - import·{·MyDocumentsUpload·}·from·"@/components/personnel-file/my-documents-upload";
+     7    │ - import·{·RequestedDocuments·}·from·"@/components/personnel-file/requested-documents";
+     8    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+     9    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";
+    10    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";
+    11    │ - import·{·loadCurrentPersonnelFileAccess·}·from·"@/lib/personnel-file/current-access";
+    12    │ - import·{·loadOwnUploadCapability·}·from·"@/lib/personnel-file/panel";
+    13    │ - import·{·getTranslate·}·from·"@/tolgee/server";
+    14    │ - import·{·getMyDocumentsAction·}·from·"../personnel-files/actions";
+    15    │ - import·{·getMyDocumentRequestsAction·}·from·"../personnel-files/document-request-actions";
+    16    │ - 
+    17    │ - /**
+    18    │ - ·*·My·documents·(#865):·the·signed-in·employee's·shared·employee·documents.
+    19    │ - ·*·Unavailable·(not·found)·while·personnel·files·are·off,·and·for·anyone
+    20    │ - ·*·without·a·current·employee·profile,·former·employees·included.·Employees
+    21    │ - ·*·upload·certificates·and·other·documents·here·(#867)·and·see·what·officers
+    22    │ - ·*·requested·from·them·(#1401).
+    23    │ - ·*/
+    24    │ - async·function·MyDocumentsContent()·{
+    25    │ - → const·[t,·result,·uploadCapability,·requests,·current]·=·await·Promise.all([
+    26    │ - → → getTranslate(),
+    27    │ - → → getMyDocumentsAction(),
+    28    │ - → → loadOwnUploadCapability(),
+    29    │ - → → getMyDocumentRequestsAction(),
+    30    │ - → → loadCurrentPersonnelFileAccess(),
+    31    │ - → ]);
+    32    │ - → if·(current.status·!==·"resolved"·||·!uploadCapability)·notFound();
+    33    │ - 
+    34    │ - → return·(
+    35    │ - → → <MyDocumentsScope
+    36    │ - → → → key={`${current.access.userId}:${current.access.organizationId}:${uploadCapability.employeeId}`}
+    37    │ - → → → userId={current.access.userId}
+    38    │ - → → → organizationId={current.access.organizationId}
+    39    │ - → → → employeeId={uploadCapability.employeeId}
+    40    │ - → → >
+    41    │ - → → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-8·p-4·md:p-6">
+    42    │ - → → → → <PageHeader
+    43    │ - → → → → → title={t("settings.personnelFiles.myDocuments.title",·"My·Documents")}
+    44    │ - → → → → → description={t(
+    45    │ - → → → → → → "settings.personnelFiles.myDocuments.description",
+    46    │ - → → → → → → "Documents·from·your·personnel·file·that·your·organization·shared·with·you.",
+    47    │ - → → → → → )}
+    48    │ - → → → → />
+    49    │ - → → → → {requests.success·?·(
+    50    │ - → → → → → <RequestedDocuments·requests={requests.data}·capability={uploadCapability}·/>
+    51    │ - → → → → )·:·(
+    52    │ - → → → → → <MyDocumentsRetry·/>
+    53    │ - → → → → )}
+    54    │ - → → → → {result.success·?·(
+    55    │ - → → → → → <MyDocumentsList
+    56    │ - → → → → → → documents={result.data}
+    57    │ - → → → → → → actions={<MyDocumentsUpload·capability={uploadCapability}·/>}
+    58    │ - → → → → → />
+    59    │ - → → → → )·:·(
+    60    │ - → → → → → <MyDocumentsRetry·/>
+    61    │ - → → → → )}
+    62    │ - → → → </div>
+    63    │ - → → </MyDocumentsScope>
+    64    │ - → );
+    65    │ - }
+    66    │ - 
+    67    │ - function·MyDocumentsLoading()·{
+    68    │ - → return·(
+    69    │ - → → <LoadingRegion
+    70    │ - → → → label={{
+    71    │ - → → → → labelKey:·"settings.personnelFiles.myDocuments.loading",
+    72    │ - → → → → labelDefault:·"Loading·your·documents",
+    73    │ - → → → }}
+    74    │ - → → → className="@container/main·flex·flex-1·flex-col·gap-6·p-4·md:p-6"
+    75    │ - → → → role="status"
+    76    │ - → → >
+    77    │ - → → → <Skeleton·aria-hidden="true"·className="h-8·w-48"·/>
+    78    │ - → → → <Skeleton·aria-hidden="true"·className="h-16·w-full"·/>
+    79    │ - → → → <Skeleton·aria-hidden="true"·className="h-16·w-full"·/>
+    80    │ - → → </LoadingRegion>
+    81    │ - → );
+    82    │ - }
+    83    │ - 
+    84    │ - export·default·function·MyDocumentsPage()·{
+    85    │ - → return·(
+    86    │ - → → <Suspense·fallback={<MyDocumentsLoading·/>}>
+    87    │ - → → → <MyDocumentsContent·/>
+    88    │ - → → </Suspense>
+    89    │ - → );
+    90    │ - }
+        1 │ + import·{·notFound·}·from·"next/navigation";␍
+        2 │ + import·{·Suspense·}·from·"react";␍
+        3 │ + import·{·MyDocumentsList·}·from·"@/components/personnel-file/my-documents-list";␍
+        4 │ + import·{·MyDocumentsRetry·}·from·"@/components/personnel-file/my-documents-retry";␍
+        5 │ + import·{·MyDocumentsScope·}·from·"@/components/personnel-file/my-documents-scope";␍
+        6 │ + import·{·MyDocumentsUpload·}·from·"@/components/personnel-file/my-documents-upload";␍
+        7 │ + import·{·RequestedDocuments·}·from·"@/components/personnel-file/requested-documents";␍
+        8 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+        9 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+       10 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+       11 │ + import·{·loadCurrentPersonnelFileAccess·}·from·"@/lib/personnel-file/current-access";␍
+       12 │ + import·{·loadOwnUploadCapability·}·from·"@/lib/personnel-file/panel";␍
+       13 │ + import·{·getTranslate·}·from·"@/tolgee/server";␍
+       14 │ + import·{·getMyDocumentsAction·}·from·"../personnel-files/actions";␍
+       15 │ + import·{·getMyDocumentRequestsAction·}·from·"../personnel-files/document-request-actions";␍
+       16 │ + ␍
+       17 │ + /**␍
+       18 │ + ·*·My·documents·(#865):·the·signed-in·employee's·shared·employee·documents.␍
+       19 │ + ·*·Unavailable·(not·found)·while·personnel·files·are·off,·and·for·anyone␍
+       20 │ + ·*·without·a·current·employee·profile,·former·employees·included.·Employees␍
+       21 │ + ·*·upload·certificates·and·other·documents·here·(#867)·and·see·what·officers␍
+       22 │ + ·*·requested·from·them·(#1401).␍
+       23 │ + ·*/␍
+       24 │ + async·function·MyDocumentsContent()·{␍
+       25 │ + → const·[t,·result,·uploadCapability,·requests,·current]·=·await·Promise.all([␍
+       26 │ + → → getTranslate(),␍
+       27 │ + → → getMyDocumentsAction(),␍
+       28 │ + → → loadOwnUploadCapability(),␍
+       29 │ + → → getMyDocumentRequestsAction(),␍
+       30 │ + → → loadCurrentPersonnelFileAccess(),␍
+       31 │ + → ]);␍
+       32 │ + → if·(current.status·!==·"resolved"·||·!uploadCapability)·notFound();␍
+       33 │ + ␍
+       34 │ + → return·(␍
+       35 │ + → → <MyDocumentsScope␍
+       36 │ + → → → key={`${current.access.userId}:${current.access.organizationId}:${uploadCapability.employeeId}`}␍
+       37 │ + → → → userId={current.access.userId}␍
+       38 │ + → → → organizationId={current.access.organizationId}␍
+       39 │ + → → → employeeId={uploadCapability.employeeId}␍
+       40 │ + → → >␍
+       41 │ + → → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-8·p-4·md:p-6">␍
+       42 │ + → → → → <PageHeader␍
+       43 │ + → → → → → title={t("settings.personnelFiles.myDocuments.title",·"My·Documents")}␍
+       44 │ + → → → → → description={t(␍
+       45 │ + → → → → → → "settings.personnelFiles.myDocuments.description",␍
+       46 │ + → → → → → → "Documents·from·your·personnel·file·that·your·organization·shared·with·you.",␍
+       47 │ + → → → → → )}␍
+       48 │ + → → → → />␍
+       49 │ + → → → → {requests.success·?·(␍
+       50 │ + → → → → → <RequestedDocuments␍
+       51 │ + → → → → → → requests={requests.data}␍
+       52 │ + → → → → → → capability={uploadCapability}␍
+       53 │ + → → → → → />␍
+       54 │ + → → → → )·:·(␍
+       55 │ + → → → → → <MyDocumentsRetry·/>␍
+       56 │ + → → → → )}␍
+       57 │ + → → → → {result.success·?·(␍
+       58 │ + → → → → → <MyDocumentsList␍
+       59 │ + → → → → → → documents={result.data}␍
+       60 │ + → → → → → → actions={<MyDocumentsUpload·capability={uploadCapability}·/>}␍
+  34 more lines truncated
+  
+
+src\components\personnel-file\document-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·IconLoader2·}·from·"@tabler/icons-react";
+      4     │ - import·{·useForm·}·from·"@tanstack/react-form";
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      6     │ - import·{·useRef,·useState·}·from·"react";
+      7     │ - import·{·toast·}·from·"sonner";
+      8     │ - import·{
+      9     │ - → type·EmployeeDocumentView,
+     10     │ - → updateEmployeeDocumentAction,
+     11     │ - }·from·"@/app/[locale]/(app)/personnel-files/actions";
+     12     │ - import·{
+     13     │ - → ActionPanel,
+     14     │ - → ActionPanelBody,
+     15     │ - → ActionPanelContent,
+     16     │ - → ActionPanelDescription,
+     17     │ - → ActionPanelFooter,
+     18     │ - → ActionPanelHeader,
+     19     │ - → ActionPanelTitle,
+     20     │ - }·from·"@/components/ui/action-panel";
+     21     │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";
+     22     │ - import·{·Button·}·from·"@/components/ui/button";
+     23     │ - import·{·DatePicker·}·from·"@/components/ui/date-picker";
+     24     │ - import·{·Input·}·from·"@/components/ui/input";
+     25     │ - import·{·Label·}·from·"@/components/ui/label";
+     26     │ - import·{·Progress·}·from·"@/components/ui/progress";
+     27     │ - import·{
+     28     │ - → Select,
+     29     │ - → SelectContent,
+     30     │ - → SelectItem,
+     31     │ - → SelectTrigger,
+     32     │ - → SelectValue,
+     33     │ - }·from·"@/components/ui/select";
+     34     │ - import·{
+     35     │ - → TFormControl,
+     36     │ - → TFormDescription,
+     37     │ - → TFormItem,
+     38     │ - → TFormLabel,
+     39     │ - → TFormMessage,
+     40     │ - }·from·"@/components/ui/tanstack-form";
+     41     │ - import·{·fieldHasError·}·from·"@/components/ui/tanstack-form-utils";
+     42     │ - import·{·useTusFileUpload·}·from·"@/hooks/use-tus-file-upload";
+     43     │ - import·{
+     44     │ - → type·DocumentCategory,
+     45     │ - → type·DocumentVisibility,
+     46     │ - → EXPIRY_DATE_CATEGORIES,
+     47     │ - → PERSONNEL_DOCUMENT_MAX_BYTES,
+     48     │ - → PERSONNEL_DOCUMENT_MIME_TYPES,
+     49     │ - → personnelDocumentFileProblem,
+     50     │ - }·from·"@/lib/personnel-file/document.types";
+     51     │ - import·{
+     52     │ - → applyCategoryChange,
+     53     │ - → type·DocumentFormValues,
+     54     │ - → type·DocumentMetadataPayload,
+     55     │ - → defaultUploadValues,
+     56     │ - → ownUploadValues,
+     57     │ - → requestUploadValues,
+     58     │ - → toDocumentMetadata,
+     59     │ - → valuesFromDocument,
+     60     │ - }·from·"./document-form-values";
+     61     │ - import·{·usePersonnelFileLabels,·usePersonnelFileProblemMessages·}·from·"./document-labels";
+     62     │ - 
+     63     │ - const·MONTHS·=·["1",·"2",·"3",·"4",·"5",·"6",·"7",·"8",·"9",·"10",·"11",·"12"]·as·const;
+     64     │ - 
+     65     │ - type·DocumentDialogProps·=·{
+     66     │ - → open:·boolean;
+     67     │ - → onOpenChange:·(open:·boolean)·=>·void;
+     68     │ - → employeeId:·string;
+     69     │ - → /**·The·categories·the·actor·manages·for·this·employee.·*/
+     70     │ - → categories:·readonly·DocumentCategory[];
+     71     │ - → today:·string;
+     72     │ - → onSaved:·()·=>·void;
+     73     │ - }·&·(
+     74     │ - → |·{
+     75     │ - → → → mode:·"upload";
+     76     │ - → → → /**·"employee":·the·employee·uploads·into·their·own·file,·always·shared·(#867).·*/
+     77     │ - → → → uploadAs?:·"employee";
+     78     │ - → → → /**
+     79     │ - → → → ·*·With·"employee":·the·upload·is·for·this·open·document·request·of·theirs
+     80     │ - → → → ·*·(#1402),·in·the·request's·category,·titled·like·it·by·default.
+     81     │ - → → → ·*/
+     82     │ - → → → documentRequest?:·{
+     83     │ - → → → → id:·string;
+     84     │ - → → → → category:·DocumentCategory;
+     85     │ - → → → → title:·string;
+     86     │ - → → → };
+     87     │ - → ··}
+     88     │ - → |·{·mode:·"edit";·document:·EmployeeDocumentView·}
+     89     │ - );
+     90     │ - 
+     91     │ - async·function·finalizeUpload(input:·{
+     92     │ - → tusFileKey:·string;
+     93     │ - → fileName:·string·|·undefined;
+     94     │ - → employeeId:·string;
+     95     │ - → source?:·"own";
+     96     │ - → documentRequestId?:·string;
+     97     │ - → metadata:·DocumentMetadataPayload;
+     98     │ - }):·Promise<void>·{
+     99     │ - → const·response·=·await·fetch("/api/upload/personnel-file",·{
+    100     │ - → → method:·"POST",
+    101     │ - → → headers:·{·"Content-Type":·"application/json"·},
+    102     │ - → → body:·JSON.stringify(input),
+    103     │ - → });
+    104     │ - → if·(!response.ok)·{
+    105     │ - → → const·body·=·(await·response.json().catch(()·=>·null))·as·{
+    106     │ - → → → error?:·string;
+    107     │ - → → }·|·null;
+    108     │ - → → throw·new·Error(body?.error·||·"Upload·failed");
+    109     │ - → }
+    110     │ - }
+    111     │ - 
+    112     │ - /**·Uploads·a·new·employee·document,·or·edits·a·document's·metadata·(never·its·file).·*/
+    113     │ - function·useDocumentDialog(props:·DocumentDialogProps)·{
+    114     │ - → const·{·open,·onOpenChange,·employeeId,·categories,·today,·onSaved·}·=·props;
+    115     │ - → const·{·t·}·=·useTranslate();
+    116     │ - → const·labels·=·usePersonnelFileLabels();
+    117     │ - → const·[file,·setFile]·=·useState<File·|·null>(null);
+    118     │ - → const·[fileError,·setFileError]·=·useState<string·|·null>(null);
+    119     │ - → const·[error,·setError]·=·useState<string·|·null>(null);
+    120     │ - → const·[working,·setWorking]·=·useState(false);
+    121     │ - → const·pending·=·useRef(false);
+    122     │ - → const·submitting·=·useRef(false);
+    123     │ - → const·pendingMetadata·=·useRef<DocumentMetadataPayload·|·null>(null);
+    124     │ - → const·asEmployee·=·props.mode·===·"upload"·&&·props.uploadAs·===·"employee";
+    125     │ - → const·documentRequest·=·(asEmployee·&&·props.mode·===·"upload"·&&·props.documentRequest)·||·null;
+    126     │ - → const·fileProblemMessages·=·usePersonnelFileProblemMessages();
+    127     │ - → const·initialValues:·DocumentFormValues·=
+    128     │ - → → props.mode·===·"edit"
+    129     │ - → → → ?·valuesFromDocument(props.document)
+    130     │ - → → → :·documentRequest
+    131     │ - → → → → ?·requestUploadValues({·today,·request:·documentRequest·})
+    132     │ - → → → → :·asEmployee
+    133     │ - → → → → → ?·ownUploadValues({·today·})
+    134     │ - → → → → → :·defaultUploadValues({·today,·category:·categories[0]·??·"other"·});
+    135     │ - 
+    136     │ - → const·upload·=·useTusFileUpload({
+    137     │ - → → maxFileSize:·PERSONNEL_DOCUMENT_MAX_BYTES,
+    138     │ - → → allowedFileTypes:·PERSONNEL_DOCUMENT_MIME_TYPES,
+    139     │ - → → uploadMetadata:·{·purpose:·"personnel-document"·},
+    140     │ - → → process:·async·({·tusFileKey,·fileName·})·=>·{
+    141     │ - → → → const·metadata·=·pendingMetadata.current;
+    142     │ - → → → if·(!metadata)·throw·new·Error("Upload·failed");
+    143     │ - → → → await·finalizeUpload({
+    144     │ - → → → → tusFileKey,
+    145     │ - → → → → fileName,
+    146     │ - → → → → employeeId,
+    147     │ - → → → → ...(asEmployee·?·{·source:·"own"·as·const·}·:·{}),
+    148     │ - → → → → ...(documentRequest·?·{·documentRequestId:·documentRequest.id·}·:·{}),
+    149     │ - → → → → metadata,
+    150     │ - → → → });
+  1310 more lines truncated
+  
+
+src\components\personnel-file\document-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{
+      4     │ - → IconCalendarOff,
+      5     │ - → IconCertificate,
+      6     │ - → IconDownload,
+      7     │ - → IconExternalLink,
+      8     │ - → IconFileText,
+      9     │ - }·from·"@tabler/icons-react";
+     10     │ - import·{·useTranslate·}·from·"@tolgee/react";
+     11     │ - import·type·{·ReactNode·}·from·"react";
+     12     │ - import·type·{·EmployeeDocumentView·}·from·"@/app/[locale]/(app)/personnel-files/actions";
+     13     │ - import·{·useAppLocale·}·from·"@/components/providers/app-locale-provider";
+     14     │ - import·{·Badge·}·from·"@/components/ui/badge";
+     15     │ - import·{·Button·}·from·"@/components/ui/button";
+     16     │ - import·{·formatDateOnly·}·from·"@/components/ui/date-picker-utils";
+     17     │ - import·{·formatAbsenceDateRange·}·from·"@/lib/personnel-file/sick-note-labels";
+     18     │ - import·{
+     19     │ - → formatFileSize,
+     20     │ - → formatPayPeriod,
+     21     │ - → personnelDocumentUrl,
+     22     │ - → usePersonnelFileLabels,
+     23     │ - }·from·"./document-labels";
+     24     │ - 
+     25     │ - function·DocumentThumbnail({·document·}:·{·document:·EmployeeDocumentView·})·{
+     26     │ - → if·(!document.mimeType.startsWith("image/"))·{
+     27     │ - → → return·(
+     28     │ - → → → <div·className="flex·size-12·shrink-0·items-center·justify-center·rounded-md·border·bg-muted">
+     29     │ - → → → → <IconFileText·aria-hidden="true"·className="size-5·text-muted-foreground"·/>
+     30     │ - → → → </div>
+     31     │ - → → );
+     32     │ - → }
+     33     │ - → return·(
+     34     │ - → → //·biome-ignore·lint/performance/noImgElement:·a·private,·access-checked·preview,·not·an·optimizable·asset.
+     35     │ - → → <img
+     36     │ - → → → src={personnelDocumentUrl(document.id,·{·thumb:·true·})}
+     37     │ - → → → alt=""
+     38     │ - → → → loading="lazy"
+     39     │ - → → → className="size-12·shrink-0·rounded-md·border·object-cover"
+     40     │ - → → />
+     41     │ - → );
+     42     │ - }
+     43     │ - 
+     44     │ - /**·Employee·documents·with·their·metadata,·an·open·and·a·download·link,·and·optional·actions.·*/
+     45     │ - export·function·DocumentList({
+     46     │ - → documents,
+     47     │ - → showVisibility,
+     48     │ - → actions,
+     49     │ - }:·{
+     50     │ - → documents:·readonly·EmployeeDocumentView[];
+     51     │ - → showVisibility:·boolean;
+     52     │ - → actions?:·(document:·EmployeeDocumentView)·=>·ReactNode;
+     53     │ - })·{
+     54     │ - → const·{·t·}·=·useTranslate();
+     55     │ - → const·locale·=·useAppLocale();
+     56     │ - → const·labels·=·usePersonnelFileLabels();
+     57     │ - 
+     58     │ - → return·(
+     59     │ - → → <ul·className="divide-y·rounded-md·border">
+     60     │ - → → → {documents.map((document)·=>·(
+     61     │ - → → → → <li·key={document.id}·className="flex·flex-wrap·items-center·gap-3·p-3·sm:flex-nowrap">
+     62     │ - → → → → → <DocumentThumbnail·document={document}·/>
+     63     │ - → → → → → <div·className="min-w-0·flex-1·space-y-1·break-words·[overflow-wrap:anywhere]">
+     64     │ - → → → → → → <div·className="flex·flex-wrap·items-center·gap-2">
+     65     │ - → → → → → → → <span·className="min-w-0·font-medium">{document.title}</span>
+     66     │ - → → → → → → → <Badge·variant="secondary">{labels.categories[document.category]}</Badge>
+     67     │ - → → → → → → → {showVisibility·?·(
+     68     │ - → → → → → → → → <Badge·variant={document.visibility·===·"shared"·?·"outline"·:·"secondary"}>
+     69     │ - → → → → → → → → → {labels.visibilities[document.visibility]}
+     70     │ - → → → → → → → → </Badge>
+     71     │ - → → → → → → → )·:·null}
+     72     │ - → → → → → → </div>
+     73     │ - → → → → → → <p·className="text-sm·text-muted-foreground">
+     74     │ - → → → → → → → {document.payPeriod
+     75     │ - → → → → → → → → ?·t("settings.personnelFiles.list.payPeriod",·"Pay·period·{period}",·{
+     76     │ - → → → → → → → → → → period:·formatPayPeriod(document.payPeriod,·locale),
+     77     │ - → → → → → → → → → })
+     78     │ - → → → → → → → → :·formatDateOnly(document.documentDate,·locale)}
+     79     │ - → → → → → → → {document.expiryDate
+     80     │ - → → → → → → → → ?·`···${t("settings.personnelFiles.list.expires",·"Expires·{date}",·{
+     81     │ - → → → → → → → → → → date:·formatDateOnly(document.expiryDate,·locale),
+     82     │ - → → → → → → → → → })}`
+     83     │ - → → → → → → → → :·null}
+     84     │ - → → → → → → → {`···${document.fileName}·(${formatFileSize(document.sizeBytes,·locale)})`}
+     85     │ - → → → → → → </p>
+     86     │ - → → → → → → {document.absence·?·(
+     87     │ - → → → → → → → <p·className="flex·items-center·gap-1·text-sm·text-muted-foreground">
+     88     │ - → → → → → → → → <IconCalendarOff·aria-hidden="true"·className="size-3.5"·/>
+     89     │ - → → → → → → → → {t("settings.personnelFiles.list.absence",·"For·sick·leave·{dateRange}",·{
+     90     │ - → → → → → → → → → dateRange:·formatAbsenceDateRange(
+     91     │ - → → → → → → → → → → document.absence.startDate,
+     92     │ - → → → → → → → → → → document.absence.endDate,
+     93     │ - → → → → → → → → → → locale,
+     94     │ - → → → → → → → → → ),
+     95     │ - → → → → → → → → })}
+     96     │ - → → → → → → → </p>
+     97     │ - → → → → → → )·:·null}
+     98     │ - → → → → → → {document.skill·?·(
+     99     │ - → → → → → → → <p·className="flex·items-center·gap-1·text-sm·text-muted-foreground">
+    100     │ - → → → → → → → → <IconCertificate·aria-hidden="true"·className="size-3.5"·/>
+    101     │ - → → → → → → → → {t("settings.personnelFiles.list.provesSkill",·"Proves·{skill}",·{
+    102     │ - → → → → → → → → → skill:·document.skill.name,
+    103     │ - → → → → → → → → })}
+    104     │ - → → → → → → → </p>
+    105     │ - → → → → → → )·:·null}
+    106     │ - → → → → → </div>
+    107     │ - → → → → → <div·className="flex·items-center·gap-1">
+    108     │ - → → → → → → <Button·asChild·variant="ghost"·size="icon">
+    109     │ - → → → → → → → <a
+    110     │ - → → → → → → → → href={personnelDocumentUrl(document.id)}
+    111     │ - → → → → → → → → target="_blank"
+    112     │ - → → → → → → → → rel="noopener·noreferrer"
+    113     │ - → → → → → → → → aria-label={t("settings.personnelFiles.list.open",·"Open·{title}",·{
+    114     │ - → → → → → → → → → title:·document.title,
+    115     │ - → → → → → → → → })}
+    116     │ - → → → → → → → >
+    117     │ - → → → → → → → → <IconExternalLink·aria-hidden="true"·className="size-4"·/>
+    118     │ - → → → → → → → </a>
+    119     │ - → → → → → → </Button>
+    120     │ - → → → → → → <Button·asChild·variant="ghost"·size="icon">
+    121     │ - → → → → → → → <a
+    122     │ - → → → → → → → → href={personnelDocumentUrl(document.id,·{·download:·true·})}
+    123     │ - → → → → → → → → aria-label={t("settings.personnelFiles.list.download",·"Download·{title}",·{
+    124     │ - → → → → → → → → → title:·document.title,
+    125     │ - → → → → → → → → })}
+    126     │ - → → → → → → → >
+    127     │ - → → → → → → → → <IconDownload·aria-hidden="true"·className="size-4"·/>
+    128     │ - → → → → → → → </a>
+    129     │ - → → → → → → </Button>
+    130     │ - → → → → → → {actions?.(document)}
+    131     │ - → → → → → </div>
+    132     │ - → → → → </li>
+    133     │ - → → → ))}
+    134     │ - → → </ul>
+    135     │ - → );
+    136     │ - }
+          1 │ + "use·client";␍
+          2 │ + ␍
+          3 │ + import·{␍
+          4 │ + → IconCalendarOff,␍
+          5 │ + → IconCertificate,␍
+          6 │ + → IconDownload,␍
+          7 │ + → IconExternalLink,␍
+          8 │ + → IconFileText,␍
+          9 │ + }·from·"@tabler/icons-react";␍
+         10 │ + import·{·useTranslate·}·from·"@tolgee/react";␍
+         11 │ + import·type·{·ReactNode·}·from·"react";␍
+         12 │ + import·type·{·EmployeeDocumentView·}·from·"@/app/[locale]/(app)/personnel-files/actions";␍
+         13 │ + import·{·useAppLocale·}·from·"@/components/providers/app-locale-provider";␍
+         14 │ + import·{·Badge·}·from·"@/components/ui/badge";␍
+  159 more lines truncated
+  
+
+src\components\personnel-file\document-request-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·IconAlertTriangle,·IconExternalLink,·IconRefresh·}·from·"@tabler/icons-react";
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      5     │ - import·type·{·ReactNode·}·from·"react";
+      6     │ - import·{·useAppLocale·}·from·"@/components/providers/app-locale-provider";
+      7     │ - import·{·Badge·}·from·"@/components/ui/badge";
+      8     │ - import·{·formatDateOnly·}·from·"@/components/ui/date-picker-utils";
+      9     │ - import·{·parseInstant·}·from·"@/lib/datetime/temporal-core";
+     10     │ - import·{·formatInstant,·localeDefaultTimeFormat·}·from·"@/lib/datetime/temporal-format";
+     11     │ - import·{
+     12     │ - → type·DocumentRequestDocumentView,
+     13     │ - → type·DocumentRequestEventView,
+     14     │ - → type·DocumentRequestView,
+     15     │ - → isActiveDocumentRequestStatus,
+     16     │ - }·from·"@/lib/personnel-file/document-request.types";
+     17     │ - import·{·personnelDocumentUrl,·usePersonnelFileLabels·}·from·"./document-labels";
+     18     │ - import·{·useDocumentRequestLabels·}·from·"./document-request-labels";
+     19     │ - 
+     20     │ - type·Labels·=·ReturnType<typeof·useDocumentRequestLabels>;
+     21     │ - 
+     22     │ - function·statusVariant(request:·DocumentRequestView)·{
+     23     │ - → if·(request.overdue)·return·"destructive"·as·const;
+     24     │ - → if·(isActiveDocumentRequestStatus(request.status))·return·"default"·as·const;
+     25     │ - → return·"secondary"·as·const;
+     26     │ - }
+     27     │ - 
+     28     │ - function·HistoryEntry({
+     29     │ - → event,
+     30     │ - → labels,
+     31     │ - → timezone,
+     32     │ - }:·{
+     33     │ - → event:·DocumentRequestEventView;
+     34     │ - → labels:·Labels;
+     35     │ - → timezone:·string;
+     36     │ - })·{
+     37     │ - → const·{·t·}·=·useTranslate();
+     38     │ - → const·locale·=·useAppLocale();
+     39     │ - → const·at·=·formatInstant(
+     40     │ - → → parseInstant(event.occurredAt),
+     41     │ - → → {·locale,·timezone,·timeFormat:·localeDefaultTimeFormat(locale)·},
+     42     │ - → → "dateTimeMedium",
+     43     │ - → );
+     44     │ - → const·reason·=·event.reasonCode·?·labels.reasonCodes[event.reasonCode]·:·event.reason;
+     45     │ - → return·(
+     46     │ - → → <li·className="space-y-0.5">
+     47     │ - → → → <p>
+     48     │ - → → → → <span·className="font-medium">{labels.events[event.kind]}</span>
+     49     │ - → → → → <span·className="text-muted-foreground">
+     50     │ - → → → → → {"···"}
+     51     │ - → → → → → {at}
+     52     │ - → → → → → {event.actorName·?·`···${event.actorName}`·:·null}
+     53     │ - → → → → </span>
+     54     │ - → → → </p>
+     55     │ - → → → {event.changes?.deadline·?·(
+     56     │ - → → → → <p·className="text-muted-foreground">
+     57     │ - → → → → → {t("settings.personnelFiles.requests.history.deadlineChanged",·"Deadline·{from}·→·{to}",·{
+     58     │ - → → → → → → from:·formatDateOnly(event.changes.deadline.from,·locale),
+     59     │ - → → → → → → to:·formatDateOnly(event.changes.deadline.to,·locale),
+     60     │ - → → → → → })}
+     61     │ - → → → → </p>
+     62     │ - → → → )·:·null}
+     63     │ - → → → {event.changes?.noteChanged·?·(
+     64     │ - → → → → <p·className="text-muted-foreground">
+     65     │ - → → → → → {t("settings.personnelFiles.requests.history.noteChanged",·"Note·changed")}
+     66     │ - → → → → </p>
+     67     │ - → → → )·:·null}
+     68     │ - → → → {reason·?·<p·className="whitespace-pre-line·text-muted-foreground">{reason}</p>·:·null}
+     69     │ - → → </li>
+     70     │ - → );
+     71     │ - }
+     72     │ - 
+     73     │ - function·DocumentLinks({·documents·}:·{·documents:·readonly·DocumentRequestDocumentView[]·})·{
+     74     │ - → return·(
+     75     │ - → → <ul·className="mt-1·space-y-0.5">
+     76     │ - → → → {documents.map((document)·=>·(
+     77     │ - → → → → <li·key={document.id}>
+     78     │ - → → → → → <a
+     79     │ - → → → → → → href={personnelDocumentUrl(document.id)}
+     80     │ - → → → → → → target="_blank"
+     81     │ - → → → → → → rel="noopener·noreferrer"
+     82     │ - → → → → → → className="inline-flex·items-center·gap-1·underline-offset-2·hover:underline"
+     83     │ - → → → → → >
+     84     │ - → → → → → → <IconExternalLink·aria-hidden="true"·className="size-3.5"·/>
+     85     │ - → → → → → → {document.title}
+     86     │ - → → → → → </a>
+     87     │ - → → → → </li>
+     88     │ - → → → ))}
+     89     │ - → → </ul>
+     90     │ - → );
+     91     │ - }
+     92     │ - 
+     93     │ - /**
+     94     │ - ·*·Document·requests·with·their·status,·deadline,·note,·submissions·and
+     95     │ - ·*·history·(#1307),·for·the·employee's·Requested·documents·and·an·employee's
+     96     │ - ·*·file·in·the·officer·area.·The·server·decided·what·is·listed·and·which
+     97     │ - ·*·documents·the·viewer·may·see.·Generic,·so·the·slots·get·the·rows·as·passed
+     98     │ - ·*·(e.g.·with·the·employee's·name·on·the·officer·page).
+     99     │ - ·*/
+    100     │ - export·function·DocumentRequestList<Request·extends·DocumentRequestView>({
+    101     │ - → requests,
+    102     │ - → timezone,
+    103     │ - → actions,
+    104     │ - → subject,
+    105     │ - }:·{
+    106     │ - → requests:·readonly·Request[];
+    107     │ - → /**·The·organization's·timezone:·history·times·are·shown·in·it.·*/
+    108     │ - → timezone:·string;
+    109     │ - → actions?:·(request:·Request)·=>·ReactNode;
+    110     │ - → /**·Whose·request·it·is,·above·its·title·(the·officer·page·across·employees,·#1403).·*/
+    111     │ - → subject?:·(request:·Request)·=>·ReactNode;
+    112     │ - })·{
+    113     │ - → const·{·t·}·=·useTranslate();
+    114     │ - → const·locale·=·useAppLocale();
+    115     │ - → const·fileLabels·=·usePersonnelFileLabels();
+    116     │ - → const·labels·=·useDocumentRequestLabels();
+    117     │ - 
+    118     │ - → return·(
+    119     │ - → → <ul·className="divide-y·rounded-md·border">
+    120     │ - → → → {requests.map((request)·=>·(
+    121     │ - → → → → <li·key={request.id}·className="min-w-0·space-y-2·break-words·p-3·[overflow-wrap:anywhere]">
+    122     │ - → → → → → <div·className="flex·flex-wrap·items-start·justify-between·gap-2">
+    123     │ - → → → → → → <div·className="min-w-0·space-y-1">
+    124     │ - → → → → → → → {subject·?·subject(request)·:·null}
+    125     │ - → → → → → → → <div·className="flex·flex-wrap·items-center·gap-2">
+    126     │ - → → → → → → → → <span·className="font-medium">{request.title}</span>
+    127     │ - → → → → → → → → <Badge·variant="secondary">{fileLabels.categories[request.category]}</Badge>
+    128     │ - → → → → → → → → <Badge·variant={statusVariant(request)}>
+    129     │ - → → → → → → → → → {request.overdue·?·(
+    130     │ - → → → → → → → → → → <>
+    131     │ - → → → → → → → → → → → <IconAlertTriangle·aria-hidden="true"·/>
+    132     │ - → → → → → → → → → → → {labels.overdue}
+    133     │ - → → → → → → → → → → </>
+    134     │ - → → → → → → → → → )·:·(
+    135     │ - → → → → → → → → → → labels.statuses[request.status]
+    136     │ - → → → → → → → → → )}
+    137     │ - → → → → → → → → </Badge>
+    138     │ - → → → → → → → </div>
+    139     │ - → → → → → → → <p·className="text-sm·text-muted-foreground">
+    140     │ - → → → → → → → → {t("settings.personnelFiles.requests.deadline",·"Due·{date}",·{
+    141     │ - → → → → → → → → → date:·formatDateOnly(request.deadline,·locale),
+    142     │ - → → → → → → → → })}
+    143     │ - → → → → → → → </p>
+    144     │ - → → → → → → → {request.renewedDocument·?·(
+    145     │ - → → → → → → → → <p·className="flex·items-center·gap-1·text-sm·text-muted-foreground">
+    146     │ - → → → → → → → → → <IconRefresh·aria-hidden="true"·className="size-3.5"·/>
+    147     │ - → → → → → → → → → {t("settings.personnelFiles.requests.renews",·"Renews·{title}",·{
+    148     │ - → → → → → → → → → → title:·request.renewedDocument.title,
+    149     │ - → → → → → → → → → })}
+    150     │ - → → → → → → → → </p>
+  329 more lines truncated
+  
+
+src\components\personnel-file\my-documents-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1     │ - "use·client";
+     2     │ - 
+     3     │ - import·{·useTranslate·}·from·"@tolgee/react";
+     4     │ - import·{·type·ReactNode,·useState·}·from·"react";
+     5     │ - import·type·{·EmployeeDocumentView·}·from·"@/app/[locale]/(app)/personnel-files/actions";
+     6     │ - import·{·DataTableToolbar·}·from·"@/components/data-table-server/data-table-toolbar";
+     7     │ - import·{
+     8     │ - → Select,
+     9     │ - → SelectContent,
+    10     │ - → SelectItem,
+    11     │ - → SelectTrigger,
+    12     │ - → SelectValue,
+    13     │ - }·from·"@/components/ui/select";
+    14     │ - import·{·DOCUMENT_CATEGORIES,·type·DocumentCategory·}·from·"@/lib/personnel-file/document.types";
+    15     │ - import·{·usePersonnelFileLabels·}·from·"./document-labels";
+    16     │ - import·{·DocumentList·}·from·"./document-list";
+    17     │ - 
+    18     │ - const·ALL_CATEGORIES·=·"all";
+    19     │ - 
+    20     │ - /**·The·employee's·shared·documents,·filterable·by·category,·with·open·and·download·links.·*/
+    21     │ - export·function·MyDocumentsList({
+    22     │ - → documents,
+    23     │ - → actions,
+    24     │ - }:·{
+    25     │ - → documents:·readonly·EmployeeDocumentView[];
+    26     │ - → actions?:·ReactNode;
+    27     │ - })·{
+    28     │ - → const·{·t·}·=·useTranslate();
+    29     │ - → const·labels·=·usePersonnelFileLabels();
+    30     │ - → const·[category,·setCategory]·=·useState<DocumentCategory·|·null>(null);
+    31     │ - → const·present·=·DOCUMENT_CATEGORIES.filter((option)·=>
+    32     │ - → → documents.some((document)·=>·document.category·===·option),
+    33     │ - → );
+    34     │ - → const·shown·=·category
+    35     │ - → → ?·documents.filter((document)·=>·document.category·===·category)
+    36     │ - → → :·documents;
+    37     │ - 
+    38     │ - → return·(
+    39     │ - → → <section
+    40     │ - → → → aria-label={t("settings.personnelFiles.myDocuments.shared.title",·"Shared·documents")}
+    41     │ - → → → className="min-w-0·space-y-4"
+    42     │ - → → >
+    43     │ - → → → <div·className="space-y-1">
+    44     │ - → → → → <h2·className="text-lg·font-semibold·tracking-tight">
+    45     │ - → → → → → {t("settings.personnelFiles.myDocuments.shared.title",·"Shared·documents")}
+    46     │ - → → → → </h2>
+    47     │ - → → → → <p·className="text-sm·text-muted-foreground">
+    48     │ - → → → → → {t(
+    49     │ - → → → → → → "settings.personnelFiles.myDocuments.shared.description",
+    50     │ - → → → → → → "Open·or·download·documents·shared·with·you,·or·add·a·permitted·document.",
+    51     │ - → → → → → )}
+    52     │ - → → → → </p>
+    53     │ - → → → </div>
+    54     │ - → → → <DataTableToolbar
+    55     │ - → → → → actions={actions}
+    56     │ - → → → → filterControls={
+    57     │ - → → → → → present.length·>·1·?·(
+    58     │ - → → → → → → <Select
+    59     │ - → → → → → → → value={category·??·ALL_CATEGORIES}
+    60     │ - → → → → → → → onValueChange={(value)·=>
+    61     │ - → → → → → → → → setCategory(value·===·ALL_CATEGORIES·?·null·:·(value·as·DocumentCategory))
+    62     │ - → → → → → → → }
+    63     │ - → → → → → → >
+    64     │ - → → → → → → → <SelectTrigger
+    65     │ - → → → → → → → → className="w-44"
+    66     │ - → → → → → → → → aria-label={t("settings.personnelFiles.panel.filter",·"Filter·by·category")}
+    67     │ - → → → → → → → >
+    68     │ - → → → → → → → → <SelectValue·/>
+    69     │ - → → → → → → → </SelectTrigger>
+    70     │ - → → → → → → → <SelectContent>
+    71     │ - → → → → → → → → <SelectItem·value={ALL_CATEGORIES}>
+    72     │ - → → → → → → → → → {t("settings.personnelFiles.panel.allCategories",·"All·categories")}
+    73     │ - → → → → → → → → </SelectItem>
+    74     │ - → → → → → → → → {present.map((option)·=>·(
+    75     │ - → → → → → → → → → <SelectItem·key={option}·value={option}>
+    76     │ - → → → → → → → → → → {labels.categories[option]}
+    77     │ - → → → → → → → → → </SelectItem>
+    78     │ - → → → → → → → → ))}
+    79     │ - → → → → → → → </SelectContent>
+    80     │ - → → → → → → </Select>
+    81     │ - → → → → → )·:·null
+    82     │ - → → → → }
+    83     │ - → → → />
+    84     │ - → → → {documents.length·===·0·?·(
+    85     │ - → → → → <p·className="rounded-lg·border·border-dashed·p-6·text-sm·text-muted-foreground">
+    86     │ - → → → → → {t(
+    87     │ - → → → → → → "settings.personnelFiles.myDocuments.empty",
+    88     │ - → → → → → → "No·documents·have·been·shared·with·you·yet.",
+    89     │ - → → → → → )}
+    90     │ - → → → → </p>
+    91     │ - → → → )·:·(
+    92     │ - → → → → <DocumentList·documents={shown}·showVisibility={false}·/>
+    93     │ - → → → )}
+    94     │ - → → </section>
+    95     │ - → );
+    96     │ - }
+         1 │ + "use·client";␍
+         2 │ + ␍
+         3 │ + import·{·useTranslate·}·from·"@tolgee/react";␍
+         4 │ + import·{·type·ReactNode,·useState·}·from·"react";␍
+         5 │ + import·type·{·EmployeeDocumentView·}·from·"@/app/[locale]/(app)/personnel-files/actions";␍
+         6 │ + import·{·DataTableToolbar·}·from·"@/components/data-table-server/data-table-toolbar";␍
+         7 │ + import·{␍
+         8 │ + → Select,␍
+         9 │ + → SelectContent,␍
+        10 │ + → SelectItem,␍
+        11 │ + → SelectTrigger,␍
+        12 │ + → SelectValue,␍
+        13 │ + }·from·"@/components/ui/select";␍
+        14 │ + import·{␍
+        15 │ + → DOCUMENT_CATEGORIES,␍
+        16 │ + → type·DocumentCategory,␍
+        17 │ + }·from·"@/lib/personnel-file/document.types";␍
+        18 │ + import·{·usePersonnelFileLabels·}·from·"./document-labels";␍
+        19 │ + import·{·DocumentList·}·from·"./document-list";␍
+        20 │ + ␍
+        21 │ + const·ALL_CATEGORIES·=·"all";␍
+        22 │ + ␍
+        23 │ + /**·The·employee's·shared·documents,·filterable·by·category,·with·open·and·download·links.·*/␍
+        24 │ + export·function·MyDocumentsList({␍
+        25 │ + → documents,␍
+        26 │ + → actions,␍
+        27 │ + }:·{␍
+        28 │ + → documents:·readonly·EmployeeDocumentView[];␍
+        29 │ + → actions?:·ReactNode;␍
+        30 │ + })·{␍
+        31 │ + → const·{·t·}·=·useTranslate();␍
+        32 │ + → const·labels·=·usePersonnelFileLabels();␍
+        33 │ + → const·[category,·setCategory]·=·useState<DocumentCategory·|·null>(null);␍
+        34 │ + → const·present·=·DOCUMENT_CATEGORIES.filter((option)·=>␍
+        35 │ + → → documents.some((document)·=>·document.category·===·option),␍
+        36 │ + → );␍
+        37 │ + → const·shown·=·category␍
+        38 │ + → → ?·documents.filter((document)·=>·document.category·===·category)␍
+        39 │ + → → :·documents;␍
+        40 │ + ␍
+        41 │ + → return·(␍
+        42 │ + → → <section␍
+        43 │ + → → → aria-label={t(␍
+        44 │ + → → → → "settings.personnelFiles.myDocuments.shared.title",␍
+        45 │ + → → → → "Shared·documents",␍
+        46 │ + → → → )}␍
+        47 │ + → → → className="min-w-0·space-y-4"␍
+        48 │ + → → >␍
+        49 │ + → → → <div·className="space-y-1">␍
+        50 │ + → → → → <h2·className="text-lg·font-semibold·tracking-tight">␍
+        51 │ + → → → → → {t(␍
+        52 │ + → → → → → → "settings.personnelFiles.myDocuments.shared.title",␍
+        53 │ + → → → → → → "Shared·documents",␍
+        54 │ + → → → → → )}␍
+  60 more lines truncated
+  
+
+src\components\personnel-file\my-documents-retry.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";
+     2    │ - import·{·useTranslate·}·from·"@tolgee/react";
+     3    │ - import·{·useRouter·}·from·"next/navigation";
+     4    │ - import·{·useTransition·}·from·"react";
+     5    │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";
+     6    │ - import·{·Button·}·from·"@/components/ui/button";
+     7    │ - 
+     8    │ - export·function·MyDocumentsRetry()·{
+     9    │ - → const·{·t·}·=·useTranslate();
+    10    │ - → const·router·=·useRouter();
+    11    │ - → const·[pending,·startTransition]·=·useTransition();
+    12    │ - → return·(
+    13    │ - → → <Alert>
+    14    │ - → → → <AlertDescription·className="space-y-3">
+    15    │ - → → → → <p>
+    16    │ - → → → → → {t(
+    17    │ - → → → → → → "settings.personnelFiles.myDocuments.loadFailed",
+    18    │ - → → → → → → "Your·documents·or·requests·could·not·be·loaded.·Try·again.",
+    19    │ - → → → → → )}
+    20    │ - → → → → </p>
+    21    │ - → → → → <Button
+    22    │ - → → → → → variant="outline"
+    23    │ - → → → → → disabled={pending}
+    24    │ - → → → → → aria-busy={pending}
+    25    │ - → → → → → onClick={()·=>·startTransition(()·=>·router.refresh())}
+    26    │ - → → → → >
+    27    │ - → → → → → {t("common.retry",·"Retry")}
+    28    │ - → → → → </Button>
+    29    │ - → → → </AlertDescription>
+    30    │ - → → </Alert>
+    31    │ - → );
+    32    │ - }
+        1 │ + "use·client";␍
+        2 │ + import·{·useTranslate·}·from·"@tolgee/react";␍
+        3 │ + import·{·useRouter·}·from·"next/navigation";␍
+        4 │ + import·{·useTransition·}·from·"react";␍
+        5 │ + import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";␍
+        6 │ + import·{·Button·}·from·"@/components/ui/button";␍
+        7 │ + ␍
+        8 │ + export·function·MyDocumentsRetry()·{␍
+        9 │ + → const·{·t·}·=·useTranslate();␍
+       10 │ + → const·router·=·useRouter();␍
+       11 │ + → const·[pending,·startTransition]·=·useTransition();␍
+       12 │ + → return·(␍
+       13 │ + → → <Alert>␍
+       14 │ + → → → <AlertDescription·className="space-y-3">␍
+       15 │ + → → → → <p>␍
+       16 │ + → → → → → {t(␍
+       17 │ + → → → → → → "settings.personnelFiles.myDocuments.loadFailed",␍
+       18 │ + → → → → → → "Your·documents·or·requests·could·not·be·loaded.·Try·again.",␍
+       19 │ + → → → → → )}␍
+       20 │ + → → → → </p>␍
+       21 │ + → → → → <Button␍
+       22 │ + → → → → → variant="outline"␍
+       23 │ + → → → → → disabled={pending}␍
+       24 │ + → → → → → aria-busy={pending}␍
+       25 │ + → → → → → onClick={()·=>·startTransition(()·=>·router.refresh())}␍
+       26 │ + → → → → >␍
+       27 │ + → → → → → {t("common.retry",·"Retry")}␍
+       28 │ + → → → → </Button>␍
+       29 │ + → → → </AlertDescription>␍
+       30 │ + → → </Alert>␍
+       31 │ + → );␍
+       32 │ + }␍
+    33 33 │   
+  
+
+src\components\personnel-file\my-documents-scope.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";
+     2    │ - 
+     3    │ - import·type·{·ReactNode·}·from·"react";
+     4    │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";
+     5    │ - 
+     6    │ - /**·RSC·arrivals·and·open·task·panels·must·belong·to·the·displayed·account·and·organization.·*/
+     7    │ - export·function·MyDocumentsScope({
+     8    │ - → userId,
+     9    │ - → organizationId,
+    10    │ - → employeeId,
+    11    │ - → children,
+    12    │ - }:·{
+    13    │ - → userId:·string;
+    14    │ - → organizationId:·string;
+    15    │ - → employeeId:·string;
+    16    │ - → children:·ReactNode;
+    17    │ - })·{
+    18    │ - → const·current·=·useOrganization();
+    19    │ - → if·(
+    20    │ - → → current.userId·!==·userId·||
+    21    │ - → → current.activeOrganizationId·!==·organizationId·||
+    22    │ - → → current.employeeId·!==·employeeId
+    23    │ - → )
+    24    │ - → → return·null;
+    25    │ - → return·children;
+    26    │ - }
+        1 │ + "use·client";␍
+        2 │ + ␍
+        3 │ + import·type·{·ReactNode·}·from·"react";␍
+        4 │ + import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";␍
+        5 │ + ␍
+        6 │ + /**·RSC·arrivals·and·open·task·panels·must·belong·to·the·displayed·account·and·organization.·*/␍
+        7 │ + export·function·MyDocumentsScope({␍
+        8 │ + → userId,␍
+        9 │ + → organizationId,␍
+       10 │ + → employeeId,␍
+       11 │ + → children,␍
+       12 │ + }:·{␍
+       13 │ + → userId:·string;␍
+       14 │ + → organizationId:·string;␍
+       15 │ + → employeeId:·string;␍
+       16 │ + → children:·ReactNode;␍
+       17 │ + })·{␍
+       18 │ + → const·current·=·useOrganization();␍
+       19 │ + → if·(␍
+       20 │ + → → current.userId·!==·userId·||␍
+       21 │ + → → current.activeOrganizationId·!==·organizationId·||␍
+       22 │ + → → current.employeeId·!==·employeeId␍
+       23 │ + → )␍
+       24 │ + → → return·null;␍
+       25 │ + → return·children;␍
+       26 │ + }␍
+    27 27 │   
+  
+
+src\components\personnel-file\my-documents.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom
+      2     │ - import·{·act,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";
+      3     │ - import·{·beforeEach,·expect,·it,·vi·}·from·"vitest";
+      4     │ - import·type·{·DocumentRequestView·}·from·"@/lib/personnel-file/document-request.types";
+      5     │ - import·{·MyDocumentsList·}·from·"./my-documents-list";
+      6     │ - import·{·MyDocumentsRetry·}·from·"./my-documents-retry";
+      7     │ - import·{·MyDocumentsScope·}·from·"./my-documents-scope";
+      8     │ - import·{·RequestedDocuments·}·from·"./requested-documents";
+      9     │ - 
+     10     │ - const·boundary·=·vi.hoisted(()·=>·({
+     11     │ - → submit:·vi.fn(),
+     12     │ - → refresh:·vi.fn(),
+     13     │ - → scope:·{
+     14     │ - → → userId:·"user",
+     15     │ - → → activeOrganizationId:·"org",
+     16     │ - → → employeeId:·"employee",
+     17     │ - → },
+     18     │ - }));
+     19     │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({
+     20     │ - → useOrganization:·()·=>·boundary.scope,
+     21     │ - }));
+     22     │ - vi.mock("@tolgee/react",·()·=>·({
+     23     │ - → useTranslate:·()·=>·({
+     24     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>
+     25     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>·String(params?.[key]·??·match)),
+     26     │ - → }),
+     27     │ - }));
+     28     │ - vi.mock("next/navigation",·()·=>·({
+     29     │ - → useRouter:·()·=>·({·refresh:·boundary.refresh·}),
+     30     │ - }));
+     31     │ - vi.mock("@/components/providers/app-locale-provider",·()·=>·({
+     32     │ - → useAppLocale:·()·=>·"en-GB",
+     33     │ - }));
+     34     │ - vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions",·()·=>·({
+     35     │ - → submitDocumentRequestAction:·boundary.submit,
+     36     │ - }));
+     37     │ - 
+     38     │ - const·capability·=·{
+     39     │ - → employeeId:·"employee",
+     40     │ - → categories:·["certificate"·as·const,·"other"·as·const],
+     41     │ - → today:·"2026-11-15",
+     42     │ - → timezone:·"Europe/Berlin",
+     43     │ - };
+     44     │ - function·request(id:·string,·overrides:·Partial<DocumentRequestView>·=·{}):·DocumentRequestView·{
+     45     │ - → return·{
+     46     │ - → → id,
+     47     │ - → → title:·id,
+     48     │ - → → employeeId:·"employee",
+     49     │ - → → category:·"certificate",
+     50     │ - → → note:·null,
+     51     │ - → → deadline:·"2026-11-30",
+     52     │ - → → status:·"open",
+     53     │ - → → overdue:·false,
+     54     │ - → → version:·1,
+     55     │ - → → renewedDocument:·null,
+     56     │ - → → createdByName:·null,
+     57     │ - → → createdAt:·"2026-11-15T12:00:00Z",
+     58     │ - → → history:·[],
+     59     │ - → → submissions:·[],
+     60     │ - → → pendingDocuments:·[],
+     61     │ - → → ...overrides,
+     62     │ - → };
+     63     │ - }
+     64     │ - beforeEach(()·=>·vi.clearAllMocks());
+     65     │ - 
+     66     │ - it("keeps·upload·reachable·in·the·original·empty·shared-document·state",·()·=>·{
+     67     │ - → render(
+     68     │ - → → <MyDocumentsList·documents={[]}·actions={<button·type="button">Upload·document</button>}·/>,
+     69     │ - → );
+     70     │ - → expect(screen.getByText("No·documents·have·been·shared·with·you·yet.")).toBeTruthy();
+     71     │ - → expect(screen.getByRole("button",·{·name:·"Upload·document"·})).toBeTruthy();
+     72     │ - });
+     73     │ - 
+     74     │ - it("retries·the·real·route·data·owner·after·a·failed·read",·()·=>·{
+     75     │ - → render(<MyDocumentsRetry·/>);
+     76     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Retry"·}));
+     77     │ - → expect(boundary.refresh).toHaveBeenCalledTimes(1);
+     78     │ - });
+     79     │ - 
+     80     │ - it("filters·shared·records·without·losing·metadata·or·the·access-checked·destinations",·async·()·=>·{
+     81     │ - → const·common·=·{
+     82     │ - → → employeeId:·"employee",
+     83     │ - → → documentDate:·"2026-11-01",
+     84     │ - → → payPeriod:·null,
+     85     │ - → → visibility:·"shared"·as·const,
+     86     │ - → → expiryDate:·null,
+     87     │ - → → mimeType:·"application/pdf",
+     88     │ - → → sizeBytes:·44,
+     89     │ - → → createdAt:·"2026-11-01T12:00:00Z",
+     90     │ - → → absence:·null,
+     91     │ - → → skill:·null,
+     92     │ - → };
+     93     │ - → render(
+     94     │ - → → <MyDocumentsList
+     95     │ - → → → documents={[
+     96     │ - → → → → {
+     97     │ - → → → → → ...common,
+     98     │ - → → → → → id:·"certificate",
+     99     │ - → → → → → category:·"certificate",
+    100     │ - → → → → → title:·"Safety·certificate",
+    101     │ - → → → → → fileName:·"safety.pdf",
+    102     │ - → → → → → expiryDate:·"2027-11-01",
+    103     │ - → → → → },
+    104     │ - → → → → {
+    105     │ - → → → → → ...common,
+    106     │ - → → → → → id:·"payslip",
+    107     │ - → → → → → category:·"payslip",
+    108     │ - → → → → → title:·"October·pay",
+    109     │ - → → → → → fileName:·"pay.pdf",
+    110     │ - → → → → → payPeriod:·{·year:·2026,·month:·10·},
+    111     │ - → → → → },
+    112     │ - → → → ]}
+    113     │ - → → />,
+    114     │ - → );
+    115     │ - → fireEvent.click(screen.getByRole("combobox",·{·name:·"Filter·by·category"·}));
+    116     │ - → fireEvent.click(await·screen.findByRole("option",·{·name:·"Certificate"·}));
+    117     │ - → expect(screen.queryByText("October·pay")).toBeNull();
+    118     │ - → expect(screen.getByText(/safety.pdf/)).toBeTruthy();
+    119     │ - → expect(
+    120     │ - → → screen.getByRole("link",·{·name:·"Download·Safety·certificate"·}).getAttribute("href"),
+    121     │ - → ).toBe("/api/personnel-files/documents/certificate?download=1");
+    122     │ - → fireEvent.click(screen.getByRole("combobox",·{·name:·"Filter·by·category"·}));
+    123     │ - → fireEvent.click(await·screen.findByRole("option",·{·name:·"All·categories"·}));
+    124     │ - → expect(screen.getByText("October·pay")).toBeTruthy();
+    125     │ - → expect(screen.getByText(/Pay·period·October·2026/)).toBeTruthy();
+    126     │ - });
+    127     │ - 
+    128     │ - it("leads·with·employee·work·in·deadline·order·and·keeps·completed·requests·accessible",·()·=>·{
+    129     │ - → render(
+    130     │ - → → <RequestedDocuments
+    131     │ - → → → capability={capability}
+    132     │ - → → → requests={[
+    133     │ - → → → → request("accepted",·{·status:·"accepted"·}),
+    134     │ - → → → → request("later"),
+    135     │ - → → → → request("overdue",·{·deadline:·"2026-11-01",·overdue:·true·}),
+    136     │ - → → → → request("submitted",·{·status:·"submitted"·}),
+    137     │ - → → → ]}
+    138     │ - → → />,
+    139     │ - → );
+    140     │ - → const·lists·=·screen
+    141     │ - → → .getAllByRole("list")
+    142     │ - → → .filter((list)·=>·list.parentElement?.tagName·!==·"DETAILS");
+    143     │ - → expect(
+    144     │ - → → within(lists[0])
+    145     │ - → → → .getAllByRole("listitem")
+    146     │ - → → → .map((item)·=>·item.textContent),
+    147     │ - → ).toEqual([expect.stringContaining("overdue"),·expect.stringContaining("later")]);
+    148     │ - → expect(screen.getByText("accepted")).toBeTruthy();
+    149     │ - → expect(screen.getByText("submitted")).toBeTruthy();
+    150     │ - → expect(screen.queryByRole("button",·{·name:·/Accept|Return|Cancel·request/·})).toBeNull();
+  422 more lines truncated
+  
+
+src\components\personnel-file\requested-documents.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·IconSend,·IconUpload·}·from·"@tabler/icons-react";
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      5     │ - import·{·useRouter·}·from·"next/navigation";
+      6     │ - import·{·useId,·useState·}·from·"react";
+      7     │ - import·{·Temporal·}·from·"temporal-polyfill";
+      8     │ - import·{·Button·}·from·"@/components/ui/button";
+      9     │ - import·type·{·DocumentRequestView·}·from·"@/lib/personnel-file/document-request.types";
+     10     │ - import·type·{·PersonnelFilePanelCapability·}·from·"@/lib/personnel-file/panel";
+     11     │ - import·{·DocumentDialog·}·from·"./document-dialog";
+     12     │ - import·{·DocumentRequestList·}·from·"./document-request-list";
+     13     │ - import·{·SubmitDocumentRequestDialog·}·from·"./submit-document-request-dialog";
+     14     │ - 
+     15     │ - /**
+     16     │ - ·*·"Requested·documents"·in·My·documents·(#1401):·what·officers·asked·the
+     17     │ - ·*·employee·for,·with·deadline,·status,·overdue·flag,·reasons·and·history.
+     18     │ - ·*·Hidden·while·there·are·none.·An·HR-only·renewed·document·never·reaches·it.
+     19     │ - ·*·From·an·open·request·the·employee·uploads·documents·and·submits·them
+     20     │ - ·*·(#1402);·they·cannot·decline·or·cancel·it.
+     21     │ - ·*/
+     22     │ - export·function·RequestedDocuments({
+     23     │ - → requests,
+     24     │ - → capability,
+     25     │ - }:·{
+     26     │ - → requests:·readonly·DocumentRequestView[];
+     27     │ - → /**·The·employee's·own·upload·capability·(employee,·today·and·timezone·of·the·organization).·*/
+     28     │ - → capability:·PersonnelFilePanelCapability;
+     29     │ - })·{
+     30     │ - → const·{·t·}·=·useTranslate();
+     31     │ - → const·router·=·useRouter();
+     32     │ - → const·[uploading,·setUploading]·=·useState<DocumentRequestView·|·null>(null);
+     33     │ - → const·[submitting,·setSubmitting]·=·useState<DocumentRequestView·|·null>(null);
+     34     │ - → const·headingId·=·useId();
+     35     │ - → const·outstanding·=·requests
+     36     │ - → → .filter((request)·=>·request.status·===·"open")
+     37     │ - → → .toSorted((a,·b)·=>·Temporal.PlainDate.compare(a.deadline,·b.deadline));
+     38     │ - → const·remaining·=·requests.filter((request)·=>·request.status·!==·"open");
+     39     │ - → if·(requests.length·===·0)·return·null;
+     40     │ - → return·(
+     41     │ - → → <section·aria-labelledby={headingId}·className="min-w-0·space-y-4">
+     42     │ - → → → <div·className="space-y-1">
+     43     │ - → → → → <h2·id={headingId}·className="text-lg·font-semibold·tracking-tight">
+     44     │ - → → → → → {t("settings.personnelFiles.myDocuments.requested.title",·"Requested·documents")}
+     45     │ - → → → → </h2>
+     46     │ - → → → → <p·className="text-sm·text-muted-foreground">
+     47     │ - → → → → → {t(
+     48     │ - → → → → → → "settings.personnelFiles.myDocuments.requested.description",
+     49     │ - → → → → → → "Documents·your·organization·asked·you·for,·with·their·deadline.",
+     50     │ - → → → → → )}
+     51     │ - → → → → </p>
+     52     │ - → → → </div>
+     53     │ - → → → <p·className="text-sm·text-muted-foreground">
+     54     │ - → → → → {t(
+     55     │ - → → → → → "settings.personnelFiles.myDocuments.requested.fileNote",
+     56     │ - → → → → → "Uploaded·documents·are·in·your·personnel·file·immediately.·Cancelling·this·form·or·a·returned·request·does·not·remove·them.",
+     57     │ - → → → → )}
+     58     │ - → → → </p>
+     59     │ - → → → {outstanding.length·>·0·?·(
+     60     │ - → → → → <DocumentRequestList
+     61     │ - → → → → → requests={outstanding}
+     62     │ - → → → → → timezone={capability.timezone}
+     63     │ - → → → → → actions={(request)·=>
+     64     │ - → → → → → → request.status·===·"open"·?·(
+     65     │ - → → → → → → → <>
+     66     │ - → → → → → → → → <Button
+     67     │ - → → → → → → → → → type="button"
+     68     │ - → → → → → → → → → variant="outline"
+     69     │ - → → → → → → → → → size="sm"
+     70     │ - → → → → → → → → → onClick={()·=>·setUploading(request)}
+     71     │ - → → → → → → → → → aria-label={t(
+     72     │ - → → → → → → → → → → "settings.personnelFiles.myDocuments.requested.upload.open",
+     73     │ - → → → → → → → → → → "Upload·a·document·for·{title}",
+     74     │ - → → → → → → → → → → {·title:·request.title·},
+     75     │ - → → → → → → → → → )}
+     76     │ - → → → → → → → → >
+     77     │ - → → → → → → → → → <IconUpload·aria-hidden="true"·className="size-4"·/>
+     78     │ - → → → → → → → → → {t("settings.personnelFiles.myDocuments.requested.upload.button",·"Upload")}
+     79     │ - → → → → → → → → </Button>
+     80     │ - → → → → → → → → <Button
+     81     │ - → → → → → → → → → type="button"
+     82     │ - → → → → → → → → → size="sm"
+     83     │ - → → → → → → → → → disabled={request.pendingDocuments.length·===·0}
+     84     │ - → → → → → → → → → onClick={()·=>·setSubmitting(request)}
+     85     │ - → → → → → → → → → aria-label={t(
+     86     │ - → → → → → → → → → → "settings.personnelFiles.myDocuments.requested.submit.open",
+     87     │ - → → → → → → → → → → "Submit·{title}",
+     88     │ - → → → → → → → → → → {·title:·request.title·},
+     89     │ - → → → → → → → → → )}
+     90     │ - → → → → → → → → >
+     91     │ - → → → → → → → → → <IconSend·aria-hidden="true"·className="size-4"·/>
+     92     │ - → → → → → → → → → {t("settings.personnelFiles.myDocuments.requested.submit.button",·"Submit")}
+     93     │ - → → → → → → → → </Button>
+     94     │ - → → → → → → → </>
+     95     │ - → → → → → → )·:·null
+     96     │ - → → → → → }
+     97     │ - → → → → />
+     98     │ - → → → )·:·null}
+     99     │ - → → → {remaining.length·>·0·?·(
+    100     │ - → → → → <div·className="space-y-3">
+    101     │ - → → → → → <h3·className="font-medium">
+    102     │ - → → → → → → {t(
+    103     │ - → → → → → → → "settings.personnelFiles.myDocuments.requested.other",
+    104     │ - → → → → → → → "Submitted·and·completed·requests",
+    105     │ - → → → → → → )}
+    106     │ - → → → → → </h3>
+    107     │ - → → → → → <DocumentRequestList·requests={remaining}·timezone={capability.timezone}·/>
+    108     │ - → → → → </div>
+    109     │ - → → → )·:·null}
+    110     │ - → → → {uploading·?·(
+    111     │ - → → → → <DocumentDialog
+    112     │ - → → → → → key={uploading.id}
+    113     │ - → → → → → mode="upload"
+    114     │ - → → → → → uploadAs="employee"
+    115     │ - → → → → → documentRequest={{
+    116     │ - → → → → → → id:·uploading.id,
+    117     │ - → → → → → → category:·uploading.category,
+    118     │ - → → → → → → title:·uploading.title,
+    119     │ - → → → → → }}
+    120     │ - → → → → → open
+    121     │ - → → → → → onOpenChange={(open)·=>·{
+    122     │ - → → → → → → if·(!open)·setUploading(null);
+    123     │ - → → → → → }}
+    124     │ - → → → → → employeeId={capability.employeeId}
+    125     │ - → → → → → categories={[uploading.category]}
+    126     │ - → → → → → today={capability.today}
+    127     │ - → → → → → onSaved={()·=>·router.refresh()}
+    128     │ - → → → → />
+    129     │ - → → → )·:·null}
+    130     │ - → → → <SubmitDocumentRequestDialog
+    131     │ - → → → → key={submitting?.id·??·"closed"}
+    132     │ - → → → → request={
+    133     │ - → → → → → requests.find((request)·=>·request.id·===·submitting?.id·&&·request.status·===·"open")·??
+    134     │ - → → → → → null
+    135     │ - → → → → }
+    136     │ - → → → → onOpenChange={(open)·=>·{
+    137     │ - → → → → → if·(!open)·setSubmitting(null);
+    138     │ - → → → → }}
+    139     │ - → → → → onSubmitted={()·=>·router.refresh()}
+    140     │ - → → → />
+    141     │ - → → </section>
+    142     │ - → );
+    143     │ - }
+          1 │ + "use·client";␍
+          2 │ + ␍
+          3 │ + import·{·IconSend,·IconUpload·}·from·"@tabler/icons-react";␍
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";␍
+          5 │ + import·{·useRouter·}·from·"next/navigation";␍
+          6 │ + import·{·useId,·useState·}·from·"react";␍
+          7 │ + import·{·Temporal·}·from·"temporal-polyfill";␍
+  153 more lines truncated
+  
+
+src\components\personnel-file\submit-document-request-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·useForm·}·from·"@tanstack/react-form";
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      5     │ - import·{·useRef,·useState·}·from·"react";
+      6     │ - import·{·toast·}·from·"sonner";
+      7     │ - import·{·submitDocumentRequestAction·}·from·"@/app/[locale]/(app)/personnel-files/document-request-actions";
+      8     │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";
+      9     │ - import·{
+     10     │ - → AlertDialog,
+     11     │ - → AlertDialogCancel,
+     12     │ - → AlertDialogContent,
+     13     │ - → AlertDialogDescription,
+     14     │ - → AlertDialogFooter,
+     15     │ - → AlertDialogHeader,
+     16     │ - → AlertDialogTitle,
+     17     │ - }·from·"@/components/ui/alert-dialog";
+     18     │ - import·{·Button·}·from·"@/components/ui/button";
+     19     │ - import·{·TFormControl,·TFormItem,·TFormLabel·}·from·"@/components/ui/tanstack-form";
+     20     │ - import·{·Textarea·}·from·"@/components/ui/textarea";
+     21     │ - import·{
+     22     │ - → DOCUMENT_REQUEST_TEXT_MAX_LENGTH,
+     23     │ - → type·DocumentRequestView,
+     24     │ - }·from·"@/lib/personnel-file/document-request.types";
+     25     │ - import·{·useDocumentRequestErrorMessage·}·from·"./document-request-labels";
+     26     │ - 
+     27     │ - /**
+     28     │ - ·*·The·employee·hands·in·the·documents·uploaded·for·a·request·since·the·last
+     29     │ - ·*·submission,·with·an·optional·note·(#1402).·The·officers·are·told;·the
+     30     │ - ·*·documents·are·in·the·file·already.
+     31     │ - ·*/
+     32     │ - export·function·SubmitDocumentRequestDialog({
+     33     │ - → request,
+     34     │ - → onOpenChange,
+     35     │ - → onSubmitted,
+     36     │ - }:·{
+     37     │ - → request:·DocumentRequestView·|·null;
+     38     │ - → onOpenChange:·(open:·boolean)·=>·void;
+     39     │ - → onSubmitted:·()·=>·void;
+     40     │ - })·{
+     41     │ - → const·{·t·}·=·useTranslate();
+     42     │ - → const·errorMessage·=·useDocumentRequestErrorMessage();
+     43     │ - → const·pending·=·useRef(false);
+     44     │ - → const·submitting·=·useRef(false);
+     45     │ - → const·[error,·setError]·=·useState<string·|·null>(null);
+     46     │ - → const·form·=·useForm({
+     47     │ - → → defaultValues:·{·note:·""·},
+     48     │ - → → onSubmit:·async·({·value·})·=>·{
+     49     │ - → → → if·(!request·||·pending.current)·return;
+     50     │ - → → → pending.current·=·true;
+     51     │ - → → → setError(null);
+     52     │ - → → → const·result·=·await·submitDocumentRequestAction({
+     53     │ - → → → → requestId:·request.id,
+     54     │ - → → → → note:·value.note,
+     55     │ - → → → → expectedVersion:·request.version,
+     56     │ - → → → }).catch(()·=>·null);
+     57     │ - → → → pending.current·=·false;
+     58     │ - → → → if·(!result)·{
+     59     │ - → → → → setError(
+     60     │ - → → → → → t(
+     61     │ - → → → → → → "settings.personnelFiles.myDocuments.requested.submit.failed",
+     62     │ - → → → → → → "Could·not·submit·the·documents.·Your·note·is·kept.·Try·again.",
+     63     │ - → → → → → ),
+     64     │ - → → → → );
+     65     │ - → → → → return;
+     66     │ - → → → }
+     67     │ - → → → if·(!result.success)·{
+     68     │ - → → → → setError(errorMessage(result));
+     69     │ - → → → → if·(result.code·===·"conflict")·onSubmitted();
+     70     │ - → → → → return;
+     71     │ - → → → }
+     72     │ - → → → toast.success(t("settings.personnelFiles.myDocuments.requested.submit.success",·"Submitted"));
+     73     │ - → → → form.reset();
+     74     │ - → → → onOpenChange(false);
+     75     │ - → → → onSubmitted();
+     76     │ - → → },
+     77     │ - → });
+     78     │ - 
+     79     │ - → return·(
+     80     │ - → → <AlertDialog
+     81     │ - → → → open={request·!==·null}
+     82     │ - → → → onOpenChange={(open)·=>·{
+     83     │ - → → → → if·(pending.current)·return;
+     84     │ - → → → → if·(!open)·{
+     85     │ - → → → → → form.reset();
+     86     │ - → → → → → setError(null);
+     87     │ - → → → → }
+     88     │ - → → → → onOpenChange(open);
+     89     │ - → → → }}
+     90     │ - → → >
+     91     │ - → → → <AlertDialogContent>
+     92     │ - → → → → <form
+     93     │ - → → → → → onSubmit={(event)·=>·{
+     94     │ - → → → → → → event.preventDefault();
+     95     │ - → → → → → → event.stopPropagation();
+     96     │ - → → → → → → if·(pending.current·||·submitting.current)·return;
+     97     │ - → → → → → → submitting.current·=·true;
+     98     │ - → → → → → → void·form.handleSubmit().finally(()·=>·{
+     99     │ - → → → → → → → submitting.current·=·false;
+    100     │ - → → → → → → });
+    101     │ - → → → → → }}
+    102     │ - → → → → → className="grid·gap-4"
+    103     │ - → → → → >
+    104     │ - → → → → → <AlertDialogHeader>
+    105     │ - → → → → → → <AlertDialogTitle>
+    106     │ - → → → → → → → {t("settings.personnelFiles.myDocuments.requested.submit.title",·"Submit·documents?")}
+    107     │ - → → → → → → </AlertDialogTitle>
+    108     │ - → → → → → → <AlertDialogDescription>
+    109     │ - → → → → → → → {t(
+    110     │ - → → → → → → → → "settings.personnelFiles.myDocuments.requested.submit.description",
+    111     │ - → → → → → → → → '{count,·plural,·one·{#·document·is}·other·{#·documents·are}}·handed·in·for·"{title}".·Your·organization·reviews·them·and·tells·you·the·result.',
+    112     │ - → → → → → → → → {
+    113     │ - → → → → → → → → → count:·request?.pendingDocuments.length·??·0,
+    114     │ - → → → → → → → → → title:·request?.title·??·"",
+    115     │ - → → → → → → → → },
+    116     │ - → → → → → → → )}
+    117     │ - → → → → → → </AlertDialogDescription>
+    118     │ - → → → → → </AlertDialogHeader>
+    119     │ - → → → → → <form.Field·name="note">
+    120     │ - → → → → → → {(field)·=>·(
+    121     │ - → → → → → → → <TFormItem>
+    122     │ - → → → → → → → → <TFormLabel>
+    123     │ - → → → → → → → → → {t(
+    124     │ - → → → → → → → → → → "settings.personnelFiles.myDocuments.requested.submit.note",
+    125     │ - → → → → → → → → → → "Note·(optional)",
+    126     │ - → → → → → → → → → )}
+    127     │ - → → → → → → → → </TFormLabel>
+    128     │ - → → → → → → → → <TFormControl>
+    129     │ - → → → → → → → → → <Textarea
+    130     │ - → → → → → → → → → → value={field.state.value}
+    131     │ - → → → → → → → → → → maxLength={DOCUMENT_REQUEST_TEXT_MAX_LENGTH}
+    132     │ - → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}
+    133     │ - → → → → → → → → → → onBlur={field.handleBlur}
+    134     │ - → → → → → → → → → />
+    135     │ - → → → → → → → → </TFormControl>
+    136     │ - → → → → → → → </TFormItem>
+    137     │ - → → → → → → )}
+    138     │ - → → → → → </form.Field>
+    139     │ - → → → → → {error·?·(
+    140     │ - → → → → → → <Alert·variant="destructive">
+    141     │ - → → → → → → → <AlertDescription>{error}</AlertDescription>
+    142     │ - → → → → → → </Alert>
+    143     │ - → → → → → )·:·null}
+    144     │ - → → → → → <AlertDialogFooter>
+    145     │ - → → → → → → <form.Subscribe·selector={(state)·=>·state.isSubmitting}>
+    146     │ - → → → → → → → {(isSubmitting)·=>·(
+    147     │ - → → → → → → → → <>
+    148     │ - → → → → → → → → → <AlertDialogCancel·type="button"·disabled={isSubmitting}>
+    149     │ - → → → → → → → → → → {t("common.cancel",·"Cancel")}
+    150     │ - → → → → → → → → → </AlertDialogCancel>
+  190 more lines truncated
+  
+
+Checked 12 files in 10ms. No fixes applied.
+Found 10 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-eaa80aa0-
+  │ d4431093adcdde65\apps\webapp
+

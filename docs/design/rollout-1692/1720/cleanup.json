@@ -1,0 +1,12 @@
+{
+  "repo": "X:\\t3-code\\worktrees\\z8\\t3-eaa80aa0-d4431093adcdde65",
+  "pid": 100948,
+  "port": 55252,
+  "pidPathVerified": true,
+  "ownedTreeOnly": true,
+  "portClosed": true,
+  "previewOwnedTabClosed": true,
+  "nativeSessionClosed": true,
+  "containersRemoved": 3,
+  "ownership": "fixture cleanup rechecked the z8.agent-owned label of each named container"
+}
