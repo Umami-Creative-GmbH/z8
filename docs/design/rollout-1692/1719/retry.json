@@ -1,0 +1,48 @@
+{
+  "checks": [
+    {
+      "name": "inline failure retains the same mounted notes input",
+      "actual": true
+    },
+    {
+      "name": "inline failure retains draft",
+      "actual": "R021 merged pointer receipt"
+    },
+    {
+      "name": "panel failure does not create error toast",
+      "actual": 0
+    },
+    {
+      "name": "one native pointer retry command",
+      "actual": 1
+    },
+    {
+      "name": "actual pointer retry closes accepted panel",
+      "actual": true
+    },
+    {
+      "name": "receipt persists in unchanged three-record history",
+      "actual": 3
+    },
+    {
+      "name": "only the new two-of-three holding remains outstanding",
+      "actual": "Outstanding returns1"
+    },
+    {
+      "name": "no fresh browser exceptions",
+      "actual": []
+    }
+  ],
+  "errors": [],
+  "pointerTarget": {
+    "receivesPointer": true,
+    "hitTag": "BUTTON"
+  },
+  "pointerEvents": [
+    {
+      "trusted": true,
+      "button": "Record receipt"
+    }
+  ],
+  "pointerCommandRequests": 1
+}

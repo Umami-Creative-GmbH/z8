@@ -14,6 +14,7 @@ assert.deepEqual(before.errors,[]);assert.deepEqual(after.errors,[]);assert.deep
 const [switched,next,native]=await Promise.all(['after-switch.json','next-runtime.json','react-runtime.json'].map(json));
 assert.equal(switched.response.status,200);assert.equal(switched.databaseActiveTarget,true);assert.equal(switched.afterReload.hasHolding,false);assert.equal(switched.afterReentry.hasHolding,false);assert.deepEqual(switched.errors,[]);
 assert.deepEqual(next,{get_compilation_issues:{issues:[]},get_errors:{configErrors:[],sessionErrors:[]}});assert.ok(native.components.every(n=>n.present));
+const retry=await json('retry.json');assert.equal(retry.checks.length,8);assert.equal(retry.pointerCommandRequests,1);assert.equal(retry.pointerTarget.receivesPointer,true);assert.equal(retry.pointerEvents[0].trusted,true);assert.deepEqual(retry.errors,[]);
 const hash=b=>createHash('sha256').update(b).digest('hex');
 for(const entry of comparison.sourceFiles??comparison.restored){
  const blob=execFileSync('git',['show',`${comparison.sourceVersion}:${entry.file}`],{cwd:root,maxBuffer:4*1024*1024});

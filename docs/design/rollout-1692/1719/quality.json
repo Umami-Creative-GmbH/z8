@@ -1,6 +1,6 @@
 {
   "implementation": "49f8d6607eb6af6d2dc922bca0b31ca301ebd9fb",
-  "integrationAncestor": "f780ef50207e9415c16a87d44c769b94602cc528",
+  "integrationAncestor": "eec17c6b3a9442866b54bf64345ef7818ecf0dfb",
   "packageManagerEnvironment": "pnpm only; pnpm_config_verify_deps_before_run=false",
   "commands": [
     {
@@ -49,7 +49,7 @@
     },
     {
       "command": "pnpm --filter webapp exec vitest run --project unit src/components/equipment src/components/driving-licence src/lib/navigation/route-metadata.test.ts src/components/ui/page-header.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx src/components/ui/action-panel.test.tsx src/components/ui/sidebar.test.tsx",
-      "result": "final restored tree: 34 suites/271 tests passed"
+      "result": "recovery-only merged tree before R018: 34 suites/271 tests passed"
     },
     {
       "command": "pnpm --filter webapp typecheck",
@@ -89,7 +89,7 @@
     },
     {
       "command": "pnpm node docs/design/rollout-1692/1719/compare.mjs .tmp/1719-fixture",
-      "result": "final pinned source 49f8d6607eb6af6d2dc922bca0b31ca301ebd9fb: 3 matched viewport pairs, identical 3 row values, two before h1s/one after, no document overflow, real dark capture. Exact bytes restored. Earlier capture width observation failed before settled recapture"
+      "result": "final pinned recovery-merged source 412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150: 3 matched viewport pairs, identical 3 row values, two before h1s/one after, no document overflow, real dark capture. Exact bytes restored. Earlier capture width observation failed before settled recapture"
     },
     {
       "command": "pnpm node docs/design/rollout-1692/1719/verify-evidence.mjs --current-source",
@@ -122,6 +122,50 @@
     {
       "command": "pnpm node docs/design/rollout-1692/1719/variants.mjs .tmp/1719-fixture preferences",
       "result": "final standalone run passed 6 checks/zero browser exceptions with bounded viewport captures. Earlier large-text phone wait timed out because innerText omits offscreen content-visibility rows; corrected harness waits on actual tbody DOM, product unchanged."
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1719/long-name.mjs .tmp/1719-fixture",
+      "result": "240-character unbroken structured employee name fits 390px and 1600px with 22.5px text, no browser exceptions. Exact first/last/fallback name restored. First fallback-only setup attempt timed out because authoritative structured names take precedence, harness corrected only."
+    },
+    {
+      "command": "git merge --no-edit ai/1692-app-wide-ui-refresh",
+      "result": "412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150 consumes ce99de60742d7fdbbaeaaefcdfa555fd7be6e784 (shared equipment recovery). Later c5b0626f805b14988042da5851310d5dfa98a3c2 consumes b42187081b43ec85e1a15a53bec9064e6f2da160, including published metadata37ce6a963 and R018. Additive route-metadata conflicts resolved preserving both opt-ins and complete tests."
+    },
+    {
+      "command": "pnpm node docs/design/rollout-1692/1719/retry.mjs .tmp/1719-fixture",
+      "result": "8 fresh assertions passed: real failed receipt retains same mounted notes/draft, inline alert/no error toast; after-hover actual BUTTON target; trusted native down/up sends exactly1 command, closes panel and physically settles original1/3 receipt. Reload retains3 history records, outstanding1, no browser exceptions. Next Rendering layer not suppressed."
+    },
+    {
+      "command": "pnpm --filter webapp exec vitest run --project unit src/components/equipment src/components/driving-licence src/lib/navigation/route-metadata.test.ts src/components/ui/page-header.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx src/components/ui/action-panel.test.tsx src/components/ui/sidebar.test.tsx; pnpm --filter webapp typecheck",
+      "result": "FINAL resolved c5b0626 tree:35 suites/277 tests passed; complete application/workflow/smoke types passed. Earlier batch accidentally continued after merge conflict and failed only on parse markers; those results are not acceptance evidence."
+    },
+    {
+      "command": "pnpm --filter webapp exec biome check src/components/equipment/equipment-employee.tsx src/components/equipment/equipment-employee-header.tsx src/components/equipment/equipment-employee-loading.tsx src/components/equipment/equipment-routes.test.tsx 'src/app/[locale]/(app)/equipment/employees/[employeeId]/page.tsx'; pnpm --filter webapp exec biome check --line-ending=crlf src/components/equipment/equipment-workspace.test.tsx src/lib/navigation/route-metadata.ts src/lib/navigation/route-metadata.test.ts",
+      "result": "FINAL5 LF +3 merged CRLF files passed, no fixes; rerun after parse-marker conflict resolution."
+    },
+    {
+      "command": "pnpm exec react-doctor apps/webapp --scope changed --base b42187081b43ec85e1a15a53bec9064e6f2da160 --include-untracked --verbose --no-score --no-supply-chain --no-parallel",
+      "result": "FINAL8-file scan zero diagnostics on resolved merge. Earlier scan during conflict is not acceptance evidence."
+    },
+    {
+      "command": "git merge --no-edit ai/1692-app-wide-ui-refresh; git diff --stat b42187081b43ec85e1a15a53bec9064e6f2da160..ai/1692-app-wide-ui-refresh",
+      "result": "FINAL886e8a2e8c553062aab73dedb31b36d15872436b includes latest LOCALeec17c6b3a9442866b54bf64345ef7818ecf0dfb (R018 verification be4a3fd5d). Only documentation/evidence/root metadata changed after resolved application checks; both employee route heading opt-ins retained. No queued #1718 detail work consumed."
+    },
+    {
+      "command": "agent-browser.cmd --session next-dev-loop-4626c8b4b738 --restore close; agent-browser.cmd --session next-dev-loop-4626c8b4b738 --restore --executable-path \"C:/Program Files/Google/Chrome/Application/chrome.exe\" --enable react-devtools open http://localhost:59056/en/equipment/employees/424291ff-d3e0-4991-8b70-b9f177c15406; agent-browser.cmd --session next-dev-loop-4626c8b4b738 --restore snapshot -i",
+      "result": "First reopen returned daemon EOF. Read-only snapshot confirmed blank session; explicit same-session reopen succeeded and displayed actual authorized records. Recovered native tree inspected and reviewed final diagnostics empty."
+    },
+    {
+      "command": "agent-browser.cmd --session next-dev-loop-4626c8b4b738 --restore react tree --json; pnpm node .tmp/1719/runtime-helper.mjs mcp . .tmp/1719-fixture; pnpm node .tmp/1719/review-evidence.mjs; pnpm node docs/design/rollout-1692/1719/verify-evidence.mjs --current-source; pnpm node docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs",
+      "result": "FINAL recovered live native tree and connected compilation/config/session diagnostics clean. Current-route source-pinned artifact validator and inherited recovery archive validator passed; inherited validator is not a new browser run."
+    },
+    {
+      "command": "agent-browser.cmd --session next-dev-loop-4626c8b4b738 --restore close; taskkill /PID 44040 /T /F; pnpm node scripts/performance/fixture.mjs cleanup .tmp/1719-fixture",
+      "result": "Browser closed. Next PID44040 manifest matched exact checkout/origin; actual command matched own next dev/59056 before stopping only its tree. Three label-owned containers removed, independent Docker absence checks passed, owned port59056 closed."
+    },
+    {
+      "command": "gh issue view 1719 --json state,assignees",
+      "result": "Final readback OPEN and assigned KaiSoellch; no tracker writes, push, PR, closure, dev merge or deployment."
     }
   ],
   "reviews": {
@@ -139,7 +183,7 @@
     "boundary": "Presentation only: existing independently authorized reader, action/payload/date/calculation/state owners preserved. New explicit-zone Temporal date display uses authorized calendar. No Effect/domain/form/schema changes. No UI shell/feedback workaround.",
     "webGuidelinesSource": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
     "limitations": [
-      "Shared error-toast pointer behavior remains root investigation",
+      "Historical shared toast obstruction corrected by inherited6a9189f; fresh current-route pointer receipt passes. Independent Next Rendering layer may reappear after hover; accepted native down/up waits for actual button target without suppression.",
       "Org-menu keyboard activation not certified; actual pointer org switch verified",
       "Current-route first Escape is not full shared shell certification",
       "No production static-generation/full-build/catalog/provider/physical-device/native-zoom or benchmark claim",
@@ -147,6 +191,15 @@
     ]
   },
   "cleanup": {
-    "status": "pending owned runtime teardown before handoff"
-  }
+    "status": "complete",
+    "browser": "next-dev-loop-4626c8b4b738 closed; all Puppeteer finally blocks close own contexts",
+    "next": "Manifest + actual command verified owned PID44040; exact process tree stopped",
+    "services": "3 label-owned containers removed and independently absent on Docker readback",
+    "port": "localhost59056 closed",
+    "privateArtifacts": "Ignored/private manifests, raw trees and logs remain local; no secrets committed"
+  },
+  "finalIntegrationMerge": "886e8a2e8c553062aab73dedb31b36d15872436b",
+  "captureSource": "412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150",
+  "inheritedFeedbackCode": "6a9189f867c6349961511cd9bc4f4db77f51e9e1",
+  "finalApplicationCheckTree": "c5b0626f805b14988042da5851310d5dfa98a3c2"
 }
