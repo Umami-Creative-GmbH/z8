@@ -1,0 +1,18 @@
+{
+    "history":  "Real synthetic 2025 history; actual short clock actions on verification date",
+    "limits":  [
+                   "No production/customer data or credentials",
+                   "Native React renderer attach failed",
+                   "Billing disabled",
+                   "Leave policy unconfigured"
+               ],
+    "actors":  [
+                   "small-admin",
+                   "small-manager",
+                   "small-employee",
+                   "small-restricted"
+               ],
+    "date":  "2026-11-15",
+    "kind":  "disposable",
+    "engine":  "Next 16.4.6 Turbopack / Chrome / agent-browser 0.39.1"
+}

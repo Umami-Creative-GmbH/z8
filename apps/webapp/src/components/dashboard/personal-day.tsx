@@ -2,6 +2,7 @@
 
 import { IconArrowRight } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useSyncExternalStore } from "react";
 import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,18 @@ import {
 	formatDurationWithSeconds,
 } from "@/lib/time-tracking/time-utils";
 import { Link } from "@/navigation";
+
+const subscribeToHydration = () => () => {};
+const getHydratedSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
+
+function useHasHydrated() {
+	return useSyncExternalStore(
+		subscribeToHydration,
+		getHydratedSnapshot,
+		getServerHydrationSnapshot,
+	);
+}
 
 function DayTotal({ timeKpis }: { timeKpis: TimeKpiRead }) {
 	const { t } = useTranslate();
@@ -48,8 +61,10 @@ export function PersonalDay({
 } = {}) {
 	const { t } = useTranslate();
 	const clock = useTimeClock();
+	const hydrated = useHasHydrated();
 	const matchesClock = useTimeSummaryClockSync(timeKpis);
-	if (!clock.isPending && !clock.isError && !clock.hasEmployee) return null;
+	if (hydrated && !clock.isPending && !clock.isError && !clock.hasEmployee)
+		return null;
 	return (
 		<Card>
 			<CardHeader>
@@ -60,7 +75,7 @@ export function PersonalDay({
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				{timeKpis && matchesClock ? (
+				{timeKpis && (!hydrated || matchesClock) ? (
 					<DayTotal timeKpis={timeKpis} />
 				) : (
 					<p role="status" className="text-sm text-muted-foreground">
@@ -73,7 +88,7 @@ export function PersonalDay({
 					</p>
 				)}
 				<PersonalClockState clock={clock} />
-				{clock.isOffline ? (
+				{hydrated && clock.isOffline ? (
 					<p className="text-sm text-muted-foreground">
 						{t("common.offline", "Offline")}
 					</p>
@@ -95,10 +110,16 @@ function PersonalClockState({
 	clock: ReturnType<typeof useTimeClock>;
 }) {
 	const { t } = useTranslate();
+	// The header can resolve the shared query before this streamed slot hydrates.
+	const hydrated = useHasHydrated();
 	const elapsed = useElapsedTimer(clock.activeWorkPeriod?.startTime ?? null);
 	return (
 		<>
-			{clock.isError ? (
+			{!hydrated || clock.isPending ? (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t("common.loading", "Loading…")}
+				</p>
+			) : clock.isError ? (
 				<div role="status" className="space-y-2 text-sm">
 					<p>
 						{t(
@@ -114,10 +135,6 @@ function PersonalClockState({
 						{t("common.retry", "Retry")}
 					</Button>
 				</div>
-			) : clock.isPending ? (
-				<p role="status" className="text-sm text-muted-foreground">
-					{t("common.loading", "Loading…")}
-				</p>
 			) : (
 				<>
 					<p className="text-sm text-muted-foreground">
