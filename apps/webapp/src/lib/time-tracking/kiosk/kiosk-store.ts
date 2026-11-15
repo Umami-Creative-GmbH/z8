@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, asc, eq, gt, isNotNull, isNull } from "drizzle-orm";
+import { organization } from "@/db/auth-schema";
 import { kiosk, kioskRetiredToken, location, organizationNotificationSettings } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import type { AuditTrail } from "@/lib/audit-trail";
@@ -424,8 +425,9 @@ export async function readKioskDeviceInfo(
 ): Promise<KioskDeviceInfo> {
 	const [[site], offlineMode, badgeInputs, nfcFobReaderEnabled] = await Promise.all([
 		client
-			.select({ name: location.name, language: organizationNotificationSettings.defaultLanguage })
+			.select({ name: location.name, organizationName: organization.name, language: organizationNotificationSettings.defaultLanguage })
 			.from(location)
+			.innerJoin(organization, eq(organization.id, location.organizationId))
 			.leftJoin(
 				organizationNotificationSettings,
 				eq(organizationNotificationSettings.organizationId, location.organizationId),
@@ -453,6 +455,7 @@ export async function readKioskDeviceInfo(
 	return {
 		id: authenticated.kioskId,
 		name: authenticated.name,
+		organizationName: site?.organizationName,
 		locationId: authenticated.locationId,
 		locationName: site?.name ?? "",
 		timezone: authenticated.timezone,
