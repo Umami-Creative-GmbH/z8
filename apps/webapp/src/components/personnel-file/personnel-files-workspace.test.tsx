@@ -11,6 +11,13 @@ const boundary = vi.hoisted(() => ({
 vi.mock("@/components/providers/organization-context-provider", () => ({
 	useOrganization: () => boundary.scope,
 }));
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: { user: { id: "officer" }, session: { activeOrganizationId: "org" } },
+		isPending: false,
+	}),
+	authClient: { $store: { atoms: { session: { subscribe: () => () => {} } } } },
+}));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
@@ -18,14 +25,7 @@ vi.mock("next/navigation", () => ({
 	useRouter: () => ({ refresh: boundary.refresh }),
 }));
 vi.mock("@/navigation", () => ({
-	Link: ({
-		href,
-		children,
-		...props
-	}: {
-		href: string;
-		children: ReactNode;
-	}) => (
+	Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
 		<a href={href} {...props}>
 			{children}
 		</a>
@@ -43,6 +43,7 @@ const capability = {
 	officerSettings: false,
 };
 const props = {
+	readId: "server-read",
 	userId: "officer",
 	organizationId: "org",
 	employees,
@@ -56,9 +57,7 @@ beforeEach(() => {
 
 it("leads with attention then employee records and retains scoped destinations and former identity", () => {
 	render(<PersonnelFilesWorkspace {...props} />);
-	expect(
-		screen.getByRole("heading", { level: 1, name: "Personnel Files" }),
-	).toBeTruthy();
+	expect(screen.getByRole("heading", { level: 1, name: "Personnel Files" })).toBeTruthy();
 	const directory = screen.getByRole("region", { name: "Employee records" });
 	expect(
 		within(directory)
@@ -71,9 +70,8 @@ it("leads with attention then employee records and retains scoped destinations a
 		}),
 	).toBeTruthy();
 	expect(
-		screen
-			.getByText("Expiring certificate")
-			.compareDocumentPosition(directory) & Node.DOCUMENT_POSITION_FOLLOWING,
+		screen.getByText("Expiring certificate").compareDocumentPosition(directory) &
+			Node.DOCUMENT_POSITION_FOLLOWING,
 	).toBeTruthy();
 	const destinations = screen.getByRole("navigation", {
 		name: "Personnel file workflows",
@@ -82,19 +80,14 @@ it("leads with attention then employee records and retains scoped destinations a
 		within(destinations)
 			.getAllByRole("link")
 			.map((link) => link.getAttribute("href")),
-	).toEqual([
-		"/personnel-files/document-requests",
-		"/personnel-files/due-for-deletion",
-	]);
+	).toEqual(["/personnel-files/document-requests", "/personnel-files/due-for-deletion"]);
 	expect(screen.queryByRole("link", { name: "Payslip batch" })).toBeNull();
 });
 
 it("distinguishes unknown directory from an empty scope and retries the server owner", () => {
 	render(<PersonnelFilesWorkspace {...props} employees={null} />);
 	expect(screen.queryByText("No employees are in your scope yet.")).toBeNull();
-	expect(screen.getByRole("alert").textContent).toContain(
-		"Employee records could not be loaded",
-	);
+	expect(screen.getByRole("alert").textContent).toContain("Employee records could not be loaded");
 	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 	expect(boundary.refresh).toHaveBeenCalledTimes(1);
 });
@@ -113,19 +106,15 @@ it("keeps empty scope guidance and only capability-admitted workflow links", () 
 		/>,
 	);
 	expect(screen.getByText("No employees are in your scope yet.")).toBeTruthy();
-	expect(
-		screen.getByText(/Contact an organization administrator/),
-	).toBeTruthy();
+	expect(screen.getByText(/Contact an organization administrator/)).toBeTruthy();
 	for (const href of [
 		"/personnel-files/payslip-batches",
 		"/personnel-files/sick-leave",
 		"/settings/personnel-files",
 	])
-		expect(
-			screen
-				.getAllByRole("link")
-				.some((link) => link.getAttribute("href") === href),
-		).toBe(true);
+		expect(screen.getAllByRole("link").some((link) => link.getAttribute("href") === href)).toBe(
+			true,
+		);
 	expect(screen.queryByRole("link", { name: "Document requests" })).toBeNull();
 });
 

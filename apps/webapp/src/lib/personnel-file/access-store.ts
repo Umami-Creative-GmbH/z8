@@ -275,6 +275,7 @@ export interface ManagedEmployee {
 	id: string;
 	name: string;
 	employeeNumber: string | null;
+	/** Current employment, including the live departure cutoff before follow-up runs. */
 	isActive: boolean;
 }
 
@@ -289,7 +290,7 @@ export async function listManagedEmployees(
 	database: Reader,
 	access: PersonnelFileAccess,
 	/** `category`: only employees whose documents of that category the actor manages (#868). */
-	filter: { employeeId?: string; category?: DocumentCategory } = {},
+	filter: { employeeId?: string; category?: DocumentCategory; now?: Instant } = {},
 ): Promise<ManagedEmployee[]> {
 	const { category } = filter;
 	const scopes = access.grants
@@ -303,7 +304,7 @@ export async function listManagedEmployees(
 			id: employee.id,
 			userName: user.name,
 			employeeNumber: employee.employeeNumber,
-			isActive: employee.isActive,
+			isActive: employeeHasOrganizationAccess(filter.now),
 		})
 		.from(employee)
 		.leftJoin(user, eq(user.id, employee.userId))

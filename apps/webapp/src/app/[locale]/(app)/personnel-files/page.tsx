@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ExpiringDocumentsCard } from "@/components/personnel-file/expiring-documents";
@@ -17,26 +18,19 @@ import {
 } from "@/lib/personnel-file/access";
 import { listManagedEmployees } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
-import {
-	listExpiringDocuments,
-	loadExpiryReminderWindow,
-} from "@/lib/personnel-file/expiry-store";
+import { listExpiringDocuments, loadExpiryReminderWindow } from "@/lib/personnel-file/expiry-store";
 import { canRunPayslipBatches } from "@/lib/personnel-file/payslip-batch-store";
 import { getTranslate } from "@/tolgee/server";
 
 /** R045: retain canonical category AND employee scope, including own-file exclusion. */
 async function PersonnelFilesContent() {
-	const [t, current] = await Promise.all([
-		getTranslate(),
-		loadCurrentPersonnelFileAccess(),
-	]);
-	if (current.status !== "resolved" || !managesAnyDocuments(current.access))
-		notFound();
+	const [t, current] = await Promise.all([getTranslate(), loadCurrentPersonnelFileAccess()]);
+	if (current.status !== "resolved" || !managesAnyDocuments(current.access)) notFound();
 	const { access } = current;
 	const now = systemClock.nowInstant();
 	// Independent sections can recover without calling an unavailable read empty.
 	const [employees, expiry] = await Promise.allSettled([
-		listManagedEmployees(db, access),
+		listManagedEmployees(db, access, { now }),
 		Promise.all([
 			listExpiringDocuments(db, access, { now }),
 			loadExpiryReminderWindow(db, {
@@ -48,6 +42,7 @@ async function PersonnelFilesContent() {
 	return (
 		<PersonnelFilesWorkspace
 			key={`${access.userId}:${access.organizationId}`}
+			readId={randomUUID()}
 			userId={access.userId}
 			organizationId={access.organizationId}
 			employees={employees.status === "fulfilled" ? employees.value : null}
@@ -55,9 +50,7 @@ async function PersonnelFilesContent() {
 				payslipBatches: canRunPayslipBatches(access),
 				documentRequests: managesDocumentRequests(access),
 				sickLeave: managesCategory(access, "sick_note"),
-				officerSettings: access.grants.some(
-					(grant) => grant.source === "organization_admin",
-				),
+				officerSettings: access.grants.some((grant) => grant.source === "organization_admin"),
 			}}
 			attention={
 				expiry.status === "fulfilled" ? (
