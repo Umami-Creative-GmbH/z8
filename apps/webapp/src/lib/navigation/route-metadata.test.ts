@@ -6,6 +6,12 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts the due-for-deletion review without adopting deeper or invalid personnel routes", () => {
+		expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/")).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail")).toBe(false);
+		expect(appPageOwnsHeading("/en/personnel-files/requests")).toBe(false);
+	});
 	it("adopts the request queue without adopting its independent descendants", () => {
 		expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);
 		expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);
@@ -60,7 +66,6 @@ describe("route metadata", () => {
 			"/en/personnel-files/payslip-batches",
 			"/en/personnel-files/payslip-batches/id",
 			"/en/personnel-files/sick-leave",
-			"/en/personnel-files/due-for-deletion",
 			"/en/settings/personnel-files",
 		])
 			expect(appPageOwnsHeading(path)).toBe(false);

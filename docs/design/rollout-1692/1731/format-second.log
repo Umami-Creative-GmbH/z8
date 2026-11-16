@@ -1,0 +1,53 @@
+src\components\personnel-file\due-for-deletion-list.tsx:389:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: userId, organizationId.
+  
+    387 │ 	);
+    388 │ 	const { userId, organizationId } = scope;
+  > 389 │ 	useLayoutEffect(() => {
+        │ 	^^^^^^^^^^^^^^^
+    390 │ 		const attempt = { active: true, submitting: false };
+    391 │ 		lifetime.current = attempt;
+  
+  i This dependency can be removed from the list.
+  
+    400 │ 			attempt.active = false;
+    401 │ 		};
+  > 402 │ 	}, [userId, organizationId]);
+        │ 	    ^^^^^^
+    403 │ 	const {
+    404 │ 		data,
+  
+  i This dependency can be removed from the list.
+  
+    400 │ 			attempt.active = false;
+    401 │ 		};
+  > 402 │ 	}, [userId, organizationId]);
+        │ 	            ^^^^^^^^^^^^^^
+    403 │ 	const {
+    404 │ 		data,
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    402 │ → },·[userId,·organizationId]);␍
+        │       ----------------------   
+
+Skipped 1 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 3 files in 61ms. Fixed 3 files.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-fd7b5280-
+  │ 0a9cc97a274c2847\apps\webapp
+

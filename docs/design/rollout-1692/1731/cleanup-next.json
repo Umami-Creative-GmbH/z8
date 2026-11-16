@@ -1,0 +1,78 @@
+{
+  "repo": "X:\\t3-code\\worktrees\\z8\\t3-fd7b5280-0a9cc97a274c2847",
+  "listenersAfter": [],
+  "processes": [
+    {
+      "ProcessId": 20320,
+      "ParentProcessId": 98408,
+      "CreationDate": "2026-11-15T20:25:39.977829+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 13964,
+      "ParentProcessId": 20320,
+      "CreationDate": "2026-11-15T20:25:40.250977+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 97224,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:29:59.773532+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 69236,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:29:59.851878+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 110260,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:30:00.586096+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 70540,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:30:00.987418+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 49384,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:30:01.634897+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 46372,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:30:04.14793+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 111716,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:30:05.34532+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 96712,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:30:05.507961+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 93136,
+      "ParentProcessId": 13964,
+      "CreationDate": "2026-11-15T20:30:18.685871+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    }
+  ],
+  "listenersBefore": [
+    {
+      "LocalPort": 60126,
+      "OwningProcess": 13964
+    }
+  ]
+}
