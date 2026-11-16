@@ -357,7 +357,7 @@ function TeamAbsencesRowsTable({
 				className="overflow-x-auto"
 				aria-label={t("team.absences.allowances", "Annual allowances")}
 			>
-				<Table mobileLayout="scroll" className="min-w-[760px]">
+				<Table mobileLayout="stacked" className="min-w-[760px]">
 					<TableHeader>
 						<TableRow>
 							<SortableAbsenceTableHead
@@ -429,7 +429,7 @@ function TeamAbsencesRowsTable({
 					<TableBody>
 						{rows.map((employee) => (
 							<TableRow key={employee.id}>
-								<TableCell className="sticky left-0 z-10 max-w-60 bg-card">
+								<TableCell className="bg-card sm:sticky sm:left-0 sm:z-10 sm:max-w-60">
 									<div className="flex min-w-0 items-center gap-3">
 										<UserAvatar
 											image={employee.image}
@@ -475,7 +475,7 @@ function TeamAbsencesRowsTable({
 										)}
 								</TableCell>
 								<TableCell className="text-right tabular-nums">{employee.sickDays}</TableCell>
-								<TableCell className="sticky right-0 z-10 bg-card text-right">
+								<TableCell className="bg-card text-right sm:sticky sm:right-0 sm:z-10">
 									<Button
 										type="button"
 										variant="outline"
