@@ -1,0 +1,20 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'certificate'
+- 'R045 revoked attempt'
+
+    at file:///X:/t3-code/worktrees/z8/t3-2f159aee-10fac1c1d358d617/.tmp/1728/roles-finish.mjs:23:206 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'certificate',
+  expected: 'R045 revoked attempt',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.9.0
