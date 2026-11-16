@@ -4,12 +4,36 @@
   "branch": "feat/legacy-claim-detail",
   "sourceHashes": [
     {
-      "file": "docs/design/rollout-1692/1748.md",
-      "sha256": "dcff88414097669ee33e8cd092f34748172ca2102e37ee6ae18187c79e2ca50a"
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "sha256": "a04b4071d09f619878e6a373756bc62745756ac5767d31194aacdaf9a947129c"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "sha256": "c9820249e6b079304beea90961fe8b932b86118963f150d724c4bb2ead97a227"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "sha256": "c7a2206c22d9ef5be6d4d1917224effd422811fbf6cd2f2980663ac899107400"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "sha256": "4a02f550438ead82b3703011f1acb3979710ea2414688ae3243f695a36f1dcb3"
     },
     {
       "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
       "sha256": "4a1b813675e75ef5a1da183c5a6c25e2e40de31434f6d459da5ee85294f121e7"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "sha256": "8981c9d05baf38381bd60d69d686fc7fe57e6f5920df4c8a0eb17a35b3cd133e"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "85d6ab7c51b8d4215b71d96b61fe75d434071c790fa970ee018804a57093bcef"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "sha256": "4da4381fbd3819c460ab8daa734670c4e504f0849c454e58275d01224b356e85"
     }
   ],
   "dependencyRoots": [
