@@ -784,9 +784,11 @@
       "provisionalReconciliationCommit": "026a6c67730c325b264f9d4bad9c04d7ec32cb85",
       "provisionalCorrectionCommit": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
       "provisionalCorrectionIntegrationCommit": "0c96db4ed2ecc072688bba0a02d9661b3846d7a8",
-      "pendingAcceptance": "Local scope Retry and the confirmed Activity duplicate-request correction pass457 unit case instances/64 files and all three type projects. Pending commands stay reserved until settlement/readback; retired feedback stays suppressed. Fresh independent lifetime/PG20/browser/native/Next/matched acceptance remains pending. Doctor0errors/3retainedwarnings and formatter-profile qualifications remain explicit.",
+      "pendingAcceptance": "Local scope Retry, pending-command lifetime and completed-upload URL corrections pass459 case instances/65 files, all three type projects and scoped lint. Real Chromium transport tests prove same-PDF staging in successive batches and unfinished 5MiB resume after reload; canonical storage is modeled only in that transport test. Fresh prior-candidate PG20 and39 public runtime probes passed before a preserved completed-PDF TUS cache failure stopped broader acceptance. Exact c72 consumer control also failed. Current correction removes successful TUS fingerprints. Fresh full-application reused-PDF/ZIP/confirmation/readback/native/Next/matched acceptance remains pending. Doctor0errors/3retainedwarnings and formatter-profile limits remain explicit; verifiedCommit stays null.",
       "provisionalCommandCorrectionCommit": "15b00b502bc2a2fd7f556433ba52c2da9768ea37",
-      "provisionalCommandCorrectionIntegrationCommit": "a076560ff3fbf7d857c4258cee08e6c22f19609e"
+      "provisionalCommandCorrectionIntegrationCommit": "a076560ff3fbf7d857c4258cee08e6c22f19609e",
+      "provisionalUploadCorrectionCommit": "c0480cfd33e579d807264ff4c2017a66b799ae36",
+      "provisionalUploadCorrectionIntegrationCommit": "32c91479c1184a0080bf82db6a6bfc6731b57c6f"
     },
     {
       "id": "R051",
@@ -832,10 +834,11 @@
       "blockedBy": [
         1694
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1846#issuecomment-6921413654"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1846#issuecomment-6921413654",
+      "implementationCommit": "d3bae3f4c956b9bf53adc7c7b402d0e4f82f3797"
     },
     {
       "id": "R055",
@@ -844,8 +847,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1847#issuecomment-6922594257"
     },
     {
       "id": "R056",
