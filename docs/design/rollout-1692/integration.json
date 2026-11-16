@@ -606,9 +606,14 @@
       "blockedBy": [
         1695
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
-      "implementationCommit": "64b1d9aba8100607826e80ec6e3c4e6b1154fc69"
+      "status": "integrated",
+      "verifiedCommit": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "implementationCommit": "64b1d9aba8100607826e80ec6e3c4e6b1154fc69",
+      "verifiedTree": "0d5b70853d7e3e86264e06c89b7d2777490f9e0f",
+      "integrationCommit": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "correctionCommit": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+      "evidence": "docs/design/rollout-1692/1835.md",
+      "integrationVerification": "Work templates #1835 verified at `16443982de929de4f885a6cfb6de5b377374cb3e`: activation-time Save reservation retires queued Activity/session/account/org commands and blocks Save/Skip races. Canonical settings admission, existing schema, complete graph and progress now share the existing guarded user-settings transaction; default/range/invalid/former/explicit-arrival refusal leaves no partial writes. No default replacement, idempotency or organization-configuration guard was introduced. Current383unit/30files+13PG/1file=396distinct cases, full3type projects, nine-file lint, seven-file targeted formatting and seven-file Doctor0/0 pass. Whole-service formatting and two inherited directives are qualified. Actual isolated normal development login reproduces historical partial graph3/3/14/1->4/4/21/1, corrected default unchanged4/4/21/1, one pointer retry->5/5/28/1; default/time-entry/preferences preserved. Initial progress already wellness; notifications navigation is observed, not fresh progress transition. Six canonical bounded-wait captures plus six qualified operational images, native target and precise per-route Next probes are retained. All50 ancestors,14824 unchanged paths,96 original artifacts,211 prior1737paths,158links/6hashes preserved. Owned browsers/Next/62642/3services cleaned. Some intermediate filenames overwritten, global progress class and partial-application source boundaries disclosed. Full production/catalog/provider/device/zoom/live-revocation/global-transition limits remain."
     },
     {
       "id": "R041",
@@ -1678,8 +1683,11 @@
       "blockedBy": [
         1694
       ],
-      "status": "implementing",
-      "verifiedCommit": null
+      "status": "awaiting-integration",
+      "verifiedCommit": null,
+      "implementationCommit": "cfa34ce7ed2ea0d2df23929f4656b7fefdcd8e29",
+      "evidence": "docs/design/rollout-1692/1742.md",
+      "handoffLimitation": "Worker126unit/13+35PG/6=161cases, full3types, Doctor100 and13PNG. Final all-to-managed scope narrowing fence has public/type coverage; live/native/captures precede final nonvisual fence. Historical four-consumer comparison and live revocation/global/build/catalog/device limitations remain; fresh merger owns readiness."
     },
     {
       "id": "R161",
@@ -1688,8 +1696,11 @@
       "blockedBy": [
         1693
       ],
-      "status": "implementing",
-      "verifiedCommit": null
+      "status": "awaiting-integration",
+      "verifiedCommit": null,
+      "implementationCommit": "6dfe584445982cfe1760dea47741a770a088f1cc",
+      "evidence": "docs/design/rollout-1692/1743.md",
+      "handoffLimitation": "Worker60unit+9PG, full3types, bounded Doctor and native light/dark accessibility. Matched evidence, roles/preferences/phoneEscape/keyboard reported; fresh merger must inspect exact source/evidence and remaining acceptance."
     },
     {
       "id": "R162",
@@ -1698,8 +1709,10 @@
       "blockedBy": [
         1694
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1744#issuecomment-6907472854"
     },
     {
       "id": "R163",
@@ -1720,8 +1733,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1746#issuecomment-6907474529"
     },
     {
       "id": "R165",
