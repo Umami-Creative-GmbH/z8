@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Temporal } from "temporal-polyfill";
 import { PayslipBatchStart } from "@/components/personnel-file/payslip-batch-start";
+import { PayslipBatchesHeading } from "@/components/personnel-file/payslip-batches-heading";
 import {
 	PayslipBatchesRetry,
 	PayslipBatchesScope,
@@ -184,7 +185,7 @@ function PayslipBatchesLoading() {
 			className="@container/main mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col gap-6 p-4 md:p-6"
 			role="status"
 		>
-			<Skeleton aria-hidden="true" className="h-8 w-48" />
+			<PayslipBatchesHeading />
 			<Skeleton aria-hidden="true" className="h-64 w-full" />
 		</LoadingRegion>
 	);
