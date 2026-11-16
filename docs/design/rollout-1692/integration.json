@@ -1037,10 +1037,11 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1754#issuecomment-6928458145"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1754#issuecomment-6928458145",
+      "implementationCommit": "37e6929e3af572718a9617f1332c171348e30cef"
     },
     {
       "id": "R071",

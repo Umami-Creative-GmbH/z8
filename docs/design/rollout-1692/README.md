@@ -87,9 +87,9 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - R059 #1851 (platform users): committed handoff awaits fresh merger review; actual ban/session checks and admission/provenance qualifications remain explicit.
 - R060 #1852 (worker queue): committed handoff awaits fresh merger review; current browser/Next and worker adoption remain unproved.
 - R068 #1753 (approval policies): committed handoff awaits fresh merger review; distinct capabilities, guarded localized alias and safe canonical-fixture acceptance retain their qualifications.
-- R069 #1754 (audit export): claimed from verified H1; audit/package/signing and authorized-download owners remain canonical, including guarded localized activity aliases.
+- R069 #1754 (audit export): committed handoff awaits fresh merger review; unsigned activity download and recovery evidence are recorded, while signing-dependent package acceptance remains blocked.
 - R071 #1755 (AVV): claimed from verified F1; current-profile readiness, billing/admin gates and the authorized document download owner remain canonical.
-- Frontier counts: **58 integrated, 26 awaiting integration, 2 implementing, 71 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
+- Frontier counts: **58 integrated, 27 awaiting integration, 1 implementing, 71 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
 - R002 #1701 (absences): integrated and verified at `a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc`; organization/year/zone, records and existing absence action owners preserved. See [capabilities and remaining checks](1701.md).
 - R005 #1703 (overtime burn-down): integrated and verified at `2bc30e88f63d9db3d547353f49077db0c0ee7805`; root corrected both Unassigned manager queries and active analytics navigation. See [capabilities, corrections and remaining checks](1703.md).
 - R001 #1700 (dashboard conformance): integrated and verified at `8eed0aa58bcae1dd19be7e6d7d78303208a3ddde`; approved composition/preferences preserved, no-organization heading and streamed clock hydration corrected. See [capabilities and remaining checks](1700.md).
