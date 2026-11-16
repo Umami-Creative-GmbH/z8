@@ -805,7 +805,11 @@
       ],
       "status": "awaiting-integration",
       "verifiedCommit": null,
-      "implementationCommit": "e194f9f367ff747ecab779ebd47c2ba34c684b84"
+      "implementationCommit": "e194f9f367ff747ecab779ebd47c2ba34c684b84",
+      "provisionalIntegrationCommit": "eba7258abf1071997dd5e1c3ea13f08fb88b5a5b",
+      "provisionalCorrectionCommit": "81a94f940b7b7fbd13a823665b993b616973b2ae",
+      "provisionalCorrectionIntegrationCommit": "a5b0f7d8ff912c30197b81ba6ffe574ef68d6215",
+      "pendingAcceptance": "Fresh merger STOP reproduced inherited same-document unlink overlap after actual organization-provider A-B-A remount, both current and premerge consumers. Root adds identity-only QueryClient-scoped reservations to both shared-note and selected-personnel-file controls. Accepted retired writes refresh real self-marker/employee-count/document observers; retired feedback stays suppressed. Permanent public controls red before/green after; 509 selected unit cases/70 files, all3typeprojects/typegen, scoped lint and Doctor9files0findings pass. Format profiles remain qualified (full100 seven files; ordinary three files). Fresh independent lifetimes/canonicalPG65+protectedPG20/actual runtime/native/Next/matched acceptance pending. No backend authority/storage/time/idempotency/cancellation changes; verifiedCommit stays null."
     },
     {
       "id": "R052",
@@ -879,10 +883,11 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1849#issuecomment-6924974031"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1849#issuecomment-6924974031",
+      "implementationCommit": "4df0a1f2d371a7776ba1ab073c10009937c70766"
     },
     {
       "id": "R058",
@@ -891,8 +896,11 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "awaiting-integration",
+      "verifiedCommit": null,
+      "implementationCommit": "26d67f428c5fb56a10d4ed5b4b09cfadfe879664",
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1850#issuecomment-6925478430"
     },
     {
       "id": "R059",
@@ -901,8 +909,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1851#issuecomment-6926778563"
     },
     {
       "id": "R060",
