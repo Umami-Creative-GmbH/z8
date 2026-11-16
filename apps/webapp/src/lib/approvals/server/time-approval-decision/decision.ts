@@ -33,6 +33,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import type { ClosedMonthKey } from "@/lib/time-tracking/closed-months/rules";
 import {
@@ -257,9 +258,8 @@ async function loadActor(
 	const row = await database.query.employee.findFirst({
 		where: and(
 			eq(employee.id, input.actor.employeeId),
-			eq(employee.organizationId, input.organizationId),
+			onCurrentRoster(input.organizationId),
 			eq(employee.userId, input.actor.userId),
-			eq(employee.isActive, true),
 		),
 		with: { user: true },
 	});

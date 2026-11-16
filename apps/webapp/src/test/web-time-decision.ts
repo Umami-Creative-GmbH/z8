@@ -23,22 +23,23 @@ export function webTimeDecision(session: WebTimeDecisionSession) {
 	): Promise<WebTimeDecision> {
 		const { userId, organizationId } = session;
 		if (!userId || !organizationId) return { success: false, result: null };
-		const [{ db }, { employee }, { and, eq }, { decideTimeApproval }] = await Promise.all([
+		const [
+			{ db },
+			{ employee },
+			{ and, eq },
+			{ decideTimeApproval },
+			{ onCurrentRoster },
+		] = await Promise.all([
 			import("@/db"),
 			import("@/db/schema"),
 			import("drizzle-orm"),
 			import("@/lib/approvals/server/time-approval-decision"),
+			import("@/lib/employee-lifecycle/current-roster"),
 		]);
 		const [actor] = await db
 			.select({ id: employee.id })
 			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, userId),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-				),
-			)
+			.where(and(eq(employee.userId, userId), onCurrentRoster(organizationId)))
 			.limit(1);
 		if (!actor) return { success: false, result: null };
 		const result = await decideTimeApproval({
@@ -53,6 +54,7 @@ export function webTimeDecision(session: WebTimeDecisionSession) {
 
 	return {
 		approve: (approvalId: string) => decide(approvalId, { kind: "approve" }),
-		reject: (approvalId: string, reason: string) => decide(approvalId, { kind: "reject", reason }),
+		reject: (approvalId: string, reason: string) =>
+			decide(approvalId, { kind: "reject", reason }),
 	};
 }
