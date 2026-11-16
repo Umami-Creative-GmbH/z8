@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the team absence heading, keeping team and descendants independent", () => {
+		expect(appPageOwnsHeading("/en/team/absences")).toBe(true);
+		expect(appPageOwnsHeading("/de/team/absences/")).toBe(true);
+		expect(appPageOwnsHeading("/en/team/absences/detail")).toBe(false);
+		expect(appPageOwnsHeading("/en/team")).toBe(false);
+		expect(appPageOwnsHeading("/en/team/driving")).toBe(false);
+	});
 	it("adopts only the report share-link settings heading without other settings or descendants", () => {
 		expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);
 		expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);

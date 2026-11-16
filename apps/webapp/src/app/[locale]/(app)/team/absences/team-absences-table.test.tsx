@@ -8,10 +8,7 @@ import {
 	getDefaultRecordAbsenceFormValues,
 	validateRecordAbsenceFormDateRange,
 } from "./record-absence-form-utils";
-import {
-	TeamAbsencesTable,
-	TeamAbsencesTableLoading,
-} from "./team-absences-table";
+import { TeamAbsencesTable, TeamAbsencesTableLoading } from "./team-absences-table";
 
 const routerPush = vi.fn();
 const tolgeeTranslations = vi.hoisted(() => new Map<string, string>());
@@ -20,14 +17,9 @@ let mockedSearchParams = "search=old&page=2&pageSize=10&year=2026";
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
 	useTranslate: () => ({
-		t: (
-			_key: string,
-			fallback: string,
-			params?: Record<string, string | number>,
-		) =>
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
-				(message, [key, value]) =>
-					message.replaceAll(`{${key}}`, String(value)),
+				(message, [key, value]) => message.replaceAll(`{${key}}`, String(value)),
 				tolgeeTranslations.get(_key) ?? fallback,
 			),
 	}),
@@ -35,14 +27,7 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push: routerPush, refresh: vi.fn() }),
-	Link: ({
-		href,
-		children,
-		...props
-	}: {
-		href: string;
-		children: React.ReactNode;
-	}) => (
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
 		<a href={href} {...props}>
 			{children}
 		</a>
@@ -94,17 +79,12 @@ describe("TeamAbsencesTable", () => {
 			"utf8",
 		);
 
-		expect(source).toContain(
-			"<Suspense fallback={<TeamAbsencesTableLoading />}>",
-		);
+		expect(source).toContain("<Suspense fallback={<TeamAbsencesTableLoading />}>");
 		expect(source).not.toContain("<Suspense fallback={null}>");
 	});
 
 	it("renders an immediate localized status while URL state resolves", () => {
-		tolgeeTranslations.set(
-			"common:loading.teamAbsences",
-			"Team-Abwesenheiten werden geladen",
-		);
+		tolgeeTranslations.set("common:loading.teamAbsences", "Team-Abwesenheiten werden geladen");
 
 		render(<TeamAbsencesTableLoading />);
 
@@ -113,14 +93,8 @@ describe("TeamAbsencesTable", () => {
 	});
 
 	it("renders translated table controls and accessible labels", () => {
-		tolgeeTranslations.set(
-			"team.absences.filters.searchPlaceholder",
-			"Mitarbeiter suchen…",
-		);
-		tolgeeTranslations.set(
-			"team.absences.filters.searchLabel",
-			"Mitarbeiter suchen",
-		);
+		tolgeeTranslations.set("team.absences.filters.searchPlaceholder", "Mitarbeiter suchen…");
+		tolgeeTranslations.set("team.absences.filters.searchLabel", "Mitarbeiter suchen");
 		tolgeeTranslations.set("team.absences.filters.searchSubmit", "Suchen");
 		tolgeeTranslations.set("team.absences.filters.allTeams", "Alle Teams");
 		tolgeeTranslations.set("team.absences.table.employee", "Mitarbeiter");
@@ -134,10 +108,7 @@ describe("TeamAbsencesTable", () => {
 			"team.absences.actions.recordForEmployee",
 			"Abwesenheit für {name} erfassen",
 		);
-		tolgeeTranslations.set(
-			"team.absences.pagination.page",
-			"Seite {page} von {pageCount}",
-		);
+		tolgeeTranslations.set("team.absences.pagination.page", "Seite {page} von {pageCount}");
 
 		render(
 			<TeamAbsencesTable
@@ -176,14 +147,13 @@ describe("TeamAbsencesTable", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByRole("searchbox", { name: "Mitarbeiter suchen" }),
-		).toHaveProperty("placeholder", "Mitarbeiter suchen…");
+		expect(screen.getByRole("searchbox", { name: "Mitarbeiter suchen" })).toHaveProperty(
+			"placeholder",
+			"Mitarbeiter suchen…",
+		);
 		expect(screen.getByRole("button", { name: "Suchen" })).toBeTruthy();
 		expect(screen.getByText("Alle Teams")).toBeTruthy();
-		expect(
-			screen.getByRole("columnheader", { name: /mitarbeiter/i }),
-		).toBeTruthy();
+		expect(screen.getByRole("columnheader", { name: /mitarbeiter/i })).toBeTruthy();
 		expect(screen.getByRole("columnheader", { name: "Aktionen" })).toBeTruthy();
 		expect(
 			screen.getByRole("button", {
@@ -218,12 +188,9 @@ describe("TeamAbsencesTable", () => {
 			/>,
 		);
 
-		fireEvent.change(
-			screen.getByRole("searchbox", { name: /search employees/i }),
-			{
-				target: { value: "Ada" },
-			},
-		);
+		fireEvent.change(screen.getByRole("searchbox", { name: /search employees/i }), {
+			target: { value: "Ada" },
+		});
 		fireEvent.click(screen.getByRole("button", { name: /search/i }));
 
 		expect(routerPush).toHaveBeenCalledWith(
@@ -251,9 +218,7 @@ describe("TeamAbsencesTable", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByRole("status", { name: /no employees found/i }),
-		).toBeTruthy();
+		expect(screen.getByRole("status", { name: /no employees found/i })).toBeTruthy();
 		expect(screen.getByText(/try adjusting filters/i)).toBeTruthy();
 	});
 
@@ -308,36 +273,24 @@ describe("TeamAbsencesTable", () => {
 		expect(screen.getByTestId("user-avatar").getAttribute("data-image")).toBe(
 			"https://example.com/ada.png",
 		);
-		expect(screen.getByTestId("user-avatar").getAttribute("data-seed")).toBe(
-			"user-1",
-		);
+		expect(screen.getByTestId("user-avatar").getAttribute("data-seed")).toBe("user-1");
 		expect(screen.getByText("24")).toBeTruthy();
-		expect(
-			screen
-				.getByRole("columnheader", { name: /employee/i })
-				.getAttribute("aria-sort"),
-		).toBe("ascending");
-		expect(
-			screen.getByRole("columnheader", { name: /pending/i }).className,
-		).not.toContain("hidden");
-		expect(
-			screen.getByRole("columnheader", { name: /sick/i }).className,
-		).not.toContain("hidden");
+		expect(screen.getByRole("columnheader", { name: /employee/i }).getAttribute("aria-sort")).toBe(
+			"ascending",
+		);
+		expect(screen.getByRole("columnheader", { name: /pending/i }).className).not.toContain(
+			"hidden",
+		);
+		expect(screen.getByRole("columnheader", { name: /sick/i }).className).not.toContain("hidden");
 		const recordButton = screen.getByRole("button", {
 			name: "Record absence for Ada Lovelace",
 		});
-		expect(recordButton.textContent).not.toContain("Record absence");
-		expect(recordButton.closest("div.rounded-lg")?.className).not.toContain(
-			"overflow-hidden",
-		);
+		expect(recordButton.textContent).toContain("Record absence");
+		expect(recordButton.closest("div.rounded-lg")?.className).not.toContain("overflow-hidden");
 
 		fireEvent.click(recordButton);
-		expect(
-			screen.getByRole("heading", { name: "Record absence for Ada Lovelace" }),
-		).toBeTruthy();
-		expect(
-			document.querySelector('[data-slot="action-panel-content"]'),
-		).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Record absence for Ada Lovelace" })).toBeTruthy();
+		expect(document.querySelector('[data-slot="action-panel-content"]')).toBeTruthy();
 	});
 
 	it("does not render absence entries below employee email addresses", () => {
@@ -433,9 +386,7 @@ describe("TeamAbsencesTable", () => {
 
 		expect(employeeHeader.getAttribute("aria-sort")).toBe("descending");
 		expect(employeeHeader.textContent).not.toMatch(/ascending|descending/i);
-		expect(
-			screen.getByRole("button", { name: /sort by employee \(descending\)/i }),
-		).toBeTruthy();
+		expect(screen.getByRole("button", { name: /sort by employee \(descending\)/i })).toBeTruthy();
 	});
 
 	it("disables pagination controls at boundaries and routes to the next page", () => {
@@ -476,10 +427,9 @@ describe("TeamAbsencesTable", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByRole<HTMLButtonElement>("button", { name: /previous page/i })
-				.disabled,
-		).toBe(true);
+		expect(screen.getByRole<HTMLButtonElement>("button", { name: /previous page/i }).disabled).toBe(
+			true,
+		);
 		const nextButton = screen.getByRole("button", { name: /next page/i });
 		expect((nextButton as HTMLButtonElement).disabled).toBe(false);
 
@@ -627,12 +577,9 @@ describe("TeamAbsencesTable", () => {
 			"/team/absences?search=old&page=1&pageSize=10&year=2026&sort=usedVacationDays&direction=asc",
 		);
 
-		fireEvent.change(
-			screen.getByRole("searchbox", { name: /search employees/i }),
-			{
-				target: { value: "Grace" },
-			},
-		);
+		fireEvent.change(screen.getByRole("searchbox", { name: /search employees/i }), {
+			target: { value: "Grace" },
+		});
 		fireEvent.click(screen.getByRole("button", { name: /search/i }));
 
 		expect(routerPush).toHaveBeenLastCalledWith(
@@ -653,10 +600,7 @@ describe("TeamAbsencesTable", () => {
 			"common.vacationAllowance.employmentMonths",
 			"{months} full employment months",
 		);
-		tolgeeTranslations.set(
-			"common.vacationAllowance.overdrawn",
-			"{days} days overdrawn",
-		);
+		tolgeeTranslations.set("common.vacationAllowance.overdrawn", "{days} days overdrawn");
 
 		render(
 			<TeamAbsencesTable
@@ -714,9 +658,7 @@ describe("TeamAbsencesTable", () => {
 		);
 
 		expect(
-			screen.getByText(
-				"8 of 30 days, prorated: started Oct 1, 2026, 3 full employment months",
-			),
+			screen.getByText("8 of 30 days, prorated: started Oct 1, 2026, 3 full employment months"),
 		).toBeTruthy();
 		expect(screen.getByText("2 days overdrawn")).toBeTruthy();
 	});
@@ -780,9 +722,7 @@ describe("validateRecordAbsenceFormDateRange", () => {
 				startTime: "",
 				endTime: "",
 			}),
-		).toBe(
-			"Cannot end in the morning if starting in the afternoon on the same day",
-		);
+		).toBe("Cannot end in the morning if starting in the afternoon on the same day");
 	});
 });
 

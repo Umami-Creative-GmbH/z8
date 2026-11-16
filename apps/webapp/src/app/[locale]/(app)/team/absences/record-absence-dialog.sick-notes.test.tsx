@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactElement, ReactNode } from "react";
+import { Activity, type ReactElement, type ReactNode } from "react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { discardStagedSickNoteUploadsAction } from "@/app/[locale]/(app)/absences/sick-note-actions";
@@ -212,6 +212,104 @@ describe("RecordAbsenceDialog sick notes (#984)", () => {
 		await waitFor(() => expect(recordAbsenceForEmployee).toHaveBeenCalledTimes(1));
 		expect(recordAbsenceWithSickNotes).not.toHaveBeenCalled();
 		expect(uploads.stage).not.toHaveBeenCalled();
+	});
+
+	it("keeps the submitted draft when cancellation is attempted during a pending record", async () => {
+		let complete!: (value: Awaited<ReturnType<typeof recordAbsenceForEmployee>>) => void;
+		vi.mocked(recordAbsenceForEmployee).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		renderDialog();
+		fillSickLeave();
+		const notes = screen.getByLabelText("Notes");
+		fireEvent.change(notes, { target: { value: "Retained draft" } });
+		fireEvent.click(screen.getByRole("button", { name: "Record absence" }));
+		await waitFor(() => expect(recordAbsenceForEmployee).toHaveBeenCalledTimes(1));
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect((notes as HTMLTextAreaElement).value).toBe("Retained draft");
+		complete({ success: false, error: "Refused" });
+	});
+
+	it("keeps the draft after refusal and retries the actual form once", async () => {
+		vi.mocked(recordAbsenceForEmployee).mockResolvedValueOnce({
+			success: false,
+			error: "Not allowed",
+		});
+		renderDialog();
+		fillSickLeave();
+		fireEvent.change(screen.getByLabelText("Notes"), { target: { value: "Keep this reason" } });
+		fireEvent.click(screen.getByRole("button", { name: "Record absence" }));
+		await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Not allowed"));
+		expect((screen.getByLabelText("Notes") as HTMLTextAreaElement).value).toBe("Keep this reason");
+		fireEvent.click(screen.getByRole("button", { name: "Record absence" }));
+		await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Absence recorded"));
+		expect(recordAbsenceForEmployee).toHaveBeenCalledTimes(2);
+	});
+
+	it.each(["success", "refusal", "rejection"])(
+		"ignores a late %s after the form retires",
+		async (outcome) => {
+			let resolve!: (value: Awaited<ReturnType<typeof recordAbsenceForEmployee>>) => void;
+			let reject!: (error: Error) => void;
+			vi.mocked(recordAbsenceForEmployee).mockImplementation(
+				() =>
+					new Promise((yes, no) => {
+						resolve = yes;
+						reject = no;
+					}),
+			);
+			const view = renderDialog();
+			fillSickLeave();
+			fireEvent.click(screen.getByRole("button", { name: "Record absence" }));
+			await waitFor(() => expect(recordAbsenceForEmployee).toHaveBeenCalledOnce());
+			view.unmount();
+			if (outcome === "rejection") reject(new Error("Transport failed"));
+			else
+				resolve(
+					outcome === "success"
+						? { success: true, data: { absenceId: "late" } }
+						: { success: false, error: "Refused" },
+				);
+			await new Promise((done) => setTimeout(done, 0));
+			expect(toast.success).not.toHaveBeenCalled();
+			expect(toast.error).not.toHaveBeenCalled();
+		},
+	);
+
+	it("retires pending work while Activity is hidden and permits a fresh operation on return", async () => {
+		let resolve!: (value: Awaited<ReturnType<typeof recordAbsenceForEmployee>>) => void;
+		vi.mocked(recordAbsenceForEmployee).mockImplementationOnce(
+			() =>
+				new Promise((yes) => {
+					resolve = yes;
+				}),
+		);
+		const panel = (
+			<RecordAbsenceDialog
+				open
+				onOpenChange={vi.fn()}
+				employee={{ id: "employee-anna", name: "Anna Example" }}
+				categories={categories}
+				sickNotesEnabled
+			/>
+		);
+		const view = render(<Activity mode="visible">{panel}</Activity>);
+		fillSickLeave();
+		fireEvent.click(screen.getByRole("button", { name: "Record absence" }));
+		await waitFor(() => expect(recordAbsenceForEmployee).toHaveBeenCalledOnce());
+		view.rerender(<Activity mode="hidden">{panel}</Activity>);
+		view.rerender(<Activity mode="visible">{panel}</Activity>);
+		await waitFor(() =>
+			expect(
+				(screen.getByRole("button", { name: "Record absence" }) as HTMLButtonElement).disabled,
+			).toBe(false),
+		);
+		resolve({ success: true, data: { absenceId: "late" } });
+		await new Promise((done) => setTimeout(done, 0));
+		expect(toast.success).not.toHaveBeenCalled();
 	});
 
 	it("names the files that could not be attached after recording", async () => {
