@@ -87,10 +87,27 @@ export function PayslipBatchWorkspace(props: WorkspaceProps) {
 	const { t } = useTranslate();
 	if (
 		current.isLoading ||
+		current.error ||
 		current.userId !== props.userId ||
 		current.activeOrganizationId !== props.organizationId
 	)
-		return (
+		return current.error ? (
+			<div role="alert" className="space-y-3 text-sm">
+				<p>
+					{t(
+						"settings.personnelFiles.batch.scopeUnavailable",
+						"Your current organization could not be confirmed. Retry before opening payslip batches.",
+					)}
+				</p>
+				<Button
+					type="button"
+					variant="outline"
+					onClick={() => void current.refetch()}
+				>
+					{t("common.retry", "Retry")}
+				</Button>
+			</div>
+		) : (
 			<p role="status">
 				{t(
 					"settings.personnelFiles.batch.scopeLoading",
