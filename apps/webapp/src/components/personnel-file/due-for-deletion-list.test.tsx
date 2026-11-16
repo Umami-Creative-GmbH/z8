@@ -315,3 +315,49 @@ it("keeps selection during a shared query refresh and retries with fresh evidenc
 	await screen.findByText("Updated title");
 	expect(screen.getByText("Selected: 1 of 500 maximum")).toBeTruthy();
 });
+
+it("releases capacity when selected documents leave the refreshed result", async () => {
+	boundary.read.mockResolvedValueOnce({
+		success: true,
+		data: {
+			...data,
+			documents: Array.from({ length: 500 }, (_, index) => ({
+				...due,
+				id: `old-${index}`,
+				title: `Old document ${index}`,
+			})),
+			unknownStart: [],
+		},
+	});
+	const view = mount();
+	await screen.findByText("Old document 0");
+	fireEvent.click(screen.getByRole("checkbox", { name: "Select due documents (up to 500)" }));
+	expect(screen.getByText("Selected: 500 of 500 maximum")).toBeTruthy();
+	boundary.read.mockResolvedValue({
+		success: true,
+		data: { ...data, documents: [{ ...due, id: "new", title: "Newly due" }] },
+	});
+	await act(async () => {
+		await view.client.invalidateQueries();
+	});
+	const checkbox = await screen.findByRole("checkbox", {
+		name: "Select Newly due for Former Person",
+	});
+	expect(screen.getByText("Selected: 0 of 500 maximum")).toBeTruthy();
+	expect(checkbox.getAttribute("aria-disabled")).not.toBe("true");
+	fireEvent.click(checkbox);
+	expect(checkbox.getAttribute("aria-checked")).toBe("true");
+	fireEvent.click(checkbox);
+	fireEvent.click(screen.getByRole("checkbox", { name: "Select due documents (up to 500)" }));
+	expect(checkbox.getAttribute("aria-checked")).toBe("true");
+	expect(
+		screen
+			.getByRole("checkbox", { name: "Select Unknown end for Legacy Person" })
+			.getAttribute("aria-checked"),
+	).toBe("false");
+	fireEvent.click(screen.getByRole("button", { name: "Review selected documents" }));
+	const dialog = await screen.findByRole("alertdialog");
+	expect(within(dialog).getByText("Newly due")).toBeTruthy();
+	expect(within(dialog).getAllByRole("link")).toHaveLength(1);
+	expect(boundary.purge).not.toHaveBeenCalled();
+});
