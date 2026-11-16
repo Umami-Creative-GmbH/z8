@@ -1637,8 +1637,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
-      "verifiedCommit": null
+      "status": "awaiting-integration",
+      "verifiedCommit": null,
+      "implementationCommit": "1ea5804a0d7f6125406b2eecec121fa1949ded90",
+      "handoffLimitation": "Worker reports shared history read failure lacks Retry; preserve and confirm at fresh merger. Original runtime/build/catalog/multi-org/device limits remain."
     },
     {
       "id": "R158",
@@ -1657,7 +1659,7 @@
       "blockedBy": [
         1694
       ],
-      "status": "pending",
+      "status": "implementing",
       "verifiedCommit": null
     },
     {

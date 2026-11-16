@@ -62,8 +62,9 @@ This satisfies F1's requirement that the approved baseline be present in its imp
 - R062 #1736 (project reports): integrated and verified at `c9a56648c81206527d1935bfcb46e0a959a4157f`, including shared compiled PDF rendering, scope recovery and stable revoke guards. [Actual recovery and precise retained limits](1736.md#root-integration-verification-and-scope-recovery).
 - R063 #1737 (vehicle reports): committed implementation awaits fresh serial review; its shared PDF dependency is now verified.
 - R065 #1738 (scheduling): committed implementation awaits fresh review; authenticated visual acceptance remains incomplete after the compiled-login approach was rejected. Normal development authentication is required for subsequent verification.
-- R157 #1739 (team) and R158 #1740 (team absences): claimed and implementing from verified H1 ancestry; latest verified product is `c9a56648c81206527d1935bfcb46e0a959a4157f`.
-- Frontier counts: **49 integrated, 11 awaiting integration, two implementing, 95 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
+- R157 #1739 (team): committed handoff awaits fresh review, including the reported shared history Retry gap.
+- R158 #1740 (team absences) and R159 #1741 (driving details): claimed and implementing from verified H1/F2 ancestry; latest verified product is `c9a56648c81206527d1935bfcb46e0a959a4157f`.
+- Frontier counts: **49 integrated, 12 awaiting integration, two implementing, 94 pending**; 157 implementation/readiness nodes and 159 blocker edges remain unchanged.
 - R002 #1701 (absences): integrated and verified at `a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc`; organization/year/zone, records and existing absence action owners preserved. See [capabilities and remaining checks](1701.md).
 - R005 #1703 (overtime burn-down): integrated and verified at `2bc30e88f63d9db3d547353f49077db0c0ee7805`; root corrected both Unassigned manager queries and active analytics navigation. See [capabilities, corrections and remaining checks](1703.md).
 - R001 #1700 (dashboard conformance): integrated and verified at `8eed0aa58bcae1dd19be7e6d7d78303208a3ddde`; approved composition/preferences preserved, no-organization heading and streamed clock hydration corrected. See [capabilities and remaining checks](1700.md).
