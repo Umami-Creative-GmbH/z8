@@ -1,0 +1,6 @@
+{
+  "source": "recovery.json",
+  "failedMessage": false,
+  "readErrorRetryAcceptance": "unpassed",
+  "qualification": "The preserved driver qualification and console boilerplate overstate the probe. One matching request was aborted, but no read error appeared and the conditional Retry click did not run. Only successful saved-record read, eight shell Tab samples, collapse persistence and scrolled phone tail are accepted. read-failure.png shows a loaded record. Unit read Retry passed independently."
+}

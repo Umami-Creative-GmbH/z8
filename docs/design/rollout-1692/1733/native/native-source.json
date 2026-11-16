@@ -1,0 +1,7 @@
+{
+  "head": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+  "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+  "canonicalSha256": "a90710da7670eb200e0e205727f99bc7b58fb971178816cb7e83302794f1b47d",
+  "session": "next-dev-loop-1733-t3-9592eb70-1d830c19755b58c9",
+  "qualification": "Fresh real loaded batch workspace target. Private-stdin normal BetterAuth sign-in, no credential output, no cookie transfer or state/restore file. Transient documented no-restore session closes below. This does not retroactively pass the worker native attempt or reproduce queued-arrival timing."
+}

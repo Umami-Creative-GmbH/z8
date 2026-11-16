@@ -1,0 +1,15 @@
+{
+  "files": 105,
+  "png": 19,
+  "json": 22,
+  "fixtureValueScan": "No generated passwords/secrets/tokens in public evidence",
+  "sourceHashes": {
+    "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx": "06153983e4f486b48d75317f2ac9997f2dcd73e2fecca3f36fce983c1baf133b",
+    "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695",
+    "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f",
+    "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts": "9d22fcac9d07044dddbec485572a116321a35bd5a82dc3e948d4d09bc446c8ef",
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "8d4e158f9a8d366b1a8041ef6e603ef4727668f57827a5a5283891171ce0e7d2",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts": "b5903620ac6f66bbba14cde8c88ca9a2068ec487365d1065d014ba6fb169b075"
+  }
+}

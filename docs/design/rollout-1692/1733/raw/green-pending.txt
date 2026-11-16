@@ -1,0 +1,36 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/payslip-batch-workspace.test.tsx (3 tests | 1 failed) 129ms
+   × freezes file edits until the confirmed command and readback settle 51ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/payslip-batch-workspace.test.tsx > freezes file edits until the confirmed command and readback settle
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/personnel-file/payslip-batch-workspace.test.tsx:59:107
+     57|  expect(boundary.confirm).not.toHaveBeenCalled();
+     58|  fireEvent.click(screen.getByRole("button", { name: "Save payslips" })…
+     59|  expect(screen.getByRole("checkbox", { name: "Include 100.pdf", hidden…
+       |                                                                                                           ^
+     60|  await act(async () => { complete({ success: true, data: { batch: read…
+     61|  await waitFor(() => expect(boundary.confirm).toHaveBeenCalledTimes(1)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  20:14:04
+   Duration  1.02s (import 38%, environment 37%, tests 14%, transform 6%, setup 3%, worker 1%)
+

@@ -202,3 +202,11 @@ describe("route metadata", () => {
 		);
 	});
 });
+it("adopts only the exact payslip batch detail heading", () => {
+	expect(
+		appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-1"),
+	).toBe(true);
+	expect(
+		appPageOwnsHeading("/de/personnel-files/payslip-batches/batch-1/detail"),
+	).toBe(false);
+});

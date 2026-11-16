@@ -1,0 +1,453 @@
+src\components\personnel-file\payslip-batch-workspace.tsx:412:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━
+
+  ! This function BatchSummary is unused.
+  
+    410 │ }
+    411 │ 
+  > 412 │ function BatchSummary({ preview }: { preview: PayslipBatchPreview }) {
+        │          ^^^^^^^^^^^^
+    413 │ 	const { t } = useTranslate();
+    414 │ 	const locale = useAppLocale();
+  
+  i Unused variables are often the result of typos, incomplete refactors, or other sources of bugs.
+  
+  i Unsafe fix: If this is intentional, prepend BatchSummary with an underscore.
+  
+     410  410 │   }␍
+     411  411 │   ␍
+     412      │ - function·BatchSummary({·preview·}:·{·preview:·PayslipBatchPreview·})·{␍
+          412 │ + function·_BatchSummary({·preview·}:·{·preview:·PayslipBatchPreview·})·{␍
+     413  413 │   	const { t } = useTranslate();␍
+     414  414 │   	const locale = useAppLocale();␍
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:474:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━
+
+  ! This function AddFilesCard is unused.
+  
+    472 │ }
+    473 │ 
+  > 474 │ function AddFilesCard({
+        │          ^^^^^^^^^^^^
+    475 │ 	batchId,
+    476 │ 	preview,
+  
+  i Unused variables are often the result of typos, incomplete refactors, or other sources of bugs.
+  
+  i Unsafe fix: If this is intentional, prepend AddFilesCard with an underscore.
+  
+     472  472 │   }␍
+     473  473 │   ␍
+     474      │ - function·AddFilesCard({␍
+          474 │ + function·_AddFilesCard({␍
+     475  475 │   	batchId,␍
+     476  476 │   	preview,␍
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:668:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━
+
+  ! This function ConfirmationResult is unused.
+  
+    666 │ }
+    667 │ 
+  > 668 │ function ConfirmationResult({ result }: { result: PayslipBatchConfirmation }) {
+        │          ^^^^^^^^^^^^^^^^^^
+    669 │ 	const { t } = useTranslate();
+    670 │ 	return (
+  
+  i Unused variables are often the result of typos, incomplete refactors, or other sources of bugs.
+  
+  i Unsafe fix: If this is intentional, prepend ConfirmationResult with an underscore.
+  
+     666  666 │   }␍
+     667  667 │   ␍
+     668      │ - function·ConfirmationResult({·result·}:·{·result:·PayslipBatchConfirmation·})·{␍
+          668 │ + function·_ConfirmationResult({·result·}:·{·result:·PayslipBatchConfirmation·})·{␍
+     669  669 │   	const { t } = useTranslate();␍
+     670  670 │   	return (␍
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:706:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━
+
+  ! This function FileList is unused.
+  
+    704 │ }
+    705 │ 
+  > 706 │ function FileList({
+        │          ^^^^^^^^
+    707 │ 	preview,
+    708 │ 	onChanged,
+  
+  i Unused variables are often the result of typos, incomplete refactors, or other sources of bugs.
+  
+  i Unsafe fix: If this is intentional, prepend FileList with an underscore.
+  
+     704  704 │   }␍
+     705  705 │   ␍
+     706      │ - function·FileList({␍
+          706 │ + function·_FileList({␍
+     707  707 │   	preview,␍
+     708  708 │   	onChanged,␍
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:708:2 lint/correctness/noUnusedFunctionParameters ━━━━━━━━━━
+
+  ! This parameter onChanged is unused.
+  
+    706 │ function FileList({
+    707 │ 	preview,
+  > 708 │ 	onChanged,
+        │ 	^^^^^^^^^
+    709 │ }: {
+    710 │ 	preview: PayslipBatchPreview;
+  
+  i Unused parameters might be the result of an incomplete refactoring.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:831:2 lint/correctness/noUnusedFunctionParameters ━━━━━━━━━━
+
+  ! This parameter onChanged is unused.
+  
+    829 │ 	file,
+    830 │ 	preview,
+  > 831 │ 	onChanged,
+        │ 	^^^^^^^^^
+    832 │ }: {
+    833 │ 	file: PayslipBatchFileView;
+  
+  i Unused parameters might be the result of an incomplete refactoring.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:973:10 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━
+
+  ! This function BatchSaveActions is unused.
+  
+    971 │ }
+    972 │ 
+  > 973 │ function BatchSaveActions({
+        │          ^^^^^^^^^^^^^^^^
+    974 │ 	unresolved,
+    975 │ 	t,
+  
+  i Unused variables are often the result of typos, incomplete refactors, or other sources of bugs.
+  
+  i Unsafe fix: If this is intentional, prepend BatchSaveActions with an underscore.
+  
+     971  971 │   }␍
+     972  972 │   ␍
+     973      │ - function·BatchSaveActions({␍
+          973 │ + function·_BatchSaveActions({␍
+     974  974 │   	unresolved,␍
+     975  975 │   	t,␍
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1073:3 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Illegal return statement outside of a function
+  
+    1072 │ 	if (query.isPending) {
+  > 1073 │ 		return (
+         │ 		^^^^^^^^
+  > 1074 │ 			<div className="space-y-3" aria-busy="true">
+  > 1075 │ 				<Skeleton className="h-24 w-full" />
+  > 1076 │ 				<Skeleton className="h-64 w-full" />
+  > 1077 │ 			</div>
+  > 1078 │ 		);
+         │ 		^^
+    1079 │ 	}
+    1080 │ 	if (query.isError) {
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1081:3 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Illegal return statement outside of a function
+  
+    1079 │ 	}
+    1080 │ 	if (query.isError) {
+  > 1081 │ 		return (
+         │ 		^^^^^^^^
+  > 1082 │ 			<div role="alert" className="space-y-3 text-sm text-destructive">
+          ...
+  > 1094 │ 			</div>
+  > 1095 │ 		);
+         │ 		^^
+    1096 │ 	}
+    1097 │ 
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1113:2 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Illegal return statement outside of a function
+  
+    1111 │ 	const busy = confirming || editing || uploading || query.isFetching;
+    1112 │ 
+  > 1113 │ 	return (
+         │ 	^^^^^^^^
+  > 1114 │ 		<BatchOperations value={{ busy: busy || confirmOpen, update }}>
+          ...
+  > 1238 │ 		</BatchOperations>
+  > 1239 │ 	);
+         │ 	^^
+    1240 │ }
+    1241 │ 
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1240:1 parse ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Expected a statement but instead found '}'.
+  
+    1238 │ 		</BatchOperations>
+    1239 │ 	);
+  > 1240 │ }
+         │ ^
+    1241 │ 
+    1242 │ function BatchSummary({ preview }: { preview: PayslipBatchPreview }) {
+  
+  i Expected a statement here.
+  
+    1238 │ 		</BatchOperations>
+    1239 │ 	);
+  > 1240 │ }
+         │ ^
+    1241 │ 
+    1242 │ function BatchSummary({ preview }: { preview: PayslipBatchPreview }) {
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1242:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'BatchSummary' is redeclared in the same scope.
+  
+    1240 │ }
+    1241 │ 
+  > 1242 │ function BatchSummary({ preview }: { preview: PayslipBatchPreview }) {
+         │          ^^^^^^^^^^^^
+    1243 │ 	const { t } = useTranslate();
+    1244 │ 	const locale = useAppLocale();
+  
+  i 'BatchSummary' is defined here:
+  
+    410 │ }
+    411 │ 
+  > 412 │ function BatchSummary({ preview }: { preview: PayslipBatchPreview }) {
+        │          ^^^^^^^^^^^^
+    413 │ 	const { t } = useTranslate();
+    414 │ 	const locale = useAppLocale();
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1304:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'AddFilesCard' is redeclared in the same scope.
+  
+    1302 │ }
+    1303 │ 
+  > 1304 │ function AddFilesCard({
+         │          ^^^^^^^^^^^^
+    1305 │ 	batchId,
+    1306 │ 	preview,
+  
+  i 'AddFilesCard' is defined here:
+  
+    472 │ }
+    473 │ 
+  > 474 │ function AddFilesCard({
+        │          ^^^^^^^^^^^^
+    475 │ 	batchId,
+    476 │ 	preview,
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1498:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'ConfirmationResult' is redeclared in the same scope.
+  
+    1496 │ }
+    1497 │ 
+  > 1498 │ function ConfirmationResult({ result }: { result: PayslipBatchConfirmation }) {
+         │          ^^^^^^^^^^^^^^^^^^
+    1499 │ 	const { t } = useTranslate();
+    1500 │ 	return (
+  
+  i 'ConfirmationResult' is defined here:
+  
+    666 │ }
+    667 │ 
+  > 668 │ function ConfirmationResult({ result }: { result: PayslipBatchConfirmation }) {
+        │          ^^^^^^^^^^^^^^^^^^
+    669 │ 	const { t } = useTranslate();
+    670 │ 	return (
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1518:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'useFailureLabels' is redeclared in the same scope.
+  
+    1516 │ }
+    1517 │ 
+  > 1518 │ function useFailureLabels() {
+         │          ^^^^^^^^^^^^^^^^
+    1519 │ 	const { t } = useTranslate();
+    1520 │ 	return {
+  
+  i 'useFailureLabels' is defined here:
+  
+    686 │ }
+    687 │ 
+  > 688 │ function useFailureLabels() {
+        │          ^^^^^^^^^^^^^^^^
+    689 │ 	const { t } = useTranslate();
+    690 │ 	return {
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1536:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'FileList' is redeclared in the same scope.
+  
+    1534 │ }
+    1535 │ 
+  > 1536 │ function FileList({
+         │          ^^^^^^^^
+    1537 │ 	preview,
+    1538 │ 	onChanged,
+  
+  i 'FileList' is defined here:
+  
+    704 │ }
+    705 │ 
+  > 706 │ function FileList({
+        │          ^^^^^^^^
+    707 │ 	preview,
+    708 │ 	onChanged,
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1568:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'usePayslipFileRow' is redeclared in the same scope.
+  
+    1566 │ }
+    1567 │ 
+  > 1568 │ function usePayslipFileRow({
+         │          ^^^^^^^^^^^^^^^^^
+    1569 │ 	file,
+    1570 │ 	preview,
+  
+  i 'usePayslipFileRow' is defined here:
+  
+    736 │ }
+    737 │ 
+  > 738 │ function usePayslipFileRow({
+        │          ^^^^^^^^^^^^^^^^^
+    739 │ 	file,
+    740 │ 	preview,
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1658:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'FileRow' is redeclared in the same scope.
+  
+    1656 │ }
+    1657 │ 
+  > 1658 │ function FileRow({
+         │          ^^^^^^^
+    1659 │ 	file,
+    1660 │ 	preview,
+  
+  i 'FileRow' is defined here:
+  
+    826 │ }
+    827 │ 
+  > 828 │ function FileRow({
+        │          ^^^^^^^
+    829 │ 	file,
+    830 │ 	preview,
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1746:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'PayslipFileStatus' is redeclared in the same scope.
+  
+    1744 │ }
+    1745 │ 
+  > 1746 │ function PayslipFileStatus({
+         │          ^^^^^^^^^^^^^^^^^
+    1747 │ 	file,
+    1748 │ 	needsEmployee,
+  
+  i 'PayslipFileStatus' is defined here:
+  
+    914 │ }
+    915 │ 
+  > 916 │ function PayslipFileStatus({
+        │          ^^^^^^^^^^^^^^^^^
+    917 │ 	file,
+    918 │ 	needsEmployee,
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx:1803:10 lint/suspicious/noRedeclare ━━━━━━━━━━
+
+  × 'BatchSaveActions' is redeclared in the same scope.
+  
+    1801 │ }
+    1802 │ 
+  > 1803 │ function BatchSaveActions({
+         │          ^^^^^^^^^^^^^^^^
+    1804 │ 	unresolved,
+    1805 │ 	t,
+  
+  i 'BatchSaveActions' is defined here:
+  
+    971 │ }
+    972 │ 
+  > 973 │ function BatchSaveActions({
+        │          ^^^^^^^^^^^^^^^^
+    974 │ 	unresolved,
+    975 │ 	t,
+  
+  i Redeclarations make it unclear which variable a reference points to and can hide earlier declarations.
+  
+  i Remove the duplicate declaration or rename one of the variables.
+  
+
+Skipped 5 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 3.
+Checked 7 files in 18ms. Fixed 3 files.
+Found 14 errors.
+Found 9 warnings.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+
