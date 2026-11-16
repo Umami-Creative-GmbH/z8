@@ -27,8 +27,38 @@ describe.skipIf(!executablePath)("payslip upload transport", () => {
 	const caller = `
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import Uppy from '@uppy/core';
+import Tus from '@uppy/tus';
 import { usePayslipBatchUpload } from '@/components/personnel-file/use-payslip-batch-upload';
+import { stageUpload } from '@/components/personnel-file/payslip-batch-upload-client';
+import { getTusFileKeyFromUploadUrl } from '@/lib/upload/tus-url';
 const onStaged = () => {};
+// Model the released client's real upload/staging calls, preserving its default
+// completed-URL cache. No localStorage internals or synthetic cache entries.
+function PreviousIntake({ batchId }) {
+  const [uppy, setUppy] = useState(null), [staged, setStaged] = useState(0);
+  useEffect(() => {
+    const client = new Uppy({ id: 'uppy', autoProceed: true }).use(Tus, {
+      endpoint: '/api/tus', removeFingerprintOnSuccess: false,
+    });
+    client.on('upload-success', async (file, response) => {
+      await stageUpload({ batchId, fileName: file.name, tusFileKey: getTusFileKeyFromUploadUrl(response.uploadURL) });
+      setStaged(1);
+      client.removeFile(file.id);
+    });
+    setUppy(client);
+    return () => client.destroy();
+  }, [batchId]);
+  return <section>
+    <input aria-label="PDF files" type="file" disabled={!uppy} onChange={event => {
+      const file = event.currentTarget.files[0];
+      uppy.addFile({ name: file.name, type: 'application/pdf', data: file, meta: { purpose: 'payslip-batch' } });
+      event.currentTarget.value = '';
+    }} />
+    <output aria-label="Staged files">{staged}</output>
+    <output aria-label="Failed files">0</output>
+  </section>;
+}
 function Intake({ batchId }) {
   const upload = usePayslipBatchUpload({ batchId, onStaged });
   const [ready, setReady] = useState(false);
@@ -47,7 +77,9 @@ function Probe() {
   return <main>
     <button onClick={() => setBatch(value => value + 1)}>Next batch</button>
     <output aria-label="Current batch">{batch}</output>
-    <Intake key={batch} batchId={'batch-' + batch} />
+    {batch === 1 && new URLSearchParams(location.search).has('previous')
+      ? <PreviousIntake batchId="previous-batch" />
+      : <Intake key={batch} batchId={'batch-' + batch} />}
   </main>;
 }
 createRoot(document.getElementById('root')).render(<Probe />);
@@ -241,5 +273,22 @@ createRoot(document.getElementById('root')).render(<Probe />);
 		expect(uploads.size).toBe(1);
 		expect(heads, JSON.stringify(trace)).toEqual([{ key: "upload-1", offset: 5 * 1024 * 1024 }]);
 		expect(stagedBytes).toEqual([bytes]);
+	}, 15_000);
+
+	it("ignores a consumed completed URL retained by the previous client", async () => {
+		const file = join(directory, "previous.pdf");
+		const bytes = Buffer.from("%PDF-1.4\n% previous client fixture\n%%EOF\n");
+		await writeFile(file, bytes);
+		await page.goto(`${origin}/?previous`);
+		await choose(file);
+		expect(await settled()).toBe(1);
+		await page.locator("button ::-p-text(Next batch)").click();
+		await page.waitForFunction(
+			() => document.querySelector('[aria-label="Current batch"]')?.textContent === "2",
+		);
+		await choose(file);
+		expect(await settled()).toBe(1);
+		expect(staged.map(({ batchId }) => batchId)).toEqual(["previous-batch", "batch-2"]);
+		expect(stagedBytes).toEqual([bytes, bytes]);
 	}, 15_000);
 });

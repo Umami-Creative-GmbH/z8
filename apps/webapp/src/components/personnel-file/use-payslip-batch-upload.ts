@@ -39,6 +39,7 @@ export function usePayslipBatchUpload(options: {
 		let active = true;
 		setProgress(idle);
 		const uppy = new Uppy({
+			id: `payslip-batch-${batchId}`,
 			restrictions: {
 				maxFileSize: PERSONNEL_DOCUMENT_MAX_BYTES,
 				maxNumberOfFiles: PAYSLIP_BATCH_MAX_FILES,
