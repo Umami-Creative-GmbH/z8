@@ -1,0 +1,68 @@
+{
+  "source": "553074091b4ff538d17709cad1e934d4d7ff4aea",
+  "dirty": [
+    ""
+  ],
+  "phase": "exercise",
+  "role": "small-admin",
+  "scope": "own synthetic small organization, 2026-11-01..15, pageSize=10",
+  "headings": [
+    "Sick leave"
+  ],
+  "rows": 10,
+  "errors": [],
+  "probes": [
+    {
+      "name": "desktop",
+      "geometry": {
+        "viewport": 1600,
+        "document": 1600,
+        "recordClient": 1294,
+        "recordScroll": 1294
+      }
+    },
+    {
+      "name": "wide-dark",
+      "geometry": {
+        "viewport": 2400,
+        "document": 2400,
+        "recordClient": 2094,
+        "recordScroll": 2094
+      }
+    },
+    {
+      "name": "phone",
+      "geometry": {
+        "viewport": 390,
+        "document": 390,
+        "recordClient": 356,
+        "recordScroll": 960
+      }
+    },
+    {
+      "name": "phone-large",
+      "geometry": {
+        "viewport": 390,
+        "document": 390,
+        "recordClient": 356,
+        "recordScroll": 960
+      }
+    },
+    {
+      "emptyPanel": true
+    },
+    {
+      "attachedReadback": true
+    },
+    {
+      "download": {
+        "status": 200,
+        "type": "image/png",
+        "size": 68
+      }
+    },
+    {
+      "unlinkedThenRelinkedReadback": true
+    }
+  ]
+}

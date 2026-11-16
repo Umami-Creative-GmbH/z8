@@ -39,6 +39,12 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(true);
 		expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id")).toBe(true);
 	});
+	it("adopts only the sick-leave overview heading, preserving independent personnel routes", () => {
+		expect(appPageOwnsHeading("/de/personnel-files/sick-leave")).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/sick-leave/detail")).toBe(
+			false,
+		);
+	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
@@ -63,12 +69,13 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);
 		expect(appPageOwnsHeading("/en/personnel-files/employee-1")).toBe(false);
 	});
-	it("adopts the personnel file directory while preserving independently staged descendant owners", () => {
+	it("adopts the personnel file directory and sick-leave overview while preserving descendant boundaries", () => {
 		expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);
 		expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/sick-leave")).toBe(true);
 		for (const path of [
 			"/en/personnel-files/id",
-			"/en/personnel-files/sick-leave",
+			"/en/personnel-files/sick-leave/detail",
 			"/en/settings/personnel-files",
 		])
 			expect(appPageOwnsHeading(path)).toBe(false);

@@ -1,0 +1,436 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9b0f468b-151f714db384cc36/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/sick-leave-overview.test.tsx (3 tests | 1 failed) 184ms
+   ❯ SickLeaveOverview (3)
+     × provides a named keyboard comparison region with all fields and no reminder actions 125ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/sick-leave-overview.test.tsx > SickLeaveOverview > provides a named keyboard comparison region with all fields and no reminder actions
+TestingLibraryElementError: Unable to find an accessible element with the role "region" and name "Sick leave"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "From":
+  <button
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-labelledby="_r_0_"
+    aria-required="true"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+    data-base-ui-click-trigger=""
+    data-slot="popover-trigger"
+    id="base-ui-_r_2_"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "To":
+  <button
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-labelledby="_r_3_"
+    aria-required="true"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+    data-base-ui-click-trigger=""
+    data-slot="popover-trigger"
+    id="base-ui-_r_5_"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Attach or link sick notes for {name}, {dateRange}":
+  <button
+    aria-label="Attach or link sick notes for {name}, {dateRange}"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 text-primary underline-offset-4 hover:underline gap-1.5 rounded-md has-[>svg]:px-2.5 h-auto px-0"
+    data-slot="button"
+    type="button"
+  />
+
+  Name "Previous page":
+  <button
+    aria-label="Previous page"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 size-9"
+    data-slot="button"
+    disabled=""
+    type="button"
+  />
+
+  Name "Next page":
+  <button
+    aria-label="Next page"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 size-9"
+    data-slot="button"
+    disabled=""
+    type="button"
+  />
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Employee":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-labelledby="_r_6_"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="select-trigger"
+    id="base-ui-_r_7_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Team":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-labelledby="_r_a_"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="select-trigger"
+    id="base-ui-_r_b_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Sick detail":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-labelledby="_r_e_"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="select-trigger"
+    id="base-ui-_r_f_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Sick notes":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-labelledby="_r_i_"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="select-trigger"
+    id="base-ui-_r_j_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Status":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-labelledby="_r_m_"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="select-trigger"
+    id="base-ui-_r_n_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Rows per page":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-labelledby="_r_q_"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-20"
+    data-size="default"
+    data-slot="select-trigger"
+    id="base-ui-_r_r_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  --------------------------------------------------
+  table:
+
+  Name "":
+  <table
+    class="w-full caption-bottom text-sm"
+    data-mobile-layout="scroll"
+    data-slot="table"
+  />
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  <thead
+    class="[&_tr]:border-b"
+    data-slot="table-header"
+  />
+
+  Name "":
+  <tbody
+    class="[&_tr:last-child]:border-0"
+    data-slot="table-body"
+  />
+
+  --------------------------------------------------
+  row:
+
+  Name "Employee Dates Duration Status Sick detail Sick notes":
+  <tr
+    class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+    data-slot="table-row"
+  />
+
+  Name "Anna Example 0017 1 – 2 Sept 2026 {count} days Pending With certificate No note Attach or link":
+  <tr
+    class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+    data-slot="table-row"
+  />
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Employee":
+  <th
+    class="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]"
+    data-slot="table-head"
+  />
+
+  Name "Dates":
+  <th
+    class="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]"
+    data-slot="table-head"
+  />
+
+  Name "Duration":
+  <th
+    class="h-10 whitespace-nowrap px-2 align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-right"
+    data-slot="table-head"
+  />
+
+  Name "Status":
+  <th
+    class="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]"
+    data-slot="table-head"
+  />
+
+  Name "Sick detail":
+  <th
+    class="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]"
+    data-slot="table-head"
+  />
+
+  Name "Sick notes":
+  <th
+    class="h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]"
+    data-slot="table-head"
+  />
+
+  --------------------------------------------------
+  cell:
+
+  Name "Anna Example 0017":
+  <td
+    class="whitespace-nowrap p-2 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] align-top"
+    data-slot="table-cell"
+  />
+
+  Name "1 – 2 Sept 2026":
+  <td
+    class="p-2 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] align-top whitespace-nowrap"
+    data-slot="table-cell"
+  />
+
+  Name "{count} days":
+  <td
+    class="p-2 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] align-top text-right tabular-nums whitespace-nowrap"
+    data-slot="table-cell"
+  />
+
+  Name "Pending":
+  <td
+    class="whitespace-nowrap p-2 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] align-top"
+    data-slot="table-cell"
+  />
+
+  Name "With certificate":
+  <td
+    class="whitespace-nowrap p-2 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] align-top"
+    data-slot="table-cell"
+  />
+
+  Name "No note Attach or link":
+  <td
+    class="whitespace-nowrap p-2 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] align-top"
+    data-slot="table-cell"
+  />
+
+  --------------------------------------------------
+  link:
+
+  Name "Anna Example":
+  <a
+    class="font-medium underline-offset-4 hover:underline"
+    href="/personnel-files/e9850000-0000-4000-8000-000000000004?category=sick_note"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      aria-busy="false"
+      class="flex flex-col gap-4"
+    >
+      <div
+        class="grid gap-3 rounded-lg border bg-card p-3 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_0_"
+          >
+            From
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-labelledby="_r_0_"
+            aria-required="true"
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+            data-base-ui-click-trigger=""
+            data-slot="popover-trigger"
+            id="base-ui-_r_2_"
+            tabindex="0"
+            type="button"
+          >
+            <svg
+              class="tabler-icon tabler-icon-calendar size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+              />
+              <path
+                d="M16 3v4"
+              />
+              <path
+                d="M8 3v4"
+              />
+              <path
+                d="M4 11h16"
+              />
+            </svg>
+            10 Jul 2026
+          </button>
+        </div>
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_3_"
+          >
+            To
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="dialog"
+            aria-labelledby="_r_3_"
+            aria-required="true"
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+            data-base-ui-click-trigger=""
+            data-slot="popover-trigger"
+            id="base-ui-_r_5_"
+            tabindex="0"
+            type="button"
+          >
+            <svg
+              class="tabler-icon tabler-icon-calendar size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+              />
+              <path
+                d="M16 3v4"
+              />
+              <path
+                d="M8 3v4"
+              />
+              <path
+                d="M4 11h16"
+              />
+            </svg>
+            10 Oct 2026
+          </button>
+        </div>
+        <div
+          class="flex min-w-0 flex-col gap-1.5"
+        >
+          <span
+            class="text-sm font-medium"
+            id="_r_6_"
+          >
+            Employee
+          </span>
+          <button
+            aria-expanded="false"
+            aria-haspopup="listbox"
+            aria-labelledby="_r_6_"
+            class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive...
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/personnel-file/sick-leave-overview.test.tsx:92:29
+     90|  it("provides a named keyboard comparison region with all fields and n…
+     91|   renderOverview([row({ status: "pending", employeeNumber: "0017" })]);
+     92|   const comparison = screen.getByRole("region", { name: "Sick leave" }…
+       |                             ^
+     93|   expect(comparison.tabIndex).toBe(0);
+     94|   expect(within(comparison).getAllByRole("columnheader")).toHaveLength…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  20:39:56
+   Duration  4.97s (transform 44%, import 43%, environment 8%, tests 4%, setup 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-9b0f468b-
+  │ 151f714db384cc36\apps\webapp
+

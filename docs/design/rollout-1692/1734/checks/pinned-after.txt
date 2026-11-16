@@ -1,0 +1,1 @@
+{"source":"553074091b4ff538d17709cad1e934d4d7ff4aea","dirty":[""],"phase":"after","role":"small-admin","scope":"own synthetic small organization, 2026-11-01..15, pageSize=10","headings":["Sick leave"],"rows":10,"errors":[],"probes":[]}
