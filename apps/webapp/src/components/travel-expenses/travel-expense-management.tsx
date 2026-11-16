@@ -1,7 +1,10 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { useOrganization } from "@/components/providers/organization-context-provider";
+import { PageHeader } from "@/components/ui/page-header";
+import { useSession } from "@/lib/auth-client";
 import { ExpenseHistory } from "./expense-history";
 import {
 	NewMileageExpenseButton,
@@ -10,9 +13,10 @@ import {
 } from "./report/new-receipt-expense-button";
 
 interface TravelExpenseManagementProps {
+	userId: string;
 	organizationId: string;
 	employeeId: string;
-	/** Approvals and finance entries, rendered under the page header. */
+	/** Independent server-authorized destinations, after personal history. */
 	banners?: ReactNode;
 }
 
@@ -21,38 +25,88 @@ interface TravelExpenseManagementProps {
  * and find every report and earlier claim in one filterable history.
  */
 export function TravelExpenseManagement({
+	userId,
 	organizationId,
 	employeeId,
 	banners,
 }: TravelExpenseManagementProps) {
+	const current = useOrganization();
+	const session = useSession();
+	const { t } = useTranslate();
+	const matches =
+		!session.isPending &&
+		session.data?.user.id === userId &&
+		session.data.session.activeOrganizationId === organizationId &&
+		current.userId === userId &&
+		current.activeOrganizationId === organizationId &&
+		current.employeeId === employeeId;
+	const [arrival, setArrival] = useState(0);
+	const initialized = useRef(false);
+	// Activity disconnects effects. A restored page gets a fresh read/command lifetime
+	// before paint, even when it returns to the same account and organization.
+	useLayoutEffect(() => {
+		if (initialized.current) setArrival((value) => value + 1);
+		initialized.current = true;
+	}, []);
+	if (!matches)
+		return (
+			<div className="space-y-4 p-4 lg:p-6">
+				<PageHeader title={t("travelExpenses.title", "Travel Expenses")} />
+				<p role="status">
+					{t(
+						"travelExpenses.workspace.reconciling",
+						"Loading your expenses for the current organization…",
+					)}
+				</p>
+			</div>
+		);
+	return (
+		<TravelExpenseWorkspace
+			key={arrival}
+			organizationId={organizationId}
+			employeeId={employeeId}
+			banners={banners}
+		/>
+	);
+}
+
+function TravelExpenseWorkspace({
+	organizationId,
+	employeeId,
+	banners,
+}: Omit<TravelExpenseManagementProps, "userId">) {
 	const { t } = useTranslate();
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<div className="flex flex-wrap items-center justify-between gap-3 px-4 lg:px-6">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("travelExpenses.title", "Travel Expenses")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"travelExpenses.workspace.description",
-							"Collect trip and standalone expenses, send them for review and follow their reimbursement.",
-						)}
-					</p>
-				</div>
-				<div className="flex flex-wrap gap-2 sm:justify-end">
-					<NewReceiptExpenseButton />
-					<NewMileageExpenseButton />
-					<NewTripReportButton />
-				</div>
-			</div>
-
-			{banners && <div className="space-y-4 px-4 lg:px-6">{banners}</div>}
+			<PageHeader
+				className="px-4 lg:px-6"
+				title={t("travelExpenses.title", "Travel Expenses")}
+				description={t(
+					"travelExpenses.workspace.description",
+					"Collect trip and standalone expenses, send them for review and follow their reimbursement.",
+				)}
+			/>
+			<section
+				aria-label={t("travelExpenses.workspace.create", "Create an expense report")}
+				className="grid gap-3 px-4 sm:grid-cols-3 lg:px-6"
+			>
+				<NewReceiptExpenseButton />
+				<NewMileageExpenseButton />
+				<NewTripReportButton />
+			</section>
 
 			<div className="px-4 lg:px-6">
 				<ExpenseHistory organizationId={organizationId} employeeId={employeeId} />
 			</div>
+			{banners && (
+				<aside
+					aria-label={t("travelExpenses.workspace.otherWork", "Review and finance")}
+					className="grid gap-3 px-4 lg:grid-cols-2 lg:px-6"
+				>
+					{banners}
+				</aside>
+			)}
 		</div>
 	);
 }

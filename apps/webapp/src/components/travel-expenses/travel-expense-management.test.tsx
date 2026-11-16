@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { Activity } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
 	ExpenseHistoryRow,
@@ -21,14 +22,33 @@ const reportActions = vi.hoisted(() => ({
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
-vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions", () => ({
+const mileageActions = vi.hoisted(() => ({
 	createStandaloneMileageReportAction: vi.fn(),
 }));
+vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions", () => mileageActions);
 vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions", () => ({
 	convertLegacyTravelExpenseDraftAction: vi.fn(),
 	getLegacyTravelExpenseConversion: vi.fn(),
 }));
 const router = vi.hoisted(() => ({ push: vi.fn() }));
+const identity = vi.hoisted(() => ({
+	userId: "user",
+	activeOrganizationId: "org",
+	employeeId: "owner",
+	pending: false,
+}));
+vi.mock("@/components/providers/organization-context-provider", () => ({
+	useOrganization: () => identity,
+}));
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		isPending: identity.pending,
+		data: {
+			user: { id: identity.userId },
+			session: { activeOrganizationId: identity.activeOrganizationId },
+		},
+	}),
+}));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
@@ -53,6 +73,12 @@ import { TravelExpenseManagement } from "./travel-expense-management";
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+	Object.assign(identity, {
+		userId: "user",
+		activeOrganizationId: "org",
+		employeeId: "owner",
+		pending: false,
+	});
 });
 
 function reportRow(overrides: Partial<ReportHistoryRow> & { id: string }): ReportHistoryRow {
@@ -133,13 +159,60 @@ function mount() {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(
 		<QueryClientProvider client={client}>
-			<TravelExpenseManagement organizationId="org" employeeId="owner" />
+			<TravelExpenseManagement userId="user" organizationId="org" employeeId="owner" />
 		</QueryClientProvider>,
 	);
 	return client;
 }
 
 describe("creating reports", () => {
+	it("retires a held creation when a retained session becomes pending and returns", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond([]));
+		let complete!: (value: unknown) => void;
+		reportActions.createStandaloneReceiptReportAction.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const tree = () => (
+			<QueryClientProvider client={client}>
+				<TravelExpenseManagement userId="user" organizationId="org" employeeId="owner" />
+			</QueryClientProvider>
+		);
+		const view = render(tree());
+		fireEvent.click(screen.getByRole("button", { name: "New receipt" }));
+		identity.pending = true;
+		view.rerender(tree());
+		expect(screen.queryByRole("button", { name: "New receipt" })).toBeNull();
+		identity.pending = false;
+		view.rerender(tree());
+		await act(async () => complete({ success: true, data: { reportId: "retired" } }));
+		expect(router.push).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: "New receipt" }).hasAttribute("disabled")).toBe(
+			false,
+		);
+		client.clear();
+	});
+
+	it("recovers locally from a rejected creation without losing the personal history", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond([claimRow()]));
+		mileageActions.createStandaloneMileageReportAction
+			.mockRejectedValueOnce(new Error("Offline"))
+			.mockResolvedValueOnce({ success: true, data: { reportId: "mileage-1" } });
+		const client = mount();
+		await screen.findByText("€120.50");
+		fireEvent.click(screen.getByRole("button", { name: "New mileage" }));
+		const error = await screen.findByRole("alert");
+		fireEvent.click(within(error).getByRole("button", { name: "Retry" }));
+		await vi.waitFor(() =>
+			expect(router.push).toHaveBeenCalledWith("/travel-expenses/reports/mileage-1"),
+		);
+		expect(screen.getByText("€120.50")).toBeTruthy();
+		client.clear();
+	});
+
 	it("creates a standalone receipt report and opens its editor", async () => {
 		historyActions.getMyTravelExpenseHistory.mockResolvedValue(respond([]));
 		reportActions.createStandaloneReceiptReportAction.mockResolvedValueOnce({
@@ -449,6 +522,94 @@ describe("status filters", () => {
 });
 
 describe("travel history recovery", () => {
+	it.each(["actor", "organization", "employee", "pending"])(
+		"retires held reads on %s A→B→A returns",
+		async (kind) => {
+			let complete!: (value: unknown) => void;
+			historyActions.getMyTravelExpenseHistory
+				.mockImplementationOnce(
+					() =>
+						new Promise((resolve) => {
+							complete = resolve;
+						}),
+				)
+				.mockResolvedValue(respond([reportRow({ id: "fresh", title: "Current personal report" })]));
+			const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+			const tree = () => (
+				<QueryClientProvider client={client}>
+					<TravelExpenseManagement userId="user" organizationId="org" employeeId="owner" />
+				</QueryClientProvider>
+			);
+			const view = render(tree());
+			if (kind === "actor") identity.userId = "other";
+			if (kind === "organization") identity.activeOrganizationId = "other";
+			if (kind === "employee") identity.employeeId = "other";
+			if (kind === "pending") identity.pending = true;
+			view.rerender(tree());
+			expect(screen.queryByRole("button", { name: "New receipt" })).toBeNull();
+			Object.assign(identity, {
+				userId: "user",
+				activeOrganizationId: "org",
+				employeeId: "owner",
+				pending: false,
+			});
+			view.rerender(tree());
+			await screen.findByText("Current personal report");
+			await act(async () =>
+				complete(respond([reportRow({ id: "old", title: "Retired personal report" })])),
+			);
+			expect(screen.queryByText("Retired personal report")).toBeNull();
+			client.clear();
+		},
+	);
+
+	it("refreshes a completed personal read after an Activity return and retires held creation", async () => {
+		historyActions.getMyTravelExpenseHistory
+			.mockResolvedValueOnce(respond([claimRow()]))
+			.mockResolvedValue(respond([reportRow({ id: "fresh", title: "Current personal report" })]));
+		let complete!: (value: unknown) => void;
+		reportActions.createTripReportAction.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const tree = (hidden: boolean) => (
+			<QueryClientProvider client={client}>
+				<Activity mode={hidden ? "hidden" : "visible"}>
+					<TravelExpenseManagement userId="user" organizationId="org" employeeId="owner" />
+				</Activity>
+			</QueryClientProvider>
+		);
+		const view = render(tree(false));
+		await screen.findByText("€120.50");
+		fireEvent.click(screen.getByRole("button", { name: "New trip" }));
+		view.rerender(tree(true));
+		await act(async () => complete({ success: true, data: { reportId: "retired" } }));
+		view.rerender(tree(false));
+		await screen.findByText("Current personal report");
+		expect(screen.queryByText("€120.50")).toBeNull();
+		expect(router.push).not.toHaveBeenCalled();
+		client.clear();
+	});
+
+	it("retains Retry after a previously empty history fails to refresh", async () => {
+		historyActions.getMyTravelExpenseHistory
+			.mockResolvedValueOnce(respond([]))
+			.mockResolvedValueOnce({ success: false, error: "Offline" })
+			.mockResolvedValueOnce(respond([claimRow()]));
+		const client = mount();
+		await screen.findByText("No travel expenses yet");
+		await act(async () => {
+			await client.invalidateQueries({ queryKey: ["travel-expenses", "history"] });
+		});
+		expect(await screen.findByRole("alert")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		expect(await screen.findByText("€120.50")).toBeTruthy();
+		client.clear();
+	});
+
 	it("preserves loaded rows during a background refresh", async () => {
 		historyActions.getMyTravelExpenseHistory
 			.mockResolvedValueOnce(respond([claimRow()]))
