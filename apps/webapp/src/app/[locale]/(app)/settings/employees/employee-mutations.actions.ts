@@ -7,10 +7,7 @@ import { invitation, user } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft, team } from "@/db/schema";
 import { AuditAction, type AuditLogEntry, logAudit } from "@/lib/audit-logger";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
-import {
-	acquireEmployeeIdentityLock,
-	isEmployeeIdentityConflict,
-} from "@/lib/auth/employee-identity-lock";
+import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { isInvitationActionable } from "@/lib/auth/employee-invitation-draft";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -26,18 +23,12 @@ import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
-import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
 import {
 	keepCustomFieldRefusal,
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
-import {
-	previewDrivingLicenceIntendedDriverWrite,
-	runDrivingLicenceIntendedDriverWrite,
-} from "@/lib/organization/driving-licence/no-longer-intended";
-import { keepDrivingLicenceStalePreview } from "@/lib/organization/driving-licence/stale-preview";
 import { type BirthdayChange, birthdayChange } from "@/lib/organization/employee-birthday";
 import { personnelNumberKey } from "@/lib/organization/personnel-number";
 import {
@@ -46,7 +37,13 @@ import {
 	findPersonnelNumberHolder,
 	keepPersonnelNumberRefusal,
 } from "@/lib/organization/personnel-number-uniqueness";
-import { keepPrimaryTeamRefusal, setPrimaryTeam } from "@/lib/organization/primary-team";
+import {
+	applyTeamChange,
+	keepTeamChangeRefusals,
+	previewTeamChange,
+	previewUnchangedTeamPlacement,
+	teamChangeScope,
+} from "@/lib/organization/team-placement/team-placement";
 import {
 	type OrganizationActor,
 	organizationAction,
@@ -56,23 +53,19 @@ import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/a
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import {
 	assignManagersSchema,
-	type ContractType,
-	createEmployeeSchema,
 	personalInformationSchema,
 	type UpdateEmployee,
 	updateEmployeeInvitationDraftSchema,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
-import { hourlyWageSchema } from "@/lib/validations/employment-history";
 import {
 	markEmployeeWorkBalanceDirty,
 	requestEmployeeWorkBalanceFullRebuild,
 } from "@/lib/work-balance/service";
 import { decodeEmployeeInvitationDraftId } from "./employee-action-types";
-import { getTargetUser, parseHourlyRate, revalidateEmployeesCache } from "./employee-action-utils";
+import { parseHourlyRate, revalidateEmployeesCache } from "./employee-action-utils";
 import { buildEligibleInvitationDraftPredicate } from "./employee-invitation-draft-eligibility";
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
-import { keepTermsRefusal, markContractWorkBalanceDirty } from "./employment-history-helpers";
 import {
 	findDraftPersonnelNumberHolder,
 	refuseTakenDraftPersonnelNumber,
@@ -94,23 +87,6 @@ const employeeFormDataSchema = z
 		message: "Use Deactivate or Reactivate to change whether an employee is active.",
 		path: ["isActive"],
 	});
-
-/** An hourly employee's wage, as employment terms hold it; null otherwise. */
-function parseFirstTermsWage(
-	contractType: ContractType,
-	hourlyRate: string | null | undefined,
-): Effect.Effect<number | null, ValidationError> {
-	if (contractType !== "hourly" || !hourlyRate) return Effect.succeed(null);
-	const parsed = hourlyWageSchema.safeParse(hourlyRate);
-	return parsed.success
-		? Effect.succeed(parsed.data)
-		: Effect.fail(
-				new ValidationError({
-					message: parsed.error.issues[0]?.message ?? "Invalid hourly rate",
-					field: "hourlyRate",
-				}),
-			);
-}
 
 /**
  * Records that an org admin set, changed or cleared a birthday (#1579). The
@@ -141,130 +117,6 @@ function recordBirthdayChange(entry: {
 function isOrgAdmin(actor: OrganizationActor) {
 	return meetsSettingsAccess(actor.settingsAccess, "orgAdmin");
 }
-
-export const createEmployeeAction = organizationAction(
-	{
-		name: "employees.create",
-		requires: "orgAdmin",
-		// The organization is the session's (ADR 0002).
-		schema: createEmployeeSchema.omit({ organizationId: true }),
-	},
-	({ actor, organizationId, input: validatedData }) =>
-		Effect.gen(function* () {
-			const dbService = yield* DatabaseService;
-
-			yield* getTargetUser(validatedData.userId);
-
-			const existing = yield* dbService.query("checkExistingEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, validatedData.userId),
-						eq(employee.organizationId, organizationId),
-					),
-				});
-			});
-
-			if (existing) {
-				return yield* Effect.fail(
-					new ValidationError({
-						message: "Employee already exists for this user in this organization",
-						field: "userId",
-					}),
-				);
-			}
-
-			const contractType = validatedData.contractType || "fixed";
-			const hourlyRate = yield* parseFirstTermsWage(contractType, validatedData.hourlyRate);
-
-			const { newEmployee, firstTerms } = yield* dbService
-				.query("createEmployee", () =>
-					// A new employee row gives the user an employee role and team in
-					// the organization: an absent-row insertion under their protection.
-					withAuthorizationMutation(
-						{ organizationId, userIds: [validatedData.userId] },
-						async (tx) => {
-							const [inserted] = await tx
-								.insert(employee)
-								.values({
-									userId: validatedData.userId,
-									organizationId,
-									role: validatedData.role,
-									position: validatedData.position || null,
-									gender: validatedData.gender || null,
-									pronouns: validatedData.pronouns || null,
-									birthday: validatedData.birthday || null,
-									startDate: validatedData.startDate || null,
-									endDate: validatedData.endDate || null,
-									isActive: true,
-									contractType,
-								})
-								.returning();
-							// The team is a membership and the primary team (Organization ADR 0010).
-							const placed = validatedData.teamId
-								? await setPrimaryTeam(tx, {
-										organizationId,
-										employeeId: inserted.id,
-										teamId: validatedData.teamId,
-										createdBy: actor.userId,
-									})
-								: null;
-							// The wage lives in employment terms (Organization ADR 0002):
-							// an hourly employee starts with confirmed terms, and
-							// without them no employee is created.
-							const terms = await writeFirstEmploymentTerms(tx, {
-								organizationId,
-								employeeId: inserted.id,
-								actorUserId: actor.userId,
-								contractType,
-								hourlyRate,
-								startDate: validatedData.startDate ?? null,
-							});
-							return {
-								newEmployee: { ...inserted, teamId: placed?.primaryTeamId ?? null },
-								firstTerms: terms,
-							};
-						},
-						dbService.db,
-					),
-				)
-				.pipe(
-					Effect.mapError((error) => {
-						if (isEmployeeIdentityConflict(error)) {
-							return new ValidationError({
-								message: "Employee already exists for this user in this organization",
-								field: "userId",
-							});
-						}
-						// Keep the terms refusal for the user (D8).
-						return keepTermsRefusal(error);
-					}),
-					keepPrimaryTeamRefusal,
-				);
-
-			if (firstTerms) {
-				yield* Effect.promise(() =>
-					markContractWorkBalanceDirty(dbService.db, {
-						employeeId: newEmployee.id,
-						organizationId: newEmployee.organizationId,
-						validFrom: firstTerms.validFrom,
-					}),
-				);
-			}
-
-			logger.info(
-				{
-					employeeId: newEmployee.id,
-					userId: newEmployee.userId,
-					organizationId: newEmployee.organizationId,
-				},
-				"Employee created successfully",
-			);
-
-			revalidateEmployeesCache(newEmployee.organizationId);
-
-			return newEmployee;
-		}),
-);
 
 /**
  * What of `data` the actor may save on the employee (scoped managers only some
@@ -317,36 +169,22 @@ export const previewEmployeeTeamChangeDrivingImpact = organizationAction(
 				teamId: input.teamId,
 			});
 			const dbService = yield* DatabaseService;
+			const target = { organizationId, employeeId };
+			const viewer = { userId: actor.userId, organizationAdmin: isOrgAdmin(actor) };
 			return yield* dbService
 				.query("employee.previewTeamChangeDrivingImpact", () =>
-					previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
-						{
-							organizationId,
-							employeeIds: [employeeId],
-							viewer: { userId: actor.userId, organizationAdmin: isOrgAdmin(actor) },
-						},
-						(work) =>
-							withAuthorizationMutation(
-								{ organizationId, employeeIds: [employeeId] },
-								work,
+					// A scoped manager can't change the team: nothing changes then.
+					Object.hasOwn(validatedData, "teamId")
+						? previewTeamChange(
 								dbService.db,
-							),
-						async (tx) => {
-							// A scoped manager can't change the team: nothing changes then.
-							if (!Object.hasOwn(validatedData, "teamId")) return;
-							await setPrimaryTeam(tx, {
-								organizationId,
-								employeeId,
-								teamId: validatedData.teamId ?? null,
-							});
-						},
-					),
+								{ ...target, kind: "move", teamId: validatedData.teamId ?? null },
+								viewer,
+							)
+						: previewUnchangedTeamPlacement(dbService.db, target, viewer),
 				)
-				.pipe(keepPrimaryTeamRefusal);
+				.pipe(keepTeamChangeRefusals);
 		}),
 );
-
-type TeamWriteTransaction = Parameters<Parameters<typeof withAuthorizationMutation>[1]>[0];
 
 /**
  * Saves the employee detail form. `customFieldValues` are the form's custom
@@ -406,11 +244,12 @@ export const updateEmployeeAction = organizationAction(
 					: null;
 			const personnelNumberScope = { organizationId, exceptEmployeeId: employeeId };
 
-			// Role, team and active state feed creation authority and target checks.
+			// Role, team and active state feed creation authority and target checks. The
+			// employee's protection is also the one a move of their team needs (`teamChangeScope`).
 			const birthdayUpdate = yield* dbService
 				.query("updateEmployee", () =>
 					withAuthorizationMutation(
-						{ organizationId, employeeIds: [employeeId] },
+						teamChangeScope({ organizationId, employeeId }),
 						async (tx) => {
 							// Actual joining dates require a reviewed correction. Recheck under the employee guard,
 							// including stale full-form payloads that would otherwise undo a reviewed save.
@@ -452,36 +291,24 @@ export const updateEmployeeAction = organizationAction(
 									.for("update");
 								birthdayUpdate = birthdayChange(stored?.birthday, scopedData.birthday);
 							}
-							const writeEmployee = async () => {
-								await tx
-									.update(employee)
-									.set(employeeUpdateData)
-									.where(
-										and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-									);
-								if (hasTeamUpdate) {
-									await setPrimaryTeam(tx, {
-										organizationId,
-										employeeId,
-										teamId: nextTeamId ?? null,
-										createdBy: actor.userId,
-									});
-								}
-							};
+							await tx
+								.update(employee)
+								.set(employeeUpdateData)
+								.where(
+									and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+								);
 							// A new primary team can end the employee's driving authorization (#1425).
-							if (hasTeamUpdate)
-								await runDrivingLicenceIntendedDriverWrite(
+							if (hasTeamUpdate) {
+								await applyTeamChange(
 									tx,
+									{ kind: "move", organizationId, employeeId, teamId: nextTeamId ?? null },
 									{
-										organizationId,
-										employeeIds: [employeeId],
 										actorUserId: actor.userId,
 										viewer: { userId: actor.userId, organizationAdmin: isOrgAdmin(actor) },
 										previewToken: input.drivingLicencePreviewToken,
 									},
-									writeEmployee,
 								);
-							else await writeEmployee();
+							}
 							await saveFormCustomFieldValues(tx, {
 								organizationId,
 								actorUserId: actor.userId,
@@ -496,8 +323,7 @@ export const updateEmployeeAction = organizationAction(
 				)
 				.pipe(
 					keepCustomFieldRefusal,
-					keepDrivingLicenceStalePreview,
-					keepPrimaryTeamRefusal,
+					keepTeamChangeRefusals,
 					// A concurrent save that took the number first hits the unique index.
 					keepPersonnelNumberRefusal(() =>
 						personnelNumber === null

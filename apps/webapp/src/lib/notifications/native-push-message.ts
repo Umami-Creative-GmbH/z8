@@ -119,6 +119,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	kiosk_command_refused: "working_time",
 	employee_deactivation_shifts_opened: "schedule",
 	former_employee_reports_without_manager: "attention",
+	former_employee_needs_rehire: "attention",
 	kiosk_fob_registered: "security",
 };
 

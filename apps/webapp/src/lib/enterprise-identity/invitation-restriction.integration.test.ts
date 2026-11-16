@@ -65,8 +65,8 @@ describe("enterprise identity invite restriction on the Better Auth endpoint", (
 				organizationHooks: createCoordinatedOrganizationHooks({
 					beforeUpdateOrganization: async () => undefined,
 					beforeCreateInvitation: refuseInvitationOutsideEnterpriseIdentity,
-					afterAcceptInvitation: async () => undefined,
-					afterAddMember: async () => undefined,
+					joinOnAcceptedInvitation: async () => async () => undefined,
+					joinOnAddedMember: async () => async () => undefined,
 				}),
 			}),
 			enterpriseIdentityInvitationResendPlugin(),

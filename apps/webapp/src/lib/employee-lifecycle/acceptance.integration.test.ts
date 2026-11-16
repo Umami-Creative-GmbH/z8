@@ -8,7 +8,6 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { db as rootDatabase } from "@/db";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
-import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
 import {
@@ -27,6 +26,7 @@ import { assertEmployeeMayClock } from "./clocking-gate";
 import { createDepartureCommands } from "./commands";
 import { runDepartureTaskDelivery } from "./delivery";
 import { hasEndedEmploymentWithoutRehire } from "./employment-periods";
+import { joinOrganization } from "./joining";
 import { LATE_CLOCK_EVIDENCE_PROVENANCE, preserveLateClockEvidence } from "./late-clock-evidence";
 import { createDepartureTaskOutbox, type DepartureTaskClaim } from "./outbox";
 import { findOpenDepartureClockRepairs } from "./reviews";
@@ -612,19 +612,20 @@ describe("employee offboarding acceptance", () => {
 				acknowledgeUnassignedDuties: true,
 			});
 
-			// Accepting membership again runs the production provisioning path, which
-			// reactivates inactive employees; the database guard keeps this one inactive.
-			const provisioned = await ensureEmployeeForOrganizationMember(
-				fixture.db as typeof rootDatabase,
-				{
-					mode: "membershipAccepted",
+			// Joining again reactivates an inactive employee; the database guard keeps this one
+			// inactive, so they keep only the membership until a rehire.
+			const joined = await (fixture.db as typeof rootDatabase).transaction((tx) =>
+				joinOrganization(tx, {
 					userId: target.userId,
 					organizationId,
-					memberRole: "member",
-				},
+					membership: { id: target.memberId, role: "member" },
+				}),
 			);
 
-			expect(provisioned).toMatchObject({ id: target.employeeId, isActive: false });
+			expect(joined.outcome).toMatchObject({
+				kind: "membership_only",
+				employee: { id: target.employeeId, isActive: false },
+			});
 
 			expect(
 				await one(`select is_active from employee where id = $1`, [target.employeeId]),

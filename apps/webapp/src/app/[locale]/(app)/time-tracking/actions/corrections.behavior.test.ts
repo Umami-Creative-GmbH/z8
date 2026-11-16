@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
@@ -96,8 +95,11 @@ vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 }));
 
+vi.mock("@/lib/approvals/server/time-approval-decision", () => ({
+	decideTimeApproval: state.decide,
+}));
+
 vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
-	decideTimeCorrectionWithStableTargetEffect: state.decide,
 	deleteCancelledTimeCorrectionsInTransaction: vi.fn(),
 	executeTimeCorrectionSubmissionInTransaction: state.executeSubmission,
 	finalizeTimeCorrectionTerminalInTransaction: vi.fn(),
@@ -1927,7 +1929,13 @@ describe("on-behalf time corrections (#507)", () => {
 		);
 		state.txEmployeeFindFirst.mockResolvedValue({ id: ids.manager });
 		state.outerApprovalWorkflowFindFirst.mockResolvedValue(undefined);
-		state.decide.mockReturnValue(Effect.void);
+		state.decide.mockResolvedValue({
+			status: "decided",
+			kind: "time_correction",
+			workPeriodId: ids.period,
+			outcome: "approved",
+			replayed: false,
+		});
 		state.txSelectForUpdate
 			.mockReset()
 			.mockResolvedValueOnce([employee])
@@ -1976,10 +1984,12 @@ describe("on-behalf time corrections (#507)", () => {
 			}),
 		);
 		expect(state.decide).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({ id: ids.manager }),
-			"approval-1",
-			"approve",
+			expect.objectContaining({
+				approvalId: "approval-1",
+				actor: { employeeId: ids.manager, userId: "user-manager" },
+				right: { as: "approver" },
+				decision: { kind: "approve" },
+			}),
 		);
 		// The approving editor is not emailed about their own change.
 		expect(state.sendEmail).not.toHaveBeenCalled();

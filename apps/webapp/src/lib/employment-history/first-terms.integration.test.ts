@@ -6,10 +6,10 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { db as rootDatabase } from "@/db";
-import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createDepartureClockOut } from "@/lib/employee-lifecycle/clock-out";
 import { createDepartureCommands } from "@/lib/employee-lifecycle/commands";
+import { joinOrganization } from "@/lib/employee-lifecycle/joining";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -134,12 +134,28 @@ describe("first employment terms", () => {
 		return { userId, invitationId };
 	}
 
-	function accept(input: { organizationId: string; userId: string; invitationId: string }) {
-		return ensureEmployeeForOrganizationMember(fixture.db as typeof rootDatabase, {
-			mode: "membershipAccepted",
-			memberRole: "member",
-			...input,
-		});
+	async function accept(input: { organizationId: string; userId: string; invitationId: string }) {
+		// Accepting gives them an approved membership; an offboarded leaver lost theirs.
+		const membership =
+			(await one<{ id: string } | undefined>(
+				"select id from member where organization_id = $1 and user_id = $2",
+				[input.organizationId, input.userId],
+			)) ??
+			(await one<{ id: string }>(
+				`insert into member (id, organization_id, user_id, role, status, created_at)
+				 values (gen_random_uuid()::text, $1, $2, 'member', 'approved', now()) returning id`,
+				[input.organizationId, input.userId],
+			));
+		const joined = await (fixture.db as typeof rootDatabase).transaction((tx) =>
+			joinOrganization(tx, {
+				organizationId: input.organizationId,
+				userId: input.userId,
+				membership: { id: membership.id, role: "member" },
+				invitation: { id: input.invitationId },
+			}),
+		);
+		await joined.afterCommit.run();
+		return joined.outcome.employee;
 	}
 
 	async function employeeOf(organizationId: string, userId: string) {

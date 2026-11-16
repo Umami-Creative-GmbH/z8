@@ -8,7 +8,7 @@ shared outer work transaction:
 | Transition | Real callers | Receipt `kind` / `writer` (adopted organizations) |
 | --- | --- | --- |
 | Submission | `requestTimeCorrection`, `requestTimeEntryDeletion`, `POST /api/time-entries/corrections` (approval branch), all through `submitCorrection` | `submit_time_correction` / `time_correction_request` |
-| Decision (approval, rejection, business deletion, auto-completion) | inbox and bots through `decideTimeCorrectionWithStableTargetEffect`; the submission's requester auto-completion | `finalize_time_correction` / `time_correction_decision` |
+| Decision (approval, rejection, business deletion, auto-completion) | inbox, cards and other entry points through the time approval decision (`decideTimeApproval`); the submission's requester auto-completion | `finalize_time_correction` / `time_correction_decision` |
 | Cancellation | `cancelMyTimeCorrectionRequest` through `cancelPendingTimeCorrection` | `cancel_time_correction` / `time_correction_cancellation` |
 
 Two independent switches decide what is written, and neither is set anywhere:

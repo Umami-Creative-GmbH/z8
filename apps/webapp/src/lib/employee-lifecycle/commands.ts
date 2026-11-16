@@ -18,7 +18,7 @@ import {
 import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
 import { synchronizeEquipmentDeparture } from "@/lib/organization/equipment/lifecycle";
-import { setPrimaryTeam } from "@/lib/organization/primary-team";
+import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { departureCutoff } from "./cutoff";
 import { queueDataExportReminder } from "./data-export-reminder";
@@ -720,8 +720,9 @@ async function rehireEmployee(
 				updatedAt: nowDate,
 			})
 			.where(and(eq(employee.organizationId, actor.organizationId), eq(employee.id, target.id)));
-		// The rehire's team is a move (Organization ADR 0010).
-		await setPrimaryTeam(tx, {
+		// The rehire's team is a move (Organization ADR 0010); "No team" ends the old primary
+		// membership. Departure ended every driving authorization, so nothing else ends.
+		await placeArrivingEmployee(tx, {
 			organizationId: actor.organizationId,
 			employeeId: target.id,
 			teamId: input.teamId ?? null,

@@ -7,8 +7,8 @@ import { employee } from "@/db/schema";
 import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
-import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
+import { joinMemberWithoutEmployee } from "@/lib/employee-lifecycle/joining";
 import { SsoRequiredError } from "@/lib/enterprise-identity/session-sso";
 import { getOrganizationAccessRequirement } from "@/lib/organization-mfa/organization-access";
 import { createLogger } from "@/lib/logger";
@@ -125,12 +125,26 @@ if(!access.allowed){
 		}
 
 		if (!employeeRecord) {
-			employeeRecord = await ensureEmployeeForOrganizationMember(db, {
-				mode: "reconcile",
+			// The one remaining net for a member without an employee (spec #1664
+			// decision 9), for one release after the backfill (#1671). Every path now
+			// joins in the membership's transaction, so this should never create one.
+			const joined = await joinMemberWithoutEmployee(db, {
 				userId: session.user.id,
 				organizationId,
-				memberRole: membership.role,
+				membership: { id: membership.id, role: membership.role },
 			});
+			employeeRecord = joined.employee;
+			if (joined.joined) {
+				logger.warn(
+					{
+						userId: session.user.id,
+						organizationId,
+						memberId: membership.id,
+						employeeId: joined.employee.id,
+					},
+					"Organization switch joined an approved member without an employee",
+				);
+			}
 		}
 
 		// Update the session's active organization

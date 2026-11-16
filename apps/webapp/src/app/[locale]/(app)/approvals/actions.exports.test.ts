@@ -28,16 +28,11 @@ describe("approvals actions module structure", () => {
 		);
 		expect(actionsSource).toMatch(/approveAbsenceEffect as approveAbsenceAction/);
 		expect(actionsSource).toMatch(/rejectAbsenceEffect as rejectAbsenceAction/);
-		expect(actionsSource).toContain("approveTimeCorrectionAction");
-		expect(actionsSource).toContain("rejectTimeCorrectionAction");
-		expect(actionsSource).toContain('from "@/lib/approvals/server/time-correction-approvals";');
 		expect(actionsSource).toMatch(/getCurrentEmployee as getCurrentEmployeeAction/);
 		expect(actionsSource).toMatch(/getPendingApprovalCounts as getPendingApprovalCountsAction/);
 		expect(actionsSource).toMatch(/getPendingApprovals as getPendingApprovalsAction/);
 		expect(actionsSource).toContain("export async function approveAbsence(");
 		expect(actionsSource).toContain("export async function rejectAbsence(");
-		expect(actionsSource).toContain("export async function approveTimeCorrection(");
-		expect(actionsSource).toContain("export async function rejectTimeCorrection(");
 		expect(actionsSource).toContain("export async function getPendingApprovals(");
 		expect(actionsSource).not.toMatch(/export\s*\{[^}]+\}\s*from\s*"@\/lib\/approvals\/server\//);
 		expect(actionsSource).not.toContain("@opentelemetry/api");

@@ -9,10 +9,6 @@ import {
 	getPendingApprovalCounts as getPendingApprovalCountsAction,
 	getPendingApprovals as getPendingApprovalsAction,
 } from "@/lib/approvals/server/queries";
-import {
-	approveTimeCorrectionEffect as approveTimeCorrectionAction,
-	rejectTimeCorrectionEffect as rejectTimeCorrectionAction,
-} from "@/lib/approvals/server/time-correction-approvals";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
 
@@ -31,16 +27,6 @@ export async function approveAbsence(...args: Parameters<typeof approveAbsenceAc
 
 export async function rejectAbsence(...args: Parameters<typeof rejectAbsenceAction>) {
 	return rejectAbsenceAction(...args);
-}
-
-export async function approveTimeCorrection(
-	...args: Parameters<typeof approveTimeCorrectionAction>
-) {
-	return approveTimeCorrectionAction(...args);
-}
-
-export async function rejectTimeCorrection(...args: Parameters<typeof rejectTimeCorrectionAction>) {
-	return rejectTimeCorrectionAction(...args);
 }
 
 export async function getPendingApprovalCounts() {

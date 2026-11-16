@@ -9,7 +9,7 @@
  *
  * Real callers run against that database: the time submission actions
  * (`clockIn`/`clockOut`, `createManualTimeEntry`, `requestTimeCorrection`,
- * `requestTimeEntryDeletion`), the web approvals actions, the requester's
+ * `requestTimeEntryDeletion`), web decisions through the time approval decision, the requester's
  * correction cancellation, the real Telegram preparation/render (old path or
  * delivery owner), the real webhook update handler deciding through the shared
  * bot attempt and the legacy branches of the work-period and correction
@@ -163,9 +163,9 @@ const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracki
 const { requestTimeCorrection, requestTimeEntryDeletion } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions/corrections"
 );
-const { approveTimeCorrection: approveOnWeb, rejectTimeCorrection: rejectOnWeb } = await import(
-	"@/app/[locale]/(app)/approvals/actions"
-);
+const { approve: approveOnWeb, reject: rejectOnWeb } = (
+	await import("@/test/web-time-decision")
+).webTimeDecision(harness);
 const { cancelMyTimeCorrectionRequest } = await import("@/app/[locale]/(app)/my-requests/actions");
 await import("@/lib/approvals/init");
 const { processDueEscalations } = await import("@/lib/approvals/escalation/transfer");

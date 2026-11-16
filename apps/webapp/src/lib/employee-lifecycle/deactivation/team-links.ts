@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { project, projectAssignment, projectManager, team, teamMembership } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
-import { removeTeamMembership } from "@/lib/organization/team-membership-removal";
+import { releaseLeavingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import {
 	type AreaApplyResult,
@@ -83,9 +83,11 @@ export async function planTeamLinks(
 }
 
 /**
- * Ends exactly the links the plan lists, inside the deactivation transaction,
- * and audits each under the acting admin. A link already gone is skipped, so a
- * re-run changes nothing.
+ * Ends the links the plan lists, inside the deactivation transaction, and
+ * audits each under the acting admin. The plan read the team memberships in
+ * this transaction, so leaving every team (`releaseLeavingEmployee`, whose
+ * delete locks the rows) ends exactly those. A link already gone is skipped,
+ * so a re-run changes nothing.
  */
 export async function applyTeamLinks(
 	tx: DeactivationWriter,
@@ -99,34 +101,17 @@ export async function applyTeamLinks(
 	};
 	const metadata = deactivationAuditMetadata(ctx);
 
-	const present =
+	// The plan read the memberships in this transaction: the employee leaves each of them.
+	const { endedTeamIds } =
 		plan.teams.length === 0
-			? new Set<string>()
-			: new Set(
-					(
-						await tx
-							.select({ teamId: teamMembership.teamId })
-							.from(teamMembership)
-							.where(
-								and(
-									eq(teamMembership.organizationId, ctx.organizationId),
-									eq(teamMembership.employeeId, ctx.employeeId),
-									inArray(
-										teamMembership.teamId,
-										plan.teams.map((membership) => membership.teamId),
-									),
-								),
-							)
-							.for("update")
-					).map((row) => row.teamId),
-				);
+			? { endedTeamIds: [] }
+			: await releaseLeavingEmployee(tx, {
+					organizationId: ctx.organizationId,
+					employeeId: ctx.employeeId,
+				});
+	const ended = new Set(endedTeamIds);
 	for (const membership of plan.teams) {
-		if (!present.has(membership.teamId)) continue;
-		await removeTeamMembership(tx, {
-			organizationId: ctx.organizationId,
-			teamId: membership.teamId,
-			employeeId: ctx.employeeId,
-		});
+		if (!ended.has(membership.teamId)) continue;
 		applied.teamIds.push(membership.teamId);
 		await ctx.audit.record(tx, {
 			organizationId: ctx.organizationId,

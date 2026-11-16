@@ -260,8 +260,10 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 			await parseSuperJsonResponse<EmployeeReadSnapshot<"managers">>(
 				managersResponse,
 			);
+		// Reads no longer create an employee for a member without one (#1671), so
+		// the legacy admin, who has none, is no manager choice.
 		expect(new Set(managers.data.map((employee) => employee.userId))).toEqual(
-			new Set([fixture.ownerUserId, manager.userId, legacyAdmin.userId]),
+			new Set([fixture.ownerUserId, manager.userId]),
 		);
 		expect(managers.data.map((employee) => employee.id)).not.toContain(
 			foreign.employeeId,

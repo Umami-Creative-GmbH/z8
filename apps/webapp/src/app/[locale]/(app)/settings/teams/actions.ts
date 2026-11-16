@@ -25,13 +25,14 @@ import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-am
 import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
+import type { DrivingLicenceChangeViewer } from "@/lib/organization/driving-licence/no-longer-intended";
 import {
-	type DrivingLicenceChangeViewer,
-	previewDrivingLicenceIntendedDriverWrite,
-	runDrivingLicenceIntendedDriverWrite,
-} from "@/lib/organization/driving-licence/no-longer-intended";
-import { keepDrivingLicenceStalePreview } from "@/lib/organization/driving-licence/stale-preview";
-import { removeTeamMembership } from "@/lib/organization/team-membership-removal";
+	applyTeamChange,
+	keepTeamChangeRefusals,
+	previewTeamChange,
+	type TeamChange,
+	teamChangeScope,
+} from "@/lib/organization/team-placement/team-placement";
 import {
 	noInput,
 	type OrganizationActor,
@@ -79,10 +80,7 @@ const teamMemberChangePreviewSchema = z.strictObject({
 	change: z.enum(["add", "remove"], "Invalid team member change"),
 });
 
-const deleteTeamSchema = z.strictObject({
-	teamId: teamIdSchema,
-	drivingLicencePreviewToken: previewTokenSchema,
-});
+const deleteTeamSchema = z.strictObject({ teamId: teamIdSchema });
 
 type DatabaseServiceInstance = typeof DatabaseService.Service;
 type OrganizationEmployee = typeof employee.$inferSelect;
@@ -219,54 +217,16 @@ function logFailure(message: string, context: Record<string, unknown>) {
 }
 
 // =============================================================================
-// Team writes that can change an employee's primary team
+// Team writes
 // =============================================================================
 
 type TeamWriteTransaction = Parameters<Parameters<typeof withAuthorizationMutation>[1]>[0];
 
-/** Adds the membership; the team becomes the primary team only of an employee without one. */
-async function writeTeamMemberAddition(
-	tx: TeamWriteTransaction,
-	input: {
-		organizationId: string;
-		teamId: string;
-		employeeId: string;
-		hadPrimaryTeam: boolean;
-		createdBy: string;
-	},
-) {
-	await tx
-		.insert(teamMembership)
-		.values({
-			organizationId: input.organizationId,
-			teamId: input.teamId,
-			employeeId: input.employeeId,
-			createdBy: input.createdBy,
-		})
-		.onConflictDoNothing();
-
-	// Keep legacy employee.teamId populated only for employees without a compatibility team.
-	if (input.hadPrimaryTeam) return;
-	await tx
-		.update(employee)
-		.set({ teamId: input.teamId, updatedAt: currentTimestamp() })
-		.where(
-			and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
-		);
-}
-
 /**
- * Removes the membership; when it was the primary team, the alphabetically first remaining
- * membership (by id) becomes the primary team, else none (shared with the deactivation, #1440).
+ * Deletes a team without memberships; false when it still has members. An empty team is
+ * nobody's primary team (Organization ADR 0010), so deleting it changes nobody's team placement
+ * and ends no driving authorization.
  */
-async function writeTeamMemberRemoval(
-	tx: TeamWriteTransaction,
-	input: { organizationId: string; teamId: string; employeeId: string },
-) {
-	await removeTeamMembership(tx, input);
-}
-
-/** Deletes a team without memberships; false when it still has members. */
 async function writeTeamDeletion(
 	tx: TeamWriteTransaction,
 	input: { organizationId: string; teamId: string },
@@ -409,7 +369,7 @@ function authorizeTeamMemberChange(
 	});
 }
 
-/** Who may delete `teamId`; shared by `deleteTeam` and its driving licence preview. */
+/** Who may delete `teamId`. */
 function authorizeTeamDeletion(actor: OrganizationActor, organizationId: string, teamId: string) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
@@ -432,6 +392,14 @@ function drivingLicenceViewer(actor: OrganizationActor): DrivingLicenceChangeVie
 /** The confirmed driving licence warning a team save takes (#1425). */
 export type TeamChangeOptions = { drivingLicencePreviewToken?: string };
 
+/** The team placement change of adding `employeeId` to or removing them from `teamId`. */
+function teamMemberChange(
+	kind: "add" | "remove",
+	input: { organizationId: string; teamId: string; employeeId: string },
+): TeamChange {
+	return { ...input, kind: kind === "add" ? "addMembership" : "removeMembership" };
+}
+
 /**
  * The warning before adding or removing a team member (#1425): what the actor may see of who
  * would lose which driving authorizations because their primary team changes, and the token
@@ -447,63 +415,19 @@ export const previewTeamMemberChangeDrivingImpact = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const { teamId, employeeId, change } = input;
-			const { dbService, targetEmployee } = yield* authorizeTeamMemberChange(
+			const { dbService } = yield* authorizeTeamMemberChange(
 				actor,
 				organizationId,
 				teamId,
 				employeeId,
 				change,
 			);
-			return yield* dbService.query("team.previewMemberChangeDrivingImpact", () =>
-				previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
-					{ organizationId, employeeIds: [employeeId], viewer: drivingLicenceViewer(actor) },
-					(work) =>
-						withAuthorizationMutation(
-							{ organizationId, employeeIds: [employeeId] },
-							work,
-							dbService.db,
-						),
-					(tx) =>
-						change === "add"
-							? writeTeamMemberAddition(tx, {
-									organizationId,
-									teamId,
-									employeeId,
-									hadPrimaryTeam: Boolean(targetEmployee?.teamId),
-									createdBy: actor.userId,
-								})
-							: writeTeamMemberRemoval(tx, { organizationId, teamId, employeeId }),
-				),
-			);
-		}),
-);
-
-/**
- * The warning before deleting a team (#1425): what the actor may see of who would lose which
- * driving authorizations because the team is their primary team or its intended-driver
- * assignment goes, and the token the save takes. Read-only.
- */
-export const previewTeamDeletionDrivingImpact = organizationAction(
-	{
-		name: "team.previewDeletionDrivingImpact",
-		requires: "scopedManager",
-		schema: teamIdSchema,
-	},
-	({ actor, organizationId, input: teamId }) =>
-		Effect.gen(function* () {
-			const { dbService } = yield* authorizeTeamDeletion(actor, organizationId, teamId);
-			return yield* dbService.query("team.previewDeletionDrivingImpact", () =>
-				previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
-					{ organizationId, viewer: drivingLicenceViewer(actor) },
-					(work) =>
-						withAuthorizationMutation(
-							{ organizationId, organizationWide: true },
-							work,
-							dbService.db,
-						),
-					(tx) => writeTeamDeletion(tx, { organizationId, teamId }),
-				),
-			);
+			const memberChange = teamMemberChange(change, { organizationId, teamId, employeeId });
+			return yield* dbService
+				.query("team.previewMemberChangeDrivingImpact", () =>
+					previewTeamChange(dbService.db, memberChange, drivingLicenceViewer(actor)),
+				)
+				.pipe(keepTeamChangeRefusals);
 		}),
 );
 
@@ -659,28 +583,14 @@ export const deleteTeam = organizationAction(
 			const { teamId } = input;
 			const { dbService } = yield* authorizeTeamDeletion(actor, organizationId, teamId);
 
-			// Deletion cascades into employee teams and team permissions across the
-			// organization, so it takes the organization-wide protection. Clearing a
-			// primary team and the team's intended-driver assignment can end driving
-			// authorizations (#1425).
+			// Deletion cascades into team permissions across the organization, so it takes
+			// the organization-wide protection.
 			const deletion = { organizationId, teamId };
-			const deleted = yield* keepDrivingLicenceStalePreview(
-				dbService.query("deleteTeam", () =>
-					withAuthorizationMutation(
-						{ organizationId, organizationWide: true },
-						(tx) =>
-							runDrivingLicenceIntendedDriverWrite(
-								tx,
-								{
-									organizationId,
-									actorUserId: actor.userId,
-									viewer: drivingLicenceViewer(actor),
-									previewToken: input.drivingLicencePreviewToken,
-								},
-								(write) => writeTeamDeletion(write, deletion),
-							),
-						dbService.db,
-					),
+			const deleted = yield* dbService.query("deleteTeam", () =>
+				withAuthorizationMutation(
+					{ organizationId, organizationWide: true },
+					(tx) => writeTeamDeletion(tx, deletion),
+					dbService.db,
 				),
 			);
 
@@ -856,36 +766,28 @@ export const addTeamMember = organizationAction(
 			// authorizeTeamMemberChange refuses an add without a target employee.
 			const targetEmployee = authorized.targetEmployee!;
 
-			// The target's team feeds manual target facts; both writes commit under
-			// the employee's configuration/access protection. A new primary team can end
-			// the employee's driving authorization (#1425).
-			const addition = {
+			// The target's team feeds manual target facts, so the change commits under the
+			// employee's configuration/access protection. A new primary team can end the
+			// employee's driving authorization (#1425).
+			const addition = teamMemberChange("add", {
 				organizationId,
 				teamId,
 				employeeId: targetEmployee.id,
-				hadPrimaryTeam: Boolean(targetEmployee.teamId),
-				createdBy: actor.userId,
-			};
-			yield* keepDrivingLicenceStalePreview(
-				dbService.query("addTeamMembership", () =>
+			});
+			yield* dbService
+				.query("addTeamMembership", () =>
 					withAuthorizationMutation(
-						{ organizationId, employeeIds: [targetEmployee.id] },
+						teamChangeScope(addition),
 						(tx) =>
-							runDrivingLicenceIntendedDriverWrite(
-								tx,
-								{
-									organizationId,
-									employeeIds: [targetEmployee.id],
-									actorUserId: actor.userId,
-									viewer: drivingLicenceViewer(actor),
-									previewToken: input.drivingLicencePreviewToken,
-								},
-								(write) => writeTeamMemberAddition(write, addition),
-							),
+							applyTeamChange(tx, addition, {
+								actorUserId: actor.userId,
+								viewer: drivingLicenceViewer(actor),
+								previewToken: input.drivingLicencePreviewToken,
+							}),
 						dbService.db,
 					),
-				),
-			);
+				)
+				.pipe(keepTeamChangeRefusals);
 
 			revalidateTag(CACHE_TAGS.TEAMS(organizationId), "max");
 			revalidateTag(CACHE_TAGS.EMPLOYEES(organizationId), "max");
@@ -933,27 +835,21 @@ export const removeTeamMember = organizationAction(
 			);
 
 			// Moving the primary team can end the employee's driving authorization (#1425).
-			const removal = { organizationId, teamId, employeeId };
-			yield* keepDrivingLicenceStalePreview(
-				dbService.query("removeTeamMembership", () =>
+			const removal = teamMemberChange("remove", { organizationId, teamId, employeeId });
+			yield* dbService
+				.query("removeTeamMembership", () =>
 					withAuthorizationMutation(
-						{ organizationId, employeeIds: [employeeId] },
+						teamChangeScope(removal),
 						(tx) =>
-							runDrivingLicenceIntendedDriverWrite(
-								tx,
-								{
-									organizationId,
-									employeeIds: [employeeId],
-									actorUserId: actor.userId,
-									viewer: drivingLicenceViewer(actor),
-									previewToken: input.drivingLicencePreviewToken,
-								},
-								(write) => writeTeamMemberRemoval(write, removal),
-							),
+							applyTeamChange(tx, removal, {
+								actorUserId: actor.userId,
+								viewer: drivingLicenceViewer(actor),
+								previewToken: input.drivingLicencePreviewToken,
+							}),
 						dbService.db,
 					),
-				),
-			);
+				)
+				.pipe(keepTeamChangeRefusals);
 
 			revalidateTag(CACHE_TAGS.TEAMS(organizationId), "max");
 			revalidateTag(CACHE_TAGS.EMPLOYEES(organizationId), "max");

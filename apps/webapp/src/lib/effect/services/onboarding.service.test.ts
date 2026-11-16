@@ -274,7 +274,7 @@ describe("OnboardingService.updateProfile", () => {
 		);
 	});
 
-	it("creates an active organization employee instead of updating a fallback employee", async () => {
+	it("creates no employee and leaves another organization's employee alone when the active organization has none (#1671)", async () => {
 		const insertedValues = vi.fn();
 		const employeeSet = vi.fn();
 		vi.mocked(headers).mockResolvedValue(new Headers());
@@ -344,18 +344,8 @@ describe("OnboardingService.updateProfile", () => {
 			}).pipe(Effect.provide(layer)),
 		);
 
-		expect(insertedValues).toHaveBeenCalledWith({
-			userId: "user-1",
-			organizationId: "org-active",
-			gender: "female",
-			birthday: "1815-12-10",
-		});
-		expect(insertedValues).toHaveBeenCalledWith(
-			expect.not.objectContaining({ firstName: expect.anything() }),
-		);
-		expect(insertedValues).toHaveBeenCalledWith(
-			expect.not.objectContaining({ lastName: expect.anything() }),
-		);
+		// Joining creates the employee (spec #1664); onboarding only fills one in.
+		expect(insertedValues).not.toHaveBeenCalled();
 		expect(employeeSet).not.toHaveBeenCalled();
 	});
 

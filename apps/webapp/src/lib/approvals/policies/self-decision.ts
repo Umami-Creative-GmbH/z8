@@ -18,6 +18,9 @@ export function isOwnRequestDecision(input: {
 
 const OWN_REQUEST_REFUSAL_PREFIX = "You cannot decide your own ";
 
+/** The typed refusal `ownRequestDecisionError` carries. */
+export const OWN_REQUEST_REFUSAL = "own_request";
+
 /** Whether a failure message is this refusal, which is safe to show as is. */
 export function isOwnRequestDecisionRefusal(message: string): boolean {
 	return message.startsWith(OWN_REQUEST_REFUSAL_PREFIX);
@@ -35,5 +38,6 @@ export function ownRequestDecisionError(input: {
 		userId: input.actorEmployeeId,
 		resource: input.resource,
 		action: input.action,
+		refusal: OWN_REQUEST_REFUSAL,
 	});
 }

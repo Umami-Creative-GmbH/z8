@@ -1950,6 +1950,33 @@ describe("approval-based correction lifecycles on PostgreSQL", () => {
 			);
 		});
 
+		it("applies an eligible manager's edit when another manager is the configured approver", async () => {
+			// The admin also manages the requester, but not as the primary (approving) manager.
+			await admin.query(
+				`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+				 values ($1, $2, $3, false, $4)`,
+				["e3010000-0000-4000-8000-000000000012", ids.requester, ids.admin, ids.adminUser],
+			);
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+
+			await expect(editAs(ids.adminUser, work.id, { isOrgAdmin: true })).resolves.toEqual({
+				success: true,
+				data: { status: "applied" },
+			});
+
+			expect((await period(work.id)).start_time.toISOString()).toBe(
+				"2026-07-22T07:30:00.000Z",
+			);
+			expect(await pendingCount(work.id)).toBe(0);
+			const { rows } = await admin.query(
+				`select approver_id, status from approval_request
+				 where organization_id = $1 and entity_id = $2`,
+				[ids.organization, work.id],
+			);
+			// Decided as eligible manager: the request keeps its configured approver.
+			expect(only(rows)).toEqual({ approver_id: ids.manager, status: "approved" });
+		});
+
 		it("lets a manager delete a report's work through the same approval", async () => {
 			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
 			actAs(ids.managerUser);

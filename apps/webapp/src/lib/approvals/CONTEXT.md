@@ -48,6 +48,16 @@ _Avoid_: dry run, simulation
 Someone who is not an employee yet, previewed as a member of a team with no managers, groups or account of their own.
 _Avoid_: invitee (Organization's word for how they arrive), synthetic employee
 
+### Deciding
+
+**Time approval**:
+An approval of one of the three time kinds, each about one work period: a time correction, a manual time submission or a policy clock-out.
+_Avoid_: time request, time entry approval
+
+**Decision right**:
+Why one person may decide one approval, and as whom: as its approver, an eligible manager, a manager of approvals or a covering deputy. A decision is made under exactly one right, which is never exchanged for another if it no longer holds; a person's own right wins over covering, and a card conveys only its recipient's right as approver or covering deputy.
+_Avoid_: authority (approval authority is legacy or canonical), management authority, permission
+
 ### Deputies
 
 **Deputy decision**:

@@ -352,6 +352,91 @@ Locally: `pnpm --dir apps/webapp employees:backfill-deactivations [--apply] [--o
   example is an absence in a closed month. Nothing was changed for that employee. Fix the cause
   and run again.
 
+### After Deploying #1671: Join Members Without an Employee (once)
+
+Since #1671, every path joins in the membership's transaction, and the reads that created a missing
+employee are gone. Members left without an employee by earlier releases need one. **Run once after
+the release**, from the worker image of the same release with the worker's environment: a dry run
+first (the default), then the real run.
+
+```bash
+# 1. Dry run: lists per organization the members it would join; changes nothing
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/backfill-member-employees.ts --json > joining-backfill-dry-run.json
+
+# 2. After reviewing the dry run: apply it
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/backfill-member-employees.ts --apply --json > joining-backfill-applied.json
+```
+
+Locally: `pnpm --dir apps/webapp employees:backfill-joining [--apply] [--organization-id <org-id>] [--json]`.
+
+- It joins every approved member who has no employee row, as joining does: an owner or admin
+  membership becomes an admin employee, any other an employee. It never touches an existing
+  employee, so nobody deactivated is switched back on.
+- No invitation draft is applied and no seat signal is sent; the hourly seat reconciliation counts
+  the new employees.
+- Each member is joined in its own transaction. An interrupted run keeps its progress, and a second
+  run joins nobody. A member that cannot be joined is listed with the reason and the run exits
+  non-zero.
+- Afterwards the organization switch route still joins a member without an employee for one
+  release and logs *Organization switch joined an approved member without an employee*. That log
+  should stay silent; #1688 removes the route's join once it has.
+
+### After Deploying #1674: Repair Surcharges the Approval Inbox Skipped (once)
+
+From 2026-07-24 until #1674, deciding a manual time submission or a policy clock-out at its
+terminal stage from the approval inbox skipped the decision's surcharge maintenance (#1690).
+Approved periods kept no surcharge calculation or one computed before the decision. Rejected
+periods kept the surcharge calculation they held. **Run once after the release that contains
+#1674**, from the worker image of the same release with the worker's environment: a dry run first
+(the default), then the real run.
+
+```bash
+# 1. Dry run: reports per organization what it would change; changes nothing
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/repair-inbox-decision-surcharges.ts --json > surcharge-repair-dry-run.json
+
+# 2. After reviewing the dry run: apply it
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/repair-inbox-decision-surcharges.ts --apply --json > surcharge-repair-applied.json
+```
+
+Locally: `pnpm --dir apps/webapp surcharges:repair-inbox-decisions [--apply] [--organization-id <org-id>] [--json]`.
+
+- It covers only organizations with surcharges enabled.
+- Stored data does not record which entry point decided. The repair therefore revisits every
+  terminal manual time submission and policy clock-out decision since 2026-07-24 00:00 UTC, by
+  the decision on the period's canonical work record. The period must still be in the decided
+  state. The decision's kind and captured surcharge snapshot come from its approval workflow or
+  legacy approval request.
+- For an approval it computes the rows that the decision's maintenance writes from the captured
+  snapshot and the period's clock entries. For a policy clock-out split by its owed break, the
+  second half is included. For a rejection it expects no rows. Only periods whose rows differ are
+  reconciled, through `SurchargeService.reconcileWorkPeriods`, each in its own transaction.
+  Periods decided from other entry points already match and are left alone. A second run changes
+  nothing.
+- It skips and lists periods whose times changed after the decision, approvals without a captured
+  snapshot (historical requests, whose maintenance computes nothing) and historical policy
+  clock-out rejections. A period that cannot be repaired is listed with the reason, and the run
+  exits non-zero. Fix the cause and run again.
+
 ## Services
 
 | Service | Port | Description |

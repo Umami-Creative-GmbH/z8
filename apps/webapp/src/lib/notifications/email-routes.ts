@@ -126,6 +126,8 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	employee_deactivation_shifts_opened: layout("/scheduling"),
 	// Settings → Employees, where a current manager is assigned (#1442).
 	former_employee_reports_without_manager: layout("/settings/employees"),
+	// The former employee's page, where the rehire starts (#1672).
+	former_employee_needs_rehire: layout("/settings/employees/"),
 	// Security settings, where the employee sees and removes their fob (#1507, decision O5);
 	// a kiosk-only employee's managers get the employee's page.
 	kiosk_fob_registered: layout("/settings/security", "/settings/employees/"),

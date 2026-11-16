@@ -199,6 +199,21 @@ describe("kiosk-only employees on PostgreSQL", () => {
 		]);
 		expect(rows.every((row) => isReservedEmail(row.email))).toBe(true);
 		expect(rows[0].email).not.toBe(rows[1].email);
+		// The team is a membership placed by the acting admin (Organization ADR 0010).
+		const memberships = await pool.query(
+			`select employee_id, team_id, created_by from team_membership
+			 where organization_id = $1 and employee_id = any($2::uuid[])`,
+			[org, [first.employeeId, second.employeeId]],
+		);
+		expect(memberships.rows).toEqual([
+			{ employee_id: first.employeeId, team_id: ids.team, created_by: ids.adminUser },
+		]);
+		// Neither gets the organization-wide team permissions of an admin membership.
+		const permissions = await pool.query(
+			"select count(*)::int as count from team_permissions where employee_id = any($1::uuid[])",
+			[[first.employeeId, second.employeeId]],
+		);
+		expect(permissions.rows[0].count).toBe(0);
 		// The demo member stays excluded; both kiosk-only employees are billable.
 		expect(await seats()).toBe(before + 2);
 	});
@@ -395,6 +410,55 @@ describe("kiosk-only employees on PostgreSQL", () => {
 					[org, userId],
 				)
 			).rows[0]?.id;
+
+		it("counts a new kiosk-only employee as a kiosk seat, signalled once it committed", async () => {
+			const before = await seatsByType();
+			seatSync.mockClear();
+			const employeesAtSync: number[] = [];
+			seatSync.mockImplementationOnce(async (change: unknown) => {
+				const { userId } = change as { userId: string };
+				const { rows } = await pool.query<{ count: number }>(
+					"select count(*)::int as count from employee where organization_id = $1 and user_id = $2",
+					[org, userId],
+				);
+				employeesAtSync.push(rows[0].count);
+			});
+
+			const created = await createKioskOnlyEmployee(db, {
+				organizationId: org,
+				actorUserId: ids.adminUser,
+				firstName: "Jamie",
+			});
+
+			expect(seatSync.mock.calls).toEqual([
+				[
+					{
+						organizationId: org,
+						memberId: await kioskMemberOf(created.userId),
+						userId: created.userId,
+						change: "added",
+					},
+				],
+			]);
+			// The sync runs on its own connection, so it must see the committed employee.
+			expect(employeesAtSync).toEqual([1]);
+			expect(await seatsByType()).toEqual({ full: before.full, kiosk: before.kiosk + 1 });
+		});
+
+		it("sends no seat signal when the creation rolls back", async () => {
+			seatSync.mockClear();
+			expect(
+				await refusalOf(
+					createKioskOnlyEmployee(db, {
+						organizationId: org,
+						actorUserId: ids.adminUser,
+						firstName: "Kim",
+						locationIds: [ids.foreignLocation],
+					}),
+				),
+			).toBe("location_not_found");
+			expect(seatSync).not.toHaveBeenCalled();
+		});
 
 		it("moves the seat from kiosk to full once the email is committed, even if the invitation fails", async () => {
 			const created = await createKioskOnlyEmployee(db, {

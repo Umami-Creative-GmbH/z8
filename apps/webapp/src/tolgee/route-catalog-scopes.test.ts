@@ -31,13 +31,15 @@ function leaves(
 	tree: TreeTranslationsData,
 	prefix = "",
 ): Record<string, string> {
-	return Object.fromEntries(
-		Object.entries(tree).flatMap(([key, value]) =>
-			typeof value === "string"
-				? [[prefix + key, value]]
-				: Object.entries(leaves(value, `${prefix}${key}.`)),
-		),
-	);
+	const entries: [string, string][] = [];
+	function visit(branch: TreeTranslationsData, currentPrefix: string) {
+		for (const [key, value] of Object.entries(branch)) {
+			if (typeof value === "string") entries.push([currentPrefix + key, value]);
+			else visit(value, `${currentPrefix}${key}.`);
+		}
+	}
+	visit(tree, prefix);
+	return Object.fromEntries(entries);
 }
 
 const modules = new Map<string, { keys: string[]; imports: string[] }>();

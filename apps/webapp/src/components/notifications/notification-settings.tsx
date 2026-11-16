@@ -161,6 +161,7 @@ const NOTIFICATION_CATEGORIES = [
 			"employee_offboarding_review",
 			"scheduled_export_paused",
 			"former_employee_reports_without_manager",
+			"former_employee_needs_rehire",
 		] as NotificationType[],
 	},
 	{
@@ -253,7 +254,8 @@ type StaticallyLabelledType =
 	| "personnel_file_document_request_submitted"
 	| "personnel_file_document_request_overdue"
 	| "employee_deactivation_shifts_opened"
-	| "former_employee_reports_without_manager";
+	| "former_employee_reports_without_manager"
+	| "former_employee_needs_rehire";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
 const TYPE_LABELS: Record<
@@ -596,6 +598,12 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.former_employee_reports_without_manager",
 					"Employees without a current manager",
+				);
+			// A former employee regained a membership and needs a rehire (#1672).
+			case "former_employee_needs_rehire":
+				return t(
+					"common:notifications.preferences.types.former_employee_needs_rehire",
+					"Former employees who need a rehire",
 				);
 			// A departed or deactivated deputy was cleared from an absence (#1014).
 			case "absence_deputy_unavailable":

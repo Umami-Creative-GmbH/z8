@@ -19,6 +19,8 @@ export class AuthorizationError extends Data.TaggedError("AuthorizationError")<{
 	userId?: string;
 	resource?: string;
 	action?: string;
+	/** A machine-readable refusal, e.g. `own_request` or `deputy_four_eyes`. */
+	refusal?: string;
 }> {}
 
 export class DatabaseError extends Data.TaggedError("DatabaseError")<{

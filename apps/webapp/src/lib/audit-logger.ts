@@ -41,6 +41,8 @@ export enum AuditAction {
 	EMPLOYEE_REACTIVATED = "employee.reactivated",
 	/** Accepting an invitation did not copy the draft's personnel number another employee held (#1197). */
 	EMPLOYEE_PERSONNEL_NUMBER_DROPPED = "employee.personnel_number_dropped",
+	/** A former employee regained a membership but stays off the roster, so joining discarded the invitation draft (#1665). */
+	EMPLOYEE_INVITATION_DRAFT_NOT_APPLIED = "employee.invitation_draft_not_applied",
 
 	// Organization Operations
 	ORGANIZATION_CREATED = "organization.created",

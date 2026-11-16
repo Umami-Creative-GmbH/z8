@@ -83,33 +83,6 @@ export const personalInformationSchema = z.object({
 	birthday: birthdaySchema.optional().nullable(),
 });
 
-// Full employee creation schema
-export const createEmployeeSchema = z.object({
-	userId: z.uuid("Invalid user ID"),
-	organizationId: z.string().min(1, "Organization ID is required"),
-	teamId: z.uuid("Invalid team ID").optional().nullable(),
-	role: employeeRoleSchema,
-	position: z
-		.string()
-		.min(1, "Position is required")
-		.max(100, "Position is too long")
-		.optional()
-		.nullable(),
-
-	// Personal information owned by the employee record
-	gender: genderSchema.optional().nullable(),
-	pronouns: pronounsSchema,
-	birthday: birthdaySchema.optional().nullable(),
-
-	// Dates
-	startDate: z.date().optional().nullable(),
-	endDate: z.date().optional().nullable(),
-
-	// Contract type and hourly rate
-	contractType: contractTypeSchema.optional(),
-	hourlyRate: hourlyRateSchema,
-});
-
 // Employee update schema (more permissive, all fields optional). Contract type
 // and wage are not employee fields: they change only through employment terms
 // (Organization ADR 0002), so a save never carries them.
@@ -212,7 +185,6 @@ export type Gender = z.infer<typeof genderSchema>;
 export type EmployeeRole = z.infer<typeof employeeRoleSchema>;
 export type ContractType = z.infer<typeof contractTypeSchema>;
 export type PersonalInformation = z.infer<typeof personalInformationSchema>;
-export type CreateEmployee = z.infer<typeof createEmployeeSchema>;
 export type UpdateEmployee = z.infer<typeof updateEmployeeSchema>;
 export type UpdateEmployeeInvitationDraft = z.infer<
 	typeof updateEmployeeInvitationDraftSchema

@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-	createEmployeeSchema,
 	personalInformationSchema,
 	pronounsSchema,
 	updateEmployeeInvitationDraftSchema,
@@ -66,17 +65,9 @@ describe("employee birthday validation", () => {
 		vi.setSystemTime("2026-07-29T23:59:59.000Z");
 
 		const birthday = new Date("2026-07-30T00:00:00.000Z");
-		const createInput = {
-			userId: "9d71d7c5-7ea7-4953-85f8-2943de780d24",
-			organizationId: "org-1",
-			role: "employee" as const,
-			birthday,
-		};
-
 		expect(personalInformationSchema.safeParse({ birthday }).success).toBe(
 			false,
 		);
-		expect(createEmployeeSchema.safeParse(createInput).success).toBe(false);
 		expect(updateEmployeeSchema.safeParse({ birthday }).success).toBe(false);
 
 		vi.setSystemTime("2026-07-30T00:00:01.000Z");
@@ -84,7 +75,6 @@ describe("employee birthday validation", () => {
 		expect(personalInformationSchema.safeParse({ birthday }).success).toBe(
 			true,
 		);
-		expect(createEmployeeSchema.safeParse(createInput).success).toBe(true);
 		expect(updateEmployeeSchema.safeParse({ birthday }).success).toBe(true);
 	});
 

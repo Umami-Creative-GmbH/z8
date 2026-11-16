@@ -343,6 +343,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"employee_deactivation_shifts_opened",
 	// Reports kept a former manager because no current one was left; to org admins (#1442)
 	"former_employee_reports_without_manager",
+	// A former employee regained a membership but needs a rehire; to who brought them in (#1672)
+	"former_employee_needs_rehire",
 	// A kiosk fob was registered to the employee at a kiosk; kiosk-only: their managers (#1507)
 	"kiosk_fob_registered",
 ]);

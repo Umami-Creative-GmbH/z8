@@ -14,9 +14,9 @@ import { generateReservedEmail, isReservedEmail } from "@/lib/auth/reserved-emai
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { isOrganizationAdmin } from "@/lib/authorization/organization-admin";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { joinOrganization } from "@/lib/employee-lifecycle/joining";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
-import { placeInTeam } from "@/lib/organization/primary-team";
 import { isUuid } from "@/lib/validations/uuid";
 import { AssignedLocationRefusal } from "../assigned-locations/errors";
 import { addAssignedLocation } from "../assigned-locations/store";
@@ -119,7 +119,7 @@ export async function createKioskOnlyEmployee(
 	const memberId = crypto.randomUUID();
 	const email = generateReservedEmail();
 	const now = new Date();
-	const employeeId = await withAuditTrail((audit) =>
+	const { employeeId, afterCommit } = await withAuditTrail((audit) =>
 		withAuthorizationMutation(
 			{ organizationId: input.organizationId, userIds: [userId] },
 			async (tx) => {
@@ -135,30 +135,23 @@ export async function createKioskOnlyEmployee(
 					createdAt: now,
 					updatedAt: now,
 				});
+				const membership = { id: memberId, role: "member" };
 				await tx.insert(member).values({
-					id: memberId,
+					...membership,
 					organizationId: input.organizationId,
 					userId,
-					role: "member",
 					status: "approved",
 					createdAt: now,
 				});
-				const [created] = await tx
-					.insert(employee)
-					.values({
-						userId,
-						organizationId: input.organizationId,
-						role: "employee",
-						isActive: true,
-					})
-					.returning({ id: employee.id });
-				// The team is a membership and the primary team (Organization ADR 0010).
-				await placeInTeam(tx, {
+				// The employee, its team and the seat signal follow the approved membership (spec #1664).
+				const joined = await joinOrganization(tx, {
 					organizationId: input.organizationId,
-					employeeId: created.id,
+					userId,
+					membership,
 					teamId,
-					createdBy: input.actorUserId,
+					actorUserId: input.actorUserId,
 				});
+				const created = joined.outcome.employee;
 				for (const locationId of locationIds) {
 					await addAssignedLocation(tx, audit, {
 						organizationId: input.organizationId,
@@ -175,7 +168,7 @@ export async function createKioskOnlyEmployee(
 					actorUserId: input.actorUserId,
 					employeeId: created.id,
 				});
-				return created.id;
+				return { employeeId: created.id, afterCommit: joined.afterCommit };
 			},
 			db,
 		),
@@ -186,12 +179,8 @@ export async function createKioskOnlyEmployee(
 		throw error;
 	});
 
-	await syncBillingSeatsAfterMemberChange({
-		organizationId: input.organizationId,
-		memberId,
-		userId,
-		change: "added",
-	});
+	// The reserved email makes it a kiosk seat (ADR 0006); the step carries the seat signal.
+	await afterCommit.run();
 	return { employeeId, userId };
 }
 

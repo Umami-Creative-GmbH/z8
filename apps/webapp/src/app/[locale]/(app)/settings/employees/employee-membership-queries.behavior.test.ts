@@ -8,13 +8,8 @@ import { DatabaseError } from "@/lib/effect/errors";
 import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
-	ensureEmployeeProfiles: vi.fn(),
 	caller: null as StubCaller | null,
 	dbService: null as null | ReturnType<typeof createDb>["dbService"],
-}));
-
-vi.mock("@/lib/auth/organization-member-provisioning", () => ({
-	ensureEmployeeProfilesForOrganizationMembers: mocks.ensureEmployeeProfiles,
 }));
 
 vi.mock("@/lib/effect/runtime", async () => {
@@ -272,7 +267,6 @@ function setActor(
 describe("employee membership queries", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.ensureEmployeeProfiles.mockResolvedValue(undefined);
 	});
 
 	it("attaches only the newest approved membership in the actor organization", async () => {

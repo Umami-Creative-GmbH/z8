@@ -52,9 +52,7 @@ const { db } = await import("@/db");
 const { revokeRemovedMemberAccessInTransaction } = await import(
 	"@/lib/auth/member-removal-cleanup"
 );
-const { ensureEmployeeForOrganizationMember } = await import(
-	"@/lib/auth/organization-member-provisioning"
-);
+const { joinOrganization } = await import("@/lib/employee-lifecycle/joining");
 const { loadReactivationChecklist } = await import(
 	"../reactivation-checklist-store"
 );
@@ -431,19 +429,22 @@ describe("member removal and SCIM deprovisioning are follow-up deactivations (#1
 		});
 	});
 
-	/** They are invited back and accept: provisioning switches them on again (#1628). */
+	/** They are invited back and accept: joining switches them on again (#1628). */
 	async function reAdd(person: SeededEmployee) {
+		const memberId = randomUUID();
 		await fixture.pool.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at)
 			 values ($1, $2, $3, 'member', 'approved', now())`,
-			[randomUUID(), fixture.organizationId, person.userId],
+			[memberId, fixture.organizationId, person.userId],
 		);
-		await ensureEmployeeForOrganizationMember(db, {
-			mode: "membershipAccepted",
-			userId: person.userId,
-			organizationId: fixture.organizationId,
-			memberRole: "member",
-		});
+		const joined = await db.transaction((tx) =>
+			joinOrganization(tx, {
+				userId: person.userId,
+				organizationId: fixture.organizationId,
+				membership: { id: memberId, role: "member" },
+			}),
+		);
+		await joined.afterCommit.run();
 	}
 
 	describe("a person who came back before the follow-up ran", () => {

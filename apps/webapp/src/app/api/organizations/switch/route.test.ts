@@ -13,7 +13,8 @@ const mockState = vi.hoisted(() => {
 		getSession: vi.fn(),
 		canAccessOrganization: vi.fn(async () => true),
 		setActiveOrganization: vi.fn(),
-		ensureEmployeeForOrganizationMember: vi.fn(),
+		joinMemberWithoutEmployee: vi.fn(),
+		logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
 		select,
 		from,
 		where,
@@ -44,9 +45,9 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/auth/organization-member-provisioning", () => ({
-	ensureEmployeeForOrganizationMember:
-		mockState.ensureEmployeeForOrganizationMember,
+vi.mock("@/lib/employee-lifecycle/joining", () => ({
+	joinMemberWithoutEmployee:
+		mockState.joinMemberWithoutEmployee,
 }));
 
 vi.mock("@/lib/organization-mfa/organization-access", () => ({
@@ -68,7 +69,7 @@ vi.mock("@/lib/diagnostics", () => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({ warn: vi.fn(), info: vi.fn(), error: vi.fn() }),
+	createLogger: () => mockState.logger,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -133,7 +134,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 			"org-2",
 		);
 		expect(
-			mockState.ensureEmployeeForOrganizationMember,
+			mockState.joinMemberWithoutEmployee,
 		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
@@ -177,7 +178,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 				error: "You are not a member of this organization",
 			});
 			expect(
-				mockState.ensureEmployeeForOrganizationMember,
+				mockState.joinMemberWithoutEmployee,
 			).not.toHaveBeenCalled();
 			expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 		},
@@ -195,7 +196,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 
 		expect(response.status).toBe(403);
 		expect(
-			mockState.ensureEmployeeForOrganizationMember,
+			mockState.joinMemberWithoutEmployee,
 		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
@@ -236,7 +237,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 			error: "Organization access is inactive",
 		});
 		expect(
-			mockState.ensureEmployeeForOrganizationMember,
+			mockState.joinMemberWithoutEmployee,
 		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
@@ -297,7 +298,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 		});
 	});
 
-	it("repairs a missing employee profile for an existing organization member", async () => {
+	it("joins an approved member who has no employee and warns that it did (#1671)", async () => {
 		mockState.limit.mockReset();
 		mockState.limit
 			.mockResolvedValueOnce([
@@ -310,19 +311,51 @@ describe("POST /api/organizations/switch bearer access", () => {
 			},
 			session: {},
 		});
+		mockState.joinMemberWithoutEmployee.mockResolvedValue({
+			employee: { id: "emp-new", isActive: true },
+			joined: true,
+		});
 
 		const response = await POST(createRequest({}, { organizationId: "org-2" }));
 
 		expect(response.status).toBe(200);
-		expect(mockState.ensureEmployeeForOrganizationMember).toHaveBeenCalledWith(
+		expect(await response.json()).toMatchObject({ hasEmployeeRecord: true });
+		expect(mockState.joinMemberWithoutEmployee).toHaveBeenCalledWith(
 			expect.anything(),
 			{
-				mode: "reconcile",
 				userId: "user-1",
 				organizationId: "org-2",
-				memberRole: "member",
+				membership: { id: "member-1", role: "member" },
 			},
 		);
+		// The last net for members without an employee: it should stay silent (#1671).
+		expect(mockState.logger.warn).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({
+				userId: "user-1",
+				organizationId: "org-2",
+				employeeId: "emp-new",
+			}),
+			expect.stringContaining("without an employee"),
+		);
+	});
+
+	it("does not warn when another request joined the member first", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([
+				{ id: "member-1", role: "member", status: "approved" },
+			])
+			.mockResolvedValueOnce([]);
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+		mockState.joinMemberWithoutEmployee.mockResolvedValue({
+			employee: { id: "emp-1", isActive: true },
+			joined: false,
+		});
+
+		const response = await POST(createRequest({}, { organizationId: "org-2" }));
+
+		expect(response.status).toBe(200);
+		expect(mockState.logger.warn).not.toHaveBeenCalled();
 	});
 
 	it("switches successfully for an approved member with an active employee", async () => {
@@ -340,7 +373,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 			hasEmployeeRecord: true,
 		});
 		expect(
-			mockState.ensureEmployeeForOrganizationMember,
+			mockState.joinMemberWithoutEmployee,
 		).not.toHaveBeenCalled();
 		expect(mockState.setActiveOrganization).toHaveBeenCalledOnce();
 	});
