@@ -1,0 +1,102 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp
+
+stdout | src/components/personnel-file/merge1730-bulk-probe.test.tsx > MERGE1730 retires a submit queued before Activity hides and reconnects
+MERGE1730 bulk lifecycle {"beforeRetirement":0,"afterReconnect":1}
+
+ ❯ |unit| src/components/personnel-file/merge1730-bulk-probe.test.tsx (3 tests | 1 failed) 177ms
+   ✓ MERGE1730 normal bulk submit reaches the public action exactly once 141ms
+   ✓ MERGE1730 same-turn queued Cancel and duplicates remain reserved 16ms
+   × MERGE1730 retires a submit queued before Activity hides and reconnects 19ms
+stdout | src/components/personnel-file/merge1730-shared-probe.test.tsx > MERGE1730 shared return keeps actual dialog open while public action is held
+MERGE1730 shared held action {"kind":"return","remainedOpen":false,"completionCallbacks":1,"successToasts":1}
+
+stdout | src/components/personnel-file/merge1730-shared-probe.test.tsx > MERGE1730 shared cancel keeps actual dialog open while public action is held
+MERGE1730 shared held action {"kind":"cancel","remainedOpen":false,"completionCallbacks":1,"successToasts":1}
+
+ ❯ |unit| src/components/personnel-file/merge1730-shared-probe.test.tsx (2 tests | 2 failed) 113ms
+   × MERGE1730 shared return keeps actual dialog open while public action is held 88ms
+   × MERGE1730 shared cancel keeps actual dialog open while public action is held 24ms
+ ❯ |unit| src/components/personnel-file/merge1730-workspace-probe.test.tsx (11 tests | 1 failed) 138ms
+   ✓ leads with scope and bulk creation and keeps employee/status/former context 66ms
+   ✓ retains usable rows after a failed same-filter refresh, disables decisions, and retries the RSC owner 15ms
+   ✓ never presents a prior filter's retained records as a failed new page 6ms
+   ✓ removes old records and tools after a userId change and requires a fresh arrival on ABA 9ms
+   ✓ removes old records and tools after a organizationId change and requires a fresh arrival on ABA 8ms
+   ✓ removes old records and tools after a employeeId change and requires a fresh arrival on ABA 8ms
+   ✓ keeps one heading and no sensitive records while checking the session 1ms
+   ✓ refreshes cached Activity arrivals before exposing old targets 12ms
+   ✓ MERGE1730 failed initial read exposes an actionable Retry control 1ms
+   × MERGE1730 a failed read after Activity reconnection remains actionable 6ms
+   ✓ MERGE1730 a later successful read recovers a failed Activity arrival 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/merge1730-bulk-probe.test.tsx > MERGE1730 retires a submit queued before Activity hides and reconnects
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/components/personnel-file/merge1730-bulk-probe.test.tsx:165:25
+    163|  if(finish)await act(async()=>finish!(refusal));
+    164|  expect(beforeRetirement).toBe(0);
+    165|  expect(afterReconnect).toBe(0);
+       |                         ^
+    166|  expect(onCreated).not.toHaveBeenCalled();
+    167| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  |unit| src/components/personnel-file/merge1730-shared-probe.test.tsx > MERGE1730 shared return keeps actual dialog open while public action is held
+ FAIL  |unit| src/components/personnel-file/merge1730-shared-probe.test.tsx > MERGE1730 shared cancel keeps actual dialog open while public action is held
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/personnel-file/merge1730-shared-probe.test.tsx:29:23
+     27|  await act(async()=>finish({success:true,data:undefined}));
+     28|  console.log("MERGE1730 shared held action",JSON.stringify({kind,remai…
+     29|  expect(remainedOpen).toBe(true);
+       |                       ^
+     30| });
+     31|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  |unit| src/components/personnel-file/merge1730-workspace-probe.test.tsx > MERGE1730 a failed read after Activity reconnection remains actionable
+AssertionError: expected null to be truthy
+
+- Expected:
+true
+
++ Received:
+null
+
+ ❯ src/components/personnel-file/merge1730-workspace-probe.test.tsx:174:55
+    172|  // A failed RSC refresh returns null again, through the real public w…
+    173|  rendered.rerender(<Activity mode="visible">{view(null)}</Activity>);
+    174|  expect(screen.queryByRole("button", {name:"Retry"})).toBeTruthy();
+       |                                                       ^
+    175| });
+    176| it("MERGE1730 a later successful read recovers a failed Activity arriv…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  4 failed | 12 passed (16)
+   Start at  09:34:36
+   Duration  4.76s (import 51%, transform 24%, environment 17%, tests 6%, setup 2%)
+
+JSON report written to X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1730-audit/probes-first.json

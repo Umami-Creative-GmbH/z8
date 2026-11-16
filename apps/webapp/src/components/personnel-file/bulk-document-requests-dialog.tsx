@@ -60,6 +60,8 @@ interface BulkDocumentRequestValues {
 	deadline: string;
 }
 
+const defaultSubmission: { arrival: symbol | null } = { arrival: null };
+
 /**
  * Asks several employees and teams for the same document at once (#1407):
  * one request per employee, same category, title, note and deadline, never a
@@ -112,12 +114,12 @@ export function BulkDocumentRequestsDialog({
 
 	const form = useForm({
 		defaultValues,
+		onSubmitMeta: defaultSubmission,
 		onSubmitInvalid: () =>
 			formElement.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
-		onSubmit: async ({ value }) => {
-			if (running.current || !arrival.current) return;
-			const owner = arrival.current;
-			running.current = owner;
+		onSubmit: async ({ value, meta }) => {
+			const owner = meta.arrival;
+			if (!owner || arrival.current !== owner || running.current !== owner) return;
 			setError(null);
 			const outcome = await createDocumentRequestsInBulkAction({
 				category: value.category,
@@ -130,7 +132,6 @@ export function BulkDocumentRequestsDialog({
 				(result) => ({ kind: "result", result }) as const,
 				() => ({ kind: "transport" }) as const,
 			);
-			if (running.current === owner) running.current = null;
 			if (arrival.current !== owner) return;
 			if (outcome.kind === "transport") {
 				setError(
@@ -196,11 +197,15 @@ export function BulkDocumentRequestsDialog({
 					<form
 						ref={formElement}
 						className="flex min-h-0 flex-1 flex-col"
-						action={() => {
-							void form.handleSubmit();
-						}}
 						onSubmit={(event) => {
+							event.preventDefault();
 							event.stopPropagation();
+							const owner = arrival.current;
+							if (!owner || running.current) return;
+							running.current = owner;
+							void form.handleSubmit({ arrival: owner }).finally(() => {
+								if (running.current === owner) running.current = null;
+							});
 						}}
 					>
 						<ActionPanelHeader>

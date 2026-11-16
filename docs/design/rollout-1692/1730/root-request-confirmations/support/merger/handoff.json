@@ -1,0 +1,249 @@
+{
+  "head": "7d7d333e685cb9ce0aae3b08bc24394ad1dda1b0",
+  "tree": "dbe5b1e4ab10f9658694683dd1af141132383a41",
+  "parents": [
+    "fb6c0d7b6289bb0c9d5dd108eff4be5697cd79a8",
+    "b3ba1c5ce8ac9dafd108feef560695ec462dce3b"
+  ],
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "classification": "PROVISIONAL: public blockers confirmed; no fresh broad acceptance; root chooses next verified SHA after correction.",
+  "independentTree": {
+    "expected": "dbe5b1e4ab10f9658694683dd1af141132383a41",
+    "actual": "dbe5b1e4ab10f9658694683dd1af141132383a41",
+    "equal": true,
+    "baseUnresolvedTree": "89284c89405d5ffbda5745d9522eb5133a7be399",
+    "resolved": [
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts"
+    ]
+  },
+  "ancestors": [
+    {
+      "sha": "fb6c0d7b6289bb0c9d5dd108eff4be5697cd79a8",
+      "ancestor": true
+    },
+    {
+      "sha": "b3ba1c5ce8ac9dafd108feef560695ec462dce3b",
+      "ancestor": true
+    },
+    {
+      "sha": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "ancestor": true
+    },
+    {
+      "sha": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "ancestor": true
+    },
+    {
+      "sha": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    }
+  ],
+  "preservation": {
+    "rootTrackedFiles": 15537,
+    "byteIdenticalCanonicalRootFiles": 15530,
+    "onlyChangedRootPaths": [
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts"
+    ],
+    "incomingSourcesByteIdentical": [
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts"
+    ],
+    "shared": [
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+        "rootBlob": "100644 blob d89eb16b9f85f117a0050fe69a4f6e573e0e5490",
+        "mergedBlob": "100644 blob d89eb16b9f85f117a0050fe69a4f6e573e0e5490",
+        "unchanged": true
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+        "rootBlob": "100644 blob 5b20cfe541b9c3e63740ed73fa708e0e67b3f50b",
+        "mergedBlob": "100644 blob 5b20cfe541b9c3e63740ed73fa708e0e67b3f50b",
+        "unchanged": true
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-request-officer-actions.tsx",
+        "rootBlob": "100644 blob 29e1e92eb53a6566d0c2cde45e792b16abeea0e1",
+        "mergedBlob": "100644 blob 29e1e92eb53a6566d0c2cde45e792b16abeea0e1",
+        "unchanged": true
+      }
+    ]
+  },
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "blob": "428d83bd5201e7f03c111a31895d5d923b0e2e01",
+      "rawSha256": "b642e250d5a5a794b1efa0c2ee47fc59877ef1ccdb61525d0174442f61961125",
+      "canonicalSha256": "b4704d05f25ddab4d5c4b4916c445e3df7bd14aa38bbc524130e7a353151a5cb"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "blob": "fd7943770930be1ba918279495ee373f597525eb",
+      "rawSha256": "561db3f33a7c5d38fe64f41fb9d0d0a802382bf1587107a778484f06350f02d6",
+      "canonicalSha256": "f57529d7c7e0dbba2c5f2d5bfccd5c40c05811d23ac3a1b779bc474f0dcd56fa"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "blob": "55f74ac6ee10712e86e65453a6749bc4735c2b07",
+      "rawSha256": "3c872d90fc3b7f874ffcfcb730adfc07643f187ef4d0bed68258dabd90339929",
+      "canonicalSha256": "f564a6b893f10d3b7ef0e94f1d83a1d3feee27ce153691131e968b1dbaae2887"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "blob": "876ad148bfcfb7b74a40dc06cd7e8ffd98b3435f",
+      "rawSha256": "2484d3ef5b8b96acb7105ea4763f5bceaba11ae0c4614885d3fb7f5defe992b8",
+      "canonicalSha256": "e0ceeff89c1919e2e933d94b5755c60deeb3cc069518cf5ab87d85d5fdfc13c4"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "blob": "eb902538a3e1fc2cd336b36ce858671d3b83d01f",
+      "rawSha256": "f3e36a365c510bb356be12d0c41061e6107cea78bd72c2cca076956d81628aa5",
+      "canonicalSha256": "6d035d6e94a4859fa9572366e7ccaeebeb75dbac17b57bbcc09f45fc7e666495"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "blob": "10f5223d05306ee69fc2db7737777b7bcdab8bf9",
+      "rawSha256": "ee8cde7d14d1a598bcc0e1be322e7c67a2d2e36b0a42e58831386669542eba5f",
+      "canonicalSha256": "88e4fef15854f0b44a707af9be0dcb92132861646a42ca1a459ff2c8987d36d2"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "blob": "3c20c0a2b83a9290cde741937ae3203329da14a9",
+      "rawSha256": "ed95ad623ff4739ccb1ce2c25bc069c5c3dc0beba48e1c8ea32967b061b5f33d",
+      "canonicalSha256": "9bfd0a989ca673cc73ac019ef2e239779dfeb95a44d6cad132ba20683993c46b"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "blob": "fafcf6ad90b808c000567fcaf0d4246eebdd7f58",
+      "rawSha256": "8209c9e04bb3a8e1ad7e1bee9e8f6fe258286e49fd15ad66440d4b44485671aa",
+      "canonicalSha256": "8feaa418f83e13fe882164d601b0c9e284cb212f0c5cdea79605c31bd77ea4ce"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts",
+      "blob": "4be86202a1a41cd9c5f2c1e88e13780e0291ec14",
+      "rawSha256": "4278b66a976ae5f60e31909863a071b2522eb283510a3cf4b900eb474ce4f2b4",
+      "canonicalSha256": "65fe67e2be6cce4e82aa91204972e2a25597866ed93569935f6a0c4cf0c28fee"
+    }
+  ],
+  "manifests": [
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "unchanged": true
+    },
+    {
+      "path": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "unchanged": true
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "unchanged": true
+    },
+    {
+      "path": ".npmrc",
+      "sha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "sha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "unchanged": true
+    }
+  ],
+  "artifactCounts": {
+    "json": 58,
+    "scripts": 12,
+    "png": 27,
+    "reportLinks": 58
+  },
+  "freshCounts": {
+    "first": {
+      "files": 3,
+      "assertions": 16,
+      "pass": 12,
+      "fail": 4,
+      "skipped": 0
+    },
+    "repeat": {
+      "files": 3,
+      "assertions": 18,
+      "pass": 12,
+      "fail": 6,
+      "skipped": 0
+    },
+    "baseline": {
+      "files": 1,
+      "assertions": 3,
+      "pass": 0,
+      "fail": 1,
+      "skipped": 2
+    }
+  },
+  "inheritedCounts": {
+    "unitFiles": 43,
+    "unitPass": 288,
+    "pgFiles": 6,
+    "pgPass": 99
+  },
+  "blockers": [
+    {
+      "id": "bulk-retired-submit",
+      "classification": "Inherited race remains uncorrected in incoming guard",
+      "trigger": "Public form submit; assert0 action calls; synchronous actual Activity hidden+visible; real TanStack validation continuation invokes action once under replacement arrival.",
+      "source": "bulk-document-requests-dialog.tsx:117,199"
+    },
+    {
+      "id": "failed-null-reconnect",
+      "classification": "New workspace presentation failure",
+      "trigger": "Initial failed null read has Retry; Activity reconnect requests refresh, another failed null read stays Checking without Retry; fresh good snapshot recovers.",
+      "source": "document-requests-workspace.tsx:110-128"
+    },
+    {
+      "id": "shared-pending-dismiss",
+      "classification": "Inherited exact-byte shared source, now publicly reproduced",
+      "trigger": "Actual Return/Cancel dialogs call held real public mocked action; native Cancel/Keep and Escape dismiss; releasing promise runs1 success toast+1callback.",
+      "source": "document-request-decision.tsx:190,241; cancel-document-request-dialog.tsx:63,114"
+    }
+  ],
+  "cleanup": {
+    "removedTemporarySourceFiles": [
+      "apps/webapp/src/components/personnel-file/merge1730-workspace-probe.test.tsx",
+      "apps/webapp/src/components/personnel-file/merge1730-bulk-probe.test.tsx",
+      "apps/webapp/src/components/personnel-file/merge1730-shared-probe.test.tsx",
+      "apps/webapp/src/components/personnel-file/merge1730-baseline-bulk.tsx",
+      "apps/webapp/src/components/personnel-file/merge1730-baseline-bulk-probe.test.tsx"
+    ],
+    "trackedStatusClean": true,
+    "servicesStarted": 0,
+    "ownedProcessesRemaining": 0,
+    "containersCreated": 0,
+    "browsersCreated": 0
+  },
+  "dependencies": "No install, upgrade, borrow, resolver/config override, repair, peer cleanup, package or lock mutation; original physical dependency layout retained. All commands used current root dependencies.",
+  "boundary": "No implementation patches beyond permitted route-metadata reconciliation; no ledger/report/raw proof edits; no push/PR/tracker/dev merge/deploy.",
+  "release": "RELEASE checkout/index/package/runtime/process ownership to root."
+}

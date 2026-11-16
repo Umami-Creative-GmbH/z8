@@ -1,0 +1,13 @@
+{
+  "baseline": "fb6c0d7b6289bb0c9d5dd108eff4be5697cd79a8",
+  "candidate": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+  "method": "git ls-tree -r --name-only HEAD -- <group>; git diff --name-only <baseline> HEAD -- <group>",
+  "groups": [
+    {"path": "docs/design/rollout-1692/1729/root-selected-file-and-activation", "trackedPaths": 152, "changedPaths": 0},
+    {"path": "docs/design/rollout-1692/1728/root-lifecycle-and-snapshot", "trackedPaths": 163, "changedPaths": 0},
+    {"path": "docs/design/rollout-1692/1835", "trackedPaths": 203, "changedPaths": 0},
+    {"path": "docs/design/rollout-1692/1737", "trackedPaths": 211, "changedPaths": 0},
+    {"path": "docs/design/rollout-1692/1736", "trackedPaths": 266, "changedPaths": 0}
+  ],
+  "qualification": "The first PowerShell collection command had a parse error before executing; the corrected read-only command completed with exit 0. This record reports the fixed-Git comparison, separate from the runtime raw working-byte preservation scope."
+}

@@ -1,0 +1,230 @@
+{
+  "session": "z8-1730-root-146b41cc77d64b7b94a9a9b6eeb4f8fa",
+  "source": {
+    "head": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+        "raw": "b642e250d5a5a794b1efa0c2ee47fc59877ef1ccdb61525d0174442f61961125",
+        "lf": "b4704d05f25ddab4d5c4b4916c445e3df7bd14aa38bbc524130e7a353151a5cb"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+        "raw": "df4aef7a8010c93cf0e98fb92245b6699fc293c7205c424a6ca656be7045b1ee",
+        "lf": "93d836f470f7784d1396eb9fbcd79006ddd58af621acba5c8f00433fb5f8158b"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+        "raw": "0c1e51b4ce91c19aea533d13b6c40219e68d0aaf0379757d2e9bce5791f55f78",
+        "lf": "d0305022a3022e321ce1abcc4f90bacc849b929c2095d396d80d1dfc08c5445e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+        "raw": "d45edc7023e21bf75b53748de693831dde789980913dba2e455f1f80913d1286",
+        "lf": "91f240c17ed0865fbf066e7c805f1c8448178f150c7144da01d9a5a9275cdebd"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+        "raw": "43b5c357cc8d0dc9163ac917b1de6969acf85391fb7b022b1b28ad4dafdc8768",
+        "lf": "94fe2bb25e27968327f22fdc016215392e1f26dfff9dacf83bb3375d24f8dcbe"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+        "raw": "8f6cb4e20f508ec92e52b814b710931a73b34dc195257535e0a996ed14d2b207",
+        "lf": "6a189dc6e744f7ee28b3752d2d28e29cc3a15b4de89bf29d3b8079d601990269"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+        "raw": "2484d3ef5b8b96acb7105ea4763f5bceaba11ae0c4614885d3fb7f5defe992b8",
+        "lf": "e0ceeff89c1919e2e933d94b5755c60deeb3cc069518cf5ab87d85d5fdfc13c4"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+        "raw": "dba29a2a17356f38e59fba8f8f617a0c6c94a3bc40639e2402638acadd9f835e",
+        "lf": "abcd121fad74d2cb015d185bfce43f7b9112edd910c8ad88ed8b5a9b105284bf"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+        "raw": "59c65f0ef1068e590631fd48f8af6bdb9075ad2e7e48a0310b1bc5895fac0a50",
+        "lf": "f979e6658a3756c1da2bc5a12983e6b72dda42947526ca75121dc49edbf39169"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts",
+        "raw": "2656d090cf08a66cf5f122f17e6f738d74a6b3df4d402a887d8e75c27c014b38",
+        "lf": "14739c3a5db6f0848dda4760396cb15722fcc8c525ee22fe6f0b8c43671576ca"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "raw": "ed95ad623ff4739ccb1ce2c25bc069c5c3dc0beba48e1c8ea32967b061b5f33d",
+        "lf": "9bfd0a989ca673cc73ac019ef2e239779dfeb95a44d6cad132ba20683993c46b"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "8209c9e04bb3a8e1ad7e1bee9e8f6fe258286e49fd15ad66440d4b44485671aa",
+        "lf": "8feaa418f83e13fe882164d601b0c9e284cb212f0c5cdea79605c31bd77ea4ce"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts",
+        "raw": "4278b66a976ae5f60e31909863a071b2522eb283510a3cf4b900eb474ce4f2b4",
+        "lf": "65fe67e2be6cce4e82aa91204972e2a25597866ed93569935f6a0c4cf0c28fee"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "cca768503a22e233bf5db7aec6e7ed7095d4dde46010f315ca49c4ce8e4c9fa6"
+  },
+  "harnessSha256": "db8883c40da40891fcd745946019c82542e2204eb87edd452a8867840510d1f9",
+  "commands": [
+    {
+      "name": "open",
+      "code": 0,
+      "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":14956169911145543337},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"targetId\":\"979C6A39367C5DE09D6C31BC4A4D88F4\",\"title\":\"z8 - time app\",\"url\":\"http://localhost:50964/en/sign-in\"},\"error\":null}\n",
+      "err": ""
+    },
+    {
+      "name": "target",
+      "code": 0,
+      "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":14956169911145543337},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"targetId\":\"979C6A39367C5DE09D6C31BC4A4D88F4\",\"title\":\"z8 - time app\",\"url\":\"http://localhost:50964/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\"},\"error\":null}\n",
+      "err": ""
+    },
+    {
+      "name": "wait",
+      "code": 0,
+      "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":14956169911145543337},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"result\":true},\"error\":null}\n",
+      "err": ""
+    },
+    {
+      "name": "tree",
+      "code": 0,
+      "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":14956169911145543337},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"tree\":\"# React component tree\\n# Columns: depth id parent name [key=...]\\n# Use `react inspect <id>` for props/hooks/state. IDs valid until next navigation.\\n0 1930 - Root\\n1 1931 1930 HeadManagerContext.Provider\\n2 1932 1931 Root\\n3 1933 1932 ServerRoot\\n4 1934 1933 Context.Provider\\n5 1935 1934 AppRouter\\n6 1936 1935 RootErrorBoundary\\n7 1937 1936 ErrorBoundary\\n8 1938 1937 ErrorBoundaryHandler\\n9 1939 1938 Router\\n10 1940 1939 HistoryUpdater\\n10 1941 1939 NavigationPromisesContext.Provider\\n11 1942 1941 PathParamsContext.Provider\\n12 1943 1942 PathnameContext.Provider\\n13 1944 1943 SearchParamsContext.Provider\\n14 1945 1944 GlobalLayoutRouterContext.Provider\\n15 1946 1945 AppRouterContext.Provider\\n16 1947 1946 LayoutRouterContext.Provider\\n17 1948 1947 HotReload\\n18 1949 1948 AppDevOverlayErrorBoundary\\n19 1950 1949 ReplaySsrOnlyErrors\\n19 1951 1949 DevRootHTTPAccessFallbackBoundary\\n20 1952 1951 HTTPAccessFallbackBoundary\\n21 1953 1952 HTTPAccessFallbackErrorBoundary\\n22 1954 1953 RedirectBoundary\\n23 1955 1954 RedirectErrorBoundary\\n24 1956 1955 Head key=\\\"[\\\\\\\"/$d$locale/!KGFwcCk/personnel-files/document-requests/__PAGE__/_head\\\\\\\",\\\\\\\"?status=all&pageSize=10&retained=1730\\\\\\\",\\\\\\\"en\\\\\\\"]\\\"\\n25 1957 1956 Fragment key=\\\"h\\\"\\n26 1958 1957 Prerender(ViewportWrapper)\\n27 1959 1958 __next_viewport_boundary__\\n28 1960 1959 meta key=\\\"0\\\"\\n28 1961 1959 meta key=\\\"1\\\"\\n26 1962 1957 Prerender(MetadataWrapper)\\n27 1963 1962 __next_metadata_boundary__\\n28 1964 1963 div\\n29 1965 1964 Suspense\\n24 1966 1955 __next_root_layout_boundary__\\n25 1967 1966 Fragment key=\\\"c\\\"\\n26 1968 1967 OuterLayoutRouter\\n27 1969 1968 Activity key=\\\"locale|en|d\\\"\\n28 1971 1969 SegmentStateProvider key=\\\"locale|en|d\\\"\\n29 1972 1971 Context.Provider key=\\\"0\\\"\\n30 1973 1972 TemplateContext.Provider key=\\\"locale|en|d\\\"\\n31 1974 1973 RenderFromTemplateContext\\n32 1975 1974 ScrollHandler\\n33 1976 1975 InnerScrollHandler\\n34 1977 1976 ErrorBoundary\\n35 1978 1977 LoadingBoundary\\n36 1979 1978 HTTPAccessFallbackBoundary\\n37 1980 1979 HTTPAccessFallbackErrorBoundary\\n38 1981 1980 RedirectBoundary\\n39 1982 1981 RedirectErrorBoundary\\n40 1983 1982 InnerLayoutRouter\\n41 1984 1983 LayoutRouterContext.Provider\\n42 1985 1984 NavigationPromisesContext.Provider\\n43 1986 1985 SegmentViewNode key=\\\"layout\\\"\\n44 1987 1986 SegmentTrieNode key=\\\"layout\\\"\\n44 1988 1986 Fragment key=\\\"c\\\"\\n45 1989 1988 link key=\\\"0\\\"\\n45 1990 1988 script key=\\\"script-0\\\"\\n45 1991 1988 script key=\\\"script-1\\\"\\n45 1992 1988 script key=\\\"script-2\\\"\\n45 1993 1988 script key=\\\"script-3\\\"\\n45 1994 1988 script key=\\\"script-4\\\"\\n45 1995 1988 script key=\\\"script-5\\\"\\n45 1996 1988 script key=\\\"script-6\\\"\\n45 1997 1988 script key=\\\"script-7\\\"\\n45 1998 1988 Prerender(LocaleLayout)\\n46 1999 1998 html\\n47 2000 1999 head\\n48 2001 2000 meta\\n48 2002 2000 meta\\n48 2003 2000 meta\\n48 2004 2000 meta\\n48 2005 2000 link\\n48 2006 2000 link\\n48 2007 2000 link\\n48 2008 2000 link\\n48 2009 2000 link\\n48 2010 2000 link\\n48 2011 2000 meta\\n48 2012 2000 meta\\n48 2013 2000 meta\\n48 2014 2000 meta\\n48 2015 2000 meta\\n48 2016 2000 meta\\n48 2017 2000 Prerender(TranslatedMeta)\\n49 2018 2017 title\\n49 2019 2017 meta\\n49 2020 2017 meta\\n47 2021 1999 body\\n48 2022 2021 Prerender(AppProviders)\\n49 2023 2022 ThemeProvider\\n50 2024 2023 Context.Provider\\n51 2025 2024 Forget(FontSizeProvider)\\n52 2026 2025 Context.Provider\\n53 2027 2026 Suspense\\n54 2034 2027 Prerender(TranslationProvider)\\n55 2035 2034 Forget(TranslationProviders)\\n56 2036 2035 Forget(TolgeeNextProvider)\\n57 2037 2036 Context.Provider\\n58 2038 2037 TolgeeProvider key=\\\"en\\\"\\n59 2039 2038 Context.Provider\\n60 2040 2039 NextIntlClientProvider\\n61 2041 2040 IntlProvider\\n62 2042 2041 Context.Provider\\n63 2043 2042 Forget(AppLocaleProvider)\\n64 2044 2043 Context.Provider\\n65 2045 2044 Prerender(ApplicationContent)\\n66 2046 2045 Forget(QueryProvider)\\n67 2047 2046 QueryClientProvider\\n68 2048 2047 Context.Provider\\n69 2049 2048 Forget(ViewRefreshProvider)\\n70 2050 2049 Context.Provider\\n71 2051 2050 Context.Provider\\n72 2052 2051 Forget(BProgressBar)\\n72 2053 2051 Forget(TooltipProvider)\\n73 2054 2053 Context.Provider\\n74 2055 2054 TooltipProvider\\n75 2056 2055 TooltipProviderContext.Provider\\n76 2057 2056 FloatingDelayGroup\\n77 2058 2057 FloatingDelayGroupContext.Provider\\n78 2059 2058 Forget(SWUpdatePrompt)\\n78 2060 2058 Suspense\\n78 2061 2058 OuterLayoutRouter\\n79 2062 2061 Activity key=\\\"(app)\\\"\\n80 2068 2062 SegmentStateProvider key=\\\"(app)\\\"\\n81 2069 2068 Context.Provider key=\\\"0\\\"\\n82 2070 2069 TemplateContext.Provider key=\\\"(app)\\\"\\n83 2071 2070 RenderFromTemplateContext\\n84 2072 2071 ScrollHandler\\n85 2073 2072 InnerScrollHandler\\n86 2074 2073 ErrorBoundary\\n87 2075 2074 ErrorBoundaryHandler\\n88 2076 2075 LoadingBoundary\\n89 2077 2076 HTTPAccessFallbackBoundary\\n90 2078 2077 HTTPAccessFallbackErrorBoundary\\n91 2079 2078 RedirectBoundary\\n92 2080 2079 RedirectErrorBoundary\\n93 2081 2080 InnerLayoutRouter\\n94 2082 2081 LayoutRouterContext.Provider\\n95 2083 2082 NavigationPromisesContext.Provider\\n96 2084 2083 SegmentViewNode key=\\\"layout\\\"\\n97 2085 2084 SegmentTrieNode key=\\\"layout\\\"\\n97 2086 2084 Fragment key=\\\"c\\\"\\n98 2087 2086 link key=\\\"0\\\"\\n98 2088 2086 script key=\\\"script-0\\\"\\n98 2089 2086 script key=\\\"script-1\\\"\\n98 2090 2086 script key=\\\"script-2\\\"\\n98 2091 2086 script key=\\\"script-3\\\"\\n98 2092 2086 script key=\\\"script-4\\\"\\n98 2093 2086 script key=\\\"script-5\\\"\\n98 2094 2086 script key=\\\"script-6\\\"\\n98 2095 2086 script key=\\\"script-7\\\"\\n98 2096 2086 script key=\\\"script-8\\\"\\n98 2097 2086 script key=\\\"script-9\\\"\\n98 2098 2086 script key=\\\"script-10\\\"\\n98 2099 2086 script key=\\\"script-11\\\"\\n98 2100 2086 script key=\\\"script-12\\\"\\n98 2101 2086 script key=\\\"script-13\\\"\\n98 2102 2086 script key=\\\"script-14\\\"\\n98 2103 2086 script key=\\\"script-15\\\"\\n98 2104 2086 script key=\\\"script-16\\\"\\n98 2105 2086 script key=\\\"script-17\\\"\\n98 2106 2086 script key=\\\"script-18\\\"\\n98 2107 2086 script key=\\\"script-19\\\"\\n98 2108 2086 script key=\\\"script-20\\\"\\n98 2109 2086 script key=\\\"script-21\\\"\\n98 2110 2086 script key=\\\"script-22\\\"\\n98 2111 2086 script key=\\\"script-23\\\"\\n98 2112 2086 script key=\\\"script-24\\\"\\n98 2113 2086 script key=\\\"script-25\\\"\\n98 2114 2086 script key=\\\"script-26\\\"\\n98 2115 2086 script key=\\\"script-27\\\"\\n98 2116 2086 Prerender(AppLayout)\\n99 2117 2116 Suspense\\n100 2124 2117 Prerender(Server(AuthenticatedAppContent))\\n101 2125 2124 Forget(PostHogProvider)\\n102 2126 2125 Forget(PushPermissionProvider)\\n103 2127 2126 Forget(UserPreferencesProvider)\\n104 2128 2127 Context.Provider\\n105 2129 2128 Forget(OrganizationSettingsProvider)\\n106 2130 2129 Forget(OrganizationContextProvider)\\n107 2131 2130 Forget(OrganizationSettingsStoreProvider) key=\\\"[\\\\\\\"perf-small-0-92c5a8b88238\\\\\\\",\\\\\\\"perf-small-92c5a8b88238\\\\\\\"]\\\"\\n108 2132 2131 Context.Provider\\n109 2133 2132 Context.Provider\\n110 2134 2133 Forget(SynchronizeOrganization)\\n110 2135 2133 Forget(SidebarProvider)\\n111 2136 2135 Context.Provider\\n112 2137 2136 Forget(TooltipProvider)\\n113 2138 2137 Context.Provider\\n114 2139 2138 TooltipProvider\\n115 2140 2139 TooltipProviderContext.Provider\\n116 2141 2140 FloatingDelayGroup\\n117 2142 2141 FloatingDelayGroupContext.Provider\\n118 2143 2142 div\\n119 2144 2143 Forget(AppSkipLink)\\n120 2145 2144 a\\n119 2146 2143 Server(ServerSidebarRegion)\\n120 2147 2146 Suspense\\n119 2148 2143 Forget(SidebarInset)\\n120 2149 2148 main\\n121 2150 2149 Suspense\\n121 2151 2149 Forget(OfflineBanner)\\n121 2152 2149 Suspense\\n121 2153 2149 Forget(OrganizationDeletionBanner)\\n121 2154 2149 PositionConsentDialogHost\\n122 2155 2154 Forget(Dialog)\\n123 2156 2155 Context.Provider\\n124 2157 2156 DialogRoot\\n125 2158 2157 DialogRootContext.Provider\\n126 2159 2158 Forget(DialogContent)\\n127 2160 2159 Forget(DialogPortal)\\n128 2161 2160 DialogPortal\\n121 2162 2149 div\\n122 2163 2162 OuterLayoutRouter\\n123 2164 2163 Activity key=\\\"personnel-files\\\"\\n124 2177 2164 SegmentStateProvider key=\\\"personnel-files\\\"\\n125 2178 2177 Context.Provider key=\\\"0\\\"\\n126 2179 2178 TemplateContext.Provider key=\\\"personnel-files\\\"\\n127 2180 2179 RenderFromTemplateContext\\n128 2181 2180 ScrollHandler\\n129 2182 2181 InnerScrollHandler\\n130 2183 2182 ErrorBoundary\\n131 2184 2183 ErrorBoundaryHandler\\n132 2185 2184 LoadingBoundary\\n133 2186 2185 HTTPAccessFallbackBoundary\\n134 2187 2186 HTTPAccessFallbackErrorBoundary\\n135 2188 2187 RedirectBoundary\\n136 2189 2188 RedirectErrorBoundary\\n137 2190 2189 InnerLayoutRouter\\n138 2191 2190 LayoutRouterContext.Provider\\n139 2192 2191 NavigationPromisesContext.Provider\\n140 2193 2192 SegmentViewNode key=\\\"layout\\\"\\n141 2194 2193 SegmentTrieNode key=\\\"layout\\\"\\n141 2195 2193 Fragment key=\\\"c\\\"\\n142 2196 2195 Prerender(PersonnelFilesLayout)\\n143 2197 2196 Prerender(RouteTranslationBoundary)\\n144 2198 2197 Suspense\\n145 2205 2198 Prerender(RouteCatalog)\\n146 2206 2205 Forget(FeatureTranslationProvider)\\n147 2207 2206 Context.Provider\\n148 2208 2207 TolgeeProvider\\n149 2209 2208 Context.Provider\\n150 2210 2209 OuterLayoutRouter\\n151 2211 2210 Activity key=\\\"document-requests\\\"\\n152 2212 2211 SegmentStateProvider key=\\\"document-requests\\\"\\n153 2213 2212 Context.Provider key=\\\"0\\\"\\n154 2214 2213 TemplateContext.Provider key=\\\"document-requests\\\"\\n155 2215 2214 RenderFromTemplateContext\\n156 2216 2215 ScrollHandler\\n157 2217 2216 InnerScrollHandler\\n158 2218 2217 ErrorBoundary\\n159 2219 2218 LoadingBoundary\\n160 2220 2219 HTTPAccessFallbackBoundary\\n161 2221 2220 RedirectBoundary\\n162 2222 2221 RedirectErrorBoundary\\n163 2223 2222 InnerLayoutRouter\\n164 2224 2223 LayoutRouterContext.Provider\\n165 2225 2224 NavigationPromisesContext.Provider\\n166 2226 2225 Fragment key=\\\"c\\\"\\n167 2227 2226 OuterLayoutRouter\\n168 2228 2227 Activity key=\\\"__PAGE__\\\"\\n169 2231 2228 SegmentStateProvider key=\\\"__PAGE__\\\"\\n170 2232 2231 Context.Provider key=\\\"0\\\"\\n171 2233 2232 TemplateContext.Provider key=\\\"__PAGE__\\\"\\n172 2234 2233 RenderFromTemplateContext\\n173 2235 2234 ScrollHandler\\n174 2236 2235 InnerScrollHandler\\n175 2237 2236 ErrorBoundary\\n176 2238 2237 LoadingBoundary\\n177 2239 2238 HTTPAccessFallbackBoundary\\n178 2240 2239 RedirectBoundary\\n179 2241 2240 RedirectErrorBoundary\\n180 2242 2241 InnerLayoutRouter\\n181 2243 2242 LayoutRouterContext.Provider\\n182 2244 2243 Fragment key=\\\"c\\\"\\n183 2245 2244 SegmentViewNode key=\\\"c-page\\\"\\n184 2246 2245 SegmentTrieNode key=\\\"page\\\"\\n184 2247 2245 Prerender(DocumentRequestsPage)\\n185 2248 2247 Suspense\\n186 2256 2248 Forget(DocumentRequestsWorkspace) key=\\\"[\\\\\\\"perf-small-0-92c5a8b88238\\\\\\\",\\\\\\\"perf-small-92c5a8b88238\\\\\\\",\\\\\\\"b000be1e-97c5-4341-836d-98c1f6487b07\\\\\\\",[[\\\\\\\"organization_admin\\\\\\\",[\\\\\\\"certificate\\\\\\\",\\\\\\\"contract\\\\\\\",\\\\\\\"other\\\\\\\",\\\\\\\"payslip\\\\\\\",\\\\\\\"sick_note\\\\\\\"],\\\\\\\"all\\\\\\\"]]]\\\"\\n187 2257 2256 div\\n188 2258 2257 Forget(Button)\\n189 2259 2258 Slot\\n190 2260 2259 ForwardRef(Link)\\n191 2261 2260 ForwardRef(BaseLink)\\n192 2262 2261 LinkComponent\\n193 2263 2262 Context.Provider\\n194 2264 2263 a\\n195 2265 2264 ArrowLeft\\n196 2266 2265 svg\\n197 2267 2266 path key=\\\"svg-0\\\"\\n197 2268 2266 path key=\\\"svg-1\\\"\\n197 2269 2266 path key=\\\"svg-2\\\"\\n188 2270 2257 Forget(PageHeader)\\n189 2271 2270 div\\n190 2272 2271 div\\n191 2273 2272 h1\\n191 2274 2272 div\\n188 2275 2257 Forget(DocumentRequestsChecking)\\n189 2276 2275 Forget(LoadingRegion)\\n190 2277 2276 div\\n183 2249 2244 script key=\\\"script-0\\\"\\n183 2250 2244 script key=\\\"script-1\\\"\\n183 2251 2244 Prerender(Next.MetadataOutlet)\\n184 2252 2251 __next_outlet_boundary__\\n185 2253 2252 Suspense\\n180 2254 2241 SegmentBoundaryTriggerNode\\n175 2255 2236 SegmentViewStateNode key=\\\"/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\\\"\\n163 2229 2222 SegmentBoundaryTriggerNode\\n158 2230 2217 SegmentViewStateNode key=\\\"/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\\\"\\n137 2199 2189 SegmentBoundaryTriggerNode\\n130 2200 2182 SegmentViewStateNode key=\\\"/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\\\"\\n126 2201 2178 SegmentViewNode\\n127 2202 2201 SegmentTrieNode key=\\\"boundary:not-found\\\"\\n126 2203 2178 SegmentViewNode\\n127 2204 2203 SegmentTrieNode key=\\\"boundary:error\\\"\\n121 2165 2149 Forget(GetTheAppBanner)\\n103 2166 2126 Forget(NativePushBridge)\\n103 2167 2126 Forget(PushPermissionModal)\\n104 2168 2167 Forget(ActionPanel)\\n105 2169 2168 Forget(Sheet)\\n106 2170 2169 Context.Provider\\n107 2171 2170 DialogRoot\\n108 2172 2171 DialogRootContext.Provider\\n109 2173 2172 Forget(ActionPanelContent)\\n110 2174 2173 Forget(SheetContent)\\n111 2175 2174 Forget(SheetPortal)\\n112 2176 2175 DialogPortal\\n93 2118 2080 SegmentBoundaryTriggerNode\\n86 2119 2073 SegmentViewStateNode key=\\\"/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\\\"\\n82 2120 2069 SegmentViewNode\\n83 2121 2120 SegmentTrieNode key=\\\"boundary:not-found\\\"\\n82 2122 2069 SegmentViewNode\\n83 2123 2122 SegmentTrieNode key=\\\"boundary:error\\\"\\n78 2063 2058 Forget(Toaster)\\n79 2064 2063 ForwardRef(Toaster)\\n80 2065 2064 section\\n69 2066 2048 ReactQueryDevtools\\n70 2067 2066 div\\n40 2028 1982 SegmentBoundaryTriggerNode\\n34 2029 1976 SegmentViewStateNode key=\\\"/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\\\"\\n30 2030 1972 SegmentViewNode\\n31 2031 2030 SegmentTrieNode key=\\\"boundary:not-found\\\"\\n30 2032 1972 SegmentViewNode\\n31 2033 2032 SegmentTrieNode key=\\\"boundary:global-error\\\"\\n24 1970 1955 AppRouterAnnouncer\"},\"error\":null}\n",
+      "err": ""
+    },
+    {
+      "name": "permission",
+      "code": 1,
+      "out": "{\"success\":false,\"data\":null,\"error\":\"Evaluation error: ReferenceError: Notification is not defined\\n    at <anonymous>:1:1\"}\n",
+      "err": ""
+    },
+    {
+      "name": "snapshot",
+      "code": 0,
+      "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":14956169911145543337},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"origin\":\"http://localhost:50964/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\",\"refs\":{\"e1\":{\"name\":\"Skip to content\",\"role\":\"link\"},\"e10\":{\"name\":\"Workplace\",\"role\":\"navigation\"},\"e11\":{\"name\":\"Team & organization\",\"role\":\"navigation\"},\"e12\":{\"name\":\"Settings & help\",\"role\":\"navigation\"},\"e13\":{\"name\":\"Account: Person 0\",\"role\":\"button\"},\"e14\":{\"name\":\"Refresh data\",\"role\":\"button\"},\"e15\":{\"name\":\"Toggle theme\",\"role\":\"button\"},\"e16\":{\"name\":\"Notifications (2 unread)\",\"role\":\"button\"},\"e17\":{\"name\":\"Open Next.js Dev Tools\",\"role\":\"button\"},\"e18\":{\"name\":\"Search\",\"role\":\"button\"},\"e19\":{\"name\":\"Dashboard\",\"role\":\"link\"},\"e2\":{\"name\":\"Notifications alt+T\",\"role\":\"region\"},\"e20\":{\"name\":\"Time Tracking\",\"role\":\"link\"},\"e21\":{\"name\":\"Calendar\",\"role\":\"link\"},\"e22\":{\"name\":\"Absences\",\"role\":\"link\"},\"e23\":{\"name\":\"Travel Expenses\",\"role\":\"link\"},\"e24\":{\"name\":\"Finance\",\"role\":\"link\"},\"e25\":{\"name\":\"My Requests\",\"role\":\"link\"},\"e26\":{\"name\":\"My Documents\",\"role\":\"link\"},\"e27\":{\"name\":\"Personnel Files\",\"role\":\"link\"},\"e28\":{\"name\":\"Reports\",\"role\":\"link\"},\"e29\":{\"name\":\"Org Explorer\",\"role\":\"link\"},\"e3\":{\"name\":\"Toggle Sidebar\",\"role\":\"button\"},\"e30\":{\"name\":\"Team\",\"role\":\"link\"},\"e31\":{\"name\":\"Team Absences\",\"role\":\"link\"},\"e32\":{\"name\":\"Approvals\",\"role\":\"link\"},\"e33\":{\"name\":\"Compliance\",\"role\":\"link\"},\"e34\":{\"name\":\"Settings\",\"role\":\"link\"},\"e35\":{\"name\":\"Get Help\",\"role\":\"link\"},\"e36\":{\"name\":\"Feedback\",\"role\":\"link\"},\"e4\":{\"name\":\"Current timezone Europe/Berlin, 11:47, UTC+01:00\",\"role\":\"button\"},\"e5\":{\"name\":\"Clock In\",\"role\":\"button\"},\"e6\":{\"name\":\"Personnel Files\",\"role\":\"link\"},\"e7\":{\"name\":\"Document requests\",\"role\":\"heading\"},\"e8\":{\"name\":\"Open Tanstack query devtools\",\"role\":\"button\"},\"e9\":{\"name\":\"Switch Organization: Performance small\",\"role\":\"button\"}},\"removedRefs\":[],\"snapshot\":\"- link \\\"Skip to content\\\" [ref=e1]\\n- button \\\"Switch Organization: Performance small\\\" [expanded=false, ref=e9]\\n- button \\\"Search\\\" [ref=e18]\\n- navigation \\\"Workplace\\\" [ref=e10]\\n  - link \\\"Dashboard\\\" [ref=e19]\\n  - link \\\"Time Tracking\\\" [ref=e20]\\n  - link \\\"Calendar\\\" [ref=e21]\\n  - link \\\"Absences\\\" [ref=e22]\\n  - link \\\"Travel Expenses\\\" [ref=e23]\\n  - link \\\"Finance\\\" [ref=e24]\\n  - link \\\"My Requests\\\" [ref=e25]\\n  - link \\\"My Documents\\\" [ref=e26]\\n  - link \\\"Personnel Files\\\" [ref=e27]\\n  - link \\\"Reports\\\" [ref=e28]\\n  - link \\\"Org Explorer\\\" [ref=e29]\\n- navigation \\\"Team & organization\\\" [ref=e11]\\n  - link \\\"Team\\\" [ref=e30]\\n  - link \\\"Team Absences\\\" [ref=e31]\\n  - link \\\"Approvals\\\" [ref=e32]\\n- navigation \\\"Settings & help\\\" [ref=e12]\\n  - link \\\"Compliance\\\" [ref=e33]\\n  - link \\\"Settings\\\" [ref=e34]\\n  - link \\\"Get Help\\\" [ref=e35]\\n  - link \\\"Feedback\\\" [ref=e36]\\n- button \\\"Account: Person 0\\\" [expanded=false, ref=e13]\\n- button \\\"Toggle Sidebar\\\" [expanded=true, ref=e3]\\n- button \\\"Current timezone Europe/Berlin, 11:47, UTC+01:00\\\" [expanded=false, ref=e4]\\n- button \\\"Clock In\\\" [expanded=false, ref=e5]\\n- button \\\"Refresh data\\\" [ref=e14]\\n- button \\\"Toggle theme\\\" [expanded=false, ref=e15]\\n- button \\\"Notifications (2 unread)\\\" [expanded=false, ref=e16]\\n- link \\\"Personnel Files\\\" [ref=e6]\\n- heading \\\"Document requests\\\" [level=1, ref=e7]\\n- region \\\"Notifications alt+T\\\" [ref=e2]\\n- button \\\"Open Tanstack query devtools\\\" [ref=e8]\\n- button \\\"Open Next.js Dev Tools\\\" [ref=e17]\"},\"error\":null}\n",
+      "err": ""
+    }
+  ],
+  "auth": {
+    "code": 0,
+    "signIn": 200,
+    "active": 200
+  },
+  "next": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_project_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-36de3f4a-69b59b59b97cbc3d\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:50964\"}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_routes",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"appRouter\": [\n    \"/[locale]\",\n    \"/[locale]/absences\",\n    \"/[locale]/accept-invitation/[invitationId]\",\n    \"/[locale]/analytics\",\n    \"/[locale]/analytics/overtime-burn-down\",\n    \"/[locale]/analytics/team-performance\",\n    \"/[locale]/analytics/vacation-trends\",\n    \"/[locale]/analytics/work-hours\",\n    \"/[locale]/approvals\",\n    \"/[locale]/approvals/deputy-decisions/[absenceId]\",\n    \"/[locale]/approvals/inbox\",\n    \"/[locale]/approvals/review/[organizationId]/[kind]/[id]\",\n    \"/[locale]/billing/suspended\",\n    \"/[locale]/calendar\",\n    \"/[locale]/calendar/[employeeId]\",\n    \"/[locale]/compliance\",\n    \"/[locale]/driving-licence\",\n    \"/[locale]/driving-licence/checks/[employee]\",\n    \"/[locale]/equipment\",\n    \"/[locale]/equipment/assignments/[assignmentId]\",\n    \"/[locale]/equipment/employees/[employeeId]\",\n    \"/[locale]/forgot-password\",\n    \"/[locale]/init\",\n    \"/[locale]/join/[code]\",\n    \"/[locale]/kiosk\",\n    \"/[locale]/licenses\",\n    \"/[locale]/mfa\",\n    \"/[locale]/my-documents\",\n    \"/[locale]/my-equipment\",\n    \"/[locale]/my-requests\",\n    \"/[locale]/notifications\",\n    \"/[locale]/onboarding/complete\",\n    \"/[locale]/onboarding/notifications\",\n    \"/[locale]/onboarding/organization\",\n    \"/[locale]/onboarding/profile\",\n    \"/[locale]/onboarding/vacation-policy\",\n    \"/[locale]/onboarding/welcome\",\n    \"/[locale]/onboarding/wellness\",\n    \"/[locale]/onboarding/work-schedule\",\n    \"/[locale]/onboarding/work-templates\",\n    \"/[locale]/organization\",\n    \"/[locale]/payroll\",\n    \"/[locale]/payroll/work-balances\",\n    \"/[locale]/payroll/work-balances/[employeeId]\",\n    \"/[locale]/personnel-files\",\n    \"/[locale]/personnel-files/[employeeId]\",\n    \"/[locale]/personnel-files/document-requests\",\n    \"/[locale]/personnel-files/due-for-deletion\",\n    \"/[locale]/personnel-files/payslip-batches\",\n    \"/[locale]/personnel-files/payslip-batches/[batchId]\",\n    \"/[locale]/personnel-files/sick-leave\",\n    \"/[locale]/platform-admin\",\n    \"/[locale]/platform-admin/analytics\",\n    \"/[locale]/platform-admin/billing\",\n    \"/[locale]/platform-admin/diagnostics\",\n    \"/[locale]/platform-admin/organizations\",\n    \"/[locale]/platform-admin/settings\",\n    \"/[locale]/platform-admin/system-email-templates\",\n    \"/[locale]/platform-admin/users\",\n    \"/[locale]/platform-admin/worker-queue\",\n    \"/[locale]/reports\",\n    \"/[locale]/reports/projects\",\n    \"/[locale]/reports/vehicles\",\n    \"/[locale]/reset-password\",\n    \"/[locale]/scheduling\",\n    \"/[locale]/settings\",\n    \"/[locale]/settings/approval-escalation\",\n    \"/[locale]/settings/approval-policies\",\n    \"/[locale]/settings/audit-export\",\n    \"/[locale]/settings/audit-log\",\n    \"/[locale]/settings/avv\",\n    \"/[locale]/settings/billable-time\",\n    \"/[locale]/settings/billable-time/accounting\",\n    \"/[locale]/settings/billable-time/cost-rates\",\n    \"/[locale]/settings/billable-time/hand-off\",\n    \"/[locale]/settings/billable-time/rates\",\n    \"/[locale]/settings/billing\",\n    \"/[locale]/settings/calendar\",\n    \"/[locale]/settings/change-policies\",\n    \"/[locale]/settings/clocking\",\n    \"/[locale]/settings/clockodo-import\",\n    \"/[locale]/settings/closed-months\",\n    \"/[locale]/settings/compliance\",\n    \"/[locale]/settings/compliance/works-council\",\n    \"/[locale]/settings/coverage-rules\",\n    \"/[locale]/settings/custom-fields\",\n    \"/[locale]/settings/customers\",\n    \"/[locale]/settings/demo\",\n    \"/[locale]/settings/discord\",\n    \"/[locale]/settings/driving-licence\",\n    \"/[locale]/settings/email-templates\",\n    \"/[locale]/settings/employees\",\n    \"/[locale]/settings/employees/[employeeId]\",\n    \"/[locale]/settings/employees/new\",\n    \"/[locale]/settings/enterprise\",\n    \"/[locale]/settings/enterprise/api-keys\",\n    \"/[locale]/settings/enterprise/api-keys/[keyId]\",\n    \"/[locale]/settings/enterprise/audit-log\",\n    \"/[locale]/settings/enterprise/branding\",\n    \"/[locale]/settings/enterprise/domains\",\n    \"/[locale]/settings/enterprise/email\",\n    \"/[locale]/settings/enterprise/identity-setup\",\n    \"/[locale]/settings/enterprise/sso\",\n    \"/[locale]/settings/equipment\",\n    \"/[locale]/settings/export\",\n    \"/[locale]/settings/export-operations\",\n    \"/[locale]/settings/export/history/[organizationId]\",\n    \"/[locale]/settings/holidays\",\n    \"/[locale]/settings/implementation-checklist\",\n    \"/[locale]/settings/import\",\n    \"/[locale]/settings/import/[batchId]\",\n    \"/[locale]/settings/kiosks\",\n    \"/[locale]/settings/locations\",\n    \"/[locale]/settings/locations/[locationId]\",\n    \"/[locale]/settings/my-data\",\n    \"/[locale]/settings/notification-channels\",\n    \"/[locale]/settings/notifications\",\n    \"/[locale]/settings/organization\",\n    \"/[locale]/settings/organizations\",\n    \"/[locale]/settings/payroll-access\",\n    \"/[locale]/settings/payroll-export\",\n    \"/[locale]/settings/payroll-readiness\",\n    \"/[locale]/settings/permissions\",\n    \"/[locale]/settings/personnel-files\",\n    \"/[locale]/settings/position-capture\",\n    \"/[locale]/settings/position-stamps\",\n    \"/[locale]/settings/profile\",\n    \"/[locale]/settings/projects\",\n    \"/[locale]/settings/report-share-links\",\n    \"/[locale]/settings/roles\",\n    \"/[locale]/settings/scheduled-exports\",\n    \"/[locale]/settings/security\",\n    \"/[locale]/settings/shifts\",\n    \"/[locale]/settings/skills\",\n    \"/[locale]/settings/slack\",\n    \"/[locale]/settings/statistics\",\n    \"/[locale]/settings/surcharges\",\n    \"/[locale]/settings/teams\",\n    \"/[locale]/settings/teams-notifications\",\n    \"/[locale]/settings/teams/[teamId]\",\n    \"/[locale]/settings/telegram\",\n    \"/[locale]/settings/travel-expenses\",\n    \"/[locale]/settings/vacation\",\n    \"/[locale]/settings/vacation/employees\",\n    \"/[locale]/settings/vacation/employees/[employeeId]\",\n    \"/[locale]/settings/vehicle-use\",\n    \"/[locale]/settings/vehicles\",\n    \"/[locale]/settings/webhooks\",\n    \"/[locale]/settings/wellness\",\n    \"/[locale]/settings/work-categories\",\n    \"/[locale]/settings/work-diagnostics\",\n    \"/[locale]/settings/work-policies\",\n    \"/[locale]/setup\",\n    \"/[locale]/share/[token]\",\n    \"/[locale]/sign-in\",\n    \"/[locale]/sign-up\",\n    \"/[locale]/team\",\n    \"/[locale]/team/absences\",\n    \"/[locale]/team/driving\",\n    \"/[locale]/team/period-submissions\",\n    \"/[locale]/team/presence\",\n    \"/[locale]/team/presence/[locationId]\",\n    \"/[locale]/time-tracking\",\n    \"/[locale]/today\",\n    \"/[locale]/travel-expenses\",\n    \"/[locale]/travel-expenses/[claimId]\",\n    \"/[locale]/travel-expenses/finance\",\n    \"/[locale]/travel-expenses/reports/[reportId]\",\n    \"/[locale]/verify-2fa\",\n    \"/[locale]/verify-email\",\n    \"/[locale]/verify-email-pending\",\n    \"/[locale]/works-council\",\n    \"/[locale]/works-council/export\",\n    \"/api/analytics/export\",\n    \"/api/app-version\",\n    \"/api/approvals/inbox\",\n    \"/api/approvals/inbox/[id]\",\n    \"/api/approvals/inbox/[id]/approve\",\n    \"/api/approvals/inbox/[id]/reject\",\n    \"/api/approvals/inbox/bulk-approve\",\n    \"/api/approvals/inbox/bulk-reject\",\n    \"/api/approvals/inbox/counts\",\n    \"/api/audit-export/public-key\",\n    \"/api/audit-export/verify\",\n    \"/api/auth/[...all]\",\n    \"/api/auth/app-exchange\",\n    \"/api/auth/app-login\",\n    \"/api/auth/app-sign-in\",\n    \"/api/auth/callback/social-org/[provider]\",\n    \"/api/auth/context\",\n    \"/api/auth/desktop-login\",\n    \"/api/auth/providers\",\n    \"/api/auth/session-expired\",\n    \"/api/auth/social-org/[provider]\",\n    \"/api/auth/verify-turnstile\",\n    \"/api/billing/checkout\",\n    \"/api/billing/portal\",\n    \"/api/billing/subscription\",\n    \"/api/billing/webhook\",\n    \"/api/calendar/conflicts\",\n    \"/api/calendar/connections\",\n    \"/api/calendar/connections/[id]\",\n    \"/api/calendar/events\",\n    \"/api/calendar/ics-feeds\",\n    \"/api/calendar/ics-feeds/[id]\",\n    \"/api/calendar/ics-feeds/[id]/regenerate\",\n    \"/api/calendar/ics/[secret]\",\n    \"/api/calendar/oauth/[provider]\",\n    \"/api/calendar/oauth/callback/[provider]\",\n    \"/api/cron/[jobName]\",\n    \"/api/cron/status/[executionId]\",\n    \"/api/dashboard/layout\",\n    \"/api/dashboard/widgets/[widget]\",\n    \"/api/desktop/context\",\n    \"/api/desktop/open\",\n    \"/api/desktop/organizations\",\n    \"/api/desktop/vehicle-use-warnings\",\n    \"/api/discord/interactions/[token]\",\n    \"/api/discord/link\",\n    \"/api/discord/setup\",\n    \"/api/driving-licence/evidence\",\n    \"/api/driving-licence/operational-employees\",\n    \"/api/driving-licence/status\",\n    \"/api/health\",\n    \"/api/jobs/[jobId]/status\",\n    \"/api/kiosk/board\",\n    \"/api/kiosk/clock\",\n    \"/api/kiosk/clock/outcome\",\n    \"/api/kiosk/commands\",\n    \"/api/kiosk/commands/[operationId]\",\n    \"/api/kiosk/employee-status\",\n    \"/api/kiosk/employees\",\n    \"/api/kiosk/fob\",\n    \"/api/kiosk/fob/registration\",\n    \"/api/kiosk/pair\",\n    \"/api/kiosk/session\",\n    \"/api/location/countries\",\n    \"/api/location/regions\",\n    \"/api/location/states\",\n    \"/api/mcp\",\n    \"/api/notifications\",\n    \"/api/notifications/count\",\n    \"/api/notifications/preferences\",\n    \"/api/notifications/push/native-token\",\n    \"/api/notifications/push/subscribe\",\n    \"/api/notifications/push/subscriptions\",\n    \"/api/notifications/push/unsubscribe\",\n    \"/api/notifications/push/vapid-key\",\n    \"/api/org-admin/holiday-categories\",\n    \"/api/org-admin/holiday-categories/[id]\",\n    \"/api/org-admin/holiday-presets\",\n    \"/api/org-admin/holiday-presets/[id]\",\n    \"/api/org-admin/holidays\",\n    \"/api/org-admin/holidays/[id]\",\n    \"/api/org-admin/holidays/import\",\n    \"/api/org-admin/holidays/preview\",\n    \"/api/organization-mfa/policy\",\n    \"/api/organization/vehicles/[vehicleId]/photos/[photoId]\",\n    \"/api/organizations/list\",\n    \"/api/organizations/sso\",\n    \"/api/organizations/switch\",\n    \"/api/payroll/comparisons/[resultId]\",\n    \"/api/personnel-files/documents/[documentId]\",\n    \"/api/personnel-files/employees/[employeeId]/zip\",\n    \"/api/platform-admin/billing\",\n    \"/api/session/organization-status\",\n    \"/api/settings/employees/read/[dataset]\",\n    \"/api/settings/skills\",\n    \"/api/setup/authorize\",\n    \"/api/slack/commands\",\n    \"/api/slack/events\",\n    \"/api/slack/interactions\",\n    \"/api/slack/link\",\n    \"/api/slack/oauth/authorize\",\n    \"/api/slack/oauth/callback\",\n    \"/api/slack/setup\",\n    \"/api/teams/messages\",\n    \"/api/teams/setup\",\n    \"/api/telegram/link\",\n    \"/api/telegram/setup\",\n    \"/api/telegram/webhook/[token]\",\n    \"/api/time-clock\",\n    \"/api/time-clock/status\",\n    \"/api/time-entries\",\n    \"/api/time-entries/[entryId]\",\n    \"/api/time-entries/clock-out-on-behalf\",\n    \"/api/time-entries/commands\",\n    \"/api/time-entries/commands/[operationId]\",\n    \"/api/time-entries/corrections\",\n    \"/api/time-entries/diagnostics\",\n    \"/api/time-entries/diagnostics/proposals\",\n    \"/api/time-entries/diagnostics/repair\",\n    \"/api/time-entries/offline-context\",\n    \"/api/time-entries/status\",\n    \"/api/time-entries/verify\",\n    \"/api/travel-expenses/[claimId]\",\n    \"/api/travel-expenses/[claimId]/receipts/[attachmentId]\",\n    \"/api/travel-expenses/exports/[batchId]\",\n    \"/api/travel-expenses/reports/[reportId]/receipts/[receiptId]\",\n    \"/api/tus/[[...path]]\",\n    \"/api/upload/personnel-file\",\n    \"/api/upload/personnel-file/payslip-batch\",\n    \"/api/upload/process\",\n    \"/api/upload/travel-expense/process\",\n    \"/api/upload/travel-expense/report-receipt\",\n    \"/api/user/onboarding-status\",\n    \"/api/v1/[...path]\",\n    \"/api/v1/absences\",\n    \"/api/v1/customers\",\n    \"/api/v1/customers/custom-fields\",\n    \"/api/v1/employees\",\n    \"/api/v1/employees/custom-fields\",\n    \"/api/v1/openapi.json\",\n    \"/api/v1/projects\",\n    \"/api/v1/projects/custom-fields\",\n    \"/api/v1/work-periods\",\n    \"/api/wellness/water-action\",\n    \"/api/wellness/water-reminder\"\n  ]\n}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/document-requests/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "status": "actual-target-tree-observed",
+  "close": {
+    "code": 0,
+    "out": "{\"success\":true,\"data\":{\"closed\":true,\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":false,\"engine\":\"chrome\",\"launchHash\":null},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":false,\"saveStatus\":\"not_configured\"},\"restoreStatus\":\"not_configured\",\"saveStatus\":\"not_configured\"},\"error\":null}\n",
+    "err": ""
+  },
+  "publicQualification": "Raw native output remains ignored and excluded from public hashes; generated synthetic sign-in email strings redacted in this public copy. No cookie/session/auth state was copied, saved, restored or minted."
+}

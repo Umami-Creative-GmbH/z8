@@ -71,7 +71,11 @@ export function DocumentRequestsWorkspace({
 				}
 			/>
 			{!current ? (
-				<DocumentRequestsChecking />
+				matches && snapshot === null ? (
+					<DocumentRequestsReadFailure hasRetained={false} />
+				) : (
+					<DocumentRequestsChecking />
+				)
 			) : (
 				<>
 					{!snapshot ? <DocumentRequestsReadFailure hasRetained={Boolean(data)} /> : null}

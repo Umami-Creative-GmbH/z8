@@ -1,0 +1,200 @@
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{␍
+      3     │ - → appPageOwnsHeading,␍
+      4     │ - → normalizeAppPath,␍
+      5     │ - → resolveAppRouteMetadata,␍
+      6     │ - }·from·"./route-metadata";␍
+          2 │ + import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      7   3 │   ␍
+      8   4 │   describe("route metadata", () => {␍
+    ······· │ 
+     19  15 │     });␍
+     20  16 │     it("adopts only selected employee files, leaving other personnel workflows independently staged", () => {␍
+     21     │ - → → expect(␍
+     22     │ - → → → appPageOwnsHeading(␍
+     23     │ - → → → → "/de/personnel-files/af981290-0000-4000-8000-000000000001",␍
+     24     │ - → → → ),␍
+     25     │ - → → ).toBe(true);␍
+         17 │ + → → expect(appPageOwnsHeading("/de/personnel-files/af981290-0000-4000-8000-000000000001")).toBe(␍
+         18 │ + → → → true,␍
+         19 │ + → → );␍
+     26  20 │       expect(␍
+     27     │ - → → → appPageOwnsHeading(␍
+     28     │ - → → → → "/en/personnel-files/af981290-0000-4000-8000-000000000001/detail",␍
+     29     │ - → → → ),␍
+         21 │ + → → → appPageOwnsHeading("/en/personnel-files/af981290-0000-4000-8000-000000000001/detail"),␍
+     30  22 │       ).toBe(false);␍
+     31  23 │     });␍
+    ······· │ 
+     33  25 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     34  26 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     35     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+     36     │ - → → → true,␍
+     37     │ - → → );␍
+     38     │ - → → expect(␍
+     39     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),␍
+     40     │ - → → ).toBe(false);␍
+         27 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+         28 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     41  29 │     });␍
+     42  30 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │ 
+     69  57 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     70  58 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     71     │ - → → expect(␍
+     72     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+     73     │ - → → ).toBe(true);␍
+         59 │ + → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     74  60 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     75     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+     76     │ - → → → false,␍
+     77     │ - → → );␍
+         61 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     78  62 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     79  63 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │ 
+     85  69 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+     86  70 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     87     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+     88     │ - → → → true,␍
+     89     │ - → → );␍
+     90     │ - → → expect(␍
+     91     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+     92     │ - → → ).toBe(false);␍
+         71 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+         72 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+     93  73 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     94  74 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │ 
+     97  77 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     98  78 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     99     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+    100     │ - → → → true,␍
+    101     │ - → → );␍
+         79 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+    102  80 │     });␍
+    103  81 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+    104     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+    105     │ - → → → true,␍
+    106     │ - → → );␍
+    107     │ - → → expect(␍
+    108     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+    109     │ - → → ).toBe(false);␍
+         82 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+         83 │ + → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+    110  84 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+    111  85 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │ 
+    114  88 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+    115  89 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+    116     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+    117     │ - → → → true,␍
+    118     │ - → → );␍
+         90 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+    119  91 │     });␍
+    120  92 │     it("adopts only the complete review arrival route", () => {␍
+    121     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+    122     │ - → → → true,␍
+    123     │ - → → );␍
+    124     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+    125     │ - → → → false,␍
+    126     │ - → → );␍
+    127     │ - → → expect(␍
+    128     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+    129     │ - → → ).toBe(false);␍
+         93 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+         94 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+         95 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+    130  96 │     });␍
+    131  97 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+    132  98 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+    133     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+    134     │ - → → → false,␍
+    135     │ - → → );␍
+         99 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+    136 100 │     });␍
+    137 101 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+    138 102 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+    139     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+    140     │ - → → → false,␍
+    141     │ - → → );␍
+        103 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+    142 104 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+    143     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+    144     │ - → → → false,␍
+    145     │ - → → );␍
+        105 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+    146 106 │     });␍
+    147 107 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │ 
+    190 150 │   ␍
+    191 151 │     it("normalizes locale and trailing slash segments", () => {␍
+    192     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+    193     │ - → → → "/settings/security",␍
+    194     │ - → → );␍
+        152 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    195 153 │     });␍
+    196 154 │   });␍
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+    171     │ - → → (entry)·=>·({␍
+    172     │ - → → → id:·`settings-${entry.id}`,␍
+    173     │ - → → → href:·entry.href,␍
+    174     │ - → → → titleKey:·entry.titleKey,␍
+    175     │ - → → → titleDefault:·entry.titleDefault,␍
+    176     │ - → → }),␍
+    177     │ - → ),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+        171 │ + → → id:·`settings-${entry.id}`,␍
+        172 │ + → → href:·entry.href,␍
+        173 │ + → → titleKey:·entry.titleKey,␍
+        174 │ + → → titleDefault:·entry.titleDefault,␍
+        175 │ + → })),␍
+    178 176 │     {␍
+    179 177 │       id: "settings",␍
+    ······· │ 
+    192 190 │   ␍
+    193 191 │   export function normalizeAppPath(pathname: string): string {␍
+    194     │ - → const·[firstSegment,·...remainingSegments]·=·pathname␍
+    195     │ - → → .split("/")␍
+    196     │ - → → .filter(Boolean);␍
+    197     │ - → const·segments·=·ALL_LANGUAGES.includes(␍
+    198     │ - → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+    199     │ - → )␍
+        192 │ + → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+        193 │ + → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+    200 194 │       ? remainingSegments␍
+    201 195 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    260 254 │       [...APP_ROUTE_METADATA]␍
+    261 255 │         .sort((left, right) => right.href.length - left.href.length)␍
+    262     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+    263     │ - → → UNKNOWN_ROUTE_METADATA␍
+        256 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+    264 257 │     );␍
+    265 258 │   }␍
+  
+
+Checked 13 files in 36ms. No fixes applied.
+Found 2 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+
