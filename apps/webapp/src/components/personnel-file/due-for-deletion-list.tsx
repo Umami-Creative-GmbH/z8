@@ -514,11 +514,13 @@ function RetentionRecords({
 	const locale = useAppLocale();
 	const instance = useId();
 	const documents = [...data.documents, ...data.unknownStart];
+	const available = new Set(documents.map(({ id }) => id));
 	const selection = documents.filter((document) => selected.has(document.id));
+	const currentSelected = new Set(selection.map(({ id }) => id));
 	const selectedDue = data.documents.filter((document) => selected.has(document.id)).length;
 	const toggle = (id: string, checked: boolean) =>
 		setSelected((previous) => {
-			const next = new Set(previous);
+			const next = new Set([...previous].filter((selectedId) => available.has(selectedId)));
 			if (checked && next.size < MAX_SELECTION) next.add(id);
 			else next.delete(id);
 			return next;
@@ -565,7 +567,7 @@ function RetentionRecords({
 								disabled={disabled}
 								onCheckedChange={(checked) =>
 									setSelected((previous) => {
-										const next = new Set(previous);
+										const next = new Set([...previous].filter((id) => available.has(id)));
 										for (const document of data.documents) {
 											if (checked === true && next.size < MAX_SELECTION) next.add(document.id);
 											else if (checked !== true) next.delete(document.id);
@@ -581,7 +583,7 @@ function RetentionRecords({
 				{data.documents.length > 0 ? (
 					<ReviewRecords
 						documents={data.documents}
-						selected={selected}
+						selected={currentSelected}
 						onToggle={toggle}
 						disabled={disabled}
 						label={t("settings.personnelFiles.due.documents", "Due documents")}
@@ -643,7 +645,7 @@ function RetentionRecords({
 					</p>
 					<ReviewRecords
 						documents={data.unknownStart}
-						selected={selected}
+						selected={currentSelected}
 						onToggle={toggle}
 						disabled={disabled}
 						label={t("settings.personnelFiles.due.unknownTitle", "Retention start unknown")}
