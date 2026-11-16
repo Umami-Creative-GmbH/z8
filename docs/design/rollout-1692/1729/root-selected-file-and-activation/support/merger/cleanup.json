@@ -1,0 +1,9 @@
+{
+  "method": "No Next, browser/native, listener or Docker service was started. All finite unit, Python and Node commands completed before release; no saved private runtime pointers were read/reused. No system-wide cleanup was attempted.",
+  "ownedNext": [],
+  "ownedBrowsers": [],
+  "ownedNativeSessions": [],
+  "ownedServices": [],
+  "ownedListeners": [],
+  "ownedBackgroundCommands": []
+}

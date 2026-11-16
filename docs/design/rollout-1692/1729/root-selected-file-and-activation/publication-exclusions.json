@@ -1,0 +1,21 @@
+{
+  "policy": "category-only; no private filenames, sizes, hashes, or reads",
+  "categories": [
+    {
+      "category": "Private fixture and authentication inputs",
+      "reason": "Contain generated credentials, service addresses or session material; not read or hashed for this publication."
+    },
+    {
+      "category": "Private external command and tool outputs",
+      "reason": "Can expose fixture paths or authentication details; public redacted command records are retained instead."
+    },
+    {
+      "category": "Transient runtime state and historical byte backups",
+      "reason": "Used only during isolated acceptance and restoration; public source pins and byte-exact restore observations describe the boundary."
+    },
+    {
+      "category": "Large internal merger indexes",
+      "reason": "Unnecessary for reviewing this narrow correction; fixed Git preservation checks and compact released summaries are retained."
+    }
+  ]
+}

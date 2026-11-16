@@ -1,0 +1,196 @@
+{
+  "state": "SEALED_FIXED_GIT",
+  "source": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+  "merge": "e1e25677696ad9dce26b77e1fcb7047db8b2fe1c",
+  "verified": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+  "preDelete": "ed1841d161a448561b329fae43903b0a2e606dfa",
+  "incomingPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+    "apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx",
+    "apps/webapp/src/components/personnel-file/delete-document-dialog.tsx",
+    "apps/webapp/src/components/personnel-file/document-list.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-section.tsx",
+    "apps/webapp/src/components/personnel-file/employee-file-loading-heading.tsx",
+    "apps/webapp/src/components/personnel-file/employee-file-workspace.test.tsx",
+    "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx",
+    "apps/webapp/src/components/personnel-file/employee-sick-leave-card.tsx",
+    "apps/webapp/src/components/personnel-file/personnel-file-panel.test.tsx",
+    "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "rootChangedPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+    "apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx",
+    "apps/webapp/src/components/personnel-file/delete-document-dialog.tsx",
+    "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+    "apps/webapp/src/components/personnel-file/employee-file-workspace.test.tsx",
+    "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx"
+  ],
+  "preserved1728Paths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+    "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+    "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+    "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+    "apps/webapp/src/components/personnel-file/use-personnel-files-snapshot.ts",
+    "apps/webapp/src/lib/personnel-file/access-store.ts",
+    "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+    "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts"
+  ],
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+      "gitBlob": "e3031c6fd8bb00db06481a85892b91d9f4b3e634",
+      "bytes": 3639,
+      "sha256": "28d24d94a53fbbc7de0894518c82ec86eb5bad507aac002c5c3b1440efb37282",
+      "lfSha256": "28d24d94a53fbbc7de0894518c82ec86eb5bad507aac002c5c3b1440efb37282"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+      "gitBlob": "1ae5dfba14d9b0506baab3f1935fc32230e0c8eb",
+      "bytes": 3410,
+      "sha256": "6b41e30259e004b8a836f93186ff68f9ee0bc784f2176dd918603dbe7f48c26d",
+      "lfSha256": "6b41e30259e004b8a836f93186ff68f9ee0bc784f2176dd918603dbe7f48c26d"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx",
+      "gitBlob": "cb33eb771ab21a660aef80fa92995f3ce900107c",
+      "bytes": 7541,
+      "sha256": "1d7706c46b541141bb0a9d956c3511f666e927769652f39a51848933d33a42ea",
+      "lfSha256": "1d7706c46b541141bb0a9d956c3511f666e927769652f39a51848933d33a42ea"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/delete-document-dialog.tsx",
+      "gitBlob": "b94ff12ce2a9a975d8f0246310737e45441a6c13",
+      "bytes": 4934,
+      "sha256": "a714bf0abf2eedc8cfb7a3b678bb989fddb14909f5f8e3f4dd4f641aceea17ce",
+      "lfSha256": "a714bf0abf2eedc8cfb7a3b678bb989fddb14909f5f8e3f4dd4f641aceea17ce"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+      "gitBlob": "04c3fdae0ecc848a20c522c4553b2d6aeeaf37be",
+      "bytes": 5184,
+      "sha256": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600",
+      "lfSha256": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-section.tsx",
+      "gitBlob": "d4e9c8b8394a212b3807ea0b1aa0a47518b02eed",
+      "bytes": 4841,
+      "sha256": "86bbea5d4313dd54040a8b227476f32b19f9b15a023f0867e08c83f75ea1d0ae",
+      "lfSha256": "86bbea5d4313dd54040a8b227476f32b19f9b15a023f0867e08c83f75ea1d0ae"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-file-loading-heading.tsx",
+      "gitBlob": "d138ecae91f0c2d7b1d57086a635d8dcae11278e",
+      "bytes": 302,
+      "sha256": "13fba15f519cb36902e8e55f338499d643e78bc589dfdff4b8593690d1ce181e",
+      "lfSha256": "13fba15f519cb36902e8e55f338499d643e78bc589dfdff4b8593690d1ce181e"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "gitBlob": "b004d82a5f982bffa0a1e6910bac78221f08ed75",
+      "bytes": 5830,
+      "sha256": "59b71d803947b29156db50952916f1d2c5f0f2d5552ed45dade8931e185eb3e5",
+      "lfSha256": "59b71d803947b29156db50952916f1d2c5f0f2d5552ed45dade8931e185eb3e5"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.test.tsx",
+      "gitBlob": "e738ccf026c73527f453231c416edde429901f30",
+      "bytes": 2642,
+      "sha256": "ef53815d97d969a8e7e44f31b7e119d57a5f55ce26649b856761b151842e31d5",
+      "lfSha256": "ef53815d97d969a8e7e44f31b7e119d57a5f55ce26649b856761b151842e31d5"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx",
+      "gitBlob": "2eae8538323417d2a18292210f8192fdd3d94295",
+      "bytes": 2749,
+      "sha256": "b6240274c74cd80cd6cfaa92af891ecca0b9ea23555d58e14a9cc74d01beb598",
+      "lfSha256": "b6240274c74cd80cd6cfaa92af891ecca0b9ea23555d58e14a9cc74d01beb598"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/employee-sick-leave-card.tsx",
+      "gitBlob": "71a34f74f6ef7a71df0f5d2ef83753edcc728591",
+      "bytes": 5043,
+      "sha256": "a8b442234467e29118ea5dfeb52781f4ca4f6af820b7e9184867571fafc9b252",
+      "lfSha256": "a8b442234467e29118ea5dfeb52781f4ca4f6af820b7e9184867571fafc9b252"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.test.tsx",
+      "gitBlob": "a4b4823a847e65a2ee53a14fb7f938709a0687af",
+      "bytes": 7394,
+      "sha256": "7be8dcf1655c481771f67fefa3e61941e1cbdfcb833eeb751a6de10adecce69f",
+      "lfSha256": "7be8dcf1655c481771f67fefa3e61941e1cbdfcb833eeb751a6de10adecce69f"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "gitBlob": "7ad9c9630be82c6452bfd4ff9cacb71e689f653a",
+      "bytes": 13490,
+      "sha256": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991",
+      "lfSha256": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "gitBlob": "58fa6088eae2c927533680f09f48e87b8c327741",
+      "bytes": 6243,
+      "sha256": "34e83988c3557583509f8d79ac6f8e315ac223d134cc94b3d1e84a9729ba7072",
+      "lfSha256": "34e83988c3557583509f8d79ac6f8e315ac223d134cc94b3d1e84a9729ba7072"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+      "gitBlob": "11b794b19a7a0a7a6917360189e58dcb43f0a99c",
+      "bytes": 4618,
+      "sha256": "0a8c83bc93d7ff1cfe2b319436221c86d230e2b54212d30b28b821cf65bf8fed",
+      "lfSha256": "0a8c83bc93d7ff1cfe2b319436221c86d230e2b54212d30b28b821cf65bf8fed"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+      "gitBlob": "34b24b47d87ac8d11d4574bd84363cf1a448b324",
+      "bytes": 6467,
+      "sha256": "cc4dde8751e1e86589b914ecfe0b62f88517bb31402c38da020cf3055e4a452d",
+      "lfSha256": "cc4dde8751e1e86589b914ecfe0b62f88517bb31402c38da020cf3055e4a452d"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-personnel-files-snapshot.ts",
+      "gitBlob": "8a1a5bee5c60383ee9eb043c7770848b9c09cebf",
+      "bytes": 2112,
+      "sha256": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f",
+      "lfSha256": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "gitBlob": "409511e714f6bfb13cbe8226c915e1ee94acf252",
+      "bytes": 8458,
+      "sha256": "43ac77259350858413a3b2fb7d74b7e2a7fa8685c925e1af3dab16aafacada22",
+      "lfSha256": "43ac77259350858413a3b2fb7d74b7e2a7fa8685c925e1af3dab16aafacada22"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "gitBlob": "42008a1c1085b7e0a798195ff89f07bdd8fa5b44",
+      "bytes": 6884,
+      "sha256": "232292abb66f836194899d0eaf6bdc42c54b734ff5933a813bcb6b566b8c36f9",
+      "lfSha256": "232292abb66f836194899d0eaf6bdc42c54b734ff5933a813bcb6b566b8c36f9"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+      "gitBlob": "4a43fb54cfd7e58d04f1a1bb8056f12597f4e9b5",
+      "bytes": 13740,
+      "sha256": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728",
+      "lfSha256": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+      "gitBlob": "631772c7f20f45e010e8d58c6689932c639c2fea",
+      "bytes": 6401,
+      "sha256": "fe4412ad51b813be30dde721420225cf387efe4b1534aab1e955df31280c570b",
+      "lfSha256": "fe4412ad51b813be30dde721420225cf387efe4b1534aab1e955df31280c570b"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "gitBlob": "1f0e3c4fb66123cc3b1ed5f422c7dc8f33a50340",
+      "bytes": 29848,
+      "sha256": "9d48a89b93baa1ba92c4d1b38777a3e17c2fc7c190d562c5fdeac52e4d7c8ad7",
+      "lfSha256": "9d48a89b93baa1ba92c4d1b38777a3e17c2fc7c190d562c5fdeac52e4d7c8ad7"
+    }
+  ]
+}
