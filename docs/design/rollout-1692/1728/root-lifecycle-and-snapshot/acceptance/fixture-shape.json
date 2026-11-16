@@ -1,0 +1,94 @@
+{
+  "actors": {
+    "small-admin": {
+      "employeeId": "09af76bd-a997-4f4b-8de4-922c7d546ac6",
+      "organizationId": "perf-small-6c16dc7ede83"
+    },
+    "small-manager": {
+      "employeeId": "6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+      "organizationId": "perf-small-6c16dc7ede83"
+    },
+    "small-employee": {
+      "employeeId": "83cd7482-3d57-42c3-bef0-198d2124374a",
+      "organizationId": "perf-small-6c16dc7ede83"
+    },
+    "small-restricted": {
+      "employeeId": "c209da12-528b-461b-beef-9009690793df",
+      "organizationId": "perf-small-6c16dc7ede83"
+    },
+    "large-admin": {
+      "employeeId": "ae52c5e6-3c20-4d88-b5e6-b749c2484414",
+      "organizationId": "perf-large-6c16dc7ede83"
+    },
+    "large-manager": {
+      "employeeId": "da87e75b-f56f-4819-ba49-9e19317b97f2",
+      "organizationId": "perf-large-6c16dc7ede83"
+    },
+    "large-employee": {
+      "employeeId": "854df231-da5f-4e3f-bcca-b4ac6244ae59",
+      "organizationId": "perf-large-6c16dc7ede83"
+    },
+    "large-restricted": {
+      "employeeId": "6b6406b6-0a2a-4a3c-8a2b-81f8802147bb",
+      "organizationId": "perf-large-6c16dc7ede83"
+    }
+  },
+  "rows": [
+    {
+      "id": "09af76bd-a997-4f4b-8de4-922c7d546ac6",
+      "is_active": true,
+      "first_name": "Fixture",
+      "last_name": "Person 0",
+      "employee_number": null
+    },
+    {
+      "id": "6274b1f0-e076-4585-a7ac-bf9ef623f96a",
+      "is_active": true,
+      "first_name": "Fixture",
+      "last_name": "Person 1",
+      "employee_number": null
+    },
+    {
+      "id": "83cd7482-3d57-42c3-bef0-198d2124374a",
+      "is_active": true,
+      "first_name": "Fixture",
+      "last_name": "Person 2",
+      "employee_number": null
+    },
+    {
+      "id": "c209da12-528b-461b-beef-9009690793df",
+      "is_active": true,
+      "first_name": "Fixture",
+      "last_name": "Person 3",
+      "employee_number": null
+    },
+    {
+      "id": "6923d068-673e-4005-91e6-27412c0a4a5d",
+      "is_active": true,
+      "first_name": "Fixture",
+      "last_name": "Person 4",
+      "employee_number": null
+    },
+    {
+      "id": "5435096c-875b-47e7-af8d-88f280a9d062",
+      "is_active": true,
+      "first_name": "Fixture",
+      "last_name": "Person 5",
+      "employee_number": null
+    },
+    {
+      "id": "b0da1513-9fff-4e58-a4dc-ec213b4e2ea6",
+      "is_active": true,
+      "first_name": "Fixture",
+      "last_name": "Person 6",
+      "employee_number": null
+    },
+    {
+      "id": "a2e345f8-5ad9-49b7-b419-9aa3b3e9ab5c",
+      "is_active": true,
+      "first_name": "Fixture",
+      "last_name": "Person 7",
+      "employee_number": null
+    }
+  ]
+}

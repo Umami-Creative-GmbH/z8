@@ -1,0 +1,392 @@
+{
+  "status": "PROVISIONAL; lifecycle reader mismatch reproduced; RELEASE",
+  "head": "80ca442bd36692f0b9a87c4f94d106a3d81492de",
+  "tree": "6e21aa122ba902f4123128100d8db0c64ab55642",
+  "parents": [
+    "a5c7f741c0df6816e0e2b10290d79b7409fc606f",
+    "a146813a73b12c443f59c56727b7f5b33557b740"
+  ],
+  "verifiedProductUnchanged": "16443982de929de4f885a6cfb6de5b377374cb3e",
+  "workingTreeClean": true,
+  "preservation": "preservation.json",
+  "dependencies": {
+    "physicalRoots": true,
+    "links": 158,
+    "linkDigest": "8404cac9cc14ed8fa2ac8462608229209270a648b1019dee94908853a6449a9e",
+    "configs": [
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799"
+      },
+      {
+        "path": "package.json",
+        "sha256": "F281C18AC5A4B789E95CC9314145E2F1BB535AFF902FD2C4A20E08256F88C2B7"
+      },
+      {
+        "path": "apps/webapp/package.json",
+        "sha256": "59BBC67934476333747162B5ABCC7ADAC7A99DB758416C9B630A09EC92AC1CC9"
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "sha256": "1AA995231F3055320FD3130345F21C4F6598232FE8981920F2AE6B860E376EA8"
+      },
+      {
+        "path": ".npmrc",
+        "sha256": "B4B849A5E5C9365F945FDFEB6E7842F06DF39EA129C60715FFC7CDB186713F03"
+      },
+      {
+        "path": "apps/webapp/next.config.ts",
+        "sha256": "D3A8ED855C1BEEE3174FEF4A6DFC9112F39AE2CE5BFA39FEB5250E55B0FC5D05"
+      }
+    ],
+    "resolutions": {
+      "next/package.json": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\package.json",
+      "react/package.json": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react\\package.json",
+      "vitest/package.json": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest\\package.json",
+      "babel-plugin-react-compiler/package.json": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler\\package.json"
+    }
+  },
+  "all51VerifiedAncestorsPreserved": true,
+  "root1835Preserved": {
+    "proofDirectoryPaths": 107,
+    "existingReportAlsoPreserved": true,
+    "byteExact": true,
+    "sourceCommit": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8"
+  },
+  "routes": {
+    "aliases": 19
+  },
+  "fresh": {
+    "unit": {
+      "passed": 190,
+      "failed": 0,
+      "pending": 0,
+      "physicalFiles": 23,
+      "reportedFiles": 23,
+      "occurrences": 190,
+      "physicalFullNames": 190,
+      "physicalNameOccurrences": 190,
+      "exit": 0
+    },
+    "postgres": {
+      "passed": 99,
+      "failed": 0,
+      "pending": 0,
+      "physicalFiles": 6,
+      "reportedFiles": 6,
+      "occurrences": 99,
+      "physicalFullNames": 99,
+      "physicalNameOccurrences": 99,
+      "exit": 0
+    },
+    "lifecycle": {
+      "tests": 1,
+      "failed": 1,
+      "passed": 0,
+      "physicalFiles": 1,
+      "sourceSha256": "177e305dd5b23f1afd864e3d8c0261b46981efe7b43fa6d41e95d920cecdfe0f",
+      "phases": [
+        "before",
+        "cutoff-effective-pending",
+        "materialized",
+        "rehired"
+      ]
+    },
+    "uniqueExecuted": {
+      "tests": 290,
+      "physicalFiles": 30,
+      "passed": 289,
+      "failed": 1,
+      "skipped": 0
+    },
+    "firstLifecycleHarnessAttempt": {
+      "executed": 1,
+      "failed": 1,
+      "additiveTests": 0,
+      "reason": "Actor manifest lacks userId; corrected by read-only scoped employee user_id lookup"
+    },
+    "types": {
+      "routeTypegen": true,
+      "application": true,
+      "workflowContracts": true,
+      "smoke": true,
+      "exit": 0
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "files": 7,
+      "errors": 0,
+      "warnings": 0,
+      "score": null
+    },
+    "biome": [
+      {
+        "name": "biome-ordinary",
+        "exit": 1
+      },
+      {
+        "name": "biome-explicit-crlf",
+        "exit": 1
+      },
+      {
+        "name": "biome-ordinary-lint",
+        "exit": 0
+      },
+      {
+        "name": "biome-explicit-lint",
+        "exit": 0
+      }
+    ],
+    "publicRuntime": {
+      "normalDevelopmentLogin": true,
+      "publicFeatureToggle": true,
+      "administratorScopedExpiryLinks": 6,
+      "currentCaptures": 3,
+      "checks": 3,
+      "errors": [],
+      "matchedHistoricalComparison": false,
+      "native": false,
+      "nextMcp": false
+    }
+  },
+  "sourceBlocker": {
+    "file": "apps/webapp/src/lib/personnel-file/access-store.ts",
+    "line": 306,
+    "returnedAtCutoff": {
+      "directoryIsActive": true,
+      "expiryRows": 0,
+      "canonicalAccessAllowed": false
+    },
+    "afterMaterialization": {
+      "directoryIsActive": false,
+      "expiryRows": 0,
+      "canonicalAccessAllowed": false
+    },
+    "afterRehire": {
+      "directoryIsActive": true,
+      "expiryRows": 2,
+      "canonicalAccessAllowed": true
+    },
+    "qualification": "Controlled-clock PostgreSQL canonical command and canonical-reader proof; not an observed live browser cutoff. Existing EmployeeDirectoryCard displays Former employee only for !isActive."
+  },
+  "workerEvidenceAudit": {
+    "decodedPngs": [
+      {
+        "name": "after-actual-expiry-read-failure.png",
+        "width": 390,
+        "height": 844,
+        "sha256": "99fcd989b90f0446b6ac2ddad05b26ab62bf5026f4addd8e5df1cf420e71082c",
+        "decodedBytes": 987480
+      },
+      {
+        "name": "after-actual-pending-read.png",
+        "width": 390,
+        "height": 844,
+        "sha256": "4d18e6a92b9dcd8aac1b063e4e5c0d7d4550075c1e4798b1bd7195629211510f",
+        "decodedBytes": 987480
+      },
+      {
+        "name": "after-actual-read-recovered.png",
+        "width": 390,
+        "height": 844,
+        "sha256": "6c62150066935207e89a401cd5bbfe9a5dbf572b076f7a8703a3501c36febc38",
+        "decodedBytes": 987480
+      },
+      {
+        "name": "after-desktop-light.png",
+        "width": 1600,
+        "height": 1000,
+        "sha256": "7fbab420e6197d65acaf62bc08643979075fce3a752510db50dc1f13c4d38b74",
+        "decodedBytes": 4800000
+      },
+      {
+        "name": "after-failed-public-officer-setup.png",
+        "width": 800,
+        "height": 600,
+        "sha256": "d77b6ac3b28ed62c34919e69b0ca001040df0e943a8a0b62ab0f92825771ad5b",
+        "decodedBytes": 1440000
+      },
+      {
+        "name": "after-failed-renewal-create.png",
+        "width": 1600,
+        "height": 1000,
+        "sha256": "e51d7ed71fb0d63dd5dae380b9cf905ea3337d346f0ad6623a75a43a6bb046ee",
+        "decodedBytes": 4800000
+      },
+      {
+        "name": "after-failed-restricted-officer.png",
+        "width": 1600,
+        "height": 1000,
+        "sha256": "d1e4b69b807fe5c0ba98b84b13f7fe5a0ad9012bff2b8cde34f6050dd105f20f",
+        "decodedBytes": 4800000
+      },
+      {
+        "name": "after-failed-roles-final.png",
+        "width": 800,
+        "height": 600,
+        "sha256": "3cd79c4eff751fa819d5d62605fbd11d740f4fef675dc5a19bd43f5a84aa67f6",
+        "decodedBytes": 1440000
+      },
+      {
+        "name": "after-phone-dark-large.png",
+        "width": 390,
+        "height": 844,
+        "sha256": "37a837d7de20ab95ee124ca32e03e1155c994ccb03c4a978ab2d693ca8829b3e",
+        "decodedBytes": 987480
+      },
+      {
+        "name": "after-phone-light.png",
+        "width": 390,
+        "height": 1200,
+        "sha256": "0f77c6087dabf2a4d0641b3892b19647588113040f0160362c984b02833b6393",
+        "decodedBytes": 1404000
+      },
+      {
+        "name": "after-renewal-created.png",
+        "width": 1600,
+        "height": 1000,
+        "sha256": "34cf450a16ba2f330236bc4bdd955d9d2535ebc99e5df38c5042c294e6bebd25",
+        "decodedBytes": 4800000
+      },
+      {
+        "name": "after-saved-large-phone.png",
+        "width": 390,
+        "height": 844,
+        "sha256": "4bdbad2a2dcb5a62a57c70258e998204157f6f0290f297769f90f875847881c6",
+        "decodedBytes": 987480
+      },
+      {
+        "name": "after-wide-dark.png",
+        "width": 2400,
+        "height": 1200,
+        "sha256": "95e338cc2dcd3431566c9c9a4804aa3bd5115a3387f557cc76ef094a81c7aa5a",
+        "decodedBytes": 8640000
+      },
+      {
+        "name": "before-desktop-light.png",
+        "width": 1600,
+        "height": 1000,
+        "sha256": "ab26e615d66336bd853c3636b45186e167fbc32f16f3a65c9b515e7737f7010d",
+        "decodedBytes": 4800000
+      },
+      {
+        "name": "before-failed.png",
+        "width": 800,
+        "height": 600,
+        "sha256": "4f352893dbd2bbfed22a44046248ebd6d746e1f0134767099c4ad3913909bf58",
+        "decodedBytes": 1440000
+      },
+      {
+        "name": "before-phone-dark-large.png",
+        "width": 390,
+        "height": 844,
+        "sha256": "c4845355fa9037c00ce9a5fd82c8188db75edf02d7c88be2b91993adebb14502",
+        "decodedBytes": 987480
+      },
+      {
+        "name": "before-phone-light.png",
+        "width": 390,
+        "height": 844,
+        "sha256": "4032ef3f47fa548d063f37cc440d3dfee3b5618924f5e990df1a2c4e5b083f0a",
+        "decodedBytes": 987480
+      },
+      {
+        "name": "before-wide-dark.png",
+        "width": 2400,
+        "height": 1200,
+        "sha256": "57b1a08eb0c56b0782fec698761595547a834d1c6325717ee0dcff78dc61dff6",
+        "decodedBytes": 8640000
+      }
+    ],
+    "sourcePins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+        "currentCanonicalSha256": "af57bb41afd0ba2b452d63a69eccc29cf1e23e45c08d6c52c832a5d2b8792fea",
+        "workerCanonicalSha256": "af57bb41afd0ba2b452d63a69eccc29cf1e23e45c08d6c52c832a5d2b8792fea",
+        "matchesWorker": true
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+        "currentCanonicalSha256": "6beb8b0f054063a179f048329e8ca3929debb875e689706e1ed0df2c9f34cea4",
+        "workerCanonicalSha256": "6beb8b0f054063a179f048329e8ca3929debb875e689706e1ed0df2c9f34cea4",
+        "matchesWorker": true
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+        "currentCanonicalSha256": "bf5d335eb771871086e3f34b62f296be546989ff9f28b19eab8ee1d15e7b82d5",
+        "workerCanonicalSha256": "bf5d335eb771871086e3f34b62f296be546989ff9f28b19eab8ee1d15e7b82d5",
+        "matchesWorker": true
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/expiring-documents.tsx",
+        "currentCanonicalSha256": "e04ef8a44cc58b57c4d06413bf52d27955e73755c02a75f8be817b9e3be9c5ec",
+        "workerCanonicalSha256": "e04ef8a44cc58b57c4d06413bf52d27955e73755c02a75f8be817b9e3be9c5ec",
+        "matchesWorker": true
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+        "currentCanonicalSha256": "801850c421b8a9614daf11d8c09ace80f03a8a1fac2bfea2f1dad2378d5f7fec",
+        "workerCanonicalSha256": "801850c421b8a9614daf11d8c09ace80f03a8a1fac2bfea2f1dad2378d5f7fec",
+        "matchesWorker": true
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "currentCanonicalSha256": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045",
+        "workerCanonicalSha256": "f596cb5bb03d9ed2db5ae1925cb88de7476ae42a09f6d223d3d9f5b84bcfb6d9",
+        "matchesWorker": false
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "currentCanonicalSha256": "ac07f792ef96ebc089f66a0ee27b9aa36efd3b3d7006a5da324a026854b1ac16",
+        "workerCanonicalSha256": "beb194eba7d5667a1587753f7706fad7b4f6236a8fe33b1d9ea314970dd4853a",
+        "matchesWorker": false
+      }
+    ],
+    "qualification": "All merged worker evidence Git bytes preserved; decode/hash validation is independent, archived execution is inherited. Current metadata legitimately includes later verified opt-ins."
+  },
+  "cleanup": {
+    "next": {
+      "filteredProcessInventory": true,
+      "stoppedPids": [
+        87840,
+        92292,
+        41864,
+        89964,
+        25052
+      ],
+      "ownedNextStopped": true,
+      "port": 63697,
+      "ownedNextIdentityVerified": true,
+      "portClosed": true,
+      "cacheMoved": false
+    },
+    "containers": [
+      {
+        "name": "z8_perf_7ca4d134c3d3_postgres",
+        "present": false
+      },
+      {
+        "name": "z8_perf_7ca4d134c3d3_redis",
+        "present": false
+      },
+      {
+        "name": "z8_perf_7ca4d134c3d3_storage",
+        "present": false
+      }
+    ],
+    "ownedServicesRemaining": 0,
+    "temporaryTestBridgeRemoved": true,
+    "foregroundRunsExited": true,
+    "browsers": "Both owned Puppeteer invocations reached awaited browser.close() in finally and exited; no cookie/state copy, native session or peer/browser cleanup."
+  },
+  "limits": [
+    "No product fixes, report/README/ledger/tracker/remote/dev/deploy writes.",
+    "Stopped expanded probes after canonical lifecycle blocker per grant: no fresh public scoped grant/revoke/late-submit, no held-read retry or arrival/Activity/pending-session acceptance, no native/MCP, no matched before/current or saved-preference acceptance.",
+    "Three current captures show real scoped records only; no historical match or accessibility certification.",
+    "Public first attempt timed out after successful normal login/feature action on a harness wait; preserved source/result/image. Follow-up used scoped readback rather than idle-network assumption.",
+    "Formatter profiles fail and were not normalized; both read-only lint/import profiles and bounded Doctor pass.",
+    "No live provider/customer, Phase, dependency install/upgrade/borrow, SQL authority/grant changes, production-login bypass or cookie mint/copy/restore.",
+    "All original rollout/worker archives retained; latest verified remains16443982."
+  ]
+}

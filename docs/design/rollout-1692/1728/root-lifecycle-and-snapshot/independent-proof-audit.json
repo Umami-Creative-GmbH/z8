@@ -1,0 +1,115 @@
+{
+  "status": "Read-only public-evidence audit; verifier draft syntax checked, never executed",
+  "source": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+  "sourcePinCount": 19,
+  "sourceDigest": "f91a1bdcced8a4689ec8fd1733da012cc2d8049390be6a3c1380f2410797d8a2",
+  "manifest": {
+    "path": ".tmp/1728-root-checks/acceptance/verification-manifest.json",
+    "sha256": "ab37639e27659f67a50900bb43b33324faac2202a35acb43f885ac5f3d206edf",
+    "indexPath": ".tmp/1728-root-checks/acceptance/artifact-hashes.json",
+    "indexSha256": "4f3e0fe9b1f60829749daedfb4349d4bf31cc978fed19fc4d7d741c7809e9ed5",
+    "indexRecords": 109,
+    "indexDigest": "b9826358544646646068c3ef972ad38c670ea17adfcad9cd0c6d5203056f270f",
+    "publicIndexedArtifacts": 108,
+    "pngs": 33,
+    "hashAudit": "All indexed size/SHA values and both JSON aggregate digests matched during the hash-only audit. Hash pins provide integrity, not a digital-signature authority.",
+    "publicationExclusion": {
+      "path": "pg-all-private.log",
+      "bytes": 2968,
+      "sha256": "af809973f2d2b8808c8e1fea790da2e4a5972e254112c929bd6aa23fc5a8fb00",
+      "proof": "publication-exclusions.json: indexedArtifacts109/publicIndexedArtifacts108/excluded[1]; verifier never opens excluded bytes"
+    },
+    "nestedArtifacts": "Original seal indexes top-level files only. Three overlay-backup .bin files are checked against source raw hashes by the draft; doctor-files/diagnostics.json is an unindexed nested artifact. Index itself is independently hash-pinned."
+  },
+  "finalQuality": {
+    "unitPath": ".tmp/1728-root-checks/acceptance/unit.json",
+    "postgresPath": ".tmp/1728-root-checks/acceptance/pg-all.json",
+    "unit": { "files": 26, "cases": 328, "passed": 327, "failed": 1 },
+    "postgres": { "files": 11, "cases": 149, "passed": 149, "failed": 0 },
+    "distinctFinal": { "files": 37, "cases": 477, "passed": 476, "failed": 1, "skipped": 0 },
+    "soleFailure": "current-roster-surfaces.test.ts :: current-roster surface guard adds no hand-written employee active checks beyond the baseline",
+    "baselinePath": ".tmp/1728-root-checks/roster-guard-baseline.json",
+    "baselineMeaning": "Four exact entire Git blobs are unchanged at provisional80ca442bd36692f0b9a87c4f94d106a3d81492de and lastverified16443982de929de4f885a6cfb6de5b377374cb3e. Their counts1 exceed guard baseline0. Classification is not a wholly-green unit claim or a whitelist/test change.",
+    "lint": "12-file read-only Biome lint exit0",
+    "doctor": "Structured acceptance/doctor.json version0.9.22: changedFileCount12, baseline16443982, errors0/warnings0/new0; do not parse original-worker Doctor stdout as JSON",
+    "types": "Full next typegen + tsconfig.typecheck.json + tsconfig.workflow-contracts.json + tsconfig.smoke.json exit0",
+    "format": {
+      "status": "Read-only CRLF profile exit1; five preserved paths fail",
+      "paths": [
+        "src/components/personnel-file/expiring-documents.test.tsx",
+        "src/components/personnel-file/expiring-documents.tsx",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts",
+        "src/lib/personnel-file/access-store.ts"
+      ]
+    },
+    "counting": "Final selections counted once. Earlier red/green, payslip-only, worker, and failed PG harness runs are not added."
+  },
+  "acceptedRuntime": {
+    "path": ".tmp/1728-root-checks/acceptance/runtime-08.json",
+    "status": "completed; errors[]; source and sourceEnd both19pins/digestf91a1bdc",
+    "harness": {
+      "runtime.mjs": "522bdf70f7bd3f8ef9cebf4e3182af18a370010aa74f79d61e963943da06bb88",
+      "common-v1-source.mjs": "e40d8746ec7ca2ed5a48afd6de94fd1065c21dc56bc1b2f20b79100cbf11c182"
+    },
+    "proof": "Actual public certificate-only specific-target grant; organization/officer/grant scoped readback, separate administrator public revoke, grant is_active true→false, real settled Request refusal, equal before/after visible draft, exact organization/employee/title SQL count0→0. renewedDocumentId is retained metadata; the zero-row count is scoped by organizationId/employeeId/title.",
+    "deadline": "Nov 20, 2026 (deadlineDay2026-11-20); locked Certificate category; title/note/renewal retained",
+    "otherChecks": "Officer own-file not-found, revoked reload refused, fresh ordinary nonofficer denied, actual Large18px preference survives390px reload with no width overflow",
+    "featureQualification": "runtime08 verifies organization-scoped enabled feature readback; actual public toggle proof is in earlier attempts",
+    "earlierAcceptedSubcase": ".tmp/1728-root-checks/acceptance/runtime-01.json retains failed overall grant stage but records a real blocked scoped expiry query, cancellation/unavailable state, independent directory preservation, and actual pointer Retry recovery."
+  },
+  "retainedFailures": {
+    "runtime01": "grant stage TimeoutError30000ms",
+    "runtime02": "grant stage TimeoutError30000ms",
+    "runtime03": "grant stage Node is either not clickable or not an Element; organization Country select hydration mismatch also observed",
+    "runtime04": "grant stage TimeoutError45000ms",
+    "runtime05": "grant stage AssertionError: Actual picker button point is unobstructed",
+    "runtime06": "grant stage Scoped public mutation readback timed out",
+    "runtime07": "Completed, but BUTTON.value deadline JSON is empty and Country select hydration mismatch is retained. Manifest records pixels showNov20. Complete correct draft acceptance uses runtime08.",
+    "historicalInitial": "matched-before-initial-category-selector.json timed out expecting a legacy category query; matched-before-initial-two-headings.json asserts2!==1. Both retained.",
+    "native01": "AssertionError1!==0; closecode1; unsuccessful",
+    "native02": "AssertionError1!==0; tree/close timeout and outcome_unknown retained; later exact-session cleanup is separate proof",
+    "pgControls": "Initial/scoped-ID/second-cleanup-interference PG149 runs each148pass/1payslip failure; initial PG green harness1pass/1fail; final accepted PG149allpass is separate",
+    "redControls": "Arrival red5cases1pass/4fail→green9pass; lifecycle red2cases1pass/1fail→green2pass. No additive counting."
+  },
+  "comparison": {
+    "before": ".tmp/1728-root-checks/acceptance/matched-before.json",
+    "current": ".tmp/1728-root-checks/acceptance/matched-current.json",
+    "acceptedPngs": "3matched-before +3matched-current viewport-only PNGs at1600x1000,390x844,2400x1200; hashes match sealed index and capture metadata",
+    "historicalScope": "Only exact a5c7f741c0df6816e0e2b10290d79b7409fc606f page.tsx, expiring-documents.tsx, route-metadata.ts over current application/dependencies. Before source start/end digest10261be6c2f9fe03d04bb55c433670a9b912a5f4950a19d0953158bbd0887e54; restoration byteExacttrue. Never a full historical application.",
+    "harnessMapping": "matched-before58c3b492…=compare.mjs; matched-current2a9d84f1…=compare-before-initial-source.mjs; bothcommon68928fb2…=common.mjs",
+    "content": "Six canonical expired rows; historical links omit category query and main h1DOMcount2; current count1. checkVisibility does not certify unclipped or screen-reader visibility.",
+    "boundedCurrentGeometry": "Desktop/wide before+after h1.left280/main.left256/sidebar.width256; phone h1.left16/main.left0. Width equals viewport; fonts loaded; bounded geometry/animation/toast waits.",
+    "qualifications": "Early shell clipping/Rendering/progress captures and initial full-page capture perturbation retained. Final successful filenames superseded earlier successful current captures. Persistent bprogress-busy plus developer/Pets overlays remain; no claim all overlays or all transitions settled."
+  },
+  "nextAndNative": {
+    "next": "runtime08 and both matched final target snapshots record get_compilation_issues issues[] and get_errors configErrors[]/sessionErrors[]. Runtime08 and both target capture errors[] do not erase earlier setup errors.",
+    "nativeAccepted": ".tmp/1728-root-checks/acceptance/native-03.json: actual renderer-ready PersonnelFilesWorkspace React tree, auth200/200, five command successes(open/target/wait/tree/snapshot), closecode0/closedtrue",
+    "nativePermission": "permission commandcode1: ReferenceError: Notification is not defined, with disable-notifications launch policy. Permission API response is unavailable; no granted/denied API proof.",
+    "setupFinding": "Country-select locale hydration mismatch observed on /settings/organization (Falkland Islands versus Falkland Islands (Islas Malvinas)); R118/#1791 separately tracked by root. No cause or personnel-files regression attribution."
+  },
+  "cleanup": {
+    "path": ".tmp/1728-root-checks/acceptance/process-cleanup-final.json",
+    "observations": "Owned Next port56769closed; ownedruntime0/native0; two exact native session listener/daemon inventories absent; foregroundruns exited; three owned disposable containers absent; overlays byte-exact restored. First immediate post-stop assertion saw still-exiting descendants before final exact inventory became empty. Fixture manifests preserved."
+  },
+  "unpassed": [
+    "Reverse directory failure in real browser; it is assembled-only",
+    "Browser departure cutoff/former badge; no former employee in fixture; canonical cutoff/materialization/rehire and deactivated controls are PostgreSQL proof",
+    "Two-org/account browser race; queued-command retirement; fresh read on Activity return; shared late-toast/dismissal/ABA ownership",
+    "First Escape/focus-return, screen-reader, automated contrast, device safe-area, exhaustive accessibility",
+    "Live binary download/storage delivery, production build, all locale/theme/feature combinations"
+  ],
+  "verifier": {
+    "draft": ".tmp/1728-verify-draft.mjs",
+    "destination": "docs/design/rollout-1692/1728/root-lifecycle-and-snapshot/verify-evidence.mjs",
+    "status": "node --check exit0 only; not executed; root must finalize and run after copying",
+    "coverage": "Pinned manifest/index/controls,19source aggregate and immutable Git blobs, four unchanged guard blobs,477distinct case semantics, runtime08/public revoke+zero rows, runtime01realexpiry subcase, three-source historical overlay/restoration,3+3matched capture metadata, native03tree/close/permission exception, cleanup, all33PNG full Sharp decode on execution; optional current raw source and158link/sixrawhash validation.",
+    "limitations": "Does not rerun tests/browser/Next/Docker, execute archived drivers, certify package contents, prove excluded private bytes, or independently establish unrecorded acceptance. Root preservation/merger metadata remains for root review."
+  },
+  "auditMethod": {
+    "writes": [".tmp/1728-proof-audit.json", ".tmp/1728-verify-draft.mjs"],
+    "noRuntimeMutation": "No Git commands, pnpm/tests, Next/browser/Docker, credential/fixture-pointer access, archived-driver execution, or tracked/app edits performed by audit agent.",
+    "privateAccessDisclosure": "A generic index hash loop inadvertently read bytes of the private-named pg-all-private.log to compute size/SHA. No contents were printed or executed. Parent was informed immediately after discovery. No zero-private-file-access claim is made; subsequent and drafted public verification explicitly omits that path.",
+    "images": "This agent checked PNG hashes/count and capture metadata, not visual pixels or Sharp decoding. Draft execution by root performs full decoding."
+  }
+}

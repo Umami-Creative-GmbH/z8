@@ -1,0 +1,21 @@
+{
+  "ownedNextPortClosed": true,
+  "qualification": "Read-only exact task path/session sidecar process and listener inventory. No peer processes or sessions touched.",
+  "ownedNextPort": 56769,
+  "fixtureManifestsPreserved": true,
+  "allOwnedForegroundRunsExited": true,
+  "ownedRuntimeProcesses": 0,
+  "nativeSessions": [
+    {
+      "listenerPresent": false,
+      "session": "z8-1728-correction-d2332ff7ef6d4e898fe7f9fa430da584",
+      "daemonPresent": false
+    },
+    {
+      "listenerPresent": false,
+      "session": "z8-1728-correction-1665078591814c35845744d2e10b9d45",
+      "daemonPresent": false
+    }
+  ],
+  "ownedNativeProcesses": 0
+}

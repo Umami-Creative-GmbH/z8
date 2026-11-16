@@ -547,9 +547,17 @@ describe("payslip batches matched by personnel number (#868)", () => {
 			);
 			const documentKey = rows[0]?.storage_key ?? "";
 			expect(documentKey.startsWith(`personnel-files/${ORG}/${ids.anna}/${fileId}-`)).toBe(true);
+			const stagedCleanup = await admin.query<{ id: string }>(
+				"select id from personnel_file_upload where organization_id = $1 and storage_key = $2",
+				[ORG, stagedKey],
+			);
+			expect(stagedCleanup.rows).toHaveLength(1);
+			const cleanupId = stagedCleanup.rows[0]?.id;
+			if (!cleanupId) throw new Error("The staged object's cleanup must be recorded");
 
 			const cleaned = await runPersonnelFileCleanup(db, {
 				deleteObject: deletePersonnelDocumentObject,
+				only: { documentId: cleanupId, organizationId: ORG },
 			});
 			expect(cleaned.deleted).toBe(1);
 			expect([...harness.objects.keys()]).toEqual([documentKey]);
@@ -560,6 +568,7 @@ describe("payslip batches matched by personnel number (#868)", () => {
 			// The trigger stamps the database clock; run a minute later to stay clear of clock skew.
 			await runPersonnelFileCleanup(db, {
 				deleteObject: deletePersonnelDocumentObject,
+				only: { documentId: fileId, organizationId: ORG },
 				now: Temporal.Instant.fromEpochMilliseconds(Date.now() + 60_000),
 			});
 			expect(harness.objects.size).toBe(0);

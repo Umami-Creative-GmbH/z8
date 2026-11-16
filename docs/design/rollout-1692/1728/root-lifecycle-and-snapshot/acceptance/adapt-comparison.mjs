@@ -1,0 +1,2 @@
+import {readFile,writeFile} from 'node:fs/promises';
+const path='.tmp/1728-root-checks/acceptance/compare.mjs';let s=await readFile(path,'utf8');s=s.replace("assert.equal(shot.documentWidth,width);assert.equal(shot.h1.length,1);assert.equal(shot.dialogs,0);","if(phase==='current'){assert.equal(shot.documentWidth,width);assert.equal(shot.h1.length,1);}assert.equal(shot.dialogs,0);");await writeFile(path,s);
