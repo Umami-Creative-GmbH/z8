@@ -3,34 +3,52 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
-import { useOrganization } from "@/components/providers/organization-context-provider";
 import { Badge } from "@/components/ui/badge";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import type { ManagedEmployee } from "@/lib/personnel-file/access-store";
 import { Link } from "@/navigation";
 import { EmployeeFileLoadingHeading } from "./employee-file-loading-heading";
+import { PersonnelFilesReadFailure } from "./personnel-files-workspace";
+import { usePersonnelFilesSnapshot } from "./use-personnel-files-snapshot";
 
 /** Display guard only. Every reader, command and content URL still authorizes independently. */
 export function EmployeeFileWorkspace({
+	readId,
 	userId,
 	organizationId,
 	employee,
 	children,
 }: {
+	/** Identity of this completed, canonically admitted server read. */
+	readId: string;
 	userId: string;
 	organizationId: string;
 	employee: ManagedEmployee;
 	children: ReactNode;
 }) {
 	const { t } = useTranslate();
-	const current = useOrganization();
-	if (
-		current.userId !== userId ||
-		current.activeOrganizationId !== organizationId
-	)
+	const snapshot = usePersonnelFilesSnapshot({ readId, userId, organizationId });
+	if (!snapshot.visible)
 		return (
-			<div className="p-4 md:p-6">
+			<div className="flex flex-col gap-6 p-4 md:p-6">
 				<EmployeeFileLoadingHeading />
+				{snapshot.pending ? (
+					<LoadingRegion
+						label={{
+							labelKey: "settings.personnelFiles.area.confirmingAccess",
+							labelDefault: "Confirming personnel-file access",
+						}}
+						role="status"
+					/>
+				) : (
+					<PersonnelFilesReadFailure>
+						{t(
+							"settings.personnelFiles.employeeFile.refreshAccess",
+							"Refresh this personnel file before continuing.",
+						)}
+					</PersonnelFilesReadFailure>
+				)}
 			</div>
 		);
 	return (
@@ -55,11 +73,9 @@ export function EmployeeFileWorkspace({
 						)}
 						{employee.employeeNumber ? (
 							<span>
-								{t(
-									"settings.personnelFiles.employeeFile.number",
-									"Personnel number: {number}",
-									{ number: employee.employeeNumber },
-								)}
+								{t("settings.personnelFiles.employeeFile.number", "Personnel number: {number}", {
+									number: employee.employeeNumber,
+								})}
 							</span>
 						) : null}
 					</div>

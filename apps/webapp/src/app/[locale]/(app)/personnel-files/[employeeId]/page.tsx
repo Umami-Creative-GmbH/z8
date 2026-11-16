@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DocumentRequestsSection } from "@/components/personnel-file/document-requests-section";
@@ -26,10 +27,7 @@ interface PersonnelFilePageProps {
  * Its requests section (#1401) shows to whoever covers certificates or other
  * documents of the employee.
  */
-async function PersonnelFileContent({
-	params,
-	searchParams,
-}: PersonnelFilePageProps) {
+async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageProps) {
 	const [current, { employeeId }, { category }] = await Promise.all([
 		loadCurrentPersonnelFileAccess(),
 		params,
@@ -45,6 +43,7 @@ async function PersonnelFileContent({
 	return (
 		<EmployeeFileWorkspace
 			key={`${current.access.userId}:${current.access.organizationId}:${employeeId}:${capability.categories.join(",")}`}
+			readId={randomUUID()}
 			userId={current.access.userId}
 			organizationId={current.access.organizationId}
 			employee={employee}
@@ -53,16 +52,10 @@ async function PersonnelFileContent({
 				key={isDocumentCategory(category) ? category : "all"}
 				capability={capability}
 				initialCategory={
-					isDocumentCategory(category) &&
-					capability.categories.includes(category)
-						? category
-						: null
+					isDocumentCategory(category) && capability.categories.includes(category) ? category : null
 				}
 			/>
-			<DocumentRequestsSection
-				capability={capability}
-				former={!employee.isActive}
-			/>
+			<DocumentRequestsSection capability={capability} former={!employee.isActive} />
 			{capability.categories.includes("sick_note") ? (
 				<EmployeeSickLeaveCard employeeId={capability.employeeId} />
 			) : null}
