@@ -1,0 +1,138 @@
+{
+  "harnessPins": [
+    {
+      "publicFile": "harness/build-probes.mjs",
+      "executedSourceSha256": "40e0138f48549dd76086bfb015eaadfae12c20fb60411daca274e56a5cafed9b",
+      "publicSanitizedSha256": "40e0138f48549dd76086bfb015eaadfae12c20fb60411daca274e56a5cafed9b"
+    },
+    {
+      "publicFile": "harness/run-probes.mjs",
+      "executedSourceSha256": "1e97e3fbc36f5ce2fd16bbfa47b9658e717470b3c831d72b355f8c57c4704261",
+      "publicSanitizedSha256": "1e97e3fbc36f5ce2fd16bbfa47b9658e717470b3c831d72b355f8c57c4704261"
+    },
+    {
+      "publicFile": "harness/remove-bridges.mjs",
+      "executedSourceSha256": "055ca295b70ed127435b26415b5cd4290b4cb9306276cacb2b67c36e97cf2529",
+      "publicSanitizedSha256": "055ca295b70ed127435b26415b5cd4290b4cb9306276cacb2b67c36e97cf2529"
+    },
+    {
+      "publicFile": "harness/fixture-control.mjs",
+      "executedSourceSha256": "7182e4452d68713ba8c9dee1e6309d248edd5203eeaa5c20055f5f470c223e5c",
+      "publicSanitizedSha256": "7182e4452d68713ba8c9dee1e6309d248edd5203eeaa5c20055f5f470c223e5c"
+    },
+    {
+      "publicFile": "harness/pg-run.mjs",
+      "executedSourceSha256": "3c35f16ffa10633cbd8b0a08191d8941a945faeee29d58fc5cbda1c3325064a1",
+      "publicSanitizedSha256": "3c35f16ffa10633cbd8b0a08191d8941a945faeee29d58fc5cbda1c3325064a1"
+    },
+    {
+      "publicFile": "harness/dev.mjs",
+      "executedSourceSha256": "9bb6c57f94a9907eaf0cc1ca60499a3cdd5b15b59ee4ced705f75b5bb6a00b58",
+      "publicSanitizedSha256": "9bb6c57f94a9907eaf0cc1ca60499a3cdd5b15b59ee4ced705f75b5bb6a00b58"
+    },
+    {
+      "publicFile": "harness/overlay.mjs",
+      "executedSourceSha256": "8bf6dc7548020bb2b109045875efde47d1b55d3acd13723b426a52121313645d",
+      "publicSanitizedSha256": "8bf6dc7548020bb2b109045875efde47d1b55d3acd13723b426a52121313645d"
+    },
+    {
+      "publicFile": "harness/preservation.mjs",
+      "publicSanitizedSha256": "50e82a3c93097300470bff608b68e03a0dca8b2b2f2c80f909fa80e152b39a4e",
+      "qualification": "Only final grant shorthand annotation corrected after last execution; behavior unchanged. No invented exact execution-stage hash.",
+      "finalHarnessSourceSha256": "50e82a3c93097300470bff608b68e03a0dca8b2b2f2c80f909fa80e152b39a4e"
+    },
+    {
+      "publicFile": "harness/seed.ts",
+      "executedSourceSha256": "8c474393e6f6f46ee1fcfbc58adec1dea723922477ef9ff185dc878a5d6e6ea6",
+      "publicSanitizedSha256": "8c474393e6f6f46ee1fcfbc58adec1dea723922477ef9ff185dc878a5d6e6ea6"
+    },
+    {
+      "publicFile": "harness/seed-run.mjs",
+      "executedSourceSha256": "51671a02e3b5909b97ac9e7e5f829e4223f34673b9bf161a613c55623c900e3f",
+      "publicSanitizedSha256": "51671a02e3b5909b97ac9e7e5f829e4223f34673b9bf161a613c55623c900e3f"
+    },
+    {
+      "publicFile": "harness/stop-next.ps1",
+      "executedSourceSha256": "396a444244d6839a5792a9ea39aa6dc931bf0030804eee414b52934268f0f518",
+      "publicSanitizedSha256": "396a444244d6839a5792a9ea39aa6dc931bf0030804eee414b52934268f0f518"
+    },
+    {
+      "publicFile": "harness/common.mjs",
+      "executedSourceSha256": "d4dc95d186e9f95ed034cc85c29bc604f04449e7cb92eced008db514fab9f290",
+      "publicSanitizedSha256": "f0edbfc541319beb767a39f0ef4623979fc10a508a125015978133c0470d1a95",
+      "qualification": "Sanitized source clone; no archived clone executed"
+    },
+    {
+      "publicFile": "harness/controller.mjs",
+      "executedSourceSha256": "d4aa77d6b5179a93038a135495cc7f4eaf63a4f9af5dc14c4ffc0942cbf4cda0",
+      "publicSanitizedSha256": "00c1fb45ba9575dc422e6da4498c90e9e60a573fe56a99dc27950848d7f1be86",
+      "qualification": "Sanitized source clone; no archived clone executed"
+    },
+    {
+      "publicFile": "harness/native.mjs",
+      "executedSourceSha256": "8c641260bdec5e85f384f5229c8a389005866694ab831964a153e3ad78a5f9ec",
+      "publicSanitizedSha256": "3db5d632394342d3a256c27ccd52ea611cfdcac3c005a788fcbc7e6c8a5e6db5",
+      "qualification": "Sanitized source clone; no archived clone executed"
+    },
+    {
+      "publicFile": "harness/commands/001-login-initial.mjs",
+      "executedSourceSha256": "a2dabf0553b0d966ce30d982444aadd0f878390194be4b18b4b999c24cfb308a",
+      "publicSanitizedSha256": "a2dabf0553b0d966ce30d982444aadd0f878390194be4b18b4b999c24cfb308a"
+    },
+    {
+      "publicFile": "harness/commands/002-login-initial-retry.mjs",
+      "executedSourceSha256": "b9a91f3e03ebab383196bcf0f1bbb54e31969e53c18690653c0458e85655bf3c",
+      "publicSanitizedSha256": "b9a91f3e03ebab383196bcf0f1bbb54e31969e53c18690653c0458e85655bf3c"
+    },
+    {
+      "publicFile": "harness/commands/003-context-preview-recovery.mjs",
+      "executedSourceSha256": "afa8e27acf4af6811de2adebd698beb74af3484e3bc96cc1c969dd34ca8569df",
+      "publicSanitizedSha256": "afa8e27acf4af6811de2adebd698beb74af3484e3bc96cc1c969dd34ca8569df"
+    },
+    {
+      "publicFile": "harness/commands/004-current-captures-native.mjs",
+      "executedSourceSha256": "58557f8eaac6c8aafeeded7dc2705edba65d4a510d495caca55cc44752e64e00",
+      "publicSanitizedSha256": "58557f8eaac6c8aafeeded7dc2705edba65d4a510d495caca55cc44752e64e00"
+    },
+    {
+      "publicFile": "harness/commands/005-phone-focus-observation.mjs",
+      "executedSourceSha256": "e0d5b8ff641a9a73b493e5608e766739670dac78c28c21be022f00481afc6b0a",
+      "publicSanitizedSha256": "e0d5b8ff641a9a73b493e5608e766739670dac78c28c21be022f00481afc6b0a"
+    },
+    {
+      "publicFile": "harness/commands/006-current-capture-continuation.mjs",
+      "executedSourceSha256": "cb31ea06aa8cfd4410c6bca85712d4f590f6863d07f0dc9703dc8020f0d2c04f",
+      "publicSanitizedSha256": "cb31ea06aa8cfd4410c6bca85712d4f590f6863d07f0dc9703dc8020f0d2c04f"
+    },
+    {
+      "publicFile": "harness/commands/007-operational-intake-confirm.mjs",
+      "executedSourceSha256": "753e7c66cb3d13a03e1e8ddb0b14339b25faa9bbefe307eded2086c180a37136",
+      "publicSanitizedSha256": "753e7c66cb3d13a03e1e8ddb0b14339b25faa9bbefe307eded2086c180a37136"
+    },
+    {
+      "publicFile": "harness/commands/008-operational-observe.mjs",
+      "executedSourceSha256": "482206158dda637fd033285f0040a3f20c91d861bbdbf676a27919f9a0adfb80",
+      "publicSanitizedSha256": "482206158dda637fd033285f0040a3f20c91d861bbdbf676a27919f9a0adfb80"
+    },
+    {
+      "publicFile": "harness/commands/009-upload-repro-control.mjs",
+      "executedSourceSha256": "b4b6796538317efc32ca2ce6be27337c82cec0466a5c13492c1e163602023f67",
+      "publicSanitizedSha256": "b4b6796538317efc32ca2ce6be27337c82cec0466a5c13492c1e163602023f67"
+    },
+    {
+      "publicFile": "harness/commands/010-historical-upload-control.mjs",
+      "executedSourceSha256": "669658177ae06c3c59c51d3955ed4af2bec69cbba139c3d87d19fcf28ebd1bb3",
+      "publicSanitizedSha256": "669658177ae06c3c59c51d3955ed4af2bec69cbba139c3d87d19fcf28ebd1bb3"
+    },
+    {
+      "publicFile": "harness/commands/011-restored-current-final.mjs",
+      "executedSourceSha256": "656eded53d10dd7d190551a429410819046081667e08497ca8f40f45c3876f8d",
+      "publicSanitizedSha256": "656eded53d10dd7d190551a429410819046081667e08497ca8f40f45c3876f8d"
+    },
+    {
+      "publicFile": "harness/commands/999-close.mjs",
+      "executedSourceSha256": "f13a1ed0cf3c4197ec8f4301b169908f52e45cab428eb604f79aab4a4b10dee3",
+      "publicSanitizedSha256": "f13a1ed0cf3c4197ec8f4301b169908f52e45cab428eb604f79aab4a4b10dee3"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "bridgesRemoved": 2,
+  "exactByteGuard": true,
+  "packageCommandsFinished": true,
+  "trackedCheckoutClean": true,
+  "ownCheckoutNodeOrPnpmAfterSuccessfulCimRead": 0,
+  "neverStarted": {
+    "devServer": true,
+    "browser": true,
+    "nativeSession": true,
+    "databaseFixture": true,
+    "containers": true,
+    "storageFixture": true,
+    "overlay": true
+  },
+  "temporaryInputsCreated": false,
+  "dependenciesModified": false,
+  "sourceModified": false,
+  "trackerOrGitMutation": false,
+  "noOtherResourcesStopped": true
+}

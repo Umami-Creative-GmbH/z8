@@ -1,0 +1,18 @@
+{
+  "jsonParsed": 36,
+  "esmOrAsyncSnippetSyntax": 50,
+  "typedSourceSyntax": 3,
+  "powershellSyntax": {
+    "nativeInstalledBinarySessionRemaining": 0,
+    "files": 1,
+    "errors": 0
+  },
+  "relativeLinks": 11,
+  "pngCrcInflateUnfilterAndViewed": 19,
+  "sourceRawAndCanonicalLfPins": 13,
+  "configPins": 36,
+  "oldStopPublicBytePins": 95,
+  "trackedStatusClean": true,
+  "noAdditionalRuntimeRun": true,
+  "proofOnly": true
+}

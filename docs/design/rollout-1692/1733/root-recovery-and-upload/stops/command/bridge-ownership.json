@@ -1,0 +1,7 @@
+{
+  "files": [
+    "apps/webapp/src/components/personnel-file/independent1733-command-probe.test.tsx",
+    "apps/webapp/src/components/personnel-file/independent1733-heading-probe.test.tsx"
+  ],
+  "policy": "Only exact generated owned bytes may be removed"
+}

@@ -1,0 +1,423 @@
+{
+  "freshPublic": {
+    "cases": 39,
+    "files": 4,
+    "passed": 39,
+    "failed": 0,
+    "tests": [
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "keeps an admitted matching session usable while its session refresh is pending",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "recovers the batch through local organization Retry after the real provider read fails",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "preserves the start-page control through the same provider failure and Retry",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent confirm / success / settle-hidden guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent confirm / success / settle-resumed guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent confirm / refusal / settle-hidden guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent confirm / refusal / settle-resumed guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent confirm / rejection / settle-hidden guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent confirm / rejection / settle-resumed guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent edit / success / settle-hidden guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent edit / success / settle-resumed guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent edit / refusal / settle-hidden guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent edit / refusal / settle-resumed guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent edit / rejection / settle-hidden guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent edit / rejection / settle-resumed guards requests until current readback",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent confirm failed retired readback gates stale preview and uses local Retry",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+        "fullName": "independent edit failed retired readback gates stale preview and uses local Retry",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/independent1733v2-heading-probe.test.tsx",
+        "fullName": "renders one safe h1 from the actual detail Page fallback alongside SiteHeader",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": false
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps one start pending through Activity until its result settles",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "drops validation-queued work across an account switch and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "drops validation-queued work across an organization switch and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across organization scope changes and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across account scope changes and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across loading scope changes and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "hides stale arrivals and ignores a pending result across error scope changes and return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps invalid input, focuses its error, and never submits it",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "keeps the draft through a same-scope refresh of calendar defaults",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "does not start a queued submission after Activity hides it during validation",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "ignores late success effects after an Activity hide/show lifetime",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "ignores late failure effects after an Activity hide/show lifetime",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-start.test.tsx",
+        "fullName": "retains the pay period after a transport failure and allows an explicit retry",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "retries the authorized preview after a read failure",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not issue a preview command for an abandoned organization arrival",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "freezes file edits until the confirmed command and readback settle",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "requires resolving included unmatched files and preserves manual drop commands",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not publish an old preview after organization ABA",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "discards late confirmation effects while cached Activity is hidden and revalidates on return",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "does not submit a queued match edit into a new Activity lifetime",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      },
+      {
+        "physicalFile": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "fullName": "offers retry only for included failed files in a confirmed batch",
+        "occurrence": 1,
+        "status": "passed",
+        "overlapsProvidedRoot457": true
+      }
+    ]
+  },
+  "freshPostgreSQL": {
+    "cases": 20,
+    "files": 1,
+    "passed": 20,
+    "failed": 0,
+    "tests": [
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch refuses displayed scope drift even when the actor administers both organizations",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch refuses an officer whose grant does not include payslips",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch shows a batch only to whoever started it",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch holds at most 500 files, counting staged files whose objects expired",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) starting a batch takes PDF files only",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching matches the whole personnel number token, never part of a longer number",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching makes a number two employees share ambiguous, to be assigned by hand",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching leaves a file of an out-of-scope employee unmatched for the officer",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching never matches or assigns the officer's own payslip, even with their team in scope",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) matching lets the officer assign a file of an employee without a personnel number, or drop it",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation stores nothing as an employee document before confirmation",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation creates a payslip per included file with the batch's pay period and visibility",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation stores a confirmed payslip under the employee's key and cleans up the staged object",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation keeps the staged file when storing the payslip fails, and confirms it on retry",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation flags an employee who already has a payslip for the pay period and keeps both",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation creates no duplicates when a confirmation is retried after a partial failure",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation notifies each employee once per shared batch, however many files are theirs",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) confirmation audits every created document and one batch summary per confirmation",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) cleanup cleans up staged files that are never confirmed, after a day",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "fullName": "payslip batches matched by personnel number (#868) cleanup releases dropped files once every included file is a document",
+        "occurrence": 1,
+        "status": "passed"
+      }
+    ],
+    "nonadditiveWithEarlier20": true
+  },
+  "providedRoot": {
+    "cases": 457,
+    "files": 64,
+    "freshlyRerunHere": false,
+    "types": "Provided typegen/all3TS and bounded quality evidence; not rerun"
+  },
+  "combinedSourceAndPG": {
+    "cases": 477,
+    "files": 65,
+    "boundary": "Provided root457/64 plus freshly observed canonicalPG20/1 only. Public probes/repeats and browser assertions are not added."
+  }
+}

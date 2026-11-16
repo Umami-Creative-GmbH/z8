@@ -1,0 +1,23 @@
+{
+  "scope": "Read-only comparison of listed public inputs and recorded current source/configuration pins. No full-checkout or Git/index audit is claimed by publisher.",
+  "publicRawInputFilesChecked": 259,
+  "runtimeFilesChecked": 207,
+  "selectedStaticRawFilesChecked": 52,
+  "allByteExact": true,
+  "rawInputRecordsDigest": "658ed79c05eeac3dc255e39f477c14af4104096ec65d2a0ef895c540315a927b",
+  "sourcePinsChecked": 14,
+  "configurationPinsChecked": 36,
+  "allCurrentRawAndCanonicalLfMatched": true,
+  "originalReportPrefixBytes": 20265,
+  "originalReportPrefixSha256": "961f333e05f39edecc4614b81c5b274eb338ca40eb72d71866f6f8e088f44db9",
+  "originalReportPrefixUnchanged": true,
+  "originalStopFilesNotMovedOrModified": 95,
+  "privateInputsRead": false,
+  "rawDoctorDiagnosticsReadOrHashed": false,
+  "sourceWrites": 0,
+  "dependencyConfigurationWrites": 0,
+  "priorProofWrites": 0,
+  "gitOrIndexOperations": 0,
+  "applicationTestsOrServicesRun": 0,
+  "readinessAdvanced": false
+}

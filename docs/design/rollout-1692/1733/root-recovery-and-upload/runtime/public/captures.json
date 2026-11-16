@@ -1,0 +1,1649 @@
+[
+  {
+    "file": "public-context-read-failed.png",
+    "sha256": "c445ebf0dfe5ef27a0cfe7e1cb37953de0f4465262a4222bc062888596facb62",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-context-read-recovered.png",
+    "sha256": "503647e868dcb1dbaaf6383f9d05c307c9538fea491eefa17834253f7f866e1b",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 371,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1475,
+        "bottom": 156,
+        "left": 371
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 371,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1475,
+        "bottom": 156,
+        "left": 371
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-preview-read-failed.png",
+    "sha256": "bd5606785cfde85a18143faa48d11836a5f451b3c2cb1b546f0033b4539dae07",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-preview-read-recovered.png",
+    "sha256": "21fc6ac54a986901478960c585e1f5e7a77e66c36c0ebd8758698cbedbaca00c",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 371,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1475,
+        "bottom": 156,
+        "left": 371
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 371,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1475,
+        "bottom": 156,
+        "left": 371
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-current-desktop-light.png",
+    "sha256": "51c4c1ca31d45f7329613d5e566dc07b4e9848350f89eea0de965b5eb954c71e",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 371,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1475,
+        "bottom": 156,
+        "left": 371
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 371,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1475,
+        "bottom": 156,
+        "left": 371
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-current-phone-light.png",
+    "sha256": "eff39cf6e9fb364bf838158efc9ba3582b1153d502264c0513ca2ebccc33e680",
+    "categoryRedaction": null,
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 16,
+        "y": 112,
+        "width": 348,
+        "height": 32,
+        "top": 112,
+        "right": 364,
+        "bottom": 144,
+        "left": 16
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 16,
+        "y": 112,
+        "width": 348,
+        "height": 32,
+        "top": 112,
+        "right": 364,
+        "bottom": 144,
+        "left": 16
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-current-phone-last-row.png",
+    "sha256": "1c6355f37cf56b7089354df7114640357507133d9904dfe78537089cfb48a4f7",
+    "categoryRedaction": null,
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 16,
+        "y": -552,
+        "width": 348,
+        "height": 32,
+        "top": -552,
+        "right": 364,
+        "bottom": -520,
+        "left": 16
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 16,
+        "y": -552,
+        "width": 348,
+        "height": 32,
+        "top": -552,
+        "right": 364,
+        "bottom": -520,
+        "left": 16
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-current-wide-dark-large.png",
+    "sha256": "bc372d0abc95d63cc04dfee2b5167331c89256552adc192fe4f5b45df43d6b7a",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 1027,
+      "width": 287,
+      "height": 73
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 618,
+        "y": 134.75,
+        "width": 1242,
+        "height": 40.5,
+        "top": 134.75,
+        "right": 1860,
+        "bottom": 175.25,
+        "left": 618
+      },
+      "main": {
+        "x": 288,
+        "y": 0,
+        "width": 1912,
+        "height": 1100,
+        "top": 0,
+        "right": 2200,
+        "bottom": 1100,
+        "left": 288
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 288,
+        "height": 1100,
+        "top": 0,
+        "right": 288,
+        "bottom": 1100,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 618,
+        "y": 134.75,
+        "width": 1242,
+        "height": 40.5,
+        "top": 134.75,
+        "right": 1860,
+        "bottom": 175.25,
+        "left": 618
+      },
+      "main": {
+        "x": 288,
+        "y": 0,
+        "width": 1912,
+        "height": 1100,
+        "top": 0,
+        "right": 2200,
+        "bottom": 1100,
+        "left": 288
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 288,
+        "height": 1100,
+        "top": 0,
+        "right": 288,
+        "bottom": 1100,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 2200,
+      "height": 1100
+    },
+    "documentWidth": 2200,
+    "font": "18px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "dark bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-current-collapsed.png",
+    "sha256": "a0641407406006364baf125d29797f03e1533311ac7e3f0e5636f936c8c45db4",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 951,
+      "width": 55,
+      "height": 49
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 271,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1375,
+        "bottom": 156,
+        "left": 271
+      },
+      "main": {
+        "x": 56,
+        "y": 0,
+        "width": 1544,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 56
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 56,
+        "height": 1000,
+        "top": 0,
+        "right": 56,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 271,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1375,
+        "bottom": 156,
+        "left": 271
+      },
+      "main": {
+        "x": 56,
+        "y": 0,
+        "width": 1544,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 56
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 56,
+        "height": 1000,
+        "top": 0,
+        "right": 56,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-operational-matches-before-confirm.png",
+    "sha256": "3384f1eca5175fe12500498a0c17a16c26ff6b843b927cf71c6c215b750d4573",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/3e5ba923-fc79-45d1-a95e-43dc6964f685",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-operational-held-confirm.png",
+    "sha256": "fd82c598ae323c9baff2ddc9bce83794facbd831d7b31262888b16df81afcb05",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/3e5ba923-fc79-45d1-a95e-43dc6964f685",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 1,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-operational-confirmed.png",
+    "sha256": "60be31d10f17de6a8380936e9367f763c638d1243697d650f19c9ab0196dc4bf",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 376,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1480,
+        "bottom": 156,
+        "left": 376
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/3e5ba923-fc79-45d1-a95e-43dc6964f685",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-officer-public-revoked.png",
+    "sha256": "7f637b00c66fbe36fe6886a8a1235f5a09216cda0717cef0906bffd468ab0a45",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 535,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 280,
+        "y": 120,
+        "width": 496,
+        "height": 36,
+        "top": 120,
+        "right": 776,
+        "bottom": 156,
+        "left": 280
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 544,
+        "height": 600,
+        "top": 0,
+        "right": 800,
+        "bottom": 600,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 600,
+        "top": 0,
+        "right": 256,
+        "bottom": 600,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 280,
+        "y": 120,
+        "width": 496,
+        "height": 36,
+        "top": 120,
+        "right": 776,
+        "bottom": 156,
+        "left": 280
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 544,
+        "height": 600,
+        "top": 0,
+        "right": 800,
+        "bottom": 600,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 600,
+        "top": 0,
+        "right": 256,
+        "bottom": 600,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/91d78f11-12e3-4cfb-8b20-4fd2e5747429",
+    "viewport": {
+      "width": 800,
+      "height": 600
+    },
+    "documentWidth": 800,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-matched-current-desktop-light.png",
+    "sha256": "179957415819878973ffb03beaa1bf3ec60ad40f0d1aefadd6dfe997c919c41b",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 371,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1475,
+        "bottom": 156,
+        "left": 371
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 371,
+        "y": 120,
+        "width": 1104,
+        "height": 36,
+        "top": 120,
+        "right": 1475,
+        "bottom": 156,
+        "left": 371
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-matched-current-phone-light.png",
+    "sha256": "84a8d78208b66044bf03dd1015b026e60ca97df6a665e47b2a74d1517b3b60fd",
+    "categoryRedaction": null,
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 16,
+        "y": 112,
+        "width": 348,
+        "height": 32,
+        "top": 112,
+        "right": 364,
+        "bottom": 144,
+        "left": 16
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 16,
+        "y": 112,
+        "width": 348,
+        "height": 32,
+        "top": 112,
+        "right": 364,
+        "bottom": 144,
+        "left": 16
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-matched-current-wide-dark-large.png",
+    "sha256": "fde9f4da9807e9fb2a65b92ba4f7d3853d98931144d34f20f13352ce20abedf4",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 1027,
+      "width": 287,
+      "height": 73
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 618,
+        "y": 134.75,
+        "width": 1242,
+        "height": 40.5,
+        "top": 134.75,
+        "right": 1860,
+        "bottom": 175.25,
+        "left": 618
+      },
+      "main": {
+        "x": 288,
+        "y": 0,
+        "width": 1912,
+        "height": 1100,
+        "top": 0,
+        "right": 2200,
+        "bottom": 1100,
+        "left": 288
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 288,
+        "height": 1100,
+        "top": 0,
+        "right": 288,
+        "bottom": 1100,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 618,
+        "y": 134.75,
+        "width": 1242,
+        "height": 40.5,
+        "top": 134.75,
+        "right": 1860,
+        "bottom": 175.25,
+        "left": 618
+      },
+      "main": {
+        "x": 288,
+        "y": 0,
+        "width": 1912,
+        "height": 1100,
+        "top": 0,
+        "right": 2200,
+        "bottom": 1100,
+        "left": 288
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 288,
+        "height": 1100,
+        "top": 0,
+        "right": 288,
+        "bottom": 1100,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 2200,
+      "height": 1100
+    },
+    "documentWidth": 2200,
+    "font": "18px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Payslip batch"
+    ],
+    "theme": "dark bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-matched-historical-desktop-light.png",
+    "sha256": "7789a8c7a006069c0c1420e1ce5e3d335a0a31eca86aafb5b02aa4b8844c16ce",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 935,
+      "width": 255,
+      "height": 65
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 337,
+        "y": 22,
+        "width": 835.34375,
+        "height": 20,
+        "top": 22,
+        "right": 1172.34375,
+        "bottom": 42,
+        "left": 337
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 337,
+        "y": 22,
+        "width": 835.34375,
+        "height": 20,
+        "top": 22,
+        "right": 1172.34375,
+        "bottom": 42,
+        "left": 337
+      },
+      "main": {
+        "x": 256,
+        "y": 0,
+        "width": 1344,
+        "height": 1000,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1000,
+        "left": 256
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1000,
+        "top": 0,
+        "right": 256,
+        "bottom": 1000,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 1600,
+      "height": 1000
+    },
+    "documentWidth": 1600,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Z8",
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-matched-historical-phone-light.png",
+    "sha256": "894eb53f24e7ce2c50d373a6bb0cb77eaec16def4e49fe2b145d86c28498e4bc",
+    "categoryRedaction": null,
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 44,
+        "y": 22,
+        "width": 210,
+        "height": 20,
+        "top": 22,
+        "right": 254,
+        "bottom": 42,
+        "left": 44
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 44,
+        "y": 22,
+        "width": 210,
+        "height": 20,
+        "top": 22,
+        "right": 254,
+        "bottom": 42,
+        "left": 44
+      },
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 844,
+        "top": 0,
+        "right": 390,
+        "bottom": 844,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "font": "16px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Z8",
+      "Payslip batch"
+    ],
+    "theme": "light bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  },
+  {
+    "file": "public-matched-historical-wide-dark-large.png",
+    "sha256": "4044c8c0f88369cbcdc0afaf486bb7da2a16291a5df8311d4c4a8cd9d0c9cdbc",
+    "categoryRedaction": {
+      "category": "account contact footer",
+      "x": 0,
+      "y": 1027,
+      "width": 287,
+      "height": 73
+    },
+    "screenshotViewportOnly": true,
+    "before": {
+      "h1": {
+        "x": 379,
+        "y": 24.75,
+        "width": 1258.96875,
+        "height": 22.5,
+        "top": 24.75,
+        "right": 1637.96875,
+        "bottom": 47.25,
+        "left": 379
+      },
+      "main": {
+        "x": 288,
+        "y": 0,
+        "width": 1912,
+        "height": 1100,
+        "top": 0,
+        "right": 2200,
+        "bottom": 1100,
+        "left": 288
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 288,
+        "height": 1100,
+        "top": 0,
+        "right": 288,
+        "bottom": 1100,
+        "left": 0
+      }
+    },
+    "after": {
+      "h1": {
+        "x": 379,
+        "y": 24.75,
+        "width": 1346.9375,
+        "height": 22.5,
+        "top": 24.75,
+        "right": 1725.9375,
+        "bottom": 47.25,
+        "left": 379
+      },
+      "main": {
+        "x": 288,
+        "y": 0,
+        "width": 1912,
+        "height": 1100,
+        "top": 0,
+        "right": 2200,
+        "bottom": 1100,
+        "left": 288
+      },
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 288,
+        "height": 1100,
+        "top": 0,
+        "right": 288,
+        "bottom": 1100,
+        "left": 0
+      }
+    },
+    "path": "/en/personnel-files/payslip-batches/6e5963e3-ab00-4684-aac7-e4d44f6f65e2",
+    "viewport": {
+      "width": 2200,
+      "height": 1100
+    },
+    "documentWidth": 2200,
+    "font": "18px",
+    "fontStatus": "loaded",
+    "h1": [
+      "Z8",
+      "Payslip batch"
+    ],
+    "theme": "dark bprogress-busy",
+    "dialogs": 0,
+    "overlays": [
+      ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+    ]
+  }
+]

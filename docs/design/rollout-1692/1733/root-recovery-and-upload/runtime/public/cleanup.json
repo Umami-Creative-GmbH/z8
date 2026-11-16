@@ -1,0 +1,45 @@
+{
+  "containers": [
+    {
+      "fixture": "runtime",
+      "service": "postgres",
+      "absent": true
+    },
+    {
+      "fixture": "runtime",
+      "service": "redis",
+      "absent": true
+    },
+    {
+      "fixture": "runtime",
+      "service": "storage",
+      "absent": true
+    },
+    {
+      "fixture": "pg",
+      "service": "postgres",
+      "absent": true
+    },
+    {
+      "fixture": "pg",
+      "service": "redis",
+      "absent": true
+    },
+    {
+      "fixture": "pg",
+      "service": "storage",
+      "absent": true
+    }
+  ],
+  "exactOwnedBridgesRemoved": 2,
+  "controllerExited": 0,
+  "nativeCloseExit": 0,
+  "browserPidAbsent": true,
+  "trackedStatus": "",
+  "licenses": {
+    "records": 125,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "inheritedNotRegenerated": true
+  },
+  "noGitTrackerPublishWrites": true
+}

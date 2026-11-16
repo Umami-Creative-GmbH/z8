@@ -1,0 +1,50 @@
+{
+  "status": "STOP / source blocker",
+  "candidate": "44308be60ceba39d69ae3379dc26f8ab206a3a9a",
+  "source": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
+  "overallGreen": false,
+  "acceptanceComplete": false,
+  "publicAllowlist": "public-allowlist.json",
+  "hashes": "artifact-hashes.json",
+  "summary": "HANDOFF-runtime.md",
+  "repro": "command-probe.test.tsx",
+  "sourcePins": "preservation.json",
+  "commands": "attempts.json",
+  "fullTestOccurrences": "test-accounting.json",
+  "tests": {
+    "firstExit": 1,
+    "repeatExit": 1,
+    "first": {
+      "cases": 27,
+      "passed": 26,
+      "failed": 1
+    },
+    "repeatNonadditive": true
+  },
+  "harnessPins": [
+    {
+      "path": "build-public-probes.mjs",
+      "sha256": "93fe71ef6f583190231c4b75be4b5c3b8b8b04f2111c405dc9b99398b838e98d"
+    },
+    {
+      "path": "run-public-probes.mjs",
+      "sha256": "800344c24dc70844080ccd2d195a303108430c23e39f606d9341a641fb560fdb"
+    },
+    {
+      "path": "repeat-minimal-probe.mjs",
+      "sha256": "530896c35b145b63525df51f5ea76e336a0a24174a88b9f61e38d3a88dd66ae7"
+    },
+    {
+      "path": "command-probe.test.tsx",
+      "sha256": "8734c87e20992ee474365f55bc947a9adabd9d31cd2222adb5b25366600da2ab"
+    },
+    {
+      "path": "heading-probe.test.tsx",
+      "sha256": "98bb8eb174f01c33e07b55882b3c7e3755bbaa7b9da59a2c5e7094c5409b3b8b"
+    }
+  ],
+  "resourcesClean": true,
+  "releaseAll": true,
+  "limitations": "See STOP.json for exact unpassed seams; no live runtime or persistence claim.",
+  "hashPolicy": "SHA256 of every exact allowed artifact except artifact-hashes.json itself. No recursive/raw artifact inventory."
+}

@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "publicName": "command-probe.test.tsx",
+      "path": "apps/webapp/src/components/personnel-file/independent1733v2-command-probe.test.tsx"
+    },
+    {
+      "publicName": "heading-probe.test.tsx",
+      "path": "apps/webapp/src/components/personnel-file/independent1733v2-heading-probe.test.tsx"
+    }
+  ]
+}

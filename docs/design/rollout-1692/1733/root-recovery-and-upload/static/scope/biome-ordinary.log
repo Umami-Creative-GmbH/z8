@@ -1,0 +1,144 @@
+src\components\personnel-file\payslip-batch-workspace-scope.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+          3 │ + import·{␍
+          4 │ + → act,␍
+          5 │ + → fireEvent,␍
+          6 │ + → render,␍
+          7 │ + → screen,␍
+          8 │ + → waitFor,␍
+          9 │ + }·from·"@testing-library/react";␍
+      4  10 │   import type { ReactNode } from "react";␍
+      5  11 │   import { beforeEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     31  37 │   }));␍
+     32  38 │   vi.mock("@/stores/organization-settings-store", () => ({␍
+     33     │ - → OrganizationSettingsStoreProvider:·({·children·}:·{·children:·ReactNode·})·=>·children,␍
+         39 │ + → OrganizationSettingsStoreProvider:·({·children·}:·{·children:·ReactNode·})·=>␍
+         40 │ + → → children,␍
+     34  41 │     useOrganizationSettings: (selector: (store: unknown) => unknown) =>␍
+     35  42 │       selector({ hydrate: boundary.noop, reset: boundary.noop }),␍
+    ······· │ 
+     43  50 │     useTranslate: () => ({␍
+     44  51 │       t: (_key: string, fallback: string, values?: Record<string, unknown>) =>␍
+     45     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>·String(values?.[key]·??·match)),␍
+         52 │ + → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>␍
+         53 │ + → → → → String(values?.[key]·??·match),␍
+         54 │ + → → → ),␍
+     46  55 │     }),␍
+     47  56 │   }));␍
+    ······· │ 
+     78  87 │   function setup(␍
+     79  88 │     content: ReactNode = (␍
+     80     │ - → → <PayslipBatchWorkspace·batchId="batch"·userId="actor"·organizationId="org"·/>␍
+         89 │ + → → <PayslipBatchWorkspace␍
+         90 │ + → → → batchId="batch"␍
+         91 │ + → → → userId="actor"␍
+         92 │ + → → → organizationId="org"␍
+         93 │ + → → />␍
+     81  94 │     ),␍
+     82  95 │   ) {␍
+    ······· │ 
+    136 149 │     try {␍
+    137 150 │       await screen.findByText("No files yet.");␍
+    138     │ - → → boundary.fetch.mockRejectedValueOnce(new·Error("Internal·read·diagnostics"));␍
+        151 │ + → → boundary.fetch.mockRejectedValueOnce(␍
+        152 │ + → → → new·Error("Internal·read·diagnostics"),␍
+        153 │ + → → );␍
+    139 154 │       await act(async () => {␍
+    140 155 │         await subject.client.refetchQueries({␍
+    ······· │ 
+    145 160 │       await waitFor(() => expect(screen.queryByText("No files yet.")).toBeNull());␍
+    146 161 │       const alert = screen.getByRole("alert");␍
+    147     │ - → → expect(alert.textContent).toContain("Your·current·organization·could·not·be·confirmed.");␍
+        162 │ + → → expect(alert.textContent).toContain(␍
+        163 │ + → → → "Your·current·organization·could·not·be·confirmed.",␍
+        164 │ + → → );␍
+    148 165 │       expect(alert.textContent).not.toContain("Internal read diagnostics");␍
+    149 166 │       fireEvent.click(screen.getByRole("button", { name: "Retry" }));␍
+    ······· │ 
+    164 181 │     try {␍
+    165 182 │       await screen.findByText("Admitted start-page records");␍
+    166     │ - → → boundary.fetch.mockRejectedValueOnce(new·Error("Internal·read·diagnostics"));␍
+        183 │ + → → boundary.fetch.mockRejectedValueOnce(␍
+        184 │ + → → → new·Error("Internal·read·diagnostics"),␍
+        185 │ + → → );␍
+    167 186 │       await act(async () => {␍
+    168 187 │         await subject.client.refetchQueries({␍
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      8   8 │   describe("route metadata", () => {␍
+      9   9 │     it("adopts the due-for-deletion review without adopting deeper or invalid personnel routes", () => {␍
+     10     │ - → → expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(true);␍
+     11     │ - → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/")).toBe(true);␍
+     12     │ - → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail")).toBe(false);␍
+         10 │ + → → expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(␍
+         11 │ + → → → true,␍
+         12 │ + → → );␍
+         13 │ + → → expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/")).toBe(␍
+         14 │ + → → → true,␍
+         15 │ + → → );␍
+         16 │ + → → expect(␍
+         17 │ + → → → appPageOwnsHeading("/en/personnel-files/due-for-deletion/detail"),␍
+         18 │ + → → ).toBe(false);␍
+     13  19 │       expect(appPageOwnsHeading("/en/personnel-files/requests")).toBe(false);␍
+     14  20 │     });␍
+     15  21 │     it("adopts the request queue without adopting its independent descendants", () => {␍
+     16     │ - → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);␍
+     17     │ - → → expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);␍
+         22 │ + → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(␍
+         23 │ + → → → true,␍
+         24 │ + → → );␍
+         25 │ + → → expect(␍
+         26 │ + → → → appPageOwnsHeading("/en/personnel-files/document-requests/extra"),␍
+         27 │ + → → ).toBe(false);␍
+     18  28 │       expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);␍
+     19  29 │     });␍
+    ······· │ 
+     21  31 │       expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);␍
+     22  32 │       expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);␍
+     23     │ - → → expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(false);␍
+         33 │ + → → expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(␍
+         34 │ + → → → false,␍
+         35 │ + → → );␍
+     24  36 │       expect(appPageOwnsHeading("/en/settings/other")).toBe(false);␍
+     25  37 │     });␍
+    ······· │ 
+     37  49 │     });␍
+     38  50 │     it("adopts the payslip batch start and detail headings", () => {␍
+     39     │ - → → expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(true);␍
+     40     │ - → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id")).toBe(true);␍
+         51 │ + → → expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(␍
+         52 │ + → → → true,␍
+         53 │ + → → );␍
+         54 │ + → → expect(␍
+         55 │ + → → → appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id"),␍
+         56 │ + → → ).toBe(true);␍
+     41  57 │     });␍
+     42  58 │     it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {␍
+    ······· │ 
+     66  82 │     it("adopts the personnel file directory while preserving independently staged descendant owners", () => {␍
+     67  83 │       expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);␍
+     68     │ - → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(true);␍
+         84 │ + → → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(␍
+         85 │ + → → → true,␍
+         86 │ + → → );␍
+     69  87 │       for (const path of [␍
+     70  88 │         "/en/personnel-files/id",␍
+  
+
+Checked 8 files in 14ms. No fixes applied.
+Found 2 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

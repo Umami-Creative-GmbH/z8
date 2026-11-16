@@ -1,0 +1,45 @@
+{
+  "listenersRemaining": 0,
+  "kind": "Exact owned source path, PID, creation, parent and executable identity; own descendants only",
+  "stopped": [
+    {
+      "ProcessId": 13816,
+      "ParentProcessId": 13508,
+      "CreationDate": "2026-11-16T18:57:46.384978+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 49852,
+      "ParentProcessId": 13816,
+      "CreationDate": "2026-11-16T18:57:46.494029+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 69404,
+      "ParentProcessId": 49852,
+      "CreationDate": "2026-11-16T18:57:49.931856+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 38552,
+      "ParentProcessId": 49852,
+      "CreationDate": "2026-11-16T18:57:49.93928+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 62548,
+      "ParentProcessId": 49852,
+      "CreationDate": "2026-11-16T18:57:50.031352+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    },
+    {
+      "ProcessId": 65352,
+      "ParentProcessId": 49852,
+      "CreationDate": "2026-11-16T18:57:50.03774+01:00",
+      "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe"
+    }
+  ],
+  "processesRemaining": 0,
+  "time": "2026-11-16T18:00:51.8189076Z",
+  "port": 58556
+}

@@ -1,0 +1,6 @@
+import {spawnSync}from'node:child_process';import{writeFileSync}from'node:fs';import assert from'node:assert/strict';
+const out='.tmp/1733-command-checks/runtime',pnpm=process.env.npm_execpath;assert.ok(pnpm);
+const args=['--config.verify-deps-before-run=false','--filter','webapp','exec','vitest','run','--project','unit','--maxWorkers','2','src/components/personnel-file/independent1733v2-command-probe.test.tsx','src/components/personnel-file/independent1733v2-heading-probe.test.tsx','src/components/personnel-file/payslip-batch-workspace.test.tsx','src/components/personnel-file/payslip-batch-start.test.tsx','--reporter=json','--outputFile=../../'+out+'/public-probes.json'];
+const exe=pnpm.endsWith('.exe')?pnpm:process.execPath,argv=exe===pnpm?args:[pnpm,...args];
+const r=spawnSync(exe,argv,{encoding:'utf8',env:{...process.env,pnpm_config_verify_deps_before_run:'false'},windowsHide:true});
+writeFileSync(out+'/public-probes.log',(r.stdout??'')+(r.stderr??''));writeFileSync(out+'/public-probe-command.json',JSON.stringify({executable:exe,argv,exit:r.status,spawnError:r.error?.code??null,physicalFiles:4},null,2)+'\n');console.log(JSON.stringify({exit:r.status,error:r.error?.code}));process.exitCode=r.status??1;

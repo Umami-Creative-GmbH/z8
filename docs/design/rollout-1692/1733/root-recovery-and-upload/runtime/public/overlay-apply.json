@@ -1,0 +1,33 @@
+{
+  "mode": "apply",
+  "ref": "c72c947e0faa21966fa24decc493ae96df3115f8",
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+      "currentRaw": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+      "historicalRaw": "75308c61c79b24e8f7dc3c061437440312663c54b41438871d18b997640a742a",
+      "historicalLf": "75308c61c79b24e8f7dc3c061437440312663c54b41438871d18b997640a742a"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+      "currentRaw": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+      "historicalRaw": "a163347a6d913c1dba5c86d7b6803347fee515fdd24ffc91b6634912dab72a81",
+      "historicalLf": "a163347a6d913c1dba5c86d7b6803347fee515fdd24ffc91b6634912dab72a81"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "currentRaw": "73ef4069f318f17da900331409f3d97941c39e86d794b61053e313baa705a248",
+      "historicalRaw": "dcecf427fbbacca34b13482f3c5be09261e2735a0e3628f613e49c66a0c570aa",
+      "historicalLf": "dcecf427fbbacca34b13482f3c5be09261e2735a0e3628f613e49c66a0c570aa"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "currentRaw": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+      "historicalRaw": "b955e74a8dd5f9559e2d65091ca6b0a1b4359eb87de283418654ab55f9f7c23d",
+      "historicalLf": "b955e74a8dd5f9559e2d65091ca6b0a1b4359eb87de283418654ab55f9f7c23d"
+    }
+  ],
+  "serverStoppedBeforeMutation": true,
+  "partialApplication": true,
+  "purpose": "Minimal public reused-upload regression control only. Existing historical page/workspace/upload/metadata consumers; actions and rest of application current. No whole historical app or broad comparison acceptance."
+}
