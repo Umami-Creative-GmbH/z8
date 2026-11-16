@@ -63,11 +63,10 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);
 		expect(appPageOwnsHeading("/en/personnel-files/employee-1")).toBe(false);
 	});
-	it("adopts only the personnel file directory, preserving all descendant owners", () => {
+	it("adopts the personnel file directory while preserving independently staged descendant owners", () => {
 		expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);
 		for (const path of [
 			"/en/personnel-files/id",
-			"/en/personnel-files/payslip-batches",
 			"/en/personnel-files/payslip-batches/id",
 			"/en/personnel-files/sick-leave",
 			"/en/settings/personnel-files",
