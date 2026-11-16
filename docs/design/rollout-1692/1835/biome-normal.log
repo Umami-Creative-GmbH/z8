@@ -1,0 +1,478 @@
+src\app\[locale]\onboarding\work-templates\actions.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·Layer·}·from·"effect";␍
+      2     │ - import·{·afterAll,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      3     │ - import·{·integrationAdminPool·}·from·"@/test/integration-database";␍
+      4     │ - ␍
+      5     │ - const·actor·=·vi.hoisted(()·=>·({·id:·"r040-1835-admin",·organizationId:·"r040-1835-a"·}));␍
+      6     │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+      7     │ - vi.mock("@/lib/auth/request-session",·()·=>·({␍
+      8     │ - → getRequestSession:·async·()·=>·({␍
+      9     │ - → → user:·{·id:·actor.id·},␍
+     10     │ - → → session:·{␍
+     11     │ - → → → id:·"r040-synthetic-request",␍
+     12     │ - → → → userId:·actor.id,␍
+     13     │ - → → → activeOrganizationId:·actor.organizationId,␍
+     14     │ - → → },␍
+     15     │ - → }),␍
+     16     │ - }));␍
+     17     │ - vi.mock("@/lib/effect/runtime",·async·()·=>·{␍
+     18     │ - → const·{·OnboardingServiceLive·}·=·await·import("@/lib/effect/services/onboarding.service");␍
+     19     │ - → const·{·AuthServiceLive·}·=·await·import("@/lib/effect/services/auth.service");␍
+     20     │ - → const·{·DatabaseServiceLive·}·=·await·import("@/lib/effect/services/database.service");␍
+     21     │ - → return·(await·import("@/test/effect-runtime")).runtimeModuleOver(␍
+     22     │ - → → OnboardingServiceLive.pipe(Layer.provide(Layer.mergeAll(AuthServiceLive,·DatabaseServiceLive))),␍
+     23     │ - → );␍
+     24     │ - });␍
+     25     │ - ␍
+     26     │ - import·{·checkIsAdmin,·createWorkTemplateOnboarding,·skipWorkTemplateSetup·}·from·"./actions";␍
+     27     │ - ␍
+     28     │ - describe("organization·work-template·production·action·and·scoped·PostgreSQL·records",·()·=>·{␍
+     29     │ - → const·pool·=·integrationAdminPool();␍
+     30     │ - → const·input·=·{␍
+     31     │ - → → name:·"Four-day·template",␍
+     32     │ - → → hoursPerWeek:·32.5,␍
+     33     │ - → → workingDays:·["monday",·"tuesday",·"wednesday",·"thursday"],␍
+     34     │ - → → setAsDefault:·true,␍
+     35     │ - → }·satisfies·Parameters<typeof·createWorkTemplateOnboarding>[0];␍
+     36     │ - → async·function·cleanup()·{␍
+     37     │ - → → await·pool.query("DELETE·FROM·organization·WHERE·id=ANY($1::text[])",·[␍
+     38     │ - → → → ["r040-1835-a",·"r040-1835-b"],␍
+     39     │ - → → ]);␍
+     40     │ - → → await·pool.query('DELETE·FROM·"user"·WHERE·id=ANY($1::text[])',·[␍
+     41     │ - → → → ["r040-1835-admin",·"r040-1835-member"],␍
+     42     │ - → → ]);␍
+     43     │ - → }␍
+     44     │ - → beforeEach(async·()·=>·{␍
+     45     │ - → → await·cleanup();␍
+     46     │ - → → actor.id·=·"r040-1835-admin";␍
+     47     │ - → → actor.organizationId·=·"r040-1835-a";␍
+     48     │ - → → await·pool.query(␍
+     49     │ - → → → 'INSERT·INTO·"user"·(id,name,email,email_verified,created_at,updated_at)·VALUES·($1,$1,$2,true,now(),now()),($3,$3,$4,true,now(),now())',␍
+     50     │ - → → → [actor.id,·"r040-admin@example.test",·"r040-1835-member",·"r040-member@example.test"],␍
+     51     │ - → → );␍
+     52     │ - → → await·pool.query(␍
+     53     │ - → → → "INSERT·INTO·organization·(id,name,slug,created_at)·VALUES·($1,$1,$1,now()),($2,$2,$2,now())",␍
+     54     │ - → → → [actor.organizationId,·"r040-1835-b"],␍
+     55     │ - → → );␍
+     56     │ - → → await·pool.query(␍
+     57     │ - → → → "INSERT·INTO·member·(id,user_id,organization_id,role,created_at)·VALUES·('r040-admin-a',$1,$2,'admin',now()),('r040-member-a','r040-1835-member',$2,'member',now()),('r040-admin-b',$1,'r040-1835-b','member',now())",␍
+     58     │ - → → → [actor.id,·actor.organizationId],␍
+     59     │ - → → );␍
+     60     │ - → });␍
+     61     │ - → afterAll(cleanup);␍
+     62     │ - → it("creates·the·exact·weekly·schedule·and·organization·default·without·touching·recorded·time·or·display-week·preference",·async·()·=>·{␍
+     63     │ - → → await·pool.query(␍
+     64     │ - → → → "INSERT·INTO·user_settings·(user_id,week_start_day,updated_at)·VALUES·($1,'monday',now())",␍
+     65     │ - → → → [actor.id],␍
+     66     │ - → → );␍
+     67     │ - → → const·timeBefore·=·(␍
+     68     │ - → → → await·pool.query("SELECT·count(*)::int·n·FROM·time_entry·WHERE·organization_id=$1",·[␍
+     69     │ - → → → → actor.organizationId,␍
+     70     │ - → → → ])␍
+     71     │ - → → ).rows[0].n;␍
+     72     │ - → → expect(await·checkIsAdmin()).toMatchObject({·success:·true,·data:·true·});␍
+     73     │ - → → expect(await·createWorkTemplateOnboarding(input)).toEqual({·success:·true,·data:·undefined·});␍
+     74     │ - → → const·policies·=·(␍
+     75     │ - → → → await·pool.query("SELECT·id,name,is_default·FROM·work_policy·WHERE·organization_id=$1",·[␍
+     76     │ - → → → → actor.organizationId,␍
+     77     │ - → → → ])␍
+     78     │ - → → ).rows;␍
+     79     │ - → → expect(policies).toEqual([␍
+     80     │ - → → → {·id:·expect.any(String),·name:·"Four-day·template",·is_default:·true·},␍
+     81     │ - → → ]);␍
+     82     │ - → → const·schedules·=·(␍
+     83     │ - → → → await·pool.query(␍
+     84     │ - → → → → "SELECT·id,schedule_cycle,schedule_type,hours_per_cycle·FROM·work_policy_schedule·WHERE·policy_id=$1",␍
+     85     │ - → → → → [policies[0].id],␍
+     86     │ - → → → )␍
+     87     │ - → → ).rows;␍
+     88     │ - → → expect(schedules).toEqual([␍
+     89     │ - → → → {␍
+     90     │ - → → → → id:·expect.any(String),␍
+     91     │ - → → → → schedule_cycle:·"weekly",␍
+     92     │ - → → → → schedule_type:·"simple",␍
+     93     │ - → → → → hours_per_cycle:·"32.50",␍
+     94     │ - → → → },␍
+     95     │ - → → ]);␍
+     96     │ - → → const·days·=·(␍
+     97     │ - → → → await·pool.query(␍
+     98     │ - → → → → "SELECT·day_of_week,hours_per_day,is_work_day·FROM·work_policy_schedule_day·WHERE·schedule_id=$1·ORDER·BY·day_of_week::text",␍
+     99     │ - → → → → [schedules[0].id],␍
+    100     │ - → → → )␍
+    101     │ - → → ).rows;␍
+    102     │ - → → expect(days).toEqual([␍
+    103     │ - → → → {·day_of_week:·"friday",·hours_per_day:·"0.00",·is_work_day:·false·},␍
+    104     │ - → → → {·day_of_week:·"monday",·hours_per_day:·"8.10",·is_work_day:·true·},␍
+    105     │ - → → → {·day_of_week:·"saturday",·hours_per_day:·"0.00",·is_work_day:·false·},␍
+    106     │ - → → → {·day_of_week:·"sunday",·hours_per_day:·"0.00",·is_work_day:·false·},␍
+    107     │ - → → → {·day_of_week:·"thursday",·hours_per_day:·"8.10",·is_work_day:·true·},␍
+    108     │ - → → → {·day_of_week:·"tuesday",·hours_per_day:·"8.10",·is_work_day:·true·},␍
+    109     │ - → → → {·day_of_week:·"wednesday",·hours_per_day:·"8.10",·is_work_day:·true·},␍
+    110     │ - → → ]);␍
+    111     │ - → → expect(␍
+    112     │ - → → → (␍
+    113     │ - → → → → await·pool.query(␍
+    114     │ - → → → → → "SELECT·organization_id,assignment_type·FROM·work_policy_assignment·WHERE·policy_id=$1",␍
+    115     │ - → → → → → [policies[0].id],␍
+    116     │ - → → → → )␍
+    117     │ - → → → ).rows,␍
+    118     │ - → → ).toEqual([{·organization_id:·actor.organizationId,·assignment_type:·"organization"·}]);␍
+    119     │ - → → expect(␍
+    120     │ - → → → (await·pool.query("SELECT·onboarding_step·FROM·user_settings·WHERE·user_id=$1",·[actor.id]))␍
+    121     │ - → → → → .rows[0],␍
+    122     │ - → → ).toEqual({·onboarding_step:·"wellness"·});␍
+    123     │ - → → expect(␍
+    124     │ - → → → (await·pool.query("SELECT·week_start_day·FROM·user_settings·WHERE·user_id=$1",·[actor.id]))␍
+    125     │ - → → → → .rows[0].week_start_day,␍
+    126     │ - → → ).toBe("monday");␍
+    127     │ - → → expect(␍
+    128     │ - → → → (␍
+    129     │ - → → → → await·pool.query("SELECT·count(*)::int·n·FROM·time_entry·WHERE·organization_id=$1",·[␍
+    130     │ - → → → → → actor.organizationId,␍
+    131     │ - → → → → ])␍
+    132     │ - → → → ).rows[0].n,␍
+    133     │ - → → ).toBe(timeBefore);␍
+    134     │ - → → expect(␍
+    135     │ - → → → (␍
+    136     │ - → → → → await·pool.query(␍
+    137     │ - → → → → → "SELECT·count(*)::int·n·FROM·work_policy·WHERE·organization_id='r040-1835-b'",␍
+    138     │ - → → → → )␍
+    139     │ - → → → ).rows[0].n,␍
+    140     │ - → → ).toBe(0);␍
+    141     │ - → });␍
+    142     │ - → it("keeps·a·non-default·template·unassigned",·async·()·=>·{␍
+    143     │ - → → expect((await·createWorkTemplateOnboarding({·...input,·setAsDefault:·false·})).success).toBe(␍
+    144     │ - → → → true,␍
+    145     │ - → → );␍
+    146     │ - → → expect(␍
+    147     │ - → → → (␍
+    148     │ - → → → → await·pool.query("SELECT·is_default·FROM·work_policy·WHERE·organization_id=$1",·[␍
+    149     │ - → → → → → actor.organizationId,␍
+    150     │ - → → → → ])␍
+  340 more lines truncated
+  
+
+src\app\[locale]\onboarding\work-templates\page-client.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconClock,·IconLoader2·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useForm·}·from·"@tanstack/react-form";␍
+      5     │ - import·{·useStore·}·from·"@tanstack/react-store";␍
+      6     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      7     │ - import·{·useLocale·}·from·"next-intl";␍
+      8     │ - import·{·useEffect,·useLayoutEffect,·useRef,·useState·}·from·"react";␍
+      9     │ - import·{·toast·}·from·"sonner";␍
+     10     │ - import·{·z·}·from·"zod";␍
+     11     │ - import·{·ProgressIndicator·}·from·"@/components/onboarding/progress-indicator";␍
+     12     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     13     │ - import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+     14     │ - import·{·Checkbox·}·from·"@/components/ui/checkbox";␍
+     15     │ - import·{·Input·}·from·"@/components/ui/input";␍
+     16     │ - import·{·Label·}·from·"@/components/ui/label";␍
+     17     │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     18     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     19     │ - import·{·Switch·}·from·"@/components/ui/switch";␍
+     20     │ - import·{␍
+     21     │ - → TFormControl,␍
+     22     │ - → TFormDescription,␍
+     23     │ - → TFormItem,␍
+     24     │ - → TFormLabel,␍
+     25     │ - → TFormMessage,␍
+     26     │ - }·from·"@/components/ui/tanstack-form";␍
+     27     │ - import·{·useSession·}·from·"@/lib/auth-client";␍
+     28     │ - import·type·{·OnboardingWorkTemplateFormValues·}·from·"@/lib/validations/onboarding";␍
+     29     │ - import·{·useRouter·}·from·"@/navigation";␍
+     30     │ - import·{·runOnboardingAction·}·from·"../run-onboarding-action";␍
+     31     │ - import·{·checkIsAdmin,·createWorkTemplateOnboarding,·skipWorkTemplateSetup·}·from·"./actions";␍
+     32     │ - ␍
+     33     │ - const·DAYS_OF_WEEK·=·[␍
+     34     │ - → "monday",␍
+     35     │ - → "tuesday",␍
+     36     │ - → "wednesday",␍
+     37     │ - → "thursday",␍
+     38     │ - → "friday",␍
+     39     │ - → "saturday",␍
+     40     │ - → "sunday",␍
+     41     │ - ]·as·const;␍
+     42     │ - ␍
+     43     │ - //·2024-01-01·is·a·Monday,·so·index·i·in·DAYS_OF_WEEK·falls·on·January·1·+·i.␍
+     44     │ - function·getShortWeekdayLabel(locale:·string,·dayIndex:·number)·{␍
+     45     │ - → return·new·Intl.DateTimeFormat(locale,·{·weekday:·"short",·timeZone:·"UTC"·}).format(␍
+     46     │ - → → Date.UTC(2024,·0,·1·+·dayIndex),␍
+     47     │ - → );␍
+     48     │ - }␍
+     49     │ - ␍
+     50     │ - type·DayOfWeek·=·"monday"·|·"tuesday"·|·"wednesday"·|·"thursday"·|·"friday"·|·"saturday"·|·"sunday";␍
+     51     │ - ␍
+     52     │ - type·Translate·=·ReturnType<typeof·useTranslate>["t"];␍
+     53     │ - ␍
+     54     │ - function·getFieldErrorMessage(error:·unknown)·{␍
+     55     │ - → if·(typeof·error·===·"string")·{␍
+     56     │ - → → return·error;␍
+     57     │ - → }␍
+     58     │ - → if·(error·&&·typeof·error·===·"object"·&&·"message"·in·error)·{␍
+     59     │ - → → return·String(error.message);␍
+     60     │ - → }␍
+     61     │ - → return·undefined;␍
+     62     │ - }␍
+     63     │ - ␍
+     64     │ - function·TemplateNameField({␍
+     65     │ - → disabled,␍
+     66     │ - → error,␍
+     67     │ - → onBlur,␍
+     68     │ - → onChange,␍
+     69     │ - → t,␍
+     70     │ - → value,␍
+     71     │ - }:·{␍
+     72     │ - → disabled:·boolean;␍
+     73     │ - → error?:·string;␍
+     74     │ - → onBlur:·()·=>·void;␍
+     75     │ - → onChange:·(value:·string)·=>·void;␍
+     76     │ - → t:·Translate;␍
+     77     │ - → value:·string;␍
+     78     │ - })·{␍
+     79     │ - → const·hasError·=·Boolean(error);␍
+     80     │ - → return·(␍
+     81     │ - → → <TFormItem>␍
+     82     │ - → → → <TFormLabel·hasError={hasError}>␍
+     83     │ - → → → → {t("onboarding.workTemplates.name",·"Template·Name")}␍
+     84     │ - → → → </TFormLabel>␍
+     85     │ - → → → <TFormControl·hasError={hasError}>␍
+     86     │ - → → → → <Input␍
+     87     │ - → → → → → name="name"␍
+     88     │ - → → → → → autoComplete="off"␍
+     89     │ - → → → → → maxLength={100}␍
+     90     │ - → → → → → value={value}␍
+     91     │ - → → → → → onChange={(event)·=>·onChange(event.target.value)}␍
+     92     │ - → → → → → onBlur={onBlur}␍
+     93     │ - → → → → → placeholder={t("onboarding.workTemplates.namePlaceholder",·"e.g.,·Full-Time,·Part-Time")}␍
+     94     │ - → → → → → disabled={disabled}␍
+     95     │ - → → → → />␍
+     96     │ - → → → </TFormControl>␍
+     97     │ - → → → <TFormDescription>␍
+     98     │ - → → → → {t("onboarding.workTemplates.nameDesc",·"A·name·to·identify·this·work·schedule.")}␍
+     99     │ - → → → </TFormDescription>␍
+    100     │ - → → → <TFormMessage>{error}</TFormMessage>␍
+    101     │ - → → </TFormItem>␍
+    102     │ - → );␍
+    103     │ - }␍
+    104     │ - ␍
+    105     │ - function·HoursPerWeekField({␍
+    106     │ - → disabled,␍
+    107     │ - → error,␍
+    108     │ - → onBlur,␍
+    109     │ - → onChange,␍
+    110     │ - → t,␍
+    111     │ - → value,␍
+    112     │ - }:·{␍
+    113     │ - → disabled:·boolean;␍
+    114     │ - → error?:·string;␍
+    115     │ - → onBlur:·()·=>·void;␍
+    116     │ - → onChange:·(value:·string)·=>·void;␍
+    117     │ - → t:·Translate;␍
+    118     │ - → value:·string;␍
+    119     │ - })·{␍
+    120     │ - → const·hasError·=·Boolean(error);␍
+    121     │ - → return·(␍
+    122     │ - → → <TFormItem>␍
+    123     │ - → → → <TFormLabel·hasError={hasError}>␍
+    124     │ - → → → → {t("onboarding.workTemplates.hoursPerWeek",·"Hours·per·Week")}␍
+    125     │ - → → → </TFormLabel>␍
+    126     │ - → → → <TFormControl·hasError={hasError}>␍
+    127     │ - → → → → <Input␍
+    128     │ - → → → → → name="hoursPerWeek"␍
+    129     │ - → → → → → inputMode="decimal"␍
+    130     │ - → → → → → step="any"␍
+    131     │ - → → → → → type="number"␍
+    132     │ - → → → → → min={0}␍
+    133     │ - → → → → → max={168}␍
+    134     │ - → → → → → placeholder={t("onboarding.workTemplates.hoursPerWeekPlaceholder",·"40")}␍
+    135     │ - → → → → → disabled={disabled}␍
+    136     │ - → → → → → value={value}␍
+    137     │ - → → → → → onChange={(event)·=>·onChange(event.target.value)}␍
+    138     │ - → → → → → onBlur={onBlur}␍
+    139     │ - → → → → />␍
+    140     │ - → → → </TFormControl>␍
+    141     │ - → → → <TFormDescription>␍
+    142     │ - → → → → {t(␍
+    143     │ - → → → → → "onboarding.workTemplates.hoursPerWeekDesc",␍
+    144     │ - → → → → → "Total·working·hours·per·week.·Typical·full-time·is·40·hours.",␍
+    145     │ - → → → → )}␍
+    146     │ - → → → </TFormDescription>␍
+    147     │ - → → → <TFormMessage>{error}</TFormMessage>␍
+    148     │ - → → </TFormItem>␍
+    149     │ - → );␍
+    150     │ - }␍
+  1258 more lines truncated
+  
+
+src\app\[locale]\onboarding\work-templates\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·userEvent·from·"@testing-library/user-event";␍
+      5     │ - import·{·Activity,·StrictMode·}·from·"react";␍
+      6     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      7     │ - ␍
+      8     │ - const·mocks·=·vi.hoisted(()·=>·({␍
+      9     │ - → checkIsAdmin:·vi.fn(),␍
+     10     │ - → createWorkTemplateOnboarding:·vi.fn(),␍
+     11     │ - → push:·vi.fn(),␍
+     12     │ - → skipWorkTemplateSetup:·vi.fn(),␍
+     13     │ - → toastError:·vi.fn(),␍
+     14     │ - → toastSuccess:·vi.fn(),␍
+     15     │ - → session:·{␍
+     16     │ - → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     17     │ - → → isPending:·false,␍
+     18     │ - → },␍
+     19     │ - }));␍
+     20     │ - ␍
+     21     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     22     │ - → useTranslate:·()·=>·({␍
+     23     │ - → → t:·(_key:·string,·fallback?:·string,·values?:·Record<string,·unknown>)·=>·{␍
+     24     │ - → → → if·(!fallback·||·!values)·return·fallback·??·_key;␍
+     25     │ - → → → return·Object.entries(values).reduce(␍
+     26     │ - → → → → (result,·[key,·value])·=>·result.replace(`{${key}}`,·String(value)),␍
+     27     │ - → → → → fallback,␍
+     28     │ - → → → );␍
+     29     │ - → → },␍
+     30     │ - → }),␍
+     31     │ - }));␍
+     32     │ - ␍
+     33     │ - vi.mock("next-intl",·()·=>·({␍
+     34     │ - → useLocale:·()·=>·"en",␍
+     35     │ - }));␍
+     36     │ - ␍
+     37     │ - vi.mock("@/lib/auth-client",·()·=>·({·useSession:·()·=>·mocks.session·}));␍
+     38     │ - ␍
+     39     │ - vi.mock("sonner",·()·=>·({␍
+     40     │ - → toast:·{·error:·mocks.toastError,·success:·mocks.toastSuccess·},␍
+     41     │ - }));␍
+     42     │ - ␍
+     43     │ - vi.mock("@/navigation",·()·=>·({␍
+     44     │ - → useRouter:·()·=>·({·push:·mocks.push·}),␍
+     45     │ - }));␍
+     46     │ - ␍
+     47     │ - vi.mock("@/components/onboarding/progress-indicator",·()·=>·({␍
+     48     │ - → ProgressIndicator:·()·=>·null,␍
+     49     │ - }));␍
+     50     │ - ␍
+     51     │ - vi.mock("./actions",·()·=>·({␍
+     52     │ - → checkIsAdmin:·mocks.checkIsAdmin,␍
+     53     │ - → createWorkTemplateOnboarding:·mocks.createWorkTemplateOnboarding,␍
+     54     │ - → skipWorkTemplateSetup:·mocks.skipWorkTemplateSetup,␍
+     55     │ - }));␍
+     56     │ - ␍
+     57     │ - import·WorkTemplatesPage·from·"./page-client";␍
+     58     │ - ␍
+     59     │ - function·deferred<T>()·{␍
+     60     │ - → let·resolve!:·(value:·T)·=>·void;␍
+     61     │ - → let·reject!:·(reason:·unknown)·=>·void;␍
+     62     │ - → const·promise·=·new·Promise<T>((resolvePromise,·rejectPromise)·=>·{␍
+     63     │ - → → resolve·=·resolvePromise;␍
+     64     │ - → → reject·=·rejectPromise;␍
+     65     │ - → });␍
+     66     │ - → return·{·promise,·reject,·resolve·};␍
+     67     │ - }␍
+     68     │ - ␍
+     69     │ - describe("WorkTemplatesPage·load·effect",·()·=>·{␍
+     70     │ - → beforeEach(()·=>·{␍
+     71     │ - → → mocks.session·=·{␍
+     72     │ - → → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     73     │ - → → → isPending:·false,␍
+     74     │ - → → };␍
+     75     │ - → → vi.clearAllMocks();␍
+     76     │ - → → mocks.checkIsAdmin.mockReset();␍
+     77     │ - → → mocks.createWorkTemplateOnboarding.mockReset();␍
+     78     │ - → → mocks.skipWorkTemplateSetup.mockReset();␍
+     79     │ - → });␍
+     80     │ - ␍
+     81     │ - → it("keeps·a·safe·heading·and·no·form·while·checking·or·routing·a·non-admin",·async·()·=>·{␍
+     82     │ - → → const·check·=·deferred<{·success:·true;·data:·false·}>();␍
+     83     │ - → → mocks.checkIsAdmin.mockReturnValue(check.promise);␍
+     84     │ - → → render(<WorkTemplatesPage·/>);␍
+     85     │ - → → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe(␍
+     86     │ - → → → "Create·work·schedule·template",␍
+     87     │ - → → );␍
+     88     │ - → → expect(screen.queryByLabelText("Template·Name")).toBeNull();␍
+     89     │ - → → await·act(async·()·=>·{␍
+     90     │ - → → → check.resolve({·success:·true,·data:·false·});␍
+     91     │ - → → });␍
+     92     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"));␍
+     93     │ - → → expect(screen.queryByLabelText("Template·Name")).toBeNull();␍
+     94     │ - → });␍
+     95     │ - ␍
+     96     │ - → it("retains·a·refused·draft·with·inline·feedback·and·retries·the·same·selected·default",·async·()·=>·{␍
+     97     │ - → → mocks.checkIsAdmin.mockResolvedValue({·success:·true,·data:·true·});␍
+     98     │ - → → mocks.createWorkTemplateOnboarding␍
+     99     │ - → → → .mockResolvedValueOnce({·success:·false,·error:·"Template·could·not·be·saved"·})␍
+    100     │ - → → → .mockResolvedValueOnce({·success:·true·});␍
+    101     │ - → → render(<WorkTemplatesPage·/>);␍
+    102     │ - → → const·name·=·await·screen.findByLabelText("Template·Name");␍
+    103     │ - → → fireEvent.change(name,·{·target:·{·value:·"Four·day"·}·});␍
+    104     │ - → → fireEvent.change(screen.getByLabelText("Hours·per·Week"),·{·target:·{·value:·"32.5"·}·});␍
+    105     │ - → → fireEvent.click(screen.getByRole("checkbox",·{·name:·"Fri"·}));␍
+    106     │ - → → fireEvent.click(screen.getByRole("switch"));␍
+    107     │ - → → fireEvent.click(screen.getByRole("button",·{·name:·"Save·and·continue"·}));␍
+    108     │ - → → expect((await·screen.findByRole("alert")).textContent).toBe("Template·could·not·be·saved");␍
+    109     │ - → → expect(name).toHaveProperty("value",·"Four·day");␍
+    110     │ - → → expect(screen.getByText("4·working·days,·8.1·hours·per·day")).toBeTruthy();␍
+    111     │ - → → fireEvent.click(screen.getByRole("button",·{·name:·"Save·and·continue"·}));␍
+    112     │ - → → await·waitFor(()·=>·expect(mocks.push).toHaveBeenCalledOnce());␍
+    113     │ - → → expect(mocks.createWorkTemplateOnboarding).toHaveBeenLastCalledWith({␍
+    114     │ - → → → name:·"Four·day",␍
+    115     │ - → → → hoursPerWeek:·32.5,␍
+    116     │ - → → → workingDays:·["monday",·"tuesday",·"wednesday",·"thursday"],␍
+    117     │ - → → → setAsDefault:·false,␍
+    118     │ - → → });␍
+    119     │ - → });␍
+    120     │ - ␍
+    121     │ - → it("does·not·navigate·or·announce·an·abandoned·save·after·organization·A→B→A",·async·()·=>·{␍
+    122     │ - → → const·request·=·deferred<{·success:·true·}>();␍
+    123     │ - → → mocks.checkIsAdmin.mockResolvedValue({·success:·true,·data:·true·});␍
+    124     │ - → → mocks.createWorkTemplateOnboarding.mockReturnValue(request.promise);␍
+    125     │ - → → const·view·=·render(<WorkTemplatesPage·/>);␍
+    126     │ - → → fireEvent.click(await·screen.findByRole("button",·{·name:·"Save·and·continue"·}));␍
+    127     │ - → → await·waitFor(()·=>·expect(mocks.createWorkTemplateOnboarding).toHaveBeenCalledOnce());␍
+    128     │ - → → mocks.session.data.session.activeOrganizationId·=·"org-b";␍
+    129     │ - → → view.rerender(<WorkTemplatesPage·/>);␍
+    130     │ - → → await·screen.findByLabelText("Template·Name");␍
+    131     │ - → → mocks.session.data.session.activeOrganizationId·=·"org-a";␍
+    132     │ - → → view.rerender(<WorkTemplatesPage·/>);␍
+    133     │ - → → await·screen.findByLabelText("Template·Name");␍
+    134     │ - → → await·act(async·()·=>·{␍
+    135     │ - → → → request.resolve({·success:·true·});␍
+    136     │ - → → });␍
+    137     │ - → → expect(mocks.toastSuccess).not.toHaveBeenCalled();␍
+    138     │ - → → expect(mocks.push).not.toHaveBeenCalled();␍
+    139     │ - → });␍
+    140     │ - ␍
+    141     │ - → it("keeps·submit·disabled·after·successful·creation·navigation",·async·()·=>·{␍
+    142     │ - → → mocks.checkIsAdmin.mockResolvedValue({·success:·true,·data:·true·});␍
+    143     │ - → → mocks.createWorkTemplateOnboarding.mockResolvedValue({·success:·true·});␍
+    144     │ - → → render(<WorkTemplatesPage·/>);␍
+    145     │ - ␍
+    146     │ - → → const·continueButton·=·await·screen.findByRole("button",·{␍
+    147     │ - → → → name:·"Save·and·continue",␍
+    148     │ - → → });␍
+    149     │ - → → fireEvent.click(continueButton);␍
+    150     │ - ␍
+  838 more lines truncated
+  
+
+Checked 3 files in 9ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

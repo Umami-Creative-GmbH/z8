@@ -1,0 +1,14 @@
+[
+  {
+    "name": "z8_perf_869977b7382b_postgres",
+    "removed": true
+  },
+  {
+    "name": "z8_perf_869977b7382b_redis",
+    "removed": true
+  },
+  {
+    "name": "z8_perf_869977b7382b_storage",
+    "removed": true
+  }
+]
