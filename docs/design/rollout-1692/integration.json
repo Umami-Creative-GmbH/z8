@@ -779,7 +779,12 @@
       ],
       "status": "awaiting-integration",
       "verifiedCommit": null,
-      "implementationCommit": "258c18d2f7f87658f816f5276301297e9eaa60da"
+      "implementationCommit": "258c18d2f7f87658f816f5276301297e9eaa60da",
+      "provisionalIntegrationCommit": "5f46459f553b8c4a0d5fb112de46aabe1b1cda71",
+      "provisionalReconciliationCommit": "026a6c67730c325b264f9d4bad9c04d7ec32cb85",
+      "provisionalCorrectionCommit": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
+      "provisionalCorrectionIntegrationCommit": "0c96db4ed2ecc072688bba0a02d9661b3846d7a8",
+      "pendingAcceptance": "The actual provider-level failed-read reproduction now recovers through local organization Retry; protected content remains gated. Root452 unit cases/64 files and all three type projects pass. Fresh PostgreSQL20, independent lifetime checks and actual runtime/intake/readback/native/Next/matched acceptance remain pending. Four retained Doctor warnings and formatter-profile boundaries remain explicit."
     },
     {
       "id": "R051",
@@ -799,10 +804,11 @@
       "blockedBy": [
         1693
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1844#issuecomment-6919907573"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1844#issuecomment-6919907573",
+      "implementationCommit": "8ee1a6c42ebdf32b25575dc9d3ac93ffe056c9cf"
     },
     {
       "id": "R053",
@@ -811,8 +817,10 @@
       "blockedBy": [
         1694
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1845#issuecomment-6920522272"
     },
     {
       "id": "R054",
