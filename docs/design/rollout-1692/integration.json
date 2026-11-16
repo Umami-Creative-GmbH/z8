@@ -941,7 +941,11 @@
       ],
       "status": "awaiting-integration",
       "verifiedCommit": null,
-      "implementationCommit": "7fc82645ae809bf4ee28d3c5edc32766703fc0cc"
+      "implementationCommit": "7fc82645ae809bf4ee28d3c5edc32766703fc0cc",
+      "provisionalIntegrationCommit": "1513a20116706380dd65a93b35104ca4eeea6066",
+      "provisionalCorrectionCommit": "9870df191c6b686106b38dcfa1bf6590ed611541",
+      "provisionalCorrectionIntegrationCommit": "931c3f41d7a75a4b03d13f3dbad2e6de4eac4260",
+      "pendingAcceptance": "Fresh merger reproduced inherited initial organization-context503 with disabled Generate, no error/Retry in current and premerge controls. Root adds local existing-provider Retry/pending feedback, retains selected period and blocks generation while settings are unhydrated; neutral unavailable preset description avoids a false loading state. Public permanent3cases red/green;289selected units/51files, all3types/typegen, scoped13lint and owned6explicit100CRLF pass. Doctor13files0errors/1incoming roster-readiness warning; broader explicit1007 and ordinary6 formatter differences retained. Framework-router test boundary and stale vehicle-heading expectation reconciled without production metadata edits. Original sealed STOP preserved; first broader failed report/initialquality raw outputs were overwritten on follow-up and are explicitly unavailable beyond captured summaries. Fresh independent lifetimes/canonicalPG14/actual completed parsedCSV-XLSX-PDF/runtime/native/Next/matched acceptance pending. No provider/action/calculation/time/authorization/export/cache-owner change; verifiedCommit stays null."
     },
     {
       "id": "R062",
@@ -1020,10 +1024,11 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1753#issuecomment-6928101776"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1753#issuecomment-6928101776",
+      "implementationCommit": "533aedf1c2d8fe28c194cec2f18af06437c67b57"
     },
     {
       "id": "R069",
@@ -1044,8 +1049,10 @@
       "blockedBy": [
         1693
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1755#issuecomment-6930041495"
     },
     {
       "id": "R072",
