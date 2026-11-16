@@ -1,0 +1,30 @@
+{
+  "filename": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+  "compiled": true,
+  "events": [
+    {
+      "file": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+      "event": {
+        "kind": "CompileSuccess",
+        "fnLoc": {
+          "start": {
+            "line": 59,
+            "column": 7,
+            "index": 2137
+          },
+          "end": {
+            "line": 162,
+            "column": 1,
+            "index": 5191
+          }
+        },
+        "fnName": "VehicleReportExports",
+        "memoSlots": 47,
+        "memoBlocks": 18,
+        "memoValues": 19,
+        "prunedMemoBlocks": 0,
+        "prunedMemoValues": 0
+      }
+    }
+  ]
+}

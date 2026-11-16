@@ -1,0 +1,18 @@
+import {spawnSync,execFileSync} from 'node:child_process';
+import {writeFileSync,readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+const root=process.cwd(),out=resolve('.tmp/1737-merger'),name=process.argv[2];
+const source=['src/app/[locale]/(app)/reports/vehicles/page.tsx','src/components/reports/vehicles/vehicle-distance-report-container.test.tsx','src/components/reports/vehicles/vehicle-distance-report-container.tsx','src/components/reports/vehicles/vehicle-report-exports.tsx','src/components/reports/vehicles/vehicle-report-period-picker.tsx','src/components/site-header.test.tsx','src/lib/navigation/route-metadata.test.ts','src/lib/navigation/route-metadata.ts'];
+let args=['--config.verify-deps-before-run=false'];
+if(name==='public') args.push('exec','vitest','run','--config','.tmp/1737-merger/vitest.config.ts','--project','public-audit','--maxWorkers','1','--reporter=json','--outputFile='+resolve(out,'public.json'));
+else if(name==='unit')args.push('exec','vitest','run','--project','unit','--maxWorkers','2','src/components/reports','src/lib/reports','src/lib/projects/report-share','src/app/[locale]/(app)/reports/projects','src/lib/navigation/route-metadata.test.ts','src/lib/billable-time/hand-off/timesheet-document.test.ts','src/components/payroll/payroll-workspace.test.tsx','src/app/[locale]/onboarding','src/components/site-header.test.tsx','src/components/providers/view-refresh-provider.test.tsx','src/components/providers/organization-context-provider.test.tsx','src/stores/organization-settings-store.test.tsx','src/components/ui/table.test.tsx','src/tolgee/extracted-key-defaults.test.ts','--reporter=json','--outputFile='+resolve(out,'unit.json'));
+else if(name==='types')args.push('run','typecheck');
+else if(name==='exact')args.push('exec','vitest','run','--project','unit','--maxWorkers','2','src/components/reports','src/lib/reports','src/components/site-header.test.tsx','src/lib/navigation/route-metadata.test.ts','src/components/providers/view-refresh-provider.test.tsx','src/components/providers/organization-context-provider.test.tsx','src/stores/organization-settings-store.test.tsx','src/components/ui/table.test.tsx','src/tolgee/extracted-key-defaults.test.ts','--reporter=json','--outputFile='+resolve(out,'exact.json'));
+else if(['format','ordinary','lint'].includes(name))args.push('exec','biome',name==='lint'?'lint':'check',...(name==='ordinary'?[]:name==='lint'?['--config-path=./biome.jsonc']:['--config-path=./biome.jsonc','--line-ending=crlf','--line-width=100']),...source);
+else if(name==='doctor')args.push('exec','react-doctor','apps/webapp','--scope','changed','--base','ab309161695fe1cf6e2739f4727598fa3fa28c04','--verbose','--no-score','--no-parallel','--no-supply-chain','--no-telemetry','--max-duration','90','--json','--json-out',resolve(out,'doctor.json'));
+else throw Error('Unknown check');
+const exe=process.env.npm_execpath,native=exe.endsWith('.exe'),cwd=name==='doctor'?root:resolve('apps/webapp'),at=new Date().toISOString();
+const r=spawnSync(native?exe:process.execPath,native?args:[exe,...args],{cwd,env:{...process.env,pnpm_config_verify_deps_before_run:'false'},encoding:'utf8',windowsHide:true,maxBuffer:32*1024*1024});
+writeFileSync(resolve(out,name+'.log'),(r.stdout??'')+(r.stderr??''));
+writeFileSync(resolve(out,name+'-command.json'),JSON.stringify({argv:['pnpm',...args],cwd,sourceHead:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),at,finishedAt:new Date().toISOString(),exit:r.status,error:r.error?.message},null,2)+'\n');
+console.log(JSON.stringify({name,exit:r.status,error:r.error?.message}));process.exitCode=r.status??1;

@@ -1,0 +1,196 @@
+{
+  "filename": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+  "compiled": true,
+  "events": [
+    {
+      "file": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+      "event": {
+        "kind": "CompileError",
+        "fnLoc": {
+          "start": {
+            "line": 14,
+            "column": 7,
+            "index": 607
+          },
+          "end": {
+            "line": 138,
+            "column": 1,
+            "index": 4574
+          }
+        },
+        "detail": {
+          "options": {
+            "category": "Todo",
+            "reason": "(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause",
+            "description": null,
+            "suggestions": null,
+            "loc": {
+              "start": {
+                "line": 42,
+                "column": 2,
+                "index": 1454
+              },
+              "end": {
+                "line": 92,
+                "column": 3,
+                "index": 3286
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+      "event": {
+        "kind": "CompileError",
+        "fnLoc": {
+          "start": {
+            "line": 14,
+            "column": 7,
+            "index": 607
+          },
+          "end": {
+            "line": 138,
+            "column": 1,
+            "index": 4574
+          }
+        },
+        "detail": {
+          "options": {
+            "category": "Todo",
+            "reason": "(BuildHIR::lowerExpression) Handle Import expressions",
+            "description": null,
+            "suggestions": null,
+            "loc": {
+              "start": {
+                "line": 47,
+                "column": 13,
+                "index": 1567
+              },
+              "end": {
+                "line": 47,
+                "column": 19,
+                "index": 1573
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+      "event": {
+        "kind": "CompileError",
+        "fnLoc": {
+          "start": {
+            "line": 14,
+            "column": 7,
+            "index": 607
+          },
+          "end": {
+            "line": 138,
+            "column": 1,
+            "index": 4574
+          }
+        },
+        "detail": {
+          "options": {
+            "category": "Todo",
+            "reason": "(BuildHIR::lowerExpression) Handle Import expressions",
+            "description": null,
+            "suggestions": null,
+            "loc": {
+              "start": {
+                "line": 51,
+                "column": 14,
+                "index": 1724
+              },
+              "end": {
+                "line": 51,
+                "column": 20,
+                "index": 1730
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+      "event": {
+        "kind": "CompileError",
+        "fnLoc": {
+          "start": {
+            "line": 14,
+            "column": 7,
+            "index": 607
+          },
+          "end": {
+            "line": 138,
+            "column": 1,
+            "index": 4574
+          }
+        },
+        "detail": {
+          "options": {
+            "category": "Todo",
+            "reason": "(BuildHIR::lowerExpression) Handle Import expressions",
+            "description": null,
+            "suggestions": null,
+            "loc": {
+              "start": {
+                "line": 54,
+                "column": 14,
+                "index": 1854
+              },
+              "end": {
+                "line": 54,
+                "column": 20,
+                "index": 1860
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\src\\components\\reports\\vehicles\\vehicle-report-exports.tsx",
+      "event": {
+        "kind": "CompileError",
+        "fnLoc": {
+          "start": {
+            "line": 14,
+            "column": 7,
+            "index": 607
+          },
+          "end": {
+            "line": 138,
+            "column": 1,
+            "index": 4574
+          }
+        },
+        "detail": {
+          "options": {
+            "category": "Todo",
+            "reason": "(BuildHIR::lowerStatement) Handle TryStatement without a catch clause",
+            "description": null,
+            "suggestions": null,
+            "loc": {
+              "start": {
+                "line": 64,
+                "column": 3,
+                "index": 2320
+              },
+              "end": {
+                "line": 79,
+                "column": 4,
+                "index": 2905
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "merge": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+  "tree": "91e20a4150d477776bdb34c343bb62c73f032cdf",
+  "parents": [
+    "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+    "6175e84f63208e234ac55c7c3933620072d0fb3c"
+  ],
+  "groups": {
+    "exact": {
+      "physicalFiles": 39,
+      "cases": 214,
+      "passed": 214,
+      "failed": 0
+    },
+    "unit": {
+      "physicalFiles": 60,
+      "cases": 586,
+      "passed": 586,
+      "failed": 0
+    },
+    "public": {
+      "physicalFiles": 5,
+      "cases": 20,
+      "passed": 19,
+      "failed": 1
+    }
+  },
+  "unique": {
+    "physicalFiles": 65,
+    "cases": 606,
+    "passed": 605,
+    "failed": 1
+  },
+  "failedCases": [
+    {
+      "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1737-merger/real-scope.public.test.tsx",
+      "fullName": "offers local Retry after the real organization context query fails before an initial vehicle snapshot",
+      "occurrence": 0,
+      "status": "failed"
+    }
+  ],
+  "checks": {
+    "types": 0,
+    "ordinary": 1,
+    "format": 0,
+    "lint": 0,
+    "doctor": 1
+  },
+  "doctor": {
+    "errorCount": 5,
+    "warningCount": 7,
+    "affectedFileCount": 3,
+    "totalDiagnosticCount": 12,
+    "score": null,
+    "scoreLabel": null
+  },
+  "compiledPDF": [
+    {
+      "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "name": "renders report facts, table rows, unknown values and notes after React Compiler optimization",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "sourceBlocker": {
+    "file": "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx",
+    "line": 55,
+    "proof": "apps/webapp/.tmp/1737-merger/real-scope.public.test.tsx",
+    "behavior": "A settled initial organization-context transport error keeps the loading message and offers no local Retry.",
+    "seam": "Real OrganizationContextProvider + QueryClient; deferred endpoint failure; public context witness confirms error before assertion."
+  },
+  "compilerQualification": "Actual installed React Compiler reports unsupported try-finally and dynamic import syntax; JavaScript is emitted, automatic memoization is skipped. No runtime correctness failure follows from those diagnostics.",
+  "runtime": {
+    "started": false,
+    "reason": "Confirmed scope-recovery source blocker; root correction required before runtime."
+  },
+  "ownedResources": {
+    "nextProcesses": 0,
+    "browsers": 0,
+    "fixtures": 0,
+    "services": 0,
+    "ports": 0,
+    "packageCommandsCompleted": true
+  },
+  "workingTree": ""
+}

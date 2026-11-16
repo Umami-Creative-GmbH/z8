@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "checkedTextFiles": 112,
+  "scope": "Exact root generated passwords/privateenv including encoded variants; not a global historical-secret assertion."
+}

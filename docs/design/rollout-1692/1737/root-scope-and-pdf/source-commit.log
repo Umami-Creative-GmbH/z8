@@ -1,0 +1,3 @@
+[fix/1737-vehicle-report-recovery 2fceadad7] Fix #1737 scope recovery and compiler-safe vehicle exports
+ 3 files changed, 162 insertions(+), 51 deletions(-)
+ create mode 100644 apps/webapp/src/components/reports/vehicles/vehicle-report-scope.test.tsx

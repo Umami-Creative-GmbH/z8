@@ -1,0 +1,29 @@
+{
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "--maxWorkers",
+    "2",
+    "src/components/reports",
+    "src/lib/reports",
+    "src/components/site-header.test.tsx",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/components/providers/view-refresh-provider.test.tsx",
+    "src/components/providers/organization-context-provider.test.tsx",
+    "src/stores/organization-settings-store.test.tsx",
+    "src/components/ui/table.test.tsx",
+    "src/tolgee/extracted-key-defaults.test.ts",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1737-merger\\exact.json"
+  ],
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+  "sourceHead": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+  "at": "2026-11-16T02:40:25.802Z",
+  "finishedAt": "2026-11-16T02:40:44.959Z",
+  "exit": 0
+}
