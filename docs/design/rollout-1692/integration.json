@@ -742,13 +742,15 @@
       "blockedBy": [
         1853
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
       "implementationCommit": "e9b0b6afe62da10ac7ced65cc48cc54ed40983cf",
-      "provisionalIntegrationCommit": "ae0755e8385206e84f98ac52b5d3a0fb7f030513",
-      "provisionalCorrectionCommit": "d4455c7c2bfe4ebd8471e918f703db5c84defe3c",
-      "provisionalCorrectionIntegrationCommit": "4769c5f1a5daba7e87f81b6cc3f8cdffd865732c",
-      "pendingAcceptance": "Fresh authenticated runtime, populated before/after capture, current selection/purge/recovery and cleanup verification remain pending. Source correction passes 346 unit cases and all three type projects; no verified advancement."
+      "verifiedTree": "93b5ffee12a3421a999d8cc5e76190e515fd7c9b",
+      "integrationCommit": "ae0755e8385206e84f98ac52b5d3a0fb7f030513",
+      "correctionCommit": "d4455c7c2bfe4ebd8471e918f703db5c84defe3c",
+      "correctionIntegrationCommit": "4769c5f1a5daba7e87f81b6cc3f8cdffd865732c",
+      "evidence": "docs/design/rollout-1692/1731.md",
+      "integrationVerification": "Verified #1731 at b1e9a95c02374118deb9bba789f3aa8291b5e932. Active selection and capacity derive from current due/unknown records; selection events intersect prior IDs with current records, so hidden stale IDs cannot block the 500-document limit. Current and cross-page selections remain; unknown-start records require explicit review. Fresh 346 unit cases in 51 files plus 83 PostgreSQL cases in five files give 429 distinct cases. Typegen/all three type projects, two correction-file CRLF checks and nine-file lint pass. Two metadata formatting failures and one inherited Activity Doctor warning remain. Actual canonical policy changes exercise the 500-selection refresh; real held purge, retry/partial outcome, read Retry and public revoke/refusal evidence are preserved with failed terminal attempts and successful continuations distinguished. A genuine 68-byte uploaded object changes protected GET and original object HEAD from 200 to 404 after purge; audit descriptions are removed. Existing-preview deletion is unpassed. Six matched historical/current states use a stopped-server three-consumer partial comparison and exact restore; actual React/Next probes and cleanup pass with overlay/native failure qualifications. All 54 prior handoffs and evidence survive; source/configs/158 dependency links remain unchanged. Broad roster, exhaustive races/roles, full production generation, catalogs, providers, devices and true zoom remain unpassed."
     },
     {
       "id": "R049",
@@ -923,8 +925,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1836#issuecomment-6917756540"
     },
     {
       "id": "R065",
@@ -1805,10 +1809,11 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1749#issuecomment-6914308593"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1749#issuecomment-6914308593",
+      "implementationCommit": "ab959b57495678eb42fb4987c2eb8a2d1fc1733f"
     },
     {
       "id": "R168",
