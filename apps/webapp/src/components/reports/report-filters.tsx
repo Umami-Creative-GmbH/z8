@@ -1,10 +1,12 @@
 "use client";
 
-import { IconChartBar } from "@tabler/icons-react";
+import { IconAlertCircle, IconChartBar } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { useOrganization } from "@/components/providers/organization-context-provider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
@@ -12,6 +14,46 @@ import type { ReportDateRange } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { DateRangePicker } from "./date-range-picker";
 import { ReportEmployeeSelector } from "./report-employee-selector";
+
+function OrganizationSettingsStatus() {
+	const { t } = useTranslate();
+	const { error, refetch } = useOrganization();
+	const [retrying, setRetrying] = useState(false);
+	if (!error) {
+		return (
+			<p role="status" className="text-sm text-muted-foreground">
+				{t(
+					"reports.filter.loadingSettings",
+					"Loading organization settings before enabling presets.",
+				)}
+			</p>
+		);
+	}
+	return (
+		<Alert variant="destructive">
+			<IconAlertCircle aria-hidden="true" />
+			<AlertTitle>
+				{t("reports.filter.settingsError", "Organization settings unavailable")}
+			</AlertTitle>
+			<AlertDescription>
+				<p>{error}</p>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={retrying}
+					onClick={() => {
+						setRetrying(true);
+						void refetch()
+							.catch(() => undefined)
+							.finally(() => setRetrying(false));
+					}}
+				>
+					{retrying ? t("common.retrying", "Retrying…") : t("common.retry", "Retry")}
+				</Button>
+			</AlertDescription>
+		</Alert>
+	);
+}
 
 interface ReportFiltersProps {
 	currentEmployeeId: string;
@@ -38,7 +80,7 @@ export function ReportFilters({
 			dateRange: null as ReportDateRange | null,
 		},
 		onSubmit: ({ value }) => {
-			if (value.employeeId && value.dateRange && !isGenerating)
+			if (value.employeeId && value.dateRange && !isGenerating && isHydrated)
 				onGenerate(value.employeeId, value.dateRange);
 		},
 	});
@@ -48,10 +90,7 @@ export function ReportFilters({
 			return;
 		}
 
-		form.setFieldValue(
-			"dateRange",
-			getDateRangeForPreset("current_month", { timezone }),
-		);
+		form.setFieldValue("dateRange", getDateRangeForPreset("current_month", { timezone }));
 	}, [form, isHydrated, timezone]);
 
 	return (
@@ -68,6 +107,7 @@ export function ReportFilters({
 					<h2 className="font-semibold">
 						{t("reports.filter.title", "Generate an employee report")}
 					</h2>
+					{!isHydrated && <OrganizationSettingsStatus />}
 					<div className="grid gap-4 md:grid-cols-2">
 						{/* Employee Selector - rendered by ReportEmployeeSelector, hidden for regular employees */}
 						<form.Field name="employeeId">
@@ -76,7 +116,7 @@ export function ReportFilters({
 									currentEmployeeId={currentEmployeeId}
 									selectedEmployeeId={field.state.value}
 									onEmployeeChange={field.handleChange}
-									disabled={isGenerating}
+									disabled={isGenerating || !isHydrated}
 								/>
 							)}
 						</form.Field>
@@ -86,7 +126,7 @@ export function ReportFilters({
 							{(field) => (
 								<fieldset
 									className="min-w-0 space-y-2 [&>div]:flex-wrap [&>div>*]:min-w-0 [&>div>*]:max-w-full [&>div>div]:h-auto [&>div>div]:min-h-9 [&>div>div]:py-2"
-									disabled={isGenerating}
+									disabled={isGenerating || !isHydrated}
 								>
 									<legend className="text-sm font-medium leading-none">
 										{t("reports.filter.period", "Period")}
@@ -99,14 +139,7 @@ export function ReportFilters({
 												field.handleChange(range);
 											}}
 										/>
-									) : (
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"reports.filter.loadingSettings",
-												"Loading organization settings before enabling presets.",
-											)}
-										</p>
-									)}
+									) : null}
 								</fieldset>
 							)}
 						</form.Field>
@@ -118,9 +151,7 @@ export function ReportFilters({
 							{(values) => (
 								<Button
 									type="submit"
-									disabled={
-										isGenerating || !values.employeeId || !values.dateRange
-									}
+									disabled={isGenerating || !isHydrated || !values.employeeId || !values.dateRange}
 									size="lg"
 									className="w-full sm:w-auto"
 								>

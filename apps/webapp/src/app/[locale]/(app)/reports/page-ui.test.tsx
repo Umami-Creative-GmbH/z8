@@ -1,12 +1,5 @@
 // @vitest-environment jsdom
-import {
-	act,
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Activity } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ReportsContainer } from "@/components/reports/reports-container";
@@ -14,11 +7,11 @@ import { appPageOwnsHeading } from "@/lib/navigation/route-metadata";
 import type { ReportData } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
+vi.mock("@/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
+
 const mocks = vi.hoisted(() => ({
 	listeners: new Set<
-		(value: {
-			data: { user: { id: string }; session: { activeOrganizationId: string } };
-		}) => void
+		(value: { data: { user: { id: string }; session: { activeOrganizationId: string } } }) => void
 	>(),
 	generate: vi.fn(),
 	pdf: vi.fn(),
@@ -54,9 +47,7 @@ vi.mock("@/app/[locale]/(app)/reports/actions", () => ({
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_: string, fallback: string, values?: Record<string, unknown>) =>
-			fallback.replace(/\{(\w+)\}/g, (all, key) =>
-				String(values?.[key] ?? all),
-			),
+			fallback.replace(/\{(\w+)\}/g, (all, key) => String(values?.[key] ?? all)),
 	}),
 }));
 vi.mock("sonner", () => ({
@@ -98,9 +89,7 @@ const report: ReportData = {
 		name: "Historic Ada",
 		employeeNumber: "A-19",
 		position: "Engineer",
-		customFields: [
-			{ fieldId: "po", name: "PO number", type: "text", value: "PN-7" },
-		],
+		customFields: [{ fieldId: "po", name: "PO number", type: "text", value: "PN-7" }],
 	},
 	period: {
 		startDate: "2026-09-01",
@@ -142,19 +131,13 @@ function deferred<T>() {
 function view(mode: "visible" | "hidden" = "visible") {
 	return (
 		<Activity mode={mode}>
-			<ReportsContainer
-				currentEmployeeId="employee-a"
-				organizationId="org-a"
-				userId="actor-a"
-			/>
+			<ReportsContainer currentEmployeeId="employee-a" organizationId="org-a" userId="actor-a" />
 		</Activity>
 	);
 }
 async function generate() {
 	await act(async () =>
-		fireEvent.click(
-			await screen.findByRole("button", { name: "Generate Report" }),
-		),
+		fireEvent.click(await screen.findByRole("button", { name: "Generate Report" })),
 	);
 }
 
@@ -304,41 +287,32 @@ describe("employee report workspace", () => {
 		mocks.generate.mockReturnValueOnce(held.promise);
 		await generate();
 		expect(screen.getByText("PO number")).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Export PDF" })).toHaveProperty(
-			"disabled",
-			true,
-		);
-		await act(async () =>
-			held.resolve({ success: false, error: "Report source unavailable" }),
-		);
+		expect(screen.getByRole("button", { name: "Export PDF" })).toHaveProperty("disabled", true);
+		await act(async () => held.resolve({ success: false, error: "Report source unavailable" }));
 		expect(screen.getByText("PN-7")).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 		await waitFor(() => expect(mocks.generate).toHaveBeenCalledTimes(3));
 		expect(mocks.generate.mock.calls[2]).toEqual(mocks.generate.mock.calls[1]);
 	});
-	it.each(["organization", "account"])(
-		"discards a held read across %s A → B → A",
-		async (kind) => {
-			const held = deferred<{ success: true; data: ReportData }>();
-			mocks.generate.mockReturnValueOnce(held.promise);
-			const mounted = render(view());
-			await generate();
-			if (kind === "organization")
-				mocks.session.data.session.activeOrganizationId = "org-b";
-			else mocks.session.data.user.id = "actor-b";
-			mounted.rerender(view());
-			if (kind === "organization")
-				mocks.session.data.session.activeOrganizationId = "org-a";
-			else mocks.session.data.user.id = "actor-a";
-			mounted.rerender(view());
-			await act(async () => held.resolve({ success: true, data: report }));
-			expect(screen.queryByText("PN-7")).toBeNull();
-			expect(mocks.success).not.toHaveBeenCalled();
-			expect(
-				screen.getByRole("button", { name: "Generate Report" }),
-			).toHaveProperty("disabled", false);
-		},
-	);
+	it.each(["organization", "account"])("discards a held read across %s A → B → A", async (kind) => {
+		const held = deferred<{ success: true; data: ReportData }>();
+		mocks.generate.mockReturnValueOnce(held.promise);
+		const mounted = render(view());
+		await generate();
+		if (kind === "organization") mocks.session.data.session.activeOrganizationId = "org-b";
+		else mocks.session.data.user.id = "actor-b";
+		mounted.rerender(view());
+		if (kind === "organization") mocks.session.data.session.activeOrganizationId = "org-a";
+		else mocks.session.data.user.id = "actor-a";
+		mounted.rerender(view());
+		await act(async () => held.resolve({ success: true, data: report }));
+		expect(screen.queryByText("PN-7")).toBeNull();
+		expect(mocks.success).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: "Generate Report" })).toHaveProperty(
+			"disabled",
+			false,
+		);
+	});
 	it("invalidates a held read on Activity hide and reconnects usable controls", async () => {
 		const held = deferred<{ success: true; data: ReportData }>();
 		mocks.generate.mockReturnValueOnce(held.promise);
@@ -349,9 +323,10 @@ describe("employee report workspace", () => {
 		await act(async () => held.resolve({ success: true, data: report }));
 		expect(screen.queryByText("PN-7")).toBeNull();
 		expect(mocks.success).not.toHaveBeenCalled();
-		expect(
-			screen.getByRole("button", { name: "Generate Report" }),
-		).toHaveProperty("disabled", false);
+		expect(screen.getByRole("button", { name: "Generate Report" })).toHaveProperty(
+			"disabled",
+			false,
+		);
 	});
 	it("suppresses held downloads after scope loss and does not replay them on return", async () => {
 		const mounted = render(view());
@@ -368,9 +343,12 @@ describe("employee report workspace", () => {
 		expect(URL.createObjectURL).not.toHaveBeenCalled();
 		expect(mocks.success).toHaveBeenCalledTimes(1);
 	});
-	it("opts in only the exact report route while retaining independent descendants", () => {
+	it("retains the exact employee, project and vehicle headings without adopting deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/reports")).toBe(true);
-		expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);
+		expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(true);
+		expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);
+		expect(appPageOwnsHeading("/en/reports/vehicles/detail")).toBe(false);
+		expect(appPageOwnsHeading("/de/reports/projects/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/reports/unknown")).toBe(false);
 	});
 });

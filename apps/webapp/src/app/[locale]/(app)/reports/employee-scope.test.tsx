@@ -7,12 +7,12 @@ import { ReportsContainer } from "@/components/reports/reports-container";
 import type { AccessibleEmployee } from "@/lib/reports/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
+vi.mock("@/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
+
 const mocks = vi.hoisted(() => ({
 	read: vi.fn(),
 	listeners: new Set<
-		(value: {
-			data: { user: { id: string }; session: { activeOrganizationId: string } };
-		}) => void
+		(value: { data: { user: { id: string }; session: { activeOrganizationId: string } } }) => void
 	>(),
 	session: {
 		data: {
@@ -102,19 +102,12 @@ it("does not reuse retired actor/organization options on A → B → A while the
 	});
 	mocks.read.mockResolvedValueOnce({
 		success: true,
-		data: [
-			employee("employee-a", "Cached actor A"),
-			employee("former-a", "Former confidential A"),
-		],
+		data: [employee("employee-a", "Cached actor A"), employee("former-a", "Former confidential A")],
 	});
 	function view(employeeId: string, actor: string, org: string) {
 		return (
 			<QueryClientProvider client={client}>
-				<ReportsContainer
-					currentEmployeeId={employeeId}
-					userId={actor}
-					organizationId={org}
-				/>
+				<ReportsContainer currentEmployeeId={employeeId} userId={actor} organizationId={org} />
 			</QueryClientProvider>
 		);
 	}
@@ -187,8 +180,7 @@ it.each(["success", "refusal", "rejection"])(
 		await act(async () => mounted.rerender(view("visible")));
 		await waitFor(() => expect(resolve).not.toBe(oldResolve));
 		await act(async () => {
-			if (outcome === "rejection")
-				oldReject(new Error("Retired network failure"));
+			if (outcome === "rejection") oldReject(new Error("Retired network failure"));
 			else
 				oldResolve(
 					outcome === "success"
@@ -207,10 +199,7 @@ it.each(["success", "refusal", "rejection"])(
 		await act(async () =>
 			resolve({
 				success: true,
-				data: [
-					employee("employee-a", "Current actor A"),
-					employee("other", "Current colleague"),
-				],
+				data: [employee("employee-a", "Current actor A"), employee("other", "Current colleague")],
 			}),
 		);
 		await screen.findByText("Current actor A");
@@ -218,9 +207,7 @@ it.each(["success", "refusal", "rejection"])(
 		mounted.unmount();
 		await waitFor(() =>
 			expect(
-				client
-					.getQueryCache()
-					.findAll({ queryKey: ["reports", "employees", "employee-a"] }),
+				client.getQueryCache().findAll({ queryKey: ["reports", "employees", "employee-a"] }),
 			).toHaveLength(0),
 		);
 		client.clear();
@@ -233,18 +220,11 @@ it("retains current roster during same-arrival refetch and rerenders, but hides 
 	});
 	mocks.read.mockResolvedValueOnce({
 		success: true,
-		data: [
-			employee("employee-a", "Current actor A"),
-			employee("other", "Current colleague"),
-		],
+		data: [employee("employee-a", "Current actor A"), employee("other", "Current colleague")],
 	});
 	const view = () => (
 		<QueryClientProvider client={client}>
-			<ReportsContainer
-				currentEmployeeId="employee-a"
-				userId="actor-a"
-				organizationId="org-a"
-			/>
+			<ReportsContainer currentEmployeeId="employee-a" userId="actor-a" organizationId="org-a" />
 		</QueryClientProvider>
 	);
 	const mounted = render(view());
@@ -266,10 +246,7 @@ it("retains current roster during same-arrival refetch and rerenders, but hides 
 	await act(async () =>
 		resolve({
 			success: true,
-			data: [
-				employee("employee-a", "Refreshed actor A"),
-				employee("other", "Current colleague"),
-			],
+			data: [employee("employee-a", "Refreshed actor A"), employee("other", "Current colleague")],
 		}),
 	);
 	await refresh;
@@ -279,9 +256,7 @@ it("retains current roster during same-arrival refetch and rerenders, but hides 
 	expect(screen.queryByText("Refreshed actor A")).toBeNull();
 	await waitFor(() =>
 		expect(
-			client
-				.getQueryCache()
-				.findAll({ queryKey: ["reports", "employees", "employee-a"] }),
+			client.getQueryCache().findAll({ queryKey: ["reports", "employees", "employee-a"] }),
 		).toHaveLength(0),
 	);
 	client.clear();
