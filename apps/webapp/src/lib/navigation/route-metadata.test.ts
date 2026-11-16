@@ -35,9 +35,9 @@ describe("route metadata", () => {
 			),
 		).toBe(false);
 	});
-	it("adopts the payslip batch start heading without adopting batch detail", () => {
+	it("adopts the payslip batch start and detail headings", () => {
 		expect(appPageOwnsHeading("/de/personnel-files/payslip-batches")).toBe(true);
-		expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id")).toBe(false);
+		expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-id")).toBe(true);
 	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
@@ -65,9 +65,9 @@ describe("route metadata", () => {
 	});
 	it("adopts the personnel file directory while preserving independently staged descendant owners", () => {
 		expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/id")).toBe(true);
 		for (const path of [
 			"/en/personnel-files/id",
-			"/en/personnel-files/payslip-batches/id",
 			"/en/personnel-files/sick-leave",
 			"/en/settings/personnel-files",
 		])
