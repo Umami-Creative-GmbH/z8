@@ -1,0 +1,12 @@
+Distance per Vehicle
+
+Period,"Jan 1 – Dec 31, 2026"
+Generated on,"Nov 16, 2026, 01:28"
+
+Kilometres
+Vehicle,Licence plate,Employee,January 2026,February 2026,March 2026,April 2026,May 2026,June 2026,July 2026,August 2026,September 2026,October 2026,November 2026,December 2026,Total
+Archived fixture van (archived),FIX-1737,Person 0,101,17,0,0,0,0,0,0,0,0,0,0,118
+Own vehicle,,Person 0,0,29,0,0,0,0,0,0,0,0,0,0,29
+Total,,,101,46,0,0,0,0,0,0,0,0,0,0,147
+
+"Whole kilometres of completed work, counted in the month the work started in (local time where it was recorded)."

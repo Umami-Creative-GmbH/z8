@@ -1,13 +1,12 @@
 "use client";
 
 import { IconAlertCircle, IconCar, IconChartBar } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { getVehicleDistanceReport } from "@/app/[locale]/(app)/reports/vehicles/actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
-import { DateRangePicker } from "@/components/reports/date-range-picker";
-import { ReportDocumentExportButtons } from "@/components/reports/report-document-export-buttons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,8 +21,14 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useDisplayContext } from "@/hooks/use-display-context";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { formatPlainDate, formatPlainDateRange } from "@/lib/datetime/temporal-format";
+import { useOrganization } from "@/hooks/use-organization";
+import { useSession } from "@/lib/auth-client";
+import { parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	formatInstant,
+	formatPlainDate,
+	formatPlainDateRange,
+} from "@/lib/datetime/temporal-format";
 import { getDateRangeForPreset } from "@/lib/reports/date-ranges";
 import type { ReportDateRange } from "@/lib/reports/types";
 import {
@@ -31,8 +36,9 @@ import {
 	type VehicleDistanceExportLabels,
 	type VehicleDistanceReport,
 } from "@/lib/reports/vehicle-distance-report";
-import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
+import { VehicleReportExports } from "./vehicle-report-exports";
+import { VehicleReportPeriodPicker } from "./vehicle-report-period-picker";
 
 /**
  * The distance per vehicle report (#1129): pick a period, then read whole
@@ -40,17 +46,68 @@ import { useOrganizationSettings } from "@/stores/organization-settings-store";
  * driving the viewer sees.
  */
 export function VehicleDistanceReportContainer() {
+	const scope = useOrganization();
+	const session = useSession();
 	const { t } = useTranslate();
-	const { locale } = useDisplayContext();
+	if (
+		scope.isLoading ||
+		scope.error ||
+		session.isPending ||
+		!scope.employeeId ||
+		!scope.userId ||
+		!scope.activeOrganizationId ||
+		session.data?.user.id !== scope.userId ||
+		session.data?.session.activeOrganizationId !== scope.activeOrganizationId
+	) {
+		return (
+			<p role="status" className="px-4 lg:px-6">
+				{t("reports.vehicles.scopeLoading", "Confirming the current organization and employee…")}
+			</p>
+		);
+	}
+	return (
+		<VehicleReportArrival
+			key={JSON.stringify([scope.userId, scope.activeOrganizationId, scope.employeeId, scope.role])}
+		/>
+	);
+}
+
+function VehicleReportArrival() {
+	const { t } = useTranslate();
+	const display = useDisplayContext();
+	const { locale } = display;
 	const { isHydrated, timezone } = useOrganizationSettings(
-		useShallow((state) => ({ isHydrated: state.isHydrated, timezone: state.timezone })),
+		useShallow((state) => ({
+			isHydrated: state.isHydrated,
+			timezone: state.timezone,
+		})),
 	);
 	const hasUserChangedRange = useRef(false);
 	const [dateRange, setDateRange] = useState<ReportDateRange | null>(null);
 	const generatedRange = useRef<ReportDateRange | null>(null);
+	const attemptedRange = useRef<ReportDateRange | null>(null);
 	const [report, setReport] = useState<VehicleDistanceReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	// Every effect setup owns a distinct arrival, including an Activity restore.
+	// A retired token is never reactivated, even when the same org/account returns.
+	const [lifetime, setLifetime] = useState({ active: false });
+	const pending = useRef<object | null>(null);
+	const revision = useRef(0);
+	const [generation, setGeneration] = useState(0);
+	const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+	useEffect(() => {
+		const token = { active: true };
+		setLifetime(token);
+		setIsLoading(false);
+		setReport(null);
+		setError(null);
+		generatedRange.current = null;
+		pending.current = null;
+		return () => {
+			token.active = false;
+		};
+	}, []);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) return;
@@ -60,7 +117,9 @@ export function VehicleDistanceReportContainer() {
 	const monthLabel = (month: string) =>
 		formatPlainDate(parsePlainDate(`${month}-01`), locale, "monthYear");
 	const kilometres = (km: number) =>
-		t("reports.vehicles.kilometres", "{distance} km", { distance: km.toLocaleString(locale) });
+		t("reports.vehicles.kilometres", "{distance} km", {
+			distance: km.toLocaleString(locale),
+		});
 
 	const exportLabels: VehicleDistanceExportLabels = {
 		title: t("reports.vehicles.title", "Distance per Vehicle"),
@@ -83,76 +142,122 @@ export function VehicleDistanceReportContainer() {
 
 	useViewRefresh(async () => {
 		const range = generatedRange.current;
-		if (!range || !report) return;
-		const result = await getVehicleDistanceReport(range.startDate, range.endDate);
-		if (generatedRange.current !== range) return;
-		if (!result.success) throw new Error(result.error);
-		setReport(result.data);
+		if (!range || !report || !lifetime.active || pending.current) return;
+		await generate(range, lifetime);
 	});
 
-	const handleGenerate = async () => {
-		if (!dateRange) return;
-		const range = dateRange;
+	async function generate(range: ReportDateRange, arrival: { active: boolean }) {
+		if (!arrival.active || pending.current) return;
+		const request = {};
+		pending.current = request;
+		revision.current += 1;
+		setGeneration(revision.current);
+		attemptedRange.current = range;
 		setIsLoading(true);
 		setError(null);
-		await runWithCleanup(
-			async () => {
-				const result = await getVehicleDistanceReport(dateRange.startDate, dateRange.endDate);
-				if (!result.success) {
-					setError(
-						result.error ||
-							t(
+		try {
+			const result = await getVehicleDistanceReport(range.startDate, range.endDate);
+			if (!arrival.active || pending.current !== request) return;
+			if (!result.success) {
+				if (result.code === "AuthorizationError" || result.code === "AuthenticationError")
+					setReport(null);
+				throw new Error(result.error);
+			}
+			generatedRange.current = range;
+			setGeneratedAt(formatInstant(systemClock.nowInstant(), display, "dateTimeMedium"));
+			setReport(result.data);
+		} catch (cause) {
+			if (arrival.active && pending.current === request)
+				setError(
+					cause instanceof Error
+						? cause.message
+						: t(
 								"reports.vehicles.failed",
 								"The distance per vehicle report could not be generated",
 							),
-					);
-					return;
-				}
-				generatedRange.current = range;
-				setReport(result.data);
-			},
-			() => setIsLoading(false),
-		);
-	};
+				);
+		} finally {
+			if (arrival.active && pending.current === request) {
+				pending.current = null;
+				setIsLoading(false);
+			}
+		}
+	}
+	const form = useForm({
+		defaultValues: { range: dateRange },
+		onSubmitMeta: { arrival: lifetime },
+		onSubmit: async ({ value, meta }) => {
+			if (value.range) await generate(value.range, meta.arrival);
+		},
+	});
+	const periodLabel = report
+		? formatPlainDateRange(
+				parsePlainDate(report.period.fromDay),
+				parsePlainDate(report.period.toDay),
+				locale,
+				"dateMedium",
+			)
+		: null;
+	const staged =
+		!!report &&
+		!!dateRange &&
+		(dateRange.startDate !== report.period.fromDay || dateRange.endDate !== report.period.toDay);
 
 	return (
 		<div className="space-y-6 px-4 lg:px-6">
 			<Card>
 				<CardContent className="pt-6">
-					<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-						<fieldset className="space-y-2">
-							<legend className="text-sm font-medium leading-none">
-								{t("reports.vehicles.filter.period", "Period")}
-							</legend>
-							{dateRange ? (
-								<DateRangePicker
-									value={dateRange}
-									onChange={(range) => {
-										hasUserChangedRange.current = true;
-										setDateRange(range);
-									}}
-								/>
-							) : (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"reports.filter.loadingSettings",
-										"Loading organization settings before enabling presets.",
-									)}
-								</p>
+					<form
+						onSubmit={(event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							form.setFieldValue("range", dateRange);
+							void form.handleSubmit({ arrival: lifetime });
+						}}
+					>
+						<div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+							<fieldset className="space-y-2">
+								<legend className="text-sm font-medium leading-none">
+									{t("reports.vehicles.filter.period", "Period")}
+								</legend>
+								{dateRange ? (
+									<VehicleReportPeriodPicker
+										value={dateRange}
+										onChange={(range) => {
+											hasUserChangedRange.current = true;
+											setDateRange(range);
+										}}
+									/>
+								) : (
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"reports.filter.loadingSettings",
+											"Loading organization settings before enabling presets.",
+										)}
+									</p>
+								)}
+							</fieldset>
+							<Button
+								type="submit"
+								disabled={isLoading || !dateRange || !lifetime.active}
+								size="lg"
+								className="w-full sm:w-auto"
+							>
+								<IconChartBar aria-hidden="true" className="mr-2 size-4" />
+								{isLoading
+									? t("reports.vehicles.generating", "Generating report…")
+									: t("reports.vehicles.generate", "Generate report")}
+							</Button>
+						</div>
+					</form>
+					{staged && (
+						<p role="status" className="mt-3 text-sm text-muted-foreground">
+							{t(
+								"reports.vehicles.staged",
+								"Period changed. Generate report to update the results and downloads.",
 							)}
-						</fieldset>
-						<Button
-							onClick={handleGenerate}
-							disabled={isLoading || !dateRange}
-							size="lg"
-							className="w-full sm:w-auto"
-						>
-							<IconChartBar className="mr-2 size-4" />
-							{isLoading
-								? t("reports.vehicles.generating", "Generating report…")
-								: t("reports.vehicles.generate", "Generate report")}
-						</Button>
-					</div>
+						</p>
+					)}
 				</CardContent>
 			</Card>
 
@@ -160,11 +265,56 @@ export function VehicleDistanceReportContainer() {
 				<Alert variant="destructive">
 					<IconAlertCircle className="size-4" />
 					<AlertTitle>{t("reports.vehicles.error", "Error")}</AlertTitle>
-					<AlertDescription>{error}</AlertDescription>
+					<AlertDescription>
+						{error}
+						<Button
+							variant="outline"
+							disabled={isLoading}
+							onClick={() => {
+								const range = attemptedRange.current ?? dateRange;
+								if (range) void generate(range, lifetime);
+							}}
+						>
+							{t("common.retry", "Retry")}
+						</Button>
+					</AlertDescription>
 				</Alert>
 			)}
 
-			{!isLoading && report && report.vehicles.length === 0 && (
+			{isLoading && <p role="status">{t("reports.vehicles.generating", "Generating report…")}</p>}
+			{report && (
+				<div className="flex flex-wrap items-end justify-between gap-4 rounded-lg border bg-card p-4 sm:p-6">
+					<div className="space-y-1">
+						<p className="text-sm text-muted-foreground">
+							{t("reports.vehicles.table.total", "Total")}
+						</p>
+						<p className="text-3xl font-semibold tabular-nums">{kilometres(report.totalKm)}</p>
+						<p className="text-sm">{periodLabel}</p>
+					</div>
+					<div className="space-y-2 text-sm">
+						<p>{t("reports.vehicles.scope", "Employees available to you in this organization")}</p>
+						<p className="text-muted-foreground">
+							{t("reports.vehicles.generated", "Generated on {time}", {
+								time: generatedAt ?? "",
+							})}
+						</p>
+						{!isLoading && !error && report.vehicles.length > 0 && (
+							<VehicleReportExports
+								key={generation}
+								isCurrent={() => lifetime.active && revision.current === generation}
+								buildDocument={() =>
+									buildVehicleDistanceReportDocument(report, {
+										labels: exportLabels,
+										periodLabel: periodLabel ?? "",
+										generatedAt: generatedAt ?? "",
+									})
+								}
+							/>
+						)}
+					</div>
+				</div>
+			)}
+			{!isLoading && !error && report && report.vehicles.length === 0 && (
 				<EmptyState
 					title={t("reports.vehicles.empty.title", "No driving in this period")}
 					description={t(
@@ -174,31 +324,20 @@ export function VehicleDistanceReportContainer() {
 				/>
 			)}
 
-			{!isLoading && report && report.vehicles.length > 0 && (
+			{report && report.vehicles.length > 0 && (
 				<Card>
 					<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
 						<CardTitle>
-							{t("reports.vehicles.totalDriven", "{distance} driven", {
-								distance: kilometres(report.totalKm),
-							})}
+							{t("reports.vehicles.comparison", "Monthly distance by vehicle and employee")}
 						</CardTitle>
-						<ReportDocumentExportButtons
-							buildDocument={(context) =>
-								buildVehicleDistanceReportDocument(report, {
-									labels: exportLabels,
-									periodLabel: formatPlainDateRange(
-										parsePlainDate(report.period.fromDay),
-										parsePlainDate(report.period.toDay),
-										locale,
-										"dateMedium",
-									),
-									generatedAt: context.generatedAt,
-								})
-							}
-						/>
 					</CardHeader>
 					<CardContent className="overflow-x-auto">
-						<Table>
+						<Table
+							aria-label={t(
+								"reports.vehicles.comparison",
+								"Monthly distance by vehicle and employee",
+							)}
+						>
 							<TableHeader>
 								<TableRow>
 									<TableHead>
@@ -305,7 +444,7 @@ function EmptyState({ title, description }: { title: string; description: string
 		<Card>
 			<CardContent className="flex items-center justify-center py-12">
 				<div className="flex flex-col items-center gap-4 text-center">
-					<IconCar className="size-12 text-muted-foreground" aria-hidden="true" />
+					<IconCar className="size-6 text-muted-foreground" aria-hidden="true" />
 					<div>
 						<p className="font-semibold">{title}</p>
 						<p className="text-sm text-muted-foreground">{description}</p>

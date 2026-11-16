@@ -1,0 +1,33 @@
+{
+  "phase": "accepted",
+  "at": "2026-11-16T00:23:14.634Z",
+  "head": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
+  "scope": "small-admin / Performance small / current year 2026 / canonical 147km seed; default font and expanded desktop sidebar; same transient normal-login browser",
+  "sources": {
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx": "2eb0d7dcf2868714cf4cb966ec6b6241c8ac8255add4d084a87e24c14690617d",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx": "3ce0d5ea72d9d13c3cba8e57a512050af56cfd8bd270597af9382ef66c3b9756",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx": "6f310f7bb1d22394b2c68a92784670ae1e437cf6c667f735099dde87264daafb",
+    "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx": "ee82f580d522f3c090da1d2a005a4776a6d338575a9bc09bcd6f3889e19d9ae6",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "4cf81709b456ed41f532eca0c810c6e017e817eb8cf309f93025ae05a4caaa3c"
+  },
+  "captures": [
+    {
+      "label": "desktop",
+      "file": "accepted-desktop.png",
+      "at": "2026-11-16T00:23:13.727Z",
+      "observation": "\"{\\\"title\\\":\\\"z8 - time app\\\",\\\"url\\\":\\\"/en/reports/vehicles\\\",\\\"headings\\\":[{\\\"text\\\":\\\"Distance per Vehicle\\\",\\\"rect\\\":{\\\"x\\\":315,\\\"y\\\":100,\\\"width\\\":1258,\\\"height\\\":40.5,\\\"top\\\":100,\\\"right\\\":1573,\\\"bottom\\\":140.5,\\\"left\\\":315}}],\\\"viewport\\\":{\\\"width\\\":1600,\\\"height\\\":1000},\\\"documentWidth\\\":1600,\\\"font\\\":\\\"18px\\\",\\\"theme\\\":\\\"bprogress-busy dark\\\",\\\"settled\\\":true,\\\"tableRows\\\":[\\\"Vehicle / employee\\\\tJanuary 2026\\\\tFebruary 2026\\\\tMarch 2026\\\\tApril 2026\\\\tMay 2026\\\\tJune 2026\\\\tJuly 2026\\\\tAugust 2026\\\\tSeptember 2026\\\\tOctober 2026\\\\tNovember 2026\\\\tDecember 2026\\\\tTotal\\\",\\\"Archived fixture van\\\\nFIX-1737\\\\nArchived\\\\n\\\\t101 km\\\\t17 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t118 km\\\",\\\"Person 0\\\\t101 km\\\\t17 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t118 km\\\",\\\"Own vehicle\\\\n\\\\t0 km\\\\t29 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t29 km\\\",\\\"Person 0\\\\t–\\\\t29 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t29 km\\\",\\\"Total\\\\t101 km\\\\t46 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t147 km\\\"],\\\"generate\\\":[{\\\"x\\\":1358.8125,\\\"y\\\":274.25,\\\"width\\\":186.1875,\\\"height\\\":45,\\\"top\\\":274.25,\\\"right\\\":1545,\\\"bottom\\\":319.25,\\\"left\\\":1358.8125}]}\""
+    },
+    {
+      "label": "phone",
+      "file": "accepted-phone.png",
+      "at": "2026-11-16T00:23:14.176Z",
+      "observation": "\"{\\\"title\\\":\\\"z8 - time app\\\",\\\"url\\\":\\\"/en/reports/vehicles\\\",\\\"headings\\\":[{\\\"text\\\":\\\"Distance per Vehicle\\\",\\\"rect\\\":{\\\"x\\\":18,\\\"y\\\":91,\\\"width\\\":354,\\\"height\\\":35.984375,\\\"top\\\":91,\\\"right\\\":372,\\\"bottom\\\":126.984375,\\\"left\\\":18}}],\\\"viewport\\\":{\\\"width\\\":390,\\\"height\\\":844},\\\"documentWidth\\\":390,\\\"font\\\":\\\"18px\\\",\\\"theme\\\":\\\"bprogress-busy dark\\\",\\\"settled\\\":true,\\\"tableRows\\\":[\\\"Vehicle / employee\\\\tJanuary 2026\\\\tFebruary 2026\\\\tMarch 2026\\\\tApril 2026\\\\tMay 2026\\\\tJune 2026\\\\tJuly 2026\\\\tAugust 2026\\\\tSeptember 2026\\\\tOctober 2026\\\\tNovember 2026\\\\tDecember 2026\\\\tTotal\\\",\\\"Archived fixture van\\\\nFIX-1737\\\\nArchived\\\\n\\\\t101 km\\\\t17 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t118 km\\\",\\\"Person 0\\\\t101 km\\\\t17 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t118 km\\\",\\\"Own vehicle\\\\n\\\\t0 km\\\\t29 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t29 km\\\",\\\"Person 0\\\\t–\\\\t29 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t29 km\\\",\\\"Total\\\\t101 km\\\\t46 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t147 km\\\"],\\\"generate\\\":[{\\\"x\\\":46,\\\"y\\\":395.734375,\\\"width\\\":298,\\\"height\\\":45,\\\"top\\\":395.734375,\\\"right\\\":344,\\\"bottom\\\":440.734375,\\\"left\\\":46}]}\""
+    },
+    {
+      "label": "wide",
+      "file": "accepted-wide.png",
+      "at": "2026-11-16T00:23:14.634Z",
+      "observation": "\"{\\\"title\\\":\\\"z8 - time app\\\",\\\"url\\\":\\\"/en/reports/vehicles\\\",\\\"headings\\\":[{\\\"text\\\":\\\"Distance per Vehicle\\\",\\\"rect\\\":{\\\"x\\\":313.53472900390625,\\\"y\\\":100,\\\"width\\\":1578,\\\"height\\\":40.5,\\\"top\\\":100,\\\"right\\\":1891.5347290039062,\\\"bottom\\\":140.5,\\\"left\\\":313.53472900390625}}],\\\"viewport\\\":{\\\"width\\\":1920,\\\"height\\\":1080},\\\"documentWidth\\\":1920,\\\"font\\\":\\\"18px\\\",\\\"theme\\\":\\\"bprogress-busy dark\\\",\\\"settled\\\":true,\\\"tableRows\\\":[\\\"Vehicle / employee\\\\tJanuary 2026\\\\tFebruary 2026\\\\tMarch 2026\\\\tApril 2026\\\\tMay 2026\\\\tJune 2026\\\\tJuly 2026\\\\tAugust 2026\\\\tSeptember 2026\\\\tOctober 2026\\\\tNovember 2026\\\\tDecember 2026\\\\tTotal\\\",\\\"Archived fixture van\\\\nFIX-1737\\\\nArchived\\\\n\\\\t101 km\\\\t17 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t118 km\\\",\\\"Person 0\\\\t101 km\\\\t17 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t118 km\\\",\\\"Own vehicle\\\\n\\\\t0 km\\\\t29 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t29 km\\\",\\\"Person 0\\\\t–\\\\t29 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t29 km\\\",\\\"Total\\\\t101 km\\\\t46 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t147 km\\\"],\\\"generate\\\":[{\\\"x\\\":1677.34716796875,\\\"y\\\":274.25,\\\"width\\\":186.1875,\\\"height\\\":45,\\\"top\\\":274.25,\\\"right\\\":1863.53466796875,\\\"bottom\\\":319.25,\\\"left\\\":1677.34716796875}]}\""
+    }
+  ]
+}

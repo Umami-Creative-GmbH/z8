@@ -1,0 +1,357 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c46170e5-df82f3f532a8cf18/apps/webapp
+
+ ❯ |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx (9 tests | 9 failed) 282ms
+   × retires an in-flight organization A read across A to B to A 77ms
+   × retires reads across a account arrival and return 18ms
+   × retires reads across a validation arrival and return 15ms
+   × retires reads across a role arrival and return 14ms
+   × refuses a form validation continuation after its requesting arrival retires 10ms
+   × retires an Activity-hidden read and unlocks a fresh generation on return 24ms
+   × keeps successful rows after failed refresh, disables downloads and retries the generated range 24ms
+   × distinguishes ungenerated, generating and an empty completed report 18ms
+   × prevents repeated Generate and late export completion after organization return 79ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > retires an in-flight organization A read across A to B to A
+AssertionError: expected <span></span> to be null
+
+- Expected:
+null
+
++ Received:
+<span>
+  Archived van
+</span>
+
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:160:45
+    158|  view.rerender(<VehicleDistanceReportContainer />);
+    159|  await act(async () => held.resolve({ success: true, data: report }));
+    160|  expect(screen.queryByText("Archived van")).toBeNull();
+       |                                             ^
+    161|  expect(screen.queryByRole("button", { name: "Export CSV" })).toBeNull…
+    162| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > retires reads across a account arrival and return
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > retires reads across a validation arrival and return
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > retires reads across a role arrival and return
+AssertionError: expected <span></span> to be null
+
+- Expected:
+null
+
++ Received:
+<span>
+  Archived van
+</span>
+
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:181:46
+    179|   view.rerender(<VehicleDistanceReportContainer />);
+    180|   await act(async () => held.resolve({ success: true, data: report }));
+    181|   expect(screen.queryByText("Archived van")).toBeNull();
+       |                                              ^
+    182|  },
+    183| );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > refuses a form validation continuation after its requesting arrival retires
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "2026-01-01",
+      "2026-12-31",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:192:28
+    190|  view.rerender(<VehicleDistanceReportContainer />);
+    191|  await act(async () => {});
+    192|  expect(boundary.read).not.toHaveBeenCalled();
+       |                            ^
+    193|  boundary.pending = false;
+    194|  view.rerender(<VehicleDistanceReportContainer />);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > retires an Activity-hidden read and unlocks a fresh generation on return
+AssertionError: expected <span></span> to be null
+
+- Expected:
+null
+
++ Received:
+<span>
+  Archived van
+</span>
+
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:223:45
+    221|   held.resolve({ success: true, data: { ...report, totalKm: 999 } }),
+    222|  );
+    223|  expect(screen.queryByText("Archived van")).toBeNull();
+       |                                             ^
+    224|  fireEvent.click(screen.getByRole("button", { name: "Generate report" …
+    225|  expect(await screen.findByText("Archived van")).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > keeps successful rows after failed refresh, disables downloads and retries the generated range
+Error: Network unavailable
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:232:26
+    230|  boundary.read
+    231|   .mockResolvedValueOnce({ success: true, data: report })
+    232|   .mockRejectedValueOnce(new Error("Network unavailable"))
+       |                          ^
+    233|   .mockResolvedValue({ success: true, data: { ...report, totalKm: 135 …
+    234|  render(<VehicleDistanceReportContainer />);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > distinguishes ungenerated, generating and an empty completed report
+TestingLibraryElementError: Unable to find an element with the text: 0 km. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-6 px-4 lg:px-6"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="min-w-0 px-6 pt-6"
+          data-slot="card-content"
+        >
+          <div
+            class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+          >
+            <fieldset
+              class="space-y-2"
+            >
+              <legend
+                class="text-sm font-medium leading-none"
+              >
+                Period
+              </legend>
+              <div
+                class="flex flex-col gap-2 sm:flex-row sm:items-center"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="listbox"
+                  aria-label="Period"
+                  class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full sm:w-[200px]"
+                  data-size="default"
+                  data-slot="select-trigger"
+                  id="base-ui-_r_t_"
+                  role="combobox"
+                  tabindex="0"
+                  type="button"
+                >
+                  <span
+                    data-slot="select-value"
+                  >
+                    Current Month
+                  </span>
+                  <span
+                    aria-hidden="true"
+                  >
+                    <svg
+                      class="tabler-icon tabler-icon-chevron-down size-4 opacity-50"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M6 9l6 6l6 -6"
+                      />
+                    </svg>
+                  </span>
+                </button>
+                <input
+                  aria-hidden="true"
+                  id="base-ui-_r_t_-hidden-input"
+                  style="clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: 0px; position: fixed; top: 0px; left: 0px;"
+                  tabindex="-1"
+                  value="current_month"
+                />
+                <div
+                  class="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground"
+                >
+                  <svg
+                    class="tabler-icon tabler-icon-calendar mr-2 size-4"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+                    />
+                    <path
+                      d="M16 3v4"
+                    />
+                    <path
+                      d="M8 3v4"
+                    />
+                    <path
+                      d="M4 11h16"
+                    />
+                  </svg>
+                  Jan 1, 2026 - Dec 31, 2026
+                </div>
+              </div>
+            </fieldset>
+            <button
+              class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-10 rounded-md px-6 has-[>svg]:px-4 w-full sm:w-auto"
+              data-slot="button"
+            >
+              <svg
+                class="tabler-icon tabler-icon-chart-bar mr-2 size-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -6"
+                />
+                <path
+                  d="M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -10"
+                />
+                <path
+                  d="M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -14"
+                />
+                <path
+                  d="M4 20h14"
+                />
+              </svg>
+              Generate report
+            </button>
+          </div>
+        </div>
+      </div>
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="min-w-0 px-6 flex items-center justify-center py-12"
+          data-slot="card-content"
+        >
+          <div
+            class="flex flex-col items-center gap-4 text-center"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-car size-12 text-muted-foreground"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"
+              />
+              <path
+                d="M15 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"
+              />
+              <path
+                d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"
+              />
+            </svg>
+            <div>
+              <p
+                class="font-semibold"
+              >
+                No driving in this period
+              </p>
+              <p
+                class="text-sm text-muted-foreground"
+              >
+                No completed work with a driven distance was recorded in this period.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:264:16
+    262|  );
+    263|  expect(screen.getByText("No driving in this period")).toBeTruthy();
+    264|  expect(screen.getByText("0 km")).toBeTruthy();
+       |                ^
+    265| });
+    266|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > prevents repeated Generate and late export completion after organization return
+AssertionError: expected "click" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st click call:
+
+    Array []
+
+
+Number of calls: 1
+
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:296:20
+    294|  view.rerender(<VehicleDistanceReportContainer />);
+    295|  await act(async () => held.resolve(new Uint8Array([1, 2])));
+    296|  expect(click).not.toHaveBeenCalled();
+       |                    ^
+
+    297|  expect(createURL).not.toHaveBeenCalled();
+    298|  click.mockRestore();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ Test Files  1 failed (1)
+      Tests  9 failed (9)
+   Start at  00:08:33
+   Duration  1.54s (import 40%, environment 29%, tests 21%, transform 8%, setup 2%)
+

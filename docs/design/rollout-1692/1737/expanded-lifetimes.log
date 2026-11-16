@@ -1,0 +1,39 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c46170e5-df82f3f532a8cf18/apps/webapp
+
+ ❯ |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx (14 tests | 1 failed) 897ms
+   × prevents duplicate Generate and retired replacement exports 175ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > prevents duplicate Generate and retired replacement exports
+AssertionError: expected "click" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st click call:
+
+    Array []
+
+
+Number of calls: 1
+
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:301:20
+    299|  view.rerender(<Activity mode="visible"><VehicleDistanceReportContaine…
+    300|  await act(async () => held.resolve(new Uint8Array([1, 2])));
+    301|  expect(click).not.toHaveBeenCalled();
+       |                    ^
+    302|  expect(createURL).not.toHaveBeenCalled();
+    303|  click.mockRestore();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  00:15:00
+   Duration  1.89s (tests 49%, import 27%, environment 18%, transform 4%, setup 1%)
+

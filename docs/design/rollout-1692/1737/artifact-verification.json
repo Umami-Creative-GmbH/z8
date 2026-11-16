@@ -1,0 +1,149 @@
+{
+  "at": "2026-11-16T00:36:24.879Z",
+  "images": [
+    {
+      "file": "accepted-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "a0160df5bbf24acdb87c9e056f2bf35de5053597620faa3b56b5e7f92f5d192a"
+    },
+    {
+      "file": "accepted-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "5b5ca54355dcbdd71b8c9c5b3f29aeba65a8c1eb472367f52b9c6800d8d071f9"
+    },
+    {
+      "file": "accepted-wide.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "7ba2a91b6d95b861aca0121cffce0eee25d0e866820f1c77a48d50e22f21272f"
+    },
+    {
+      "file": "current-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "7ae2c65e9874827ae1deaf9305eee5801a748282343e68f6047a93f63b84d3ff"
+    },
+    {
+      "file": "current-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "4bf8404a75d7433990987a435502e895a5296741dd48dca11970553096bee3bd"
+    },
+    {
+      "file": "current-wide.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "9413a7fc6e5c357985cc6488469f60eef0d9de9e6ef6b5b9b25a2c019f63107f"
+    },
+    {
+      "file": "dark-large-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "dee1b8b29a235fcdc3ac8d513d8255fdb018aadd4dc5721aa257e0a4074692b7"
+    },
+    {
+      "file": "final-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "2d98716fb9d79ed47962dd8ea29c15fe21feb5173041b77f555966d6646f8b99"
+    },
+    {
+      "file": "final-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "2e653881036c66a1b03629cb25a2b02bc6765fe56421312f9709a8614338969d"
+    },
+    {
+      "file": "final-wide.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "a2e121118789ed8544723cb8c2d5fed7d8baf120bfcb618e975e8877a58103bc"
+    },
+    {
+      "file": "historical-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "17061298a16489a6640c0de288ff9b172c0b7167847a6175a2dc5cdf583ada7e"
+    },
+    {
+      "file": "historical-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "2cd5bcfa18c0249d77e26133c2c28971051b32a98525b9017971cdce7e20f3fe"
+    },
+    {
+      "file": "historical-wide.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "89db73faf09c9f1b98e3f20a255f7d7656f3e84b01966ea314881720ecc9a3d2"
+    },
+    {
+      "file": "matched-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "97c4e598eb32cd473f9a10756fcf415a5ec32a9febb6d9a07afd15da2669f428"
+    },
+    {
+      "file": "matched-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "6d532c907f4b2023484e39430c350e37cf8c47b5b9f6e75c833193f9706b3051"
+    },
+    {
+      "file": "matched-wide.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "1388f3bfc2cc14daf359ce5a03f68bfb51b8d819e9376abc675803c532118fa0"
+    },
+    {
+      "file": "offline-retained-final.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "e8ae3d59a2cea23244f26b4e7ed940ce5fcc51d10de0290e9e75a64aad711085"
+    },
+    {
+      "file": "offline-retained.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "2a43d6a1464d36aee5220aa17365223f04a303f71d237db2ea77307069fd458c"
+    },
+    {
+      "file": "recovered-final.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "dd73b326a06c33a24e90bff4ea0170407dcae6553c8261a95398c2a13da35dbb"
+    },
+    {
+      "file": "sealed-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "e92ffd81f0a6c58a115f0d7f65280d3d23d4b785e6c1d0138b7e2f2ad02fa06f"
+    },
+    {
+      "file": "sealed-phone.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3db664b68139f909c67c60b5f7a0ef735ce275d2a8330056ea57f20bc0d5217c"
+    },
+    {
+      "file": "sealed-wide.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "5d4053028214783a4b395d1c3053f9ff825141cf754798f5dbe2a8fb69fcd2de"
+    }
+  ],
+  "jsonCountBeforeSeal": 14,
+  "finalSourcePinsMatch": true,
+  "unchanged": [
+    "apps/webapp/src/components/reports/report-document-export-buttons.tsx",
+    "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+    "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+    "apps/webapp/src/lib/reports/vehicle-distance-report.ts",
+    "apps/webapp/src/lib/reports/vehicle-distance-work.ts",
+    "apps/webapp/src/app/[locale]/(app)/reports/vehicles/actions.ts",
+    "apps/webapp/src/components/reports/date-range-picker.tsx"
+  ],
+  "lockHashApproved": true
+}

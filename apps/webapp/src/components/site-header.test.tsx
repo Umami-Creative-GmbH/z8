@@ -65,15 +65,13 @@ describe("SiteHeader", () => {
 				<PageHeader title="My equipment" />
 			</>,
 		);
-		expect(
-			screen.getAllByRole("heading", { level: 1 }).map((n) => n.textContent),
-		).toEqual(["My equipment"]);
+		expect(screen.getAllByRole("heading", { level: 1 }).map((n) => n.textContent)).toEqual([
+			"My equipment",
+		]);
 		page.unmount();
 		pathname = "/en/my-equipment/other";
 		render(<SiteHeader />);
-		expect(
-			screen.getByRole("heading", { level: 1, name: "My equipment" }),
-		).toBeTruthy();
+		expect(screen.getByRole("heading", { level: 1, name: "My equipment" })).toBeTruthy();
 	});
 	it("hands the suspended recovery title to the page without opting descendants into heading ownership", () => {
 		pathname = "/de/billing/suspended";
@@ -84,16 +82,12 @@ describe("SiteHeader", () => {
 			</>,
 		);
 		expect(
-			screen
-				.getAllByRole("heading", { level: 1 })
-				.map((heading) => heading.textContent),
+			screen.getAllByRole("heading", { level: 1 }).map((heading) => heading.textContent),
 		).toEqual(["Organization suspended"]);
 		page.unmount();
 		pathname = "/en/billing/suspended/unconverted";
 		render(<SiteHeader />);
-		expect(
-			screen.getByRole("heading", { level: 1, name: "Billing & Subscription" }),
-		).toBeTruthy();
+		expect(screen.getByRole("heading", { level: 1, name: "Billing & Subscription" })).toBeTruthy();
 	});
 	it("hands the main title to converted pages while retaining unknown descendant titles", () => {
 		pathname = "/de/reports";
@@ -104,9 +98,7 @@ describe("SiteHeader", () => {
 			</>,
 		);
 		expect(
-			screen
-				.getAllByRole("heading", { level: 1 })
-				.map((heading) => heading.textContent),
+			screen.getAllByRole("heading", { level: 1 }).map((heading) => heading.textContent),
 		).toEqual(["Employee Reports"]);
 		page.unmount();
 		pathname = "/de/calendar/employee-1";
@@ -117,33 +109,34 @@ describe("SiteHeader", () => {
 			</>,
 		);
 		expect(
-			screen
-				.getAllByRole("heading", { level: 1 })
-				.map((heading) => heading.textContent),
+			screen.getAllByRole("heading", { level: 1 }).map((heading) => heading.textContent),
 		).toEqual(["Calendar"]);
 		calendar.unmount();
 		pathname = "/en/calendar/employee-1/detail";
 		render(<SiteHeader />);
-		expect(
-			screen.getByRole("heading", { level: 1, name: "Calendar" }),
-		).toBeTruthy();
+		expect(screen.getByRole("heading", { level: 1, name: "Calendar" })).toBeTruthy();
 	});
 
-	it("does not remove the shell heading from unconverted report subpages", () => {
+	it("hands the exact vehicle report its heading and retains descendant shell titles", () => {
 		pathname = "/en/reports/vehicles";
+		const page = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Distance per Vehicle" />
+			</>,
+		);
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		page.unmount();
+		pathname = "/en/reports/vehicles/detail";
 		render(<SiteHeader />);
-		expect(
-			screen.getByRole("heading", { level: 1, name: "Distance per Vehicle" }),
-		).toBeTruthy();
+		expect(screen.getByRole("heading", { level: 1, name: "Distance per Vehicle" })).toBeTruthy();
 	});
 	it("shows header actions in the requested order on the dashboard route", () => {
 		pathname = "/en";
 
 		render(<SiteHeader />);
 
-		const buttons = screen
-			.getAllByRole("button")
-			.map((button) => button.textContent);
+		const buttons = screen.getAllByRole("button").map((button) => button.textContent);
 		expect(buttons).toEqual([
 			"Toggle sidebar",
 			"Customize dashboard",
@@ -161,24 +154,12 @@ describe("SiteHeader", () => {
 		render(<SiteHeader />);
 		fireEvent.click(screen.getByRole("button", { name: "More actions" }));
 		const panel = await screen.findByRole("dialog", { name: "More actions" });
-		expect(
-			within(panel).getByRole("button", { name: "Customize dashboard" }),
-		).toBeTruthy();
-		expect(
-			within(panel).getByRole("button", { name: "Saved timezone" }),
-		).toBeTruthy();
-		expect(
-			within(panel).getByRole("button", { name: "Refresh data" }),
-		).toBeTruthy();
-		expect(
-			within(panel).getByRole("button", { name: "Toggle theme" }),
-		).toBeTruthy();
-		expect(
-			within(panel).queryByRole("button", { name: "Clock In" }),
-		).toBeNull();
-		expect(
-			within(panel).queryByRole("button", { name: "Notifications" }),
-		).toBeNull();
+		expect(within(panel).getByRole("button", { name: "Customize dashboard" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Saved timezone" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Refresh data" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Toggle theme" })).toBeTruthy();
+		expect(within(panel).queryByRole("button", { name: "Clock In" })).toBeNull();
+		expect(within(panel).queryByRole("button", { name: "Notifications" })).toBeNull();
 	});
 
 	it("keeps mobile overflow actions available outside the dashboard without customization", async () => {
@@ -186,15 +167,9 @@ describe("SiteHeader", () => {
 		render(<SiteHeader />);
 		fireEvent.click(screen.getByRole("button", { name: "More actions" }));
 		const panel = await screen.findByRole("dialog", { name: "More actions" });
-		expect(
-			within(panel).queryByRole("button", { name: "Customize dashboard" }),
-		).toBeNull();
-		expect(
-			within(panel).getByRole("button", { name: "Saved timezone" }),
-		).toBeTruthy();
-		expect(
-			within(panel).getByRole("button", { name: "Refresh data" }),
-		).toBeTruthy();
+		expect(within(panel).queryByRole("button", { name: "Customize dashboard" })).toBeNull();
+		expect(within(panel).getByRole("button", { name: "Saved timezone" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Refresh data" })).toBeTruthy();
 	});
 
 	it("does not show the dashboard customize trigger outside the dashboard route", () => {
@@ -202,9 +177,7 @@ describe("SiteHeader", () => {
 
 		render(<SiteHeader />);
 
-		expect(
-			screen.queryByRole("button", { name: "Customize dashboard" }),
-		).toBeNull();
+		expect(screen.queryByRole("button", { name: "Customize dashboard" })).toBeNull();
 		expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Timezone" })).toBeTruthy();
 	});

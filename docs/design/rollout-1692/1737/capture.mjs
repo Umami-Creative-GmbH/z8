@@ -1,0 +1,15 @@
+import {spawnSync,execFileSync} from 'node:child_process';import {readFile,writeFile} from 'node:fs/promises';import {resolve} from 'node:path';import {createHash} from 'node:crypto';
+const session='z8-1737-c46170e5';const env={...process.env};for(const key of Object.keys(env))if(/^AGENT_BROWSER_(RESTORE|SESSION_NAME|STATE)/i.test(key))delete env[key];
+function browser(args,input){const r=spawnSync('cmd.exe',['/d','/c','C:/Users/KaiHentschel/AppData/Local/pnpm/bin/agent-browser.cmd','--session',session,...args],{input,encoding:'utf8',env,windowsHide:true});if(r.status)throw Error(r.stderr||r.stdout);return r.stdout;}
+const phase=process.argv[2], root=resolve('.'), base=resolve('docs/design/rollout-1692/1737');
+const sources={};for(const file of ['apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx','apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx','apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx','apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx','apps/webapp/src/lib/navigation/route-metadata.ts'])sources[file]=createHash('sha256').update(await readFile(file)).digest('hex');
+const captures=[];
+for(const [label,width,height]of [['desktop',1600,1000],['phone',390,844],['wide',1920,1080]]){
+ browser(['set','viewport',String(width),String(height)]);
+ browser(['wait','--text','Archived fixture van']);
+ const raw=browser(['eval','--stdin'],`JSON.stringify({title:document.title,url:location.pathname,headings:[...document.querySelectorAll('h1')].map(n=>({text:n.textContent,rect:n.getBoundingClientRect().toJSON()})),viewport:{width:innerWidth,height:innerHeight},documentWidth:document.documentElement.scrollWidth,font:getComputedStyle(document.body).fontSize,theme:document.documentElement.className,settled:document.body.innerText.includes('147 km')&&!document.body.innerText.includes('Generating report'),tableRows:[...document.querySelectorAll('table tr')].map(n=>n.innerText),generate:[...document.querySelectorAll('button')].filter(n=>n.textContent==='Generate report').map(n=>n.getBoundingClientRect().toJSON())})`);
+ let observation=raw.trim();for(let i=0;i<3&&typeof observation==='string';i++)observation=JSON.parse(observation);
+ if(['matched','sealed'].includes(phase)&&(!observation.settled||observation.font!=='16px'||observation.theme.includes('dark')||observation.headings.length!==1||observation.documentWidth!==width))throw Error('Matched default, settled heading or geometry verification failed');
+ const file=resolve(base,`${phase}-${label}.png`);browser(['screenshot',file]);captures.push({label,file:`${phase}-${label}.png`,at:new Date().toISOString(),observation});
+}
+await writeFile(resolve(base,`${phase}-captures.json`),JSON.stringify({phase,at:new Date().toISOString(),head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),scope:'small-admin / Performance small / current year 2026 / canonical 147km seed; default font and expanded desktop sidebar; same transient normal-login browser',sources,captures},null,2)+'\n');console.log(`Captured ${phase}: three settled default-config views with source pins.`);

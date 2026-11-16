@@ -1,0 +1,38 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c46170e5-df82f3f532a8cf18/apps/webapp
+
+ ❯ |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx (1 test | 1 failed) 74ms
+   × retires an in-flight organization A read across A to B to A 73ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/reports/vehicles/vehicle-distance-report-container.test.tsx > retires an in-flight organization A read across A to B to A
+AssertionError: expected <span></span> to be null
+
+- Expected:
+null
+
++ Received:
+<span>
+  Archived van
+</span>
+
+ ❯ src/components/reports/vehicles/vehicle-distance-report-container.test.tsx:41:45
+     39|  boundary.scope = {...boundary.scope, activeOrganizationId: "org-a", o…
+     40|  await act(async () => held.resolve({success: true, data: report}));
+     41|  expect(screen.queryByText("Archived van")).toBeNull();
+       |                                             ^
+     42|  expect(screen.queryByRole("button", {name: "Export CSV"})).toBeNull();
+     43| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  23:54:34
+   Duration  2.62s (environment 68%, import 21%, transform 7%, tests 3%, setup 1%)
+

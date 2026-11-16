@@ -1,0 +1,7 @@
+src/app/[locale]/(auth)/licenses/page.tsx(7,22): error TS2307: Cannot find module '@/data/licenses.json' or its corresponding type declarations.
+src/components/auth-background-images.ts(1,24): error TS2307: Cannot find module '@/../public/backgrounds/a-chosen-soul-sJ_nxQIAUvg-unsplash.webp' or its corresponding type declarations.
+src/components/auth-background-images.ts(2,25): error TS2307: Cannot find module '@/../public/backgrounds/ally-griffin-3hsrEvJi_gw-unsplash.webp' or its corresponding type declarations.
+src/components/auth-background-images.ts(3,27): error TS2307: Cannot find module '@/../public/backgrounds/andreia-bohner-6XZdT2jeymc-unsplash.webp' or its corresponding type declarations.
+src/components/auth-background-images.ts(4,25): error TS2307: Cannot find module '@/../public/backgrounds/philip-oroni-2KBQdhqHpOM-unsplash.webp' or its corresponding type declarations.
+src/components/auth-background-images.ts(5,28): error TS2307: Cannot find module '@/../public/backgrounds/rohit-choudhari-_E6sXQHsgQc-unsplash.webp' or its corresponding type declarations.
+src/components/auth-background-images.ts(6,20): error TS2307: Cannot find module '@/../public/backgrounds/vimal-s-J69ERsG93hI-unsplash.webp' or its corresponding type declarations.

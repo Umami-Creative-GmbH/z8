@@ -1,0 +1,42 @@
+{
+  "at": "2026-11-16T00:36:24.877Z",
+  "nativeLines": [
+    "188 682 675 Forget(VehicleDistanceReportContainer)",
+    "189 1248 682 Forget(VehicleReportArrival) key=\"[\\\"perf-small-0-bc6b35f36095\\\",\\\"perf-small-bc6b35f36095\\\",\\\"5e9bbcd0-d8b7-4a84-bf1d-cac35a8f0c41\\\",\\\"admin\\\"]\"",
+    "198 1282 1256 Forget(VehicleReportPeriodPicker)",
+    "193 1540 1537 VehicleReportExports key=\"1\""
+  ],
+  "mcp": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ],
+  "qualification": "Final connected probes are clear. Earlier real PDF ReferenceError, offline transport failure and failed harness/capture attempts remain qualified in the report."
+}

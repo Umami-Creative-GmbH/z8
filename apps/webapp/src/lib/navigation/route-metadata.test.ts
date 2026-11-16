@@ -81,9 +81,10 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);
 		expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);
 	});
-	it("adopts only the portfolio pilot title, leaving other reports and descendants with shell titles", () => {
+	it("adopts exact report titles and preserves descendant shell headings", () => {
 		expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);
-		expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);
+		expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(true);
+		expect(appPageOwnsHeading("/de/reports/vehicles/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);
 	});
 	it.each([
