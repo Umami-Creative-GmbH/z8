@@ -744,7 +744,11 @@
       ],
       "status": "awaiting-integration",
       "verifiedCommit": null,
-      "implementationCommit": "e9b0b6afe62da10ac7ced65cc48cc54ed40983cf"
+      "implementationCommit": "e9b0b6afe62da10ac7ced65cc48cc54ed40983cf",
+      "provisionalIntegrationCommit": "ae0755e8385206e84f98ac52b5d3a0fb7f030513",
+      "provisionalCorrectionCommit": "d4455c7c2bfe4ebd8471e918f703db5c84defe3c",
+      "provisionalCorrectionIntegrationCommit": "4769c5f1a5daba7e87f81b6cc3f8cdffd865732c",
+      "pendingAcceptance": "Fresh authenticated runtime, populated before/after capture, current selection/purge/recovery and cleanup verification remain pending. Source correction passes 346 unit cases and all three type projects; no verified advancement."
     },
     {
       "id": "R049",
@@ -1813,8 +1817,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1750#issuecomment-6915801907"
     },
     {
       "id": "R169",
