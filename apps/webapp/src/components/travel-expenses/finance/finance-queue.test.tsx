@@ -12,10 +12,18 @@ import {
 import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 
 const mocks = vi.hoisted(() => ({
+	actor: "finance",
+	organization: "org",
 	getQueue: vi.fn(),
 	getFilters: vi.fn(),
 	markReimbursed: vi.fn(),
 	searchListeners: new Set<() => void>(),
+}));
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: { user: { id: mocks.actor }, session: { activeOrganizationId: mocks.organization } },
+		isPending: false,
+	}),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -182,7 +190,7 @@ function view(patch: Partial<FinanceQueueView> = {}): FinanceQueueView {
 }
 
 function mount(props: { coverage?: "uncovered" } = {}) {
-	render(
+	return render(
 		<QueryClientProvider
 			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 		>
@@ -210,6 +218,8 @@ beforeAll(() => {
 
 describe("finance queue (#612, #753)", () => {
 	beforeEach(() => {
+		mocks.actor = "finance";
+		mocks.organization = "org";
 		mocks.getQueue.mockReset();
 		mocks.getFilters.mockReset();
 		mocks.getFilters.mockResolvedValue({
@@ -223,6 +233,129 @@ describe("finance queue (#612, #753)", () => {
 		window.history.replaceState(null, "", "/travel-expenses/finance");
 	});
 	afterEach(cleanup);
+
+	it("retains loaded accounts after a failed refresh and requires a successful local retry before selection", async () => {
+		mocks.getQueue
+			.mockResolvedValueOnce(page([report]))
+			.mockResolvedValueOnce({ success: false, error: "Unavailable" })
+			.mockResolvedValue(page([report]));
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		render(
+			<QueryClientProvider client={client}>
+				<FinanceQueue />
+			</QueryClientProvider>,
+		);
+		await screen.findByText("€89.90 outstanding");
+		await client.invalidateQueries({ queryKey: ["travel-expenses", "finance"] });
+		expect(await screen.findByRole("alert")).toBeTruthy();
+		expect(screen.getByText("€89.90 outstanding")).toBeTruthy();
+		expect(
+			screen.getByRole("checkbox", { name: /Select all expenses/ }).getAttribute("aria-disabled"),
+		).toBe("true");
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+		expect(
+			screen.getByRole("checkbox", { name: /Select all expenses/ }).getAttribute("aria-disabled"),
+		).not.toBe("true");
+	});
+
+	it("reports failed filter options separately and retries them without clearing the queue", async () => {
+		mocks.getQueue.mockResolvedValue(page([report]));
+		mocks.getFilters.mockRejectedValueOnce(new Error("Unavailable"));
+		mount();
+		expect(
+			await screen.findByText("Filter options could not be loaded. Please retry."),
+		).toBeTruthy();
+		expect(await screen.findByText("€89.90 outstanding")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+		expect(mocks.getFilters).toHaveBeenCalledTimes(2);
+	});
+
+	it.each(["actor", "organization"] as const)(
+		"does not present cached accounts as current after an observed %s return while the read is held",
+		async (change) => {
+			let calls = 0;
+			mocks.getQueue.mockImplementation(() =>
+				++calls === 1 ? Promise.resolve(page([report])) : new Promise(() => {}),
+			);
+			const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+			const pageView = () => (
+				<QueryClientProvider client={client}>
+					<FinanceQueue />
+				</QueryClientProvider>
+			);
+			const rendered = render(pageView());
+			await screen.findByText("€89.90 outstanding");
+			if (change === "actor") mocks.actor = "other";
+			else mocks.organization = "other";
+			rendered.rerender(pageView());
+			await waitFor(() => expect(calls).toBe(2));
+			mocks.actor = "finance";
+			mocks.organization = "org";
+			rendered.rerender(pageView());
+			await waitFor(() => expect(calls).toBe(3));
+			expect(screen.queryByText("€89.90 outstanding")).toBeNull();
+			expect(screen.queryByRole("button", { name: "Mark as reimbursed" })).toBeNull();
+		},
+	);
+
+	it("keeps a pending bulk payment open through Escape and native duplicate submission", async () => {
+		mocks.getQueue.mockResolvedValue(page([report]));
+		let finish!: (value: unknown) => void;
+		mocks.markReimbursed.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		);
+		mount();
+		await screen.findByText("€89.90 outstanding");
+		fireEvent.click(screen.getByRole("checkbox", { name: /Select all expenses/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Mark as reimbursed" }));
+		const dialog = screen.getByRole("dialog");
+		fireEvent.change(within(dialog).getByLabelText(/Payment reference/), {
+			target: { value: "BANK 1749" },
+		});
+		const form = dialog.querySelector("form");
+		if (!form) throw new Error("Bulk form missing");
+		fireEvent.submit(form);
+		await waitFor(() => expect(mocks.markReimbursed).toHaveBeenCalledOnce());
+		fireEvent.submit(form);
+		fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+		expect(screen.getByRole("dialog")).toBeTruthy();
+		expect(mocks.markReimbursed).toHaveBeenCalledOnce();
+		finish({ success: false, error: "Unavailable" });
+		expect(
+			await screen.findByText("The expenses could not be marked as reimbursed. Please retry."),
+		).toBeTruthy();
+		expect((screen.getByLabelText(/Payment reference/) as HTMLInputElement).value).toBe(
+			"BANK 1749",
+		);
+	});
+
+	it("does not select retained rows while the next page is still loading", async () => {
+		let complete!: (result: ReturnType<typeof page>) => void;
+		mocks.getQueue.mockResolvedValueOnce(page([report], { hasMore: true })).mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		mount();
+		await screen.findByText("€89.90 outstanding");
+		fireEvent.click(screen.getByRole("button", { name: "Next" }));
+		await waitFor(() => expect(mocks.getQueue).toHaveBeenCalledTimes(2));
+		const selectAll = screen.getByRole("checkbox", { name: /Select all expenses/ });
+		expect(selectAll.getAttribute("aria-disabled")).toBe("true");
+		fireEvent.click(selectAll);
+		expect(
+			screen.getByRole("button", { name: "Mark as reimbursed" }).hasAttribute("disabled"),
+		).toBe(true);
+		complete(page([openReport("page-2", "Alex", "EUR", "15.00")], { page: 2 }));
+		await screen.findByText(/Alex/);
+		expect(screen.getByText("0 selected")).toBeTruthy();
+	});
 
 	it("lists open approved expenses with employee-paid entitlement, company-paid costs and balance", async () => {
 		mocks.getQueue.mockResolvedValue(page([report]));

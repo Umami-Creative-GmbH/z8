@@ -50,6 +50,7 @@ import {
 import { payrollRunLabel } from "./payroll-run-notice";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 import { settlementTitle } from "./settlement-title";
+import { useFinanceReadScope } from "./use-finance-command";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -67,7 +68,7 @@ function SourceIcon({ account }: { account: SettlementAccount }) {
 				? IconHistory
 				: IconReceipt;
 	return (
-		<span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+		<span className="hidden size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground sm:flex">
 			<Icon aria-hidden="true" className="size-4" />
 		</span>
 	);
@@ -152,8 +153,17 @@ function QueueFilters({
 }) {
 	const { t } = useTranslate();
 	const notExportedId = useId();
-	const { data: options } = useQuery({
-		queryKey: queryKeys.travelExpenses.financeQueueFilters(),
+	const employeeId = useId();
+	const teamId = useId();
+	const currencyId = useId();
+	const scope = useFinanceReadScope();
+	const {
+		data: options,
+		isError,
+		isFetching,
+		refetch,
+	} = useQuery({
+		queryKey: [...queryKeys.travelExpenses.financeQueueFilters(), scope],
 		queryFn: async () => {
 			const result = await getTravelExpenseFinanceQueueFilterOptions();
 			if (!result.success) throw new Error(result.error);
@@ -177,51 +187,89 @@ function QueueFilters({
 	}));
 
 	return (
-		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-center">
-			<SearchableSelect
-				aria-label={t("travelExpenses.finance.filter.employee.label", "Employee")}
-				options={employeeOptions}
-				value={view.employeeId ?? ""}
-				onValueChange={(value) => filter({ employeeId: value || null })}
-				placeholder={allEmployees}
-				searchPlaceholder={t("travelExpenses.finance.filter.employee.search", "Search employees…")}
-				emptyText={t("travelExpenses.finance.filter.employee.none", "No employee found.")}
-				allowEmpty
-				emptyLabel={allEmployees}
-			/>
-			<SearchableSelect
-				aria-label={t("travelExpenses.finance.filter.team.label", "Team at approval")}
-				options={teamOptions}
-				value={view.teamId ?? ""}
-				onValueChange={(value) => filter({ teamId: value || null })}
-				placeholder={allTeams}
-				searchPlaceholder={t("travelExpenses.finance.filter.team.search", "Search teams…")}
-				emptyText={t("travelExpenses.finance.filter.team.none", "No team found.")}
-				allowEmpty
-				emptyLabel={allTeams}
-			/>
-			<SearchableSelect
-				aria-label={t("travelExpenses.finance.filter.currency.label", "Currency")}
-				options={currencyOptions}
-				value={view.currency ?? ""}
-				onValueChange={(value) => filter({ currency: value || null })}
-				placeholder={allCurrencies}
-				searchPlaceholder={t("travelExpenses.finance.filter.currency.search", "Search currencies…")}
-				emptyText={t("travelExpenses.finance.filter.currency.none", "No currency found.")}
-				allowEmpty
-				emptyLabel={allCurrencies}
-			/>
-			<div className="flex min-h-9 items-center gap-2">
-				<Checkbox
-					id={notExportedId}
-					checked={view.notExported}
-					onCheckedChange={(checked) => filter({ notExported: checked === true })}
+		<>
+			{isError && (
+				<TravelExpenseLoadError
+					message={t(
+						"travelExpenses.finance.filter.failed",
+						"Filter options could not be loaded. Please retry.",
+					)}
+					retry={() => {
+						void refetch();
+					}}
+					isRetrying={isFetching}
 				/>
-				<Label htmlFor={notExportedId} className="whitespace-nowrap font-normal">
-					{t("travelExpenses.finance.filter.notExported", "Not yet exported")}
-				</Label>
+			)}
+			<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))_auto] xl:items-end">
+				<div className="space-y-2">
+					<Label htmlFor={employeeId}>
+						{t("travelExpenses.finance.filter.employee.label", "Employee")}
+					</Label>
+					<SearchableSelect
+						id={employeeId}
+						aria-label={t("travelExpenses.finance.filter.employee.label", "Employee")}
+						options={employeeOptions}
+						value={view.employeeId ?? ""}
+						onValueChange={(value) => filter({ employeeId: value || null })}
+						placeholder={allEmployees}
+						searchPlaceholder={t(
+							"travelExpenses.finance.filter.employee.search",
+							"Search employees…",
+						)}
+						emptyText={t("travelExpenses.finance.filter.employee.none", "No employee found.")}
+						allowEmpty
+						emptyLabel={allEmployees}
+					/>
+				</div>
+				<div className="space-y-2">
+					<Label htmlFor={teamId}>
+						{t("travelExpenses.finance.filter.team.label", "Team at approval")}
+					</Label>
+					<SearchableSelect
+						id={teamId}
+						aria-label={t("travelExpenses.finance.filter.team.label", "Team at approval")}
+						options={teamOptions}
+						value={view.teamId ?? ""}
+						onValueChange={(value) => filter({ teamId: value || null })}
+						placeholder={allTeams}
+						searchPlaceholder={t("travelExpenses.finance.filter.team.search", "Search teams…")}
+						emptyText={t("travelExpenses.finance.filter.team.none", "No team found.")}
+						allowEmpty
+						emptyLabel={allTeams}
+					/>
+				</div>
+				<div className="space-y-2">
+					<Label htmlFor={currencyId}>
+						{t("travelExpenses.finance.filter.currency.label", "Currency")}
+					</Label>
+					<SearchableSelect
+						id={currencyId}
+						aria-label={t("travelExpenses.finance.filter.currency.label", "Currency")}
+						options={currencyOptions}
+						value={view.currency ?? ""}
+						onValueChange={(value) => filter({ currency: value || null })}
+						placeholder={allCurrencies}
+						searchPlaceholder={t(
+							"travelExpenses.finance.filter.currency.search",
+							"Search currencies…",
+						)}
+						emptyText={t("travelExpenses.finance.filter.currency.none", "No currency found.")}
+						allowEmpty
+						emptyLabel={allCurrencies}
+					/>
+				</div>
+				<div className="flex min-h-9 items-center gap-2">
+					<Checkbox
+						id={notExportedId}
+						checked={view.notExported}
+						onCheckedChange={(checked) => filter({ notExported: checked === true })}
+					/>
+					<Label htmlFor={notExportedId} className="whitespace-nowrap font-normal">
+						{t("travelExpenses.finance.filter.notExported", "Not yet exported")}
+					</Label>
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }
 
@@ -307,13 +355,19 @@ function QueuePagination({
  * With `coverage: "uncovered"` (#756), owners and admins see only what awaits
  * reimbursement and no expense officer covers.
  */
-export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } = {}) {
+export function FinanceQueue(props: { coverage?: FinanceQueueCoverage } = {}) {
+	const scope = useFinanceReadScope();
+	return <FinanceQueueContent key={scope} {...props} />;
+}
+
+function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	const scope = useFinanceReadScope();
 	const { view, setView } = useFinanceQueueView(coverage);
 	const search = financeQueueSearch(view);
-	const { data, isError, isFetching, isLoading, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.financeQueue(search, coverage),
+	const { data, isError, isFetching, isLoading, isPlaceholderData, refetch } = useQuery({
+		queryKey: [...queryKeys.travelExpenses.financeQueue(search, coverage), scope],
 		queryFn: async () => {
 			const result = coverage
 				? await getTravelExpenseFinanceQueue(view, coverage)
@@ -321,14 +375,19 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
-		placeholderData: (previous) => previous,
+		placeholderData: (previous, query) => (query?.queryKey.at(-1) === scope ? previous : undefined),
 	});
 	const queryClient = useQueryClient();
 	const canSettle = data?.canSettle ?? false;
-	const selection = useSelection(`${search}|${coverage ?? ""}`, data?.accounts ?? []);
+	// Retained rows belong to the previous view, not the page named by the controls.
+	const selection = useSelection(
+		`${scope}|${search}|${coverage ?? ""}`,
+		isPlaceholderData || isError || isFetching ? [] : (data?.accounts ?? []),
+	);
 	// What was selected when the dialog opened: a reload meanwhile changes neither the request nor its results.
 	const [bulkItems, setBulkItems] = useState<BulkReimbursementItem[] | null>(null);
 	function openBulk() {
+		if (isPlaceholderData || isError || isFetching) return;
 		setBulkItems(
 			selection.selected.map((account) => ({ account, label: accountLabel(t, locale, account) })),
 		);
@@ -400,7 +459,7 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 					)}
 				</div>
 				<QueueFilters view={view} onChange={setView} />
-				{isError && !data && (
+				{isError && (
 					<TravelExpenseLoadError
 						message={t(
 							"travelExpenses.finance.errors.load",
@@ -464,6 +523,7 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 														name: accountLabel(t, locale, account),
 													})}
 													checked={selection.isSelected(account)}
+													disabled={isPlaceholderData || isError || isFetching}
 													onCheckedChange={(checked) => selection.toggle(account, checked === true)}
 												/>
 											)}
@@ -472,13 +532,13 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 									<Link
 										href={accountHref(account)}
 										className={cn(
-											"flex flex-wrap items-center gap-x-3 gap-y-1 py-4 transition-colors hover:bg-muted/50 focus-visible:outline-2 sm:flex-nowrap",
+											"grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-4 transition-colors hover:bg-muted/50 focus-visible:outline-2 sm:flex sm:flex-nowrap",
 											canSettle ? "min-w-0 flex-1 pr-6 pl-3" : "px-6",
 										)}
 									>
 										<SourceIcon account={account} />
-										<div className="min-w-0 flex-1">
-											<p className="truncate font-medium">
+										<div className="col-span-2 min-w-0 flex-1">
+											<p className="break-words font-medium">
 												{account.employeeName ?? "—"} · {title.name}
 											</p>
 											<p className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
@@ -512,7 +572,7 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 													)}
 											</p>
 										</div>
-										<div className="text-right text-sm">
+										<div className="text-sm sm:text-right">
 											{account.summary.currencies.map((line) => (
 												<p key={line.currency} className="tabular-nums">
 													<span className="text-muted-foreground">
@@ -528,7 +588,10 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 											))}
 										</div>
 										<SettlementStateBadge state={account.summary.state} />
-										<IconChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
+										<IconChevronRight
+											aria-hidden="true"
+											className="hidden size-4 text-muted-foreground sm:block"
+										/>
 									</Link>
 								</li>
 							);

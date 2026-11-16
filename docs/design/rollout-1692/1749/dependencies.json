@@ -1,0 +1,28 @@
+{
+  "physicalRootAppAndVirtualStore": true,
+  "lockHash": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+  "packages": [
+    {
+      "name": "next",
+      "path": "node_modules/.pnpm/next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915/node_modules/next/dist/server/next.js"
+    },
+    {
+      "name": "react",
+      "path": "node_modules/.pnpm/react@19.3.1/node_modules/react/index.js"
+    },
+    {
+      "name": "vitest",
+      "path": "node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/index.cjs"
+    },
+    {
+      "name": "babel-plugin-react-compiler",
+      "path": "node_modules/.pnpm/babel-plugin-react-compiler@1.0.0/node_modules/babel-plugin-react-compiler/dist/index.js"
+    }
+  ],
+  "install": "frozen offline integrity copy; ignore-scripts",
+  "licenses": {
+    "provenance": "Authorized manifest/lock-matched read-copy of inherited root artifact",
+    "sha256": "FD8CA4BF29B59368907AE8D52A5149B3959A901194F424AD605044F67C2F0BBF",
+    "entries": 125
+  }
+}

@@ -220,6 +220,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		/^\/payroll\/work-balances\/[^/]+$/.test(path) ||
 		path === "/" ||
 		path === "/time-tracking" ||
+		path === "/travel-expenses/finance" ||
 		path === "/notifications" ||
 		path === "/absences" ||
 		path === "/my-requests" ||

@@ -1,0 +1,42 @@
+{
+  "identical": true,
+  "sizeBytes": 2957,
+  "sha256": "08a8715617afe1083236378a5e2659a322bc527ddc0adf9e5be07b8b39665498",
+  "zipCrcVerified": true,
+  "entries": [
+    {
+      "name": "expenses.csv",
+      "bytes": 3616,
+      "sha256": "d4aa3ed9f4055ddcf8e3fbbfb0424e64a656c290580c8b0fd192122ae731cbe6",
+      "containsSyntheticExpense": true
+    },
+    {
+      "name": "manifest.json",
+      "bytes": 1912,
+      "sha256": "13ade4b4c99b4ce9a7a5ee5c4c1fabb2519f922512ffd30efc32770ec2accd33",
+      "containsSyntheticExpense": true
+    },
+    {
+      "name": "receipts.csv",
+      "bytes": 122,
+      "sha256": "37234fd0f5faf5217afe586d05966827a1797b31dc6f76ef998843c9e34fb87c",
+      "containsSyntheticExpense": false
+    },
+    {
+      "name": "reports.csv",
+      "bytes": 898,
+      "sha256": "d8670881c77c70feefa7e9cdca9ffd7056983d87634428e5ea745bfd71b9cce1",
+      "containsSyntheticExpense": false
+    }
+  ],
+  "storedBatch": {
+    "status": "completed",
+    "attempt": 1,
+    "size_bytes": 2957,
+    "checksum_sha256": "08a8715617afe1083236378a5e2659a322bc527ddc0adf9e5be07b8b39665498",
+    "manifest_digest": "travel_expense_export:v1:6de3e0ba1d0fbde0dfcb90f3c2d47373b7a93575ebf8391e8a6d669b7ff3b5f0"
+  },
+  "settlementEntriesAfterExport": 0,
+  "chromiumDownloadsCompleted": 2,
+  "driver": "New isolated Puppeteer context with normal auth and notifications denied; native CLI completion canceled"
+}

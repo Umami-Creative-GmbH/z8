@@ -7,6 +7,8 @@ import { getExpenseOfficerCoverageGap } from "@/app/[locale]/(app)/travel-expens
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { queryKeys } from "@/lib/query/keys";
 import { Link } from "@/navigation";
+import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { useFinanceReadScope } from "./use-finance-command";
 
 export const UNCOVERED_FINANCE_QUEUE_HREF = "/travel-expenses/finance?coverage=uncovered";
 
@@ -17,14 +19,28 @@ export const UNCOVERED_FINANCE_QUEUE_HREF = "/travel-expenses/finance?coverage=u
  */
 export function OfficerCoverageGapNotice() {
 	const { t } = useTranslate();
-	const { data } = useQuery({
-		queryKey: queryKeys.travelExpenses.officerCoverageGap(),
+	const scope = useFinanceReadScope();
+	const { data, isError, isFetching, refetch } = useQuery({
+		queryKey: [...queryKeys.travelExpenses.officerCoverageGap(), scope],
 		queryFn: async () => {
 			const result = await getExpenseOfficerCoverageGap();
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
 	});
+	if (isError)
+		return (
+			<TravelExpenseLoadError
+				message={t(
+					"travelExpenses.finance.coverageGap.failed",
+					"Coverage could not be checked. Please retry.",
+				)}
+				retry={() => {
+					void refetch();
+				}}
+				isRetrying={isFetching}
+			/>
+		);
 	if (!data || data.uncovered === 0) return null;
 	return (
 		<Alert role="status">

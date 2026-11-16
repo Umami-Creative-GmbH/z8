@@ -1,0 +1,269 @@
+{
+  "matrix": [
+    {
+      "style": "light",
+      "viewport": "desktop",
+      "sameRowsAndDestinations": true,
+      "notificationPermission": "denied",
+      "sameFontAndTheme": true,
+      "beforeH1": 2,
+      "afterH1": 1
+    },
+    {
+      "style": "light",
+      "viewport": "phone",
+      "sameRowsAndDestinations": true,
+      "notificationPermission": "denied",
+      "sameFontAndTheme": true,
+      "beforeH1": 2,
+      "afterH1": 1
+    },
+    {
+      "style": "light",
+      "viewport": "wide",
+      "sameRowsAndDestinations": true,
+      "notificationPermission": "denied",
+      "sameFontAndTheme": true,
+      "beforeH1": 2,
+      "afterH1": 1
+    },
+    {
+      "style": "dark18",
+      "viewport": "desktop",
+      "sameRowsAndDestinations": true,
+      "notificationPermission": "denied",
+      "sameFontAndTheme": true,
+      "beforeH1": 2,
+      "afterH1": 1
+    },
+    {
+      "style": "dark18",
+      "viewport": "phone",
+      "sameRowsAndDestinations": true,
+      "notificationPermission": "denied",
+      "sameFontAndTheme": true,
+      "beforeH1": 2,
+      "afterH1": 1
+    },
+    {
+      "style": "dark18",
+      "viewport": "wide",
+      "sameRowsAndDestinations": true,
+      "notificationPermission": "denied",
+      "sameFontAndTheme": true,
+      "beforeH1": 2,
+      "afterH1": 1
+    }
+  ],
+  "images": [
+    {
+      "file": "after-collapsed-dark18.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 148940,
+      "sha256": "849b17fb610d7f106ff22a55e47ebe30fc95ea3015d6904a0fec153672af780b"
+    },
+    {
+      "file": "after-dark18-desktop.png",
+      "width": 1312,
+      "height": 1000,
+      "bytes": 156241,
+      "sha256": "f41add53251c79e43c507e8230c88e84c8ffd84c407885cd179c836757e6f5f8"
+    },
+    {
+      "file": "after-dark18-phone.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 48182,
+      "sha256": "b49d943c10cf432a77ef5ea05f894806d8eaaae098ba3dfb18fc3bc141c09e5e"
+    },
+    {
+      "file": "after-dark18-wide.png",
+      "width": 2112,
+      "height": 1200,
+      "bytes": 185516,
+      "sha256": "ae607130480108aa0c5481f52ace40f0bfc9f1ad07ed4c7c5340df7dde6262d5"
+    },
+    {
+      "file": "after-light-desktop.png",
+      "width": 1344,
+      "height": 1000,
+      "bytes": 148764,
+      "sha256": "fac6ecb617bd9885119bee31050f220e2097b31c07d1df703c0e6c6762a8ef0d"
+    },
+    {
+      "file": "after-light-phone.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 53034,
+      "sha256": "cd3275fe92f551d473178e1e9f88ebb6f540b04b1620e992a9d2bc90ef19c575"
+    },
+    {
+      "file": "after-light-wide.png",
+      "width": 2144,
+      "height": 1200,
+      "bytes": 165653,
+      "sha256": "358e801c7c51d9db5fd140e47b868b2a51cd55e9c3926f9b438799012cdc9741"
+    },
+    {
+      "file": "before-dark18-desktop.png",
+      "width": 1312,
+      "height": 1000,
+      "bytes": 154712,
+      "sha256": "5344a3e6ba7ed84dcf47da5f031700ee5f0bf1a71592fa9ec12f7944975ae1ed"
+    },
+    {
+      "file": "before-dark18-phone.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 45033,
+      "sha256": "b896cf8ad8deb7714642249e4c82aa79ea411bafc58447ff8ce8040e1e33bae2"
+    },
+    {
+      "file": "before-dark18-wide.png",
+      "width": 2112,
+      "height": 1200,
+      "bytes": 181051,
+      "sha256": "4173b9a3f080fdef67705f8142951f1d83fd666795627f1ebd0956fa090aee5e"
+    },
+    {
+      "file": "before-light-desktop.png",
+      "width": 1344,
+      "height": 1000,
+      "bytes": 147083,
+      "sha256": "16d4bc0f734a1be72e0477f19339b3a92c42a73d338df897712920593ec96801"
+    },
+    {
+      "file": "before-light-phone.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 52212,
+      "sha256": "88c6429ff457bdbff0550b7143e66235c1a0b9a0578967d341a13e011095a733"
+    },
+    {
+      "file": "before-light-wide.png",
+      "width": 2144,
+      "height": 1200,
+      "bytes": 166405,
+      "sha256": "9ad172273ef375c37c29f4899ccca35d0f08e1e88444b8fd9a245917db9096fa"
+    },
+    {
+      "file": "bulk-mixed-outcome.png",
+      "width": 512,
+      "height": 279,
+      "bytes": 16682,
+      "sha256": "6c389e6899e7010e41976eec581b1ac54a4dca01e3dd7f38eb105b773813a6ca"
+    },
+    {
+      "file": "partial-persisted.png",
+      "width": 720,
+      "height": 666,
+      "bytes": 2852,
+      "sha256": "60319bce0b30d9f6307ad12ddd7a035600dbaa51c092018bcad7e3f7d2cc653c"
+    },
+    {
+      "file": "report-paid-readback.png",
+      "width": 720,
+      "height": 292,
+      "bytes": 1309,
+      "sha256": "c7bf186b4c6b49276e1a23e97700d52de622fe25d6c58c172ba2e736b986dbc9"
+    }
+  ],
+  "next": {
+    "get_compilation_issues": {
+      "issues": []
+    },
+    "get_errors": {
+      "configErrors": [],
+      "sessionErrors": []
+    },
+    "get_page_metadata": {
+      "sessions": [
+        {
+          "url": "/en/travel-expenses/finance",
+          "routerType": "app",
+          "segments": [
+            {
+              "path": "app/[locale]/(app)/layout.tsx",
+              "type": "layout",
+              "isBoundary": false,
+              "isBuiltin": false
+            },
+            {
+              "path": "app/[locale]/(app)/travel-expenses/layout.tsx",
+              "type": "layout",
+              "isBoundary": false,
+              "isBuiltin": false
+            },
+            {
+              "path": "app/[locale]/layout.tsx",
+              "type": "layout",
+              "isBoundary": false,
+              "isBuiltin": false
+            },
+            {
+              "path": "global-error.js",
+              "type": "boundary:global-error",
+              "isBoundary": true,
+              "isBuiltin": true
+            },
+            {
+              "path": "not-found.js",
+              "type": "boundary:not-found",
+              "isBoundary": true,
+              "isBuiltin": true
+            },
+            {
+              "path": "app/[locale]/(app)/error.tsx",
+              "type": "boundary:error",
+              "isBoundary": true,
+              "isBuiltin": false
+            },
+            {
+              "path": "app/[locale]/(app)/not-found.tsx",
+              "type": "boundary:not-found",
+              "isBoundary": true,
+              "isBuiltin": false
+            },
+            {
+              "path": "app/[locale]/error.tsx",
+              "type": "boundary:error",
+              "isBoundary": true,
+              "isBuiltin": false
+            },
+            {
+              "path": "app/[locale]/not-found.tsx",
+              "type": "boundary:not-found",
+              "isBoundary": true,
+              "isBuiltin": false
+            },
+            {
+              "path": "app/[locale]/(app)/travel-expenses/finance/page.tsx",
+              "type": "page",
+              "isBoundary": false,
+              "isBuiltin": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "nativeReact": {
+    "component": "FinanceQueueContent",
+    "treeResolved": true,
+    "inspectSucceeded": true,
+    "privatePropsExcluded": true
+  },
+  "keyboard": {
+    "currencyFirstEscapeClosedPopup": true,
+    "focusReturnedTo": "Currency",
+    "partialPaymentSubmittedWith": "Enter"
+  },
+  "transferInitiation": false,
+  "limits": [
+    "Native viewports are not true zoom or device certification",
+    "Native download completion canceled; fresh isolated Puppeteer context completed two actual downloads",
+    "No live grant/revoke, positive recovery or payroll recording browser matrix; see actual component/PostgreSQL seams",
+    "Initial handcrafted report evidence refusal retained unchanged; separate valid report prerequisite used"
+  ]
+}

@@ -40,6 +40,11 @@ import {
 	type BulkReimbursementSkippedItem,
 } from "./bulk-reimbursement-dialog";
 import { settlementTitle } from "./settlement-title";
+import {
+	type FinanceSubmission,
+	useFinanceCommand,
+	useFinanceReadScope,
+} from "./use-finance-command";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -169,10 +174,13 @@ function ExportSelection({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const attempt = useRef<{ selection: string; key: string } | null>(null);
+	const command = useFinanceCommand(JSON.stringify(rows.map((row) => row.revisionId)));
 	const [problem, setProblem] = useState<string | null>(null);
 	const form = useForm({
+		onSubmitMeta: { submission: null as FinanceSubmission | null },
 		defaultValues: { revisionIds: [] as string[] },
-		onSubmit: async ({ value, formApi }) => {
+		onSubmit: async ({ value, formApi, meta }) => {
+			if (!meta.submission || !command.isCurrent(meta.submission)) return;
 			setProblem(null);
 			const chosen = new Set(value.revisionIds);
 			const selection = rows
@@ -187,6 +195,7 @@ function ExportSelection({
 				idempotencyKey: attempt.current.key,
 				selection,
 			});
+			if (!command.isCurrent(meta.submission)) return;
 			if (!result.success) {
 				// Keep the key: sending the same selection again is a safe retry.
 				setProblem(
@@ -228,7 +237,21 @@ function ExportSelection({
 			noValidate
 			onSubmit={(event) => {
 				event.preventDefault();
-				void form.handleSubmit();
+				event.stopPropagation();
+				const submission = command.reserve();
+				if (!submission) return;
+				void form
+					.handleSubmit({ submission })
+					.catch(() => {
+						if (command.isCurrent(submission))
+							setProblem(
+								t(
+									"travelExpenses.finance.exports.errors.failed",
+									"The export could not be created. Please retry.",
+								),
+							);
+					})
+					.finally(() => command.release(submission));
 			}}
 			className="space-y-3"
 			aria-label={t("travelExpenses.finance.exports.form.label", "Create an export")}
@@ -591,9 +614,14 @@ function BatchItem({
  * the export permission; an export never records a reimbursement.
  */
 export function FinanceExports() {
+	const scope = useFinanceReadScope();
+	return <FinanceExportsContent key={scope} scope={scope} />;
+}
+
+function FinanceExportsContent({ scope }: { scope: string | null }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const queryKey = queryKeys.travelExpenses.financeExports();
+	const queryKey = [...queryKeys.travelExpenses.financeExports(), scope];
 	const { data, isError, isFetching, isLoading, refetch } = useQuery({
 		queryKey,
 		queryFn: async () => {
@@ -627,7 +655,7 @@ export function FinanceExports() {
 					)}
 				</p>
 			</div>
-			{isError && !data ? (
+			{isError && (
 				<TravelExpenseLoadError
 					message={t(
 						"travelExpenses.finance.exports.errors.load",
@@ -638,20 +666,25 @@ export function FinanceExports() {
 					}}
 					isRetrying={isFetching}
 				/>
-			) : isLoading || !data ? (
-				<div>
-					<p className="sr-only">
-						{t("travelExpenses.finance.exports.loading", "Loading exports…")}
-					</p>
-					<Skeleton aria-hidden="true" className="h-48 w-full" />
-				</div>
+			)}
+			{isLoading || !data ? (
+				isError ? null : (
+					<div>
+						<p className="sr-only">
+							{t("travelExpenses.finance.exports.loading", "Loading exports…")}
+						</p>
+						<Skeleton aria-hidden="true" className="h-48 w-full" />
+					</div>
+				)
 			) : (
 				<>
-					<ExportSelection
-						rows={data.exportable}
-						maxRevisions={data.maxRevisions}
-						onChanged={refresh}
-					/>
+					<fieldset disabled={isError || isFetching} className="min-w-0">
+						<ExportSelection
+							rows={data.exportable}
+							maxRevisions={data.maxRevisions}
+							onChanged={refresh}
+						/>
+					</fieldset>
 					{data.batches.length > 0 && (
 						<div className="space-y-2">
 							<h3 className="text-base font-medium">
@@ -664,7 +697,7 @@ export function FinanceExports() {
 											<BatchItem
 												key={batch.id}
 												batch={batch}
-												canSettle={data.canSettle}
+												canSettle={data.canSettle && !isError && !isFetching}
 												onChanged={refresh}
 											/>
 										))}
