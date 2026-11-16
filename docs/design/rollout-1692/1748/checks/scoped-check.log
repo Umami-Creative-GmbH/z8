@@ -1,0 +1,258 @@
+src\components\travel-expenses\travel-expense-claim-detail.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    132 132 │       async (changed) => {␍
+    133 133 │         let finish!: (value: Response) => void;␍
+    134     │ - → → → vi.stubGlobal("fetch",·vi.fn()␍
+    135     │ - → → → → .mockResolvedValueOnce(Response.json(storedDetail))␍
+    136     │ - → → → → .mockImplementationOnce(()·=>·new·Promise<Response>(resolve·=>·{·finish·=·resolve;·}))␍
+    137     │ - → → → → .mockResolvedValueOnce(Response.json({·...storedDetail,·claim:·{·...storedDetail.claim,·notes:·"Current·evidence"·}·})));␍
+        134 │ + → → → vi.stubGlobal(␍
+        135 │ + → → → → "fetch",␍
+        136 │ + → → → → vi␍
+        137 │ + → → → → → .fn()␍
+        138 │ + → → → → → .mockResolvedValueOnce(Response.json(storedDetail))␍
+        139 │ + → → → → → .mockImplementationOnce(␍
+        140 │ + → → → → → → ()·=>␍
+        141 │ + → → → → → → → new·Promise<Response>((resolve)·=>·{␍
+        142 │ + → → → → → → → → finish·=·resolve;␍
+        143 │ + → → → → → → → }),␍
+        144 │ + → → → → → )␍
+        145 │ + → → → → → .mockResolvedValueOnce(␍
+        146 │ + → → → → → → Response.json({␍
+        147 │ + → → → → → → → ...storedDetail,␍
+        148 │ + → → → → → → → claim:·{·...storedDetail.claim,·notes:·"Current·evidence"·},␍
+        149 │ + → → → → → → }),␍
+        150 │ + → → → → → ),␍
+        151 │ + → → → );␍
+    138 152 │         const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });␍
+    139     │ - → → → const·view·=·(claimId·=·"old-claim")·=>·<QueryClientProvider·client={client}>␍
+    140     │ - → → → → <TravelExpenseClaimDetail·claimId={claimId}·organizationId={actor.activeOrganizationId}␍
+    141     │ - → → → → → employeeId={actor.employeeId}·userId={actor.userId}·/>␍
+    142     │ - → → → </QueryClientProvider>;␍
+        153 │ + → → → const·view·=·(claimId·=·"old-claim")·=>·(␍
+        154 │ + → → → → <QueryClientProvider·client={client}>␍
+        155 │ + → → → → → <TravelExpenseClaimDetail␍
+        156 │ + → → → → → → claimId={claimId}␍
+        157 │ + → → → → → → organizationId={actor.activeOrganizationId}␍
+        158 │ + → → → → → → employeeId={actor.employeeId}␍
+        159 │ + → → → → → → userId={actor.userId}␍
+        160 │ + → → → → → />␍
+        161 │ + → → → → </QueryClientProvider>␍
+        162 │ + → → → );␍
+    143 163 │         const mounted = render(view());␍
+    144 164 │         await screen.findByText("Original context");␍
+    ······· │ 
+    149 169 │         await vi.waitFor(() => expect(finish).toBeTypeOf("function"));␍
+    150 170 │         expect(screen.queryByText("Original context")).toBeNull();␍
+    151     │ - → → → actor.activeOrganizationId·=·"org";·actor.employeeId·=·"owner";·actor.userId·=·"user";␍
+        171 │ + → → → actor.activeOrganizationId·=·"org";␍
+        172 │ + → → → actor.employeeId·=·"owner";␍
+        173 │ + → → → actor.userId·=·"user";␍
+    152 174 │         mounted.rerender(view());␍
+    153 175 │         await screen.findByText("Current evidence");␍
+    154     │ - → → → await·act(async·()·=>·{·finish(Response.json({·...storedDetail,·claim:·{·...storedDetail.claim,·notes:·"Retired·evidence"·}·}));·});␍
+        176 │ + → → → await·act(async·()·=>·{␍
+        177 │ + → → → → finish(␍
+        178 │ + → → → → → Response.json({␍
+        179 │ + → → → → → → ...storedDetail,␍
+        180 │ + → → → → → → claim:·{·...storedDetail.claim,·notes:·"Retired·evidence"·},␍
+        181 │ + → → → → → }),␍
+        182 │ + → → → → );␍
+        183 │ + → → → });␍
+    155 184 │         expect(screen.queryByText("Retired evidence")).toBeNull();␍
+    156 185 │         expect(screen.queryByText("Original context")).toBeNull();␍
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{␍
+      3     │ - → appPageOwnsHeading,␍
+      4     │ - → normalizeAppPath,␍
+      5     │ - → resolveAppRouteMetadata,␍
+      6     │ - }·from·"./route-metadata";␍
+          2 │ + import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      7   3 │   ␍
+      8   4 │   describe("route metadata", () => {␍
+    ······· │ 
+     16  12 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     17  13 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     18     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+     19     │ - → → → true,␍
+     20     │ - → → );␍
+     21     │ - → → expect(␍
+     22     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),␍
+     23     │ - → → ).toBe(false);␍
+         14 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+         15 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     24  16 │     });␍
+     25  17 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │ 
+     53  45 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     54  46 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     55     │ - → → expect(␍
+     56     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+     57     │ - → → ).toBe(true);␍
+         47 │ + → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     58  48 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     59     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+     60     │ - → → → false,␍
+     61     │ - → → );␍
+         49 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     62  50 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     63  51 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │ 
+     69  57 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+     70  58 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     71     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+     72     │ - → → → true,␍
+     73     │ - → → );␍
+     74     │ - → → expect(␍
+     75     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+     76     │ - → → ).toBe(false);␍
+         59 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+         60 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+     77  61 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     78  62 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │ 
+     81  65 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     82  66 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     83     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+     84     │ - → → → true,␍
+     85     │ - → → );␍
+         67 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+     86  68 │     });␍
+     87  69 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+     88     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+     89     │ - → → → true,␍
+     90     │ - → → );␍
+     91     │ - → → expect(␍
+     92     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+     93     │ - → → ).toBe(false);␍
+         70 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+         71 │ + → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+     94  72 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     95  73 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │ 
+     98  76 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     99  77 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+    100     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+    101     │ - → → → true,␍
+    102     │ - → → );␍
+         78 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+    103  79 │     });␍
+    104  80 │     it("adopts only the complete review arrival route", () => {␍
+    105     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+    106     │ - → → → true,␍
+    107     │ - → → );␍
+    108     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+    109     │ - → → → false,␍
+    110     │ - → → );␍
+    111     │ - → → expect(␍
+    112     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+    113     │ - → → ).toBe(false);␍
+         81 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+         82 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+         83 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+    114  84 │     });␍
+    115  85 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+    116  86 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+    117     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+    118     │ - → → → false,␍
+    119     │ - → → );␍
+         87 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+    120  88 │     });␍
+    121  89 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+    122  90 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+    123     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+    124     │ - → → → false,␍
+    125     │ - → → );␍
+         91 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+    126  92 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+    127     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+    128     │ - → → → false,␍
+    129     │ - → → );␍
+         93 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+    130  94 │     });␍
+    131  95 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │ 
+    174 138 │   ␍
+    175 139 │     it("normalizes locale and trailing slash segments", () => {␍
+    176     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+    177     │ - → → → "/settings/security",␍
+    178     │ - → → );␍
+        140 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    179 141 │     });␍
+    180 142 │   });␍
+    ······· │ 
+    193 155 │   ])("retained legacy claim heading ownership: %s", (path, owns) => {␍
+    194 156 │     expect(appPageOwnsHeading(path)).toBe(owns);␍
+    195     │ - });␍
+    196     │ - ␍
+        157 │ + });␍
+    197 158 │   
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    169 169 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    170 170 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    171     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+    172     │ - → → (entry)·=>·({␍
+    173     │ - → → → id:·`settings-${entry.id}`,␍
+    174     │ - → → → href:·entry.href,␍
+    175     │ - → → → titleKey:·entry.titleKey,␍
+    176     │ - → → → titleDefault:·entry.titleDefault,␍
+    177     │ - → → }),␍
+    178     │ - → ),␍
+        171 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+        172 │ + → → id:·`settings-${entry.id}`,␍
+        173 │ + → → href:·entry.href,␍
+        174 │ + → → titleKey:·entry.titleKey,␍
+        175 │ + → → titleDefault:·entry.titleDefault,␍
+        176 │ + → })),␍
+    179 177 │     {␍
+    180 178 │       id: "settings",␍
+    ······· │ 
+    193 191 │   ␍
+    194 192 │   export function normalizeAppPath(pathname: string): string {␍
+    195     │ - → const·[firstSegment,·...remainingSegments]·=·pathname␍
+    196     │ - → → .split("/")␍
+    197     │ - → → .filter(Boolean);␍
+    198     │ - → const·segments·=·ALL_LANGUAGES.includes(␍
+    199     │ - → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+    200     │ - → )␍
+        193 │ + → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+        194 │ + → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+    201 195 │       ? remainingSegments␍
+    202 196 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    209 203 │   export function appPageOwnsHeading(pathname: string): boolean {␍
+    210 204 │     const path = normalizeAppPath(pathname);␍
+    211     │ - ·const·legacyClaimId·=·/^\/travel-expenses\/([^/]+)$/.exec(path)?.[1];␍
+        205 │ + → const·legacyClaimId·=·/^\/travel-expenses\/([^/]+)$/.exec(path)?.[1];␍
+    212 206 │     return (␍
+    213 207 │       Boolean(legacyClaimId && z.uuid().safeParse(legacyClaimId).success) ||␍
+    ······· │ 
+    259 253 │       [...APP_ROUTE_METADATA]␍
+    260 254 │         .sort((left, right) => right.href.length - left.href.length)␍
+    261     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+    262     │ - → → UNKNOWN_ROUTE_METADATA␍
+        255 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+    263 256 │     );␍
+    264 257 │   }␍
+  
+
+Checked 7 files in 11ms. No fixes applied.
+Found 3 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

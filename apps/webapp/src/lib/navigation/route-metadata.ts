@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { SETTINGS_ENTRIES } from "@/components/settings/settings-config";
 import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
@@ -207,7 +208,9 @@ export function normalizeAppPath(pathname: string): string {
  */
 export function appPageOwnsHeading(pathname: string): boolean {
 	const path = normalizeAppPath(pathname);
+	const legacyClaimId = /^\/travel-expenses\/([^/]+)$/.exec(path)?.[1];
 	return (
+		Boolean(legacyClaimId && z.uuid().safeParse(legacyClaimId).success) ||
 		/^\/equipment\/assignments\/[^/]+$/.test(path) ||
 		/^\/equipment\/employees\/[^/]+$/.test(path) ||
 		/^\/driving-licence\/checks\/[^/]+$/.test(path) ||

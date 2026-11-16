@@ -1,0 +1,23 @@
+{
+  "base": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+  "verifiedProduct": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+  "mode": "owned implementation",
+  "files": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "sha256": "a04b4071d09f619878e6a373756bc62745756ac5767d31194aacdaf9a947129c"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "sha256": "c9820249e6b079304beea90961fe8b932b86118963f150d724c4bb2ead97a227"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "sha256": "429d536c6e5718490cbc42bc44caeedbcd9969f22841b32d46db31c278bb3231"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "85d6ab7c51b8d4215b71d96b61fe75d434071c790fa970ee018804a57093bcef"
+    }
+  ]
+}
