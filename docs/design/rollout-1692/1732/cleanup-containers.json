@@ -1,0 +1,38 @@
+[
+  {
+    "name": "z8_perf_8e75cf0e1627_postgres",
+    "absent": true
+  },
+  {
+    "name": "z8_perf_8e75cf0e1627_redis",
+    "absent": true
+  },
+  {
+    "name": "z8_perf_8e75cf0e1627_storage",
+    "absent": true
+  },
+  {
+    "name": "z8_perf_46bfd619ac78_postgres",
+    "absent": true
+  },
+  {
+    "name": "z8_perf_46bfd619ac78_redis",
+    "absent": true
+  },
+  {
+    "name": "z8_perf_46bfd619ac78_storage",
+    "absent": true
+  },
+  {
+    "name": "z8_perf_54d41fb2a83a_postgres",
+    "absent": true
+  },
+  {
+    "name": "z8_perf_54d41fb2a83a_redis",
+    "absent": true
+  },
+  {
+    "name": "z8_perf_54d41fb2a83a_storage",
+    "absent": true
+  }
+]

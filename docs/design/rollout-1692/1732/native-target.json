@@ -1,0 +1,13 @@
+{
+  "tag": "INPUT",
+  "field": "payPeriodYear",
+  "ancestors": [
+    "TFormControl",
+    "TFormItem",
+    "Field",
+    "PayslipBatchStart",
+    "PayslipBatchesScope"
+  ],
+  "expanded": "false",
+  "allOptionsHidden": true
+}

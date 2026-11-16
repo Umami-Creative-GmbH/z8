@@ -301,6 +301,66 @@ describe("payslip batches matched by personnel number (#868)", () => {
 	});
 
 	describe("starting a batch", () => {
+		it("refuses displayed scope drift even when the actor administers both organizations", async () => {
+			const second = `${ORG}-second`;
+			await admin.query(
+				"insert into organization (id,name,slug,timezone,personnel_files_enabled,created_at) values ($1,$1,$1,'Europe/Berlin',true,now())",
+				[second],
+			);
+			await admin.query(
+				"insert into member (id,organization_id,user_id,role,status,created_at) values ($1,$2,'t868-owner','owner','approved',now())",
+				[`${second}-member`, second],
+			);
+			const { loadCurrentPersonnelFileAccess } = await import(
+				"./current-access"
+			);
+			const { canRunPayslipBatches, listOwnPayslipBatches } = await import(
+				"./payslip-batch-store"
+			);
+			try {
+				signIn("owner");
+				const accessA = await loadCurrentPersonnelFileAccess();
+				harness.organizationId = second;
+				const accessB = await loadCurrentPersonnelFileAccess();
+				if (accessA.status !== "resolved" || accessB.status !== "resolved")
+					throw Error("Both scopes must resolve");
+				expect(canRunPayslipBatches(accessA.access)).toBe(true);
+				expect(canRunPayslipBatches(accessB.access)).toBe(true);
+				const result = await actions.startPayslipBatchAction({
+					payPeriod: { year: 2026, month: 11 },
+					visibility: "shared",
+					expectedScope: { userId: "t868-owner", organizationId: ORG },
+				});
+				expect(result.success).toBe(false);
+				expect(await listOwnPayslipBatches(db, accessA.access)).toEqual([]);
+				expect(await listOwnPayslipBatches(db, accessB.access)).toEqual([]);
+				const docs = await admin.query(
+					"select id from employee_document where organization_id in ($1,$2)",
+					[ORG, second],
+				);
+				expect(docs.rows).toEqual([]);
+				expect(harness.notifications).toEqual([]);
+				const wrongActor = await actions.startPayslipBatchAction({
+					payPeriod: { year: 2026, month: 11 },
+					visibility: "hr_only",
+					expectedScope: { userId: "t868-officer", organizationId: second },
+				});
+				expect(wrongActor.success).toBe(false);
+				expect(await listOwnPayslipBatches(db, accessB.access)).toEqual([]);
+				const accepted = await actions.startPayslipBatchAction({
+					payPeriod: { year: 2026, month: 11 },
+					visibility: "hr_only",
+					expectedScope: { userId: "t868-owner", organizationId: second },
+				});
+				expect(accepted.success).toBe(true);
+				expect(await listOwnPayslipBatches(db, accessB.access)).toHaveLength(1);
+			} finally {
+				harness.organizationId = ORG;
+				await admin.query("delete from organization where id=$1", [second]);
+			}
+		});
+
+
 		it("refuses an officer whose grant does not include payslips", async () => {
 			signIn("contractOfficer");
 			const result = await actions.startPayslipBatchAction({

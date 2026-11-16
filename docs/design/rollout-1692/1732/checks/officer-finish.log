@@ -1,0 +1,36 @@
+[
+  {
+    id: 'personnel-file-officer-category-contract',
+    checked: false,
+    aria: null
+  },
+  { id: 'personnel-file-officer-category-contract-label', aria: null },
+  {
+    id: 'personnel-file-officer-category-payslip',
+    checked: true,
+    aria: null
+  },
+  { id: 'personnel-file-officer-category-payslip-label', aria: null },
+  {
+    id: 'personnel-file-officer-category-certificate',
+    checked: false,
+    aria: null
+  },
+  {
+    id: 'personnel-file-officer-category-certificate-label',
+    aria: null
+  },
+  {
+    id: 'personnel-file-officer-category-sick_note',
+    checked: false,
+    aria: null
+  },
+  { id: 'personnel-file-officer-category-sick_note-label', aria: null },
+  {
+    id: 'personnel-file-officer-category-other',
+    checked: false,
+    aria: null
+  },
+  { id: 'personnel-file-officer-category-other-label', aria: null }
+]
+Canonical UI saved payslip-only grant for Person 2.

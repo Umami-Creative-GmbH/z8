@@ -1,0 +1,2 @@
+Removed verified fixture-owned containers. Private manifests remain local for operator removal.
+Fixture command failed; inspect private runtime.log.

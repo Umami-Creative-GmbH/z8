@@ -1,0 +1,12 @@
+{
+  "results": [
+    {
+      "name": "month select opens with ArrowDown and Escape returns focus",
+      "passed": true
+    },
+    {
+      "name": "reduced motion preference active",
+      "passed": true
+    }
+  ]
+}
