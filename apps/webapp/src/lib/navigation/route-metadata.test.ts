@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts the manager Today briefing heading without descendants", () => {
+		expect(appPageOwnsHeading("/en/today")).toBe(true);
+		expect(appPageOwnsHeading("/de/today/")).toBe(true);
+		expect(appPageOwnsHeading("/en/today/detail")).toBe(false);
+	});
 	it("adopts only the report share-link settings heading without other settings or descendants", () => {
 		expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);
 		expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);

@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { Activity } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { TodayApprovalsPanel } from "./today-approvals-panel";
@@ -36,6 +37,35 @@ describe("TodayApprovalsPanel", () => {
 			ok: true,
 			json: async () => ({ success: true }),
 		}) as unknown as typeof fetch;
+	});
+	it("ignores a decision completion from before Activity was hidden", async () => {
+		let complete!: (value: unknown) => void;
+		vi.mocked(global.fetch).mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		const items = [approvalItem()];
+		const view = render(
+			<Activity mode="visible">
+				<TodayApprovalsPanel items={items} />
+			</Activity>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Approve Vacation request" }));
+		view.rerender(
+			<Activity mode="hidden">
+				<TodayApprovalsPanel items={items} />
+			</Activity>,
+		);
+		view.rerender(
+			<Activity mode="visible">
+				<TodayApprovalsPanel items={items} />
+			</Activity>,
+		);
+		await act(async () => complete({ ok: true, json: async () => ({ success: true }) }));
+		expect(toastSuccessMock).not.toHaveBeenCalled();
+		expect(refreshMock).not.toHaveBeenCalled();
 	});
 
 	it("approves an item inline and refreshes the briefing", async () => {
