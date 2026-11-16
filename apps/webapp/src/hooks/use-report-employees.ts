@@ -1,10 +1,6 @@
 "use client";
 
-import {
-	CancelledError,
-	useQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
+import { CancelledError, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { getAccessibleEmployeesAction } from "@/app/[locale]/(app)/reports/actions";
 import type { SelectableEmployee } from "@/components/employee-select/types";
@@ -20,6 +16,10 @@ export interface UseReportEmployeesResult {
 	employees: SelectableEmployee[];
 	/** Whether the data is currently loading */
 	isLoading: boolean;
+	/** Whether the current roster read is being retried or refreshed. */
+	isRefetching: boolean;
+	/** Retry only the still-current roster opening. */
+	refetch: () => Promise<void>;
 	/** Error if fetching failed */
 	error: Error | null;
 	/** Current employee (always first in the list if available) */
@@ -31,9 +31,7 @@ export interface UseReportEmployeesResult {
 /**
  * Transform AccessibleEmployee to SelectableEmployee format
  */
-function transformAccessibleEmployee(
-	emp: AccessibleEmployee,
-): SelectableEmployee {
+function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmployee {
 	return {
 		id: emp.id,
 		userId: emp.id, // Use same ID as seed for avatar
@@ -77,16 +75,13 @@ function transformAccessibleEmployee(
  *
  * @param currentEmployeeId - The current user's employee ID (used for query key)
  */
-export function useReportEmployees(
-	currentEmployeeId?: string,
-): UseReportEmployeesResult {
+export function useReportEmployees(currentEmployeeId?: string): UseReportEmployeesResult {
 	const client = useQueryClient();
 	const session = useSession();
 	const actor = session.data?.user.id;
 	const organization = session.data?.session.activeOrganizationId;
 	const scope = JSON.stringify([actor, organization]);
-	const ready =
-		!session.isPending && !!actor && !!organization && !!currentEmployeeId;
+	const ready = !session.isPending && !!actor && !!organization && !!currentEmployeeId;
 	const openingId = useId();
 	const sequence = useRef(0);
 	const active = useRef<object | null>(null);
@@ -123,10 +118,7 @@ export function useReportEmployees(
 		};
 		let previous = scope;
 		const unsubscribe = authClient.$store.atoms.session.subscribe((value) => {
-			const next = JSON.stringify([
-				value.data?.user.id,
-				value.data?.session.activeOrganizationId,
-			]);
+			const next = JSON.stringify([value.data?.user.id, value.data?.session.activeOrganizationId]);
 			if (next !== previous) {
 				previous = next;
 				retire();
@@ -137,19 +129,9 @@ export function useReportEmployees(
 			unsubscribe();
 			retire();
 		};
-	}, [
-		client,
-		currentEmployeeId,
-		actor,
-		organization,
-		scope,
-		ready,
-		openingId,
-		revision,
-	]);
-	const admitted =
-		ready && opening?.scope === scope && opening.revision === revision;
-	const { data, isLoading, error } = useQuery({
+	}, [client, currentEmployeeId, actor, organization, scope, ready, openingId, revision]);
+	const admitted = ready && opening?.scope === scope && opening.revision === revision;
+	const { data, isLoading, isRefetching, error, refetch } = useQuery({
 		queryKey: opening?.key ?? [
 			...queryKeys.reports.employees(currentEmployeeId ?? ""),
 			actor,
@@ -158,6 +140,8 @@ export function useReportEmployees(
 			"pending",
 		],
 		queryFn: async ({ signal }) => {
+			if (signal.aborted || active.current !== opening?.owner)
+				throw new CancelledError({ silent: true });
 			const result = await getAccessibleEmployeesAction();
 			if (signal.aborted || active.current !== opening?.owner)
 				throw new CancelledError({ silent: true });
@@ -186,6 +170,11 @@ export function useReportEmployees(
 	return {
 		employees,
 		isLoading: !admitted || isLoading,
+		isRefetching: admitted && isRefetching,
+		refetch: async () => {
+			if (!admitted || active.current !== opening?.owner) return;
+			await refetch({ cancelRefetch: false });
+		},
 		error: admitted && error instanceof Error ? error : null,
 		currentEmployee,
 		canViewMultiple,
