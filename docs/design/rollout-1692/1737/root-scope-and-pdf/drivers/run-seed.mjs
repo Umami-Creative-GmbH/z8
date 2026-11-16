@@ -1,0 +1,11 @@
+﻿import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {fixtureFromPointer,repo} from './common.mjs';
+const [pointer]=process.argv.slice(2);const {runtime}=await fixtureFromPointer(pointer);
+assert.ok(process.env.npm_execpath,'Invoke through pnpm node');
+const allowed=Object.fromEntries(Object.entries(process.env).filter(([k])=>/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA|PNPM_HOME)$/i.test(k)));
+const seed=fileURLToPath(new URL('./seed.mjs',import.meta.url));
+const child=spawnSync(process.env.npm_execpath,['--config.verify-deps-before-run=false','--dir','apps/webapp','exec','tsx',seed,resolve(pointer)],{cwd:repo,env:{...allowed,...runtime.env,pnpm_config_verify_deps_before_run:'false',TSX_TSCONFIG_PATH:resolve(repo,'apps/webapp/tsconfig.json'),Z8_1737_REPO:repo},windowsHide:true,stdio:'inherit'});
+process.exitCode=child.status??1;
