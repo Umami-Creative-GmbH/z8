@@ -1,8 +1,10 @@
 "use client";
 
 import { IconChartBar } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,20 +39,54 @@ export function ProjectFilters({
 		})),
 	);
 	const hasUserChangedRange = useRef(false);
-	const [dateRange, setDateRange] = useState<ReportDateRange | null>(null);
-	const [statusFilter, setStatusFilter] = useState<string>("all");
+	const lifetime = useRef<object | null>(null);
+	useLayoutEffect(() => {
+		lifetime.current = {};
+		return () => {
+			lifetime.current = null;
+		};
+	}, []);
+	const form = useForm({
+		defaultValues: {
+			dateRange: null as ReportDateRange | null,
+			statusFilter: "all",
+		},
+		onSubmitMeta: { generation: null as object | null },
+		onSubmit: ({ value, meta }) => {
+			if (
+				!value.dateRange ||
+				isGenerating ||
+				!meta.generation ||
+				meta.generation !== lifetime.current
+			)
+				return;
+			onGenerate(
+				value.dateRange,
+				value.statusFilter === "all"
+					? undefined
+					: value.statusFilter.split(","),
+			);
+		},
+	});
+	const { dateRange, statusFilter } = useStore(
+		form.store,
+		(state) => state.values,
+	);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
 			return;
 		}
 
-		setDateRange(getDateRangeForPreset("current_month", { timezone }));
-	}, [isHydrated, timezone]);
+		form.setFieldValue(
+			"dateRange",
+			getDateRangeForPreset("current_month", { timezone }),
+		);
+	}, [form, isHydrated, timezone]);
 
 	const handleDateRangeChange = (range: ReportDateRange) => {
 		hasUserChangedRange.current = true;
-		setDateRange(range);
+		form.setFieldValue("dateRange", range);
 	};
 
 	const STATUS_OPTIONS = [
@@ -76,23 +112,19 @@ export function ProjectFilters({
 		},
 	];
 
-	const handleGenerate = () => {
-		if (!dateRange) {
-			return;
-		}
-
-		const statusArray =
-			statusFilter === "all" ? undefined : statusFilter.split(",");
-		onGenerate(dateRange, statusArray);
-	};
-
 	return (
 		<Card>
 			<CardContent className="pt-6">
-				<div className="flex flex-col gap-4">
+				<form
+					className="flex flex-col gap-4"
+					onSubmit={(event) => {
+						event.preventDefault();
+						void form.handleSubmit({ generation: lifetime.current });
+					}}
+				>
 					<div className="grid gap-4 md:grid-cols-2">
 						{/* Date Range Picker */}
-						<fieldset className="space-y-2">
+						<fieldset disabled={isGenerating} className="min-w-0 space-y-2">
 							<legend className="text-sm font-medium leading-none">
 								{t("reports.projects.filter.period", "Period")}
 							</legend>
@@ -121,7 +153,9 @@ export function ProjectFilters({
 							</Label>
 							<Select
 								value={statusFilter}
-								onValueChange={setStatusFilter}
+								onValueChange={(value) =>
+									form.setFieldValue("statusFilter", value ?? "all")
+								}
 								disabled={isGenerating}
 							>
 								<SelectTrigger id={statusFilterId}>
@@ -146,18 +180,18 @@ export function ProjectFilters({
 					{/* Generate Button */}
 					<div className="flex justify-end">
 						<Button
-							onClick={handleGenerate}
+							type="submit"
 							disabled={isGenerating || !dateRange}
-							size="lg"
+							size="default"
 							className="w-full sm:w-auto"
 						>
-							<IconChartBar className="mr-2 size-4" />
+							<IconChartBar aria-hidden="true" className="mr-2 size-4" />
 							{isGenerating
 								? t("reports.projects.generating", "Generating Report...")
 								: t("reports.projects.generate", "Generate Report")}
 						</Button>
 					</div>
-				</div>
+				</form>
 			</CardContent>
 		</Card>
 	);

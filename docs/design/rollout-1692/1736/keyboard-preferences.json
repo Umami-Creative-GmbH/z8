@@ -1,0 +1,8 @@
+{
+  "fontPreference": "large",
+  "label": "Status",
+  "role": "combobox",
+  "rootFont": "18px",
+  "statusFocusReturned": true,
+  "theme": "dark"
+}

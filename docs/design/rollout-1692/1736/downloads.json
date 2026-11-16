@@ -1,0 +1,164 @@
+[
+  {
+    "kind": "project",
+    "format": "csv",
+    "bytes": 1570,
+    "sha256": "0a42e0bc480eac5a31718e56b073c021f062dde1961886f209d34f2b21c6c26c",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 5,
+      "customerIncludesUnpricedProject": false,
+      "sharedRedactionChecked": false
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  },
+  {
+    "kind": "project",
+    "format": "xlsx",
+    "bytes": 9892,
+    "sha256": "685ecd1023c9ea45d4142f0445c7d2f3722603d53a91bdaac202493021988bd6",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 5,
+      "customerIncludesUnpricedProject": false,
+      "sharedRedactionChecked": false
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  },
+  {
+    "kind": "project",
+    "format": "pdf",
+    "bytes": 5284,
+    "sha256": "f1feb76ba2ed425469ba82a76c2ec6c3f3507d6b96ee4edfe7458b08a0db0243",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 5,
+      "customerIncludesUnpricedProject": false,
+      "sharedRedactionChecked": false
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  },
+  {
+    "kind": "customer",
+    "format": "csv",
+    "bytes": 1636,
+    "sha256": "d75e3f87c39594b3ec79c95aaea7932f265ca3ef227d636b150c14ed6030076e",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 6,
+      "customerIncludesUnpricedProject": true,
+      "sharedRedactionChecked": false
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  },
+  {
+    "kind": "customer",
+    "format": "xlsx",
+    "bytes": 9218,
+    "sha256": "84f01bf6de7ba29cb451fe5baaa9043f3ef58625ceafe12393ac39493ea50c9d",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 6,
+      "customerIncludesUnpricedProject": true,
+      "sharedRedactionChecked": false
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  },
+  {
+    "kind": "customer",
+    "format": "pdf",
+    "bytes": 4992,
+    "sha256": "ebce751a75a1fda7086e95fb5333e532d325b6688c8b486ea8d69c65db92335d",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 6,
+      "customerIncludesUnpricedProject": true,
+      "sharedRedactionChecked": false
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  },
+  {
+    "kind": "shared",
+    "format": "csv",
+    "bytes": 332,
+    "sha256": "30c3dcea205479a3857600ef2033af536e00c6929a646102150febfcffe07712",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 5,
+      "customerIncludesUnpricedProject": false,
+      "sharedRedactionChecked": true
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  },
+  {
+    "kind": "shared",
+    "format": "xlsx",
+    "bytes": 8252,
+    "sha256": "87c27febb49c8b72a0edad87789677ec4137c23c95141e062591feed59f4b31f",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 5,
+      "customerIncludesUnpricedProject": false,
+      "sharedRedactionChecked": true
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  },
+  {
+    "kind": "shared",
+    "format": "pdf",
+    "bytes": 2834,
+    "sha256": "10363e78dcf4188faee4c027c46a29c02f7ba2e07e80234d65ed4cec52b00585",
+    "completedBrowserEvent": true,
+    "parsedScope": {
+      "period": [
+        "2026-11-01",
+        "2026-11-30"
+      ],
+      "project": "R062 Delivery",
+      "hours": 5,
+      "customerIncludesUnpricedProject": false,
+      "sharedRedactionChecked": true
+    },
+    "transport": "native agent-browser pointer click; same owned browser CDP allow directory + download completion event; native download subcommand canceled blob captures separately"
+  }
+]

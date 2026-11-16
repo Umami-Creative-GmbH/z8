@@ -1,0 +1,9 @@
+{
+  "privateIdentities": ".tmp/1736-checkpoint-fixture/cleanup-identities-private.json",
+  "generation": "post-cabc final PostgreSQL checks",
+  "browserOrNextStarted": false,
+  "servicePortsClosed": true,
+  "privateManifestsPreserved": true,
+  "peerOrRootCleanup": false,
+  "exactLabeledServicesRemoved": 3
+}

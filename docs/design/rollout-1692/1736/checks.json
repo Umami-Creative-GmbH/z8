@@ -1,0 +1,78 @@
+{
+  "base": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
+  "mergedCheckpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
+  "integrationMerge": "ad24fd4729d2a6ea36693c98756c0c35f2567129",
+  "priorEvidence": "pre-cabc-checks.json",
+  "summary": {
+    "unitFiles": 41,
+    "unitTests": 309,
+    "includesNewWellnessAndPayrollCompatibility": true,
+    "postgresFiles": 6,
+    "postgresTests": 36,
+    "typeProjects": [
+      "application",
+      "workflow-contracts",
+      "smoke"
+    ],
+    "doctorErrors": 0,
+    "doctorReviewedWarnings": 6
+  },
+  "records": [
+    {
+      "name": "unit",
+      "cwd": "apps/webapp",
+      "command": "pnpm --config.verify-deps-before-run=false exec vitest run --project unit --maxWorkers 2 src/components/reports src/lib/reports src/lib/projects/report-share src/app/[locale]/(app)/reports/projects src/lib/navigation/route-metadata.test.ts src/lib/billable-time/hand-off/timesheet-document.test.ts src/components/payroll/payroll-workspace.test.tsx src/app/[locale]/onboarding/wellness/page.test.tsx",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "privateRawLog": ".tmp/1736-post-cabc-unit.log",
+      "rawSha256": "bc2cb66fd146b9c60a7f52b83e179f938567f29840e727e6902aa11618c61fbe"
+    },
+    {
+      "name": "postgres",
+      "cwd": ".",
+      "command": "pnpm --config.verify-deps-before-run=false node .tmp/1736-checkpoint-run.mjs exec vitest run --project integration src/app/[locale]/(app)/reports/projects src/lib/projects/report-share",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "privateRawLog": ".tmp/1736-post-cabc-postgres.log",
+      "rawSha256": "d813fba2c7b407a07c0f97dd4df74acfc581e8eab4671d058a779dcfe7d005ad"
+    },
+    {
+      "name": "biome",
+      "cwd": "apps/webapp",
+      "command": "pnpm --config.verify-deps-before-run=false exec biome check src/components/reports/projects/customer-billable-view.tsx src/components/reports/projects/project-filters.tsx src/components/reports/projects/project-reports-container.tsx src/components/reports/projects/project-summary-cards.tsx src/components/reports/projects/report-share-dialog.tsx src/components/reports/projects/report-share-link-list.tsx src/components/reports/projects/shared-report-view.tsx src/components/reports/report-document-export-buttons.tsx src/lib/reports/exporters/report-document-pdf.tsx src/components/reports/projects/project-reports-workflow.test.tsx src/components/reports/projects/report-share-dialog.test.tsx src/components/reports/projects/report-share-link-list.test.tsx src/components/reports/report-document-export-buttons.test.tsx src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "privateRawLog": ".tmp/1736-post-cabc-biome.log",
+      "rawSha256": "628d9f212f53bbc8f41c71f8b593e2372335e50a5d50d1a4f693fcce069d8c53"
+    },
+    {
+      "name": "doctor",
+      "cwd": ".",
+      "command": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope changed --base cabc162b5afa374ab8f4bbaeaf76b9e368faa04e --no-score --no-supply-chain --max-duration 90 --no-parallel --verbose --json --json-out docs/design/rollout-1692/1736/doctor.json",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "privateRawLog": ".tmp/1736-post-cabc-doctor.log",
+      "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rawLogEmptyBecauseJsonOut": true
+    },
+    {
+      "name": "types",
+      "cwd": "apps/webapp",
+      "command": "pnpm --config.verify-deps-before-run=false run typecheck",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "exitCode": 0,
+      "privateRawLog": ".tmp/1736-post-cabc-types.log",
+      "rawSha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e"
+    }
+  ]
+}
