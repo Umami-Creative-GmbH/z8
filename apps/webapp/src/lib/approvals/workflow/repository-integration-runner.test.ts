@@ -39,7 +39,7 @@ describe("approval workflow repository integration runner", () => {
 		expect(runner).toContain(
 			[
 				'bash "$app_directory/scripts/run-postgres-integration-suites.sh" \\',
-				// biome-ignore lint/suspicious/noTemplateCurlyInString: shell variables
+				// oxlint-disable-next-line eslint/no-template-curly-in-string -- shell variables
 				'\t"postgresql://postgres:${database_password}@127.0.0.1:${host_port}/${database_name}"',
 			].join("\n"),
 		);

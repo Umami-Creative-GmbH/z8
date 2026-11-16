@@ -46,9 +46,9 @@ export type SurchargeRuleFormValues = {
 };
 
 // TanStack's deeply inferred array paths exceed TypeScript's practical limit at this component boundary.
-// biome-ignore lint/suspicious/noExplicitAny: preserves the existing generic form boundary.
+// oxlint-disable-next-line typescript/no-explicit-any -- preserves the existing generic form boundary.
 export type SurchargeFormApi = any;
-// biome-ignore lint/suspicious/noExplicitAny: preserves the existing generic field boundary.
+// oxlint-disable-next-line typescript/no-explicit-any -- preserves the existing generic field boundary.
 type FormField = any;
 
 function dateFieldToString(value: unknown): string {

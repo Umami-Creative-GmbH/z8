@@ -94,7 +94,7 @@ export interface BotCommandResponse {
 	 * - Teams: Adaptive Card JSON
 	 * - Telegram: rendered by TelegramRenderer into MarkdownV2 + inline keyboard
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: Card payloads vary by platform
+	// oxlint-disable-next-line typescript/no-explicit-any -- Card payloads vary by platform
 	card?: any;
 }
 

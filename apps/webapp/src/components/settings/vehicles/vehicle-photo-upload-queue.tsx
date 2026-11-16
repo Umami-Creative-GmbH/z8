@@ -288,7 +288,7 @@ export function VehiclePhotoUploadQueue({
 				</p>
 			) : null}
 			<ul
-				// biome-ignore lint/a11y/noNoninteractiveTabindex: Scrollable results need keyboard focus when no retry buttons remain.
+				// oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Scrollable results need keyboard focus when no retry buttons remain.
 				tabIndex={0}
 				className="max-h-48 space-y-2 overflow-y-auto rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 				aria-live="polite"

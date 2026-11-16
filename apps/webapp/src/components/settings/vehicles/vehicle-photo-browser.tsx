@@ -125,7 +125,7 @@ export function VehiclePhotoBrowser({
 							setSelected(photo.id);
 						}}
 					>
-						{/* biome-ignore lint/performance/noImgElement: The optimized private image must use the authenticated delivery route directly. */}
+						{/* oxlint-disable-next-line nextjs/no-img-element -- The optimized private image must use the authenticated delivery route directly. */}
 						<img
 							src={photo.imageUrl}
 							alt={t(
@@ -175,7 +175,7 @@ export function VehiclePhotoBrowser({
 							{vehicle.name} · {vehicle.licencePlate}
 						</DialogDescription>
 					</DialogHeader>
-					{/* biome-ignore lint/performance/noImgElement: The optimized private image must use the authenticated delivery route directly. */}
+					{/* oxlint-disable-next-line nextjs/no-img-element -- The optimized private image must use the authenticated delivery route directly. */}
 					<img
 						src={current.imageUrl}
 						alt={t(

@@ -227,16 +227,25 @@ test("marketing and webapp use TypeScript 7 supported by their Next.js builds", 
 	}
 });
 
-test("app Biome configurations extend the repository project", async () => {
-	for (const app of ["marketing", "webapp"]) {
-		const source = await fs.readFile(
-			new URL(`../../apps/${app}/biome.jsonc`, import.meta.url),
-			"utf8",
-		);
-		// JSONC allows whole-line comments; drop them before parsing.
-		const config = JSON.parse(source.replace(/^\s*\/\/.*$/gm, ""));
+test("webapp build includes the formatter configuration needed by catalog generation", async () => {
+	const dockerfile = await fs.readFile(new URL("../Dockerfile.webapp", import.meta.url), "utf8");
+	const workspace = dockerfile.split("FROM base AS workspace")[1]?.split("FROM workspace AS webapp-builder")[0];
+	assert.ok(workspace, "webapp build must inherit the workspace stage");
+	assert.match(workspace, /^COPY \.oxfmtrc\.json \.\/$/m);
+});
 
-		assert.equal(config.root, false, `${app} Biome configuration must not define a nested root`);
+test("app lint and format commands use the shared repository configurations", async () => {
+	for (const app of ["marketing", "webapp"]) {
+		const manifest = JSON.parse(await fs.readFile(
+			new URL(`../../apps/${app}/package.json`, import.meta.url), "utf8",
+		));
+		for (const [script, configName] of [["lint", ".oxlintrc.json"], ["format:check", ".oxfmtrc.json"]]) {
+			const configArgument = manifest.scripts[script].match(/-c\s+(\S+)/)?.[1];
+			assert.ok(configArgument, `${app} ${script} must select the shared configuration`);
+			const configPath = new URL(`../../apps/${app}/${configArgument}`, import.meta.url);
+			assert.equal(configPath.href, new URL(`../../${configName}`, import.meta.url).href);
+			JSON.parse(await fs.readFile(configPath, "utf8"));
+		}
 	}
 });
 

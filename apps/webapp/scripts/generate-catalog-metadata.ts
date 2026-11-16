@@ -3,15 +3,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type {
-	CatalogSourceMask,
-	CatalogSourceMetadata,
-} from "../src/tolgee/catalog-slices";
-import {
-	ALL_LANGUAGES,
-	CATALOG_NAMESPACES,
-	type Namespace,
-} from "../src/tolgee/shared";
+import type { CatalogSourceMask, CatalogSourceMetadata } from "../src/tolgee/catalog-slices";
+import { ALL_LANGUAGES, CATALOG_NAMESPACES, type Namespace } from "../src/tolgee/shared";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 type Tree = { [key: string]: Tree | string };
@@ -29,61 +22,39 @@ function metadata(locale: string): CatalogSourceMetadata {
 		CATALOG_NAMESPACES.map((namespace) => [
 			namespace,
 			JSON.parse(
-				readFileSync(
-					resolve(root, "messages", namespace, `${locale}.json`),
-					"utf8",
-				),
+				readFileSync(resolve(root, "messages", namespace, `${locale}.json`), "utf8"),
 			) as Tree,
 		]),
 	) as Record<Namespace, Tree>;
 
-	function shape(
-		namespace: Namespace,
-		tree: Tree,
-		path: string[] = [],
-	): CatalogSourceMask {
+	function shape(namespace: Namespace, tree: Tree, path: string[] = []): CatalogSourceMask {
 		return Object.fromEntries(
 			Object.entries(tree).map(([key, child]) => {
 				const next = [...path, key];
 				const shared = CATALOG_NAMESPACES.some(
 					(other) => other !== namespace && at(raw[other], next) !== undefined,
 				);
-				return [
-					key,
-					typeof child === "string" || !shared
-						? 1
-						: shape(namespace, child, next),
-				];
+				return [key, typeof child === "string" || !shared ? 1 : shape(namespace, child, next)];
 			}),
 		);
 	}
 
 	const contributors = new Map<string, Namespace[]>();
-	function collect(
-		namespace: Namespace,
-		tree: Tree | string,
-		path: string[] = [],
-	) {
+	function collect(namespace: Namespace, tree: Tree | string, path: string[] = []) {
 		if (typeof tree === "string") {
 			const key = JSON.stringify(path);
 			contributors.set(key, [...(contributors.get(key) ?? []), namespace]);
 			return;
 		}
-		for (const [key, child] of Object.entries(tree))
-			collect(namespace, child, [...path, key]);
+		for (const [key, child] of Object.entries(tree)) collect(namespace, child, [...path, key]);
 	}
 	for (const namespace of CATALOG_NAMESPACES) collect(namespace, raw[namespace]);
 
 	return {
 		sources: Object.fromEntries(
-			CATALOG_NAMESPACES.map((namespace) => [
-				namespace,
-				shape(namespace, raw[namespace]),
-			]),
+			CATALOG_NAMESPACES.map((namespace) => [namespace, shape(namespace, raw[namespace])]),
 		) as Record<Namespace, CatalogSourceMask>,
-		collisions: Object.fromEntries(
-			[...contributors].filter(([, sources]) => sources.length > 1),
-		),
+		collisions: Object.fromEntries([...contributors].filter(([, sources]) => sources.length > 1)),
 	};
 }
 
@@ -99,8 +70,7 @@ const source = [
 	'import type { CatalogSourceMetadata } from "./catalog-slices";',
 	"",
 	...[...shapes].map(
-		([serialized, index]) =>
-			`const sourceShape${index}: CatalogSourceMetadata = ${serialized};`,
+		([serialized, index]) => `const sourceShape${index}: CatalogSourceMetadata = ${serialized};`,
 	),
 	"export const CATALOG_SOURCE_METADATA: Readonly<Record<string, CatalogSourceMetadata>> = {",
 	...locales,
@@ -111,10 +81,12 @@ const output = resolve(root, "src/tolgee/catalog-source-metadata.generated.ts");
 const formatted = execFileSync(
 	process.execPath,
 	[
-		createRequire(import.meta.url).resolve("@biomejs/biome/bin/biome"),
-		"format",
-		"--stdin-file-path",
-		output,
+		resolve(createRequire(import.meta.url).resolve("oxfmt/package.json"), "../bin/oxfmt"),
+		"--config",
+		resolve(root, "../../.oxfmtrc.json"),
+		"--stdin-filepath",
+		// Use a virtual input name: generated files are excluded from bulk formatting.
+		resolve(root, "src/tolgee/catalog-source-metadata.ts"),
 	],
 	{ cwd: root, input: source, encoding: "utf8" },
 );
@@ -125,6 +97,4 @@ try {
 	if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 }
 if (existing !== formatted) writeFileSync(output, formatted);
-console.log(
-	`Catalog metadata: ${ALL_LANGUAGES.length} locales, ${shapes.size} distinct shapes.`,
-);
+console.log(`Catalog metadata: ${ALL_LANGUAGES.length} locales, ${shapes.size} distinct shapes.`);

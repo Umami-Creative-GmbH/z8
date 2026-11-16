@@ -72,7 +72,7 @@ const sourceShape0: CatalogSourceMetadata = {
 				moveUp: 1,
 				name: 1,
 				navigation: 1,
-				"new": 1,
+				new: 1,
 				next: 1,
 				no: 1,
 				notApplicable: 1,
@@ -450,9 +450,7 @@ const sourceShape0: CatalogSourceMetadata = {
 		'["common","more"]': ["common", "teamsBot"],
 	},
 };
-export const CATALOG_SOURCE_METADATA: Readonly<
-	Record<string, CatalogSourceMetadata>
-> = {
+export const CATALOG_SOURCE_METADATA: Readonly<Record<string, CatalogSourceMetadata>> = {
 	en: sourceShape0,
 	de: sourceShape0,
 	fr: sourceShape0,

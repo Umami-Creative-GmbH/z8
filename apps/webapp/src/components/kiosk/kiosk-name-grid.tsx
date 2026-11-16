@@ -39,10 +39,9 @@ export function useKioskNameList(
 
 	// The retry button calls load() directly; an Effect Event may only run from Effects.
 	const loadOnChange = useEffectEvent(load);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: each reloadKey change reloads the list
 	useEffect(() => {
 		loadOnChange();
-	}, [reloadKey]);
+	}, [reloadKey]); // oxlint-disable-line react-hooks/exhaustive-deps -- each reloadKey change reloads the list
 
 	return {
 		list,

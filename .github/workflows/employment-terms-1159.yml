@@ -74,8 +74,8 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm --filter webapp build
 
-  biome:
-    name: Employment terms changed-file Biome
+  code-quality:
+    name: Employment terms changed-file Oxlint and Oxfmt
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -96,18 +96,21 @@ jobs:
         run: pnpm --filter webapp... install --frozen-lockfile
       - name: Check changed TypeScript files
         working-directory: apps/webapp
-        run: >-
-          pnpm exec biome ci --max-diagnostics=100
-          next.config.ts
-          "src/app/[locale]/(app)/cache-components-route-contract.test.ts"
-          "src/app/[locale]/onboarding/organization/page.tsx"
-          "src/app/[locale]/onboarding/organization/page.server.test.tsx"
-          src/app/api/driving-licence/evidence/route.ts
-          src/lib/calendar/employment-terms-requirements.integration.test.ts
-          src/lib/calendar/work-policy-requirements.test.ts
-          src/lib/calendar/work-policy-requirements.ts
-          src/lib/employment-history/load-terms-in-force.ts
-          src/lib/scheduling/staffing/load-staffing-facts.ts
+        run: |
+          files=(
+            next.config.ts
+            "src/app/[locale]/(app)/cache-components-route-contract.test.ts"
+            "src/app/[locale]/onboarding/organization/page.tsx"
+            "src/app/[locale]/onboarding/organization/page.server.test.tsx"
+            src/app/api/driving-licence/evidence/route.ts
+            src/lib/calendar/employment-terms-requirements.integration.test.ts
+            src/lib/calendar/work-policy-requirements.test.ts
+            src/lib/calendar/work-policy-requirements.ts
+            src/lib/employment-history/load-terms-in-force.ts
+            src/lib/scheduling/staffing/load-staffing-facts.ts
+          )
+          pnpm exec oxlint --config ../../.oxlintrc.json "${files[@]}"
+          pnpm exec oxfmt --config ../../.oxfmtrc.json --check "${files[@]}"
 
   postgres:
     name: Employment terms PostgreSQL regressions

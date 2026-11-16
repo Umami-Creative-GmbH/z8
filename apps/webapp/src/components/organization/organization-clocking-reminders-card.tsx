@@ -249,7 +249,7 @@ export function OrganizationClockingRemindersCard({
 											</legend>
 											<div className="flex flex-wrap gap-4">
 												{CLOCKING_REMINDER_ROLES.map((role) => (
-													// biome-ignore lint/a11y/noLabelWithoutControl: the checkbox inside is the control
+													// oxlint-disable-next-line jsx-a11y/label-has-associated-control -- the checkbox inside is the control
 													<label key={role} className="flex items-center gap-2 text-sm">
 														<Checkbox
 															checked={field.state.value.includes(role)}

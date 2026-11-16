@@ -44,7 +44,7 @@ export function normalizeExpenseWageTypeCode(value: unknown): string | null | un
 	if (typeof value !== "string") return undefined;
 	const code = value.trim();
 	if (code === "") return null;
-	// biome-ignore lint/suspicious/noControlCharactersInRegex: rejecting control characters is the point
+	// oxlint-disable-next-line eslint/no-control-regex -- rejecting control characters is the point
 	if (code.length > MAX_EXPENSE_WAGE_TYPE_CODE_LENGTH || /[\u0000-\u001f\u007f]/.test(code)) {
 		return undefined;
 	}
