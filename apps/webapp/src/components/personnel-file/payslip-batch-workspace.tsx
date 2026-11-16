@@ -57,6 +57,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { payPeriodCode } from "@/lib/personnel-file/payslip-batch.types";
 import { queryKeys } from "@/lib/query/keys";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { formatPayPeriod, usePersonnelFileLabels } from "./document-labels";
 import { collectPayslipFiles } from "./payslip-batch-files";
 import { usePayslipBatchUpload } from "./use-payslip-batch-upload";
@@ -146,10 +147,11 @@ function BatchArrival({ batchId, userId, organizationId }: WorkspaceProps) {
 	const command = useRef(false);
 	useLayoutEffect(() => {
 		lifetime.current = {};
-		command.current = false;
-		setConfirming(false);
+		if (!command.current) {
+			setConfirming(false);
+			setEditing(false);
+		}
 		setConfirmOpen(false);
-		setEditing(false);
 		setUploading(false);
 		return () => {
 			lifetime.current = null;
@@ -171,6 +173,14 @@ function BatchArrival({ batchId, userId, organizationId }: WorkspaceProps) {
 	function refresh() {
 		void queryClient.invalidateQueries({ queryKey });
 	}
+	function releaseCommand() {
+		command.current = false;
+		if (lifetime.current) {
+			setEditing(false);
+			setConfirming(false);
+			setConfirmOpen(false);
+		}
+	}
 	async function update(
 		input: Parameters<typeof updatePayslipBatchFileAction>[0],
 		started: object | null,
@@ -180,21 +190,21 @@ function BatchArrival({ batchId, userId, organizationId }: WorkspaceProps) {
 		command.current = true;
 		setEditing(true);
 		setError(null);
-		const updated = await updatePayslipBatchFileAction(input).catch(() => null);
-		if (lifetime.current !== started) return;
-		if (!updated?.success)
-			setError(
-				updated?.error ??
-					t(
-						"settings.personnelFiles.batch.updateFailed",
-						"The match could not be updated. Check the current record and try again.",
-					),
+		await runWithCleanup(async () => {
+			const updated = await updatePayslipBatchFileAction(input).catch(
+				() => null,
 			);
-		await query.refetch();
-		if (lifetime.current === started) {
-			command.current = false;
-			setEditing(false);
-		}
+			if (lifetime.current === started && !updated?.success)
+				setError(
+					updated?.error ??
+						t(
+							"settings.personnelFiles.batch.updateFailed",
+							"The match could not be updated. Check the current record and try again.",
+						),
+				);
+			// A resumed arrival reads the result before the reservation is released.
+			if (lifetime.current) await query.refetch().catch(() => undefined);
+		}, releaseCommand);
 	}
 
 	async function confirm() {
@@ -205,43 +215,41 @@ function BatchArrival({ batchId, userId, organizationId }: WorkspaceProps) {
 		command.current = true;
 		setConfirming(true);
 		setError(null);
-		const confirmed = await confirmPayslipBatchAction({ batchId }).catch(
-			() => null,
-		);
-		if (lifetime.current !== started) return;
-		if (!confirmed?.success) {
-			setError(
-				confirmed?.error ??
-					t(
-						"settings.personnelFiles.batch.confirmFailed",
-						"The batch could not be saved. Refresh to check its result before retrying.",
-					),
+		await runWithCleanup(async () => {
+			const confirmed = await confirmPayslipBatchAction({ batchId }).catch(
+				() => null,
 			);
-		} else {
-			setResult(confirmed.data);
-			if (confirmed.data.failed.length === 0)
-				toast.success(
-					t(
-						"settings.personnelFiles.batch.confirmed",
-						"{count} payslips saved",
-						{ count: confirmed.data.created.length },
-					),
-				);
-			else
-				toast.error(
-					t(
-						"settings.personnelFiles.batch.partlyFailed",
-						"{count} files could not be saved. You can retry them.",
-						{ count: confirmed.data.failed.length },
-					),
-				);
-		}
-		await query.refetch();
-		if (lifetime.current === started) {
-			command.current = false;
-			setConfirming(false);
-			setConfirmOpen(false);
-		}
+			if (lifetime.current === started) {
+				if (!confirmed?.success) {
+					setError(
+						confirmed?.error ??
+							t(
+								"settings.personnelFiles.batch.confirmFailed",
+								"The batch could not be saved. Refresh to check its result before retrying.",
+							),
+					);
+				} else {
+					setResult(confirmed.data);
+					if (confirmed.data.failed.length === 0)
+						toast.success(
+							t(
+								"settings.personnelFiles.batch.confirmed",
+								"{count} payslips saved",
+								{ count: confirmed.data.created.length },
+							),
+						);
+					else
+						toast.error(
+							t(
+								"settings.personnelFiles.batch.partlyFailed",
+								"{count} files could not be saved. You can retry them.",
+								{ count: confirmed.data.failed.length },
+							),
+						);
+				}
+			}
+			if (lifetime.current) await query.refetch().catch(() => undefined);
+		}, releaseCommand);
 	}
 
 	if (query.isPending) {
@@ -295,38 +303,10 @@ function BatchArrival({ batchId, userId, organizationId }: WorkspaceProps) {
 		>
 			<div className="flex min-w-0 flex-col gap-6">
 				<BatchSummary preview={preview} />
-				<ol
-					aria-label={t(
-						"settings.personnelFiles.batch.steps",
-						"Batch progress",
-					)}
-					className="grid gap-2 border-y py-4 text-sm sm:grid-cols-3"
-				>
-					<li
-						className="font-medium"
-						aria-current={open && !preview.files.length ? "step" : undefined}
-					>
-						{t(
-							"settings.personnelFiles.batch.stepAdd",
-							"1. Add PDF or ZIP files",
-						)}
-					</li>
-					<li
-						className="font-medium"
-						aria-current={open && preview.files.length ? "step" : undefined}
-					>
-						{t(
-							"settings.personnelFiles.batch.stepMatch",
-							"2. Confirm employee matches",
-						)}
-					</li>
-					<li className="font-medium" aria-current={!open ? "step" : undefined}>
-						{t(
-							"settings.personnelFiles.batch.stepSave",
-							"3. Save and review results",
-						)}
-					</li>
-				</ol>
+				<BatchProgress
+					status={preview.batch.status}
+					fileCount={preview.files.length}
+				/>
 				{error ? (
 					<p role="alert" className="text-sm text-destructive">
 						{error}
@@ -417,6 +397,45 @@ function BatchArrival({ batchId, userId, organizationId }: WorkspaceProps) {
 				</AlertDialog>
 			</div>
 		</BatchOperations>
+	);
+}
+
+function BatchProgress({
+	status,
+	fileCount,
+}: {
+	status: PayslipBatchPreview["batch"]["status"];
+	fileCount: number;
+}) {
+	const { t } = useTranslate();
+	const open = status === "open";
+	return (
+		<ol
+			aria-label={t("settings.personnelFiles.batch.steps", "Batch progress")}
+			className="grid gap-2 border-y py-4 text-sm sm:grid-cols-3"
+		>
+			<li
+				className="font-medium"
+				aria-current={open && !fileCount ? "step" : undefined}
+			>
+				{t("settings.personnelFiles.batch.stepAdd", "1. Add PDF or ZIP files")}
+			</li>
+			<li
+				className="font-medium"
+				aria-current={open && fileCount ? "step" : undefined}
+			>
+				{t(
+					"settings.personnelFiles.batch.stepMatch",
+					"2. Confirm employee matches",
+				)}
+			</li>
+			<li className="font-medium" aria-current={!open ? "step" : undefined}>
+				{t(
+					"settings.personnelFiles.batch.stepSave",
+					"3. Save and review results",
+				)}
+			</li>
+		</ol>
 	);
 }
 
