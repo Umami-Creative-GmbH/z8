@@ -1,0 +1,19 @@
+{
+  "method": "Normal public export control click; own native Browser download events awaited to completed, then copied from exact owned directory. No cookies/state read.",
+  "results": [
+    {
+      "format": "csv",
+      "state": "completed",
+      "suggestedFilename": "distance-per-vehicle-1794788896231.csv",
+      "artifact": "actual.csv",
+      "at": "2026-11-16T00:28:16.344Z"
+    },
+    {
+      "format": "xlsx",
+      "state": "completed",
+      "suggestedFilename": "distance-per-vehicle-1794788899045.xlsx",
+      "artifact": "actual.xlsx",
+      "at": "2026-11-16T00:28:19.180Z"
+    }
+  ]
+}
