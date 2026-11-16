@@ -726,9 +726,14 @@
       "blockedBy": [
         1853
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
-      "implementationCommit": "b3ba1c5ce8ac9dafd108feef560695ec462dce3b"
+      "status": "integrated",
+      "verifiedCommit": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "implementationCommit": "b3ba1c5ce8ac9dafd108feef560695ec462dce3b",
+      "verifiedTree": "5cdcf159419000b42077d5fcfba7fb08bef34ced",
+      "integrationCommit": "7d7d333e685cb9ce0aae3b08bc24394ad1dda1b0",
+      "correctionCommit": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+      "evidence": "docs/design/rollout-1692/1730.md",
+      "integrationVerification": "Verified #1730 at 8e3876c39725b7a8ef5218439766395401d64b80. Bulk captures activation before validation; failed queue arrivals retain Retry. Shared Return/Cancel capture request ID/version, lock pending dismissal and duplicates, suppress retired completions and retain reasons with transport retry. Existing payload, authority and version contracts remain unchanged. Fresh 335 unit cases in 52 files plus 99 PostgreSQL cases in six files give 434 distinct cases; all three type projects pass. Eight correction files pass explicit CRLF checks and all 13 files pass lint/import; two metadata formatting failures and three reviewed Doctor warnings remain. Fresh functional groups cover 35 action, eight recovery, 11 public grant/revoke and 15 genuine upload assertions. Protected 68-byte files survive Return/Cancel; linked renewal remains PG-only. Five matched current/historical states, restored-source React/Next checks and cleanup pass with partial-application/overlay/native permission qualifications. All 53 prior verified handoffs, scoped raw files, configs and dependencies survive. The public archive preserves failures and labels privacy clones. Broad roster, exhaustive races/roles, full build, catalogs, providers, devices and true zoom remain unpassed. See the report for exact evidence and boundaries."
     },
     {
       "id": "R048",
@@ -1138,10 +1143,11 @@
         1727,
         1729
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1772#issuecomment-6912422288"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1772#issuecomment-6912422288",
+      "implementationCommit": "72e90d0f05eb793f5efe236a61d1cb804fed52ba"
     },
     {
       "id": "R096",
@@ -1795,8 +1801,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1749#issuecomment-6914308593"
     },
     {
       "id": "R168",
