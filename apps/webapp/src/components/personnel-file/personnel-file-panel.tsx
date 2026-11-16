@@ -21,6 +21,7 @@ import {
 	getPersonnelFileAction,
 } from "@/app/[locale]/(app)/personnel-files/actions";
 import { unlinkSickNoteAction } from "@/app/[locale]/(app)/personnel-files/sick-note-actions";
+import { useSickNoteUnlinkReservation } from "@/components/absences/sick-notes/use-sick-note-unlink-reservation";
 import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { useOrganization } from "@/components/providers/organization-context-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -61,6 +62,10 @@ export function PersonnelFilePanel({
 	const { t } = useTranslate();
 	const labels = usePersonnelFileLabels();
 	const scope = useOrganization();
+	const unlinkReservation = useSickNoteUnlinkReservation({
+		userId: scope.userId,
+		organizationId: scope.activeOrganizationId,
+	});
 	const queryClient = useQueryClient();
 	const [category, setCategory] = useState<DocumentCategory | null>(
 		initialCategory,
@@ -122,42 +127,48 @@ export function PersonnelFilePanel({
 
 	async function unlink(document: EmployeeDocumentView) {
 		if (unlinkPending.current) return;
-		unlinkPending.current = true;
 		const task = lifetime.current;
-		setUnlinkingId(document.id);
-		// Promise#finally rather than try/finally: the React Compiler cannot
-		// compile try statements without a catch clause.
-		await unlinkSickNoteAction({ documentId: document.id })
-			.then((result) => {
-				if (lifetime.current !== task) return;
-				if (!result.success) {
-					toast.error(
-						result.error ||
+		await unlinkReservation.run(document.id, async () => {
+			if (lifetime.current !== task) return;
+			unlinkPending.current = true;
+			setUnlinkingId(document.id);
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await unlinkSickNoteAction({ documentId: document.id })
+				.then((result) => {
+					if (result.success) refreshSickNotes();
+					if (lifetime.current !== task) return;
+					if (!result.success) {
+						toast.error(
+							result.error ||
+								t(
+									"settings.personnelFiles.sickNotes.unlinkFailed",
+									"The sick note could not be unlinked.",
+								),
+						);
+						return;
+					}
+					toast.success(
+						t(
+							"settings.personnelFiles.sickNotes.unlinked",
+							"Sick note unlinked",
+						),
+					);
+				})
+				.catch(() => {
+					if (lifetime.current === task)
+						toast.error(
 							t(
 								"settings.personnelFiles.sickNotes.unlinkFailed",
 								"The sick note could not be unlinked.",
 							),
-					);
-					return;
-				}
-				toast.success(
-					t("settings.personnelFiles.sickNotes.unlinked", "Sick note unlinked"),
-				);
-				refreshSickNotes();
-			})
-			.catch(() => {
-				if (lifetime.current === task)
-					toast.error(
-						t(
-							"settings.personnelFiles.sickNotes.unlinkFailed",
-							"The sick note could not be unlinked.",
-						),
-					);
-			})
-			.finally(() => {
-				unlinkPending.current = false;
-				setUnlinkingId(null);
-			});
+						);
+				})
+				.finally(() => {
+					unlinkPending.current = false;
+					setUnlinkingId(null);
+				});
+		});
 	}
 
 	return (
@@ -230,7 +241,11 @@ export function PersonnelFilePanel({
 				actions={(document) => (
 					<PersonnelFileDocumentActions
 						document={document}
-						unlinkingId={unlinkingId}
+						unlinkingId={
+							unlinkReservation.isPending(document.id)
+								? document.id
+								: unlinkingId
+						}
 						onUnlink={unlink}
 						onLink={setLinking}
 						onSkill={setNamingSkill}
@@ -324,6 +339,7 @@ function PersonnelFileDocumentActions({
 						variant="ghost"
 						size="icon"
 						disabled={unlinkingId !== null}
+						aria-busy={unlinkingId === document.id}
 						onClick={() => void onUnlink(document)}
 						aria-label={t(
 							"settings.personnelFiles.sickNotes.unlinkFromAbsence",
