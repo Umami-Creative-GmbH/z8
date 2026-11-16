@@ -26,10 +26,7 @@ interface ProjectFiltersProps {
 	isGenerating?: boolean;
 }
 
-export function ProjectFilters({
-	onGenerate,
-	isGenerating = false,
-}: ProjectFiltersProps) {
+export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFiltersProps) {
 	const { t } = useTranslate();
 	const statusFilterId = useId();
 	const { isHydrated, timezone } = useOrganizationSettings(
@@ -62,26 +59,18 @@ export function ProjectFilters({
 				return;
 			onGenerate(
 				value.dateRange,
-				value.statusFilter === "all"
-					? undefined
-					: value.statusFilter.split(","),
+				value.statusFilter === "all" ? undefined : value.statusFilter.split(","),
 			);
 		},
 	});
-	const { dateRange, statusFilter } = useStore(
-		form.store,
-		(state) => state.values,
-	);
+	const { dateRange, statusFilter } = useStore(form.store, (state) => state.values);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
 			return;
 		}
 
-		form.setFieldValue(
-			"dateRange",
-			getDateRangeForPreset("current_month", { timezone }),
-		);
+		form.setFieldValue("dateRange", getDateRangeForPreset("current_month", { timezone }));
 	}, [form, isHydrated, timezone]);
 
 	const handleDateRangeChange = (range: ReportDateRange) => {
@@ -129,10 +118,7 @@ export function ProjectFilters({
 								{t("reports.projects.filter.period", "Period")}
 							</legend>
 							{dateRange ? (
-								<DateRangePicker
-									value={dateRange}
-									onChange={handleDateRangeChange}
-								/>
+								<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
 							) : (
 								<p className="text-sm text-muted-foreground">
 									{t(
@@ -145,25 +131,17 @@ export function ProjectFilters({
 
 						{/* Status Filter */}
 						<div className="space-y-2">
-							<Label
-								htmlFor={statusFilterId}
-								className="text-sm font-medium leading-none"
-							>
+							<Label htmlFor={statusFilterId} className="text-sm font-medium leading-none">
 								{t("reports.projects.filter.status", "Status")}
 							</Label>
 							<Select
 								value={statusFilter}
-								onValueChange={(value) =>
-									form.setFieldValue("statusFilter", value ?? "all")
-								}
+								onValueChange={(value) => form.setFieldValue("statusFilter", value ?? "all")}
 								disabled={isGenerating}
 							>
 								<SelectTrigger id={statusFilterId}>
 									<SelectValue
-										placeholder={t(
-											"reports.projects.filter.selectStatus",
-											"Select status filter",
-										)}
+										placeholder={t("reports.projects.filter.selectStatus", "Select status filter")}
 									/>
 								</SelectTrigger>
 								<SelectContent>

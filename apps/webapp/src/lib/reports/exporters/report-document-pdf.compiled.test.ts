@@ -19,9 +19,7 @@ it("renders report facts, table rows, unknown values and notes after React Compi
 	const babel = require("next/dist/compiled/babel/core");
 	const compiler = require("babel-plugin-react-compiler");
 	const esbuild = createRequire(require.resolve("tsx/package.json"))("esbuild");
-	const filename = fileURLToPath(
-		new URL("./report-document-pdf.tsx", import.meta.url),
-	);
+	const filename = fileURLToPath(new URL("./report-document-pdf.tsx", import.meta.url));
 	const compiled = babel.transformSync(readFileSync(filename, "utf8"), {
 		filename,
 		configFile: false,
@@ -74,9 +72,7 @@ it("renders report facts, table rows, unknown values and notes after React Compi
 	const pdf = await task.promise;
 	const page = await pdf.getPage(1);
 	const content = await page.getTextContent();
-	const text = content.items
-		.map((item) => ("str" in item ? item.str : ""))
-		.join(" ");
+	const text = content.items.map((item) => ("str" in item ? item.str : "")).join(" ");
 	expect(text).toContain("Synthetic project report");
 	expect(text).toContain("2026-11-01 to 2026-11-30");
 	expect(text).toContain("Synthetic Delivery");
@@ -196,11 +192,7 @@ it("renders report facts, table rows, unknown values and notes after React Compi
 				tables: [
 					{
 						...document.tables[0],
-						rows: Array.from({ length: 80 }, (_, index) => [
-							`Record ${index + 1}`,
-							5,
-							null,
-						]),
+						rows: Array.from({ length: 80 }, (_, index) => [`Record ${index + 1}`, 5, null]),
 					},
 				],
 			},
@@ -214,14 +206,9 @@ it("renders report facts, table rows, unknown values and notes after React Compi
 		const pages: string[] = [];
 		for (let number = 1; number <= parsed.numPages; number++) {
 			const pageContent = await (await parsed.getPage(number)).getTextContent();
-			pages.push(
-				pageContent.items
-					.map((item) => ("str" in item ? item.str : ""))
-					.join(" "),
-			);
+			pages.push(pageContent.items.map((item) => ("str" in item ? item.str : "")).join(" "));
 		}
-		for (const expected of fixture.expected)
-			expect(pages.join(" ")).toContain(expected);
+		for (const expected of fixture.expected) expect(pages.join(" ")).toContain(expected);
 		if (fixture.document.title.includes("Frozen")) {
 			expect(pages.join(" ")).not.toContain("Margin");
 			expect(pages.join(" ")).not.toContain("Cost unknown");

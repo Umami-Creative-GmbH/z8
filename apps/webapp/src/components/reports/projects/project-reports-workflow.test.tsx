@@ -1,12 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	act,
-	cleanup,
-	fireEvent,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { Activity } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ProjectPortfolioData } from "@/lib/reports/project-types";
@@ -43,13 +37,9 @@ vi.mock("@/hooks/use-display-context", () => ({
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("@/navigation", () => ({
-	Link: ({
-		href,
-		children,
-	}: {
-		href: string;
-		children: import("react").ReactNode;
-	}) => <a href={href}>{children}</a>,
+	Link: ({ href, children }: { href: string; children: import("react").ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 vi.mock("next/dynamic", () => ({ default: () => () => null }));
 vi.mock("sonner", () => ({
@@ -105,9 +95,7 @@ beforeEach(() => {
 		activeOrganizationId: "A",
 		isLoading: false,
 	};
-	useOrganizationSettings
-		.getState()
-		.setSettings({ isHydrated: true, timezone: "Europe/Berlin" });
+	useOrganizationSettings.getState().setSettings({ isHydrated: true, timezone: "Europe/Berlin" });
 	mocks.overview.mockResolvedValue({ success: true, data: portfolio() });
 });
 
@@ -125,9 +113,7 @@ it.each(["organization", "account", "Activity"])(
 		} else {
 			mocks.scope = {
 				...mocks.scope,
-				...(kind === "organization"
-					? { activeOrganizationId: "B" }
-					: { userId: "other" }),
+				...(kind === "organization" ? { activeOrganizationId: "B" } : { userId: "other" }),
 			};
 			view.rerender(view.tree());
 			mocks.scope = {
@@ -137,9 +123,7 @@ it.each(["organization", "account", "Activity"])(
 			};
 			view.rerender(view.tree());
 		}
-		await act(async () =>
-			pending.resolve({ success: true, data: portfolio(99) }),
-		);
+		await act(async () => pending.resolve({ success: true, data: portfolio(99) }));
 		expect(screen.queryByText("99.0 h")).toBeNull();
 		expect(mocks.success).not.toHaveBeenCalled();
 		mocks.overview.mockResolvedValueOnce({ success: true, data: portfolio() });
@@ -164,9 +148,7 @@ it("preserves the last generated result after a failed generation and a failed b
 		error: "Refresh failed",
 	});
 	await act(async () => {
-		await expect(mocks.refresh?.()).rejects.toThrow(
-			"Could not refresh project reports",
-		);
+		await expect(mocks.refresh?.()).rejects.toThrow("Could not refresh project reports");
 	});
 	expect(screen.getByText("12.0 h")).toBeTruthy();
 });

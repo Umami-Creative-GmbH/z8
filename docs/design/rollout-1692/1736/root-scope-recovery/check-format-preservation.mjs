@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {resolve} from 'node:path';
+import {readFile,writeFile} from 'node:fs/promises';
+const require=createRequire(resolve('apps/webapp/package.json')),esbuild=createRequire(require.resolve('tsx/package.json'))('esbuild'),command=JSON.parse(await readFile('.tmp/1736-merger/format-valid-command.json','utf8'));
+const semantic=new Set(['src/components/reports/projects/project-reports-container.tsx','src/components/reports/projects/report-share-link-list.tsx']),paths=command.argv.filter(p=>p.startsWith('src/')&&!semantic.has(p)),records=[];
+for(const p of paths){const path='apps/webapp/'+p,before=execFileSync('git',['show','fe499a787b218523c07b7c904fe04b34700d6f2c:'+path],{encoding:'utf8'}),after=await readFile(path,'utf8'),print=async text=>(await esbuild.transform(text,{loader:path.endsWith('.tsx')?'tsx':'ts',jsx:'automatic',minify:true,legalComments:'none',sourcefile:path})).code;assert.equal(await print(before),await print(after),path);records.push({path,compiledJavaScriptIdentical:true});}
+assert.equal(records.length,12);await writeFile('.tmp/1736-root-checks/format-preservation.json',JSON.stringify({base:'fe499a787b218523c07b7c904fe04b34700d6f2c',source:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),tool:'existing esbuild '+esbuild.version,qualification:'Identical compiled/minified JavaScript for twelve scoped formatting-only files, with JSX automatic transform and comments removed. Two semantic consumers and two new recovery/test files are excluded. Initial TypeScript7 native package lacks createPrinter; that attempt did not compare source.',records},null,2)+'\n');console.log('Twelve formatting-only files compile to identical JavaScript.');

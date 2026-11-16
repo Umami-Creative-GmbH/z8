@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconAlertTriangle,
-	IconBriefcase,
-	IconClock,
-	IconUsers,
-} from "@tabler/icons-react";
+import { IconAlertTriangle, IconBriefcase, IconClock, IconUsers } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { ProjectInfo } from "@/lib/reports/project-types";
 import { useProjectHoursFormat } from "./use-project-hours-format";
@@ -48,10 +43,7 @@ export function ProjectSummaryCards({
 						<dt className="text-sm text-muted-foreground">
 							{t("reports.projects.cards.totalHours", "Total Hours")}
 						</dt>
-						<IconClock
-							aria-hidden="true"
-							className="size-4 text-muted-foreground"
-						/>
+						<IconClock aria-hidden="true" className="size-4 text-muted-foreground" />
 					</div>
 					<dd>
 						<div className="text-2xl font-semibold tracking-tight tabular-nums">
@@ -71,20 +63,14 @@ export function ProjectSummaryCards({
 						<dt className="text-sm text-muted-foreground">
 							{t("reports.projects.cards.teamMembers", "Team Members")}
 						</dt>
-						<IconUsers
-							aria-hidden="true"
-							className="size-4 text-muted-foreground"
-						/>
+						<IconUsers aria-hidden="true" className="size-4 text-muted-foreground" />
 					</div>
 					<dd>
 						<div className="text-2xl font-semibold tracking-tight tabular-nums">
 							{summary.uniqueEmployees}
 						</div>
 						<p className="text-xs text-muted-foreground">
-							{t(
-								"reports.projects.cards.activeContributors",
-								"Active contributors",
-							)}
+							{t("reports.projects.cards.activeContributors", "Active contributors")}
 						</p>
 					</dd>
 				</div>
@@ -95,10 +81,7 @@ export function ProjectSummaryCards({
 						<dt className="text-sm text-muted-foreground">
 							{t("reports.projects.cards.budgetUsed", "Budget Used")}
 						</dt>
-						<IconBriefcase
-							aria-hidden="true"
-							className="size-4 text-muted-foreground"
-						/>
+						<IconBriefcase aria-hidden="true" className="size-4 text-muted-foreground" />
 					</div>
 					<dd>
 						<div className="text-2xl font-semibold tracking-tight tabular-nums">
@@ -108,14 +91,10 @@ export function ProjectSummaryCards({
 						</div>
 						<p className="text-xs text-muted-foreground">
 							{summary.budgetHours !== null
-								? t(
-										"reports.projects.cards.hoursOfBudget",
-										"{used}h of {total}h",
-										{
-											used: format.number(summary.totalHours),
-											total: format.compactNumber(summary.budgetHours),
-										},
-									)
+								? t("reports.projects.cards.hoursOfBudget", "{used}h of {total}h", {
+										used: format.number(summary.totalHours),
+										total: format.compactNumber(summary.budgetHours),
+									})
 								: t("reports.projects.cards.noBudgetSet", "No budget set")}
 						</p>
 					</dd>
@@ -127,10 +106,7 @@ export function ProjectSummaryCards({
 						<dt className="text-sm text-muted-foreground">
 							{t("reports.projects.cards.dailyAverage", "Daily Average")}
 						</dt>
-						<IconClock
-							aria-hidden="true"
-							className="size-4 text-muted-foreground"
-						/>
+						<IconClock aria-hidden="true" className="size-4 text-muted-foreground" />
 					</div>
 					<dd>
 						<div className="text-2xl font-semibold tracking-tight tabular-nums">
@@ -153,10 +129,7 @@ export function ProjectSummaryCards({
 					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.totalProjects", "Total Projects")}
 					</dt>
-					<IconBriefcase
-						aria-hidden="true"
-						className="size-4 text-muted-foreground"
-					/>
+					<IconBriefcase aria-hidden="true" className="size-4 text-muted-foreground" />
 				</div>
 				<dd>
 					<div className="text-2xl font-semibold tracking-tight tabular-nums">
@@ -176,20 +149,14 @@ export function ProjectSummaryCards({
 					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.totalHours", "Total Hours")}
 					</dt>
-					<IconClock
-						aria-hidden="true"
-						className="size-4 text-muted-foreground"
-					/>
+					<IconClock aria-hidden="true" className="size-4 text-muted-foreground" />
 				</div>
 				<dd>
 					<div className="text-2xl font-semibold tracking-tight tabular-nums">
 						{format.hours(data.totalHours)}
 					</div>
 					<p className="text-xs text-muted-foreground">
-						{t(
-							"reports.projects.cards.acrossAllProjects",
-							"Across all projects",
-						)}
+						{t("reports.projects.cards.acrossAllProjects", "Across all projects")}
 					</p>
 				</dd>
 			</div>
@@ -200,20 +167,14 @@ export function ProjectSummaryCards({
 					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.activeProjects", "Active Projects")}
 					</dt>
-					<IconBriefcase
-						aria-hidden="true"
-						className="size-4 text-muted-foreground"
-					/>
+					<IconBriefcase aria-hidden="true" className="size-4 text-muted-foreground" />
 				</div>
 				<dd>
 					<div className="text-2xl font-semibold tracking-tight tabular-nums">
 						{data.activeProjects}
 					</div>
 					<p className="text-xs text-muted-foreground">
-						{t(
-							"reports.projects.cards.currentlyInProgress",
-							"Currently in progress",
-						)}
+						{t("reports.projects.cards.currentlyInProgress", "Currently in progress")}
 					</p>
 				</dd>
 			</div>
@@ -224,10 +185,7 @@ export function ProjectSummaryCards({
 					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.overBudget", "Over Budget")}
 					</dt>
-					<IconAlertTriangle
-						aria-hidden="true"
-						className="size-4 text-muted-foreground"
-					/>
+					<IconAlertTriangle aria-hidden="true" className="size-4 text-muted-foreground" />
 				</div>
 				<dd>
 					<div className="text-2xl font-semibold tracking-tight tabular-nums text-amber-600">
@@ -245,10 +203,7 @@ export function ProjectSummaryCards({
 					<dt className="text-sm text-muted-foreground">
 						{t("reports.projects.cards.overdue", "Overdue")}
 					</dt>
-					<IconAlertTriangle
-						aria-hidden="true"
-						className="size-4 text-muted-foreground"
-					/>
+					<IconAlertTriangle aria-hidden="true" className="size-4 text-muted-foreground" />
 				</div>
 				<dd>
 					<div className="text-2xl font-semibold tracking-tight tabular-nums text-red-600">

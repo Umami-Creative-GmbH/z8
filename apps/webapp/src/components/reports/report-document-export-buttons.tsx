@@ -1,10 +1,6 @@
 "use client";
 
-import {
-	IconDownload,
-	IconFileSpreadsheet,
-	IconFileText,
-} from "@tabler/icons-react";
+import { IconDownload, IconFileSpreadsheet, IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -12,10 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
-import {
-	type ReportDocument,
-	reportFileName,
-} from "@/lib/reports/exporters/report-document";
+import { type ReportDocument, reportFileName } from "@/lib/reports/exporters/report-document";
 import { exportReportDocumentToCSV } from "@/lib/reports/exporters/report-document-csv";
 import type {
 	ProjectReportExportContext,
@@ -28,14 +21,8 @@ export type ExportFormat = "pdf" | "excel" | "csv";
 export function useProjectReportExportLabels(): ProjectReportExportLabels {
 	const { t } = useTranslate();
 	return {
-		projectReportTitle: t(
-			"reports.projects.export.projectReportTitle",
-			"Project report",
-		),
-		customerReportTitle: t(
-			"reports.projects.export.customerReportTitle",
-			"Customer report",
-		),
+		projectReportTitle: t("reports.projects.export.projectReportTitle", "Project report"),
+		customerReportTitle: t("reports.projects.export.customerReportTitle", "Customer report"),
 		project: t("reports.projects.export.project", "Project"),
 		customer: t("reports.projects.export.customer", "Customer"),
 		employee: t("reports.projects.export.employee", "Employee"),
@@ -43,41 +30,26 @@ export function useProjectReportExportLabels(): ProjectReportExportLabels {
 		period: t("reports.projects.export.period", "Period"),
 		generatedAt: t("reports.projects.export.generatedAt", "Generated on"),
 		currency: t("reports.projects.export.currency", "Currency"),
-		ratesResolvedAt: t(
-			"reports.projects.export.ratesResolvedAt",
-			"Rates as of",
-		),
+		ratesResolvedAt: t("reports.projects.export.ratesResolvedAt", "Rates as of"),
 		summaryTable: t("reports.projects.export.summaryTable", "Summary"),
 		employeesTable: t("reports.projects.export.employeesTable", "Employees"),
-		dailyHoursTable: t(
-			"reports.projects.export.dailyHoursTable",
-			"Hours per day",
-		),
+		dailyHoursTable: t("reports.projects.export.dailyHoursTable", "Hours per day"),
 		customersTable: t("reports.projects.export.customersTable", "Customers"),
 		projectsTable: t("reports.projects.export.projectsTable", "Projects"),
 		total: t("reports.projects.export.total", "Total"),
 		hours: t("reports.projects.export.hours", "Hours"),
 		workPeriods: t("reports.projects.export.workPeriods", "Work periods"),
 		billableHours: t("reports.projects.export.billableHours", "Billable hours"),
-		nonBillableHours: t(
-			"reports.projects.export.nonBillableHours",
-			"Non-billable hours",
-		),
+		nonBillableHours: t("reports.projects.export.nonBillableHours", "Non-billable hours"),
 		withoutCustomerHours: t(
 			"reports.projects.export.withoutCustomerHours",
 			"Billable hours without customer",
 		),
-		withoutCustomer: t(
-			"reports.projects.export.withoutCustomer",
-			"Without customer",
-		),
+		withoutCustomer: t("reports.projects.export.withoutCustomer", "Without customer"),
 		revenue: t("reports.projects.export.revenue", "Revenue"),
 		unpricedWork: t("reports.projects.export.unpricedWork", "Unpriced work"),
 		unpricedHours: t("reports.projects.export.unpricedHours", "Unpriced hours"),
-		pendingReview: t(
-			"reports.projects.export.pendingReview",
-			"Pending corrections or submissions",
-		),
+		pendingReview: t("reports.projects.export.pendingReview", "Pending corrections or submissions"),
 		cost: t("reports.projects.export.cost", "Cost"),
 		margin: t("reports.projects.export.margin", "Margin"),
 		marginPercent: t("reports.projects.export.marginPercent", "Margin %"),
@@ -99,18 +71,9 @@ export function useProjectReportExportLabels(): ProjectReportExportLabels {
 			"Cost unknown: some of the work has no cost rate, so its cost and margin are not shown.",
 		),
 		invoicedHours: t("reports.projects.export.invoicedHours", "Invoiced hours"),
-		invoicedRevenue: t(
-			"reports.projects.export.invoicedRevenue",
-			"Invoiced revenue",
-		),
-		uninvoicedHours: t(
-			"reports.projects.export.uninvoicedHours",
-			"Un-invoiced hours",
-		),
-		uninvoicedRevenue: t(
-			"reports.projects.export.uninvoicedRevenue",
-			"Un-invoiced revenue",
-		),
+		invoicedRevenue: t("reports.projects.export.invoicedRevenue", "Invoiced revenue"),
+		uninvoicedHours: t("reports.projects.export.uninvoicedHours", "Un-invoiced hours"),
+		uninvoicedRevenue: t("reports.projects.export.uninvoicedRevenue", "Un-invoiced revenue"),
 		changedAfterInvoicing: t(
 			"reports.projects.export.changedAfterInvoicing",
 			"Changed after invoicing",
@@ -119,10 +82,7 @@ export function useProjectReportExportLabels(): ProjectReportExportLabels {
 			"reports.projects.export.invoicingNote",
 			"Invoiced revenue keeps the rates of its invoice draft; un-invoiced revenue uses the rates in effect when the report was generated.",
 		),
-		customFieldsTable: t(
-			"reports.projects.export.customFieldsTable",
-			"Custom fields",
-		),
+		customFieldsTable: t("reports.projects.export.customFieldsTable", "Custom fields"),
 		customFieldRecord: t("reports.projects.export.customFieldRecord", "Record"),
 		customFieldName: t("reports.projects.export.customFieldName", "Field"),
 		customFieldValue: t("reports.projects.export.customFieldValue", "Value"),
@@ -132,10 +92,7 @@ export function useProjectReportExportLabels(): ProjectReportExportLabels {
 	};
 }
 
-async function buildReportExportFile(
-	format: ExportFormat,
-	document: ReportDocument,
-) {
+async function buildReportExportFile(format: ExportFormat, document: ReportDocument) {
 	return format === "pdf"
 		? {
 				data: await (
@@ -150,8 +107,7 @@ async function buildReportExportFile(
 						await import("@/lib/reports/exporters/report-document-excel")
 					).exportReportDocumentToExcel(document),
 					filename: reportFileName(document, "xlsx"),
-					mimeType:
-						"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+					mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 				}
 			: {
 					data: exportReportDocumentToCSV(document),
@@ -160,11 +116,7 @@ async function buildReportExportFile(
 				};
 }
 
-function downloadReportFile(file: {
-	data: BlobPart;
-	mimeType: string;
-	filename: string;
-}) {
+function downloadReportFile(file: { data: BlobPart; mimeType: string; filename: string }) {
 	const blob = new Blob([file.data], { type: file.mimeType });
 	const url = URL.createObjectURL(blob);
 	const anchor = window.document.createElement("a");
@@ -220,14 +172,9 @@ export function ReportDocumentExportButtons({
 		if (!arrival || pending.current) return;
 		const operation = {};
 		pending.current = operation;
-		const current = () =>
-			lifetime.current === arrival && pending.current === operation;
+		const current = () => lifetime.current === arrival && pending.current === operation;
 		setLoading(format);
-		const generatedAt = formatInstant(
-			systemClock.nowInstant(),
-			displayContext,
-			"dateTimeMedium",
-		);
+		const generatedAt = formatInstant(systemClock.nowInstant(), displayContext, "dateTimeMedium");
 		await (async () => {
 			try {
 				const document = buildDocument({ labels, generatedAt });
@@ -263,11 +210,7 @@ export function ReportDocumentExportButtons({
 	return (
 		<div className="flex flex-wrap gap-2">
 			{formats.includes("pdf") && (
-				<Button
-					onClick={() => handleExport("pdf")}
-					disabled={loading !== null}
-					variant="outline"
-				>
+				<Button onClick={() => handleExport("pdf")} disabled={loading !== null} variant="outline">
 					<IconFileText aria-hidden="true" className="mr-2 size-4" />
 					{loading === "pdf"
 						? t("reports.export.generating", "Generating...")
@@ -275,11 +218,7 @@ export function ReportDocumentExportButtons({
 				</Button>
 			)}
 			{formats.includes("excel") && (
-				<Button
-					onClick={() => handleExport("excel")}
-					disabled={loading !== null}
-					variant="outline"
-				>
+				<Button onClick={() => handleExport("excel")} disabled={loading !== null} variant="outline">
 					<IconFileSpreadsheet aria-hidden="true" className="mr-2 size-4" />
 					{loading === "excel"
 						? t("reports.export.generating", "Generating...")
@@ -287,11 +226,7 @@ export function ReportDocumentExportButtons({
 				</Button>
 			)}
 			{formats.includes("csv") && (
-				<Button
-					onClick={() => handleExport("csv")}
-					disabled={loading !== null}
-					variant="outline"
-				>
+				<Button onClick={() => handleExport("csv")} disabled={loading !== null} variant="outline">
 					<IconDownload aria-hidden="true" className="mr-2 size-4" />
 					{loading === "csv"
 						? t("reports.export.generating", "Generating...")

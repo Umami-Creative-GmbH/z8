@@ -1,0 +1,474 @@
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:7:272 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    5 │ __turbopack_context__.s([
+    6 │     "constantTimeEqual",
+  > 7 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$buffer$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["constantTimeEqual"],
+      │                                                                                                                                                                                                                                                                                ^^^^^^^^^^^^^^^^^^^
+    8 │     "formatEnvelope",
+    9 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["formatEnvelope"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+     5  5 │   __turbopack_context__.s([
+     6  6 │       "constantTimeEqual",
+     7    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$buffer$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["constantTimeEqual"],
+        7 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$buffer$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.constantTimeEqual,
+     8  8 │       "formatEnvelope",
+     9  9 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["formatEnvelope"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:9:287 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+     7 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$buffer$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["constantTimeEqual"],
+     8 │     "formatEnvelope",
+   > 9 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["formatEnvelope"],
+       │                                                                                                                                                                                                                                                                                               ^^^^^^^^^^^^^^^^
+    10 │     "generateRandomString",
+    11 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$random$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["generateRandomString"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+     7  7 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$buffer$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["constantTimeEqual"],
+     8  8 │       "formatEnvelope",
+     9    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["formatEnvelope"],
+        9 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__.formatEnvelope,
+    10 10 │       "generateRandomString",
+    11 11 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$random$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["generateRandomString"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:11:272 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+     9 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["formatEnvelope"],
+    10 │     "generateRandomString",
+  > 11 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$random$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["generateRandomString"],
+       │                                                                                                                                                                                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^
+    12 │     "getCryptoKey",
+    13 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getCryptoKey"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+     9  9 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["formatEnvelope"],
+    10 10 │       "generateRandomString",
+    11    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$random$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["generateRandomString"],
+       11 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$random$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.generateRandomString,
+    12 12 │       "getCryptoKey",
+    13 13 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getCryptoKey"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:13:287 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    11 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$random$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["generateRandomString"],
+    12 │     "getCryptoKey",
+  > 13 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getCryptoKey"],
+       │                                                                                                                                                                                                                                                                                               ^^^^^^^^^^^^^^
+    14 │     "hashPassword",
+    15 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hashPassword"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    11 11 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$random$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["generateRandomString"],
+    12 12 │       "getCryptoKey",
+    13    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getCryptoKey"],
+       13 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__.getCryptoKey,
+    14 14 │       "hashPassword",
+    15 15 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hashPassword"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:15:274 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    13 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getCryptoKey"],
+    14 │     "hashPassword",
+  > 15 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hashPassword"],
+       │                                                                                                                                                                                                                                                                                  ^^^^^^^^^^^^^^
+    16 │     "makeSignature",
+    17 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["makeSignature"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    13 13 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["getCryptoKey"],
+    14 14 │       "hashPassword",
+    15    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hashPassword"],
+       15 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.hashPassword,
+    16 16 │       "makeSignature",
+    17 17 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["makeSignature"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:17:287 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    15 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hashPassword"],
+    16 │     "makeSignature",
+  > 17 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["makeSignature"],
+       │                                                                                                                                                                                                                                                                                               ^^^^^^^^^^^^^^^
+    18 │     "parseEnvelope",
+    19 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["parseEnvelope"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    15 15 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hashPassword"],
+    16 16 │       "makeSignature",
+    17    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["makeSignature"],
+       17 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__.makeSignature,
+    18 18 │       "parseEnvelope",
+    19 19 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["parseEnvelope"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:19:287 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    17 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["makeSignature"],
+    18 │     "parseEnvelope",
+  > 19 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["parseEnvelope"],
+       │                                                                                                                                                                                                                                                                                               ^^^^^^^^^^^^^^^
+    20 │     "signJWT",
+    21 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["signJWT"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    17 17 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["makeSignature"],
+    18 18 │       "parseEnvelope",
+    19    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["parseEnvelope"],
+       19 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__.parseEnvelope,
+    20 20 │       "signJWT",
+    21 21 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["signJWT"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:21:269 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    19 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["parseEnvelope"],
+    20 │     "signJWT",
+  > 21 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["signJWT"],
+       │                                                                                                                                                                                                                                                                             ^^^^^^^^^
+    22 │     "symmetricDecodeJWT",
+    23 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricDecodeJWT"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    19 19 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["parseEnvelope"],
+    20 20 │       "signJWT",
+    21    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["signJWT"],
+       21 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.signJWT,
+    22 22 │       "symmetricDecodeJWT",
+    23 23 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricDecodeJWT"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:23:269 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    21 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["signJWT"],
+    22 │     "symmetricDecodeJWT",
+  > 23 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricDecodeJWT"],
+       │                                                                                                                                                                                                                                                                             ^^^^^^^^^^^^^^^^^^^^
+    24 │     "symmetricDecrypt",
+    25 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricDecrypt"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    21 21 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["signJWT"],
+    22 22 │       "symmetricDecodeJWT",
+    23    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricDecodeJWT"],
+       23 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.symmetricDecodeJWT,
+    24 24 │       "symmetricDecrypt",
+    25 25 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricDecrypt"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:25:287 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    23 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricDecodeJWT"],
+    24 │     "symmetricDecrypt",
+  > 25 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricDecrypt"],
+       │                                                                                                                                                                                                                                                                                               ^^^^^^^^^^^^^^^^^^
+    26 │     "symmetricEncodeJWT",
+    27 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricEncodeJWT"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    23 23 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricDecodeJWT"],
+    24 24 │       "symmetricDecrypt",
+    25    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricDecrypt"],
+       25 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__.symmetricDecrypt,
+    26 26 │       "symmetricEncodeJWT",
+    27 27 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricEncodeJWT"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:27:269 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    25 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricDecrypt"],
+    26 │     "symmetricEncodeJWT",
+  > 27 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricEncodeJWT"],
+       │                                                                                                                                                                                                                                                                             ^^^^^^^^^^^^^^^^^^^^
+    28 │     "symmetricEncrypt",
+    29 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricEncrypt"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    25 25 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricDecrypt"],
+    26 26 │       "symmetricEncodeJWT",
+    27    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricEncodeJWT"],
+       27 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.symmetricEncodeJWT,
+    28 28 │       "symmetricEncrypt",
+    29 29 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricEncrypt"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:29:287 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    27 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricEncodeJWT"],
+    28 │     "symmetricEncrypt",
+  > 29 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricEncrypt"],
+       │                                                                                                                                                                                                                                                                                               ^^^^^^^^^^^^^^^^^^
+    30 │     "verifyJWT",
+    31 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["verifyJWT"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    27 27 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["symmetricEncodeJWT"],
+    28 28 │       "symmetricEncrypt",
+    29    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricEncrypt"],
+       29 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__.symmetricEncrypt,
+    30 30 │       "verifyJWT",
+    31 31 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["verifyJWT"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:31:269 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    29 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricEncrypt"],
+    30 │     "verifyJWT",
+  > 31 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["verifyJWT"],
+       │                                                                                                                                                                                                                                                                             ^^^^^^^^^^^
+    32 │     "verifyPassword",
+    33 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["verifyPassword"]
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    29 29 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["symmetricEncrypt"],
+    30 30 │       "verifyJWT",
+    31    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["verifyJWT"],
+       31 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$jwt$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.verifyJWT,
+    32 32 │       "verifyPassword",
+    33 33 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$crypto$2f$password$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["verifyPassword"]
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_plugins_organization_index_mjs_04_40_rgad-aj._.js:7:290 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    5 │ __turbopack_context__.s([
+    6 │     "getOrgAdapter",
+  > 7 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$adapter$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["getOrgAdapter"],
+      │                                                                                                                                                                                                                                                                                                  ^^^^^^^^^^^^^^^
+    8 │     "hasPermission",
+    9 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$has$2d$permission$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hasPermission"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+     5  5 │   __turbopack_context__.s([
+     6  6 │       "getOrgAdapter",
+     7    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$adapter$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["getOrgAdapter"],
+        7 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$adapter$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.getOrgAdapter,
+     8  8 │       "hasPermission",
+     9  9 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$has$2d$permission$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hasPermission"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_plugins_organization_index_mjs_04_40_rgad-aj._.js:9:300 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+     7 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$adapter$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["getOrgAdapter"],
+     8 │     "hasPermission",
+   > 9 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$has$2d$permission$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hasPermission"],
+       │                                                                                                                                                                                                                                                                                                            ^^^^^^^^^^^^^^^
+    10 │     "organization",
+    11 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$organization$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["organization"],
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+     7  7 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$adapter$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["getOrgAdapter"],
+     8  8 │       "hasPermission",
+     9    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$has$2d$permission$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hasPermission"],
+        9 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$has$2d$permission$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.hasPermission,
+    10 10 │       "organization",
+    11 11 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$organization$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["organization"],
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_plugins_organization_index_mjs_04_40_rgad-aj._.js:11:311 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+     9 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$has$2d$permission$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hasPermission"],
+    10 │     "organization",
+  > 11 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$organization$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["organization"],
+       │                                                                                                                                                                                                                                                                                                                       ^^^^^^^^^^^^^^
+    12 │     "parseRoles",
+    13 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$roles$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["parseRoles"]
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+     9  9 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$has$2d$permission$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["hasPermission"],
+    10 10 │       "organization",
+    11    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$organization$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["organization"],
+       11 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$organization$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__.organization,
+    12 12 │       "parseRoles",
+    13 13 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$roles$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["parseRoles"]
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_plugins_organization_index_mjs_04_40_rgad-aj._.js:13:288 lint/complexity/useLiteralKeys  FIXABLE  ━━━━━━━━━━
+
+  i The computed expression can be simplified without the use of a string literal.
+  
+    11 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$organization$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["organization"],
+    12 │     "parseRoles",
+  > 13 │     ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$roles$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["parseRoles"]
+       │                                                                                                                                                                                                                                                                                                ^^^^^^^^^^^^
+    14 │ ]);
+    15 │ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e...
+  
+  i A literal key is easier to read, and tools such as type checkers and minifiers can understand the property name.
+  
+  i Unsafe fix: Use a literal key instead.
+  
+    11 11 │       ()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$organization$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["organization"],
+    12 12 │       "parseRoles",
+    13    │ - ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$roles$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["parseRoles"]
+       13 │ + ····()=>__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$better$2d$auth$40$1$2e$7$2e$22_$40$opentel_c690c38abfd464efcfb4d648f09d68c0$2f$node_modules$2f$better$2d$auth$2f$dist$2f$plugins$2f$organization$2f$roles$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__.parseRoles
+    14 14 │   ]);
+    15 15 │   ...ion/index.mjs [app-route] (ecmascript) <locals>");
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_crypto_index_mjs_1n2g_9pmg-mkb._.js:3:1 lint/suspicious/noRedundantUseStrict  FIXABLE  ━━━━━━━━━━
+
+  ! Redundant use strict directive.
+  
+    1 │ module.exports = [
+    2 │ "[project]/node_modules/.pnpm/better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0/node_modules/better-auth/dist/crypto/index.mjs [app-route] (ecmascript)", ((__turbopack_context__) => {
+  > 3 │ "use strict";
+      │ ^^^^^^^^^^^^^
+    4 │ 
+    5 │ __turbopack_context__.s([
+  
+  i The entire contents of JavaScript modules are automatically in strict mode, with no statement needed to initiate it.
+  
+  i Safe fix: Remove the redundant use strict directive.
+  
+     1  1 │   module.exports = [
+     2  2 │   "[project]/node_modules/.pnpm/better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0/node_modules/better-auth/dist/crypto/index.mjs [app-route] (ecmascript)", ((__turbopack_context__) => {
+     3    │ - "use·strict";
+     4  3 │   
+        4 │ + 
+     5  5 │   __turbopack_context__.s([
+     6  6 │       "constantTimeEqual",
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_plugins_organization_index_mjs_04_40_rgad-aj._.js:3:1 lint/suspicious/noRedundantUseStrict  FIXABLE  ━━━━━━━━━━
+
+  ! Redundant use strict directive.
+  
+    1 │ module.exports = [
+    2 │ "[project]/node_modules/.pnpm/better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0/node_modules/better-auth/dist/plugins/organization/index.mjs [app-route] (ecmascript)", ((__turbopack_context__) => {
+  > 3 │ "use strict";
+      │ ^^^^^^^^^^^^^
+    4 │ 
+    5 │ __turbopack_context__.s([
+  
+  i The entire contents of JavaScript modules are automatically in strict mode, with no statement needed to initiate it.
+  
+  i Safe fix: Remove the redundant use strict directive.
+  
+     1  1 │   module.exports = [
+     2  2 │   "[project]/node_modules/.pnpm/better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0/node_modules/better-auth/dist/plugins/organization/index.mjs [app-route] (ecmascript)", ((__turbopack_context__) => {
+     3    │ - "use·strict";
+     4  3 │   
+        4 │ + 
+     5  5 │   __turbopack_context__.s([
+     6  6 │       "getOrgAdapter",
+  
+
+.next\dev\server\chunks\0g5k_better-auth_dist_plugins_organization_index_mjs_04_40_rgad-aj._.js:22:1 lint/suspicious/noRedundantUseStrict  FIXABLE  ━━━━━━━━━━
+
+  ! Redundant use strict directive.
+  
+    20 │ }),
+    21 │ "[project]/node_modules/.pnpm/better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0/node_modules/better-auth/dist/plugins/organization/index.mjs [app-route] (ecmascript) <locals>", ((__turbopack_context__) => {
+  > 22 │ "use strict";
+       │ ^^^^^^^^^^^^^
+    23 │ 
+    24 │ __turbopack_context__.s([]);
+  
+  i The entire contents of JavaScript modules are automatically in strict mode, with no statement needed to initiate it.
+  
+  i Safe fix: Remove the redundant use strict directive.
+  
+    20 20 │   }),
+    21 21 │   "[project]/node_modules/.pnpm/better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0/node_modules/better-auth/dist/plugins/organization/index.mjs [app-route] (ecmascript) <locals>", ((__turbopack_context__) => {
+    22    │ - "use·strict";
+    23 22 │   
+       23 │ + 
+    24 24 │   __turbopack_context__.s([]);
+    25 25 │   ...organization/roles.mjs [app-route] (ecmascript)");
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 894678.
+Checked 12881 files in 12s. No fixes applied.
+Found 102684 errors.
+Found 299139 warnings.
+Found 492875 infos.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some warnings were emitted while running checks.
+  
+

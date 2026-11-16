@@ -1,0 +1,31 @@
+{
+  "name": "unit",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "--maxWorkers",
+    "2",
+    "src/components/reports",
+    "src/lib/reports",
+    "src/lib/projects/report-share",
+    "src/app/[locale]/(app)/reports/projects",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/lib/billable-time/hand-off/timesheet-document.test.ts",
+    "src/components/payroll/payroll-workspace.test.tsx",
+    "src/app/[locale]/onboarding",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1736-merger/unit.json"
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "startedAt": "2026-11-16T02:10:50.8634654+01:00",
+  "finishedAt": "2026-11-16T02:11:29.9234252+01:00",
+  "exitCode": 0
+}

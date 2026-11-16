@@ -1,0 +1,1 @@
+{"phase":"before","status":"failed-run","consumers":[{"name":"project-reports","status":"failed-run","failedTransport":1,"responseStatuses":[200],"captures":4}]}

@@ -1,0 +1,30 @@
+{
+  "name": "doctor",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "react-doctor",
+    "apps/webapp",
+    "--scope",
+    "changed",
+    "--base",
+    "58ea18603a936d102f0625e3303f4c05689a9961",
+    "--no-score",
+    "--no-supply-chain",
+    "--max-duration",
+    "90",
+    "--no-parallel",
+    "--verbose",
+    "--json",
+    "--json-out",
+    "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1736-merger/doctor.json"
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "startedAt": "2026-11-16T02:16:24.1320816+01:00",
+  "finishedAt": "2026-11-16T02:16:44.9252679+01:00",
+  "exitCode": 0
+}

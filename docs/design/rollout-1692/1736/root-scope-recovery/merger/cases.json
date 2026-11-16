@@ -1,0 +1,3332 @@
+[
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace replaces records when another organization arrives for the same actor and organization name",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace discards a held summary after a organization scope leaves and returns",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace discards a held summary after a actor scope leaves and returns",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace discards a held summary after a coverage scope leaves and returns",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace suppresses an old export after a organization scope leaves and returns, and permits a new export",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace suppresses an old export after a actor scope leaves and returns, and permits a new export",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace suppresses an old export after a coverage scope leaves and returns, and permits a new export",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace suppresses an old PDF after a organization scope leaves and returns, and permits a new download",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace suppresses an old PDF after a actor scope leaves and returns, and permits a new download",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace suppresses an old PDF after a coverage scope leaves and returns, and permits a new download",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace preserves same-scope custom drafts when a new server snapshot reorders the covered roster",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace discards a previous route lifetime's export when cached payroll becomes visible again",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace does not create a late PDF download after leaving payroll",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace retains an export retry after a transport rejection",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace does not announce a late export after leaving the payroll workspace",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace states the organization and puts employee totals before supporting comparison records",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace renders the period heading in the selected German locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace renders payroll workspace labels through Tolgee translations",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace collapses blocker rows by default",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace renders summary cards, employee rows, period controls, and blockers",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace renders blocker exceptions with employee context and authorized workflow links",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace renders a distinguishable clear control beside every blocker workflow link",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace links unresolved work minutes to the calendar without offering a false-positive clear",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace sends only the clicked blocker and current period and filter request",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps pending state on only the clicked blocker and prevents a duplicate click",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace tracks same-source blockers of different types independently",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps concurrent rows pending independently and finishes with the last server refresh",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace refreshes from server truth with the same request after dismissal",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace refreshes the latest requested period after dismissal and ignores the older navigation response",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace does not let an older dismissal refresh overwrite navigation started afterward",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace applies only the latest ordinary period refresh when responses resolve out of order",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace suppresses in-flight dismissal effects and discards queued clears after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace suppresses refresh result effects after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace focuses the next blocker clear control after successful removal",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace detects and focuses across removal when blocker source IDs collide",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace preserves focus moved elsewhere before a deferred removal completes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace focuses the previous blocker clear control when the last row is removed",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace focuses the visible blockers summary card when successful removal leaves no row",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace restores the activated clear control after pending disablement loses focus and dismissal fails",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace moves to the next blocker after successful removal of a pending control that lost focus",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace preserves focus deliberately moved away while dismissal is refused",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace restores focus lost between refused completion and the enabled commit",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps focus on the activated clear control when dismissal fails",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps the blocker and shows the safe dismissal error when clearing fails",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps the blocker, clears pending state, and shows a localized error on dismissal rejection",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace preserves the summary and uses the refresh-specific error after dismissal on result failure",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace preserves the summary and uses the refresh-specific error after dismissal on rejection",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace falls back for an unscoped employee and an invalid blocker date",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace hides an employee ID used as the blocker employee name",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps payroll period controls on aligned grid rails",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace disables export controls when no export formats are configured",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps payroll actions available at the default managed scope",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace opens scope sheets with visible checkbox labels",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace applies team scope selections from the team sheet",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace applies multiple team scope selections at once",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace discards team draft selections when cancelled",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps the committed scope when applying a team filter fails",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace opens employee scope selection without refreshing until apply",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace applies multiple employee draft selections at once",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace discards employee draft selections when cancelled",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace filters produce no matches when selected employees and teams do not overlap",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace shows empty states when no teams or employees are assigned",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace moves to the previous month from the selected month",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace moves to the next month from the selected month",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace moves to the previous week from the selected week",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace keeps month mode when switching to week fails",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace moves to the next week from the selected week",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "PayrollWorkspace returns to the current month",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "shows the comparison workspace for supported formats (datev_lohn)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "shows the comparison workspace for supported formats (lexware_lohn)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "shows the comparison workspace for supported formats (sage_lohn)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "shows the comparison workspace for supported formats (successfactors_csv)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+    "fullName": "shows the comparison workspace for supported formats (sage)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/date-range-picker.test.tsx",
+    "fullName": "DateRangePicker disables and explains preset selection until organization settings are hydrated",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/date-range-picker.test.tsx",
+    "fullName": "DateRangePicker keeps picker selections as local calendar strings",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/date-range-picker.test.tsx",
+    "fullName": "DateRangePicker formats calendar labels without converting through the host timezone",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/export-buttons.test.tsx",
+    "fullName": "ExportButtons mounts without evaluating the Excel module",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/export-buttons.test.tsx",
+    "fullName": "ExportButtons exports CSV content and cleans up without evaluating Excel",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/export-buttons.test.tsx",
+    "fullName": "ExportButtons exports PDF content and cleans up without evaluating Excel",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/export-buttons.test.tsx",
+    "fullName": "ExportButtons loads Excel on click, holds all controls, and cleans up repeated downloads",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/export-buttons.test.tsx",
+    "fullName": "ExportButtons restores controls after a rejected Excel import and permits retry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/export-buttons.test.tsx",
+    "fullName": "ExportButtons disables all controls while the Excel module is still loading",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/export-buttons.test.tsx",
+    "fullName": "ExportButtons restores controls after workbook generation rejects and permits retry without leaking URLs",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/report-custom-fields.test.tsx",
+    "fullName": "ReportCustomFieldsCard lists the report's custom fields in order with readable values",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/report-custom-fields.test.tsx",
+    "fullName": "ReportCustomFieldsCard renders nothing without fields",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/report-document-export-buttons.test.tsx",
+    "fullName": "keeps anonymous frozen-report export controls available and renders their trimmed report scope",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/report-document-export-buttons.test.tsx",
+    "fullName": "retires a pending anonymous export on unmount and allows a fresh deliberate download",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/report-document-export-buttons.test.tsx",
+    "fullName": "retires a pending anonymous export on Activity and allows a fresh deliberate download",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/report-document-export-buttons.test.tsx",
+    "fullName": "retires a pending anonymous export on replacement and allows a fresh deliberate download",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/report-summary-cards.test.tsx",
+    "fullName": "ReportSummaryCards shows earnings for an employee who is fixed now but worked under hourly terms",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/report-summary-cards.test.tsx",
+    "fullName": "ReportSummaryCards shows no earnings when no hourly terms were in force",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/reports-i18n.test.ts",
+    "fullName": "reports i18n does not leave known report UI copy as raw literals",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts payroll, the work-balance directory and selected balance without deeper descendants",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts only the personal requests page heading",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts the personal documents heading without officer descendants",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts the employee equipment record heading without adopting its collection",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata retains independent approvals page headings",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts only the deputy history record, preserving other approval headings",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts only the complete review arrival route",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts the exact vacation route while retaining staged descendants",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts refreshed analytics without adopting unconverted descendants",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata adopts only the portfolio pilot title, leaving other reports and descendants with shell titles",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /de/my-requests",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/payroll",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/scheduling",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/approvals/inbox",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/compliance",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/works-council",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/team/absences",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/team/driving",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/driving-licence",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/driving-licence/checks/employee-1",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/reports/projects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/reports/vehicles",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/settings/employees/employee-1",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/settings/locations/location-1",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/equipment",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/equipment/employees/employee-1",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/equipment/assignments/assignment-1",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /de/my-equipment",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata resolves /en/settings/equipment",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata matches route prefixes only at path-segment boundaries",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "fullName": "route metadata normalizes locale and trailing slash segments",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/date-ranges.test.ts",
+    "fullName": "getDateRangeForPreset resolves the current month from the organization-local current instant",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/date-ranges.test.ts",
+    "fullName": "getDateRangeForPreset resolves last month using PlainDate arithmetic",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/date-ranges.test.ts",
+    "fullName": "formatDateRangeLabel formats calendar dates in the requested locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms pays a Berlin 22:00 to 02:00 shift 2 h at each wage when the wage changes that night",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms pays work up to the 14th when the employee switched from hourly to fixed on the 15th",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms reports no earnings when no hourly terms are in force during the range",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms reports zero earnings for hourly terms without work",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms earns nothing for work no confirmed terms cover",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms uses the recorded duration, net of breaks",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms counts only the part of a shift inside the report range",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms rejects hourly work under terms that carry no wage",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/hourly-earnings.test.ts",
+    "fullName": "calculateHourlyEarningsFromTerms rejects currencies mixed across worked terms",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/permissions.test.ts",
+    "fullName": "getReportAccessibleEmployeeIds returns only self for employees",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/permissions.test.ts",
+    "fullName": "getReportAccessibleEmployeeIds returns self and direct reports for managers",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/permissions.test.ts",
+    "fullName": "getReportAccessibleEmployeeIds returns null for admins because the organization filter is sufficient",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/permissions.test.ts",
+    "fullName": "getManagerReportAccessibleEmployees deduplicates duplicate direct reports while preserving the first occurrence",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/permissions.test.ts",
+    "fullName": "getManagerReportAccessibleEmployees filters direct reports from other organizations",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/permissions.test.ts",
+    "fullName": "getManagerReportAccessibleEmployees maps first and last names from auth user fields",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/permissions.test.ts",
+    "fullName": "canReadReportEmployee uses CASL Employee object-subject visibility for report targets",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/permissions.test.ts",
+    "fullName": "canReadReportEmployee preserves admin all-in-org and employee self report visibility",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "buildProjectHealthFields sets budget alerts at 70, 90, and 100 percent thresholds",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "buildProjectHealthFields sets deadline alerts for 14 days, 7 days, 1 day, today, and overdue",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "buildProjectHealthFields counts the calendar days from today to the deadline day",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "buildProjectHealthFields takes today's date in the organization's timezone, not the server's or the viewer's",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "buildProjectHealthFields spreads range hours over every report day, both ends included",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "buildProjectHealthFields forecasts selected-range burn rate budget exhaustion before deadline",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "buildProjectHealthFields uses cumulative hours for remaining budget and selected-range hours for forecast burn rate",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "buildProjectHealthFields does not forecast without average daily hours, budget, or deadline",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "project health totals and alerts counts budget health totals",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "project health totals and alerts sorts alerts by severity and risk",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-health.test.ts",
+    "fullName": "project health totals and alerts sorts an earlier forecast risk before a later deadline-only warning",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-access.test.ts",
+    "fullName": "project report access gives owners and admins of the organization every project with cost and margin",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-access.test.ts",
+    "fullName": "project report access gives project managers their projects with revenue only",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-access.test.ts",
+    "fullName": "project report access keeps team managers at hours: every project, no Billable Time figures",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-access.test.ts",
+    "fullName": "project report access gives employees role admin without an admin membership no money",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-access.test.ts",
+    "fullName": "project report access keeps employees who manage no project out of project reports",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export exports invoiced and un-invoiced hours and revenue when the figures carry them",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export exports a project manager's report without any cost or margin column",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export exports cost and margin for owners, and an unknown cost as such",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export exports hours only when the report has no Billable Time figures",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export writes money as two-decimal numbers in Excel",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export renders the same document as a PDF",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export exports the project's and the customer's custom fields as a table, in order",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export exports the customer view with its totals row",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-report-export.test.ts",
+    "fullName": "project report export exports projects without a customer as their own group, with their hours without customer",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-task-breakdown.test.ts",
+    "fullName": "buildProjectTaskBreakdown adds up to the project total with a No task row for untasked time",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-task-breakdown.test.ts",
+    "fullName": "buildProjectTaskBreakdown leaves out the No task row when every period has a task",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-task-breakdown.test.ts",
+    "fullName": "buildProjectTaskBreakdown counts the No task row's bookings that are missing a task (#884)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-task-breakdown.test.ts",
+    "fullName": "buildProjectTaskBreakdown gives the No task row no count when none of its bookings is missing a task",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-task-breakdown.test.ts",
+    "fullName": "buildProjectTaskBreakdown is empty when nothing was booked",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/project-task-breakdown.test.ts",
+    "fullName": "buildProjectTaskBreakdown reports estimate progress from all hours booked to the task, not only the period",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange uses the organization timezone for inclusive calendar dates",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange preserves local-day boundaries across New York daylight saving time",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange preserves Berlin local-day boundaries across daylight saving time",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange counts a DST fallback date as one inclusive calendar day",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange supports non-hour organization offsets",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange rejects invalid and reversed dates",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange clips a period crossing the May boundary in Berlin to the selected local date",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange splits a project period at the May-to-June boundary in Berlin",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-date-range.test.ts",
+    "fullName": "resolveReportDateRange preserves the clipped minute total when a one-minute period crosses Berlin midnight",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-generator.test.ts",
+    "fullName": "report generator scopes home office category lookup to all home office categories in the report organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-generator.test.ts",
+    "fullName": "report generator aggregates home office days across active and inactive home office categories",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/report-generator.test.ts",
+    "fullName": "report generator clips absence days to the report calendar strings",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/vehicle-distance-report.test.ts",
+    "fullName": "distance per vehicle report lists every month of the period, also months without driving",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/vehicle-distance-report.test.ts",
+    "fullName": "distance per vehicle report sums kilometres per vehicle, employee and month",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/vehicle-distance-report.test.ts",
+    "fullName": "distance per vehicle report groups every own vehicle into one row, whoever drove it",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/vehicle-distance-report.test.ts",
+    "fullName": "distance per vehicle report exports one row per vehicle and employee with kilometres per month",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/vehicle-distance-report.test.ts",
+    "fullName": "distance per vehicle report ignores work outside the period's months",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/layout.test.tsx",
+    "fullName": "OnboardingLayout keeps random content in an async child behind neutral shell geometry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/layout.test.tsx",
+    "fullName": "OnboardingLayout uses the auth-style full-screen glass shell",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/run-onboarding-action.test.ts",
+    "fullName": "runOnboardingAction keeps loading latched when the result callback returns true",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/run-onboarding-action.test.ts",
+    "fullName": "runOnboardingAction resets loading after a resolved non-navigation result",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/run-onboarding-action.test.ts",
+    "fullName": "runOnboardingAction dispatches an action rejection exactly once between loading states",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/run-onboarding-action.test.ts",
+    "fullName": "runOnboardingAction propagates a result callback error without invoking the rejection callback",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/run-onboarding-action.test.ts",
+    "fullName": "runOnboardingAction propagates a rejection callback error after resetting loading",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/billable-figures.test.tsx",
+    "fullName": "BillableFiguresCard shows a project manager hours and revenue, and no cost or margin",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/billable-figures.test.tsx",
+    "fullName": "BillableFiguresCard shows an unknown margin as cost unknown, never as 100%",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/billable-figures.test.tsx",
+    "fullName": "BillableFiguresCard formats hours with the viewer's decimal separator and a spaced unit",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/billable-figures.test.tsx",
+    "fullName": "BillableFiguresCard links owners and admins from the changed-after-invoicing count to the marked work",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/billable-figures.test.tsx",
+    "fullName": "BillableFiguresCard gives project managers the count without a link to the admin-only hand-off area",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/billable-figures.test.tsx",
+    "fullName": "BillableFiguresCard flags billable work on projects without a customer, which cannot be handed off",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/billable-figures.test.tsx",
+    "fullName": "BillableEmployeeTable lists each employee's hours in the viewer's locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/customer-billable-view.test.tsx",
+    "fullName": "CustomerBillableView lists projects without a customer in a group of their own",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-budget-progress.test.tsx",
+    "fullName": "ProjectBudgetProgress shows used and remaining hours in the viewer's locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-budget-progress.test.tsx",
+    "fullName": "ProjectBudgetProgress shows hours over budget in the viewer's locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-health-alerts.test.tsx",
+    "fullName": "ProjectHealthAlerts renders an empty state when projects have no alerts",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-health-alerts.test.tsx",
+    "fullName": "ProjectHealthAlerts renders budget and forecast alert details with a details action",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-portfolio-table.test.tsx",
+    "fullName": "ProjectPortfolioTable keeps every local result reachable and opens the correct project after filtering and paging",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-portfolio-table.test.tsx",
+    "fullName": "ProjectPortfolioTable shows each project's hours and budget in the viewer's locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-report-details.test.tsx",
+    "fullName": "ProjectReportDetails shows the customer and the project's and customer's custom fields",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-report-details.test.tsx",
+    "fullName": "ProjectReportDetails says when the project has no customer",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-reports-container.contract.test.ts",
+    "fullName": "ProjectReportsContainer report action boundary sends the report range's calendar days to the server actions as ISO day strings",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx",
+    "fullName": "discards a late generation across organization A→B→A and permits a fresh generation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx",
+    "fullName": "discards a late generation across account A→B→A and permits a fresh generation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx",
+    "fullName": "discards a late generation across Activity A→B→A and permits a fresh generation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx",
+    "fullName": "preserves the last generated result after a failed generation and a failed background refresh",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx",
+    "fullName": "requires generation, retries a failed read with the same calendar scope and prevents pending duplicates",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-summary-cards.test.tsx",
+    "fullName": "ProjectSummaryCards shows total hours across projects in the viewer's locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-summary-cards.test.tsx",
+    "fullName": "ProjectSummaryCards shows a single project's hours, budget and daily average in the viewer's locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-summary-cards.test.tsx",
+    "fullName": "ProjectSummaryCards keeps English hours with a decimal point",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-task-breakdown.test.tsx",
+    "fullName": "ProjectTaskBreakdown lists hours and share per task with a No task row",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-task-breakdown.test.tsx",
+    "fullName": "ProjectTaskBreakdown marks done tasks as done",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-task-breakdown.test.tsx",
+    "fullName": "ProjectTaskBreakdown shows estimate progress only for a task with an estimate",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-task-breakdown.test.tsx",
+    "fullName": "ProjectTaskBreakdown shows how many bookings of the No task row are missing a task (#884)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-task-breakdown.test.tsx",
+    "fullName": "ProjectTaskBreakdown shows no missing-task count when none is missing a task",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-task-breakdown.test.tsx",
+    "fullName": "ProjectTaskBreakdown says so when no time was booked",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-team-breakdown.test.tsx",
+    "fullName": "ProjectTeamBreakdown lists each employee's hours in the viewer's locale",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/project-team-breakdown.test.tsx",
+    "fullName": "ProjectTeamBreakdown renders frozen report inputs without mutating them",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx",
+    "fullName": "retires the TanStack submit continuation across organization before invoking the action",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx",
+    "fullName": "retires the TanStack submit continuation across account before invoking the action",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx",
+    "fullName": "retires the TanStack submit continuation across Activity before invoking the action",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx",
+    "fullName": "retains failed share options and uses the report's calendar days, then reveals the successful secret only until dismissal",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx",
+    "fullName": "forgets a dismissed creation instead of revealing its secret in a reopened dialog",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx",
+    "fullName": "keeps cached project share links in their requesting organization arrival and leaves peer queries intact",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx",
+    "fullName": "keeps cached settings share links in their requesting organization arrival and leaves peer queries intact",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx",
+    "fullName": "keeps cached project share links in their requesting account arrival and leaves peer queries intact",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx",
+    "fullName": "keeps cached settings share links in their requesting account arrival and leaves peer queries intact",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx",
+    "fullName": "does not fetch or expose cached links while organization scope is unresolved",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/billable-time/hand-off/timesheet-document.test.ts",
+    "fullName": "timesheet document lists every handed-off work period with its day, people, times and hours, and totals the hours",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/billable-time/hand-off/timesheet-document.test.ts",
+    "fullName": "timesheet document renders as a PDF",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/share-link-expiry.test.ts",
+    "fullName": "report share link expiry expires 30 days after creation when the creator picks no expiry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/share-link-expiry.test.ts",
+    "fullName": "report share link expiry allows up to 90 days",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/share-link-expiry.test.ts",
+    "fullName": "report share link expiry refuses more than 90 days",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/share-link-expiry.test.ts",
+    "fullName": "report share link expiry refuses a link without expiry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/share-link-expiry.test.ts",
+    "fullName": "report share link expiry refuses 0 days",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/share-link-expiry.test.ts",
+    "fullName": "report share link expiry refuses -5 days",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/share-link-expiry.test.ts",
+    "fullName": "report share link expiry refuses 1.5 days",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/share-link-expiry.test.ts",
+    "fullName": "report share link expiry refuses NaN days",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot-document.test.ts",
+    "fullName": "shared snapshot document renders hours, the billable split and revenue, and no internal figure column",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot-document.test.ts",
+    "fullName": "shared snapshot document has no revenue column, currency or rate notes when the snapshot shares hours only",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot-document.test.ts",
+    "fullName": "shared snapshot document leaves out the employee table unless the snapshot has the employee breakdown",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot-document.test.ts",
+    "fullName": "shared snapshot document renders one customer and its projects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot.test.ts",
+    "fullName": "shared snapshot of a project report never carries cost, margin, unpriced or pending figures, even from an owner's report",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot.test.ts",
+    "fullName": "shared snapshot of a project report shares hours and the billable split without revenue or currency when the link shares hours only",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot.test.ts",
+    "fullName": "shared snapshot of a project report holds no employee or team names while the employee breakdown is off",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot.test.ts",
+    "fullName": "shared snapshot of a project report shows real employee names when the creator switches the employee breakdown on",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot.test.ts",
+    "fullName": "shared snapshot of a project report keeps the period as calendar days and leaves out ids, budget and description",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot.test.ts",
+    "fullName": "shared snapshot of one customer's billable report contains that customer and its projects only, never another customer or the without-customer group",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/projects/report-share/shared-snapshot.test.ts",
+    "fullName": "shared snapshot of one customer's billable report is an empty row for a customer without work in the period",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/exporters/employee-report-custom-fields.test.ts",
+    "fullName": "employee report custom fields in exports writes a Custom Fields section to the CSV, in order, with dates as ISO dates",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/exporters/employee-report-custom-fields.test.ts",
+    "fullName": "employee report custom fields in exports adds the custom fields to the Excel summary sheet",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/exporters/employee-report-custom-fields.test.ts",
+    "fullName": "employee report custom fields in exports adds the custom fields to the PDF",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/exporters/excel-exporter.test.ts",
+    "fullName": "Excel report characterization retains the filename and all fictional report worksheet cells",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+    "fullName": "renders report facts, table rows, unknown values and notes after React Compiler optimization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion does not claim success or allow continuation after failed finalization, and retries once",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion separates summary failure from confirmed completion and retries only the read",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion announces each pending phase and prevents premature continuation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion retains scoped guidance org=true admin=true preset=false",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion retains scoped guidance org=true admin=true preset=true",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion retains scoped guidance org=true admin=false preset=false",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion retains scoped guidance org=false admin=false preset=undefined",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion does not finalize for unknown or signed-out sessions",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion rejects late organization A results across A to B to A without refinalizing",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion ignores a late completion from a previous account and finalizes the current account once",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion revalidates after cached Activity without reviving old continuation or repeating finalization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion does not read a summary or expose late errors after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion does not revive an old account summary after an A to B to A round trip",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/complete/page.test.tsx",
+    "fullName": "personal onboarding completion keeps rejected finalization retryable and a summary refusal distinct",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state keeps one safe task heading while account loading settles into notification setup",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state never stores a default permission response as push consent",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state never stores a denied permission response as push consent",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state shows granted push permission as a disabled Enabled button",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state keeps the Enable action available before permission is granted",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state keeps submit disabled after successful configuration navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state submits the exact notification preference values",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state associates every notification switch with its visible label",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state keeps skip disabled after successful skip navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state resets submit loading and shows a safe error when configuration rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "NotificationsPage busy state resets skip loading and shows a safe error when skipping rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership permits a fresh save after A to B to A without old completions unlocking it",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership keeps default permission separate from opt-in and can save email/topics",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership keeps denied permission separate from opt-in and can save email/topics",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership opts in only after literal granted and allows independent push preference changes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership suppresses repeated push and save/skip while permission is held, then recovers rejection",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership suppresses repeated save and competing actions",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership suppresses repeated skip and competing actions",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership discards held push after late org arrival and retains all other choices",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership discards old refusal after organization return while a new skip is pending",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership never carries a draft or stale result across accounts A to B to A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership discards save after Activity disconnect/reconnect and permits a current action",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership discards skip after Activity disconnect/reconnect and permits a current action",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership discards push after Activity disconnect/reconnect and permits a current action",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership discards a save on ordinary unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership waits for the initial account and never treats no session as setup authority",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+    "fullName": "notification arrival ownership keeps availability loading and unsupported states separate from preferences",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.server.test.tsx",
+    "fullName": "OrganizationPage passes creation availability false when the deployment disables creation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.server.test.tsx",
+    "fullName": "OrganizationPage passes creation availability true when the deployment allows creation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.server.test.tsx",
+    "fullName": "OrganizationPage passes creation availability true when the deployment flag is unset",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient keeps one organization task heading while a membership read settles",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient keeps existing members on this step when the automatic skip is refused",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient discards a successful creation reply after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient discards late creation across account A to B to A without losing the new draft",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient discards late creation across organization A to B to A without losing the new draft",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient invalidates a pending skip during Activity hide and resume",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient keeps the duplicate lock during Activity resume until the original creation settles",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient rejects held slug A to B to A responses from an earlier visit",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient prevents repeated creation while pending and retains all input for retry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient preserves a manually edited slug when the organization name changes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient connects the slug help and live status to the labeled input",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient keeps the current slug request loading when an older response resolves",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient keeps the current slug error when an older response resolves last",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient shows the tracking suggestion separately from employment and submits the chosen rollout date",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient keeps submit disabled after successful creation navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient keeps skip disabled after successful skip navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient resets submit loading and shows a safe error when creation rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient resets skip loading and shows a safe error when skipping rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient hides the creation form when organization creation is disabled",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient explains creation is disabled when the creation form is unavailable",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient does not skip or navigate when a membership result resolves after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient settles membership loading safely when the summary rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/organization/page.test.tsx",
+    "fullName": "OrganizationPageClient runs the membership skip once during StrictMode replay",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "fullName": "updateProfileOnboarding applies preference defaults before updating the profile",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "fullName": "updateProfileOnboarding rejects invalid week start values before updating the profile",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "fullName": "updateProfileOnboarding rejects invalid time format values before updating the profile",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "fullName": "updateProfileOnboarding refuses an out-of-range or non-calendar birthday 1899-12-31",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "fullName": "updateProfileOnboarding refuses an out-of-range or non-calendar birthday 2999-01-01",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "fullName": "updateProfileOnboarding refuses an out-of-range or non-calendar birthday 2025-02-29",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "fullName": "updateProfileOnboarding refuses an out-of-range or non-calendar birthday 2025-01-01T00:00:00Z",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage discards Save queued before organization and permits a fresh submission",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage discards Save queued before organization-return and permits a fresh submission",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage discards Save queued before session-reconnect and permits a fresh submission",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage discards Save queued before Activity-return and permits a fresh submission",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage captures a fresh UTC calendar limit for each mounted page",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage renders the profile preferences and submits the default values",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage associates profile fields with their visible labels",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage focuses and links the required-name error without sending an invalid save",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage sends the selected civil birthday and permits clearing optional gender",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage locks skip synchronously against repeated activation and save",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage ignores save completion after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage ignores skip completion after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage ignores a held skip across an account A to B to A round trip",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage ignores a held skip across an organization A to B to A round trip",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage discards held save responses after Activity hides and resumes the page",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage discards held skip responses after Activity hides and resumes the page",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage retains the draft and offers inline recovery after an authoritative refusal",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage exposes the gender choices as a labelled group of toggle buttons",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage keeps skip disabled after successful skip navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage resets submit loading and shows a safe error when updating rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "fullName": "ProfilePage resets skip loading and shows a safe error when skipping rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority refuses a member before policy or onboarding progress writes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority preserves approved owner save semantics",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority preserves approved admin save semantics",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority refuses save and Skip for member without writes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority refuses save and Skip for pending without writes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority refuses save and Skip for former without writes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority refuses save and Skip for no-organization without writes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority checks fresh authority after successful page admission",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority keeps an admitted Skip as progress only",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority refuses a stale organization expectation before writes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority refuses a stale account expectation before writes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts",
+    "fullName": "vacation onboarding public action authority admits a matching expectation without treating it as a permission grant",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect keeps one task heading and no policy controls during pending-session",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect keeps one task heading and no policy controls during held-access",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect sends the requesting account and organization with save",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect sends the requesting account and organization with skip",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held saves through an organization A to B to A arrival",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held save after batched account A→B→A (success=true)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held save after batched account A→B→A (success=false)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held save after batched organization A→B→A (success=true)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held save after batched organization A→B→A (success=false)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held skip after batched account A→B→A (success=true)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held skip after batched account A→B→A (success=false)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held skip after batched organization A→B→A (success=true)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held skip after batched organization A→B→A (success=false)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held access through batched account A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires held access through batched organization A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect observes batched account A to B to A changes before a held skip refusal",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect does not admit or redirect from a retired access read",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retains a draft after save refusal and permits an intentional retry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retains skip refusal instead of forcing continuation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect guards duplicate native submissions and skip clicks during a save",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect retires a save while cached Activity is hidden, then rechecks access",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect routes a non-admin to notifications without exposing policy controls",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect associates day validation with the input and names each policy decision",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect keeps submit disabled after successful creation navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect preserves carryover state and submits the policy while loading",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect keeps invalid policy state on screen and blocks submission",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect associates policy fields with their visible labels",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect shows a readable message when the day count is out of range",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect keeps skip disabled after successful skip navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect resets submit loading and shows a safe error when creation rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect resets skip loading and shows a safe error when skipping rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect ignores an admin result that resolves after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect uses the safe fallback route when the admin check rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect keeps a live admin request during StrictMode replay",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx",
+    "fullName": "VacationPolicyPage load effect ignores an admin check that resolves after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage waits for the summary before offering the correct next step",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage retries a refused initialize without navigating or repeating successful initialization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage retries a refused summary without navigating or repeating successful initialization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage saves the original destination after successful continuation (hasOrganization=true)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage saves the original destination after successful continuation (hasOrganization=false)",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage retains retryable continuation after refused step update",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage retains retryable continuation after rejected step update",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage starts once during StrictMode replay",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage waits for a session and offers recovery without starting for an unavailable account",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage recovers a rejected initialize without disclosing transport details",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage recovers a rejected summary without disclosing transport details",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage retains role-derived progress and all guidance for admin=true",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage retains role-derived progress and all guidance for admin=false",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held rejected initialize after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held refused initialize after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held success initialize after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held rejected summary after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held refused summary after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held success summary after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held rejected step after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held refused step after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage account-only scope lifetime ignores a held success step after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held rejected initialize after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held refused initialize after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held success initialize after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held rejected summary after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held refused summary after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held success summary after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held rejected step after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held refused step after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage organization-only scope lifetime ignores a held success step after A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage revalidates a cached Activity summary before enabling another continuation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage does not continue a hidden Activity's obsolete initialize",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage does not continue a hidden Activity's obsolete summary",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage ignores held initialize across account and organization A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage ignores held summary across account and organization A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage ignores held step across account and organization A→B→A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage ignores held initialize refusal after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage ignores held summary refusal after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage ignores held step refusal after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage retires continuation while the session is pending even with retained identity",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage requires a fresh summary before continuing immediately after Activity returns",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/welcome/page.test.tsx",
+    "fullName": "WelcomePage suppresses a hidden Activity's late step success and permits a fresh continuation on return",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage discards a Save queued before Activity returns and retains the goal for a fresh Continue",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale save refusal across organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale save rejected across organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale save success across account",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale save rejected across account",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale save refusal across activity",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale save rejected across activity",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale save success across unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale save refusal across unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale skip refusal across organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale skip rejected across organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale skip success across account",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale skip rejected across account",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale skip refusal across activity",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale skip rejected across activity",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale skip success across unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores stale skip refusal across unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage prevents native save activation while skip is held",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage holds preference activation until the current account is resolved",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage keeps personal preferences available without an active organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores held save success after an organization round trip and retains the personal draft",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores held skip success after an organization round trip and retains the personal draft",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage shows save refusal beside the retained draft and allows retry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage keeps account drafts separate and ignores late save after an account round trip",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage keeps account drafts separate and ignores late skip after an account round trip",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores save after Activity deactivation, retains draft, and allows a fresh retry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores skip after Activity deactivation, retains draft, and allows a fresh retry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage preserves enabled reminder values and submits them while loading",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage preserves preset/custom relationships, slider limits, disabled drafts and the exact save payload",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores held save after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage ignores held skip after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage associates wellness controls with their visible labels",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage keeps skip disabled after successful skip navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage allows returning to the personal step after completed navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage resets submit loading and shows a safe error when configuration rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+    "fullName": "WellnessPage resets skip loading and shows a safe error when skipping rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect keeps one safe task heading while session is pending",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect keeps one safe task heading while access is pending",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect captures a fresh UTC effective date for each mounted form",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect associates schedule fields with their visible labels",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect keeps submit disabled after successful schedule navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect keeps skip disabled after successful skip navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect resets submit loading and shows a safe error when setting the schedule rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect resets skip loading and shows a safe error when skipping rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect does not start the skip mutation after an unmounted access request resolves",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect ignores a skip result that resolves after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect uses the safe fallback route when the access check rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect keeps a refused automatic skip visible and retries the existing owner",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect does not announce or navigate a save that finishes after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect ignores held save results through Activity hide and reconnect",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect ignores held skip results through Activity hide and reconnect",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect discards an old administrator check across account A → B → A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect discards an old administrator check across organization A → B → A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect ignores old save refusals across organization A → B → A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect ignores old skip refusals across organization A → B → A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect ignores old save refusals across account A → B → A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect ignores old skip refusals across account A → B → A",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect keeps administrator checking named and excludes editable fields while held",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect falls back honestly when access is unavailable rather than treating it as non-admin success",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect retains a rejected automatic skip for retry without falling through to wellness",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect retains failed input and its original effective boundary for an explicit retry",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect does not repeat a held automatic skip when Activity reconnects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect does not start a queued submit from before an Activity reconnection",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect shares the pending lock across duplicate skip clicks and save",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect refuses -1 weekly hours before any mutation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect refuses 169 weekly hours before any mutation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+    "fullName": "WorkSchedulePage load effect keeps one live skip mutation during StrictMode replay",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect keeps submit disabled after successful creation navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect preserves edited state and submits selected weekdays while loading",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect keeps invalid template state on screen and blocks submission",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect keeps skip disabled after successful skip navigation",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect resets submit loading and shows a safe error when creation rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect resets skip loading and shows a safe error when skipping rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect ignores an admin result that resolves after unmount",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect uses the safe fallback route when the admin check rejects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect keeps a live admin request during StrictMode replay",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect associates labels and descriptions with every work-template control",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect toggles a working day when its day name is clicked",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "fullName": "WorkTemplatesPage load effect associates a template-name validation error with the invalid input",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/reports/projects/actions.scope.test.ts",
+    "fullName": "project report portfolio scope allows assigned project managers and scopes them to managed projects",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/reports/projects/actions.scope.test.ts",
+    "fullName": "project report portfolio scope uses selected-range hours for report totals and cumulative hours for budget health",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/reports/projects/actions.scope.test.ts",
+    "fullName": "project report portfolio scope scopes project and work-period queries to the active organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/reports/projects/actions.scope.test.ts",
+    "fullName": "project report portfolio scope uses the active-organization employee supplied by requireAuth",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/reports/projects/actions.scope.test.ts",
+    "fullName": "project report portfolio scope scopes the page-gate employee lookup to the active organization",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/reports/projects/actions.scope.test.ts",
+    "fullName": "project report portfolio scope serializes detailed report period boundaries as ISO strings",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/reports/projects/page.scope.test.ts",
+    "fullName": "project reports page access gate allows admins, managers, and employees assigned as project managers",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/generated-scope.public.test.tsx",
+    "fullName": "keeps generated period/status for detail, shared Refresh and export while the filter draft changes",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/generated-scope.public.test.tsx",
+    "fullName": "retries the failed generation's period/status after a newer draft edit and preserves the accepted result on failure",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/generated-scope.public.test.tsx",
+    "fullName": "keeps an intentional export alive through a draft edit but retires it when the accepted report is replaced",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/scope-revoke.public.test.tsx",
+    "fullName": "offers local recovery when the current report scope read fails instead of announcing perpetual loading",
+    "occurrence": 1,
+    "status": "failed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/scope-revoke.public.test.tsx",
+    "fullName": "offers local recovery when the current share-link scope read fails in the settings consumer",
+    "occurrence": 1,
+    "status": "failed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/scope-revoke.public.test.tsx",
+    "fullName": "does not start a second revoke when Refresh updates the same link while its first revoke is pending",
+    "occurrence": 1,
+    "status": "failed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/share-cache.public.test.tsx",
+    "fullName": "retires an abandoned project list read across Activity and keeps unrelated prefix peers",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/share-cache.public.test.tsx",
+    "fullName": "retires an abandoned settings list read across Activity and keeps unrelated prefix peers",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/share-cache.public.test.tsx",
+    "fullName": "retires a pending view-history read through organization A→B→A without deleting peer history",
+    "occurrence": 1,
+    "status": "passed"
+  },
+  {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/.tmp/1736-merger/share-cache.public.test.tsx",
+    "fullName": "retires a pending view-history read through account A→B→A without deleting peer history",
+    "occurrence": 1,
+    "status": "passed"
+  }
+]

@@ -1,12 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	act,
-	cleanup,
-	fireEvent,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { Activity } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { render } from "@/test/render-with-translations";
@@ -69,9 +63,7 @@ it.each(["organization", "account", "Activity"])(
 		);
 		const view = render(tree());
 		fireEvent.click(screen.getByRole("button", { name: "Share" }));
-		const form = (
-			await screen.findByRole("button", { name: "Create link" })
-		).closest("form");
+		const form = (await screen.findByRole("button", { name: "Create link" })).closest("form");
 		if (!form) throw Error("Missing share form");
 		await act(async () => {
 			fireEvent.submit(form);
@@ -80,9 +72,7 @@ it.each(["organization", "account", "Activity"])(
 			} else {
 				mocks.scope = {
 					...mocks.scope,
-					...(kind === "organization"
-						? { activeOrganizationId: "B" }
-						: { userId: "other" }),
+					...(kind === "organization" ? { activeOrganizationId: "B" } : { userId: "other" }),
 				};
 				view.rerender(tree());
 			}
@@ -112,9 +102,7 @@ it("retains failed share options and uses the report's calendar days, then revea
 	await waitFor(() => expect(mocks.error).toHaveBeenCalled());
 	expect(employees.getAttribute("aria-checked")).toBe("true");
 	fireEvent.click(screen.getByRole("button", { name: "Create link" }));
-	expect(
-		await screen.findByRole("textbox", { name: "Share link" }),
-	).toBeTruthy();
+	expect(await screen.findByRole("textbox", { name: "Share link" })).toBeTruthy();
 	expect(mocks.create.mock.calls[1][0]).toEqual({
 		kind: "project",
 		projectId: "project-A",
@@ -150,9 +138,7 @@ it("forgets a dismissed creation instead of revealing its secret in a reopened d
 	fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	fireEvent.click(screen.getByRole("button", { name: "Share" }));
-	await act(async () =>
-		finish({ success: true, data: { path: "/share/synthetic-test-token" } }),
-	);
+	await act(async () => finish({ success: true, data: { path: "/share/synthetic-test-token" } }));
 	expect(screen.queryByRole("textbox", { name: "Share link" })).toBeNull();
 	expect(screen.getByRole("button", { name: "Create link" })).toBeTruthy();
 });

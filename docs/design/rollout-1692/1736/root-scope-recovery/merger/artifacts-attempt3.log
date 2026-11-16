@@ -1,0 +1,10 @@
+file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1736-merger/verify-artifacts.mjs:16
+const ensure = (ok, message) => { if (!ok) throw Error(message); };
+                                                 ^
+
+Error: Actual numeric hours customer/pdf: 
+    at ensure (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1736-merger/verify-artifacts.mjs:16:50)
+    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1736-merger/verify-artifacts.mjs:82:2
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v26.9.0
