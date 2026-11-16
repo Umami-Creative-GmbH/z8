@@ -803,13 +803,17 @@
       "blockedBy": [
         1853
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "9f2bd756833e85a33a97db496487afbc992c69ae",
       "implementationCommit": "e194f9f367ff747ecab779ebd47c2ba34c684b84",
       "provisionalIntegrationCommit": "eba7258abf1071997dd5e1c3ea13f08fb88b5a5b",
       "provisionalCorrectionCommit": "81a94f940b7b7fbd13a823665b993b616973b2ae",
       "provisionalCorrectionIntegrationCommit": "a5b0f7d8ff912c30197b81ba6ffe574ef68d6215",
-      "pendingAcceptance": "Fresh merger STOP reproduced inherited same-document unlink overlap after actual organization-provider A-B-A remount, both current and premerge consumers. Root adds identity-only QueryClient-scoped reservations to both shared-note and selected-personnel-file controls. Accepted retired writes refresh real self-marker/employee-count/document observers; retired feedback stays suppressed. Permanent public controls red before/green after; 509 selected unit cases/70 files, all3typeprojects/typegen, scoped lint and Doctor9files0findings pass. Format profiles remain qualified (full100 seven files; ordinary three files). Fresh independent lifetimes/canonicalPG65+protectedPG20/actual runtime/native/Next/matched acceptance pending. No backend authority/storage/time/idempotency/cancellation changes; verifiedCommit stays null."
+      "integrationCommit": "9f2bd756833e85a33a97db496487afbc992c69ae",
+      "verificationProofCommit": "0778a51b8d58c8203943f394e43b0535147a683d",
+      "evidence": "docs/design/rollout-1692/1734.md",
+      "correctionCommit": "81a94f940b7b7fbd13a823665b993b616973b2ae",
+      "integrationVerification": "Fresh bounded verification on3d64886, application tree unchanged through verified proof merge. Root509selected unit cases/70files plus fresh canonicalPG65/3 and protectedPG20/1 give594/74 selection union; independent new9/1 plus overlapping protected40/5 andPG85/4 gives134/10 separately, not additive. Seven attempted runs198instances197pass/1initial fake-fixture sequencing failure retained. All3types/typegen/scopedlint pass; Doctor9files0errors0warnings; full100format7 and ordinary3 boundaries remain unpassed. Real one held cross-view unlink refreshes actual selected documents, self markers and employee counts without retired feedback; synthetic note intake/protected68byte exact download/relink with unchanged12absences/history, actual public all-scope officer grant/self exclusion/revoke/refused retaineddraft0writes/foreign404 pass. Two-consumer partial historical pairs1600/390/2400dark and18px reload, bounded native/current Next pass. Safe36runtime+30STOP payloads byte-exact; selected static provenance, source/config pins and root staged Git blobs verified in root-unlink-lifetime proof. Successful captures96px bottom-cropped/phonepartial/sharedoverlays, historical desktop record widths/named picker/liveallABA/truezoom/device/providers/Tolgee/fullgeneration/globalroster and formatting remain explicit limits. Reservation covers oneQueryClient only; no backend authority/time/storage/idempotency/cross-tab policy change. Staged archive whitespace check retains22 space-before-tab diagnostics in exact historical heading-resolution.patch context; payload unchanged, no whole-proof whitespace pass."
     },
     {
       "id": "R052",
@@ -909,10 +913,11 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1851#issuecomment-6926778563"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1851#issuecomment-6926778563",
+      "implementationCommit": "42f90816301f5377c2dcfe2dafc09f3397b80196"
     },
     {
       "id": "R060",
@@ -921,8 +926,11 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "awaiting-integration",
+      "verifiedCommit": null,
+      "implementationCommit": "c754c42ea1226317bd32b3d0c64c38d8903f3574",
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1852#issuecomment-6926941364"
     },
     {
       "id": "R061",
@@ -1012,8 +1020,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1753#issuecomment-6928101776"
     },
     {
       "id": "R069",
@@ -1022,8 +1032,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1754#issuecomment-6928458145"
     },
     {
       "id": "R071",
