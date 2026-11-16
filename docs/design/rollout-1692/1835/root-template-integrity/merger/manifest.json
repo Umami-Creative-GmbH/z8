@@ -1,0 +1,253 @@
+{
+  "status": "PROVISIONAL; source blockers remain; RELEASE",
+  "head": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+  "parents": [
+    "cf0203c822ac2837de2c02bc4da816dc741a63e9",
+    "64b1d9aba8100607826e80ec6e3c4e6b1154fc69"
+  ],
+  "tree": "0e015eda05ce608d01de7414db57eb437b256313",
+  "verifiedProductUnchanged": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+  "workingTreeClean": true,
+  "preservation": "preservation.json",
+  "dependencies": {
+    "physicalRoots": true,
+    "links": 158,
+    "hashes": 6,
+    "unchanged": true
+  },
+  "fresh": {
+    "unit": {
+      "tests": 371,
+      "files": 26,
+      "passed": 369,
+      "failed": 2,
+      "skipped": 0,
+      "existingCompatibilityPassed": 365,
+      "newProbes": 6
+    },
+    "postgres": {
+      "tests": 12,
+      "files": 1,
+      "passed": 4,
+      "failed": 8,
+      "skipped": 0
+    },
+    "uniqueTotal": {
+      "tests": 383,
+      "physicalFiles": 27,
+      "passed": 373,
+      "failed": 10
+    },
+    "detailRerun": {
+      "testsExecuted": 2,
+      "failed": 2,
+      "filtered": 10,
+      "additiveTests": 0,
+      "purpose": "Capture exact23505/default-index and22003 causes through normal public error logging"
+    },
+    "types": {
+      "routeGeneration": true,
+      "application": true,
+      "workflowContracts": true,
+      "smoke": true,
+      "exit": 0
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "files": 3,
+      "errors": 0,
+      "warnings": 0,
+      "score": null,
+      "networkScoreTelemetrySupplyChainDisabled": true
+    },
+    "biome": [
+      {
+        "name": "biome-default",
+        "exit": 1
+      },
+      {
+        "name": "biome-default-crlf",
+        "exit": 1
+      },
+      {
+        "name": "biome-explicit",
+        "exit": 1
+      },
+      {
+        "name": "biome-explicit-crlf",
+        "exit": 0
+      },
+      {
+        "name": "biome-default-lint",
+        "exit": 0
+      },
+      {
+        "name": "biome-explicit-lint",
+        "exit": 0
+      }
+    ],
+    "newRuntimeBrowserNative": 0
+  },
+  "failures": {
+    "unit": [
+      {
+        "file": "src/.merge1835-audit/queued-public.test.tsx",
+        "test": "R040 public native submission arrival contract retires Save queued before Activity-return and permits a fresh save"
+      },
+      {
+        "file": "src/.merge1835-audit/queued-public.test.tsx",
+        "test": "R040 public native submission arrival contract reserves a native Save before TanStack validation so Skip cannot win the same gesture"
+      }
+    ],
+    "postgres": [
+      {
+        "file": "src/.merge1835-audit/writer-public.integration.test.ts",
+        "test": "R040 production public actions on owned disposable PostgreSQL refuses a second organization default without leaving a partial graph"
+      },
+      {
+        "file": "src/.merge1835-audit/writer-public.integration.test.ts",
+        "test": "R040 production public actions on owned disposable PostgreSQL rolls back a valid-schema daily numeric overflow after schedule insertion"
+      },
+      {
+        "file": "src/.merge1835-audit/writer-public.integration.test.ts",
+        "test": "R040 production public actions on owned disposable PostgreSQL refuses malformed public input empty-name before any persistence"
+      },
+      {
+        "file": "src/.merge1835-audit/writer-public.integration.test.ts",
+        "test": "R040 production public actions on owned disposable PostgreSQL refuses malformed public input over-week-limit before any persistence"
+      },
+      {
+        "file": "src/.merge1835-audit/writer-public.integration.test.ts",
+        "test": "R040 production public actions on owned disposable PostgreSQL refuses malformed public input unknown-day before any persistence"
+      },
+      {
+        "file": "src/.merge1835-audit/writer-public.integration.test.ts",
+        "test": "R040 production public actions on owned disposable PostgreSQL keeps canonical former-admin admission and the public create action aligned"
+      },
+      {
+        "file": "src/.merge1835-audit/writer-public.integration.test.ts",
+        "test": "R040 production public actions on owned disposable PostgreSQL keeps canonical former-admin admission and public skip aligned"
+      },
+      {
+        "file": "src/.merge1835-audit/writer-public.integration.test.ts",
+        "test": "R040 production public actions on owned disposable PostgreSQL refuses an A-arrival command after the session selects another authorized organization"
+      }
+    ]
+  },
+  "observations": {
+    "defaultConflict": {
+      "postgresCode": "23505",
+      "constraint": "workPolicyAssignment_org_default_idx",
+      "before": [
+        1,
+        1,
+        7,
+        1
+      ],
+      "after": [
+        2,
+        2,
+        14,
+        1
+      ],
+      "graphOrder": [
+        "policy",
+        "schedule",
+        "day",
+        "assignment"
+      ],
+      "priorRowsUnchanged": true
+    },
+    "dayOverflow": {
+      "postgresCode": "22003",
+      "after": [
+        1,
+        1,
+        0,
+        0
+      ]
+    },
+    "malformedInputsPersisted": [
+      "empty name",
+      "169 hours/week",
+      "unknown weekday"
+    ],
+    "formerAdmin": {
+      "canonicalAdmission": false,
+      "createSucceeded": true,
+      "skipSucceeded": true,
+      "method": "Initially seeded former employee; real PostgreSQL authorization facts and actions; only request/session and Next boundary replaced"
+    },
+    "twoAuthorizedOrganizations": {
+      "writtenScope": "Server-selected B from A-composed draft",
+      "comparedArrivalHint": false,
+      "qualification": "No existing expected-hint API or live browser/in-flight claim"
+    },
+    "daySemantics": {
+      "empty": "seven zero-hour nonwork rows",
+      "duplicate": "40h with monday repeated twice persists monday20.00; unchanged formula"
+    }
+  },
+  "cleanup": {
+    "bridgeCopiesRemoved": 2,
+    "ownedContainersRemoved": 3,
+    "ownedContainersRemaining": 0,
+    "nextBrowserNativeStarted": false,
+    "reservedPortListeners": 0,
+    "foregroundCommandsExited": true
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+      "gitBlob": "c3017446ca4fe77615180b2b5c8b58deb587c9db",
+      "rawSha256": "8e65592e6d22e9d02faed1f02553bd89d5705a2a7ee8f67369e25ae64a3c2b59",
+      "lfSha256": "86c164ff9acf662f3e4fa219b928e68f9dd0c4b3d7c2853e9e02ab81f29fb5fc",
+      "crlfSha256": "8e65592e6d22e9d02faed1f02553bd89d5705a2a7ee8f67369e25ae64a3c2b59"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+      "gitBlob": "20df1714dcef8b443f96cf75d376436eca09c0fa",
+      "rawSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8",
+      "lfSha256": "039d1718b8805fb1fdb7495f2e7a970ef50a7006926bc3502c821c67961126ec",
+      "crlfSha256": "ad06e16c8e29d9b4c957508dd84aaa1194e5dda1a200676c20f5b49d3b7ed5b8"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "gitBlob": "4ec2a1ffe6efcbf95b0c9c0c3c4e98f6639d59ad",
+      "rawSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024",
+      "lfSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+      "crlfSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+    },
+    {
+      "path": "apps/webapp/src/lib/validations/onboarding.ts",
+      "gitBlob": "06895c8efd98c2b152d9eb1e78ecf81be93f0a2a",
+      "rawSha256": "807541711c0dddc8322aee2ae81925003ff8973a782240921eda196e94c86a19",
+      "lfSha256": "94656a41622221f5737469b86979b2a0fb0f2a9b84d718ee065ef64395c82ec3",
+      "crlfSha256": "807541711c0dddc8322aee2ae81925003ff8973a782240921eda196e94c86a19"
+    },
+    {
+      "path": "apps/webapp/src/lib/organization-action/settings-access.ts",
+      "gitBlob": "4925876b38122e9af43206385d3bc386ec0f3cd3",
+      "rawSha256": "148429c2552d9bca9aa71d12330e6b6e15682d30ef63fadbc4181573f1d178ee",
+      "lfSha256": "4da7941cfc3d6575ceb661428a98f37cdbe840cb7ccbc8b5a963d1979209783e",
+      "crlfSha256": "148429c2552d9bca9aa71d12330e6b6e15682d30ef63fadbc4181573f1d178ee"
+    },
+    {
+      "path": "apps/webapp/src/lib/user-preferences/user-settings-mutation.ts",
+      "gitBlob": "ca204fae4d840e721811f386c0aaa665199c796d",
+      "rawSha256": "7318a3fbdb902a9d7c01e2a6591f80171f3e913e09b3a1934f150f09aa6e7708",
+      "lfSha256": "d0e964ab5e308ed3cbbf11f8b0fdfbe72a42fd3551cbf8457a35ff4946b8a0e6",
+      "crlfSha256": "7318a3fbdb902a9d7c01e2a6591f80171f3e913e09b3a1934f150f09aa6e7708"
+    }
+  ],
+  "limits": [
+    "No product fixes, ledger/README/tracker/push/PR writes; merged incoming evidence bytes preserved.",
+    "Former-admin and arrival findings use sanctioned request/session boundaries, not actual BetterAuth cookie-cache bypass proof.",
+    "No simultaneous in-transaction permission-revocation, durable idempotency or successful existing-default replacement claim.",
+    "ADR0003 excludes work-policy writers from organization configuration protection; no replacement/history/upsert/deletion semantics added.",
+    "383 fresh unique tests are not added to archived148unit/5PG/27runtime totals; detail rerun is non-additive.",
+    "Three archived Doctor .json files contain stdout; preservation report qualifies them.",
+    "PowerShell logs preserve decoded streams/platform encoding, not raw CLI byte streams."
+  ]
+}

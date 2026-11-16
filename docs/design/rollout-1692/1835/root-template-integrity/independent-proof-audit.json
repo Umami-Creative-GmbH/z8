@@ -1,0 +1,686 @@
+{
+  "scope": "Read-only audit of explicitly safe .tmp/1835-root-checks evidence. No checks rerun; no git, application source, credentials, private manifests, fixture pointers, backups, services or browsers accessed. One new report written.",
+  "featureCommit": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+  "provisionalIntegrationCommit": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+  "graph": {
+    "historicalRefusal": {
+      "from": {
+        "policy": 3,
+        "schedule": 3,
+        "day": 14,
+        "assignment": 1
+      },
+      "to": {
+        "policy": 4,
+        "schedule": 4,
+        "day": 21,
+        "assignment": 1
+      },
+      "delta": {
+        "policy": 1,
+        "schedule": 1,
+        "day": 7,
+        "assignment": 0
+      },
+      "rowHashUnchanged": false,
+      "hashesUnchanged": {
+        "defaultGraphHash": true,
+        "recordedTimeHash": true,
+        "userSettingsHash": true,
+        "preferencesWithoutProgressHash": true
+      },
+      "onboardingStepFrom": "wellness",
+      "onboardingStepTo": "wellness",
+      "namedRowsAfter": {
+        "policyIds": 1,
+        "scheduleIds": 1,
+        "dayIds": 7
+      },
+      "isDefaultAfter": true,
+      "hoursPerCycleAfter": "37.5"
+    },
+    "correctedRefusal": {
+      "from": {
+        "policy": 4,
+        "schedule": 4,
+        "day": 21,
+        "assignment": 1
+      },
+      "to": {
+        "policy": 4,
+        "schedule": 4,
+        "day": 21,
+        "assignment": 1
+      },
+      "delta": {
+        "policy": 0,
+        "schedule": 0,
+        "day": 0,
+        "assignment": 0
+      },
+      "rowHashUnchanged": true,
+      "hashesUnchanged": {
+        "defaultGraphHash": true,
+        "recordedTimeHash": true,
+        "userSettingsHash": true,
+        "preferencesWithoutProgressHash": true
+      },
+      "onboardingStepFrom": "wellness",
+      "onboardingStepTo": "wellness",
+      "namedRowsAfter": {
+        "policyIds": 0,
+        "scheduleIds": 0,
+        "dayIds": 0
+      },
+      "isDefaultAfter": null,
+      "hoursPerCycleAfter": null
+    },
+    "correctedAcceptedRetry": {
+      "from": {
+        "policy": 4,
+        "schedule": 4,
+        "day": 21,
+        "assignment": 1
+      },
+      "to": {
+        "policy": 5,
+        "schedule": 5,
+        "day": 28,
+        "assignment": 1
+      },
+      "delta": {
+        "policy": 1,
+        "schedule": 1,
+        "day": 7,
+        "assignment": 0
+      },
+      "rowHashUnchanged": false,
+      "hashesUnchanged": {
+        "defaultGraphHash": true,
+        "recordedTimeHash": true,
+        "userSettingsHash": false,
+        "preferencesWithoutProgressHash": true
+      },
+      "onboardingStepFrom": "wellness",
+      "onboardingStepTo": "wellness",
+      "namedRowsAfter": {
+        "policyIds": 1,
+        "scheduleIds": 1,
+        "dayIds": 7
+      },
+      "isDefaultAfter": false,
+      "hoursPerCycleAfter": "37.5"
+    },
+    "historicalEndEqualsCorrectedStart": true,
+    "acceptedDays": [
+      {
+        "day": "monday",
+        "isWorkDay": true,
+        "hoursPerDay": "7.5"
+      },
+      {
+        "day": "tuesday",
+        "isWorkDay": true,
+        "hoursPerDay": "7.5"
+      },
+      {
+        "day": "wednesday",
+        "isWorkDay": true,
+        "hoursPerDay": "7.5"
+      },
+      {
+        "day": "thursday",
+        "isWorkDay": true,
+        "hoursPerDay": "7.5"
+      },
+      {
+        "day": "friday",
+        "isWorkDay": true,
+        "hoursPerDay": "7.5"
+      },
+      {
+        "day": "saturday",
+        "isWorkDay": false,
+        "hoursPerDay": "0.0"
+      },
+      {
+        "day": "sunday",
+        "isWorkDay": false,
+        "hoursPerDay": "0.0"
+      }
+    ]
+  },
+  "phases": {
+    "before": {
+      "status": "observed-historical-partial-graph",
+      "sourceEntries": 17,
+      "sourceHead": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+      "digest": "f224b46f7884dd8fde8513a49153b93faf60d4899dab4f51a0b21b22f1e622a9",
+      "recomputedDigestMatches": true,
+      "startEndSourcesIdentical": true,
+      "declaredDigestMatches": true,
+      "declaredCanonicalEntriesMatch": true,
+      "harnessPins": {
+        "runtime": {
+          "sha256": "831b9e16ba8fe3f7342a5a3cd09b99f81dcb35de51770214efd8360efaf5bc4d",
+          "bytesMatch": true
+        },
+        "common": {
+          "sha256": "38ccf5d558fd6536f3ace9a6e32ba3fa4f46ea489cd96fc08e243d48049ad556",
+          "bytesMatch": true
+        },
+        "fixture-guard": {
+          "sha256": "6acce292bfa5a45b5367fef1907d850c5133d13f537352c70ebb292ef3a2a7d1",
+          "bytesMatch": true
+        },
+        "readback": {
+          "sha256": "34886ed49580dcefdd0c91e56448e5fb8cf9a36badf312151cb9e9601d5bfe47",
+          "bytesMatch": true
+        }
+      },
+      "captures": [
+        {
+          "filename": "before-default-refused-desktop.png",
+          "sha256": "224e03b7ca26e933628b5d2172e37756d04ca18ce04b69b1772244a98f41b62f",
+          "bytesMatch": true,
+          "sourceDigestMatches": true,
+          "path": "/en/onboarding/work-templates",
+          "viewport": {
+            "width": 1600,
+            "height": 1000
+          },
+          "documentWidth": 1600,
+          "headingCount": 1,
+          "visibleToasts": 0,
+          "alerts": [
+            "Failed to create work schedule template"
+          ]
+        },
+        {
+          "filename": "before-default-refused-phone.png",
+          "sha256": "6f241a3a75535c88ecfecf05543f7db809005767c8b2e30628cfb8b2aaa34c51",
+          "bytesMatch": true,
+          "sourceDigestMatches": true,
+          "path": "/en/onboarding/work-templates",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "documentWidth": 390,
+          "headingCount": 1,
+          "visibleToasts": 0,
+          "alerts": [
+            "Failed to create work schedule template"
+          ]
+        }
+      ],
+      "transport": {
+        "requestCount": 3,
+        "responseCount": 3,
+        "requestsByStage": {
+          "setup": 2,
+          "default": 1
+        },
+        "responsesByStage": {
+          "setup": 2,
+          "default": 1
+        },
+        "responseStatuses": [
+          200,
+          200,
+          200
+        ],
+        "responseBodyBytes": [
+          69,
+          69,
+          133
+        ]
+      },
+      "browserErrors": [],
+      "dialogs": [],
+      "nextDiagnostics": {
+        "get_compilation_issues": [
+          {
+            "issues": []
+          }
+        ],
+        "get_errors": [
+          {
+            "configErrors": [],
+            "sessionErrors": []
+          }
+        ]
+      },
+      "cleanup": {
+        "context": "Own ephemeral context closed",
+        "browser": "Own Chromium closed"
+      }
+    },
+    "after": {
+      "status": "accepted-recovery",
+      "sourceEntries": 17,
+      "sourceHead": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+      "digest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d",
+      "recomputedDigestMatches": true,
+      "startEndSourcesIdentical": true,
+      "declaredDigestMatches": true,
+      "declaredCanonicalEntriesMatch": true,
+      "harnessPins": {
+        "runtime": {
+          "sha256": "831b9e16ba8fe3f7342a5a3cd09b99f81dcb35de51770214efd8360efaf5bc4d",
+          "bytesMatch": true
+        },
+        "common": {
+          "sha256": "38ccf5d558fd6536f3ace9a6e32ba3fa4f46ea489cd96fc08e243d48049ad556",
+          "bytesMatch": true
+        },
+        "fixture-guard": {
+          "sha256": "6acce292bfa5a45b5367fef1907d850c5133d13f537352c70ebb292ef3a2a7d1",
+          "bytesMatch": true
+        },
+        "readback": {
+          "sha256": "34886ed49580dcefdd0c91e56448e5fb8cf9a36badf312151cb9e9601d5bfe47",
+          "bytesMatch": true
+        }
+      },
+      "captures": [
+        {
+          "filename": "after-default-refused-desktop.png",
+          "sha256": "5b8afc5688101207acd7709818470ea67fb5ec9025d13611a1028c8f4fc87836",
+          "bytesMatch": true,
+          "sourceDigestMatches": true,
+          "path": "/en/onboarding/work-templates",
+          "viewport": {
+            "width": 1600,
+            "height": 1000
+          },
+          "documentWidth": 1600,
+          "headingCount": 1,
+          "visibleToasts": 0,
+          "alerts": [
+            "An organization default already exists. Create a non-default template or manage work policies in settings."
+          ]
+        },
+        {
+          "filename": "after-default-refused-phone.png",
+          "sha256": "0ec78a58f1607be190a7663133dc539dcd4bca25d0ec4b37d75869f3faceeb59",
+          "bytesMatch": true,
+          "sourceDigestMatches": true,
+          "path": "/en/onboarding/work-templates",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "documentWidth": 390,
+          "headingCount": 1,
+          "visibleToasts": 0,
+          "alerts": [
+            "An organization default already exists. Create a non-default template or manage work policies in settings."
+          ]
+        },
+        {
+          "filename": "after-accepted-recovery-desktop.png",
+          "sha256": "3ab8a4290cbb4668fa511b540cc6e5fcfde639628591363e1f413a0b1ea499f2",
+          "bytesMatch": true,
+          "sourceDigestMatches": true,
+          "path": "/en/onboarding/notifications",
+          "viewport": {
+            "width": 1600,
+            "height": 1000
+          },
+          "documentWidth": 1600,
+          "headingCount": 1,
+          "visibleToasts": 0,
+          "alerts": []
+        },
+        {
+          "filename": "after-accepted-recovery-phone.png",
+          "sha256": "2dc23cabfa71d08767b561ddd380f8a8f1a438afe1f7fd7c2b87c9c3743c12ba",
+          "bytesMatch": true,
+          "sourceDigestMatches": true,
+          "path": "/en/onboarding/notifications",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "documentWidth": 390,
+          "headingCount": 1,
+          "visibleToasts": 0,
+          "alerts": []
+        }
+      ],
+      "transport": {
+        "requestCount": 4,
+        "responseCount": 4,
+        "requestsByStage": {
+          "setup": 2,
+          "default": 1,
+          "retry": 1
+        },
+        "responsesByStage": {
+          "setup": 2,
+          "default": 1,
+          "retry": 1
+        },
+        "responseStatuses": [
+          200,
+          200,
+          200,
+          200
+        ],
+        "responseBodyBytes": [
+          69,
+          69,
+          241,
+          77
+        ]
+      },
+      "browserErrors": [],
+      "dialogs": [],
+      "nextDiagnostics": {
+        "get_compilation_issues": [
+          {
+            "issues": []
+          }
+        ],
+        "get_errors": [
+          {
+            "configErrors": [],
+            "sessionErrors": []
+          }
+        ]
+      },
+      "cleanup": {
+        "context": "Own ephemeral context closed",
+        "browser": "Own Chromium closed"
+      }
+    }
+  },
+  "sourceDifferenceBetweenPhases": [
+    "apps/webapp/src/lib/effect/services/onboarding.service.ts"
+  ],
+  "historicalServiceCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+  "correctedServiceCanonicalSha256": "7af76c4768f036610e9105b966b72b7fe818410c4ff064608a92a82bcec3a8f9",
+  "commands": {
+    "unit-command.json": {
+      "exitCode": 0,
+      "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "pinnedSourceCount": 9,
+      "allPinsMatchSourcePinsJson": true
+    },
+    "pg-all-command.json": {
+      "exitCode": 0,
+      "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "pinnedSourceCount": 5,
+      "allPinsMatchSourcePinsJson": true
+    },
+    "types-command.json": {
+      "exitCode": 0,
+      "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "pinnedSourceCount": 9,
+      "allPinsMatchSourcePinsJson": true
+    },
+    "lint-command.json": {
+      "exitCode": 0,
+      "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "pinnedSourceCount": 9,
+      "allPinsMatchSourcePinsJson": true
+    },
+    "format-command.json": {
+      "exitCode": 0,
+      "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "pinnedSourceCount": 9,
+      "allPinsMatchSourcePinsJson": true
+    },
+    "doctor-command.json": {
+      "exitCode": 0,
+      "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "pinnedSourceCount": 9,
+      "allPinsMatchSourcePinsJson": true
+    },
+    "service-format-command.json": {
+      "exitCode": 1,
+      "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "pinnedSourceCount": 9,
+      "allPinsMatchSourcePinsJson": true
+    }
+  },
+  "checks": {
+    "unit": {
+      "success": true,
+      "passedAssertions": 383,
+      "physicalFiles": 30,
+      "reportedSuites": 60,
+      "assertionCountByRows": 383
+    },
+    "postgres": {
+      "success": true,
+      "passedAssertions": 13,
+      "physicalFiles": 1,
+      "reportedSuites": 2,
+      "assertionCountByRows": 13
+    },
+    "uniquePassingCases": 396,
+    "doctor": {
+      "version": "0.9.22",
+      "summary": {
+        "errorCount": 0,
+        "warningCount": 0,
+        "affectedFileCount": 0,
+        "totalDiagnosticCount": 0,
+        "score": null,
+        "scoreLabel": null
+      },
+      "mode": "baseline",
+      "sourceRevision": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+      "changedFileCount": 7,
+      "analyzedFiles": [
+        "src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+        "src/app/[locale]/onboarding/work-templates/actions.ts",
+        "src/app/[locale]/onboarding/work-templates/page-client.tsx",
+        "src/app/[locale]/onboarding/work-templates/page.test.tsx",
+        "src/lib/effect/services/onboarding.service.test.ts",
+        "src/lib/effect/services/onboarding.service.ts",
+        "src/lib/user-preferences/user-settings-mutation.ts"
+      ],
+      "complete": true,
+      "isCurrentChanges": false
+    },
+    "lint": "9 files, formatter disabled, no fixes, exit 0.",
+    "format": "7 targeted files, no fixes, exit 0. Separate onboarding.service.ts formatter check exits 1 with 1 error and truncated formatter diff. format-final.log is a mutation log (3 fixed), not a passing check."
+  },
+  "native": {
+    "status": "accepted",
+    "sourceEntries": 17,
+    "sourceStartEndEqual": true,
+    "sourceDigestMatchesAfter": true,
+    "sourcePinsMatchAfter": true,
+    "closed": true,
+    "permission": {
+      "permission": "unavailable"
+    },
+    "commands": {
+      "open": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      },
+      "target": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      },
+      "ready": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      },
+      "save": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      },
+      "refused": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      },
+      "observation": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      },
+      "permission": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      },
+      "tree": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      },
+      "close": {
+        "exitCode": 0,
+        "success": true,
+        "error": null,
+        "stderrEmpty": true
+      }
+    },
+    "observation": {
+      "dialogs": 0,
+      "headings": [
+        "Create work schedule template"
+      ],
+      "hours": "40",
+      "name": "Standard",
+      "path": "/en/onboarding/work-templates"
+    },
+    "treeNamedComponents": {
+      "WorkTemplateSetup": 1,
+      "TemplateNameField": 1,
+      "HoursPerWeekField": 1,
+      "WorkingDaysSelector": 1,
+      "DefaultTemplateToggle": 1,
+      "WorkTemplateActions": 1,
+      "SchedulePreview": 1,
+      "Activity": 4
+    },
+    "nextDiagnostics": {
+      "get_compilation_issues": [
+        {
+          "issues": []
+        }
+      ],
+      "get_errors": [
+        {
+          "configErrors": [],
+          "sessionErrors": []
+        }
+      ]
+    }
+  },
+  "cleanup": {
+    "privateManifestsRetained": true,
+    "nextPort": 62642,
+    "portClosed": true,
+    "removed": true,
+    "verifiedAbsent": true,
+    "exactServiceCount": 3,
+    "services": [
+      "z8_perf_944a3d4b9d86_postgres",
+      "z8_perf_944a3d4b9d86_redis",
+      "z8_perf_944a3d4b9d86_storage"
+    ],
+    "ownershipLabelVerified": true
+  },
+  "nextStop": {
+    "port": 62642,
+    "cacheMoved": false,
+    "filteredProcessInventory": true,
+    "stoppedPids": [
+      64428,
+      95500,
+      74240
+    ],
+    "portClosed": true,
+    "ownedNextStopped": true,
+    "ownedNextIdentityVerified": true
+  },
+  "limitations": [
+    "Current checkout bytes and committed git blobs were not independently read in this audit; recorded canonical arrays, declared arrays, aggregate digests, and harness/PNG bytes are internally consistent. Parent verifier should compare commit blobs and current source.",
+    "Historical before is a one-file service overlay on current surrounding app source, not a full historical product checkout.",
+    "Runtime transport records only POST requests with next-action to the work-template route. Seven request/response pairs comprise four setup posts and three Save posts. This is not a count of all HTTP/auth traffic.",
+    "Both initial onboardingStep values already equal wellness. Accepted retry observes wellness retained and notifications navigation; it does not prove a fresh work_templates-to-wellness transition. The settings full-row hash changes on accepted retry, while preferences excluding progress stay unchanged.",
+    "Native evidence contains nine successful CLI output files, one pointer Save click, retained Standard/40 values, one visible heading and zero blocking dialogs. It has no next-action transport counter and no native harness byte pin.",
+    "Native notification permission is unavailable under the declared fixture-only launch policy; it is not evidence of production permission settings.",
+    "React Doctor reports zero errors/warnings for seven analyzed files against its provisional sourceRevision/base, not a complete current nine-file or full-tree analysis.",
+    "The service formatting failure is retained. Do not call all formatting green.",
+    "This audit checked PNG hashes and recorded dimensions/alerts; root separately reported visual inspection of the three phone states and cosmetic shell/Pets/N overlays.",
+    "Runtime snapshots cover the named default conflict and non-default retry. Race, Activity abandonment and broader authority claims require their separate public unit/PG proof; screenshots do not establish them.",
+    "Vitest suite totals 60 and 2 are not physical file counts; physical counts are 30 and 1. Do not add repeated red/green runs to the 396 unique-case count."
+  ],
+  "recommendedPublicCopy": {
+    "base": ".tmp/1835-root-checks",
+    "files": [
+      "source-pins.json",
+      "source-commit.log",
+      "declared-runtime-before.json",
+      "declared-runtime-after.json",
+      "unit-command.json",
+      "unit.json",
+      "unit.log",
+      "pg-all-command.json",
+      "pg-all.json",
+      "types-command.json",
+      "types.log",
+      "lint-command.json",
+      "lint.log",
+      "format-command.json",
+      "format.log",
+      "service-format-command.json",
+      "service-format.log",
+      "doctor-command.json",
+      "doctor.json",
+      "doctor.log",
+      "cleanup.json",
+      "stop-after-settled.json",
+      "runtime-before-settled/work-template-runtime-before.json",
+      "runtime-before-settled/runtime-source.txt",
+      "runtime-before-settled/common-source.txt",
+      "runtime-before-settled/fixture-guard-source.txt",
+      "runtime-before-settled/readback-source.txt",
+      "runtime-before-settled/before-default-refused-desktop.png",
+      "runtime-before-settled/before-default-refused-phone.png",
+      "runtime-after-settled/work-template-runtime-after.json",
+      "runtime-after-settled/runtime-source.txt",
+      "runtime-after-settled/common-source.txt",
+      "runtime-after-settled/fixture-guard-source.txt",
+      "runtime-after-settled/readback-source.txt",
+      "runtime-after-settled/after-default-refused-desktop.png",
+      "runtime-after-settled/after-default-refused-phone.png",
+      "runtime-after-settled/after-accepted-recovery-desktop.png",
+      "runtime-after-settled/after-accepted-recovery-phone.png",
+      "native/native-result.json",
+      "native/open.json",
+      "native/target.json",
+      "native/ready.json",
+      "native/save.json",
+      "native/refused.json",
+      "native/observation.json",
+      "native/permission.json",
+      "native/tree.json",
+      "native/close.json"
+    ],
+    "additionalAuditFile": ".tmp/1835-root-proof-audit.json",
+    "policy": "Use this explicit whitelist. Do not copy whole temporary directories. Exclude *private*, fixture pointers, backups/service-corrected-source.txt, failed/intermediate runtime folders, controller/runtime logs not reviewed, executable drivers and older duplicate/red-green artifacts unless separately audited and needed."
+  }
+}

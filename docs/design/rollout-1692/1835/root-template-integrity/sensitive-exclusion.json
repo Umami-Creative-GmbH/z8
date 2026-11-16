@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "method": "Exact generated secret values and URL-password variants checked in memory before copying; private manifests, credentials and private logs excluded.",
+  "filesChecked": 95,
+  "privateValuesPrinted": false
+}
