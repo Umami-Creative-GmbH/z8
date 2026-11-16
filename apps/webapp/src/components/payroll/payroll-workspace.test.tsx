@@ -1612,6 +1612,52 @@ describe("PayrollWorkspace", () => {
 		expect(document.activeElement).toBe(chosenControl);
 	});
 
+	it("restores focus lost between refused completion and the enabled commit", async () => {
+		vi.useFakeTimers({
+			toFake: [
+				"setTimeout",
+				"clearTimeout",
+				"setInterval",
+				"clearInterval",
+				"requestAnimationFrame",
+				"cancelAnimationFrame",
+			],
+		});
+		try {
+			const dismissal = deferred<{ success: false; error: string }>();
+			actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+			render(<PayrollWorkspace initialSummary={summary} exportFormats={[]} />);
+			expandPayrollBlockers();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(34);
+			});
+			const clearButton = screen.getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			});
+			clearButton.focus();
+			expect(document.activeElement).toBe(clearButton);
+			fireEvent.click(clearButton);
+			await act(async () => {
+				await Promise.resolve();
+			});
+			expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledOnce();
+			expect(document.activeElement).toBe(clearButton);
+			await act(async () => {
+				dismissal.resolve({ success: false, error: "Still blocked" });
+				await dismissal.promise;
+				await Promise.resolve();
+				expect(toastMocks.error).toHaveBeenCalledWith("Still blocked");
+				expect(clearButton).toHaveProperty("disabled", true);
+				// Model native focus fixup between settlement and React's enabled commit.
+				clearButton.blur();
+			});
+			expect(clearButton).toHaveProperty("disabled", false);
+			expect(document.activeElement).toBe(clearButton);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("keeps focus on the activated clear control when dismissal fails", async () => {
 		const dismissal = deferred<{ success: false; error: string }>();
 		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
@@ -1627,6 +1673,7 @@ describe("PayrollWorkspace", () => {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 		}) as HTMLButtonElement;
 		clearButton.focus();
+		expect(document.activeElement).toBe(clearButton);
 		fireEvent.click(clearButton);
 		dismissal.resolve({ success: false, error: "Still blocked" });
 
