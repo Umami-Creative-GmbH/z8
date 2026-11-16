@@ -4,7 +4,7 @@ import { IconHistory, IconLoader2, IconReceipt } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useId, useState } from "react";
+import { useId } from "react";
 import { getMyTravelExpenseHistory } from "@/app/[locale]/(app)/travel-expenses/history-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -312,12 +312,21 @@ function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean 
  * and settlement balances. Loaded rows stay visible while
  * a refresh runs or fails.
  */
-export function ExpenseHistory(scope: { organizationId: string; employeeId: string }) {
+export function ExpenseHistory({
+	organizationId,
+	employeeId,
+	filter,
+	setFilter,
+}: {
+	organizationId: string;
+	employeeId: string;
+	filter: ExpenseHistoryFilter;
+	setFilter: (filter: ExpenseHistoryFilter) => void;
+}) {
 	const { t } = useTranslate();
-	const [filter, setFilter] = useState<ExpenseHistoryFilter>("all");
 	const arrival = useId();
 	const { data, isError, isFetching, isLoading, refetch } = useQuery({
-		queryKey: [...queryKeys.travelExpenses.history(scope), arrival],
+		queryKey: [...queryKeys.travelExpenses.history({ organizationId, employeeId }), arrival],
 		queryFn: async ({ signal }) => {
 			const result = await getMyTravelExpenseHistory();
 			signal.throwIfAborted();

@@ -522,6 +522,39 @@ describe("status filters", () => {
 });
 
 describe("travel history recovery", () => {
+	it("keeps the selected status filter when Activity refreshes personal history", async () => {
+		historyActions.getMyTravelExpenseHistory.mockResolvedValue(
+			respond([
+				reportRow({ id: "draft", title: "Personal draft" }),
+				reportRow({
+					id: "rejected",
+					title: "Personal rejection",
+					stage: "rejected",
+					status: "rejected",
+				}),
+			]),
+		);
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const tree = (hidden: boolean) => (
+			<QueryClientProvider client={client}>
+				<Activity mode={hidden ? "hidden" : "visible"}>
+					<TravelExpenseManagement userId="user" organizationId="org" employeeId="owner" />
+				</Activity>
+			</QueryClientProvider>
+		);
+		const view = render(tree(false));
+		await screen.findByText("Personal draft");
+		fireEvent.click(screen.getByRole("radio", { name: /Rejected/ }));
+		view.rerender(tree(true));
+		view.rerender(tree(false));
+		await screen.findByText("Personal rejection");
+		expect(screen.getByRole("radio", { name: /Rejected/ }).getAttribute("aria-checked")).toBe(
+			"true",
+		);
+		expect(screen.queryByText("Personal draft")).toBeNull();
+		client.clear();
+	});
+
 	it.each(["actor", "organization", "employee", "pending"])(
 		"retires held reads on %s A→B→A returns",
 		async (kind) => {

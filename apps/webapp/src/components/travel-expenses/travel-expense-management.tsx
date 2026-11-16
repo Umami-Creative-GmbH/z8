@@ -5,6 +5,7 @@ import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { useOrganization } from "@/components/providers/organization-context-provider";
 import { PageHeader } from "@/components/ui/page-header";
 import { useSession } from "@/lib/auth-client";
+import type { ExpenseHistoryFilter } from "@/lib/travel-expenses/expense-history";
 import { ExpenseHistory } from "./expense-history";
 import {
 	NewMileageExpenseButton,
@@ -41,6 +42,7 @@ export function TravelExpenseManagement({
 		current.activeOrganizationId === organizationId &&
 		current.employeeId === employeeId;
 	const [arrival, setArrival] = useState(0);
+	const [filter, setFilter] = useState<ExpenseHistoryFilter>("all");
 	const initialized = useRef(false);
 	// Activity disconnects effects. A restored page gets a fresh read/command lifetime
 	// before paint, even when it returns to the same account and organization.
@@ -66,6 +68,8 @@ export function TravelExpenseManagement({
 			organizationId={organizationId}
 			employeeId={employeeId}
 			banners={banners}
+			filter={filter}
+			setFilter={setFilter}
 		/>
 	);
 }
@@ -74,7 +78,12 @@ function TravelExpenseWorkspace({
 	organizationId,
 	employeeId,
 	banners,
-}: Omit<TravelExpenseManagementProps, "userId">) {
+	filter,
+	setFilter,
+}: Omit<TravelExpenseManagementProps, "userId"> & {
+	filter: ExpenseHistoryFilter;
+	setFilter: (filter: ExpenseHistoryFilter) => void;
+}) {
 	const { t } = useTranslate();
 
 	return (
@@ -97,7 +106,12 @@ function TravelExpenseWorkspace({
 			</section>
 
 			<div className="px-4 lg:px-6">
-				<ExpenseHistory organizationId={organizationId} employeeId={employeeId} />
+				<ExpenseHistory
+					organizationId={organizationId}
+					employeeId={employeeId}
+					filter={filter}
+					setFilter={setFilter}
+				/>
 			</div>
 			{banners && (
 				<aside
