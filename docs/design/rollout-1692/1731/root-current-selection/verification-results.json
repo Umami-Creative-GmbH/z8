@@ -1,0 +1,119 @@
+{
+  "state": "completed",
+  "source": "87b431bd6116ab90aed9d822db835dc78107bffb",
+  "observedExits": {
+    "default": 0,
+    "currentSource": 0
+  },
+  "commandEnvironment": "$env:pnpm_config_verify_deps_before_run='false'",
+  "commands": {
+    "default": "pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/1731/root-current-selection/verify-evidence.mjs",
+    "currentSource": "pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/1731/root-current-selection/verify-evidence.mjs --current-source"
+  },
+  "provenance": "These are actual completed tools exec/write_stdin results observed by archive assembler; no raw shell exit record was reconstructed. Default stdout is byte-copied from successful attempt04 with the identical default command.",
+  "failedAttempts": [
+    {
+      "log": "verification-attempt-01.log",
+      "exit": 1,
+      "boundary": "pnpm engine-store sandbox lock denied; verifier did not start"
+    },
+    {
+      "log": "verification-attempt-02.log",
+      "exit": 1,
+      "boundary": "Archive checker used entire1728 ticket directory instead of preserved named163-file root proof group; corrected checker only"
+    },
+    {
+      "log": "verification-attempt-03.log",
+      "exit": 1,
+      "boundary": "Checker assumed earlier1730 stop schema booleans. Actual1731 schema has listenersRemaining/processesRemaining; corrected assertions to real zero counts."
+    }
+  ],
+  "successfulDefaultAttempt": {
+    "log": "verification-attempt-04.log",
+    "exit": 0
+  },
+  "outputs": {
+    "default": {
+      "file": "verification-default.log",
+      "sha256": "406ebc5059da5eed661b3f005abd6a3189de93130026c673964321580887d181",
+      "result": {
+        "status": "verified",
+        "source": "87b431bd6116ab90aed9d822db835dc78107bffb",
+        "currentSourceChecked": false,
+        "publicArtifacts": 159,
+        "jsonFiles": 52,
+        "decodedPngs": 26,
+        "sourcePins": 17,
+        "configSnapshots": 14,
+        "unitCases": 346,
+        "physicalUnitFiles": 51,
+        "postgresCases": 83,
+        "physicalPostgresFiles": 5,
+        "distinctCases": 429,
+        "distinctPhysicalFiles": 56,
+        "verifiedTicketAncestors": 54,
+        "preserved1730ProofFiles": 201,
+        "preserved1730Corrections": 8,
+        "dependencyParents": 3,
+        "localDependencyLinks": 158,
+        "routeTemplates": 172,
+        "redirectAliases": 19,
+        "syntaxCheckedScripts": 29,
+        "syntaxParsedTypeScript": 21,
+        "syntaxParsedSourceAndConfigSnapshots": 19,
+        "syntaxParsedPowershell": 2,
+        "captureReferences": 26,
+        "localProseLinks": 10,
+        "terminalDriverExitsPreserved": true,
+        "previewDiscrepancyQualified": true,
+        "privateEvidenceRead": false,
+        "runtimeHarnessesExecuted": 0,
+        "testsRerun": false,
+        "wholeBranchVerified": false
+      }
+    },
+    "currentSource": {
+      "file": "verification-current-source.log",
+      "sha256": "5370f85f322e42082eae2a9cac761e51abd9dace6c8e3d9b909395e9d9cd5ec2",
+      "result": {
+        "status": "verified",
+        "source": "87b431bd6116ab90aed9d822db835dc78107bffb",
+        "currentSourceChecked": true,
+        "publicArtifacts": 159,
+        "jsonFiles": 52,
+        "decodedPngs": 26,
+        "sourcePins": 17,
+        "configSnapshots": 14,
+        "unitCases": 346,
+        "physicalUnitFiles": 51,
+        "postgresCases": 83,
+        "physicalPostgresFiles": 5,
+        "distinctCases": 429,
+        "distinctPhysicalFiles": 56,
+        "verifiedTicketAncestors": 54,
+        "preserved1730ProofFiles": 201,
+        "preserved1730Corrections": 8,
+        "dependencyParents": 3,
+        "localDependencyLinks": 158,
+        "routeTemplates": 172,
+        "redirectAliases": 19,
+        "syntaxCheckedScripts": 29,
+        "syntaxParsedTypeScript": 21,
+        "syntaxParsedSourceAndConfigSnapshots": 19,
+        "syntaxParsedPowershell": 2,
+        "captureReferences": 26,
+        "localProseLinks": 10,
+        "terminalDriverExitsPreserved": true,
+        "previewDiscrepancyQualified": true,
+        "privateEvidenceRead": false,
+        "runtimeHarnessesExecuted": 0,
+        "testsRerun": false,
+        "wholeBranchVerified": false
+      }
+    }
+  },
+  "selfExcluded": true,
+  "runtimeHarnessesExecuted": 0,
+  "testsRerun": false,
+  "privateEvidenceRead": false
+}

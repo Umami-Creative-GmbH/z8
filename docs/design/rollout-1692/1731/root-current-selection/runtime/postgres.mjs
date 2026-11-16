@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {createWriteStream} from 'node:fs';
+import {spawn,execFileSync} from 'node:child_process';
+import {resolve,join} from 'node:path';
+const out=resolve('.tmp/1731-root-checks/runtime'),directory=(await readFile(join(out,'fixture-pointer-private.txt'),'utf8')).trim();
+const r=JSON.parse(await readFile(join(directory,'runtime-private.json'),'utf8')),f=JSON.parse(await readFile(join(directory,'fixture-private.json'),'utf8')),s=JSON.parse(await readFile(join(directory,'services.json'),'utf8'));
+assert.equal(f.kind,'disposable');assert.equal(r.env.POSTGRES_HOST,'127.0.0.1');assert.match(r.env.POSTGRES_DB,/^approval_workflow_repository_test_perf_[a-f0-9]{12}$/);for(const c of s.containers)assert.equal(execFileSync('docker',['inspect','--format','{{ index .Config.Labels "z8.agent-owned" }}',c],{encoding:'utf8',windowsHide:true}).trim(),s.label);
+const files=['retention','audit-minimisation','document-request-retention','officer-grants','personnel-file'].map(x=>'src/lib/personnel-file/'+x+'.integration.test.ts');
+const args=['--config.verify-deps-before-run=false','--filter','webapp','exec','vitest','run','--project','integration','--maxWorkers','1',...files,'--reporter=json','--outputFile='+join(directory,'postgres-raw.json')];
+const allowed=/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA|PNPM_HOME|NUMBER_OF_PROCESSORS|PROCESSOR_ARCHITECTURE|SWC_NATIVE_BINDING_CACHE)$/i;
+const env={...Object.fromEntries(Object.entries(process.env).filter(([k])=>allowed.test(k))),...r.env,NODE_ENV:'test',TZ:'UTC',pnpm_config_verify_deps_before_run:'false',BILLING_ENABLED:'false',TELEMETRY_ENABLED:'false',ENABLE_CRON_JOBS:'false'};
+const log=createWriteStream(join(directory,'postgres-private.log'));await new Promise(done=>log.once('open',done));
+const started=new Date().toISOString();const code=await new Promise((done,reject)=>{const c=spawn(process.env.npm_execpath,args,{cwd:resolve('.'),env,windowsHide:true,stdio:['ignore',log,log]});c.once('error',reject);c.once('exit',done);});log.end();
+const raw=JSON.parse(await readFile(join(directory,'postgres-raw.json'),'utf8'));const results=raw.testResults.map(x=>({file:x.name.replaceAll('\\','/').split('/apps/webapp/')[1],status:x.status,cases:x.assertionResults.map(a=>({name:a.fullName,status:a.status,occurrence:1}))}));
+const report={command:['pnpm',...args.slice(0,-1),'--outputFile=<owned-private-pg-report>'],started,ended:new Date().toISOString(),exit:code,source:'87b431bd6116ab90aed9d822db835dc78107bffb',physicalFiles:results.length,tests:raw.numTotalTests,passed:raw.numPassedTests,failed:raw.numFailedTests,pending:raw.numPendingTests,results,qualification:'Fresh rerun; nonadditive with earlier 83 cases. Canonical DB/session harness and external object-storage fakes; no browser or physical-storage proof.'};
+await writeFile(join(out,'postgres.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({exit:code,files:report.physicalFiles,tests:report.tests,passed:report.passed,failed:report.failed,pending:report.pending}));process.exitCode=code;

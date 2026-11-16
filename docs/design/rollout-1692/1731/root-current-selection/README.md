@@ -1,0 +1,35 @@
+# Current document selection: root integration proof
+
+This archive records the two-file selection correction and released runtime verification for provisional #1731 at `87b431bd6116ab90aed9d822db835dc78107bffb`. Production code matches `d4455c7c2bfe4ebd8471e918f703db5c84defe3c`. The latest directly VERIFIED checkpoint remains `8e3876c39725b7a8ef5218439766395401d64b80`; root owns any advancement. Whole-branch review and rollout acceptance remain incomplete.
+
+Selection and capacity now derive from the current due and unknown records. Individual and select-all events intersect previous IDs with those records. A disappeared 500-item selection no longer disables every newly due checkbox. Cross-page selection and current IDs remain; unknown records require individual opt-in. The server still authorizes the command. No new reconciliation effect or retention policy was added.
+
+Read the [source pins](source-pins.json), [verification manifest](verification-manifest.json), [public evidence index](evidence-index.json), [publication exclusions](publication-exclusions.json), [root check record](static/checks.json), and [released runtime handoff](runtime/HANDOFF-runtime.md). Raw evidence is preserved byte for byte, including failures and summaries whose qualifications below are more precise.
+
+| Evidence | Result and boundary |
+| --- | --- |
+| Final root units | 346 passed in 51 physical files. The 13-case red and first-green runs overlap. First green used an intermediate effect removed after two new Doctor diagnostics. Intermediate stages were not separately committed or sealed. |
+| Fresh runtime PG | 83 passed in five physical files, real disposable PostgreSQL. Earlier 83 are nonadditive. Final unit and PG identities total 429 distinct cases in 56 physical files. This archive verification reruns neither suite. |
+| Types and quality | Typegen and three type projects passed; exit provenance is the honest root tool-result attestation in checks.json. Two explicit CRLF files and nine lint files passed. Nine-file format failed on both unchanged route-metadata files. The merger handoff says one; its raw log says two. Doctor: nine files, zero errors, one existing Activity reset warning. |
+| Cap | 13 assertions completed; terminal driver exit 1 at policy restoration. Separate public keyboard restoration persisted 6/6 through reload. |
+| Actions and recovery | Eight action assertions completed; terminal exit 1. Held outgoing purge, abort, retained evidence and same-evidence partial retry are recorded. Separate recovery passed two assertions with exit 0. The announced 1/1 screenshot precedes settled refetch and is diagnostic only. |
+| Authority | Four initial assertions, exit 1; seven continuation assertions, exit 0. Publicly created officer grant was revoked through public settings, then fresh purge refused, evidence and record remained, protected content returned 404 and route reload was not found. |
+| Genuine object | Three initial assertions, exit 1; seven continuation assertions, exit 0. These overlap and are not unique case totals. A genuine 68-byte PNG had protected GET and exact original HEAD 200 before purge, 404 after purge; 21 unselected unknown records remained. |
+| Preview qualification | Raw binary continuation has one zero-byte preview placeholder with versionId string "null" before purge, then zero versions and delete markers. The released summary compresses the before state to zero. Neither proves a usable generated preview, existing-preview deletion or version-history cleanup. Metadata-only 501-cohort records do not prove storage deletion. |
+| Matched views | Six current/historical pairs, same actor and 6/6 policy, 25 accepted PNGs plus one pre-refetch diagnostic. The sealed 522-row digest is an organization-scoped database snapshot, not visible due rows: compare.mjs selects id, employee_id, category, title and document_date::text ordered by id. Current captures show 500 due records with a separate unknown group. |
+| Comparison and native | Only three exact historical 89fe consumers were overlaid with owned Next stopped; current bytes restored exactly before restart. New helpers and the rest of the app stayed current. Current, historical and final-restored actual React/Next probes passed. Earlier restored daemon/tree/close failures remain; that same-user session later reported inactive with pid null. |
+| Preservation and cleanup | 17 raw source pins, 14 config snapshots, three physical dependency parents, 158 local links, all 54 verified ticket ancestors, eight #1730 corrections and 201 proof files preserved. Prior proof groups remain 1729=152, 1728=163, 1835=203, 1737=211, 1736=266. All owned Next/browser/native resources and three labeled containers were released. |
+
+The [runtime allowlist](runtime/public-allowlist.json) contains exactly 128 entries plus its hash index. The archive adds 15 exact root check files and 15 exact merger files. The baseline control has only its documented document-labels import rebased. Public JSON capture references point to labeled contact-footer clones; original accepted-state images, private failure images, credentials and fixture inputs are excluded, including their names and hashes. Automatic approval review rejected private failure-image inspection; it was not bypassed. Fresh sanitized live diagnostics and approved clones supplied the acceptance evidence. Lower-right Pets/Next/Rendering obstructions remain qualified.
+
+Use these read-only archive checks from the repository root. They decode and hash public artifacts, parse scripts without importing harnesses, check fixed Git source and preservation, and print JSON. Their output files are deliberately outside the sealed evidence index.
+
+```powershell
+$env:pnpm_config_verify_deps_before_run='false'
+pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/1731/root-current-selection/verify-evidence.mjs
+pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/1731/root-current-selection/verify-evidence.mjs --current-source
+```
+
+Default verification always targets fixed Git87b. Optional current-source comparison uses canonical LF and may legitimately fail after later tickets. It never rewrites prior fixed pins. [Default output](verification-default.log), [current-source output](verification-current-source.log), and [verification results](verification-results.json) retain the actual archive-check exits.
+
+Broader current-roster guard remains unresolved and unrun. No exhaustive runtime ABA/Activity/race/role or empty/loading/feature-off matrix, full production generation, Tolgee/catalog/provider/customer/payment coverage, physical devices, store shell, screen reader, long translations or true zoom is passed. Synthetic initial membership/employment setup and unrelated benchmark work history are prerequisites, not full offboarding proof. Runtime ZIP/title-edit/free-text/pay-period variants remain PG coverage. Archive integrity does not certify the entire branch or product.

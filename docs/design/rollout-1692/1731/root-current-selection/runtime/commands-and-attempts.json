@@ -1,0 +1,217 @@
+{
+  "qualification": "Exact driver entries and observed exits; actual private pointer paths replaced by category placeholders. All command sessions settled. No archived driver executed during sealing.",
+  "commands": [
+    {
+      "entry": "baseline.mjs",
+      "exit": 0,
+      "attemptsBeforeSuccess": [
+        {
+          "exit": 1,
+          "reason": "Normal pnpm engine-store lock permission denied; normal review escalation used."
+        },
+        {
+          "exit": 1,
+          "reason": "Harness Git ls-files output exceeded default child buffer; final harness uses32MiB. Initial failed version not separately hash-sealed."
+        }
+      ],
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node baseline.mjs"
+    },
+    {
+      "entry": "prepare.mjs",
+      "exit": 0,
+      "commandRecord": "prepare-command.json",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node prepare.mjs"
+    },
+    {
+      "entry": "postgres.mjs",
+      "exit": 0,
+      "commandRecord": "public-postgres-dedup.json",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node postgres.mjs"
+    },
+    {
+      "entry": "seed-attempt01.mjs",
+      "actualEntry": "seed.mjs",
+      "exit": 1,
+      "reason": "Missing valid_to column; entire initial transaction rolled back.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node seed-attempt01.mjs"
+    },
+    {
+      "entry": "seed.mjs",
+      "exit": 0,
+      "reason": "Corrected initial prerequisite seed; no auth/member/grant/policy SQL mutation.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node seed.mjs"
+    },
+    {
+      "entry": "dev.mjs",
+      "runs": 3,
+      "exit": 1,
+      "reason": "Three owned Next launchers settled after intentional exact PID cleanup; source current → historical partial overlay → restored current.",
+      "command": "pnpm --config.verify-deps-before-run=false node <public-dev-helper> dev <root-workspace> <new-owned-private-fixture>",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node dev.mjs"
+    },
+    {
+      "entry": "cap-attempt01.mjs",
+      "actualEntry": "cap.mjs",
+      "exit": 1,
+      "reason": "Harness readback used years instead of retention_years after real public Save.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node cap-attempt01.mjs"
+    },
+    {
+      "entry": "cap-attempt02.mjs",
+      "actualEntry": "cap.mjs",
+      "exit": 1,
+      "reason": "Background target page RAF wait30s; no cap assertion completed.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node cap-attempt02.mjs"
+    },
+    {
+      "entry": "cap-attempt03.mjs",
+      "actualEntry": "cap.mjs",
+      "exit": 1,
+      "reason": "Background target page RAF wait60s; no cap assertion completed.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node cap-attempt03.mjs"
+    },
+    {
+      "entry": "cap.mjs",
+      "exit": 1,
+      "completedAssertions": 13,
+      "reason": "All cap/unknown assertions passed; final public policy restoration did not persist. Subsequent separate native keyboard restoration passed.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node cap.mjs"
+    },
+    {
+      "entry": "restore-policy.mjs",
+      "runs": 2,
+      "exit": 0,
+      "reason": "Both public native-keyboard restorations persisted6/6 and survived reload. Final artifact records second run; first successful tool result is attested, not invented as a second retained raw report.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node restore-policy.mjs"
+    },
+    {
+      "entry": "actions-attempt01.mjs",
+      "actualEntry": "actions.mjs",
+      "exit": 1,
+      "reason": "Harness internal checkbox-ID suffix assumption; no destructive action.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node actions-attempt01.mjs"
+    },
+    {
+      "entry": "actions.mjs",
+      "exit": 1,
+      "completedAssertions": 8,
+      "reason": "Held pending/transport refusal/same-evidence retry/actual partial purge/scoped retention/audit passed. Later policy/refresh continuation timed out. Separate policy restore and recovery passed. Announced partial-result image is pre-refetch diagnostic only.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node actions.mjs"
+    },
+    {
+      "entry": "recovery.mjs",
+      "exit": 0,
+      "completedAssertions": 2,
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node recovery.mjs"
+    },
+    {
+      "entry": "roles.mjs",
+      "exit": 1,
+      "completedAssertions": 4,
+      "reason": "Public grant and independent category/scope/self/nonofficer checks passed. Pointer Review activation did not open confirmation; no officer purge dispatched.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node roles.mjs"
+    },
+    {
+      "entry": "roles-continuation.mjs",
+      "exit": 0,
+      "completedAssertions": 7,
+      "reason": "Same UI-created grant; native keyboard review/hold/public revoke/refusal/readback/404/reload denial.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node roles-continuation.mjs"
+    },
+    {
+      "entry": "binary.mjs",
+      "exit": 1,
+      "completedAssertions": 3,
+      "reason": "Genuine upload, checksum-protected200 and exact original HEAD200 passed; pointer paging did not locate second-page record. Object kept intact for continuation.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node binary.mjs"
+    },
+    {
+      "entry": "binary-continuation.mjs",
+      "exit": 0,
+      "completedAssertions": 7,
+      "reason": "Same actual object; native second-page selection, explicit unknown review, actual purge, retained21unknown, protected404/originalHEAD404/audit minimisation. Before-content checks overlap initial3.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node binary-continuation.mjs"
+    },
+    {
+      "entry": "compare.mjs current",
+      "runs": 2,
+      "exit": 0,
+      "completedAssertions": 4,
+      "reason": "First unredacted screenshots excluded; final labeled contact-redacted set accepted. Same source/fixture, no added test count.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node compare.mjs current"
+    },
+    {
+      "entry": "compare.mjs before",
+      "exit": 0,
+      "completedAssertions": 4,
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node compare.mjs before"
+    },
+    {
+      "entry": "native.mjs current",
+      "exit": 0,
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node native.mjs current"
+    },
+    {
+      "entry": "native.mjs before",
+      "exit": 0,
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node native.mjs before"
+    },
+    {
+      "entry": "native.mjs restored",
+      "exit": 1,
+      "reason": "Actual auth200/target navigation succeeded; React tree and close daemon response timed out outcome_unknown. Same-user exact session info subsequently inactive/pidnull.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node native.mjs restored"
+    },
+    {
+      "entry": "native.mjs restored-final",
+      "exit": 0,
+      "reason": "Fresh unique transient session; actual target React inspection + connected Next route/empty compiler/errors, close0.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node native.mjs restored-final"
+    },
+    {
+      "entry": "overlay.mjs before",
+      "exit": 0,
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node overlay.mjs before"
+    },
+    {
+      "entry": "overlay.mjs restore",
+      "exit": 0,
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node overlay.mjs restore"
+    },
+    {
+      "entry": "finish.mjs",
+      "exit": 0,
+      "reason": "Only four own native sessions; final scoped readback; exactly3owned containers absent; raw pins/config/dependency topology/index/clean87b end.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node finish.mjs"
+    },
+    {
+      "entry": "discover.mjs",
+      "runs": 2,
+      "exit": 0,
+      "reason": "Fresh sanitized live diagnosis; original two-route diagnostic source was edited without a contemporaneous source copy. Its raw JSON remains ignored; no fabricated earlier source hash.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node discover.mjs"
+    },
+    {
+      "entry": "public-clones.mjs",
+      "exit": 0,
+      "reason": "Only exact successful-state captures; no private/failure PNG reads.",
+      "pnpmPolicy": "Entry uses pnpm_config_verify_deps_before_run=false and pnpm --config.verify-deps-before-run=false node public-clones.mjs"
+    },
+    {
+      "entry": "agent-browser core/version",
+      "firstExit": 1,
+      "exit": 0,
+      "reason": "PowerShell shim script execution policy denied; supported .cmd shim delivered core guide and0.39.1 version without policy changes."
+    },
+    {
+      "entry": "private failure-image inspection",
+      "status": "rejected by automatic approval review",
+      "reason": "Private raw screenshot exposure risk. It was not read through another mechanism; new sanitized live diagnostics and labeled accepted-state clones used instead."
+    },
+    {
+      "entry": "already-settled shell-session poll",
+      "status": "tool error",
+      "reason": "Unknown finished process ID; no application action."
+    }
+  ]
+}

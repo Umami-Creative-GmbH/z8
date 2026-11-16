@@ -1,0 +1,2719 @@
+{
+  "head": "87b431bd6116ab90aed9d822db835dc78107bffb",
+  "tree": "ba5a7bec6d0fe7feaedcf7b2d93da359e3a41593",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "status": "clean",
+  "allSourcePinsRawUnchanged": true,
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "raw": "c897e353391aa3401269a259b47a5b31f7c2d5015238edd39563b0bf321836ac",
+      "lf": "c9052b9de4c70dc09a2f50f1743d58d0b21b4630638efd1e40ffb8b635687ad6",
+      "gitBlob": "a3ee0e13aec04307ad7caba8eaec1ac534fd1eae",
+      "snapshot": "source-snapshots/0.source"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+      "raw": "a441d7b061dd28eae958da7ec446b85a133886b1141f8d74e0009e1eab96fdd5",
+      "lf": "2753124b4df7a9cb83c58ac8b5fed7d89480a1bcfffddac907f881ec0521b602",
+      "gitBlob": "3ff90a6f102cb40ca6b5cf40b585221e7e3d3186",
+      "snapshot": "source-snapshots/1.source"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/retention-actions.ts",
+      "raw": "d205ed4f0864143a186b73c91137c1041825701ef59e970340b149988d586669",
+      "lf": "0bf17a4ad9b7e6c957f9b40413f34ef68da2a9bb14b44af751714c708f4ebbb7",
+      "gitBlob": "96c5c45e195e67403040192952b909777833b28d",
+      "snapshot": "source-snapshots/2.source"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-heading.tsx",
+      "raw": "f84d23b92178efae714289f8f9a5134fb012a2c45b9f055fdaf5df0697c325b0",
+      "lf": "502e9e65cc2b14fda9cec8c63142d68a816b3fc427d0398363580f4990449962",
+      "gitBlob": "d67bef8d9f89638ac3fa3551247a28cc10a033a5",
+      "snapshot": "source-snapshots/3.source"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "raw": "2661241ef4abedafceb935aec3fc30ce1de83bd558cc16e1cabc98a22338eeb3",
+      "lf": "645bf1660ea0409c7bab3df7c1aca7826348581ccd0b8b13fbf8d45b45c762a7",
+      "gitBlob": "3d5e6f8554d08ed9686c215a6845cbab2f4cb26f",
+      "snapshot": "source-snapshots/4.source"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+      "raw": "08826aa7372c010f070dc7f73b27c9b0d4780cb54443b672b1cb2e17c81de086",
+      "lf": "160e1f6e11bc43e94ec6298594fe63f2edf26171de835a2ccbdd0cf7385a3b42",
+      "gitBlob": "33f8e0e5b54db24bbb89d8c02034eb9f79d90b24",
+      "snapshot": "source-snapshots/5.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "raw": "ccbddb866cc559fade83fa503c8315d50f4fcd7eafe568b6288579a6c236cc8f",
+      "lf": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6",
+      "gitBlob": "3cfa371a6d1f17170682c8e863fe4d33e3dcb908",
+      "snapshot": "source-snapshots/6.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention.integration.test.ts",
+      "raw": "78cc9a7126c3aeadf419d86ceefdbe7e5e63bf1f5ebed7f57a50faf02b6c984c",
+      "lf": "6e55ff67a8f726ae1163a9dbcb84b11d4d304fc111bcf26b703c11ac8d8ddd40",
+      "gitBlob": "c39eec03c6e4822e8d4deb5214d8ae1aaae09959",
+      "snapshot": "source-snapshots/7.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "raw": "5806affd7573ed901211af63b06e156066c6cd1550b4c3fc567fe12f1c15781a",
+      "lf": "cf148cf379cd0379f6bddd1a465d520bb1e0588ae526ba9378ae3faefbdf4f52",
+      "gitBlob": "da57c561f339fd39479b7cb07d1fcff0ec656110",
+      "snapshot": "source-snapshots/8.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention-store.ts",
+      "raw": "f68227029b3d9efbab65c0aef35155aea09c1d2c387419e95c310d88272bcbde",
+      "lf": "21e2577f9f9156ce2d4fa108a221dd2f382fe5993e018db8c41a45bd6c427364",
+      "gitBlob": "c8faf87a7141d0fb06356e5fd0dbcbdfab5cd2b1",
+      "snapshot": "source-snapshots/9.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/retention.ts",
+      "raw": "9c1fe69ce7f2de3007fc9a72ed05028545ec320b78fe14d022a283ee3592ae11",
+      "lf": "60b380628a5140d592a567d3d6006f655e6a7785582354416560edc5364f20cd",
+      "gitBlob": "eb2dc0e9d616179f13e392551520137e88ee4f35",
+      "snapshot": "source-snapshots/10.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/current-access.ts",
+      "raw": "100a6dd200b71db2c30089086cecaea28c9196add2b5355cc919aff8de124792",
+      "lf": "c420c675e12a06396984e0dda6cae761c15b246cf81fdeed11500a92e15f2bf9",
+      "gitBlob": "6c6c064f6bb02ee4f65c0885df0457c0a46333d0",
+      "snapshot": "source-snapshots/11.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+      "raw": "91d9d45d0afac333dbeefa31f86f95d8c0e33901b52fb03f6e0449cf9ea6df0f",
+      "lf": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728",
+      "gitBlob": "4a43fb54cfd7e58d04f1a1bb8056f12597f4e9b5",
+      "snapshot": "source-snapshots/12.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/upload-ledger.ts",
+      "raw": "19d578d0da8f2bf5afaec5a7e74f002531d7f897d16946f1017d15b0217b5e49",
+      "lf": "ef76fe9ba005f9de3cc43e73433206b3f15cdc30e46358fde3cba4941929682a",
+      "gitBlob": "7cda8bde88c5054870ef4c2f3e3fb02878dcf62d",
+      "snapshot": "source-snapshots/13.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/audit.ts",
+      "raw": "59fd4772981f1f650716202507c95f57c86d69a8469dc39fd6003f4e7ba173f8",
+      "lf": "8f932d5626aa12ae303d5fe0c14144a5f0e0a9c790db96f437bfa3b9c3649c36",
+      "gitBlob": "62d680f1c046db6e14932777bea141a2a6a440ac",
+      "snapshot": "source-snapshots/14.source"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/audit-minimisation.ts",
+      "raw": "a2302e8f6b8825047416623d90eb2935390eb58ab346b55241354a4cd2fa3333",
+      "lf": "01ea6777dd22f32f1fd283e31de9f7d928c9eb5ce63a91b00cb2643208954ca3",
+      "gitBlob": "7fc62443127e8c65e21b00f994e01b4b57c1f868",
+      "snapshot": "source-snapshots/15.source"
+    },
+    {
+      "path": "scripts/performance/fixture.mjs",
+      "raw": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+      "lf": "888e5a3ff65e535ff55a0c3644d1f01f65437ad050195f0774b91483743715c4",
+      "gitBlob": "0b79ab082c1a7f49c07510b711067fd5bf987d65",
+      "snapshot": "source-snapshots/16.source"
+    }
+  ],
+  "configs": [
+    {
+      "path": ".npmrc",
+      "snapshot": "config-snapshots/0.config",
+      "raw": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03"
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "snapshot": "config-snapshots/1.config",
+      "raw": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "snapshot": "config-snapshots/2.config",
+      "raw": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "snapshot": "config-snapshots/3.config",
+      "raw": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "snapshot": "config-snapshots/4.config",
+      "raw": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223"
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "snapshot": "config-snapshots/5.config",
+      "raw": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e"
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "snapshot": "config-snapshots/6.config",
+      "raw": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7"
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "snapshot": "config-snapshots/7.config",
+      "raw": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "snapshot": "config-snapshots/8.config",
+      "raw": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc"
+    },
+    {
+      "path": "package.json",
+      "snapshot": "config-snapshots/9.config",
+      "raw": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "snapshot": "config-snapshots/10.config",
+      "raw": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "snapshot": "config-snapshots/11.config",
+      "raw": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "path": "node_modules/.modules.yaml",
+      "snapshot": "config-snapshots/12.config",
+      "raw": "e8d58c3826da6034c257da4c8e55991b6c2a6c285d9377305e4461e5d5304d4d"
+    },
+    {
+      "path": "node_modules/.pnpm/lock.yaml",
+      "snapshot": "config-snapshots/13.config",
+      "raw": "39e4cc0bf8792f5fc5f714c03ff83f31a579ced56f8fe9f27febcedfc7e41f01"
+    }
+  ],
+  "manifests": {
+    ".npmrc": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+    "apps/webapp/biome.jsonc": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+    "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "apps/webapp/package.json": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+    "apps/webapp/tsconfig.json": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+    "apps/webapp/tsconfig.smoke.json": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+    "apps/webapp/tsconfig.typecheck.json": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+    "apps/webapp/tsconfig.workflow-contracts.json": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+    "apps/webapp/vitest.config.ts": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+    "package.json": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+    "pnpm-lock.yaml": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "pnpm-workspace.yaml": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+    "node_modules/.modules.yaml": "e8d58c3826da6034c257da4c8e55991b6c2a6c285d9377305e4461e5d5304d4d",
+    "node_modules/.pnpm/lock.yaml": "39e4cc0bf8792f5fc5f714c03ff83f31a579ced56f8fe9f27febcedfc7e41f01"
+  },
+  "dependencyRoots": [
+    {
+      "path": "node_modules",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules",
+      "isDirectory": true,
+      "isSymbolicLink": false,
+      "birthtimeMs": 1794758928312.47,
+      "mtimeMs": 1794759784939.5247
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\node_modules",
+      "isDirectory": true,
+      "isSymbolicLink": false,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794760829915.4607
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm",
+      "isDirectory": true,
+      "isSymbolicLink": false,
+      "birthtimeMs": 1794758928312.47,
+      "mtimeMs": 1794759016291.687
+    }
+  ],
+  "links": [
+    {
+      "path": "node_modules/@esbuild/win32-x64",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@esbuild+win32-x64@0.28.2\\node_modules\\@esbuild\\win32-x64",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@esbuild+win32-x64@0.28.2\\node_modules\\@esbuild\\win32-x64"
+    },
+    {
+      "path": "node_modules/puppeteer-core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\puppeteer-core@25.17.0_yauzl@2.10.0\\node_modules\\puppeteer-core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011287.4568,
+      "mtimeMs": 1794759011287.4568,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\puppeteer-core@25.17.0_yauzl@2.10.0\\node_modules\\puppeteer-core"
+    },
+    {
+      "path": "node_modules/react-doctor",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683\\node_modules\\react-doctor",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011287.4568,
+      "mtimeMs": 1794759011287.4568,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683\\node_modules\\react-doctor"
+    },
+    {
+      "path": "node_modules/shadcn",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn"
+    },
+    {
+      "path": "node_modules/turbo",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\turbo@2.11.11\\node_modules\\turbo",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\turbo@2.11.11\\node_modules\\turbo"
+    },
+    {
+      "path": "apps/webapp/node_modules/@aws-sdk/client-s3",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@aws-sdk+client-s3@3.1167.0\\node_modules\\@aws-sdk\\client-s3",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@aws-sdk+client-s3@3.1167.0\\node_modules\\@aws-sdk\\client-s3"
+    },
+    {
+      "path": "apps/webapp/node_modules/@aws-sdk/s3-request-presigner",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@aws-sdk+s3-request-presigner@3.1167.0\\node_modules\\@aws-sdk\\s3-request-presigner",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@aws-sdk+s3-request-presigner@3.1167.0\\node_modules\\@aws-sdk\\s3-request-presigner"
+    },
+    {
+      "path": "apps/webapp/node_modules/@base-ui/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@base-ui+react@1.9.0_@date-_367596df1f109cf5c4332405308b84ea\\node_modules\\@base-ui\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@base-ui+react@1.9.0_@date-_367596df1f109cf5c4332405308b84ea\\node_modules\\@base-ui\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/api-key",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+api-key@1.7.22_316ffdaceccd02488a5359740788c523\\node_modules\\@better-auth\\api-key",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+api-key@1.7.22_316ffdaceccd02488a5359740788c523\\node_modules\\@better-auth\\api-key"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+core@1.7.22_@b_c85985d0786343e7bb36ef926812d766\\node_modules\\@better-auth\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+core@1.7.22_@b_c85985d0786343e7bb36ef926812d766\\node_modules\\@better-auth\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/drizzle-adapter",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+drizzle-adapte_ec2a7c021f40b5740dcf3349778bd278\\node_modules\\@better-auth\\drizzle-adapter",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011305.5173,
+      "mtimeMs": 1794759011305.5173,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+drizzle-adapte_ec2a7c021f40b5740dcf3349778bd278\\node_modules\\@better-auth\\drizzle-adapter"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/passkey",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+passkey@1.7.22_ccacbb775e4bae18c750242b40065d24\\node_modules\\@better-auth\\passkey",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+passkey@1.7.22_ccacbb775e4bae18c750242b40065d24\\node_modules\\@better-auth\\passkey"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/scim",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+scim@1.7.22_@b_1f689c31e2038e9a2444e8e4119f9599\\node_modules\\@better-auth\\scim",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+scim@1.7.22_@b_1f689c31e2038e9a2444e8e4119f9599\\node_modules\\@better-auth\\scim"
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/sso",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+sso@1.7.22_@be_5edda52e927e6de7823325cbdcc12d3d\\node_modules\\@better-auth\\sso",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@better-auth+sso@1.7.22_@be_5edda52e927e6de7823325cbdcc12d3d\\node_modules\\@better-auth\\sso"
+    },
+    {
+      "path": "apps/webapp/node_modules/@biomejs/biome",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@biomejs+biome@2.6.7\\node_modules\\@biomejs\\biome",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@biomejs+biome@2.6.7\\node_modules\\@biomejs\\biome"
+    },
+    {
+      "path": "apps/webapp/node_modules/@bprogress/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@bprogress+core@1.3.4\\node_modules\\@bprogress\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@bprogress+core@1.3.4\\node_modules\\@bprogress\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@capacitor/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@capacitor+core@8.6.0\\node_modules\\@capacitor\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011313.0593,
+      "mtimeMs": 1794759011313.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@capacitor+core@8.6.0\\node_modules\\@capacitor\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@casl/ability",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@casl+ability@7.1.2\\node_modules\\@casl\\ability",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@casl+ability@7.1.2\\node_modules\\@casl\\ability"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dagrejs/dagre",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dagrejs+dagre@3.1.3\\node_modules\\@dagrejs\\dagre",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dagrejs+dagre@3.1.3\\node_modules\\@dagrejs\\dagre"
+    },
+    {
+      "path": "apps/webapp/node_modules/@daypicker/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@daypicker+react@10.0.2_@types+react@19.3.0_react@19.3.1\\node_modules\\@daypicker\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@daypicker+react@10.0.2_@types+react@19.3.0_react@19.3.1\\node_modules\\@daypicker\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dicebear/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dicebear+core@10.7.0\\node_modules\\@dicebear\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011305.5173,
+      "mtimeMs": 1794759011305.5173,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dicebear+core@10.7.0\\node_modules\\@dicebear\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dicebear/styles",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dicebear+styles@10.6.0\\node_modules\\@dicebear\\styles",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011312.0522,
+      "mtimeMs": 1794759011312.0522,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dicebear+styles@10.6.0\\node_modules\\@dicebear\\styles"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+core@6.3.1_react-d_168a6a798a0c4da81319d56a661242e7\\node_modules\\@dnd-kit\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011317.0608,
+      "mtimeMs": 1794759011317.0608,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+core@6.3.1_react-d_168a6a798a0c4da81319d56a661242e7\\node_modules\\@dnd-kit\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/modifiers",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+modifiers@9.0.0_@d_863ec3ee87a5a16bd51748559e7c5ba5\\node_modules\\@dnd-kit\\modifiers",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011317.0608,
+      "mtimeMs": 1794759011317.0608,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+modifiers@9.0.0_@d_863ec3ee87a5a16bd51748559e7c5ba5\\node_modules\\@dnd-kit\\modifiers"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/sortable",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+sortable@10.0.0_@d_c41ff902779dbbfd62f36a1930b8a632\\node_modules\\@dnd-kit\\sortable",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011308.0273,
+      "mtimeMs": 1794759011308.0273,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+sortable@10.0.0_@d_c41ff902779dbbfd62f36a1930b8a632\\node_modules\\@dnd-kit\\sortable"
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/utilities",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+utilities@3.2.2_react@19.3.1\\node_modules\\@dnd-kit\\utilities",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011304.5154,
+      "mtimeMs": 1794759011304.5154,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@dnd-kit+utilities@3.2.2_react@19.3.1\\node_modules\\@dnd-kit\\utilities"
+    },
+    {
+      "path": "apps/webapp/node_modules/@faker-js/faker",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@faker-js+faker@10.6.0\\node_modules\\@faker-js\\faker",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@faker-js+faker@10.6.0\\node_modules\\@faker-js\\faker"
+    },
+    {
+      "path": "apps/webapp/node_modules/@marsidev/react-turnstile",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@marsidev+react-turnstile@1_0910f3d23e37e5a512b1458612a272ef\\node_modules\\@marsidev\\react-turnstile",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@marsidev+react-turnstile@1_0910f3d23e37e5a512b1458612a272ef\\node_modules\\@marsidev\\react-turnstile"
+    },
+    {
+      "path": "apps/webapp/node_modules/@modelcontextprotocol/client",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@modelcontextprotocol+client@2.4.0\\node_modules\\@modelcontextprotocol\\client",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011314.0593,
+      "mtimeMs": 1794759011314.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@modelcontextprotocol+client@2.4.0\\node_modules\\@modelcontextprotocol\\client"
+    },
+    {
+      "path": "apps/webapp/node_modules/@modelcontextprotocol/server",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@modelcontextprotocol+server@2.4.0\\node_modules\\@modelcontextprotocol\\server",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@modelcontextprotocol+server@2.4.0\\node_modules\\@modelcontextprotocol\\server"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/api",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\api",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\api"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/auto-instrumentations-node",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+auto-instrum_4ec4e60a116ba2e2d1f0bd9ba26d1e0a\\node_modules\\@opentelemetry\\auto-instrumentations-node",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+auto-instrum_4ec4e60a116ba2e2d1f0bd9ba26d1e0a\\node_modules\\@opentelemetry\\auto-instrumentations-node"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/exporter-metrics-otlp-http",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+exporter-met_384553707af16af336f8d4cb1046ce6c\\node_modules\\@opentelemetry\\exporter-metrics-otlp-http",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+exporter-met_384553707af16af336f8d4cb1046ce6c\\node_modules\\@opentelemetry\\exporter-metrics-otlp-http"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/exporter-trace-otlp-http",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+exporter-tra_2c35f6faac6c7ac0e135f87dab376cb3\\node_modules\\@opentelemetry\\exporter-trace-otlp-http",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+exporter-tra_2c35f6faac6c7ac0e135f87dab376cb3\\node_modules\\@opentelemetry\\exporter-trace-otlp-http"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/resources",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+resources@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\resources",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+resources@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\resources"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/sdk-node",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+sdk-node@0.3_2c14b7ba2e13ce9e74fc495794c6878f\\node_modules\\@opentelemetry\\sdk-node",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011314.0593,
+      "mtimeMs": 1794759011314.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+sdk-node@0.3_2c14b7ba2e13ce9e74fc495794c6878f\\node_modules\\@opentelemetry\\sdk-node"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/sdk-trace",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+sdk-trace@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\sdk-trace",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.5625,
+      "mtimeMs": 1794759011319.5625,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+sdk-trace@3.1.1_@opentelemetry+api@1.10.0\\node_modules\\@opentelemetry\\sdk-trace"
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/semantic-conventions",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+semantic-conventions@1.45.0\\node_modules\\@opentelemetry\\semantic-conventions",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@opentelemetry+semantic-conventions@1.45.0\\node_modules\\@opentelemetry\\semantic-conventions"
+    },
+    {
+      "path": "apps/webapp/node_modules/@posthog/nextjs-config",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@posthog+nextjs-config@1.12_189ec650117cac83318239e6561b7511\\node_modules\\@posthog\\nextjs-config",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@posthog+nextjs-config@1.12_189ec650117cac83318239e6561b7511\\node_modules\\@posthog\\nextjs-config"
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-email/editor",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-email+editor@1.8.4_@_94260adcd3ff185ce0c8efb141e5714b\\node_modules\\@react-email\\editor",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-email+editor@1.8.4_@_94260adcd3ff185ce0c8efb141e5714b\\node_modules\\@react-email\\editor"
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-email/ui",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-email+ui@6.11.11_@ba_24ab72d1a5a7dedede3f11af410f06fe\\node_modules\\@react-email\\ui",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-email+ui@6.11.11_@ba_24ab72d1a5a7dedede3f11af410f06fe\\node_modules\\@react-email\\ui"
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-pdf/renderer",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-pdf+renderer@4.9.0_react@19.3.1\\node_modules\\@react-pdf\\renderer",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.0588,
+      "mtimeMs": 1794759011319.0588,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@react-pdf+renderer@4.9.0_react@19.3.1\\node_modules\\@react-pdf\\renderer"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/calendar",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+calendar@4.9.1__c6b1a4f95ff30a212fb7000f85d78d00\\node_modules\\@schedule-x\\calendar",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+calendar@4.9.1__c6b1a4f95ff30a212fb7000f85d78d00\\node_modules\\@schedule-x\\calendar"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/calendar-controls",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+calendar-controls@4.9.1\\node_modules\\@schedule-x\\calendar-controls",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+calendar-controls@4.9.1\\node_modules\\@schedule-x\\calendar-controls"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/drag-and-drop",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+drag-and-drop@3.7.3\\node_modules\\@schedule-x\\drag-and-drop",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+drag-and-drop@3.7.3\\node_modules\\@schedule-x\\drag-and-drop"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/event-modal",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+event-modal@4.9_cecd30f1661a5365e3e6a5237d964d6c\\node_modules\\@schedule-x\\event-modal",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+event-modal@4.9_cecd30f1661a5365e3e6a5237d964d6c\\node_modules\\@schedule-x\\event-modal"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+react@4.1.0_@sc_d5f3e61d0d4043d6e286e65c6449c168\\node_modules\\@schedule-x\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+react@4.1.0_@sc_d5f3e61d0d4043d6e286e65c6449c168\\node_modules\\@schedule-x\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/theme-default",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+theme-default@4.9.1\\node_modules\\@schedule-x\\theme-default",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@schedule-x+theme-default@4.9.1\\node_modules\\@schedule-x\\theme-default"
+    },
+    {
+      "path": "apps/webapp/node_modules/@slack/web-api",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@slack+web-api@8.3.0\\node_modules\\@slack\\web-api",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011308.0273,
+      "mtimeMs": 1794759011308.0273,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@slack+web-api@8.3.0\\node_modules\\@slack\\web-api"
+    },
+    {
+      "path": "apps/webapp/node_modules/@t3-oss/env-nextjs",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@t3-oss+env-nextjs@0.13.11_typescript@7.0.2_zod@4.6.7\\node_modules\\@t3-oss\\env-nextjs",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@t3-oss+env-nextjs@0.13.11_typescript@7.0.2_zod@4.6.7\\node_modules\\@t3-oss\\env-nextjs"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tabler/icons-react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tabler+icons-react@3.51.0_react@19.3.1\\node_modules\\@tabler\\icons-react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011313.0593,
+      "mtimeMs": 1794759011313.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tabler+icons-react@3.51.0_react@19.3.1\\node_modules\\@tabler\\icons-react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tailwindcss/postcss",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tailwindcss+postcss@4.3.5\\node_modules\\@tailwindcss\\postcss",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tailwindcss+postcss@4.3.5\\node_modules\\@tailwindcss\\postcss"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-form",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c\\node_modules\\@tanstack\\react-form",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c\\node_modules\\@tanstack\\react-form"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-hotkeys",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-hotkeys@0.2_83ac8b07a735c133f3ec856db88facb6\\node_modules\\@tanstack\\react-hotkeys",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011308.0273,
+      "mtimeMs": 1794759011308.0273,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-hotkeys@0.2_83ac8b07a735c133f3ec856db88facb6\\node_modules\\@tanstack\\react-hotkeys"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416\\node_modules\\@tanstack\\react-query",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416\\node_modules\\@tanstack\\react-query"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query-devtools",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-query-devto_a335988fa10f5f21fcce71d55d2f8402\\node_modules\\@tanstack\\react-query-devtools",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.0588,
+      "mtimeMs": 1794759011319.0588,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-query-devto_a335988fa10f5f21fcce71d55d2f8402\\node_modules\\@tanstack\\react-query-devtools"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-store",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-store@0.11._6def17552e8b2a0b74c5841dd97fc82c\\node_modules\\@tanstack\\react-store",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011322.569,
+      "mtimeMs": 1794759011322.569,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-store@0.11._6def17552e8b2a0b74c5841dd97fc82c\\node_modules\\@tanstack\\react-store"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-table",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-table@9.3.1_da81904ea248d4185313a0793b432bf0\\node_modules\\@tanstack\\react-table",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-table@9.3.1_da81904ea248d4185313a0793b432bf0\\node_modules\\@tanstack\\react-table"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-virtual",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-virtual@3.1_9a1a86ed0f22c2cd916a6506b873df01\\node_modules\\@tanstack\\react-virtual",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tanstack+react-virtual@3.1_9a1a86ed0f22c2cd916a6506b873df01\\node_modules\\@tanstack\\react-virtual"
+    },
+    {
+      "path": "apps/webapp/node_modules/@testing-library/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+react@16.3_caf0c89dcd807677af52e2a43e70eff8\\node_modules\\@testing-library\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011307.0276,
+      "mtimeMs": 1794759011307.0276,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+react@16.3_caf0c89dcd807677af52e2a43e70eff8\\node_modules\\@testing-library\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@testing-library/user-event",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+user-event_98cc42e531c929ba4ce24d23c3da3ae6\\node_modules\\@testing-library\\user-event",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@testing-library+user-event_98cc42e531c929ba4ce24d23c3da3ae6\\node_modules\\@testing-library\\user-event"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/format-icu",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+format-icu@7.3.0\\node_modules\\@tolgee\\format-icu",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011315.061,
+      "mtimeMs": 1794759011315.061,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+format-icu@7.3.0\\node_modules\\@tolgee\\format-icu"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+react@7.3.0_react@19.3.1\\node_modules\\@tolgee\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+react@7.3.0_react@19.3.1\\node_modules\\@tolgee\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/web",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+web@7.3.0\\node_modules\\@tolgee\\web",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tolgee+web@7.3.0\\node_modules\\@tolgee\\web"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/file-store",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+file-store@2.1.2_@open_c4b7846b4974bd67d72c7b9bad4045d9\\node_modules\\@tus\\file-store",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011314.0593,
+      "mtimeMs": 1794759011314.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+file-store@2.1.2_@open_c4b7846b4974bd67d72c7b9bad4045d9\\node_modules\\@tus\\file-store"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/s3-store",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+s3-store@2.1.0_supports-color@8.1.1\\node_modules\\@tus\\s3-store",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+s3-store@2.1.0_supports-color@8.1.1\\node_modules\\@tus\\s3-store"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/server",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+server@2.4.7_@opentele_e08f3697d44fee673769a55c454535d5\\node_modules\\@tus\\server",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@tus+server@2.4.7_@opentele_e08f3697d44fee673769a55c454535d5\\node_modules\\@tus\\server"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/canvas-confetti",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+canvas-confetti@1.9.0\\node_modules\\@types\\canvas-confetti",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+canvas-confetti@1.9.0\\node_modules\\@types\\canvas-confetti"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/luxon",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+luxon@3.7.6\\node_modules\\@types\\luxon",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+luxon@3.7.6\\node_modules\\@types\\luxon"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/node",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+node@26.6.6\\node_modules\\@types\\node",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+node@26.6.6\\node_modules\\@types\\node"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/nodemailer",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+nodemailer@8.0.2\\node_modules\\@types\\nodemailer",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+nodemailer@8.0.2\\node_modules\\@types\\nodemailer"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/papaparse",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+papaparse@5.5.2\\node_modules\\@types\\papaparse",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+papaparse@5.5.2\\node_modules\\@types\\papaparse"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/pg",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+pg@8.23.1\\node_modules\\@types\\pg",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+pg@8.23.1\\node_modules\\@types\\pg"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/qrcode",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+qrcode@1.5.6\\node_modules\\@types\\qrcode",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+qrcode@1.5.6\\node_modules\\@types\\qrcode"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+react@19.3.0\\node_modules\\@types\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+react@19.3.0\\node_modules\\@types\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/react-dom",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+react-dom@19.3.0_@types+react@19.3.0\\node_modules\\@types\\react-dom",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011308.0273,
+      "mtimeMs": 1794759011308.0273,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+react-dom@19.3.0_@types+react@19.3.0\\node_modules\\@types\\react-dom"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/sanitize-html",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+sanitize-html@2.16.2\\node_modules\\@types\\sanitize-html",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+sanitize-html@2.16.2\\node_modules\\@types\\sanitize-html"
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/web-push",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+web-push@3.6.4\\node_modules\\@types\\web-push",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@types+web-push@3.6.4\\node_modules\\@types\\web-push"
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/core",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+core@6.3.1\\node_modules\\@uppy\\core",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011313.0593,
+      "mtimeMs": 1794759011313.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+core@6.3.1\\node_modules\\@uppy\\core"
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/locales",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+locales@5.3.2\\node_modules\\@uppy\\locales",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+locales@5.3.2\\node_modules\\@uppy\\locales"
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/tus",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+tus@6.0.1_@uppy+core@6.3.1\\node_modules\\@uppy\\tus",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.5625,
+      "mtimeMs": 1794759011319.5625,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@uppy+tus@6.0.1_@uppy+core@6.3.1\\node_modules\\@uppy\\tus"
+    },
+    {
+      "path": "apps/webapp/node_modules/@upstash/ratelimit",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@upstash+ratelimit@2.2.0_@upstash+redis@1.39.0\\node_modules\\@upstash\\ratelimit",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@upstash+ratelimit@2.2.0_@upstash+redis@1.39.0\\node_modules\\@upstash\\ratelimit"
+    },
+    {
+      "path": "apps/webapp/node_modules/@vitest/coverage-v8",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@vitest+coverage-v8@5.1.0_vitest@5.1.0\\node_modules\\@vitest\\coverage-v8",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011312.0522,
+      "mtimeMs": 1794759011312.0522,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@vitest+coverage-v8@5.1.0_vitest@5.1.0\\node_modules\\@vitest\\coverage-v8"
+    },
+    {
+      "path": "apps/webapp/node_modules/@xyflow/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@xyflow+react@12.12.1_@type_9e9a715b87204f86f49d86da5d319f2b\\node_modules\\@xyflow\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\@xyflow+react@12.12.1_@type_9e9a715b87204f86f49d86da5d319f2b\\node_modules\\@xyflow\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/babel-plugin-react-compiler",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011315.061,
+      "mtimeMs": 1794759011315.061,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler"
+    },
+    {
+      "path": "apps/webapp/node_modules/better-auth",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0\\node_modules\\better-auth",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0\\node_modules\\better-auth"
+    },
+    {
+      "path": "apps/webapp/node_modules/botbuilder",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\botbuilder@4.23.3_debug@4.4_439ac00be1e5c0b570ec6497eb8cd905\\node_modules\\botbuilder",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\botbuilder@4.23.3_debug@4.4_439ac00be1e5c0b570ec6497eb8cd905\\node_modules\\botbuilder"
+    },
+    {
+      "path": "apps/webapp/node_modules/bullmq",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\bullmq@6.7.5_ioredis@6.0.0_supports-color@8.1.1__pg@8.23.1\\node_modules\\bullmq",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011307.0276,
+      "mtimeMs": 1794759011307.0276,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\bullmq@6.7.5_ioredis@6.0.0_supports-color@8.1.1__pg@8.23.1\\node_modules\\bullmq"
+    },
+    {
+      "path": "apps/webapp/node_modules/canvas-confetti",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\canvas-confetti@1.9.4\\node_modules\\canvas-confetti",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\canvas-confetti@1.9.4\\node_modules\\canvas-confetti"
+    },
+    {
+      "path": "apps/webapp/node_modules/class-variance-authority",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\class-variance-authority@0.7.1\\node_modules\\class-variance-authority",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\class-variance-authority@0.7.1\\node_modules\\class-variance-authority"
+    },
+    {
+      "path": "apps/webapp/node_modules/clsx",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\clsx@2.1.1\\node_modules\\clsx",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\clsx@2.1.1\\node_modules\\clsx"
+    },
+    {
+      "path": "apps/webapp/node_modules/cmdk",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\cmdk@1.1.1_@types+react-dom_f7dee528d90d74e746bb181d01259bd0\\node_modules\\cmdk",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\cmdk@1.1.1_@types+react-dom_f7dee528d90d74e746bb181d01259bd0\\node_modules\\cmdk"
+    },
+    {
+      "path": "apps/webapp/node_modules/country-flag-icons",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\country-flag-icons@1.6.20\\node_modules\\country-flag-icons",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011301.5151,
+      "mtimeMs": 1794759011301.5151,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\country-flag-icons@1.6.20\\node_modules\\country-flag-icons"
+    },
+    {
+      "path": "apps/webapp/node_modules/cron-parser",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\cron-parser@5.10.4\\node_modules\\cron-parser",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011301.5151,
+      "mtimeMs": 1794759011301.5151,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\cron-parser@5.10.4\\node_modules\\cron-parser"
+    },
+    {
+      "path": "apps/webapp/node_modules/date-holidays",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\date-holidays@3.39.1\\node_modules\\date-holidays",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\date-holidays@3.39.1\\node_modules\\date-holidays"
+    },
+    {
+      "path": "apps/webapp/node_modules/dotenv",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\dotenv@18.0.10\\node_modules\\dotenv",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\dotenv@18.0.10\\node_modules\\dotenv"
+    },
+    {
+      "path": "apps/webapp/node_modules/dotenv-cli",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\dotenv-cli@11.1.0\\node_modules\\dotenv-cli",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011315.061,
+      "mtimeMs": 1794759011315.061,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\dotenv-cli@11.1.0\\node_modules\\dotenv-cli"
+    },
+    {
+      "path": "apps/webapp/node_modules/drizzle-kit",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\drizzle-kit@0.31.11_patch_h_26ac68103728dfd9f7e46b97a24f83e5\\node_modules\\drizzle-kit",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\drizzle-kit@0.31.11_patch_h_26ac68103728dfd9f7e46b97a24f83e5\\node_modules\\drizzle-kit"
+    },
+    {
+      "path": "apps/webapp/node_modules/drizzle-orm",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7\\node_modules\\drizzle-orm",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7\\node_modules\\drizzle-orm"
+    },
+    {
+      "path": "apps/webapp/node_modules/effect",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\effect@4.1.4\\node_modules\\effect",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011301.5151,
+      "mtimeMs": 1794759011301.5151,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\effect@4.1.4\\node_modules\\effect"
+    },
+    {
+      "path": "apps/webapp/node_modules/embla-carousel-react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\embla-carousel-react@8.6.0_react@19.3.1\\node_modules\\embla-carousel-react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.5625,
+      "mtimeMs": 1794759011319.5625,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\embla-carousel-react@8.6.0_react@19.3.1\\node_modules\\embla-carousel-react"
+    },
+    {
+      "path": "apps/webapp/node_modules/exceljs",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\exceljs@4.4.0\\node_modules\\exceljs",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011289.4583,
+      "mtimeMs": 1794759011289.4583,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\exceljs@4.4.0\\node_modules\\exceljs"
+    },
+    {
+      "path": "apps/webapp/node_modules/fast-xml-parser",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\fast-xml-parser@5.12.0\\node_modules\\fast-xml-parser",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\fast-xml-parser@5.12.0\\node_modules\\fast-xml-parser"
+    },
+    {
+      "path": "apps/webapp/node_modules/file-type",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\file-type@22.3.0_supports-color@8.1.1\\node_modules\\file-type",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011314.0593,
+      "mtimeMs": 1794759011314.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\file-type@22.3.0_supports-color@8.1.1\\node_modules\\file-type"
+    },
+    {
+      "path": "apps/webapp/node_modules/input-otp",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\input-otp@1.5.0_react-dom@19.3.1_react@19.3.1__react@19.3.1\\node_modules\\input-otp",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\input-otp@1.5.0_react-dom@19.3.1_react@19.3.1__react@19.3.1\\node_modules\\input-otp"
+    },
+    {
+      "path": "apps/webapp/node_modules/ioredis",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\ioredis@6.0.0_supports-color@8.1.1\\node_modules\\ioredis",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011307.0276,
+      "mtimeMs": 1794759011307.0276,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\ioredis@6.0.0_supports-color@8.1.1\\node_modules\\ioredis"
+    },
+    {
+      "path": "apps/webapp/node_modules/jsdom",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jsdom@31.0.0_@napi-rs+canvas@1.1.0_@noble+hashes@2.4.0\\node_modules\\jsdom",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011304.5154,
+      "mtimeMs": 1794759011304.5154,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jsdom@31.0.0_@napi-rs+canvas@1.1.0_@noble+hashes@2.4.0\\node_modules\\jsdom"
+    },
+    {
+      "path": "apps/webapp/node_modules/jsqr",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jsqr@1.4.0\\node_modules\\jsqr",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011302.5144,
+      "mtimeMs": 1794759011302.5144,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jsqr@1.4.0\\node_modules\\jsqr"
+    },
+    {
+      "path": "apps/webapp/node_modules/jszip",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jszip@3.10.2\\node_modules\\jszip",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\jszip@3.10.2\\node_modules\\jszip"
+    },
+    {
+      "path": "apps/webapp/node_modules/luxon",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\luxon@3.7.2\\node_modules\\luxon",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\luxon@3.7.2\\node_modules\\luxon"
+    },
+    {
+      "path": "apps/webapp/node_modules/nanoid",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\nanoid@6.0.2\\node_modules\\nanoid",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\nanoid@6.0.2\\node_modules\\nanoid"
+    },
+    {
+      "path": "apps/webapp/node_modules/next",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011322.569,
+      "mtimeMs": 1794759011322.569,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next"
+    },
+    {
+      "path": "apps/webapp/node_modules/next-intl",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next-intl@4.15.1_@swc+helpe_dfba13ec8809a1ae8ff931366da7e2bb\\node_modules\\next-intl",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011312.0522,
+      "mtimeMs": 1794759011312.0522,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\next-intl@4.15.1_@swc+helpe_dfba13ec8809a1ae8ff931366da7e2bb\\node_modules\\next-intl"
+    },
+    {
+      "path": "apps/webapp/node_modules/node-vault",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\node-vault@0.13.0_supports-color@8.1.1\\node_modules\\node-vault",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011313.0593,
+      "mtimeMs": 1794759011313.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\node-vault@0.13.0_supports-color@8.1.1\\node_modules\\node-vault"
+    },
+    {
+      "path": "apps/webapp/node_modules/nodemailer",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\nodemailer@10.5.0\\node_modules\\nodemailer",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011289.4583,
+      "mtimeMs": 1794759011289.4583,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\nodemailer@10.5.0\\node_modules\\nodemailer"
+    },
+    {
+      "path": "apps/webapp/node_modules/papaparse",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\papaparse@5.7.1\\node_modules\\papaparse",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011315.061,
+      "mtimeMs": 1794759011315.061,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\papaparse@5.7.1\\node_modules\\papaparse"
+    },
+    {
+      "path": "apps/webapp/node_modules/pdfjs-dist",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pdfjs-dist@6.5.438\\node_modules\\pdfjs-dist",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pdfjs-dist@6.5.438\\node_modules\\pdfjs-dist"
+    },
+    {
+      "path": "apps/webapp/node_modules/pg",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pg@8.23.1\\node_modules\\pg",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pg@8.23.1\\node_modules\\pg"
+    },
+    {
+      "path": "apps/webapp/node_modules/pino",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino@10.4.0\\node_modules\\pino",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino@10.4.0\\node_modules\\pino"
+    },
+    {
+      "path": "apps/webapp/node_modules/pino-opentelemetry-transport",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino-opentelemetry-transport@4.0.2_pino@10.4.0\\node_modules\\pino-opentelemetry-transport",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino-opentelemetry-transport@4.0.2_pino@10.4.0\\node_modules\\pino-opentelemetry-transport"
+    },
+    {
+      "path": "apps/webapp/node_modules/pino-pretty",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino-pretty@13.2.0\\node_modules\\pino-pretty",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011307.0276,
+      "mtimeMs": 1794759011307.0276,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\pino-pretty@13.2.0\\node_modules\\pino-pretty"
+    },
+    {
+      "path": "apps/webapp/node_modules/portless",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\portless@0.17.0\\node_modules\\portless",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\portless@0.17.0\\node_modules\\portless"
+    },
+    {
+      "path": "apps/webapp/node_modules/postcss",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\postcss@8.5.32\\node_modules\\postcss",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011316.0598,
+      "mtimeMs": 1794759011316.0598,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\postcss@8.5.32\\node_modules\\postcss"
+    },
+    {
+      "path": "apps/webapp/node_modules/posthog-js",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\posthog-js@1.447.15_@types+react@19.3.0_react@19.3.1\\node_modules\\posthog-js",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011322.569,
+      "mtimeMs": 1794759011322.569,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\posthog-js@1.447.15_@types+react@19.3.0_react@19.3.1\\node_modules\\posthog-js"
+    },
+    {
+      "path": "apps/webapp/node_modules/posthog-node",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\posthog-node@5.70.0_@opente_5315168d3d9b20ee8aaf40c54e839883\\node_modules\\posthog-node",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011317.0608,
+      "mtimeMs": 1794759011317.0608,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\posthog-node@5.70.0_@opente_5315168d3d9b20ee8aaf40c54e839883\\node_modules\\posthog-node"
+    },
+    {
+      "path": "apps/webapp/node_modules/preact",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\preact@11.2.0\\node_modules\\preact",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\preact@11.2.0\\node_modules\\preact"
+    },
+    {
+      "path": "apps/webapp/node_modules/qrcode",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\qrcode@1.5.4\\node_modules\\qrcode",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011320.5688,
+      "mtimeMs": 1794759011320.5688,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\qrcode@1.5.4\\node_modules\\qrcode"
+    },
+    {
+      "path": "apps/webapp/node_modules/qrcode.react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\qrcode.react@4.2.0_react@19.3.1\\node_modules\\qrcode.react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011289.4583,
+      "mtimeMs": 1794759011289.4583,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\qrcode.react@4.2.0_react@19.3.1\\node_modules\\qrcode.react"
+    },
+    {
+      "path": "apps/webapp/node_modules/react",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011322.569,
+      "mtimeMs": 1794759011322.569,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react"
+    },
+    {
+      "path": "apps/webapp/node_modules/react-dom",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-dom@19.3.1_react@19.3.1\\node_modules\\react-dom",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-dom@19.3.1_react@19.3.1\\node_modules\\react-dom"
+    },
+    {
+      "path": "apps/webapp/node_modules/react-email",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-email@6.11.11_react-d_022bde083a50cfbd0d056986100bb31d\\node_modules\\react-email",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-email@6.11.11_react-d_022bde083a50cfbd0d056986100bb31d\\node_modules\\react-email"
+    },
+    {
+      "path": "apps/webapp/node_modules/react-resizable-panels",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-resizable-panels@4.21_d608f9a8b79c049dde78fa5e1e59c5dd\\node_modules\\react-resizable-panels",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011306.0217,
+      "mtimeMs": 1794759011306.0217,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react-resizable-panels@4.21_d608f9a8b79c049dde78fa5e1e59c5dd\\node_modules\\react-resizable-panels"
+    },
+    {
+      "path": "apps/webapp/node_modules/recharts",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\recharts@3.10.1_@types+reac_df092349403d0944c49d93dc0ae17508\\node_modules\\recharts",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011319.5625,
+      "mtimeMs": 1794759011319.5625,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\recharts@3.10.1_@types+reac_df092349403d0944c49d93dc0ae17508\\node_modules\\recharts"
+    },
+    {
+      "path": "apps/webapp/node_modules/resend",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\resend@6.38.0_@react-email+_30fb074d8eeb8b860fde70740d298991\\node_modules\\resend",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\resend@6.38.0_@react-email+_30fb074d8eeb8b860fde70740d298991\\node_modules\\resend"
+    },
+    {
+      "path": "apps/webapp/node_modules/sanitize-html",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sanitize-html@2.18.2\\node_modules\\sanitize-html",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sanitize-html@2.18.2\\node_modules\\sanitize-html"
+    },
+    {
+      "path": "apps/webapp/node_modules/server-only",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\server-only@0.0.1\\node_modules\\server-only",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\server-only@0.0.1\\node_modules\\server-only"
+    },
+    {
+      "path": "apps/webapp/node_modules/shadcn",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011317.0608,
+      "mtimeMs": 1794759011317.0608,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\shadcn@4.23.0_supports-color@8.1.1\\node_modules\\shadcn"
+    },
+    {
+      "path": "apps/webapp/node_modules/sharp",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sharp@0.35.5_@types+node@26.6.6\\node_modules\\sharp",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sharp@0.35.5_@types+node@26.6.6\\node_modules\\sharp"
+    },
+    {
+      "path": "apps/webapp/node_modules/sonner",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sonner@2.0.8_@types+react@1_a4a83cacc98a5853740e8e3e24a10bd1\\node_modules\\sonner",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011298.991,
+      "mtimeMs": 1794759011298.991,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\sonner@2.0.8_@types+react@1_a4a83cacc98a5853740e8e3e24a10bd1\\node_modules\\sonner"
+    },
+    {
+      "path": "apps/webapp/node_modules/streamdown",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\streamdown@2.7.1_react-dom@_7119a3d3786711231536898516211f39\\node_modules\\streamdown",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011301.5151,
+      "mtimeMs": 1794759011301.5151,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\streamdown@2.7.1_react-dom@_7119a3d3786711231536898516211f39\\node_modules\\streamdown"
+    },
+    {
+      "path": "apps/webapp/node_modules/stripe",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\stripe@23.1.0_@types+node@26.6.6\\node_modules\\stripe",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\stripe@23.1.0_@types+node@26.6.6\\node_modules\\stripe"
+    },
+    {
+      "path": "apps/webapp/node_modules/suncalc",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\suncalc@2.1.4\\node_modules\\suncalc",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\suncalc@2.1.4\\node_modules\\suncalc"
+    },
+    {
+      "path": "apps/webapp/node_modules/superjson",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\superjson@2.2.6\\node_modules\\superjson",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011291.4565,
+      "mtimeMs": 1794759011291.4565,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\superjson@2.2.6\\node_modules\\superjson"
+    },
+    {
+      "path": "apps/webapp/node_modules/swr",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\swr@2.5.1_react@19.3.1\\node_modules\\swr",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011300.5078,
+      "mtimeMs": 1794759011300.5078,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\swr@2.5.1_react@19.3.1\\node_modules\\swr"
+    },
+    {
+      "path": "apps/webapp/node_modules/tailwind-merge",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tailwind-merge@3.7.0\\node_modules\\tailwind-merge",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011318.0593,
+      "mtimeMs": 1794759011318.0593,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tailwind-merge@3.7.0\\node_modules\\tailwind-merge"
+    },
+    {
+      "path": "apps/webapp/node_modules/tailwindcss",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tailwindcss@4.3.5\\node_modules\\tailwindcss",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011295.479,
+      "mtimeMs": 1794759011295.479,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tailwindcss@4.3.5\\node_modules\\tailwindcss"
+    },
+    {
+      "path": "apps/webapp/node_modules/temporal-polyfill",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\temporal-polyfill@1.0.8\\node_modules\\temporal-polyfill",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011297.486,
+      "mtimeMs": 1794759011297.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\temporal-polyfill@1.0.8\\node_modules\\temporal-polyfill"
+    },
+    {
+      "path": "apps/webapp/node_modules/timepicker-ui",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\timepicker-ui@4.7.0\\node_modules\\timepicker-ui",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011310.5347,
+      "mtimeMs": 1794759011310.5347,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\timepicker-ui@4.7.0\\node_modules\\timepicker-ui"
+    },
+    {
+      "path": "apps/webapp/node_modules/tsx",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tsx@4.23.15\\node_modules\\tsx",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011293.963,
+      "mtimeMs": 1794759011293.963,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tsx@4.23.15\\node_modules\\tsx"
+    },
+    {
+      "path": "apps/webapp/node_modules/tw-animate-css",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tw-animate-css@1.4.0\\node_modules\\tw-animate-css",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011304.5154,
+      "mtimeMs": 1794759011304.5154,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\tw-animate-css@1.4.0\\node_modules\\tw-animate-css"
+    },
+    {
+      "path": "apps/webapp/node_modules/typescript",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\typescript@7.0.2\\node_modules\\typescript",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011296.486,
+      "mtimeMs": 1794759011296.486,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\typescript@7.0.2\\node_modules\\typescript"
+    },
+    {
+      "path": "apps/webapp/node_modules/ultracite",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\ultracite@8.2.0_@biomejs+bi_79a3fdcfcad7d460feb3ea58464806eb\\node_modules\\ultracite",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011290.4563,
+      "mtimeMs": 1794759011290.4563,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\ultracite@8.2.0_@biomejs+bi_79a3fdcfcad7d460feb3ea58464806eb\\node_modules\\ultracite"
+    },
+    {
+      "path": "apps/webapp/node_modules/undici",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\undici@8.12.4\\node_modules\\undici",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011288.4585,
+      "mtimeMs": 1794759011288.4585,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\undici@8.12.4\\node_modules\\undici"
+    },
+    {
+      "path": "apps/webapp/node_modules/vaul",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vaul@1.1.2_@types+react-dom_e6daed60270af77db87af90114bb2908\\node_modules\\vaul",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011309.0293,
+      "mtimeMs": 1794759011309.0293,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vaul@1.1.2_@types+react-dom_e6daed60270af77db87af90114bb2908\\node_modules\\vaul"
+    },
+    {
+      "path": "apps/webapp/node_modules/vitest",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011292.458,
+      "mtimeMs": 1794759011292.458,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest"
+    },
+    {
+      "path": "apps/webapp/node_modules/web-push",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\web-push@4.0.0_supports-color@8.1.1\\node_modules\\web-push",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011312.0522,
+      "mtimeMs": 1794759011312.0522,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\web-push@4.0.0_supports-color@8.1.1\\node_modules\\web-push"
+    },
+    {
+      "path": "apps/webapp/node_modules/zod",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\zod@4.6.7\\node_modules\\zod",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011303.5156,
+      "mtimeMs": 1794759011303.5156,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\zod@4.6.7\\node_modules\\zod"
+    },
+    {
+      "path": "apps/webapp/node_modules/zustand",
+      "realpath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\zustand@5.1.0_@types+react@_5e5050d806f3bb046bcf240769239f0f\\node_modules\\zustand",
+      "isDirectory": false,
+      "isSymbolicLink": true,
+      "birthtimeMs": 1794759011321.5686,
+      "mtimeMs": 1794759011321.5686,
+      "target": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\zustand@5.1.0_@types+react@_5e5050d806f3bb046bcf240769239f0f\\node_modules\\zustand"
+    }
+  ],
+  "dependencyTopologyUnchanged": true,
+  "allTrackedIndexEntriesUnchanged": true,
+  "trackedEntries": 15937,
+  "all54VerifiedTicketAncestorsPreserved": true,
+  "proof1730": [
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/.gitattributes",
+      "gitBlob": "fa1385d99a319b43c06f5309d1aae9fdd3adea46",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/README.md",
+      "gitBlob": "ce0a016bbb8ff7891f07ffef0b9b4b627e10e38d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/all-changed-paths.json",
+      "gitBlob": "69fa8d4c9b27a30fa067d2f391e8400f76745754",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/biome-format-all.log",
+      "gitBlob": "210401f94de861123d55504cf9420033db6d4c69",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/biome-lint-all.log",
+      "gitBlob": "2f682b66bd37ef224f84792aa4c72d80ae6a4818",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/biome-root-final.log",
+      "gitBlob": "1640097a067aa84d24abad120b6366e4814ece24",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/bulk-green.json",
+      "gitBlob": "83cd100a34658e1ba94aa0e1f25ed24877f2c2ac",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/bulk-green.log",
+      "gitBlob": "39e0b447943ea3c58946cbf781a97bbd4ee53237",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/bulk-red.json",
+      "gitBlob": "6cbaea63abafb379e6a1a3f84609d1fb9a3605ac",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/bulk-red.log",
+      "gitBlob": "19a892a6357f1faabe714c1940f52be1082e10b1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/doctor.log",
+      "gitBlob": "5caadc4aedc63f09bb73c6c30d0ad1ccba5a6d8d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/format-root.log",
+      "gitBlob": "926690b442075d8ef04295b8b0c6b577bb5b8249",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/quality-all.json",
+      "gitBlob": "a4f3f92dd9ad6ec621bdd15bf974367f58a71db3",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/root-changed-paths.json",
+      "gitBlob": "46b8ac8217ce2b6b854c339f8c0953ec510a575c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-activation-green.json",
+      "gitBlob": "c9f183f7908746b6616a07d53aec6c238dfbc766",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-activation-green.log",
+      "gitBlob": "68e316f636710d14b7d4627f2cd48273999529d7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-activation-red.json",
+      "gitBlob": "938977479a7b5de9f5b02d8a69f407ed37530a20",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-activation-red.log",
+      "gitBlob": "38329b26c85928cdc85d7c91b58ab0ca2beff194",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-pending-green.json",
+      "gitBlob": "9d3c02f62cb63a82c3a747bb521c4f273a2efc42",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-pending-green.log",
+      "gitBlob": "f4cdc84154560b4a1ff56686e7c9357f4395ff69",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-pending-red.json",
+      "gitBlob": "b88f5761845dd964ff90406c83ea548cfe5f4c4e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-pending-red.log",
+      "gitBlob": "582184f9a6ed99c54deca87df2ba70c4f65de14e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-recovery-green.json",
+      "gitBlob": "8a2e27b71a1d2be537488078768db1f7b255f1f4",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-recovery-green.log",
+      "gitBlob": "b2c482bd443cdc1f51b21d4b29b02b63fb2e19d3",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-recovery-red.json",
+      "gitBlob": "9bfa4ebce98f0e696d962abceb8f510a5cdce468",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-recovery-red.log",
+      "gitBlob": "9f4ded4f5284e53d3af130c4035541567ac426f7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-retirement-red.json",
+      "gitBlob": "ff13bb04052e605b5132ba5fbbdf8e3202ff1204",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/shared-retirement-red.log",
+      "gitBlob": "38cb37ac002dfc19c4e5e2c254918b96151aae93",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/tolgee-isolated.json",
+      "gitBlob": "67deed93cb64f0fbafdd77482b7d5652b0ae6c84",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/tolgee-isolated.log",
+      "gitBlob": "551caae66842f637a715497b99f37b60761dfca4",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/typecheck-exit-attestation.json",
+      "gitBlob": "1ca9283bf47d43970de0e049716b54f484bf4438",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/typecheck.log",
+      "gitBlob": "42ac6332bf2febc68b891b08a0bd1668c915ea22",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/unit-final-02.json",
+      "gitBlob": "7b1c30789e7f76b40237940af5ba904ca49e99cc",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/unit-final-02.log",
+      "gitBlob": "6739c92686db5b648429d5d8ebc38e6690576277",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/unit-final.json",
+      "gitBlob": "21c2fc5f1d708548e4c18d12cd2ebf7cb4fd5b86",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/unit-final.log",
+      "gitBlob": "16a34c879e341a38a3326d76ad95f7be4f3afa83",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/workspace-green.json",
+      "gitBlob": "d1bf8e0b60265202cb2190030af97b80053a250b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/workspace-green.log",
+      "gitBlob": "3f5c235d5112e387dad75313642063494b9ea28c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/workspace-red.json",
+      "gitBlob": "e0f46352c803817ef60a0fea7e18556eb8bf279b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/checks/workspace-red.log",
+      "gitBlob": "31578cde3549463815af1d7fec51372f42eceec3",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/evidence-index.json",
+      "gitBlob": "96f200491aff45a96c81d3dba22924a4bd4fd23a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/publication-exclusions.json",
+      "gitBlob": "1d5da5bc41dedffe9ce9199b92e059e96fe60179",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/HANDOFF-runtime.md",
+      "gitBlob": "856084726a7dc712723ec913d8a704a07a2eed93",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-01-bulk-created.png",
+      "gitBlob": "7965a43f32185d3bc31597b7dee2a433b16b9dd4",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-01-bulk-pending.png",
+      "gitBlob": "cc7bf28318727354ad0c0063fd2746d15c8b6a21",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-01-failure-bulk.png",
+      "gitBlob": "8e2120df65d2c1707a80e2148cced4bb42c9c389",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-01-queue-context.png",
+      "gitBlob": "bc638f67d9307497ed46512c11658d20fe69a578",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-01-source.mjs",
+      "gitBlob": "789d55d420c38a34bada6f7184d3ca915c525cd0",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-01.json",
+      "gitBlob": "f369d3898701a79f2a250e9f0afcd1689e84fd8e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-02-bulk-created.png",
+      "gitBlob": "b4180a5a10a2de7162afd4cd7d1d212dc13b9854",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-02-bulk-pending.png",
+      "gitBlob": "ad977b340bfd44818ff5d96b2658f2dc232cbf7a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-02-failure-bulk-transport.png",
+      "gitBlob": "bf65e2d4e2182eb7c29d2d91655b7c94f9ab0fdc",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-02-queue-context.png",
+      "gitBlob": "0536901d1ce13d1e3b523296269fe0e8c55a607a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-02-source.mjs",
+      "gitBlob": "93631a59cdd0a798edb5bb1d75be5f28a3c78b30",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-02.json",
+      "gitBlob": "60040e70c59deccb9859648f1c3130cfc60353c5",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-bulk-created.png",
+      "gitBlob": "f4bca98301fd59eb51add5d341a5b6917cd2e04d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-bulk-pending.png",
+      "gitBlob": "4d66a6ab603bec73dacd6b319b45382b9deaa20c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-bulk-transport-retained.png",
+      "gitBlob": "de50a634cc04653aaa4323d57d9adf0ec8c4dca0",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-cancel-pending.png",
+      "gitBlob": "30fc8970e58da875cd99462a3d8aaf167f28ea0a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-cancel-transport-retained.png",
+      "gitBlob": "cf570e9f4eece0b1300238e8ff64491cbd1192bc",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-queue-context.png",
+      "gitBlob": "10ca137e9549be6811675505e9a6697a34a1b6c7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-return-pending.png",
+      "gitBlob": "069c5d6fb26b5c16e9f918864930f9f6839ed50d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-return-transport-retained.png",
+      "gitBlob": "581f3a21720226c61b11f81bcaa5cd7498f193dd",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03-source.mjs",
+      "gitBlob": "bf5a2425694bf375244dfcc144aed5bc78b25725",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions-03.json",
+      "gitBlob": "c6b23830f403b9f1ec6b36c6abadc8eb1016e5fd",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/actions.mjs",
+      "gitBlob": "bf5a2425694bf375244dfcc144aed5bc78b25725",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/artifact-hashes.json",
+      "gitBlob": "f198ccfef8356085936bcab271689d5d1904f3a1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/attempt-01-engine-lock.txt",
+      "gitBlob": "87327ab50fb3f01af420075dd539fe5e22dbd3ce",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/cleanup-audit-preparation-failure.txt",
+      "gitBlob": "6e718063be96782bb052adaa845d046b7f24565d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/cleanup-audit.ps1",
+      "gitBlob": "640c2e7df3e37b10c3b1500c52ba7aa6860374b5",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/cleanup.json",
+      "gitBlob": "b0089da40b1ded4baff76d6cd50479e7d3d8a30b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/common.mjs",
+      "gitBlob": "f78f2de4705e02d3d3afb6397bd4117e39a78d91",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/compare-01-source.mjs",
+      "gitBlob": "80f687295d868ee6b4836986ed447792dd951dba",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/compare-02-source.mjs",
+      "gitBlob": "5c884929cf283616440703c7c61245b2845d7823",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/compare-03-syntax-failed.txt",
+      "gitBlob": "9eea4d48b963ddbbc28123ea38dbc5d982d7b75a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/compare-03-syntax-failure.txt",
+      "gitBlob": "eb32dfc57f79796ea0e907f1b477e8fadccafe4d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/compare-04-source.mjs",
+      "gitBlob": "e5df8c5d4510064ed4221dec54a258fa8df0c4e2",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/compare-05-source.mjs",
+      "gitBlob": "c6da62fbd2310e3fc89ccc7004f915813ae6f60b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/compare-06-source.mjs",
+      "gitBlob": "4dd134a6156c35df37d72f340bb3e796fb132b5a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/compare.mjs",
+      "gitBlob": "4dd134a6156c35df37d72f340bb3e796fb132b5a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/dev.mjs",
+      "gitBlob": "20636e8e83f51ce0387b354b148f17e789d83238",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/discover-public.json",
+      "gitBlob": "495438c6fd61faca0bf9eb0c5e4d7c6b6bea7fb3",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/discover.mjs",
+      "gitBlob": "344e9bb6043c2fc22f2ee41b5cd43bdf648ba9ef",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-before-05.json",
+      "gitBlob": "a789b937108e04164f7f043dbfe39044bdf7eaa1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-before-06-desktop-collapsed-light-16.png",
+      "gitBlob": "c1f003cf82d4e64ff4945877c305a73c0a3422b9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-before-06-desktop-light-16.png",
+      "gitBlob": "a28e1341632b5673dca28ab541ea04dee5ccd7ef",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-before-06-phone-dark-18.png",
+      "gitBlob": "017b32935c749e212e408d580beb069a1bbbc6f0",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-before-06-phone-light-16.png",
+      "gitBlob": "b3ebf2e23d53086da45bc5fba5fd3e9f2532824d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-before-06-wide-dark-18.png",
+      "gitBlob": "9c8e018605fcccb385459f5f2c463e648701352a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-before-06.json",
+      "gitBlob": "51a6781f36d1432170d9b9ab389de55a5a70d93f",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-02-desktop-collapsed-light-16.png",
+      "gitBlob": "c310594e50d04c9fdfa08fed552edc8871089e53",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-02-desktop-light-16.png",
+      "gitBlob": "eccbffe5385af4645bb46af9a4da229d5c215ad1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-02-phone-dark-18.png",
+      "gitBlob": "4c460e159306c061d5b5dba1e10e05c8487ff1fd",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-02-phone-light-16.png",
+      "gitBlob": "245732045f4e6f5dca5857b7288d30db6d3a7ffa",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-02-wide-dark-18.png",
+      "gitBlob": "8a1d67e100d37846bf894b01b20354f513a8ab7b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-02.json",
+      "gitBlob": "bdbe23510184b1a428e19ad4eaecdd3c41dd7a70",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-04.json",
+      "gitBlob": "d26f33f9c27f347084430a33207769a2879f4429",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-05-desktop-collapsed-light-16.png",
+      "gitBlob": "732beae53d7db153b1470cf806cfaaded69c6489",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-05-desktop-light-16.png",
+      "gitBlob": "bf8ade281cb2fd8428174db1521e0f9341272705",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-05-phone-dark-18.png",
+      "gitBlob": "0f3085b8756954866acf39508e07dab43bb7d680",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-05-phone-light-16.png",
+      "gitBlob": "245732045f4e6f5dca5857b7288d30db6d3a7ffa",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-05-wide-dark-18.png",
+      "gitBlob": "5751975e82d0b9afd8b2f15c8f3af08204c38345",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-05.json",
+      "gitBlob": "47c8ab46d5f2284b7edbb563ad1bd95eac1e68a3",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-desktop-collapsed-light-16.png",
+      "gitBlob": "0595695f0097054e17ee4587943b40e307d771b5",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-desktop-light-16.png",
+      "gitBlob": "7b8278eb1517c603b5ffb50865e24b4549eb25ad",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current-phone-light-16.png",
+      "gitBlob": "245732045f4e6f5dca5857b7288d30db6d3a7ffa",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-current.json",
+      "gitBlob": "5fbf3a8e91c4d4e1399f6a8a9a635bc7070a4e51",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-restored-06-desktop.png",
+      "gitBlob": "401595e49169201af2a5532fc7ba58a9448b7e73",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/matched-restored-06.json",
+      "gitBlob": "108dd4e3fa3c9aa512e86e6c7f2f0d895ce6db5b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/native-next-selected.json",
+      "gitBlob": "2b8957d5e5e6add2af514232cf19221a22e554ef",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/native-public.json",
+      "gitBlob": "7f7fdf23d7e3bffa28db493964961fa3ce78535c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/native-restored-public.json",
+      "gitBlob": "d8f56d429687b5a6e83de430e1f7dc856b59292e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/native-restored.mjs",
+      "gitBlob": "a569f9a93098ec465b0d1258974d67af234f1e81",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/native.mjs",
+      "gitBlob": "90c9c03523cfc95e59d3768de350d4a5a7b952a8",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/overlay-applied.json",
+      "gitBlob": "86e869c8cbd8e2ef52b26554d40a742d42c94e4b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/overlay-restored.json",
+      "gitBlob": "15af89959c9d4972ebeb6c930fb4b76e894d8f9d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/overlay.mjs",
+      "gitBlob": "4e21414605b96ec8331cd436e18f0508693b5f47",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/pin.mjs",
+      "gitBlob": "6cd521d4a9693978f190367375c29b27df1e5e37",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/postgres-command.json",
+      "gitBlob": "e6192638919bd5a996fc121482ed6d39f54b95e6",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/postgres.json",
+      "gitBlob": "467015d17123d3f3f9ef9c3c4f628777f843be23",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/postgres.mjs",
+      "gitBlob": "1ff7ff63743b8d0a266d7bf9fdf2d297e9bb2d8a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/queue-initial.png",
+      "gitBlob": "e226b67b49d259790e59615c2ba8253c440cbb6f",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-01-source.mjs",
+      "gitBlob": "daa63ec43ece241b368f0b83168994c22260e59e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-02-activity-return-failed.png",
+      "gitBlob": "2147678f0c45b9881034453b2bbf784f1ad35133",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-02-different-filter-failed.png",
+      "gitBlob": "2a6df8f3c4257c23f91b423942766959afa78ffe",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-02-failure-failed-activity-return.png",
+      "gitBlob": "7cc70ee06c2155f615487034fc084b5885463d36",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-02-same-filter-failed.png",
+      "gitBlob": "ee580bcda3e737704601d2d0cf712b19d4acf849",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-02-same-filter-recovered.png",
+      "gitBlob": "e544f55068d40a00d2d301e30afcb456b4865d0a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-02-source.mjs",
+      "gitBlob": "fdd6345699a744826425b5d34a11455ff736d3b1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-02.json",
+      "gitBlob": "064bdfcfdd01cad838f760ffd7eef58fc3e10fa2",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-03-activity-return-failed.png",
+      "gitBlob": "7e72cb299a2cdb037671a1e0ccc98971afa09612",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-03-activity-return-recovered.png",
+      "gitBlob": "54bfed0c780265e96adae634d2b925c78b79433c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-03-different-filter-failed.png",
+      "gitBlob": "125af90c9768989d4a7b8a564ee096b3f79b1a4d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-03-same-filter-failed.png",
+      "gitBlob": "970aa1515ee58606f71ce3aa774af0a6d3214c12",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-03-same-filter-recovered.png",
+      "gitBlob": "f01c2b982d0ddf2db1e5cf049de8271347937f31",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-03-source.mjs",
+      "gitBlob": "531181b8d4904bc5cc959dfeb5997a9ba19f2d19",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-03.json",
+      "gitBlob": "78d1555ce8129a838b70997b4540b3863950c906",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-different-filter-failed.png",
+      "gitBlob": "f52e5a065d54723b96dd56add20f17a05e1b0238",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-failure-failed-activity-return.png",
+      "gitBlob": "705ad26123efe03db975ac258924a53a31300389",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-same-filter-failed.png",
+      "gitBlob": "9dcb0e1ceb1f6a9e5c0eea442f726040ec398507",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery-same-filter-recovered.png",
+      "gitBlob": "4f23acae993d85ada634e337f69fc7a7807ee8db",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery.json",
+      "gitBlob": "7936e70cad3408320271f0e590a6451d08044a5d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/recovery.mjs",
+      "gitBlob": "531181b8d4904bc5cc959dfeb5997a9ba19f2d19",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/reload-probe-final.png",
+      "gitBlob": "f9a42059e6463b6ecfbb5d2226ef2aa9e631d14e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/reload-probe.json",
+      "gitBlob": "c716166ea66ac200f56166a9c9e9e30cef642935",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/reload-probe.mjs",
+      "gitBlob": "18daceffbd8065dd769d09b5bad23b13b9f47159",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles-01-source.mjs",
+      "gitBlob": "5e44c94182a3c67e0b56c5498153a28efc58ee29",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles-02-source.mjs",
+      "gitBlob": "d2bfe108cb0855847f5c3b0514356b78c21f574d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles-02.json",
+      "gitBlob": "31cc937f034427c8b8c93a44c5cdee457c745cf7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles-03-public-revoked-command-refused.png",
+      "gitBlob": "15f00694e74eca0b0950bfe9e91c6f00c7ac0ccd",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles-03-source.mjs",
+      "gitBlob": "05d6d7285a21e74ca15e828d8ab4708155e9f0c0",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles-03-specific-category-queue.png",
+      "gitBlob": "8fde3ba7c405333f127134c77bafb29722080b35",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles-03.json",
+      "gitBlob": "ccdf9aa2afac4ad2d6a1f513f16f65988ba88f14",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles.json",
+      "gitBlob": "5accc5b54c6421b7acbe1909d644df2cb03ed9f9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/roles.mjs",
+      "gitBlob": "05d6d7285a21e74ca15e828d8ab4708155e9f0c0",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/seal-01-failure.txt",
+      "gitBlob": "65906f34984297b4b4775f51b86b1b86eda5de65",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/seal-01-source.mjs",
+      "gitBlob": "2cb1f07efdaa53d0a6ce025def3f4765585d7b7c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/seal.mjs",
+      "gitBlob": "e67cd4e4d0e1eba637e3e954413047bb442cf8e9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/seed.json",
+      "gitBlob": "a632879ef3c03cc1c75ede73707efcdba46466c9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/seed.mjs",
+      "gitBlob": "0071163b0e1699ea3b1269473b73d52bf1923f54",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/source-start.json",
+      "gitBlob": "fc9615d35719e18d7345132784e3438e33ca8a5b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/stop-current-before-overlay.json",
+      "gitBlob": "679bb4ac6812cc168a4f93bc712477bee3cd0d27",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/stop-final.json",
+      "gitBlob": "376c67b9f7f69bbb88c5737864776fd705401e4d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/stop-historical-before-restore.json",
+      "gitBlob": "d1ae8bf626805b8dc94b1a5e67af93a651e844c7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/stop-next.ps1",
+      "gitBlob": "7c3f747ca596a24e6c3c63a74d91e6575a84e21c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/upload-02-cancelled-keeps-both-documents.png",
+      "gitBlob": "197af76facc5c46709bf5500a43295c0c7e2aebd",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/upload-02-returned-keeps-first-document.png",
+      "gitBlob": "8555e5d08a85ca54f7746745c8606d6ba8bf9ff6",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/upload-failure-first-upload.png",
+      "gitBlob": "221544e3e14a5783fbfb42307da7aedb5d8e106c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/uploads-01-source.mjs",
+      "gitBlob": "1de71847b22684ed9bc74e29459ceba614360dea",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/uploads-02-source.mjs",
+      "gitBlob": "89835785a668f961b542eadc0bbb14a5b25174b9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/uploads-02.json",
+      "gitBlob": "a2267ce467343b2e3e8698ac6411e3966f112cab",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/uploads.json",
+      "gitBlob": "51e57366411617a5c6ca4c01128e862472b20ab9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/uploads.mjs",
+      "gitBlob": "89835785a668f961b542eadc0bbb14a5b25174b9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/runtime/verification-manifest.json",
+      "gitBlob": "aa35c93f1716d131a7a57f3b06bfdccbee401132",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/source-pins.json",
+      "gitBlob": "4a90bf6fe1e92f271006d9b9b14dcfc987aad472",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/independent-correction-review.md",
+      "gitBlob": "81d7c200fb4f746124723ccd5f762d053e26b9e4",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/HANDOFF.md",
+      "gitBlob": "4413a45e544f9955b462a18aafaabb2d2818f672",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/commands.txt",
+      "gitBlob": "0b2612c8572ac8e3a5d43b8cf57079b6eb159526",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/first-merge1730-shared-probe.test.tsx",
+      "gitBlob": "1fd294da76a12b4e846c7c71a1c6bde84234c6eb",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/handoff.json",
+      "gitBlob": "ded74a4255c2cc72289223dc83e2e0a5f0ad1ee9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/independent-tree.json",
+      "gitBlob": "f89c2468b72f6b92de87adc98fade14edacddb3d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/merge1730-baseline-bulk-probe.test.tsx",
+      "gitBlob": "87469d35d2dcce09d2c1f796293d30ebfa020ee1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/merge1730-baseline-bulk.tsx",
+      "gitBlob": "040a448835fac642c6c995ac22071c8d81831763",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/merge1730-bulk-probe.test.tsx",
+      "gitBlob": "769d71e762f5bf33a44595afeb1b835e3982a306",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/merge1730-shared-probe.test.tsx",
+      "gitBlob": "0fa9fe565a4e43cc44ec0b6b28d39f3cb0505a86",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/merge1730-workspace-probe.test.tsx",
+      "gitBlob": "806fbfb2b01c76a2d67954bb53bc0c51d8fa3cc4",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/probes-baseline.json",
+      "gitBlob": "e6454d2aa9a236433ed333f4489c2bad0c534359",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/probes-baseline.txt",
+      "gitBlob": "67870985f5b3c802738949acc4fb6cc8a13997ff",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/probes-first.json",
+      "gitBlob": "af19de2ec3140cdd1deb96e92eddb932aad58a3c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/probes-first.txt",
+      "gitBlob": "ff98ef5fb0b7d1a6332cfdb2e5cc384598c77304",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/probes-repeat.json",
+      "gitBlob": "5fa929ff6107e3b9e8bb1676bbec8567e1e5126c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/merger/probes-repeat.txt",
+      "gitBlob": "de739c31a9297673ea19a813bff8e4e39a921969",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/prior-proof-groups.json",
+      "gitBlob": "0872b7bbb373f4896173d0ab03e10a3acbc78381",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/provenance.md",
+      "gitBlob": "4122b206330c1b3ccb66f27383973214bd9c578d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/support/publication-plan.json",
+      "gitBlob": "f26efc734488f7e577cb403a3c6331e76357d953",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/verification-attempt-01.log",
+      "gitBlob": "292e846c42cfd82a5da541cc8b7c27b044e94687",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/verification-current-source.log",
+      "gitBlob": "bc8179ea3a04738d0d06b16842c6b12afec383af",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/verification-default.log",
+      "gitBlob": "953eb076aa2c6229ccbb89604d9f8fe5954fc53f",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/verification-manifest.json",
+      "gitBlob": "db94b7b692a6f20f7b363218d47dacbaf1febf34",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/verification-results.json",
+      "gitBlob": "6fb05f06a2509714cc5fa13ea38b3f0ce3201047",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/root-request-confirmations/verify-evidence.mjs",
+      "gitBlob": "2dfd9dc3fb4d97ea4126d073f75616543d799935",
+      "unchanged": true
+    }
+  ],
+  "corrections1730": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts",
+      "unchanged": true
+    }
+  ],
+  "priorEvidenceGroups": {
+    "1728": 163,
+    "1729": 152,
+    "1736": 266,
+    "1737": 211,
+    "1835": 203
+  },
+  "preservationQualification": "Complete unchanged index and clean Git worktree plus exact raw pins/configs and byte-exact overlay restoration. Prior fixed-source evidence and source pins were not rewritten; current-source1730 heading drift is legitimate, as supplied."
+}

@@ -1,0 +1,46 @@
+{
+  "started": "2026-11-16T12:55:19.342Z",
+  "ended": "2026-11-16T12:55:21.791Z",
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "node",
+    "scripts/performance/fixture.mjs",
+    "cleanup",
+    "<new-owned-private-fixture>"
+  ],
+  "exit": 0,
+  "label": "z8-performance-fixture-1450",
+  "containers": [
+    {
+      "name": "z8_perf_377710bf3008_postgres",
+      "remaining": false
+    },
+    {
+      "name": "z8_perf_377710bf3008_redis",
+      "remaining": false
+    },
+    {
+      "name": "z8_perf_377710bf3008_storage",
+      "remaining": false
+    }
+  ],
+  "containersRemaining": 0,
+  "fixtureAppPort": 63405,
+  "fixtureAppPortListening": false,
+  "nativeSessionsActive": 0,
+  "ownPuppeteerBrowsersClosed": "All driver finally blocks awaited browser.close; all driver shell sessions settled before release.",
+  "privateInputsAndRawFailures": "Preserved ignored; never included in public allowlist or hashes.",
+  "prohibited": {
+    "sqlAuthMembershipGrantMutationsAfterPreparation": 0,
+    "savedCopiedMintedRestoredCookieSessionStorage": 0,
+    "installsUpgradesRepairs": 0,
+    "activeCacheMoves": 0,
+    "configResolverOverlays": 0,
+    "trackerWrites": 0,
+    "commitsPushesPullRequests": 0,
+    "issueClosureDevMergeDeploy": 0,
+    "phaseCustomerProviderPaymentCalls": 0
+  },
+  "ownResourcesRemaining": 0
+}
