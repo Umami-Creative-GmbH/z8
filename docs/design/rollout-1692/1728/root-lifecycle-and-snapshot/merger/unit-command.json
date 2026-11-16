@@ -1,0 +1,32 @@
+{
+  "mode": "unit",
+  "args": [
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "--maxWorkers",
+    "1",
+    "src/components/personnel-file",
+    "src/lib/personnel-file/access.test.ts",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/components/site-header.test.tsx",
+    "src/components/providers/view-refresh-provider.test.tsx",
+    "src/components/providers/view-refresh-migrated.test.tsx",
+    "src/components/ui/page-header.test.tsx",
+    "src/app/[locale]/onboarding/work-templates/page.test.tsx",
+    "src/app/[locale]/onboarding/work-templates/submission-arrival.test.tsx",
+    "src/lib/effect/services/onboarding.service.test.ts",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1728-audit\\unit.json"
+  ],
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "head": "80ca442bd36692f0b9a87c4f94d106a3d81492de",
+  "started": "2026-11-16T05:50:10.368Z",
+  "exit": 0,
+  "ended": "2026-11-16T05:50:36.083Z"
+}

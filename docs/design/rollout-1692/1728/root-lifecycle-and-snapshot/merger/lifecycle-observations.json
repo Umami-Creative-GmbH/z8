@@ -1,0 +1,72 @@
+{
+  "qualification": "Real PostgreSQL canonical lifecycle commands and canonical public readers; controlled domain clock, no browser clock manipulation, no SQL authority/grant changes.",
+  "before": {
+    "at": "2027-05-01T08:00:00Z",
+    "directory": {
+      "id": "86299576-0cbd-4539-92c8-ce2d8ff3992d",
+      "name": "Person 3",
+      "employeeNumber": null,
+      "isActive": true
+    },
+    "expiryRows": 2,
+    "canonicalAccess": {
+      "allowed": true,
+      "employeeId": "86299576-0cbd-4539-92c8-ce2d8ff3992d"
+    }
+  },
+  "scheduled": {
+    "departureId": "cf2a0e9f-7546-4a59-b128-5955e72c45ab",
+    "revision": 1
+  },
+  "cutoff": {
+    "at": "2027-05-01T22:00:00Z",
+    "directory": {
+      "id": "86299576-0cbd-4539-92c8-ce2d8ff3992d",
+      "name": "Person 3",
+      "employeeNumber": null,
+      "isActive": true
+    },
+    "expiryRows": 0,
+    "canonicalAccess": {
+      "allowed": false,
+      "reason": "offboarded"
+    },
+    "departureStatus": "pending"
+  },
+  "executed": {
+    "status": "effective",
+    "departureId": "cf2a0e9f-7546-4a59-b128-5955e72c45ab",
+    "followUpPending": true
+  },
+  "materialized": {
+    "at": "2027-05-01T22:00:00Z",
+    "directory": {
+      "id": "86299576-0cbd-4539-92c8-ce2d8ff3992d",
+      "name": "Person 3",
+      "employeeNumber": null,
+      "isActive": false
+    },
+    "expiryRows": 0,
+    "canonicalAccess": {
+      "allowed": false,
+      "reason": "offboarded"
+    }
+  },
+  "rehire": {
+    "employmentPeriodId": "8d8331bc-34e3-44de-ac38-3d6d5c1b26ba"
+  },
+  "rehired": {
+    "at": "2027-05-02T22:00:00Z",
+    "directory": {
+      "id": "86299576-0cbd-4539-92c8-ce2d8ff3992d",
+      "name": "Person 3",
+      "employeeNumber": null,
+      "isActive": true
+    },
+    "expiryRows": 2,
+    "canonicalAccess": {
+      "allowed": true,
+      "employeeId": "86299576-0cbd-4539-92c8-ce2d8ff3992d"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+import {readFile,readdir,stat,writeFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {resolve,relative,join} from 'node:path';
+const root=process.cwd(),src=resolve('apps/webapp/src'),base='80ca442bd36692f0b9a87c4f94d106a3d81492de',verified='16443982de929de4f885a6cfb6de5b377374cb3e';
+const baseline=JSON.parse(await readFile(join(src,'lib/employee-lifecycle/raw-employee-active-checks.json'),'utf8'));
+const pattern=/\bemployee\.isActive\b|"employee"\."is_active"|\bemployee\.is_active\b/g;
+const grown=[];async function walk(dir){for(const e of await readdir(dir,{withFileTypes:true})){const p=join(dir,e.name);if(e.isDirectory()){if(!['node_modules','__tests__','testing'].includes(e.name))await walk(p);}else if(/\.tsx?$/.test(e.name)&&!(/\.(?:test|spec)\.tsx?$/.test(e.name)||/\.test\.\w+\.ts$/.test(e.name))){const count=((await readFile(p,'utf8')).match(pattern)||[]).length,file=relative(src,p).replaceAll('\\','/');if(count>(baseline[file]||0)){const gitpath='apps/webapp/src/'+file,at=rev=>execFileSync('git',['show',rev+':'+gitpath],{encoding:'utf8',maxBuffer:1024*1024});const old=at(base),prior=at(verified);grown.push({file,current:count,baseline:baseline[file]||0,atProvisional:(old.match(pattern)||[]).length,atVerified:(prior.match(pattern)||[]).length,entireSourceMatchesProvisional:(await readFile(p,'utf8')).replaceAll('\r\n','\n')===old.replaceAll('\r\n','\n')});}}}}
+await walk(src);await writeFile('.tmp/1728-root-checks/roster-guard-baseline.json',JSON.stringify({base,verified,grown,qualification:'Read-only classification of the broad preexisting guard; no whitelist, test or unrelated source changed.'},null,2)+'\n');console.log(JSON.stringify(grown));
