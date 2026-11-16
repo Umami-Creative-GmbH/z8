@@ -945,9 +945,11 @@
       "provisionalIntegrationCommit": "1513a20116706380dd65a93b35104ca4eeea6066",
       "provisionalCorrectionCommit": "9870df191c6b686106b38dcfa1bf6590ed611541",
       "provisionalCorrectionIntegrationCommit": "931c3f41d7a75a4b03d13f3dbad2e6de4eac4260",
-      "pendingAcceptance": "Second fresh verifier STOP reproduced both roster refusal/rejection missing localRetry through real provider/QueryClient/reports; settings recovery control passed and instrumentation-only refetch recovered roster. Root exposes a current-opening guarded refetch from the single-consumer report hook, local selectorRetry and accessible pending feedback; cancellation checked before dispatch and after read, existing exact-key/scope retirement preserved. Seven permanent public cases now cover settings+roster recovery, rejection/coalescing and Activity late results;293selectedunits/51files, all3types/typegen,13filelint pass. Owned3explicit100CRLF pass; broader explicit1005/ordinary8 format differences remain. Doctor13files0errors/1incoming roster-readiness warning. All new attempt outputs unique; initial settings-phase overwritten-intermediate limitations remain explicit. Fresh independent canonicalPG14/current application/complete parsedCSV-XLSX-PDF/native/Next/roles/preferences/matched acceptance pending; exports remain0verified. No provider/action/canonical query factory/authorization/calculation/time/export owner change; verifiedCommit null.",
+      "pendingAcceptance": "Fresh independent recovery9/1 and canonicalPG14/2 pass on241a. Actual CSV1/XLSX1 completed and parsed with canonical parity; PDF0, repeated current compiledUI null.props STOP preserved in immutable105-file archive. Root reproduces compiler-hoisted row callbacks losing local lazy PDF primitives: identical plain4/4 and compiled-no-row pass, compiled repeated-row3fail; direct Document element preserves scope/lazy import, no document data/format/calculation or download-authority changes. Afterfix differential8/8 and real compiled annual/custom-field/hourly-projection PDF parsing pass;294 selected units/52files, all3type projects/typegen,15filelint,owned2explicit100CRLF pass. Doctor15files0errors/1unchanged roster-readiness warning. Broadexplicit1005/ordinary10formatter differences remain unpassed; earlier settings overwritten-intermediate raw-history limit persists. Fresh currentUI PDF/parsed downloads, roles/recovery/preferences/matched/native/Next acceptance still pending; earlier PDF0 is not retroactively changed. Sourcec7eab9013 and provisionalmerge9284956; verifiedCommit remainsnull.",
       "provisionalRosterCorrectionCommit": "2e78c69a1531750bdd744fdaf99f4f78fc65550d",
-      "provisionalRosterCorrectionIntegrationCommit": "9f9df79f46f203f7aaa75d3f39ceb1f94dac7f7c"
+      "provisionalRosterCorrectionIntegrationCommit": "9f9df79f46f203f7aaa75d3f39ceb1f94dac7f7c",
+      "provisionalPDFCorrectionCommit": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
+      "provisionalPDFCorrectionIntegrationCommit": "9284956219792bc328f24137ae5a17856f2dd999"
     },
     {
       "id": "R062",
@@ -1052,10 +1054,12 @@
       "blockedBy": [
         1693
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1755#issuecomment-6930041495"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1755#issuecomment-6930041495",
+      "implementationCommit": "4b3fe82dbc3c292be3c49f62c00d56667e60edae",
+      "pendingAcceptance": "Implementation handoff clean on feat/avv-settings-review. Worker51unitcases,14PGcases in each billing variant (not28distinct),all3types,scopedlint/explicitformat;Doctor0errors1inheritedwarning. Billing-enabled live AVV, completed native PDF/matched visuals/nativeReact remain unpassed. Read-only merger preparation preserves source/canonicalLFvsCRLF pin qualifications. Fresh serial merger owns readiness; no billing gate/provider/secret bypass."
     },
     {
       "id": "R072",
@@ -1076,8 +1080,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1757#issuecomment-6931196869"
     },
     {
       "id": "R074",
