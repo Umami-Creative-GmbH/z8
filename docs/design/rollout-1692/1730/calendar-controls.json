@@ -1,0 +1,212 @@
+[
+  {
+    "text": "26",
+    "aria": "Monday, October 26th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "27",
+    "aria": "Tuesday, October 27th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "28",
+    "aria": "Wednesday, October 28th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "29",
+    "aria": "Thursday, October 29th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "30",
+    "aria": "Friday, October 30th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "31",
+    "aria": "Saturday, October 31st, 2026",
+    "disabled": true
+  },
+  {
+    "text": "1",
+    "aria": "Sunday, November 1st, 2026",
+    "disabled": true
+  },
+  {
+    "text": "2",
+    "aria": "Monday, November 2nd, 2026",
+    "disabled": true
+  },
+  {
+    "text": "3",
+    "aria": "Tuesday, November 3rd, 2026",
+    "disabled": true
+  },
+  {
+    "text": "4",
+    "aria": "Wednesday, November 4th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "5",
+    "aria": "Thursday, November 5th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "6",
+    "aria": "Friday, November 6th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "7",
+    "aria": "Saturday, November 7th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "8",
+    "aria": "Sunday, November 8th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "9",
+    "aria": "Monday, November 9th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "10",
+    "aria": "Tuesday, November 10th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "11",
+    "aria": "Wednesday, November 11th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "12",
+    "aria": "Thursday, November 12th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "13",
+    "aria": "Friday, November 13th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "14",
+    "aria": "Saturday, November 14th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "15",
+    "aria": "Today, Sunday, November 15th, 2026",
+    "disabled": true
+  },
+  {
+    "text": "16",
+    "aria": "Monday, November 16th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "17",
+    "aria": "Tuesday, November 17th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "18",
+    "aria": "Wednesday, November 18th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "19",
+    "aria": "Thursday, November 19th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "20",
+    "aria": "Friday, November 20th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "21",
+    "aria": "Saturday, November 21st, 2026",
+    "disabled": false
+  },
+  {
+    "text": "22",
+    "aria": "Sunday, November 22nd, 2026",
+    "disabled": false
+  },
+  {
+    "text": "23",
+    "aria": "Monday, November 23rd, 2026",
+    "disabled": false
+  },
+  {
+    "text": "24",
+    "aria": "Tuesday, November 24th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "25",
+    "aria": "Wednesday, November 25th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "26",
+    "aria": "Thursday, November 26th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "27",
+    "aria": "Friday, November 27th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "28",
+    "aria": "Saturday, November 28th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "29",
+    "aria": "Sunday, November 29th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "30",
+    "aria": "Monday, November 30th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "1",
+    "aria": "Tuesday, December 1st, 2026",
+    "disabled": false
+  },
+  {
+    "text": "2",
+    "aria": "Wednesday, December 2nd, 2026",
+    "disabled": false
+  },
+  {
+    "text": "3",
+    "aria": "Thursday, December 3rd, 2026",
+    "disabled": false
+  },
+  {
+    "text": "4",
+    "aria": "Friday, December 4th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "5",
+    "aria": "Saturday, December 5th, 2026",
+    "disabled": false
+  },
+  {
+    "text": "6",
+    "aria": "Sunday, December 6th, 2026",
+    "disabled": false
+  }
+]

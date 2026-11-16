@@ -6,6 +6,11 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts the request queue without adopting its independent descendants", () => {
+		expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);
+	});
 	it("adopts only the report share-link settings heading without other settings or descendants", () => {
 		expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);
 		expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);
@@ -18,9 +23,6 @@ describe("route metadata", () => {
 				"/de/personnel-files/af981290-0000-4000-8000-000000000001",
 			),
 		).toBe(true);
-		expect(appPageOwnsHeading("/en/personnel-files/document-requests")).toBe(
-			false,
-		);
 		expect(
 			appPageOwnsHeading(
 				"/en/personnel-files/af981290-0000-4000-8000-000000000001/detail",
@@ -55,7 +57,6 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/de/personnel-files")).toBe(true);
 		for (const path of [
 			"/en/personnel-files/id",
-			"/en/personnel-files/document-requests",
 			"/en/personnel-files/payslip-batches",
 			"/en/personnel-files/payslip-batches/id",
 			"/en/personnel-files/sick-leave",

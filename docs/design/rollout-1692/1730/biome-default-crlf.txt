@@ -1,0 +1,1034 @@
+src\app\[locale]\(app)\personnel-files\document-requests\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    24  24 │   };␍
+    25  25 │   ␍
+    26     │ - async·function·DocumentRequestsContent({·searchParams·}:·DocumentRequestsPageProps)·{␍
+    27     │ - → const·[current,·params]·=·await·Promise.all([loadCurrentPersonnelFileAccess(),·searchParams]);␍
+    28     │ - → if·(current.status·!==·"resolved"·||·!managesDocumentRequests(current.access))·notFound();␍
+        26 │ + async·function·DocumentRequestsContent({␍
+        27 │ + → searchParams,␍
+        28 │ + }:·DocumentRequestsPageProps)·{␍
+        29 │ + → const·[current,·params]·=·await·Promise.all([␍
+        30 │ + → → loadCurrentPersonnelFileAccess(),␍
+        31 │ + → → searchParams,␍
+        32 │ + → ]);␍
+        33 │ + → if·(current.status·!==·"resolved"·||·!managesDocumentRequests(current.access))␍
+        34 │ + → → notFound();␍
+    29  35 │     const { access } = current;␍
+    30  36 │     const now = systemClock.nowInstant();␍
+    ······ │ 
+    59  65 │     return (␍
+    60  66 │       <DocumentRequestsWorkspace␍
+    61     │ - → → → key={JSON.stringify([access.userId,·access.organizationId,·access.selfEmployeeId,·grants])}␍
+        67 │ + → → → key={JSON.stringify([␍
+        68 │ + → → → → access.userId,␍
+        69 │ + → → → → access.organizationId,␍
+        70 │ + → → → → access.selfEmployeeId,␍
+        71 │ + → → → → grants,␍
+        72 │ + → → → ])}␍
+    62  73 │         userId={access.userId}␍
+    63  74 │         organizationId={access.organizationId}␍
+  
+
+src\components\personnel-file\bulk-document-requests-dialog.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     14  14 │   vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));␍
+     15  15 │   vi.mock("@/components/ui/action-panel", () => {␍
+     16     │ - → const·Pass·=·({·children·}:·{·children?:·ReactNode·})·=>·<div>{children}</div>;␍
+         16 │ + → const·Pass·=·({·children·}:·{·children?:·ReactNode·})·=>·(␍
+         17 │ + → → <div>{children}</div>␍
+         18 │ + → );␍
+     17  19 │     return {␍
+     18     │ - → → ActionPanel:·({·children,·open·}:·{·children?:·ReactNode;·open:·boolean·})·=>␍
+     19     │ - → → → open·?·<div>{children}</div>·:·null,␍
+         20 │ + → → ActionPanel:·({␍
+         21 │ + → → → children,␍
+         22 │ + → → → open,␍
+         23 │ + → → }:·{␍
+         24 │ + → → → children?:·ReactNode;␍
+         25 │ + → → → open:·boolean;␍
+         26 │ + → → })·=>·(open·?·<div>{children}</div>·:·null),␍
+     20  27 │       ActionPanelBody: Pass,␍
+     21  28 │       ActionPanelContent: Pass,␍
+    ······· │ 
+     23  30 │       ActionPanelFooter: Pass,␍
+     24  31 │       ActionPanelHeader: Pass,␍
+     25     │ - → → ActionPanelTitle:·({·children·}:·{·children?:·ReactNode·})·=>·<h2>{children}</h2>,␍
+         32 │ + → → ActionPanelTitle:·({·children·}:·{·children?:·ReactNode·})·=>·(␍
+         33 │ + → → → <h2>{children}</h2>␍
+         34 │ + → → ),␍
+     26  35 │     };␍
+     27  36 │   });␍
+     28  37 │   vi.mock("@/components/ui/date-picker", () => ({␍
+     29     │ - → DatePicker:·({·value,·onChange·}:·{·value?:·string·|·null;·onChange:·(v:·string)·=>·void·})·=>·(␍
+         38 │ + → DatePicker:·({␍
+         39 │ + → → value,␍
+         40 │ + → → onChange,␍
+         41 │ + → }:·{␍
+         42 │ + → → value?:·string·|·null;␍
+         43 │ + → → onChange:·(v:·string)·=>·void;␍
+         44 │ + → })·=>·(␍
+     30  45 │       <input␍
+     31  46 │         aria-label="Deadline picker"␍
+    ······· │ 
+     72  87 │     ),␍
+     73  88 │   }));␍
+     74     │ - vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions",·()·=>·({␍
+     75     │ - → createDocumentRequestsInBulkAction:·vi.fn(),␍
+     76     │ - }));␍
+         89 │ + vi.mock(␍
+         90 │ + → "@/app/[locale]/(app)/personnel-files/document-request-actions",␍
+         91 │ + → ()·=>·({␍
+         92 │ + → → createDocumentRequestsInBulkAction:·vi.fn(),␍
+         93 │ + → }),␍
+         94 │ + );␍
+     77  95 │   ␍
+     78  96 │   const certificateOptions: DocumentRequestRecipientOptions = {␍
+    ······· │ 
+     90 108 │   };␍
+     91 109 │   ␍
+     92     │ - function·renderDialog(options:·DocumentRequestRecipientOptions·=·certificateOptions)·{␍
+        110 │ + function·renderDialog(␍
+        111 │ + → options:·DocumentRequestRecipientOptions·=·certificateOptions,␍
+        112 │ + )·{␍
+     93 113 │     const onCreated = vi.fn();␍
+     94 114 │     const onOpenChange = vi.fn();␍
+    ······· │ 
+    112 132 │       target: { value: "Please upload the new card." },␍
+    113 133 │     });␍
+    114     │ - → fireEvent.change(screen.getByLabelText("Deadline·picker"),·{·target:·{·value:·"2026-11-30"·}·});␍
+        134 │ + → fireEvent.change(screen.getByLabelText("Deadline·picker"),·{␍
+        135 │ + → → target:·{·value:·"2026-11-30"·},␍
+        136 │ + → });␍
+    115 137 │   }␍
+    116 138 │   ␍
+    ······· │ 
+    123 145 │   describe("requesting a document from several employees at once", () => {␍
+    124 146 │     it("retains an uncertain transport outcome and can retry without inventing success", async () => {␍
+    125     │ - → → vi.mocked(createDocumentRequestsInBulkAction).mockRejectedValueOnce(new·Error("offline"));␍
+        147 │ + → → vi.mocked(createDocumentRequestsInBulkAction).mockRejectedValueOnce(␍
+        148 │ + → → → new·Error("offline"),␍
+        149 │ + → → );␍
+    126 150 │       const { onCreated } = renderDialog();␍
+    127 151 │       fireEvent.click(screen.getByRole("switch", { name: "Berlin" }));␍
+    ······· │ 
+    132 156 │       );␍
+    133 157 │       expect(onCreated).not.toHaveBeenCalled();␍
+    134     │ - → → expect((screen.getByRole("textbox",·{·name:·/^Title/·})·as·HTMLInputElement).value).toBe(␍
+    135     │ - → → → "First·aid·refresher",␍
+    136     │ - → → );␍
+        158 │ + → → expect(␍
+        159 │ + → → → (screen.getByRole("textbox",·{·name:·/^Title/·})·as·HTMLInputElement)␍
+        160 │ + → → → → .value,␍
+        161 │ + → → ).toBe("First·aid·refresher");␍
+    137 162 │       vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValueOnce({␍
+    138 163 │         success: true,␍
+    ······· │ 
+    140 165 │           created: 0,␍
+    141 166 │           skipped: 1,␍
+    142     │ - → → → → skippedBy:·{·not_covered:·0,·own_file:·0,·former_employee:·0,·already_requested:·1·},␍
+        167 │ + → → → → skippedBy:·{␍
+        168 │ + → → → → → not_covered:·0,␍
+        169 │ + → → → → → own_file:·0,␍
+        170 │ + → → → → → former_employee:·0,␍
+        171 │ + → → → → → already_requested:·1,␍
+        172 │ + → → → → },␍
+    143 173 │         },␍
+    144 174 │       });␍
+    145 175 │       fireEvent.click(screen.getByRole("button", { name: "Request" }));␍
+    146     │ - → → expect(await·screen.findByText("No·document·requests·created.")).toBeTruthy();␍
+        176 │ + → → expect(␍
+        177 │ + → → → await·screen.findByText("No·document·requests·created."),␍
+        178 │ + → → ).toBeTruthy();␍
+    147 179 │     });␍
+    148 180 │     it("keeps the draft and offers an inline retry after a refused request", async () => {␍
+    ······· │ 
+    156 188 │       fillRequest();␍
+    157 189 │       fireEvent.click(screen.getByRole("button", { name: "Request" }));␍
+    158     │ - → → expect((await·screen.findByRole("alert")).textContent).toContain("at·most·500·employees");␍
+    159     │ - → → expect((screen.getByRole("textbox",·{·name:·/^Title/·})·as·HTMLInputElement).value).toBe(␍
+    160     │ - → → → "First·aid·refresher",␍
+    161     │ - → → );␍
+        190 │ + → → expect((await·screen.findByRole("alert")).textContent).toContain(␍
+        191 │ + → → → "at·most·500·employees",␍
+        192 │ + → → );␍
+        193 │ + → → expect(␍
+        194 │ + → → → (screen.getByRole("textbox",·{·name:·/^Title/·})·as·HTMLInputElement)␍
+        195 │ + → → → → .value,␍
+        196 │ + → → ).toBe("First·aid·refresher");␍
+    162 197 │       vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValue({␍
+    163 198 │         success: true,␍
+    ······· │ 
+    165 200 │           created: 1,␍
+    166 201 │           skipped: 0,␍
+    167     │ - → → → → skippedBy:·{·not_covered:·0,·own_file:·0,·former_employee:·0,·already_requested:·0·},␍
+        202 │ + → → → → skippedBy:·{␍
+        203 │ + → → → → → not_covered:·0,␍
+        204 │ + → → → → → own_file:·0,␍
+        205 │ + → → → → → former_employee:·0,␍
+        206 │ + → → → → → already_requested:·0,␍
+        207 │ + → → → → },␍
+    168 208 │         },␍
+    169 209 │       });␍
+    ······· │ 
+    173 213 │   ␍
+    174 214 │     it("keeps cancellation disabled and suppresses duplicate submissions while pending", async () => {␍
+    175     │ - → → let·finish!:·(result:·Awaited<ReturnType<typeof·createDocumentRequestsInBulkAction>>)·=>·void;␍
+        215 │ + → → let·finish!:·(␍
+        216 │ + → → → result:·Awaited<ReturnType<typeof·createDocumentRequestsInBulkAction>>,␍
+        217 │ + → → )·=>·void;␍
+    176 218 │       vi.mocked(createDocumentRequestsInBulkAction).mockImplementation(␍
+    177 219 │         () =>␍
+    ······· │ 
+    185 227 │       const submit = screen.getByRole("button", { name: "Request" });␍
+    186 228 │       fireEvent.click(submit);␍
+    187     │ - → → await·waitFor(()·=>·expect(createDocumentRequestsInBulkAction).toHaveBeenCalledTimes(1));␍
+    188     │ - → → expect((screen.getByRole("button",·{·name:·"Cancel"·})·as·HTMLButtonElement).disabled).toBe(␍
+    189     │ - → → → true,␍
+    190     │ - → → );␍
+        229 │ + → → await·waitFor(()·=>␍
+        230 │ + → → → expect(createDocumentRequestsInBulkAction).toHaveBeenCalledTimes(1),␍
+        231 │ + → → );␍
+        232 │ + → → expect(␍
+        233 │ + → → → (screen.getByRole("button",·{·name:·"Cancel"·})·as·HTMLButtonElement)␍
+        234 │ + → → → → .disabled,␍
+        235 │ + → → ).toBe(true);␍
+  29 more lines truncated
+  
+
+src\components\personnel-file\bulk-document-requests-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     86  86 │     const labels = usePersonnelFileLabels();␍
+     87  87 │     const errorMessage = useDocumentRequestErrorMessage();␍
+     88     │ - → const·[summary,·setSummary]·=·useState<DocumentRequestBulkSummary·|·null>(null);␍
+         88 │ + → const·[summary,·setSummary]·=·useState<DocumentRequestBulkSummary·|·null>(␍
+         89 │ + → → null,␍
+         90 │ + → );␍
+     89  91 │     const [error, setError] = useState<string | null>(null);␍
+     90  92 │     const arrival = useRef<symbol | null>(null);␍
+    ······· │ 
+     98 100 │     }, []);␍
+     99 101 │     const categories = DOCUMENT_REQUEST_CATEGORIES.filter(␍
+    100     │ - → → (category)·=>·options[category].employees.length·>·0·||·options[category].teams.length·>·0,␍
+        102 │ + → → (category)·=>␍
+        103 │ + → → → options[category].employees.length·>·0·||␍
+        104 │ + → → → options[category].teams.length·>·0,␍
+    101 105 │     );␍
+    102 106 │     const defaultValues: BulkDocumentRequestValues = {␍
+    ······· │ 
+    109 113 │     };␍
+    110 114 │     const required = (label: string) =>␍
+    111     │ - → → t("settings.personnelFiles.form.required",·"{label}·is·required",·{·label·});␍
+        115 │ + → → t("settings.personnelFiles.form.required",·"{label}·is·required",·{␍
+        116 │ + → → → label,␍
+        117 │ + → → });␍
+    112 118 │   ␍
+    113 119 │     const form = useForm({␍
+    114 120 │       defaultValues,␍
+    115 121 │       onSubmitInvalid: () =>␍
+    116     │ - → → → formElement.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),␍
+        122 │ + → → → formElement.current␍
+        123 │ + → → → → ?.querySelector<HTMLElement>('[aria-invalid="true"]')␍
+        124 │ + → → → → ?.focus(),␍
+    117 125 │       onSubmit: async ({ value }) => {␍
+    118 126 │         if (running.current || !arrival.current) return;␍
+    ······· │ 
+    168 176 │       // Keep only the selections the new category still offers.␍
+    169 177 │       const teamIds = new Set(options[next].teams.map((team) => team.id));␍
+    170     │ - → → const·employeeIds·=·new·Set(options[next].employees.map((person)·=>·person.id));␍
+        178 │ + → → const·employeeIds·=·new·Set(␍
+        179 │ + → → → options[next].employees.map((person)·=>·person.id),␍
+        180 │ + → → );␍
+    171 181 │       form.setFieldValue("category", next);␍
+    172     │ - → → form.setFieldValue("teamIds",·(current)·=>·current.filter((id)·=>·teamIds.has(id)));␍
+    173     │ - → → form.setFieldValue("employeeIds",·(current)·=>·current.filter((id)·=>·employeeIds.has(id)));␍
+        182 │ + → → form.setFieldValue("teamIds",·(current)·=>␍
+        183 │ + → → → current.filter((id)·=>·teamIds.has(id)),␍
+        184 │ + → → );␍
+        185 │ + → → form.setFieldValue("employeeIds",·(current)·=>␍
+        186 │ + → → → current.filter((id)·=>·employeeIds.has(id)),␍
+        187 │ + → → );␍
+    174 188 │     }␍
+    175 189 │   ␍
+    176 190 │     return (␍
+    177     │ - → → <ActionPanel·open={open}·onOpenChange={(next)·=>·(next·?·onOpenChange(true)·:·close())}>␍
+        191 │ + → → <ActionPanel␍
+        192 │ + → → → open={open}␍
+        193 │ + → → → onOpenChange={(next)·=>·(next·?·onOpenChange(true)·:·close())}␍
+        194 │ + → → >␍
+    178 195 │         <ActionPanelContent showCloseButton={!isSubmitting}>␍
+    179 196 │           {summary ? (␍
+    ······· │ 
+    181 198 │               <ActionPanelHeader>␍
+    182 199 │                 <ActionPanelTitle>␍
+    183     │ - → → → → → → → → {t("settings.personnelFiles.requests.bulk.doneTitle",·"Documents·requested")}␍
+        200 │ + → → → → → → → → {t(␍
+        201 │ + → → → → → → → → → "settings.personnelFiles.requests.bulk.doneTitle",␍
+        202 │ + → → → → → → → → → "Documents·requested",␍
+        203 │ + → → → → → → → → )}␍
+    184 204 │                 </ActionPanelTitle>␍
+    185 205 │               </ActionPanelHeader>␍
+    ······· │ 
+    234 254 │                         <TFormItem>␍
+    235 255 │                           <TFormLabel required>␍
+    236     │ - → → → → → → → → → → → → → {t("settings.personnelFiles.form.category",·"Category")}␍
+        256 │ + → → → → → → → → → → → → → {t(␍
+        257 │ + → → → → → → → → → → → → → → "settings.personnelFiles.form.category",␍
+        258 │ + → → → → → → → → → → → → → → "Category",␍
+        259 │ + → → → → → → → → → → → → → )}␍
+    237 260 │                           </TFormLabel>␍
+    238 261 │                           <Select␍
+    ······· │ 
+    243 266 │                           >␍
+    244 267 │                             <TFormControl>␍
+    245     │ - → → → → → → → → → → → → → → <SelectTrigger·className="w-full"·onBlur={field.handleBlur}>␍
+        268 │ + → → → → → → → → → → → → → → <SelectTrigger␍
+        269 │ + → → → → → → → → → → → → → → → className="w-full"␍
+        270 │ + → → → → → → → → → → → → → → → onBlur={field.handleBlur}␍
+        271 │ + → → → → → → → → → → → → → → >␍
+    246 272 │                                 <SelectValue />␍
+    247 273 │                               </SelectTrigger>␍
+    ······· │ 
+    263 289 │                       <fieldset className="space-y-3">␍
+    264 290 │                         <legend className="text-sm font-medium">␍
+    265     │ - → → → → → → → → → → → → {t("settings.personnelFiles.requests.bulk.teams",·"Teams")}␍
+        291 │ + → → → → → → → → → → → → {t(␍
+        292 │ + → → → → → → → → → → → → → "settings.personnelFiles.requests.bulk.teams",␍
+        293 │ + → → → → → → → → → → → → → "Teams",␍
+        294 │ + → → → → → → → → → → → → )}␍
+    266 295 │                         </legend>␍
+    267 296 │                         <p className="text-muted-foreground text-sm">␍
+    ······· │ 
+    282 311 │                             teams={offered.teams}␍
+    283 312 │                             teamIds={field.state.value}␍
+    284     │ - → → → → → → → → → → → → → onTeamIdsChange={(teamIds)·=>·field.handleChange(teamIds)}␍
+        313 │ + → → → → → → → → → → → → → onTeamIdsChange={(teamIds)·=>␍
+        314 │ + → → → → → → → → → → → → → → field.handleChange(teamIds)␍
+        315 │ + → → → → → → → → → → → → → }␍
+    285 316 │                             disabled={false}␍
+    286 317 │                             testIdPrefix="bulk-document-request-team"␍
+    ······· │ 
+    294 325 │                     validators={{␍
+    295 326 │                       onSubmit: ({ value, fieldApi }) =>␍
+    296     │ - → → → → → → → → → → → value.length·>·0·||·fieldApi.form.getFieldValue("teamIds").length·>·0␍
+        327 │ + → → → → → → → → → → → value.length·>·0·||␍
+        328 │ + → → → → → → → → → → → fieldApi.form.getFieldValue("teamIds").length·>·0␍
+    297 329 │                           ? undefined␍
+    298 330 │                           : t(␍
+    ······· │ 
+    305 337 │                       <TFormItem>␍
+    306 338 │                         <EmployeeMultiSelect␍
+    307     │ - → → → → → → → → → → → → label={t("settings.personnelFiles.requests.bulk.employees",·"Employees")}␍
+        339 │ + → → → → → → → → → → → → label={t(␍
+        340 │ + → → → → → → → → → → → → → "settings.personnelFiles.requests.bulk.employees",␍
+        341 │ + → → → → → → → → → → → → → "Employees",␍
+        342 │ + → → → → → → → → → → → → )}␍
+    308 343 │                           placeholder={t(␍
+    309 344 │                             "settings.personnelFiles.requests.bulk.selectEmployees",␍
+    ······· │ 
+    311 346 │                           )}␍
+    312 347 │                           value={field.state.value}␍
+    313     │ - → → → → → → → → → → → → onChange={(employeeIds)·=>·field.handleChange(employeeIds)}␍
+        348 │ + → → → → → → → → → → → → onChange={(employeeIds)·=>␍
+        349 │ + → → → → → → → → → → → → → field.handleChange(employeeIds)␍
+        350 │ + → → → → → → → → → → → → }␍
+    314 351 │                           employees={offered.employees.map((person) =>␍
+    315     │ - → → → → → → → → → → → → → toSelectableEmployee({·...person,·email:·""·},·{·isActive:·true·}),␍
+        352 │ + → → → → → → → → → → → → → toSelectableEmployee(␍
+        353 │ + → → → → → → → → → → → → → → {·...person,·email:·""·},␍
+        354 │ + → → → → → → → → → → → → → → {·isActive:·true·},␍
+        355 │ + → → → → → → → → → → → → → ),␍
+    316 356 │                           )}␍
+    317 357 │                           error={␍
+    ······· │ 
+    330 370 │                         value.trim()␍
+    331 371 │                           ? undefined␍
+    332     │ - → → → → → → → → → → → → :·required(t("settings.personnelFiles.form.title",·"Title")),␍
+        372 │ + → → → → → → → → → → → → :·required(␍
+        373 │ + → → → → → → → → → → → → → → t("settings.personnelFiles.form.title",·"Title"),␍
+        374 │ + → → → → → → → → → → → → → ),␍
+    333 375 │                     }}␍
+    334 376 │                   >␍
+    ······· │ 
+    344 386 │                             value={field.state.value}␍
+    345 387 │                             maxLength={DOCUMENT_REQUEST_TITLE_MAX_LENGTH}␍
+    346     │ - → → → → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}␍
+        388 │ + → → → → → → → → → → → → → onChange={(event)·=>␍
+        389 │ + → → → → → → → → → → → → → → field.handleChange(event.target.value)␍
+        390 │ + → → → → → → → → → → → → → }␍
+    347 391 │                             onBlur={field.handleBlur}␍
+    348 392 │                           />␍
+    ······· │ 
+    362 406 │                       <TFormItem>␍
+    363 407 │                         <TFormLabel>␍
+    364     │ - → → → → → → → → → → → → {t("settings.personnelFiles.requests.create.note",·"Note·(optional)")}␍
+  76 more lines truncated
+  
+
+src\components\personnel-file\document-requests-overview.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{·IconAlertTriangle,·IconChevronLeft,·IconChevronRight·}·from·"@tabler/icons-react";␍
+          3 │ + import·{␍
+          4 │ + → IconAlertTriangle,␍
+          5 │ + → IconChevronLeft,␍
+          6 │ + → IconChevronRight,␍
+          7 │ + }·from·"@tabler/icons-react";␍
+      4   8 │   import { useTranslate } from "@tolgee/react";␍
+      5   9 │   import { useSearchParams } from "next/navigation";␍
+    ······· │ 
+     61  65 │   ␍
+     62  66 │     const statusLabels: Record<DocumentRequestStatusFilter, string> = {␍
+     63     │ - → → active:·t("settings.personnelFiles.requests.page.filters.active",·"Open·and·submitted"),␍
+         67 │ + → → active:·t(␍
+         68 │ + → → → "settings.personnelFiles.requests.page.filters.active",␍
+         69 │ + → → → "Open·and·submitted",␍
+         70 │ + → → ),␍
+     64  71 │       ...labels.statuses,␍
+     65  72 │       all: t("settings.personnelFiles.requests.page.filters.all", "All statuses"),␍
+    ······· │ 
+     80  87 │   ␍
+     81  88 │     return (␍
+     82     │ - → → <section·className="min-w-0·space-y-4"·aria-labelledby={titleId}·aria-busy={isPending}>␍
+         89 │ + → → <section␍
+         90 │ + → → → className="min-w-0·space-y-4"␍
+         91 │ + → → → aria-labelledby={titleId}␍
+         92 │ + → → → aria-busy={isPending}␍
+         93 │ + → → >␍
+     83  94 │         <div className="flex flex-wrap items-baseline justify-between gap-2">␍
+     84  95 │           <h2 id={titleId} className="text-lg font-semibold">␍
+     85     │ - → → → → → {t("settings.personnelFiles.requests.page.records",·"Request·records")}␍
+         96 │ + → → → → → {t(␍
+         97 │ + → → → → → → "settings.personnelFiles.requests.page.records",␍
+         98 │ + → → → → → → "Request·records",␍
+         99 │ + → → → → → )}␍
+     86 100 │           </h2>␍
+     87 101 │           <p className="text-sm text-muted-foreground tabular-nums">␍
+    ······· │ 
+     98 112 │               <div className="flex min-w-48 flex-col gap-1.5">␍
+     99 113 │                 <span id={statusId} className="text-sm font-medium">␍
+    100     │ - → → → → → → → → {t("settings.personnelFiles.requests.page.filters.status",·"Status")}␍
+        114 │ + → → → → → → → → {t(␍
+        115 │ + → → → → → → → → → "settings.personnelFiles.requests.page.filters.status",␍
+        116 │ + → → → → → → → → → "Status",␍
+        117 │ + → → → → → → → → )}␍
+    101 118 │                 </span>␍
+    102 119 │                 <Select␍
+    ······· │ 
+    127 144 │               >␍
+    128 145 │                 <IconAlertTriangle aria-hidden="true" className="size-4" />␍
+    129     │ - → → → → → → → {t("settings.personnelFiles.requests.page.filters.overdue",·"Only·overdue")}␍
+        146 │ + → → → → → → → {t(␍
+        147 │ + → → → → → → → → "settings.personnelFiles.requests.page.filters.overdue",␍
+        148 │ + → → → → → → → → "Only·overdue",␍
+        149 │ + → → → → → → → )}␍
+    130 150 │               </Button>␍
+    131 151 │             </div>␍
+    ······· │ 
+    162 182 │                 ) : null}␍
+    163 183 │                 {request.overdue ? (␍
+    164     │ - → → → → → → → → <Badge·variant="outline">{labels.statuses[request.status]}</Badge>␍
+        184 │ + → → → → → → → → <Badge·variant="outline">␍
+        185 │ + → → → → → → → → → {labels.statuses[request.status]}␍
+        186 │ + → → → → → → → → </Badge>␍
+    165 187 │                 ) : null}␍
+    166 188 │                 {request.status === "open" &&␍
+    167 189 │                 request.history.some((event) => event.kind === "returned") ? (␍
+    168 190 │                   <Badge variant="outline">␍
+    169     │ - → → → → → → → → → {t("settings.personnelFiles.requests.page.returned",·"Returned·for·resubmission")}␍
+        191 │ + → → → → → → → → → {t(␍
+        192 │ + → → → → → → → → → → "settings.personnelFiles.requests.page.returned",␍
+        193 │ + → → → → → → → → → → "Returned·for·resubmission",␍
+        194 │ + → → → → → → → → → )}␍
+    170 195 │                   </Badge>␍
+    171 196 │                 ) : null}␍
+    ······· │ 
+    193 218 │         {props.pageCount > 1 ? (␍
+    194 219 │           <nav␍
+    195     │ - → → → → → aria-label={t("settings.personnelFiles.requests.page.pages",·"Request·pages")}␍
+        220 │ + → → → → → aria-label={t(␍
+        221 │ + → → → → → → "settings.personnelFiles.requests.page.pages",␍
+        222 │ + → → → → → → "Request·pages",␍
+        223 │ + → → → → → )}␍
+    196 224 │             className="flex flex-wrap items-center justify-end gap-2 border-t pt-4 text-sm"␍
+    197 225 │           >␍
+    198 226 │             <span className="tabular-nums">␍
+    199     │ - → → → → → → {t("settings.personnelFiles.requests.page.pagination",·"Page·{page}·of·{pageCount}",·{␍
+    200     │ - → → → → → → → page,␍
+    201     │ - → → → → → → → pageCount:·props.pageCount,␍
+    202     │ - → → → → → → })}␍
+        227 │ + → → → → → → {t(␍
+        228 │ + → → → → → → → "settings.personnelFiles.requests.page.pagination",␍
+        229 │ + → → → → → → → "Page·{page}·of·{pageCount}",␍
+        230 │ + → → → → → → → {␍
+        231 │ + → → → → → → → → page,␍
+        232 │ + → → → → → → → → pageCount:·props.pageCount,␍
+        233 │ + → → → → → → → },␍
+        234 │ + → → → → → → )}␍
+    203 235 │             </span>␍
+    204 236 │             <Button␍
+    ······· │ 
+    208 240 │               disabled={isPending || page <= 1}␍
+    209 241 │               onClick={() => update({ page: page - 1 })}␍
+    210     │ - → → → → → → aria-label={t("settings.personnelFiles.requests.page.previous",·"Previous·page")}␍
+        242 │ + → → → → → → aria-label={t(␍
+        243 │ + → → → → → → → "settings.personnelFiles.requests.page.previous",␍
+        244 │ + → → → → → → → "Previous·page",␍
+        245 │ + → → → → → → )}␍
+    211 246 │             >␍
+    212 247 │               <IconChevronLeft aria-hidden="true" className="size-4" />␍
+    ······· │ 
+    218 253 │               disabled={isPending || page >= props.pageCount}␍
+    219 254 │               onClick={() => update({ page: page + 1 })}␍
+    220     │ - → → → → → → aria-label={t("settings.personnelFiles.requests.page.next",·"Next·page")}␍
+        255 │ + → → → → → → aria-label={t(␍
+        256 │ + → → → → → → → "settings.personnelFiles.requests.page.next",␍
+        257 │ + → → → → → → → "Next·page",␍
+        258 │ + → → → → → → )}␍
+    221 259 │             >␍
+    222 260 │               <IconChevronRight aria-hidden="true" className="size-4" />␍
+  
+
+src\components\personnel-file\document-requests-workspace.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     20  20 │     useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),␍
+     21  21 │   }));␍
+     22     │ - vi.mock("@/components/providers/app-locale-provider",·()·=>·({·useAppLocale:·()·=>·"en-GB"·}));␍
+         22 │ + vi.mock("@/components/providers/app-locale-provider",·()·=>·({␍
+         23 │ + → useAppLocale:·()·=>·"en-GB",␍
+         24 │ + }));␍
+     23  25 │   vi.mock("@/components/providers/organization-context-provider", () => ({␍
+     24  26 │     useOrganization: () => ({␍
+    ······· │ 
+     38  40 │     }),␍
+     39  41 │   }));␍
+     40     │ - vi.mock("next/navigation",·()·=>·({·useSearchParams:·()·=>·new·URLSearchParams()·}));␍
+         42 │ + vi.mock("next/navigation",·()·=>·({␍
+         43 │ + → useSearchParams:·()·=>·new·URLSearchParams(),␍
+         44 │ + }));␍
+     41  45 │   vi.mock("@/navigation", () => ({␍
+     42  46 │     Link: ({ href, children }: { href: string; children: ReactNode }) => (␍
+    ······· │ 
+     45  49 │     useRouter: () => ({ refresh: boundary.refresh, push: boundary.push }),␍
+     46  50 │   }));␍
+     47     │ - vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions",·()·=>·({␍
+     48     │ - → createDocumentRequestsInBulkAction:·vi.fn(),␍
+     49     │ - → editDocumentRequestAction:·vi.fn(),␍
+     50     │ - → cancelDocumentRequestAction:·vi.fn(),␍
+     51     │ - → acceptDocumentRequestAction:·vi.fn(),␍
+     52     │ - → returnDocumentRequestAction:·vi.fn(),␍
+     53     │ - }));␍
+         51 │ + vi.mock(␍
+         52 │ + → "@/app/[locale]/(app)/personnel-files/document-request-actions",␍
+         53 │ + → ()·=>·({␍
+         54 │ + → → createDocumentRequestsInBulkAction:·vi.fn(),␍
+         55 │ + → → editDocumentRequestAction:·vi.fn(),␍
+         56 │ + → → cancelDocumentRequestAction:·vi.fn(),␍
+         57 │ + → → acceptDocumentRequestAction:·vi.fn(),␍
+         58 │ + → → returnDocumentRequestAction:·vi.fn(),␍
+         59 │ + → }),␍
+         60 │ + );␍
+     54  61 │   function snapshot(): DocumentRequestsSnapshot {␍
+     55  62 │     return {␍
+    ······· │ 
+     59  66 │       timezone: "Pacific/Kiritimati",␍
+     60  67 │       recipientOptions: {␍
+     61     │ - → → → certificate:·{·employees:·[{·id:·"employee",·name:·"Ada·Example"·}],·teams:·[]·},␍
+         68 │ + → → → certificate:·{␍
+         69 │ + → → → → employees:·[{·id:·"employee",·name:·"Ada·Example"·}],␍
+         70 │ + → → → → teams:·[],␍
+         71 │ + → → → },␍
+     62  72 │         other: { employees: [], teams: [] },␍
+     63  73 │       },␍
+    ······· │ 
+    107 117 │     render(view(snapshot()));␍
+    108 118 │     expect(screen.getAllByRole("heading", { level: 1 }).length).toBe(1);␍
+    109     │ - → expect(screen.getByRole("button",·{·name:·"Request·from·several"·})).toBeTruthy();␍
+        119 │ + → expect(␍
+        120 │ + → → screen.getByRole("button",·{·name:·"Request·from·several"·}),␍
+        121 │ + → ).toBeTruthy();␍
+    110 122 │     expect(screen.getByText("Personnel no. {number}")).toBeTruthy();␍
+    111 123 │     expect(screen.getByText("Open")).toBeTruthy();␍
+    ······· │ 
+    135 147 │       rendered.rerender(view(data));␍
+    136 148 │       expect(screen.queryByText("First aid")).toBeNull();␍
+    137     │ - → → expect(screen.queryByRole("button",·{·name:·"Request·from·several"·})).toBeNull();␍
+    138     │ - → → boundary[field]·=·field·===·"userId"·?·"officer"·:·field·===·"organizationId"·?·"org"·:·"self";␍
+        149 │ + → → expect(␍
+        150 │ + → → → screen.queryByRole("button",·{·name:·"Request·from·several"·}),␍
+        151 │ + → → ).toBeNull();␍
+        152 │ + → → boundary[field]·=␍
+        153 │ + → → → field·===·"userId"␍
+        154 │ + → → → → ?·"officer"␍
+        155 │ + → → → → :·field·===·"organizationId"␍
+        156 │ + → → → → → ?·"org"␍
+        157 │ + → → → → → :·"self";␍
+    139 158 │       rendered.rerender(view(data));␍
+    140 159 │       expect(screen.queryByText("First aid")).toBeNull();␍
+  
+
+src\components\personnel-file\document-requests-workspace.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     40  40 │     const session = useSession();␍
+     41  41 │     const { refresh } = useRouter();␍
+     42     │ - → const·[retained,·setRetained]·=·useState({·source:·snapshot,·filterKey,·snapshot·});␍
+         42 │ + → const·[retained,·setRetained]·=·useState({␍
+         43 │ + → → source:·snapshot,␍
+         44 │ + → → filterKey,␍
+         45 │ + → → snapshot,␍
+         46 │ + → });␍
+     43  47 │     if (retained.source !== snapshot || retained.filterKey !== filterKey) {␍
+     44  48 │       setRetained({␍
+     45  49 │         source: snapshot,␍
+     46  50 │         filterKey,␍
+     47     │ - → → → snapshot:·snapshot·??·(retained.filterKey·===·filterKey·?·retained.snapshot·:·null),␍
+         51 │ + → → → snapshot:␍
+         52 │ + → → → → snapshot·??␍
+         53 │ + → → → → (retained.filterKey·===·filterKey·?·retained.snapshot·:·null),␍
+     48  54 │       });␍
+     49  55 │     }␍
+     50     │ - → const·data·=·snapshot·??·(retained.filterKey·===·filterKey·?·retained.snapshot·:·null);␍
+         56 │ + → const·data·=␍
+         57 │ + → → snapshot·??·(retained.filterKey·===·filterKey·?·retained.snapshot·:·null);␍
+     51  58 │     const matches =␍
+     52  59 │       !session.isPending &&␍
+    ······· │ 
+     73  80 │         </Button>␍
+     74  81 │         <PageHeader␍
+     75     │ - → → → → title={t("settings.personnelFiles.requests.page.title",·"Document·requests")}␍
+         82 │ + → → → → title={t(␍
+         83 │ + → → → → → "settings.personnelFiles.requests.page.title",␍
+         84 │ + → → → → → "Document·requests",␍
+         85 │ + → → → → )}␍
+     76  86 │           description={t(␍
+     77  87 │             "settings.personnelFiles.requests.page.description",␍
+    ······· │ 
+     89  99 │           actions={␍
+     90 100 │             current && data ? (␍
+     91     │ - → → → → → → <BulkDocumentRequestsButton·options={data.recipientOptions}·today={data.today}·/>␍
+        101 │ + → → → → → → <BulkDocumentRequestsButton␍
+        102 │ + → → → → → → → options={data.recipientOptions}␍
+        103 │ + → → → → → → → today={data.today}␍
+        104 │ + → → → → → → />␍
+     92 105 │             ) : undefined␍
+     93 106 │           }␍
+    ······· │ 
+     97 110 │         ) : (␍
+     98 111 │           <>␍
+     99     │ - → → → → → {!snapshot·?·<DocumentRequestsReadFailure·hasRetained={Boolean(data)}·/>·:·null}␍
+        112 │ + → → → → → {!snapshot·?·(␍
+        113 │ + → → → → → → <DocumentRequestsReadFailure·hasRetained={Boolean(data)}·/>␍
+        114 │ + → → → → → )·:·null}␍
+    100 115 │             {data ? (␍
+    101     │ - → → → → → → <DocumentRequestsOverview·{...data}·decisionsAvailable={snapshot·!==·null}·/>␍
+        116 │ + → → → → → → <DocumentRequestsOverview␍
+        117 │ + → → → → → → → {...data}␍
+        118 │ + → → → → → → → decisionsAvailable={snapshot·!==·null}␍
+        119 │ + → → → → → → />␍
+    102 120 │             ) : null}␍
+    103 121 │           </>␍
+    ······· │ 
+    121 139 │   export function DocumentRequestsTitle() {␍
+    122 140 │     const { t } = useTranslate();␍
+    123     │ - → return·<>{t("settings.personnelFiles.requests.page.title",·"Document·requests")}</>;␍
+        141 │ + → return·(␍
+        142 │ + → → <>{t("settings.personnelFiles.requests.page.title",·"Document·requests")}</>␍
+        143 │ + → );␍
+    124 144 │   }␍
+    125 145 │   ␍
+    ······· │ 
+    130 150 │     refresh: () => void,␍
+    131 151 │   ) {␍
+    132     │ - → const·[retired,·setRetired]·=·useState<{·snapshot:·DocumentRequestsSnapshot·|·null·}·|·null>(␍
+    133     │ - → → null,␍
+    134     │ - → );␍
+        152 │ + → const·[retired,·setRetired]·=·useState<{␍
+        153 │ + → → snapshot:·DocumentRequestsSnapshot·|·null;␍
+        154 │ + → }·|·null>(null);␍
+    135 155 │     const connected = useRef(false);␍
+    136 156 │     const latest = useRef(snapshot);␍
+    ······· │ 
+    147 167 │     }, [refresh]);␍
+    148 168 │   ␍
+    149     │ - → if·(settled·&&·!matches·&&·retired?.snapshot·!==·snapshot)·setRetired({·snapshot·});␍
+        169 │ + → if·(settled·&&·!matches·&&·retired?.snapshot·!==·snapshot)␍
+        170 │ + → → setRetired({·snapshot·});␍
+    150 171 │     return matches && retired?.snapshot !== snapshot;␍
+    151 172 │   }␍
+    152 173 │   ␍
+    153     │ - function·DocumentRequestsReadFailure({·hasRetained·}:·{·hasRetained:·boolean·})·{␍
+        174 │ + function·DocumentRequestsReadFailure({␍
+        175 │ + → hasRetained,␍
+        176 │ + }:·{␍
+        177 │ + → hasRetained:·boolean;␍
+        178 │ + })·{␍
+    154 179 │     const { t } = useTranslate();␍
+    155 180 │     const { refresh } = useRouter();␍
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+          2 │ + import·{␍
+          3 │ + → appPageOwnsHeading,␍
+          4 │ + → normalizeAppPath,␍
+          5 │ + → resolveAppRouteMetadata,␍
+          6 │ + }·from·"./route-metadata";␍
+      3   7 │   ␍
+      4   8 │   describe("route metadata", () => {␍
+      5   9 │     it("adopts the request queue without adopting its independent descendants", () => {␍
+      6     │ - → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);␍
+      7     │ - → → expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);␍
+         10 │ + → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(␍
+         11 │ + → → → true,␍
+         12 │ + → → );␍
+         13 │ + → → expect(␍
+         14 │ + → → → appPageOwnsHeading("/en/personnel-files/document-requests/extra"),␍
+         15 │ + → → ).toBe(false);␍
+      8  16 │       expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);␍
+      9  17 │     });␍
+    ······· │ 
+     11  19 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     12  20 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     13     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+     14     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+         21 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+         22 │ + → → → true,␍
+         23 │ + → → );␍
+         24 │ + → → expect(␍
+         25 │ + → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),␍
+         26 │ + → → ).toBe(false);␍
+     15  27 │     });␍
+     16  28 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │ 
+     31  43 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     32  44 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     33     │ - → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+         45 │ + → → expect(␍
+         46 │ + → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+         47 │ + → → ).toBe(true);␍
+     34  48 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     35     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+         49 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+         50 │ + → → → false,␍
+         51 │ + → → );␍
+     36  52 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     37  53 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │ 
+     43  59 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+     44  60 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     45     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+     46     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+         61 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+         62 │ + → → → true,␍
+         63 │ + → → );␍
+         64 │ + → → expect(␍
+         65 │ + → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+         66 │ + → → ).toBe(false);␍
+     47  67 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     48  68 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │ 
+     51  71 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     52  72 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     53     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+         73 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+         74 │ + → → → true,␍
+         75 │ + → → );␍
+     54  76 │     });␍
+     55  77 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+     56     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+     57     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+         78 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+         79 │ + → → → true,␍
+         80 │ + → → );␍
+         81 │ + → → expect(␍
+         82 │ + → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+         83 │ + → → ).toBe(false);␍
+     58  84 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     59  85 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │ 
+     62  88 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     63  89 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+     64     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+         90 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+         91 │ + → → → true,␍
+         92 │ + → → );␍
+     65  93 │     });␍
+     66  94 │     it("adopts only the complete review arrival route", () => {␍
+     67     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+     68     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+     69     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+         95 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+         96 │ + → → → true,␍
+         97 │ + → → );␍
+         98 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+         99 │ + → → → false,␍
+        100 │ + → → );␍
+        101 │ + → → expect(␍
+        102 │ + → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+        103 │ + → → ).toBe(false);␍
+     70 104 │     });␍
+     71 105 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+     72 106 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+     73     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+        107 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+        108 │ + → → → false,␍
+        109 │ + → → );␍
+     74 110 │     });␍
+     75 111 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+     76 112 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+     77     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+        113 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+        114 │ + → → → false,␍
+        115 │ + → → );␍
+     78 116 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+     79     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+        117 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+        118 │ + → → → false,␍
+        119 │ + → → );␍
+     80 120 │     });␍
+     81 121 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │ 
+    123 163 │   ␍
+    124 164 │     it("normalizes locale and trailing slash segments", () => {␍
+    125     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+        165 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+        166 │ + → → → "/settings/security",␍
+        167 │ + → → );␍
+    126 168 │     });␍
+    127 169 │   });␍
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+    171     │ - → → id:·`settings-${entry.id}`,␍
+    172     │ - → → href:·entry.href,␍
+    173     │ - → → titleKey:·entry.titleKey,␍
+    174     │ - → → titleDefault:·entry.titleDefault,␍
+    175     │ - → })),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+        171 │ + → → (entry)·=>·({␍
+        172 │ + → → → id:·`settings-${entry.id}`,␍
+        173 │ + → → → href:·entry.href,␍
+        174 │ + → → → titleKey:·entry.titleKey,␍
+        175 │ + → → → titleDefault:·entry.titleDefault,␍
+        176 │ + → → }),␍
+        177 │ + → ),␍
+    176 178 │     {␍
+    177 179 │       id: "settings",␍
+    ······· │ 
+    190 192 │   ␍
+    191 193 │   export function normalizeAppPath(pathname: string): string {␍
+    192     │ - → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+    193     │ - → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+        194 │ + → const·[firstSegment,·...remainingSegments]·=·pathname␍
+        195 │ + → → .split("/")␍
+        196 │ + → → .filter(Boolean);␍
+        197 │ + → const·segments·=·ALL_LANGUAGES.includes(␍
+        198 │ + → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+        199 │ + → )␍
+    194 200 │       ? remainingSegments␍
+    195 201 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    248 254 │       [...APP_ROUTE_METADATA]␍
+    249 255 │         .sort((left, right) => right.href.length - left.href.length)␍
+    250     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+        256 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+        257 │ + → → UNKNOWN_ROUTE_METADATA␍
+    251 258 │     );␍
+    252 259 │   }␍
+  
+
+src\lib\personnel-file\document-request-officer.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      9   9 │   ␍
+     10  10 │   import { Temporal } from "temporal-polyfill";␍
+     11     │ - import·{·afterAll,·beforeAll,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+         11 │ + import·{␍
+         12 │ + → afterAll,␍
+         13 │ + → beforeAll,␍
+         14 │ + → beforeEach,␍
+         15 │ + → describe,␍
+         16 │ + → expect,␍
+         17 │ + → it,␍
+         18 │ + → vi,␍
+         19 │ + }·from·"vitest";␍
+     12  20 │   import type { CreateNotificationParams } from "@/lib/notifications/types";␍
+     13  21 │   import { integrationAdminPool } from "@/test/integration-database";␍
+    ······· │ 
+     19  27 │   }));␍
+     20  28 │   ␍
+     21     │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+         29 │ + vi.mock("next/headers",·async·()·=>␍
+         30 │ + → (await·import("@/test/integration-harness")).nextHeaders(),␍
+         31 │ + );␍
+     22  32 │   vi.mock("next/server", async (original) =>␍
+     23  33 │     (await import("@/test/integration-harness")).nextServer(original),␍
+    ······· │ 
+     52  62 │   vi.setConfig({ testTimeout: 60_000 });␍
+     53  63 │   ␍
+     54     │ - const·actions·=·await·import("@/app/[locale]/(app)/personnel-files/document-request-actions");␍
+         64 │ + const·actions·=·await·import(␍
+         65 │ + → "@/app/[locale]/(app)/personnel-files/document-request-actions"␍
+         66 │ + );␍
+     55  67 │   const { db } = await import("@/db");␍
+     56  68 │   const { resolvePersonnelFileAccess } = await import("./access-store");␍
+     57     │ - const·{·listManagedDocumentRequests,·lockManagedDocumentRequest·}·=·await·import(␍
+     58     │ - → "./document-request-store"␍
+     59     │ - );␍
+     60     │ - const·{·parseDocumentRequestOverviewParams·}·=·await·import("./document-request-overview");␍
+     61     │ - const·{·seedPersonnelFileOfficerGrant·}·=·await·import("./testing/officer-grant.test.fixture");␍
+         69 │ + const·{·listManagedDocumentRequests,·lockManagedDocumentRequest·}·=␍
+         70 │ + → await·import("./document-request-store");␍
+         71 │ + const·{·parseDocumentRequestOverviewParams·}·=·await·import(␍
+         72 │ + → "./document-request-overview"␍
+         73 │ + );␍
+         74 │ + const·{·seedPersonnelFileOfficerGrant·}·=·await·import(␍
+         75 │ + → "./testing/officer-grant.test.fixture"␍
+         76 │ + );␍
+     62  77 │   ␍
+     63  78 │   const ORG = "t1403-org";␍
+    ······· │ 
+     80  95 │   ␍
+     81  96 │   async function cleanup() {␍
+     82     │ - → await·admin.query("delete·from·organization·where·id·=·any($1)",·[[ORG,·OTHER_ORG]]);␍
+         97 │ + → await·admin.query("delete·from·organization·where·id·=·any($1)",·[␍
+         98 │ + → → [ORG,·OTHER_ORG],␍
+         99 │ + → ]);␍
+     83 100 │     await admin.query('delete from "user" where id like $1', ["t1403-%"]);␍
+     84 101 │   }␍
+    ······· │ 
+    126 143 │     await seedPerson("anna", "Anna Example", "member", { teamId: ids.berlin });␍
+    127 144 │     await seedPerson("ben", "Ben Example", "member");␍
+    128     │ - → await·seedPerson("stranger",·"Sam·Stranger",·"owner",·{·organizationId:·OTHER_ORG·});␍
+        145 │ + → await·seedPerson("stranger",·"Sam·Stranger",·"owner",·{␍
+        146 │ + → → organizationId:·OTHER_ORG,␍
+        147 │ + → });␍
+    129 148 │   }␍
+    130 149 │   ␍
+    131 150 │   /** Otto covers Berlin's certificates only. */␍
+    132 151 │   async function grantOfficer() {␍
+    133     │ - → await·admin.query("delete·from·personnel_file_officer_grant·where·organization_id·=·$1",·[ORG]);␍
+        152 │ + → await·admin.query(␍
+        153 │ + → → "delete·from·personnel_file_officer_grant·where·organization_id·=·$1",␍
+        154 │ + → → [ORG],␍
+        155 │ + → );␍
+    134 156 │     officerGrantId = await seedPersonnelFileOfficerGrant(admin, {␍
+    135 157 │       organizationId: ORG,␍
+    ······· │ 
+    157 179 │   async function create(␍
+    158 180 │     person: Person,␍
+    159     │ - → input:·{·employeeId:·string;·category?:·"certificate"·|·"other";·title:·string·},␍
+        181 │ + → input:·{␍
+        182 │ + → → employeeId:·string;␍
+        183 │ + → → category?:·"certificate"·|·"other";␍
+        184 │ + → → title:·string;␍
+        185 │ + → },␍
+    160 186 │   ): Promise<string> {␍
+    161 187 │     signIn(person);␍
+    ······· │ 
+    166 192 │       ...input,␍
+    167 193 │     });␍
+    168     │ - → if·(!result.success)·throw·new·Error(`create·failed:·${result.error}·(${result.code})`);␍
+        194 │ + → if·(!result.success)␍
+        195 │ + → → throw·new·Error(`create·failed:·${result.error}·(${result.code})`);␍
+    169 196 │     return result.data.id;␍
+    170 197 │   }␍
+    171 198 │   ␍
+    172     │ - async·function·setRow(requestId:·string,·values:·{·deadline?:·string;·status?:·string·})·{␍
+        199 │ + async·function·setRow(␍
+        200 │ + → requestId:·string,␍
+        201 │ + → values:·{·deadline?:·string;·status?:·string·},␍
+        202 │ + )·{␍
+    173 203 │     if (values.deadline) {␍
+    174     │ - → → await·admin.query("update·employee_document_request·set·deadline·=·$2·where·id·=·$1",·[␍
+    175     │ - → → → requestId,␍
+    176     │ - → → → values.deadline,␍
+    177     │ - → → ]);␍
+        204 │ + → → await·admin.query(␍
+        205 │ + → → → "update·employee_document_request·set·deadline·=·$2·where·id·=·$1",␍
+        206 │ + → → → [requestId,·values.deadline],␍
+        207 │ + → → );␍
+    178 208 │     }␍
+    179 209 │     if (values.status) {␍
+    180     │ - → → await·admin.query("update·employee_document_request·set·status·=·$2·where·id·=·$1",·[␍
+    181     │ - → → → requestId,␍
+    182     │ - → → → values.status,␍
+    183     │ - → → ]);␍
+        210 │ + → → await·admin.query(␍
+        211 │ + → → → "update·employee_document_request·set·status·=·$2·where·id·=·$1",␍
+        212 │ + → → → [requestId,·values.status],␍
+        213 │ + → → );␍
+    184 214 │     }␍
+    185 215 │   }␍
+    186 216 │   ␍
+    187     │ - async·function·listAs(person:·Person,·params:·Record<string,·string>·=·{},·now?:·Temporal.Instant)·{␍
+        217 │ + async·function·listAs(␍
+        218 │ + → person:·Person,␍
+        219 │ + → params:·Record<string,·string>·=·{},␍
+        220 │ + → now?:·Temporal.Instant,␍
+        221 │ + )·{␍
+    188 222 │     const result = await listManagedDocumentRequests(␍
+    189 223 │       db,␍
+    ······· │ 
+    231 265 │     beforeEach(async () => {␍
+    232 266 │       harness.notifications.length = 0;␍
+    233     │ - → → await·admin.query("delete·from·employee_document_request·where·organization_id·=·$1",·[ORG]);␍
+        267 │ + → → await·admin.query(␍
+        268 │ + → → → "delete·from·employee_document_request·where·organization_id·=·$1",␍
+        269 │ + → → → [ORG],␍
+        270 │ + → → );␍
+    234 271 │       await grantOfficer();␍
+    235 272 │     });␍
+    ······· │ 
+    237 274 │     describe("contents", () => {␍
+    238 275 │       it("lists the requests the viewer covers, across employees, with whose they are", async () => {␍
+    239     │ - → → → await·create("owner",·{·employeeId:·ids.anna,·title:·"Anna·certificate"·});␍
+    240     │ - → → → await·create("owner",·{·employeeId:·ids.anna,·category:·"other",·title:·"Anna·other"·});␍
+        276 │ + → → → await·create("owner",·{␍
+        277 │ + → → → → employeeId:·ids.anna,␍
+        278 │ + → → → → title:·"Anna·certificate",␍
+        279 │ + → → → });␍
+        280 │ + → → → await·create("owner",·{␍
+        281 │ + → → → → employeeId:·ids.anna,␍
+        282 │ + → → → → category:·"other",␍
+        283 │ + → → → → title:·"Anna·other",␍
+        284 │ + → → → });␍
+    241 285 │         await create("owner", { employeeId: ids.ben, title: "Ben certificate" });␍
+    242     │ - → → → await·create("owner",·{·employeeId:·ids.admin,·title:·"Adam·certificate"·});␍
+        286 │ + → → → await·create("owner",·{␍
+        287 │ + → → → → employeeId:·ids.admin,␍
+        288 │ + → → → → title:·"Adam·certificate",␍
+  299 more lines truncated
+  
+
+Checked 9 files in 18ms. No fixes applied.
+Found 9 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

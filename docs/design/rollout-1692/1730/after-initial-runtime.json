@@ -1,0 +1,93 @@
+{
+  "stage": "after-initial",
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "rawSha256": "b642e250d5a5a794b1efa0c2ee47fc59877ef1ccdb61525d0174442f61961125",
+      "canonicalLfSha256": "b4704d05f25ddab4d5c4b4916c445e3df7bd14aa38bbc524130e7a353151a5cb"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "rawSha256": "2484d3ef5b8b96acb7105ea4763f5bceaba11ae0c4614885d3fb7f5defe992b8",
+      "canonicalLfSha256": "e0ceeff89c1919e2e933d94b5755c60deeb3cc069518cf5ab87d85d5fdfc13c4"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "rawSha256": "57d1013228d2100fd31b2a56d349edc4a130c08536c5a5a5b02ce7751d149d1a",
+      "canonicalLfSha256": "a38d39e5fb945bba6360899d5d518c21e80b297edbd4eb09f00055df5d9e43c9"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "rawSha256": "e78a149c9f94205da559c785256e63218092def9f68b54c53768127ef3798ba3",
+      "canonicalLfSha256": "2ae0ed3959e9ef764a02b3408a43371f7e95356f9a0656a1d75cfed225a87ffa"
+    }
+  ],
+  "captures": [
+    {
+      "name": "desktop",
+      "path": "after-initial-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "theme": "light",
+      "font": "16px",
+      "actor": "synthetic small-admin (owner)",
+      "scope": true,
+      "h1": [
+        "Document requests"
+      ],
+      "overflow": false,
+      "loadedFonts": "loaded",
+      "rows": 10
+    },
+    {
+      "name": "phone",
+      "path": "after-initial-phone.png",
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "font": "16px",
+      "actor": "synthetic small-admin (owner)",
+      "scope": true,
+      "h1": [
+        "Document requests"
+      ],
+      "overflow": false,
+      "loadedFonts": "loaded",
+      "rows": 10
+    },
+    {
+      "name": "wide-dark",
+      "path": "after-initial-wide-dark.png",
+      "width": 2400,
+      "height": 1200,
+      "theme": "dark",
+      "font": "16px",
+      "actor": "synthetic small-admin (owner)",
+      "scope": true,
+      "h1": [
+        "Document requests"
+      ],
+      "overflow": false,
+      "loadedFonts": "loaded",
+      "rows": 10
+    },
+    {
+      "name": "phone-dark",
+      "path": "after-initial-phone-dark.png",
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "font": "18px",
+      "actor": "synthetic small-admin (owner)",
+      "scope": true,
+      "h1": [
+        "Document requests"
+      ],
+      "overflow": false,
+      "loadedFonts": "loaded",
+      "rows": 10
+    }
+  ],
+  "errors": []
+}

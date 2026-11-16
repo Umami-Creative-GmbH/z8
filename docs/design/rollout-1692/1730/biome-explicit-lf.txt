@@ -1,0 +1,1420 @@
+src\app\[locale]\(app)\personnel-files\document-requests\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·notFound,·unstable_rethrow·}·from·"next/navigation";␍
+     2    │ - import·{·Suspense·}·from·"react";␍
+     3    │ - import·{␍
+     4    │ - → type·DocumentRequestsSnapshot,␍
+     5    │ - → DocumentRequestsTitle,␍
+     6    │ - → DocumentRequestsWorkspace,␍
+     7    │ - }·from·"@/components/personnel-file/document-requests-workspace";␍
+     8    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     9    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+    10    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+    11    │ - import·{·db·}·from·"@/db";␍
+    12    │ - import·{·systemClock·}·from·"@/lib/datetime/temporal-core";␍
+    13    │ - import·{·managesDocumentRequests·}·from·"@/lib/personnel-file/access";␍
+    14    │ - import·{·loadCurrentPersonnelFileAccess·}·from·"@/lib/personnel-file/current-access";␍
+    15    │ - import·{·parseDocumentRequestOverviewParams·}·from·"@/lib/personnel-file/document-request-overview";␍
+    16    │ - import·{␍
+    17    │ - → listDocumentRequestRecipientOptions,␍
+    18    │ - → listManagedDocumentRequests,␍
+    19    │ - }·from·"@/lib/personnel-file/document-request-store";␍
+    20    │ - import·{·loadOrganizationDay·}·from·"@/lib/personnel-file/organization-day";␍
+    21    │ - ␍
+    22    │ - type·DocumentRequestsPageProps·=·{␍
+    23    │ - → searchParams:·Promise<Record<string,·string·|·string[]·|·undefined>>;␍
+    24    │ - };␍
+    25    │ - ␍
+    26    │ - async·function·DocumentRequestsContent({·searchParams·}:·DocumentRequestsPageProps)·{␍
+    27    │ - → const·[current,·params]·=·await·Promise.all([loadCurrentPersonnelFileAccess(),·searchParams]);␍
+    28    │ - → if·(current.status·!==·"resolved"·||·!managesDocumentRequests(current.access))·notFound();␍
+    29    │ - → const·{·access·}·=·current;␍
+    30    │ - → const·now·=·systemClock.nowInstant();␍
+    31    │ - → const·filters·=·parseDocumentRequestOverviewParams(params);␍
+    32    │ - → let·snapshot:·DocumentRequestsSnapshot·|·null·=·null;␍
+    33    │ - → try·{␍
+    34    │ - → → const·[result,·{·today,·timezone·},·recipientOptions]·=·await·Promise.all([␍
+    35    │ - → → → listManagedDocumentRequests(db,·access,·filters,·now),␍
+    36    │ - → → → loadOrganizationDay(db,·{·organizationId:·access.organizationId,·now·}),␍
+    37    │ - → → → listDocumentRequestRecipientOptions(db,·access,·now),␍
+    38    │ - → → ]);␍
+    39    │ - → → if·(result.kind·!==·"ok")·notFound();␍
+    40    │ - → → snapshot·=·{␍
+    41    │ - → → → filters:·{·...filters,·page:·result.page·},␍
+    42    │ - → → → rows:·result.rows,␍
+    43    │ - → → → pageCount:·result.pageCount,␍
+    44    │ - → → → today:·today.toString(),␍
+    45    │ - → → → timezone,␍
+    46    │ - → → → recipientOptions,␍
+    47    │ - → → };␍
+    48    │ - → }·catch·(error)·{␍
+    49    │ - → → unstable_rethrow(error);␍
+    50    │ - → → //·A·failed·read·is·never·an·empty·queue.·The·current·scope·may·retry·the·RSC·owner.␍
+    51    │ - → }␍
+    52    │ - → const·grants·=·access.grants.map((grant)·=>·[␍
+    53    │ - → → grant.source,␍
+    54    │ - → → [...grant.categories].sort(),␍
+    55    │ - → → grant.scope.kind·===·"all"␍
+    56    │ - → → → ?·"all"␍
+    57    │ - → → → :·[[...grant.scope.employeeIds].sort(),·[...grant.scope.teamIds].sort()],␍
+    58    │ - → ]);␍
+    59    │ - → return·(␍
+    60    │ - → → <DocumentRequestsWorkspace␍
+    61    │ - → → → key={JSON.stringify([access.userId,·access.organizationId,·access.selfEmployeeId,·grants])}␍
+    62    │ - → → → userId={access.userId}␍
+    63    │ - → → → organizationId={access.organizationId}␍
+    64    │ - → → → employeeId={access.selfEmployeeId}␍
+    65    │ - → → → filterKey={JSON.stringify(filters)}␍
+    66    │ - → → → snapshot={snapshot}␍
+    67    │ - → → />␍
+    68    │ - → );␍
+    69    │ - }␍
+    70    │ - ␍
+    71    │ - function·DocumentRequestsLoading()·{␍
+    72    │ - → return·(␍
+    73    │ - → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6">␍
+    74    │ - → → → <PageHeader·title={<DocumentRequestsTitle·/>}·/>␍
+    75    │ - → → → <LoadingRegion␍
+    76    │ - → → → → label={{␍
+    77    │ - → → → → → labelKey:·"settings.personnelFiles.requests.page.loading",␍
+    78    │ - → → → → → labelDefault:·"Loading·document·requests",␍
+    79    │ - → → → → }}␍
+    80    │ - → → → >␍
+    81    │ - → → → → <Skeleton·aria-hidden="true"·className="h-16·w-full"·/>␍
+    82    │ - → → → → <Skeleton·aria-hidden="true"·className="mt-4·h-64·w-full"·/>␍
+    83    │ - → → → </LoadingRegion>␍
+    84    │ - → → </div>␍
+    85    │ - → );␍
+    86    │ - }␍
+    87    │ - ␍
+    88    │ - export·default·function·DocumentRequestsPage(props:·DocumentRequestsPageProps)·{␍
+    89    │ - → return·(␍
+    90    │ - → → <Suspense·fallback={<DocumentRequestsLoading·/>}>␍
+    91    │ - → → → <DocumentRequestsContent·{...props}·/>␍
+    92    │ - → → </Suspense>␍
+    93    │ - → );␍
+    94    │ - }␍
+        1 │ + import·{·notFound,·unstable_rethrow·}·from·"next/navigation";
+        2 │ + import·{·Suspense·}·from·"react";
+        3 │ + import·{
+        4 │ + → type·DocumentRequestsSnapshot,
+        5 │ + → DocumentRequestsTitle,
+        6 │ + → DocumentRequestsWorkspace,
+        7 │ + }·from·"@/components/personnel-file/document-requests-workspace";
+        8 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+        9 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+       10 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+       11 │ + import·{·db·}·from·"@/db";
+       12 │ + import·{·systemClock·}·from·"@/lib/datetime/temporal-core";
+       13 │ + import·{·managesDocumentRequests·}·from·"@/lib/personnel-file/access";
+       14 │ + import·{·loadCurrentPersonnelFileAccess·}·from·"@/lib/personnel-file/current-access";
+       15 │ + import·{·parseDocumentRequestOverviewParams·}·from·"@/lib/personnel-file/document-request-overview";
+       16 │ + import·{
+       17 │ + → listDocumentRequestRecipientOptions,
+       18 │ + → listManagedDocumentRequests,
+       19 │ + }·from·"@/lib/personnel-file/document-request-store";
+       20 │ + import·{·loadOrganizationDay·}·from·"@/lib/personnel-file/organization-day";
+       21 │ + 
+       22 │ + type·DocumentRequestsPageProps·=·{
+       23 │ + → searchParams:·Promise<Record<string,·string·|·string[]·|·undefined>>;
+       24 │ + };
+       25 │ + 
+       26 │ + async·function·DocumentRequestsContent({·searchParams·}:·DocumentRequestsPageProps)·{
+       27 │ + → const·[current,·params]·=·await·Promise.all([loadCurrentPersonnelFileAccess(),·searchParams]);
+       28 │ + → if·(current.status·!==·"resolved"·||·!managesDocumentRequests(current.access))·notFound();
+       29 │ + → const·{·access·}·=·current;
+       30 │ + → const·now·=·systemClock.nowInstant();
+       31 │ + → const·filters·=·parseDocumentRequestOverviewParams(params);
+       32 │ + → let·snapshot:·DocumentRequestsSnapshot·|·null·=·null;
+       33 │ + → try·{
+       34 │ + → → const·[result,·{·today,·timezone·},·recipientOptions]·=·await·Promise.all([
+       35 │ + → → → listManagedDocumentRequests(db,·access,·filters,·now),
+       36 │ + → → → loadOrganizationDay(db,·{·organizationId:·access.organizationId,·now·}),
+       37 │ + → → → listDocumentRequestRecipientOptions(db,·access,·now),
+       38 │ + → → ]);
+       39 │ + → → if·(result.kind·!==·"ok")·notFound();
+       40 │ + → → snapshot·=·{
+       41 │ + → → → filters:·{·...filters,·page:·result.page·},
+       42 │ + → → → rows:·result.rows,
+       43 │ + → → → pageCount:·result.pageCount,
+       44 │ + → → → today:·today.toString(),
+       45 │ + → → → timezone,
+       46 │ + → → → recipientOptions,
+       47 │ + → → };
+       48 │ + → }·catch·(error)·{
+       49 │ + → → unstable_rethrow(error);
+       50 │ + → → //·A·failed·read·is·never·an·empty·queue.·The·current·scope·may·retry·the·RSC·owner.
+       51 │ + → }
+       52 │ + → const·grants·=·access.grants.map((grant)·=>·[
+       53 │ + → → grant.source,
+       54 │ + → → [...grant.categories].sort(),
+       55 │ + → → grant.scope.kind·===·"all"
+       56 │ + → → → ?·"all"
+  39 more lines truncated
+  
+
+src\components\personnel-file\bulk-document-requests-dialog.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·fireEvent,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·type·{·ReactNode·}·from·"react";␍
+      5     │ - import·{·toast·}·from·"sonner";␍
+      6     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      7     │ - import·{·createDocumentRequestsInBulkAction·}·from·"@/app/[locale]/(app)/personnel-files/document-request-actions";␍
+      8     │ - import·type·{·SelectableEmployee·}·from·"@/components/employee-select";␍
+      9     │ - import·type·{·DocumentRequestRecipientOptions·}·from·"@/lib/personnel-file/document-request-overview";␍
+     10     │ - import·{·render·}·from·"@/test/render-with-translations";␍
+     11     │ - import·{·BulkDocumentRequestsDialog·}·from·"./bulk-document-requests-dialog";␍
+     12     │ - ␍
+     13     │ - vi.mock("sonner",·()·=>·({·toast:·{·success:·vi.fn(),·error:·vi.fn()·}·}));␍
+     14     │ - vi.mock("@/navigation",·()·=>·({·useRouter:·()·=>·({·refresh:·vi.fn()·})·}));␍
+     15     │ - vi.mock("@/components/ui/action-panel",·()·=>·{␍
+     16     │ - → const·Pass·=·({·children·}:·{·children?:·ReactNode·})·=>·<div>{children}</div>;␍
+     17     │ - → return·{␍
+     18     │ - → → ActionPanel:·({·children,·open·}:·{·children?:·ReactNode;·open:·boolean·})·=>␍
+     19     │ - → → → open·?·<div>{children}</div>·:·null,␍
+     20     │ - → → ActionPanelBody:·Pass,␍
+     21     │ - → → ActionPanelContent:·Pass,␍
+     22     │ - → → ActionPanelDescription:·Pass,␍
+     23     │ - → → ActionPanelFooter:·Pass,␍
+     24     │ - → → ActionPanelHeader:·Pass,␍
+     25     │ - → → ActionPanelTitle:·({·children·}:·{·children?:·ReactNode·})·=>·<h2>{children}</h2>,␍
+     26     │ - → };␍
+     27     │ - });␍
+     28     │ - vi.mock("@/components/ui/date-picker",·()·=>·({␍
+     29     │ - → DatePicker:·({·value,·onChange·}:·{·value?:·string·|·null;·onChange:·(v:·string)·=>·void·})·=>·(␍
+     30     │ - → → <input␍
+     31     │ - → → → aria-label="Deadline·picker"␍
+     32     │ - → → → value={value·??·""}␍
+     33     │ - → → → onChange={(event)·=>·onChange(event.target.value)}␍
+     34     │ - → → />␍
+     35     │ - → ),␍
+     36     │ - }));␍
+     37     │ - //·The·employee·picker·is·a·searchable·modal;·a·checkbox·per·offered·employee·stands·in·for·it.␍
+     38     │ - vi.mock("@/components/employee-select",·()·=>·({␍
+     39     │ - → EmployeeMultiSelect:·({␍
+     40     │ - → → label,␍
+     41     │ - → → value,␍
+     42     │ - → → onChange,␍
+     43     │ - → → employees·=·[],␍
+     44     │ - → → error,␍
+     45     │ - → }:·{␍
+     46     │ - → → label:·string;␍
+     47     │ - → → value:·string[];␍
+     48     │ - → → onChange:·(value:·string[])·=>·void;␍
+     49     │ - → → employees?:·SelectableEmployee[];␍
+     50     │ - → → error?:·string;␍
+     51     │ - → })·=>·(␍
+     52     │ - → → <fieldset·aria-invalid={error·?·true·:·undefined}>␍
+     53     │ - → → → <legend>{label}</legend>␍
+     54     │ - → → → {error·?·<p>{error}</p>·:·null}␍
+     55     │ - → → → {employees.map((employee)·=>·(␍
+     56     │ - → → → → <label·key={employee.id}>␍
+     57     │ - → → → → → <input␍
+     58     │ - → → → → → → type="checkbox"␍
+     59     │ - → → → → → → checked={value.includes(employee.id)}␍
+     60     │ - → → → → → → onChange={(event)·=>␍
+     61     │ - → → → → → → → onChange(␍
+     62     │ - → → → → → → → → event.target.checked␍
+     63     │ - → → → → → → → → → ?·[...value,·employee.id]␍
+     64     │ - → → → → → → → → → :·value.filter((id)·=>·id·!==·employee.id),␍
+     65     │ - → → → → → → → )␍
+     66     │ - → → → → → → }␍
+     67     │ - → → → → → />␍
+     68     │ - → → → → → {employee.user.name}␍
+     69     │ - → → → → </label>␍
+     70     │ - → → → ))}␍
+     71     │ - → → </fieldset>␍
+     72     │ - → ),␍
+     73     │ - }));␍
+     74     │ - vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions",·()·=>·({␍
+     75     │ - → createDocumentRequestsInBulkAction:·vi.fn(),␍
+     76     │ - }));␍
+     77     │ - ␍
+     78     │ - const·certificateOptions:·DocumentRequestRecipientOptions·=·{␍
+     79     │ - → certificate:·{␍
+     80     │ - → → employees:·[␍
+     81     │ - → → → {·id:·"anna",·name:·"Anna·Example"·},␍
+     82     │ - → → → {·id:·"dana",·name:·"Dana·Example"·},␍
+     83     │ - → → ],␍
+     84     │ - → → teams:·[␍
+     85     │ - → → → {·id:·"berlin",·name:·"Berlin"·},␍
+     86     │ - → → → {·id:·"hamburg",·name:·"Hamburg"·},␍
+     87     │ - → → ],␍
+     88     │ - → },␍
+     89     │ - → other:·{·employees:·[],·teams:·[]·},␍
+     90     │ - };␍
+     91     │ - ␍
+     92     │ - function·renderDialog(options:·DocumentRequestRecipientOptions·=·certificateOptions)·{␍
+     93     │ - → const·onCreated·=·vi.fn();␍
+     94     │ - → const·onOpenChange·=·vi.fn();␍
+     95     │ - → render(␍
+     96     │ - → → <BulkDocumentRequestsDialog␍
+     97     │ - → → → open␍
+     98     │ - → → → onOpenChange={onOpenChange}␍
+     99     │ - → → → options={options}␍
+    100     │ - → → → today="2026-10-18"␍
+    101     │ - → → → onCreated={onCreated}␍
+    102     │ - → → />,␍
+    103     │ - → );␍
+    104     │ - → return·{·onCreated,·onOpenChange·};␍
+    105     │ - }␍
+    106     │ - ␍
+    107     │ - function·fillRequest()·{␍
+    108     │ - → fireEvent.change(screen.getByRole("textbox",·{·name:·/^Title/·}),·{␍
+    109     │ - → → target:·{·value:·"First·aid·refresher"·},␍
+    110     │ - → });␍
+    111     │ - → fireEvent.change(screen.getByRole("textbox",·{·name:·"Note·(optional)"·}),·{␍
+    112     │ - → → target:·{·value:·"Please·upload·the·new·card."·},␍
+    113     │ - → });␍
+    114     │ - → fireEvent.change(screen.getByLabelText("Deadline·picker"),·{·target:·{·value:·"2026-11-30"·}·});␍
+    115     │ - }␍
+    116     │ - ␍
+    117     │ - beforeEach(()·=>·{␍
+    118     │ - → vi.mocked(toast.error).mockReset();␍
+    119     │ - → vi.mocked(toast.success).mockReset();␍
+    120     │ - → vi.mocked(createDocumentRequestsInBulkAction).mockReset();␍
+    121     │ - });␍
+    122     │ - ␍
+    123     │ - describe("requesting·a·document·from·several·employees·at·once",·()·=>·{␍
+    124     │ - → it("retains·an·uncertain·transport·outcome·and·can·retry·without·inventing·success",·async·()·=>·{␍
+    125     │ - → → vi.mocked(createDocumentRequestsInBulkAction).mockRejectedValueOnce(new·Error("offline"));␍
+    126     │ - → → const·{·onCreated·}·=·renderDialog();␍
+    127     │ - → → fireEvent.click(screen.getByRole("switch",·{·name:·"Berlin"·}));␍
+    128     │ - → → fillRequest();␍
+    129     │ - → → fireEvent.click(screen.getByRole("button",·{·name:·"Request"·}));␍
+    130     │ - → → expect((await·screen.findByRole("alert")).textContent).toContain(␍
+    131     │ - → → → "outcome·could·not·be·confirmed",␍
+    132     │ - → → );␍
+    133     │ - → → expect(onCreated).not.toHaveBeenCalled();␍
+    134     │ - → → expect((screen.getByRole("textbox",·{·name:·/^Title/·})·as·HTMLInputElement).value).toBe(␍
+    135     │ - → → → "First·aid·refresher",␍
+    136     │ - → → );␍
+    137     │ - → → vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValueOnce({␍
+    138     │ - → → → success:·true,␍
+    139     │ - → → → data:·{␍
+    140     │ - → → → → created:·0,␍
+    141     │ - → → → → skipped:·1,␍
+    142     │ - → → → → skippedBy:·{·not_covered:·0,·own_file:·0,·former_employee:·0,·already_requested:·1·},␍
+    143     │ - → → → },␍
+    144     │ - → → });␍
+    145     │ - → → fireEvent.click(screen.getByRole("button",·{·name:·"Request"·}));␍
+    146     │ - → → expect(await·screen.findByText("No·document·requests·created.")).toBeTruthy();␍
+    147     │ - → });␍
+    148     │ - → it("keeps·the·draft·and·offers·an·inline·retry·after·a·refused·request",·async·()·=>·{␍
+    149     │ - → → vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValue({␍
+    150     │ - → → → success:·false,␍
+  387 more lines truncated
+  
+
+src\components\personnel-file\bulk-document-requests-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconLoader2,·IconUsersPlus·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useForm,·useStore·}·from·"@tanstack/react-form";␍
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      6     │ - import·{·useLayoutEffect,·useRef,·useState·}·from·"react";␍
+      7     │ - import·{·toast·}·from·"sonner";␍
+      8     │ - import·{·createDocumentRequestsInBulkAction·}·from·"@/app/[locale]/(app)/personnel-files/document-request-actions";␍
+      9     │ - import·{·EmployeeMultiSelect·}·from·"@/components/employee-select";␍
+     10     │ - import·{␍
+     11     │ - → TeamSwitches,␍
+     12     │ - → toSelectableEmployee,␍
+     13     │ - }·from·"@/components/settings/access-grants/grant-editor";␍
+     14     │ - import·{␍
+     15     │ - → ActionPanel,␍
+     16     │ - → ActionPanelBody,␍
+     17     │ - → ActionPanelContent,␍
+     18     │ - → ActionPanelDescription,␍
+     19     │ - → ActionPanelFooter,␍
+     20     │ - → ActionPanelHeader,␍
+     21     │ - → ActionPanelTitle,␍
+     22     │ - }·from·"@/components/ui/action-panel";␍
+     23     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     24     │ - import·{·DatePicker·}·from·"@/components/ui/date-picker";␍
+     25     │ - import·{·Input·}·from·"@/components/ui/input";␍
+     26     │ - import·{␍
+     27     │ - → Select,␍
+     28     │ - → SelectContent,␍
+     29     │ - → SelectItem,␍
+     30     │ - → SelectTrigger,␍
+     31     │ - → SelectValue,␍
+     32     │ - }·from·"@/components/ui/select";␍
+     33     │ - import·{␍
+     34     │ - → TFormControl,␍
+     35     │ - → TFormDescription,␍
+     36     │ - → TFormItem,␍
+     37     │ - → TFormLabel,␍
+     38     │ - → TFormMessage,␍
+     39     │ - }·from·"@/components/ui/tanstack-form";␍
+     40     │ - import·{·fieldHasError·}·from·"@/components/ui/tanstack-form-utils";␍
+     41     │ - import·{·Textarea·}·from·"@/components/ui/textarea";␍
+     42     │ - import·{␍
+     43     │ - → DOCUMENT_REQUEST_CATEGORIES,␍
+     44     │ - → DOCUMENT_REQUEST_TEXT_MAX_LENGTH,␍
+     45     │ - → DOCUMENT_REQUEST_TITLE_MAX_LENGTH,␍
+     46     │ - → type·DocumentRequestBulkSummary,␍
+     47     │ - → type·DocumentRequestCategory,␍
+     48     │ - }·from·"@/lib/personnel-file/document-request.types";␍
+     49     │ - import·type·{·DocumentRequestRecipientOptions·}·from·"@/lib/personnel-file/document-request-overview";␍
+     50     │ - import·{·useRouter·}·from·"@/navigation";␍
+     51     │ - import·{·usePersonnelFileLabels·}·from·"./document-labels";␍
+     52     │ - import·{·useDocumentRequestErrorMessage·}·from·"./document-request-labels";␍
+     53     │ - ␍
+     54     │ - interface·BulkDocumentRequestValues·{␍
+     55     │ - → category:·DocumentRequestCategory;␍
+     56     │ - → teamIds:·string[];␍
+     57     │ - → employeeIds:·string[];␍
+     58     │ - → title:·string;␍
+     59     │ - → note:·string;␍
+     60     │ - → deadline:·string;␍
+     61     │ - }␍
+     62     │ - ␍
+     63     │ - /**␍
+     64     │ - ·*·Asks·several·employees·and·teams·for·the·same·document·at·once·(#1407):␍
+     65     │ - ·*·one·request·per·employee,·same·category,·title,·note·and·deadline,·never·a␍
+     66     │ - ·*·renewed·document.·The·server·re-checks·every·employee·and·skips·whom·the␍
+     67     │ - ·*·officer·does·not·cover,·the·officer·themself,·former·employees·and·anyone␍
+     68     │ - ·*·with·an·identical·active·request;·the·dialog·then·shows·the·counts.␍
+     69     │ - ·*/␍
+     70     │ - export·function·BulkDocumentRequestsDialog({␍
+     71     │ - → open,␍
+     72     │ - → onOpenChange,␍
+     73     │ - → options,␍
+     74     │ - → today,␍
+     75     │ - → onCreated,␍
+     76     │ - }:·{␍
+     77     │ - → open:·boolean;␍
+     78     │ - → onOpenChange:·(open:·boolean)·=>·void;␍
+     79     │ - → /**·The·employees·and·teams·offered·per·category·(the·server·re-checks·them).·*/␍
+     80     │ - → options:·DocumentRequestRecipientOptions;␍
+     81     │ - → /**·The·organization's·today:·the·earliest·deadline.·*/␍
+     82     │ - → today:·string;␍
+     83     │ - → onCreated:·()·=>·void;␍
+     84     │ - })·{␍
+     85     │ - → const·{·t·}·=·useTranslate();␍
+     86     │ - → const·labels·=·usePersonnelFileLabels();␍
+     87     │ - → const·errorMessage·=·useDocumentRequestErrorMessage();␍
+     88     │ - → const·[summary,·setSummary]·=·useState<DocumentRequestBulkSummary·|·null>(null);␍
+     89     │ - → const·[error,·setError]·=·useState<string·|·null>(null);␍
+     90     │ - → const·arrival·=·useRef<symbol·|·null>(null);␍
+     91     │ - → const·running·=·useRef<symbol·|·null>(null);␍
+     92     │ - → const·formElement·=·useRef<HTMLFormElement>(null);␍
+     93     │ - → useLayoutEffect(()·=>·{␍
+     94     │ - → → arrival.current·=·Symbol("bulk·request·arrival");␍
+     95     │ - → → return·()·=>·{␍
+     96     │ - → → → arrival.current·=·null;␍
+     97     │ - → → };␍
+     98     │ - → },·[]);␍
+     99     │ - → const·categories·=·DOCUMENT_REQUEST_CATEGORIES.filter(␍
+    100     │ - → → (category)·=>·options[category].employees.length·>·0·||·options[category].teams.length·>·0,␍
+    101     │ - → );␍
+    102     │ - → const·defaultValues:·BulkDocumentRequestValues·=·{␍
+    103     │ - → → category:·categories[0]·??·"certificate",␍
+    104     │ - → → teamIds:·[],␍
+    105     │ - → → employeeIds:·[],␍
+    106     │ - → → title:·"",␍
+    107     │ - → → note:·"",␍
+    108     │ - → → deadline:·"",␍
+    109     │ - → };␍
+    110     │ - → const·required·=·(label:·string)·=>␍
+    111     │ - → → t("settings.personnelFiles.form.required",·"{label}·is·required",·{·label·});␍
+    112     │ - ␍
+    113     │ - → const·form·=·useForm({␍
+    114     │ - → → defaultValues,␍
+    115     │ - → → onSubmitInvalid:·()·=>␍
+    116     │ - → → → formElement.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),␍
+    117     │ - → → onSubmit:·async·({·value·})·=>·{␍
+    118     │ - → → → if·(running.current·||·!arrival.current)·return;␍
+    119     │ - → → → const·owner·=·arrival.current;␍
+    120     │ - → → → running.current·=·owner;␍
+    121     │ - → → → setError(null);␍
+    122     │ - → → → const·outcome·=·await·createDocumentRequestsInBulkAction({␍
+    123     │ - → → → → category:·value.category,␍
+    124     │ - → → → → teamIds:·value.teamIds,␍
+    125     │ - → → → → employeeIds:·value.employeeIds,␍
+    126     │ - → → → → title:·value.title,␍
+    127     │ - → → → → note:·value.note,␍
+    128     │ - → → → → deadline:·value.deadline,␍
+    129     │ - → → → }).then(␍
+    130     │ - → → → → (result)·=>·({·kind:·"result",·result·})·as·const,␍
+    131     │ - → → → → ()·=>·({·kind:·"transport"·})·as·const,␍
+    132     │ - → → → );␍
+    133     │ - → → → if·(running.current·===·owner)·running.current·=·null;␍
+    134     │ - → → → if·(arrival.current·!==·owner)·return;␍
+    135     │ - → → → if·(outcome.kind·===·"transport")·{␍
+    136     │ - → → → → setError(␍
+    137     │ - → → → → → t(␍
+    138     │ - → → → → → → "settings.personnelFiles.requests.bulk.failed",␍
+    139     │ - → → → → → → "The·outcome·could·not·be·confirmed.·Your·entries·are·kept.·Retry;·employees·with·an·identical·active·request·will·be·skipped.",␍
+    140     │ - → → → → → ),␍
+    141     │ - → → → → );␍
+    142     │ - → → → → return;␍
+    143     │ - → → → }␍
+    144     │ - → → → const·{·result·}·=·outcome;␍
+    145     │ - → → → if·(!result.success)·{␍
+    146     │ - → → → → const·message·=·errorMessage(result);␍
+    147     │ - → → → → setError(message);␍
+    148     │ - → → → → toast.error(message);␍
+    149     │ - → → → → return;␍
+    150     │ - → → → }␍
+  913 more lines truncated
+  
+
+src\components\personnel-file\document-requests-overview.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconAlertTriangle,·IconChevronLeft,·IconChevronRight·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useSearchParams·}·from·"next/navigation";␍
+      6     │ - import·{·useId,·useTransition·}·from·"react";␍
+      7     │ - import·{·DataTableToolbar·}·from·"@/components/data-table-server/data-table-toolbar";␍
+      8     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+      9     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     10     │ - import·{␍
+     11     │ - → Select,␍
+     12     │ - → SelectContent,␍
+     13     │ - → SelectItem,␍
+     14     │ - → SelectTrigger,␍
+     15     │ - → SelectValue,␍
+     16     │ - }·from·"@/components/ui/select";␍
+     17     │ - import·{␍
+     18     │ - → DOCUMENT_REQUEST_STATUS_FILTERS,␍
+     19     │ - → type·DocumentRequestOverviewFilters,␍
+     20     │ - → type·DocumentRequestStatusFilter,␍
+     21     │ - → type·ManagedDocumentRequestView,␍
+     22     │ - }·from·"@/lib/personnel-file/document-request-overview";␍
+     23     │ - import·{·personnelFilePath·}·from·"@/lib/personnel-file/paths";␍
+     24     │ - import·{·Link,·useRouter·}·from·"@/navigation";␍
+     25     │ - import·{·useDocumentRequestLabels·}·from·"./document-request-labels";␍
+     26     │ - import·{·DocumentRequestList·}·from·"./document-request-list";␍
+     27     │ - import·{·DocumentRequestOfficerActions·}·from·"./document-request-officer-actions";␍
+     28     │ - ␍
+     29     │ - const·PATH·=·"/personnel-files/document-requests";␍
+     30     │ - const·DEFAULT_STATUS:·DocumentRequestStatusFilter·=·"active";␍
+     31     │ - ␍
+     32     │ - export·interface·DocumentRequestsOverviewProps·{␍
+     33     │ - → /**·The·filters,·with·the·page·the·server·actually·returned.·*/␍
+     34     │ - → filters:·DocumentRequestOverviewFilters;␍
+     35     │ - → rows:·ManagedDocumentRequestView[];␍
+     36     │ - → pageCount:·number;␍
+     37     │ - → /**·The·organization's·today·(`YYYY-MM-DD`):·the·earliest·new·deadline.·*/␍
+     38     │ - → today:·string;␍
+     39     │ - → /**·The·organization's·timezone:·history·times·are·shown·in·it.·*/␍
+     40     │ - → timezone:·string;␍
+     41     │ - → /**·Retained·records·after·a·failed·read·are·useful·context,·not·current·decision·targets.·*/␍
+     42     │ - → decisionsAvailable?:·boolean;␍
+     43     │ - }␍
+     44     │ - ␍
+     45     │ - /**␍
+     46     │ - ·*·The·officer·"Document·requests"·page's·list·(#1403):·the·requests·the␍
+     47     │ - ·*·viewer·covers,·across·employees,·with·status·and·overdue·filters·in·the␍
+     48     │ - ·*·URL·(the·page·reloads·the·list·on·the·server),·and·edit·and·cancel·for·open␍
+     49     │ - ·*·and·submitted·requests.␍
+     50     │ - ·*/␍
+     51     │ - export·function·DocumentRequestsOverview(props:·DocumentRequestsOverviewProps)·{␍
+     52     │ - → const·{·t·}·=·useTranslate();␍
+     53     │ - → const·{·push,·refresh·}·=·useRouter();␍
+     54     │ - → const·searchParams·=·useSearchParams();␍
+     55     │ - → const·[isPending,·startTransition]·=·useTransition();␍
+     56     │ - → const·labels·=·useDocumentRequestLabels();␍
+     57     │ - → const·statusId·=·useId();␍
+     58     │ - → const·titleId·=·useId();␍
+     59     │ - → const·{·filters·}·=·props;␍
+     60     │ - → const·{·page·}·=·filters;␍
+     61     │ - ␍
+     62     │ - → const·statusLabels:·Record<DocumentRequestStatusFilter,·string>·=·{␍
+     63     │ - → → active:·t("settings.personnelFiles.requests.page.filters.active",·"Open·and·submitted"),␍
+     64     │ - → → ...labels.statuses,␍
+     65     │ - → → all:·t("settings.personnelFiles.requests.page.filters.all",·"All·statuses"),␍
+     66     │ - → };␍
+     67     │ - ␍
+     68     │ - → function·update(changes:·Record<string,·string·|·number·|·null>)·{␍
+     69     │ - → → const·params·=·new·URLSearchParams(searchParams.toString());␍
+     70     │ - → → for·(const·[key,·value]·of·Object.entries(changes))·{␍
+     71     │ - → → → if·(value·===·null·||·value·===·"")·params.delete(key);␍
+     72     │ - → → → else·params.set(key,·String(value));␍
+     73     │ - → → }␍
+     74     │ - → → if·(!Object.hasOwn(changes,·"page"))·params.delete("page");␍
+     75     │ - → → const·query·=·params.toString();␍
+     76     │ - → → startTransition(()·=>·{␍
+     77     │ - → → → push(query·?·`${PATH}?${query}`·:·PATH);␍
+     78     │ - → → });␍
+     79     │ - → }␍
+     80     │ - ␍
+     81     │ - → return·(␍
+     82     │ - → → <section·className="min-w-0·space-y-4"·aria-labelledby={titleId}·aria-busy={isPending}>␍
+     83     │ - → → → <div·className="flex·flex-wrap·items-baseline·justify-between·gap-2">␍
+     84     │ - → → → → <h2·id={titleId}·className="text-lg·font-semibold">␍
+     85     │ - → → → → → {t("settings.personnelFiles.requests.page.records",·"Request·records")}␍
+     86     │ - → → → → </h2>␍
+     87     │ - → → → → <p·className="text-sm·text-muted-foreground·tabular-nums">␍
+     88     │ - → → → → → {t(␍
+     89     │ - → → → → → → "settings.personnelFiles.requests.page.pageRecords",␍
+     90     │ - → → → → → → "{count,·plural,·one·{#·request·on·this·page}·other·{#·requests·on·this·page}}",␍
+     91     │ - → → → → → → {·count:·props.rows.length·},␍
+     92     │ - → → → → → )}␍
+     93     │ - → → → → </p>␍
+     94     │ - → → → </div>␍
+     95     │ - → → → <DataTableToolbar␍
+     96     │ - → → → → filterControls={␍
+     97     │ - → → → → → <div·className="flex·min-w-0·flex-wrap·items-end·gap-3">␍
+     98     │ - → → → → → → <div·className="flex·min-w-48·flex-col·gap-1.5">␍
+     99     │ - → → → → → → → <span·id={statusId}·className="text-sm·font-medium">␍
+    100     │ - → → → → → → → → {t("settings.personnelFiles.requests.page.filters.status",·"Status")}␍
+    101     │ - → → → → → → → </span>␍
+    102     │ - → → → → → → → <Select␍
+    103     │ - → → → → → → → → value={filters.status}␍
+    104     │ - → → → → → → → → onValueChange={(status)·=>␍
+    105     │ - → → → → → → → → → update({·status:·status·===·DEFAULT_STATUS·?·null·:·status·})␍
+    106     │ - → → → → → → → → }␍
+    107     │ - → → → → → → → → disabled={isPending}␍
+    108     │ - → → → → → → → >␍
+    109     │ - → → → → → → → → <SelectTrigger·aria-labelledby={statusId}·className="w-full">␍
+    110     │ - → → → → → → → → → <SelectValue·/>␍
+    111     │ - → → → → → → → → </SelectTrigger>␍
+    112     │ - → → → → → → → → <SelectContent>␍
+    113     │ - → → → → → → → → → {DOCUMENT_REQUEST_STATUS_FILTERS.map((status)·=>·(␍
+    114     │ - → → → → → → → → → → <SelectItem·key={status}·value={status}>␍
+    115     │ - → → → → → → → → → → → {statusLabels[status]}␍
+    116     │ - → → → → → → → → → → </SelectItem>␍
+    117     │ - → → → → → → → → → ))}␍
+    118     │ - → → → → → → → → </SelectContent>␍
+    119     │ - → → → → → → → </Select>␍
+    120     │ - → → → → → → </div>␍
+    121     │ - → → → → → → <Button␍
+    122     │ - → → → → → → → type="button"␍
+    123     │ - → → → → → → → variant={filters.overdue·?·"default"·:·"outline"}␍
+    124     │ - → → → → → → → aria-pressed={filters.overdue}␍
+    125     │ - → → → → → → → disabled={isPending}␍
+    126     │ - → → → → → → → onClick={()·=>·update({·overdue:·filters.overdue·?·null·:·"1"·})}␍
+    127     │ - → → → → → → >␍
+    128     │ - → → → → → → → <IconAlertTriangle·aria-hidden="true"·className="size-4"·/>␍
+    129     │ - → → → → → → → {t("settings.personnelFiles.requests.page.filters.overdue",·"Only·overdue")}␍
+    130     │ - → → → → → → </Button>␍
+    131     │ - → → → → → </div>␍
+    132     │ - → → → → }␍
+    133     │ - → → → />␍
+    134     │ - ␍
+    135     │ - → → → {props.rows.length·===·0·?·(␍
+    136     │ - → → → → <p·className="text-sm·text-muted-foreground">␍
+    137     │ - → → → → → {t(␍
+    138     │ - → → → → → → "settings.personnelFiles.requests.page.empty",␍
+    139     │ - → → → → → → "No·document·requests·match·the·filters.",␍
+    140     │ - → → → → → )}␍
+    141     │ - → → → → </p>␍
+    142     │ - → → → )·:·(␍
+    143     │ - → → → → <DocumentRequestList␍
+    144     │ - → → → → → requests={props.rows}␍
+    145     │ - → → → → → timezone={props.timezone}␍
+    146     │ - → → → → → subject={(request)·=>·(␍
+    147     │ - → → → → → → <div·className="flex·flex-wrap·items-center·gap-2·text-sm">␍
+    148     │ - → → → → → → → <Link␍
+    149     │ - → → → → → → → → href={personnelFilePath(request.employeeId)}␍
+    150     │ - → → → → → → → → className="font-medium·underline-offset-4·hover:underline"␍
+  307 more lines truncated
+  
+
+src\components\personnel-file\document-requests-workspace.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom␍
+      2     │ - ␍
+      3     │ - import·{·fireEvent,·render,·screen·}·from·"@testing-library/react";␍
+      4     │ - import·{·Activity,·type·ReactNode·}·from·"react";␍
+      5     │ - import·{·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·{␍
+      7     │ - → type·DocumentRequestsSnapshot,␍
+      8     │ - → DocumentRequestsWorkspace,␍
+      9     │ - }·from·"./document-requests-workspace";␍
+     10     │ - ␍
+     11     │ - const·boundary·=·vi.hoisted(()·=>·({␍
+     12     │ - → userId:·"officer",␍
+     13     │ - → organizationId:·"org",␍
+     14     │ - → employeeId:·"self",␍
+     15     │ - → pending:·false,␍
+     16     │ - → refresh:·vi.fn(),␍
+     17     │ - → push:·vi.fn(),␍
+     18     │ - }));␍
+     19     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     20     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     21     │ - }));␍
+     22     │ - vi.mock("@/components/providers/app-locale-provider",·()·=>·({·useAppLocale:·()·=>·"en-GB"·}));␍
+     23     │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({␍
+     24     │ - → useOrganization:·()·=>·({␍
+     25     │ - → → userId:·boundary.userId,␍
+     26     │ - → → activeOrganizationId:·boundary.organizationId,␍
+     27     │ - → → employeeId:·boundary.employeeId,␍
+     28     │ - → → isLoading:·false,␍
+     29     │ - → }),␍
+     30     │ - }));␍
+     31     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     32     │ - → useSession:·()·=>·({␍
+     33     │ - → → isPending:·boundary.pending,␍
+     34     │ - → → data:·{␍
+     35     │ - → → → user:·{·id:·boundary.userId·},␍
+     36     │ - → → → session:·{·activeOrganizationId:·boundary.organizationId·},␍
+     37     │ - → → },␍
+     38     │ - → }),␍
+     39     │ - }));␍
+     40     │ - vi.mock("next/navigation",·()·=>·({·useSearchParams:·()·=>·new·URLSearchParams()·}));␍
+     41     │ - vi.mock("@/navigation",·()·=>·({␍
+     42     │ - → Link:·({·href,·children·}:·{·href:·string;·children:·ReactNode·})·=>·(␍
+     43     │ - → → <a·href={href}>{children}</a>␍
+     44     │ - → ),␍
+     45     │ - → useRouter:·()·=>·({·refresh:·boundary.refresh,·push:·boundary.push·}),␍
+     46     │ - }));␍
+     47     │ - vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions",·()·=>·({␍
+     48     │ - → createDocumentRequestsInBulkAction:·vi.fn(),␍
+     49     │ - → editDocumentRequestAction:·vi.fn(),␍
+     50     │ - → cancelDocumentRequestAction:·vi.fn(),␍
+     51     │ - → acceptDocumentRequestAction:·vi.fn(),␍
+     52     │ - → returnDocumentRequestAction:·vi.fn(),␍
+     53     │ - }));␍
+     54     │ - function·snapshot():·DocumentRequestsSnapshot·{␍
+     55     │ - → return·{␍
+     56     │ - → → filters:·{·status:·"active",·overdue:·false,·page:·1,·pageSize:·25·},␍
+     57     │ - → → pageCount:·2,␍
+     58     │ - → → today:·"2026-11-15",␍
+     59     │ - → → timezone:·"Pacific/Kiritimati",␍
+     60     │ - → → recipientOptions:·{␍
+     61     │ - → → → certificate:·{·employees:·[{·id:·"employee",·name:·"Ada·Example"·}],·teams:·[]·},␍
+     62     │ - → → → other:·{·employees:·[],·teams:·[]·},␍
+     63     │ - → → },␍
+     64     │ - → → rows:·[␍
+     65     │ - → → → {␍
+     66     │ - → → → → id:·"request",␍
+     67     │ - → → → → employeeId:·"employee",␍
+     68     │ - → → → → employeeName:·"Ada·Example",␍
+     69     │ - → → → → employeeNumber:·"R047-2",␍
+     70     │ - → → → → isFormer:·true,␍
+     71     │ - → → → → category:·"certificate",␍
+     72     │ - → → → → title:·"First·aid",␍
+     73     │ - → → → → note:·"Keep·this·evidence",␍
+     74     │ - → → → → deadline:·"2026-11-01",␍
+     75     │ - → → → → status:·"open",␍
+     76     │ - → → → → overdue:·true,␍
+     77     │ - → → → → version:·3,␍
+     78     │ - → → → → renewedDocument:·null,␍
+     79     │ - → → → → createdByName:·"Officer",␍
+     80     │ - → → → → createdAt:·"2026-10-01T10:00:00Z",␍
+     81     │ - → → → → history:·[],␍
+     82     │ - → → → → submissions:·[],␍
+     83     │ - → → → → pendingDocuments:·[],␍
+     84     │ - → → → },␍
+     85     │ - → → ],␍
+     86     │ - → };␍
+     87     │ - }␍
+     88     │ - const·view·=·(data:·DocumentRequestsSnapshot·|·null,·key·=·"active")·=>·(␍
+     89     │ - → <DocumentRequestsWorkspace␍
+     90     │ - → → userId="officer"␍
+     91     │ - → → organizationId="org"␍
+     92     │ - → → employeeId="self"␍
+     93     │ - → → filterKey={key}␍
+     94     │ - → → snapshot={data}␍
+     95     │ - → />␍
+     96     │ - );␍
+     97     │ - beforeEach(()·=>·{␍
+     98     │ - → Object.assign(boundary,·{␍
+     99     │ - → → userId:·"officer",␍
+    100     │ - → → organizationId:·"org",␍
+    101     │ - → → employeeId:·"self",␍
+    102     │ - → → pending:·false,␍
+    103     │ - → });␍
+    104     │ - → vi.clearAllMocks();␍
+    105     │ - });␍
+    106     │ - it("leads·with·scope·and·bulk·creation·and·keeps·employee/status/former·context",·()·=>·{␍
+    107     │ - → render(view(snapshot()));␍
+    108     │ - → expect(screen.getAllByRole("heading",·{·level:·1·}).length).toBe(1);␍
+    109     │ - → expect(screen.getByRole("button",·{·name:·"Request·from·several"·})).toBeTruthy();␍
+    110     │ - → expect(screen.getByText("Personnel·no.·{number}")).toBeTruthy();␍
+    111     │ - → expect(screen.getByText("Open")).toBeTruthy();␍
+    112     │ - → expect(screen.getByText("Overdue")).toBeTruthy();␍
+    113     │ - → expect(screen.getByText("Former·employee")).toBeTruthy();␍
+    114     │ - });␍
+    115     │ - it("retains·usable·rows·after·a·failed·same-filter·refresh,·disables·decisions,·and·retries·the·RSC·owner",·()·=>·{␍
+    116     │ - → const·rendered·=·render(view(snapshot()));␍
+    117     │ - → rendered.rerender(view(null));␍
+    118     │ - → expect(screen.getByText("First·aid")).toBeTruthy();␍
+    119     │ - → expect(screen.queryByRole("button",·{·name:·"Change·{title}"·})).toBeNull();␍
+    120     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Retry"·}));␍
+    121     │ - → expect(boundary.refresh).toHaveBeenCalledTimes(1);␍
+    122     │ - });␍
+    123     │ - it("never·presents·a·prior·filter's·retained·records·as·a·failed·new·page",·()·=>·{␍
+    124     │ - → const·rendered·=·render(view(snapshot()));␍
+    125     │ - → rendered.rerender(view(null,·"accepted"));␍
+    126     │ - → expect(screen.queryByText("First·aid")).toBeNull();␍
+    127     │ - → expect(screen.getByRole("button",·{·name:·"Retry"·})).toBeTruthy();␍
+    128     │ - });␍
+    129     │ - it.each(["userId",·"organizationId",·"employeeId"]·as·const)(␍
+    130     │ - → "removes·old·records·and·tools·after·a·%s·change·and·requires·a·fresh·arrival·on·ABA",␍
+    131     │ - → (field)·=>·{␍
+    132     │ - → → const·data·=·snapshot(),␍
+    133     │ - → → → rendered·=·render(view(data));␍
+    134     │ - → → boundary[field]·=·"changed";␍
+    135     │ - → → rendered.rerender(view(data));␍
+    136     │ - → → expect(screen.queryByText("First·aid")).toBeNull();␍
+    137     │ - → → expect(screen.queryByRole("button",·{·name:·"Request·from·several"·})).toBeNull();␍
+    138     │ - → → boundary[field]·=·field·===·"userId"·?·"officer"·:·field·===·"organizationId"·?·"org"·:·"self";␍
+    139     │ - → → rendered.rerender(view(data));␍
+    140     │ - → → expect(screen.queryByText("First·aid")).toBeNull();␍
+    141     │ - → → rendered.rerender(view(snapshot()));␍
+    142     │ - → → expect(screen.getByText("First·aid")).toBeTruthy();␍
+    143     │ - → },␍
+    144     │ - );␍
+    145     │ - it("keeps·one·heading·and·no·sensitive·records·while·checking·the·session",·()·=>·{␍
+    146     │ - → boundary.pending·=·true;␍
+    147     │ - → render(view(snapshot()));␍
+    148     │ - → expect(screen.getAllByRole("heading",·{·level:·1·}).length).toBe(1);␍
+    149     │ - → expect(screen.queryByText("First·aid")).toBeNull();␍
+    150     │ - });␍
+  171 more lines truncated
+  
+
+src\components\personnel-file\document-requests-workspace.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconArrowLeft·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useLayoutEffect,·useRef,·useState,·useTransition·}·from·"react";␍
+      6     │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";␍
+      7     │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";␍
+      8     │ - import·{·Button·}·from·"@/components/ui/button";␍
+      9     │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     10     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     11     │ - import·{·useSession·}·from·"@/lib/auth-client";␍
+     12     │ - import·type·{·DocumentRequestRecipientOptions·}·from·"@/lib/personnel-file/document-request-overview";␍
+     13     │ - import·{·Link,·useRouter·}·from·"@/navigation";␍
+     14     │ - import·{·BulkDocumentRequestsButton·}·from·"./bulk-document-requests-dialog";␍
+     15     │ - import·{␍
+     16     │ - → DocumentRequestsOverview,␍
+     17     │ - → type·DocumentRequestsOverviewProps,␍
+     18     │ - }·from·"./document-requests-overview";␍
+     19     │ - ␍
+     20     │ - export·type·DocumentRequestsSnapshot·=·DocumentRequestsOverviewProps·&·{␍
+     21     │ - → recipientOptions:·DocumentRequestRecipientOptions;␍
+     22     │ - };␍
+     23     │ - ␍
+     24     │ - /**·RSC·owns·reads;·this·boundary·keeps·drafts·on·refresh·and·rejects·other·account/org·arrivals.·*/␍
+     25     │ - export·function·DocumentRequestsWorkspace({␍
+     26     │ - → userId,␍
+     27     │ - → organizationId,␍
+     28     │ - → employeeId,␍
+     29     │ - → filterKey,␍
+     30     │ - → snapshot,␍
+     31     │ - }:·{␍
+     32     │ - → userId:·string;␍
+     33     │ - → organizationId:·string;␍
+     34     │ - → employeeId:·string·|·null;␍
+     35     │ - → filterKey:·string;␍
+     36     │ - → snapshot:·DocumentRequestsSnapshot·|·null;␍
+     37     │ - })·{␍
+     38     │ - → const·{·t·}·=·useTranslate();␍
+     39     │ - → const·context·=·useOrganization();␍
+     40     │ - → const·session·=·useSession();␍
+     41     │ - → const·{·refresh·}·=·useRouter();␍
+     42     │ - → const·[retained,·setRetained]·=·useState({·source:·snapshot,·filterKey,·snapshot·});␍
+     43     │ - → if·(retained.source·!==·snapshot·||·retained.filterKey·!==·filterKey)·{␍
+     44     │ - → → setRetained({␍
+     45     │ - → → → source:·snapshot,␍
+     46     │ - → → → filterKey,␍
+     47     │ - → → → snapshot:·snapshot·??·(retained.filterKey·===·filterKey·?·retained.snapshot·:·null),␍
+     48     │ - → → });␍
+     49     │ - → }␍
+     50     │ - → const·data·=·snapshot·??·(retained.filterKey·===·filterKey·?·retained.snapshot·:·null);␍
+     51     │ - → const·matches·=␍
+     52     │ - → → !session.isPending·&&␍
+     53     │ - → → !context.isLoading·&&␍
+     54     │ - → → session.data?.user.id·===·userId·&&␍
+     55     │ - → → session.data.session.activeOrganizationId·===·organizationId·&&␍
+     56     │ - → → context.userId·===·userId·&&␍
+     57     │ - → → context.activeOrganizationId·===·organizationId·&&␍
+     58     │ - → → context.employeeId·===·employeeId;␍
+     59     │ - → const·current·=·useRequestArrival(␍
+     60     │ - → → snapshot,␍
+     61     │ - → → matches,␍
+     62     │ - → → !session.isPending·&&·!context.isLoading,␍
+     63     │ - → → refresh,␍
+     64     │ - → );␍
+     65     │ - ␍
+     66     │ - → return·(␍
+     67     │ - → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6">␍
+     68     │ - → → → <Button·asChild·variant="ghost"·size="sm"·className="-ml-2·self-start">␍
+     69     │ - → → → → <Link·href="/personnel-files">␍
+     70     │ - → → → → → <IconArrowLeft·aria-hidden="true"·className="size-4"·/>␍
+     71     │ - → → → → → {t("settings.personnelFiles.area.title",·"Personnel·Files")}␍
+     72     │ - → → → → </Link>␍
+     73     │ - → → → </Button>␍
+     74     │ - → → → <PageHeader␍
+     75     │ - → → → → title={t("settings.personnelFiles.requests.page.title",·"Document·requests")}␍
+     76     │ - → → → → description={t(␍
+     77     │ - → → → → → "settings.personnelFiles.requests.page.description",␍
+     78     │ - → → → → → "The·documents·asked·of·the·employees·whose·certificates·or·other·documents·you·manage.·A·request·is·overdue·when·it·is·still·open·after·its·deadline.",␍
+     79     │ - → → → → )}␍
+     80     │ - → → → → scope={␍
+     81     │ - → → → → → current·&&·data␍
+     82     │ - → → → → → → ?·t(␍
+     83     │ - → → → → → → → → "settings.personnelFiles.requests.page.calendarScope",␍
+     84     │ - → → → → → → → → "Deadlines·follow·your·organization's·calendar···{timezone}",␍
+     85     │ - → → → → → → → → {·timezone:·data.timezone·},␍
+     86     │ - → → → → → → → )␍
+     87     │ - → → → → → → :·undefined␍
+     88     │ - → → → → }␍
+     89     │ - → → → → actions={␍
+     90     │ - → → → → → current·&&·data·?·(␍
+     91     │ - → → → → → → <BulkDocumentRequestsButton·options={data.recipientOptions}·today={data.today}·/>␍
+     92     │ - → → → → → )·:·undefined␍
+     93     │ - → → → → }␍
+     94     │ - → → → />␍
+     95     │ - → → → {!current·?·(␍
+     96     │ - → → → → <DocumentRequestsChecking·/>␍
+     97     │ - → → → )·:·(␍
+     98     │ - → → → → <>␍
+     99     │ - → → → → → {!snapshot·?·<DocumentRequestsReadFailure·hasRetained={Boolean(data)}·/>·:·null}␍
+    100     │ - → → → → → {data·?·(␍
+    101     │ - → → → → → → <DocumentRequestsOverview·{...data}·decisionsAvailable={snapshot·!==·null}·/>␍
+    102     │ - → → → → → )·:·null}␍
+    103     │ - → → → → </>␍
+    104     │ - → → → )}␍
+    105     │ - → → </div>␍
+    106     │ - → );␍
+    107     │ - }␍
+    108     │ - ␍
+    109     │ - export·function·DocumentRequestsChecking()·{␍
+    110     │ - → return·(␍
+    111     │ - → → <LoadingRegion␍
+    112     │ - → → → label={{␍
+    113     │ - → → → → labelKey:·"settings.personnelFiles.requests.page.checking",␍
+    114     │ - → → → → labelDefault:·"Checking·document·request·access",␍
+    115     │ - → → → }}␍
+    116     │ - → → → className="min-h-32"␍
+    117     │ - → → />␍
+    118     │ - → );␍
+    119     │ - }␍
+    120     │ - ␍
+    121     │ - export·function·DocumentRequestsTitle()·{␍
+    122     │ - → const·{·t·}·=·useTranslate();␍
+    123     │ - → return·<>{t("settings.personnelFiles.requests.page.title",·"Document·requests")}</>;␍
+    124     │ - }␍
+    125     │ - ␍
+    126     │ - function·useRequestArrival(␍
+    127     │ - → snapshot:·DocumentRequestsSnapshot·|·null,␍
+    128     │ - → matches:·boolean,␍
+    129     │ - → settled:·boolean,␍
+    130     │ - → refresh:·()·=>·void,␍
+    131     │ - )·{␍
+    132     │ - → const·[retired,·setRetired]·=·useState<{·snapshot:·DocumentRequestsSnapshot·|·null·}·|·null>(␍
+    133     │ - → → null,␍
+    134     │ - → );␍
+    135     │ - → const·connected·=·useRef(false);␍
+    136     │ - → const·latest·=·useRef(snapshot);␍
+    137     │ - → useLayoutEffect(()·=>·{␍
+    138     │ - → → latest.current·=·snapshot;␍
+    139     │ - → },·[snapshot]);␍
+    140     │ - → useLayoutEffect(()·=>·{␍
+    141     │ - → → if·(connected.current)·{␍
+    142     │ - → → → //·Activity·reconnects·must·obtain·fresh·server·authority·before·exposing·cached·targets.␍
+    143     │ - → → → setRetired({·snapshot:·latest.current·});␍
+    144     │ - → → → refresh();␍
+    145     │ - → → }␍
+    146     │ - → → connected.current·=·true;␍
+    147     │ - → },·[refresh]);␍
+    148     │ - ␍
+    149     │ - → if·(settled·&&·!matches·&&·retired?.snapshot·!==·snapshot)·setRetired({·snapshot·});␍
+    150     │ - → return·matches·&&·retired?.snapshot·!==·snapshot;␍
+  215 more lines truncated
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·describe,·expect,·it·}·from·"vitest";␍
+      2     │ - import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      3     │ - ␍
+      4     │ - describe("route·metadata",·()·=>·{␍
+      5     │ - → it("adopts·the·request·queue·without·adopting·its·independent·descendants",·()·=>·{␍
+      6     │ - → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);␍
+      7     │ - → → expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);␍
+      8     │ - → → expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);␍
+      9     │ - → });␍
+     10     │ - → it("adopts·payroll,·the·work-balance·directory·and·selected·balance·without·deeper·descendants",·()·=>·{␍
+     11     │ - → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     12     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     13     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+     14     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     15     │ - → });␍
+     16     │ - → it("adopts·only·the·notification·timeline·heading,·retaining·settings·and·descendants",·()·=>·{␍
+     17     │ - → → expect(appPageOwnsHeading("/de/notifications")).toBe(true);␍
+     18     │ - → → expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);␍
+     19     │ - → → expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);␍
+     20     │ - → });␍
+     21     │ - → it("adopts·only·the·personal·requests·page·heading",·()·=>·{␍
+     22     │ - → → expect(appPageOwnsHeading("/de/my-requests")).toBe(true);␍
+     23     │ - → → expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);␍
+     24     │ - → });␍
+     25     │ - → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{␍
+     26     │ - → → expect(appPageOwnsHeading("/de/my-documents")).toBe(true);␍
+     27     │ - → → expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);␍
+     28     │ - → → expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);␍
+     29     │ - → });␍
+     30     │ - → it("adopts·equipment·overview·and·exact·assignment·headings,·keeping·other·descendants·independent",·()·=>·{␍
+     31     │ - → → expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     32     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     33     │ - → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     34     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     35     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     36     │ - → → expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     37     │ - → → expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+     38     │ - → });␍
+     39     │ - → it("adopts·the·employee·equipment·record·heading·without·adopting·its·collection",·()·=>·{␍
+     40     │ - → → expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);␍
+     41     │ - → → expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);␍
+     42     │ - → });␍
+     43     │ - → it("adopts·the·licence·workspace·and·employee·check·while·retaining·other·descendants·and·settings·headings",·()·=>·{␍
+     44     │ - → → expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     45     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+     46     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+     47     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     48     │ - → → expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+     49     │ - → });␍
+     50     │ - → it("retains·independent·approvals·page·headings",·()·=>·{␍
+     51     │ - → → expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     52     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     53     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+     54     │ - → });␍
+     55     │ - → it("adopts·only·the·deputy·history·record,·preserving·other·approval·headings",·()·=>·{␍
+     56     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+     57     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+     58     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     59     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     60     │ - → });␍
+     61     │ - → it("adopts·the·exact·inbox·heading,·retaining·independent·review·route·ownership",·()·=>·{␍
+     62     │ - → → expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     63     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+     64     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+     65     │ - → });␍
+     66     │ - → it("adopts·only·the·complete·review·arrival·route",·()·=>·{␍
+     67     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+     68     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+     69     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+     70     │ - → });␍
+     71     │ - → it("adopts·the·exact·vacation·route·while·retaining·staged·descendants",·()·=>·{␍
+     72     │ - → → expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+     73     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+     74     │ - → });␍
+     75     │ - → it("adopts·only·refreshed·analytics·routes·while·retaining·staged·descendants",·()·=>·{␍
+     76     │ - → → expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+     77     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+     78     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+     79     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+     80     │ - → });␍
+     81     │ - → it("adopts·refreshed·analytics·without·adopting·unconverted·descendants",·()·=>·{␍
+     82     │ - → → expect(appPageOwnsHeading("/de/analytics")).toBe(true);␍
+     83     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);␍
+     84     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);␍
+     85     │ - → → expect(appPageOwnsHeading("/en/calendar")).toBe(true);␍
+     86     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);␍
+     87     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);␍
+     88     │ - → });␍
+     89     │ - → it("adopts·only·the·portfolio·pilot·title,·leaving·other·reports·and·descendants·with·shell·titles",·()·=>·{␍
+     90     │ - → → expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);␍
+     91     │ - → → expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);␍
+     92     │ - → → expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);␍
+     93     │ - → });␍
+     94     │ - → it.each([␍
+     95     │ - → → ["/en",·"Dashboard"],␍
+     96     │ - → → ["/de/my-requests",·"My·Requests"],␍
+     97     │ - → → ["/en/organization",·"Org·Explorer"],␍
+     98     │ - → → ["/en/payroll",·"Payroll"],␍
+     99     │ - → → ["/en/scheduling",·"Scheduling"],␍
+    100     │ - → → ["/en/approvals/inbox",·"Approvals"],␍
+    101     │ - → → ["/en/compliance",·"Compliance"],␍
+    102     │ - → → ["/en/works-council",·"Works·Council"],␍
+    103     │ - → → ["/en/team/absences",·"Team·Absences"],␍
+    104     │ - → → ["/en/team/driving",·"Driving·Details"],␍
+    105     │ - → → ["/en/driving-licence",·"My·driving·authorization"],␍
+    106     │ - → → ["/en/driving-licence/checks/employee-1",·"My·driving·authorization"],␍
+    107     │ - → → ["/en/reports/projects",·"Project·Reports"],␍
+    108     │ - → → ["/en/reports/vehicles",·"Distance·per·Vehicle"],␍
+    109     │ - → → ["/en/settings/employees/employee-1",·"Employees"],␍
+    110     │ - → → ["/en/settings/locations/location-1",·"Locations"],␍
+    111     │ - → → ["/en/equipment",·"Equipment"],␍
+    112     │ - → → ["/en/equipment/employees/employee-1",·"Equipment"],␍
+    113     │ - → → ["/en/equipment/assignments/assignment-1",·"Equipment"],␍
+    114     │ - → → ["/de/my-equipment",·"My·equipment"],␍
+    115     │ - → → ["/en/settings/equipment",·"Settings"],␍
+    116     │ - → ])("resolves·%s",·(pathname,·title)·=>·{␍
+    117     │ - → → expect(resolveAppRouteMetadata(pathname).titleDefault).toBe(title);␍
+    118     │ - → });␍
+    119     │ - ␍
+    120     │ - → it("matches·route·prefixes·only·at·path-segment·boundaries",·()·=>·{␍
+    121     │ - → → expect(resolveAppRouteMetadata("/en/teamwork").titleDefault).toBe("Z8");␍
+    122     │ - → });␍
+    123     │ - ␍
+    124     │ - → it("normalizes·locale·and·trailing·slash·segments",·()·=>·{␍
+    125     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    126     │ - → });␍
+    127     │ - });␍
+          1 │ + import·{·describe,·expect,·it·}·from·"vitest";
+          2 │ + import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";
+          3 │ + 
+          4 │ + describe("route·metadata",·()·=>·{
+          5 │ + → it("adopts·the·request·queue·without·adopting·its·independent·descendants",·()·=>·{
+          6 │ + → → expect(appPageOwnsHeading("/de/personnel-files/document-requests")).toBe(true);
+          7 │ + → → expect(appPageOwnsHeading("/en/personnel-files/document-requests/extra")).toBe(false);
+          8 │ + → → expect(appPageOwnsHeading("/en/settings/personnel-files")).toBe(false);
+          9 │ + → });
+         10 │ + → it("adopts·payroll,·the·work-balance·directory·and·selected·balance·without·deeper·descendants",·()·=>·{
+         11 │ + → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);
+         12 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
+         13 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);
+         14 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);
+         15 │ + → });
+         16 │ + → it("adopts·only·the·notification·timeline·heading,·retaining·settings·and·descendants",·()·=>·{
+         17 │ + → → expect(appPageOwnsHeading("/de/notifications")).toBe(true);
+         18 │ + → → expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);
+         19 │ + → → expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);
+         20 │ + → });
+         21 │ + → it("adopts·only·the·personal·requests·page·heading",·()·=>·{
+         22 │ + → → expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
+         23 │ + → → expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);
+  105 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";␍
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+      3     │ - ␍
+      4     │ - export·type·AppRouteMetadata·=·{␍
+      5     │ - → id:·string;␍
+      6     │ - → href:·string;␍
+      7     │ - → titleKey:·string;␍
+      8     │ - → titleDefault:·string;␍
+      9     │ - };␍
+     10     │ - ␍
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[␍
+     12     │ - → {␍
+     13     │ - → → id:·"dashboard",␍
+     14     │ - → → href:·"/",␍
+     15     │ - → → titleKey:·"nav.dashboard",␍
+     16     │ - → → titleDefault:·"Dashboard",␍
+     17     │ - → },␍
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},␍
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment␍
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.␍
+     21     │ - → {␍
+     22     │ - → → id:·"equipment",␍
+     23     │ - → → href:·"/equipment",␍
+     24     │ - → → titleKey:·"nav.equipment",␍
+     25     │ - → → titleDefault:·"Equipment",␍
+     26     │ - → },␍
+     27     │ - → {␍
+     28     │ - → → id:·"my-equipment",␍
+     29     │ - → → href:·"/my-equipment",␍
+     30     │ - → → titleKey:·"nav.my-equipment",␍
+     31     │ - → → titleDefault:·"My·equipment",␍
+     32     │ - → },␍
+     33     │ - → {␍
+     34     │ - → → id:·"notifications",␍
+     35     │ - → → href:·"/notifications",␍
+     36     │ - → → titleKey:·"notifications.title",␍
+     37     │ - → → titleDefault:·"Notifications",␍
+     38     │ - → },␍
+     39     │ - → {␍
+     40     │ - → → id:·"calendar",␍
+     41     │ - → → href:·"/calendar",␍
+     42     │ - → → titleKey:·"nav.calendar",␍
+     43     │ - → → titleDefault:·"Calendar",␍
+     44     │ - → },␍
+     45     │ - → {␍
+     46     │ - → → id:·"time-tracking",␍
+     47     │ - → → href:·"/time-tracking",␍
+     48     │ - → → titleKey:·"nav.time-tracking",␍
+     49     │ - → → titleDefault:·"Time·Tracking",␍
+     50     │ - → },␍
+     51     │ - → {␍
+     52     │ - → → id:·"my-requests",␍
+     53     │ - → → href:·"/my-requests",␍
+     54     │ - → → titleKey:·"nav.my-requests",␍
+     55     │ - → → titleDefault:·"My·Requests",␍
+     56     │ - → },␍
+     57     │ - → {␍
+     58     │ - → → id:·"org-explorer",␍
+     59     │ - → → href:·"/organization",␍
+     60     │ - → → titleKey:·"nav.org-explorer",␍
+     61     │ - → → titleDefault:·"Org·Explorer",␍
+     62     │ - → },␍
+     63     │ - → {␍
+     64     │ - → → id:·"absences",␍
+     65     │ - → → href:·"/absences",␍
+     66     │ - → → titleKey:·"nav.absences",␍
+     67     │ - → → titleDefault:·"Absences",␍
+     68     │ - → },␍
+     69     │ - → {␍
+     70     │ - → → id:·"travel-expenses",␍
+     71     │ - → → href:·"/travel-expenses",␍
+     72     │ - → → titleKey:·"nav.travel-expenses",␍
+     73     │ - → → titleDefault:·"Travel·Expenses",␍
+     74     │ - → },␍
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this␍
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.␍
+     77     │ - → {␍
+     78     │ - → → id:·"driving-licence",␍
+     79     │ - → → href:·"/driving-licence",␍
+     80     │ - → → titleKey:·"drivingLicence.myTitle",␍
+     81     │ - → → titleDefault:·"My·driving·authorization",␍
+     82     │ - → },␍
+     83     │ - → {␍
+     84     │ - → → id:·"reports-projects",␍
+     85     │ - → → href:·"/reports/projects",␍
+     86     │ - → → titleKey:·"reports.projects.title",␍
+     87     │ - → → titleDefault:·"Project·Reports",␍
+     88     │ - → },␍
+     89     │ - → {␍
+     90     │ - → → id:·"reports-vehicles",␍
+     91     │ - → → href:·"/reports/vehicles",␍
+     92     │ - → → titleKey:·"reports.vehicles.title",␍
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",␍
+     94     │ - → },␍
+     95     │ - → {␍
+     96     │ - → → id:·"reports",␍
+     97     │ - → → href:·"/reports",␍
+     98     │ - → → titleKey:·"nav.reports",␍
+     99     │ - → → titleDefault:·"Reports",␍
+    100     │ - → },␍
+    101     │ - → {␍
+    102     │ - → → id:·"team-absences",␍
+    103     │ - → → href:·"/team/absences",␍
+    104     │ - → → titleKey:·"nav.teamAbsences",␍
+    105     │ - → → titleDefault:·"Team·Absences",␍
+    106     │ - → },␍
+    107     │ - → {␍
+    108     │ - → → id:·"team-presence",␍
+    109     │ - → → href:·"/team/presence",␍
+    110     │ - → → titleKey:·"nav.teamPresence",␍
+    111     │ - → → titleDefault:·"Who·Is·In",␍
+    112     │ - → },␍
+    113     │ - → {␍
+    114     │ - → → id:·"team-period-submissions",␍
+    115     │ - → → href:·"/team/period-submissions",␍
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",␍
+    117     │ - → → titleDefault:·"Period·Submissions",␍
+    118     │ - → },␍
+    119     │ - → {␍
+    120     │ - → → id:·"team-driving",␍
+    121     │ - → → href:·"/team/driving",␍
+    122     │ - → → titleKey:·"nav.teamDriving",␍
+    123     │ - → → titleDefault:·"Driving·Details",␍
+    124     │ - → },␍
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},␍
+    126     │ - → {␍
+    127     │ - → → id:·"approvals",␍
+    128     │ - → → href:·"/approvals",␍
+    129     │ - → → titleKey:·"nav.approvals",␍
+    130     │ - → → titleDefault:·"Approvals",␍
+    131     │ - → },␍
+    132     │ - → {␍
+    133     │ - → → id:·"analytics",␍
+    134     │ - → → href:·"/analytics",␍
+    135     │ - → → titleKey:·"nav.analytics",␍
+    136     │ - → → titleDefault:·"Analytics",␍
+    137     │ - → },␍
+    138     │ - → {␍
+    139     │ - → → id:·"payroll",␍
+    140     │ - → → href:·"/payroll",␍
+    141     │ - → → titleKey:·"nav.payroll",␍
+    142     │ - → → titleDefault:·"Payroll",␍
+    143     │ - → },␍
+    144     │ - → {␍
+    145     │ - → → id:·"scheduling",␍
+    146     │ - → → href:·"/scheduling",␍
+    147     │ - → → titleKey:·"nav.scheduling",␍
+    148     │ - → → titleDefault:·"Scheduling",␍
+    149     │ - → },␍
+    150     │ - → {␍
+  355 more lines truncated
+  
+
+src\lib\personnel-file\document-request-officer.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /**␍
+      2     │ - ·*·#1403·(spec·#1307):·the·officer·"Document·requests"·page·lists·the·requests␍
+      3     │ - ·*·the·viewer·covers·across·employees,·filtered·by·status·and·overdue·(in·the␍
+      4     │ - ·*·organization's·calendar);·covering·officers·edit·the·deadline·and·note·of␍
+      5     │ - ·*·open·and·submitted·requests;·an·officer·who·loses·coverage·loses·sight·of␍
+      6     │ - ·*·the·request·and·every·action·on·it.·Against·a·disposable·PostgreSQL␍
+      7     │ - ·*·database;·the·session·and·notification·delivery·are·replaced.␍
+      8     │ - ·*/␍
+      9     │ - ␍
+     10     │ - import·{·Temporal·}·from·"temporal-polyfill";␍
+     11     │ - import·{·afterAll,·beforeAll,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+     12     │ - import·type·{·CreateNotificationParams·}·from·"@/lib/notifications/types";␍
+     13     │ - import·{·integrationAdminPool·}·from·"@/test/integration-database";␍
+     14     │ - ␍
+     15     │ - const·harness·=·vi.hoisted(()·=>·({␍
+     16     │ - → userId:·null·as·string·|·null,␍
+     17     │ - → organizationId:·"t1403-org",␍
+     18     │ - → notifications:·[]·as·CreateNotificationParams[],␍
+     19     │ - }));␍
+     20     │ - ␍
+     21     │ - vi.mock("next/headers",·async·()·=>·(await·import("@/test/integration-harness")).nextHeaders());␍
+     22     │ - vi.mock("next/server",·async·(original)·=>␍
+     23     │ - → (await·import("@/test/integration-harness")).nextServer(original),␍
+     24     │ - );␍
+     25     │ - vi.mock("next/cache",·async·(original)·=>␍
+     26     │ - → (await·import("@/test/integration-harness")).nextCache(original),␍
+     27     │ - );␍
+     28     │ - vi.mock("@/lib/auth",·()·=>·({␍
+     29     │ - → auth:·{␍
+     30     │ - → → api:·{␍
+     31     │ - → → → getSession:·async·()·=>␍
+     32     │ - → → → → harness.userId␍
+     33     │ - → → → → → ?·{␍
+     34     │ - → → → → → → → user:·{·id:·harness.userId,·role:·"user"·},␍
+     35     │ - → → → → → → → session:·{␍
+     36     │ - → → → → → → → → id:·`session-${harness.userId}`,␍
+     37     │ - → → → → → → → → userId:·harness.userId,␍
+     38     │ - → → → → → → → → activeOrganizationId:·harness.organizationId,␍
+     39     │ - → → → → → → → },␍
+     40     │ - → → → → → → }␍
+     41     │ - → → → → → :·null,␍
+     42     │ - → → },␍
+     43     │ - → },␍
+     44     │ - }));␍
+     45     │ - vi.mock("@/lib/notifications/notification-service",·()·=>·({␍
+     46     │ - → createNotification:·async·(params:·CreateNotificationParams)·=>·{␍
+     47     │ - → → harness.notifications.push(params);␍
+     48     │ - → → return·null;␍
+     49     │ - → },␍
+     50     │ - }));␍
+     51     │ - ␍
+     52     │ - vi.setConfig({·testTimeout:·60_000·});␍
+     53     │ - ␍
+     54     │ - const·actions·=·await·import("@/app/[locale]/(app)/personnel-files/document-request-actions");␍
+     55     │ - const·{·db·}·=·await·import("@/db");␍
+     56     │ - const·{·resolvePersonnelFileAccess·}·=·await·import("./access-store");␍
+     57     │ - const·{·listManagedDocumentRequests,·lockManagedDocumentRequest·}·=·await·import(␍
+     58     │ - → "./document-request-store"␍
+     59     │ - );␍
+     60     │ - const·{·parseDocumentRequestOverviewParams·}·=·await·import("./document-request-overview");␍
+     61     │ - const·{·seedPersonnelFileOfficerGrant·}·=·await·import("./testing/officer-grant.test.fixture");␍
+     62     │ - ␍
+     63     │ - const·ORG·=·"t1403-org";␍
+     64     │ - const·OTHER_ORG·=·"t1403-other";␍
+     65     │ - ␍
+     66     │ - const·ids·=·{␍
+     67     │ - → owner:·"e1403000-0000-4000-8000-000000000001",␍
+     68     │ - → admin:·"e1403000-0000-4000-8000-000000000002",␍
+     69     │ - → officer:·"e1403000-0000-4000-8000-000000000003",␍
+     70     │ - → anna:·"e1403000-0000-4000-8000-000000000004",␍
+     71     │ - → ben:·"e1403000-0000-4000-8000-000000000005",␍
+     72     │ - → stranger:·"e1403000-0000-4000-8000-000000000006",␍
+     73     │ - → berlin:·"e1403100-0000-4000-8000-000000000001",␍
+     74     │ - }·as·const;␍
+     75     │ - type·Person·=·"owner"·|·"admin"·|·"officer"·|·"anna"·|·"ben"·|·"stranger";␍
+     76     │ - const·userOf·=·(person:·Person)·=>·`t1403-${person}`;␍
+     77     │ - ␍
+     78     │ - const·admin·=·integrationAdminPool();␍
+     79     │ - let·officerGrantId·=·"";␍
+     80     │ - ␍
+     81     │ - async·function·cleanup()·{␍
+     82     │ - → await·admin.query("delete·from·organization·where·id·=·any($1)",·[[ORG,·OTHER_ORG]]);␍
+     83     │ - → await·admin.query('delete·from·"user"·where·id·like·$1',·["t1403-%"]);␍
+     84     │ - }␍
+     85     │ - ␍
+     86     │ - async·function·seedOrganization(id:·string)·{␍
+     87     │ - → await·admin.query(␍
+     88     │ - → → `insert·into·organization·(id,·name,·slug,·timezone,·personnel_files_enabled,·created_at)␍
+     89     │ - → → ·values·($1,·$1,·$1,·'Europe/Berlin',·true,·now())`,␍
+     90     │ - → → [id],␍
+     91     │ - → );␍
+     92     │ - }␍
+     93     │ - ␍
+     94     │ - async·function·seedPerson(␍
+     95     │ - → person:·Person,␍
+     96     │ - → displayName:·string,␍
+     97     │ - → memberRole:·string,␍
+     98     │ - → options:·{·organizationId?:·string;·teamId?:·string·|·null·}·=·{},␍
+     99     │ - )·{␍
+    100     │ - → const·organizationId·=·options.organizationId·??·ORG;␍
+    101     │ - → await·admin.query(␍
+    102     │ - → → 'insert·into·"user"·(id,name,email,created_at,updated_at)·values·($1,$2,$3,now(),now())',␍
+    103     │ - → → [userOf(person),·displayName,·`${userOf(person)}@example.test`],␍
+    104     │ - → );␍
+    105     │ - → await·admin.query(␍
+    106     │ - → → "insert·into·member·(id,organization_id,user_id,role,status,created_at)·values·($1,$2,$3,$4,'approved',now())",␍
+    107     │ - → → [`t1403-member-${person}`,·organizationId,·userOf(person),·memberRole],␍
+    108     │ - → );␍
+    109     │ - → await·admin.query(␍
+    110     │ - → → "insert·into·employee·(id,user_id,organization_id,role,team_id,is_active,updated_at)·values·($1,$2,$3,'employee',$4,true,now())",␍
+    111     │ - → → [ids[person],·userOf(person),·organizationId,·options.teamId·??·null],␍
+    112     │ - → );␍
+    113     │ - }␍
+    114     │ - ␍
+    115     │ - async·function·seed()·{␍
+    116     │ - → await·cleanup();␍
+    117     │ - → await·seedOrganization(ORG);␍
+    118     │ - → await·seedOrganization(OTHER_ORG);␍
+    119     │ - → await·admin.query(␍
+    120     │ - → → "insert·into·team·(id,·organization_id,·name,·updated_at)·values·($1,·$2,·'Berlin',·now())",␍
+    121     │ - → → [ids.berlin,·ORG],␍
+    122     │ - → );␍
+    123     │ - → await·seedPerson("owner",·"Olga·Owner",·"owner");␍
+    124     │ - → await·seedPerson("admin",·"Adam·Admin",·"admin");␍
+    125     │ - → await·seedPerson("officer",·"Otto·Officer",·"member");␍
+    126     │ - → await·seedPerson("anna",·"Anna·Example",·"member",·{·teamId:·ids.berlin·});␍
+    127     │ - → await·seedPerson("ben",·"Ben·Example",·"member");␍
+    128     │ - → await·seedPerson("stranger",·"Sam·Stranger",·"owner",·{·organizationId:·OTHER_ORG·});␍
+    129     │ - }␍
+    130     │ - ␍
+    131     │ - /**·Otto·covers·Berlin's·certificates·only.·*/␍
+    132     │ - async·function·grantOfficer()·{␍
+    133     │ - → await·admin.query("delete·from·personnel_file_officer_grant·where·organization_id·=·$1",·[ORG]);␍
+    134     │ - → officerGrantId·=·await·seedPersonnelFileOfficerGrant(admin,·{␍
+    135     │ - → → organizationId:·ORG,␍
+    136     │ - → → officerEmployeeId:·ids.officer,␍
+    137     │ - → → createdBy:·userOf("owner"),␍
+    138     │ - → → teamIds:·[ids.berlin],␍
+    139     │ - → → categories:·["certificate"],␍
+    140     │ - → });␍
+    141     │ - }␍
+    142     │ - ␍
+    143     │ - function·signIn(person:·Person,·organizationId·=·ORG)·{␍
+    144     │ - → harness.userId·=·userOf(person);␍
+    145     │ - → harness.organizationId·=·organizationId;␍
+    146     │ - }␍
+    147     │ - ␍
+    148     │ - async·function·accessOf(person:·Person)·{␍
+    149     │ - → const·access·=·await·resolvePersonnelFileAccess(db,·{␍
+    150     │ - → → userId:·userOf(person),␍
+  1115 more lines truncated
+  
+
+Checked 9 files in 12ms. No fixes applied.
+Found 9 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

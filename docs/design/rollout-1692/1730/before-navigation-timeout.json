@@ -1,0 +1,38 @@
+{
+  "stage": "before",
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "rawSha256": "f97cdaea4242fe129c96d0c5b182876d5cd226b46d06ae3cd548573c1ecc1e02",
+      "canonicalLfSha256": "f97cdaea4242fe129c96d0c5b182876d5cd226b46d06ae3cd548573c1ecc1e02"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "rawSha256": "9ca4700d4069fc79e0b2eb15d11c9be7961435b6d7825833e1eab489bad86a40",
+      "canonicalLfSha256": "9ca4700d4069fc79e0b2eb15d11c9be7961435b6d7825833e1eab489bad86a40"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "rawSha256": "4d7c8f3df5cd79e4dd7f1deaf7856ce1af8d823fb22c50bc60211742e857d38e",
+      "canonicalLfSha256": "afa04b979926aab57736aa04db8fb0720a8c43db396ec727c9286a4d925d2f64"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "rawSha256": "d372ad33573ff7fcca18a4fefc75d0a268e21bc491c20834b0a975a6bd015284",
+      "canonicalLfSha256": "d372ad33573ff7fcca18a4fefc75d0a268e21bc491c20834b0a975a6bd015284"
+    }
+  ],
+  "captures": [],
+  "errors": [
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering."
+  ],
+  "failure": "Navigation timeout of 90000 ms exceeded"
+}
