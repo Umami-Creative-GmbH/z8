@@ -1,0 +1,306 @@
+{
+  "state": "SEALED_FIXED_GIT",
+  "source": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+  "merge": "7d7d333e685cb9ce0aae3b08bc24394ad1dda1b0",
+  "published": "fb6c0d7b6289bb0c9d5dd108eff4be5697cd79a8",
+  "verified": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+  "incomingPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+    "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+    "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts"
+  ],
+  "rootChangedPaths": [
+    "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+    "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+    "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+    "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+    "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+    "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts"
+  ],
+  "allChangedPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+    "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+    "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+    "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+    "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+    "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+    "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+    "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts"
+  ],
+  "contextPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+    "apps/webapp/src/components/personnel-file/document-request-officer-actions.tsx",
+    "apps/webapp/src/lib/personnel-file/document-request.types.ts",
+    "apps/webapp/src/lib/personnel-file/document-request-store.ts",
+    "apps/webapp/src/lib/personnel-file/current-access.ts",
+    "apps/webapp/src/lib/personnel-file/access.ts"
+  ],
+  "preserved1728Paths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+    "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+    "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+    "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+    "apps/webapp/src/components/personnel-file/use-personnel-files-snapshot.ts",
+    "apps/webapp/src/lib/personnel-file/access-store.ts",
+    "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+    "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts"
+  ],
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+      "gitBlob": "01ee7241d159d65cfc8c003ec331bff02275cc8e",
+      "bytes": 15798,
+      "sha256": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f",
+      "lfSha256": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "gitBlob": "428d83bd5201e7f03c111a31895d5d923b0e2e01",
+      "bytes": 3426,
+      "sha256": "b4704d05f25ddab4d5c4b4916c445e3df7bd14aa38bbc524130e7a353151a5cb",
+      "lfSha256": "b4704d05f25ddab4d5c4b4916c445e3df7bd14aa38bbc524130e7a353151a5cb"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+      "gitBlob": "1ae5dfba14d9b0506baab3f1935fc32230e0c8eb",
+      "bytes": 3410,
+      "sha256": "6b41e30259e004b8a836f93186ff68f9ee0bc784f2176dd918603dbe7f48c26d",
+      "lfSha256": "6b41e30259e004b8a836f93186ff68f9ee0bc784f2176dd918603dbe7f48c26d"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "gitBlob": "8e2b454e53e12a6041c5c2914e3212cfd66e272d",
+      "bytes": 11585,
+      "sha256": "93d836f470f7784d1396eb9fbcd79006ddd58af621acba5c8f00433fb5f8158b",
+      "lfSha256": "93d836f470f7784d1396eb9fbcd79006ddd58af621acba5c8f00433fb5f8158b"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "gitBlob": "a1c15cfebce3bd81eca5ed35ecca893be466ca54",
+      "bytes": 17695,
+      "sha256": "d0305022a3022e321ce1abcc4f90bacc849b929c2095d396d80d1dfc08c5445e",
+      "lfSha256": "d0305022a3022e321ce1abcc4f90bacc849b929c2095d396d80d1dfc08c5445e"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+      "gitBlob": "805bb9a1c77675e66a96e9c62b91ef8df8a426a1",
+      "bytes": 5488,
+      "sha256": "91f240c17ed0865fbf066e7c805f1c8448178f150c7144da01d9a5a9275cdebd",
+      "lfSha256": "91f240c17ed0865fbf066e7c805f1c8448178f150c7144da01d9a5a9275cdebd"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "gitBlob": "0144c5d38846072a599f37cf682922f38f30941e",
+      "bytes": 8505,
+      "sha256": "94fe2bb25e27968327f22fdc016215392e1f26dfff9dacf83bb3375d24f8dcbe",
+      "lfSha256": "94fe2bb25e27968327f22fdc016215392e1f26dfff9dacf83bb3375d24f8dcbe"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+      "gitBlob": "eb0097d22aea960d3b117aad51864261c7dc4be9",
+      "bytes": 8900,
+      "sha256": "6a189dc6e744f7ee28b3752d2d28e29cc3a15b4de89bf29d3b8079d601990269",
+      "lfSha256": "6a189dc6e744f7ee28b3752d2d28e29cc3a15b4de89bf29d3b8079d601990269"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-request-officer-actions.tsx",
+      "gitBlob": "29e1e92eb53a6566d0c2cde45e792b16abeea0e1",
+      "bytes": 2664,
+      "sha256": "b3af8f51c2e6214e86e0bfb8606716b77017dc4c66147f281d33846a5cd1e5ec",
+      "lfSha256": "b3af8f51c2e6214e86e0bfb8606716b77017dc4c66147f281d33846a5cd1e5ec"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "gitBlob": "876ad148bfcfb7b74a40dc06cd7e8ffd98b3435f",
+      "bytes": 7906,
+      "sha256": "e0ceeff89c1919e2e933d94b5755c60deeb3cc069518cf5ab87d85d5fdfc13c4",
+      "lfSha256": "e0ceeff89c1919e2e933d94b5755c60deeb3cc069518cf5ab87d85d5fdfc13c4"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "gitBlob": "82f982e1497275dc3af6b06ba0af05c3d0aa4d2a",
+      "bytes": 6667,
+      "sha256": "abcd121fad74d2cb015d185bfce43f7b9112edd910c8ad88ed8b5a9b105284bf",
+      "lfSha256": "abcd121fad74d2cb015d185bfce43f7b9112edd910c8ad88ed8b5a9b105284bf"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "gitBlob": "70c91d5e373cbfd5fd637e40c9a2625e662f3a7d",
+      "bytes": 6241,
+      "sha256": "f979e6658a3756c1da2bc5a12983e6b72dda42947526ca75121dc49edbf39169",
+      "lfSha256": "f979e6658a3756c1da2bc5a12983e6b72dda42947526ca75121dc49edbf39169"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "gitBlob": "58fa6088eae2c927533680f09f48e87b8c327741",
+      "bytes": 6243,
+      "sha256": "34e83988c3557583509f8d79ac6f8e315ac223d134cc94b3d1e84a9729ba7072",
+      "lfSha256": "34e83988c3557583509f8d79ac6f8e315ac223d134cc94b3d1e84a9729ba7072"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+      "gitBlob": "11b794b19a7a0a7a6917360189e58dcb43f0a99c",
+      "bytes": 4618,
+      "sha256": "0a8c83bc93d7ff1cfe2b319436221c86d230e2b54212d30b28b821cf65bf8fed",
+      "lfSha256": "0a8c83bc93d7ff1cfe2b319436221c86d230e2b54212d30b28b821cf65bf8fed"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+      "gitBlob": "34b24b47d87ac8d11d4574bd84363cf1a448b324",
+      "bytes": 6467,
+      "sha256": "cc4dde8751e1e86589b914ecfe0b62f88517bb31402c38da020cf3055e4a452d",
+      "lfSha256": "cc4dde8751e1e86589b914ecfe0b62f88517bb31402c38da020cf3055e4a452d"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts",
+      "gitBlob": "e0d3de1d5b829395286e5065a1d8e46d84893c5c",
+      "bytes": 1687,
+      "sha256": "14739c3a5db6f0848dda4760396cb15722fcc8c525ee22fe6f0b8c43671576ca",
+      "lfSha256": "14739c3a5db6f0848dda4760396cb15722fcc8c525ee22fe6f0b8c43671576ca"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-personnel-files-snapshot.ts",
+      "gitBlob": "8a1a5bee5c60383ee9eb043c7770848b9c09cebf",
+      "bytes": 2112,
+      "sha256": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f",
+      "lfSha256": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "gitBlob": "3c20c0a2b83a9290cde741937ae3203329da14a9",
+      "bytes": 8658,
+      "sha256": "9bfd0a989ca673cc73ac019ef2e239779dfeb95a44d6cad132ba20683993c46b",
+      "lfSha256": "9bfd0a989ca673cc73ac019ef2e239779dfeb95a44d6cad132ba20683993c46b"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "gitBlob": "fafcf6ad90b808c000567fcaf0d4246eebdd7f58",
+      "bytes": 6935,
+      "sha256": "8feaa418f83e13fe882164d601b0c9e284cb212f0c5cdea79605c31bd77ea4ce",
+      "lfSha256": "8feaa418f83e13fe882164d601b0c9e284cb212f0c5cdea79605c31bd77ea4ce"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/access.ts",
+      "gitBlob": "bbfa4936ca3cf1fc2e8cdf02d7cee740c0071cbe",
+      "bytes": 9715,
+      "sha256": "7bb6dff435ed9e3b70b598882d944e7a29feb2c4d6ce9ecd8ab28376813c51d4",
+      "lfSha256": "7bb6dff435ed9e3b70b598882d944e7a29feb2c4d6ce9ecd8ab28376813c51d4"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/access-store.ts",
+      "gitBlob": "4a43fb54cfd7e58d04f1a1bb8056f12597f4e9b5",
+      "bytes": 13740,
+      "sha256": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728",
+      "lfSha256": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/current-access.ts",
+      "gitBlob": "6c6c064f6bb02ee4f65c0885df0457c0a46333d0",
+      "bytes": 1169,
+      "sha256": "c420c675e12a06396984e0dda6cae761c15b246cf81fdeed11500a92e15f2bf9",
+      "lfSha256": "c420c675e12a06396984e0dda6cae761c15b246cf81fdeed11500a92e15f2bf9"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/document-request.types.ts",
+      "gitBlob": "5afc7e01163a1b9f1bb623a17ecf3ab4cbc612ab",
+      "bytes": 8310,
+      "sha256": "5563993578d3fb5fdf0cf3a6ee6d85f43d9918e627b1d58b3ac9b19170ae3c41",
+      "lfSha256": "5563993578d3fb5fdf0cf3a6ee6d85f43d9918e627b1d58b3ac9b19170ae3c41"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts",
+      "gitBlob": "4be86202a1a41cd9c5f2c1e88e13780e0291ec14",
+      "bytes": 22564,
+      "sha256": "65fe67e2be6cce4e82aa91204972e2a25597866ed93569935f6a0c4cf0c28fee",
+      "lfSha256": "65fe67e2be6cce4e82aa91204972e2a25597866ed93569935f6a0c4cf0c28fee"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/document-request-store.ts",
+      "gitBlob": "7dd934a5685f6c2f4d3f15ba7457cd40bc441552",
+      "bytes": 50160,
+      "sha256": "2e55d521483f51d0f3625db130bd79d1b417d94abc0ffd3b0274f6277e32f392",
+      "lfSha256": "2e55d521483f51d0f3625db130bd79d1b417d94abc0ffd3b0274f6277e32f392"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+      "gitBlob": "631772c7f20f45e010e8d58c6689932c639c2fea",
+      "bytes": 6401,
+      "sha256": "fe4412ad51b813be30dde721420225cf387efe4b1534aab1e955df31280c570b",
+      "lfSha256": "fe4412ad51b813be30dde721420225cf387efe4b1534aab1e955df31280c570b"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "gitBlob": "1f0e3c4fb66123cc3b1ed5f422c7dc8f33a50340",
+      "bytes": 29848,
+      "sha256": "9d48a89b93baa1ba92c4d1b38777a3e17c2fc7c190d562c5fdeac52e4d7c8ad7",
+      "lfSha256": "9d48a89b93baa1ba92c4d1b38777a3e17c2fc7c190d562c5fdeac52e4d7c8ad7"
+    }
+  ],
+  "repositoryManifestPins": [
+    {
+      "path": "pnpm-lock.yaml",
+      "gitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "sameAsPublished": true
+    },
+    {
+      "path": "package.json",
+      "gitBlob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "sha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "sameAsPublished": true
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "gitBlob": "72bd6c845fc48f077c52fd789d799cb0928b6873",
+      "sha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "sameAsPublished": true
+    },
+    {
+      "path": ".npmrc",
+      "gitBlob": "901e422dfa4838df9e44e94aff5f9804c71f54bf",
+      "sha256": "dd998aaa9f9922968f3267afc734950541138c7d0e00665590907f81824641c0",
+      "sameAsPublished": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "gitBlob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "sha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "sameAsPublished": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "gitBlob": "ee5b75c0f4a1e53ab7120d871d8bb0cd6d5fa7f8",
+      "sha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "sameAsPublished": true
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "gitBlob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4",
+      "sha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2",
+      "sameAsPublished": true
+    }
+  ],
+  "baselineBulk": {
+    "ref": "fb6c0d7b6289bb0c9d5dd108eff4be5697cd79a8",
+    "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+    "gitBlob": "040a448835fac642c6c995ac22071c8d81831763",
+    "gitSha256": "d372ad33573ff7fcca18a4fefc75d0a268e21bc491c20834b0a975a6bd015284",
+    "archivedSha256": "d372ad33573ff7fcca18a4fefc75d0a268e21bc491c20834b0a975a6bd015284",
+    "rawMatch": true,
+    "lfMatch": true
+  },
+  "provenanceBoundary": "Exact final Git source and pinned baseline; intermediate shared activation/retirement/recovery source stages were evolving working copies and are not all machine-exact separately sealed Git stages."
+}

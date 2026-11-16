@@ -1,0 +1,9 @@
+{
+  "kind": "root-transcript-attestation",
+  "source": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+  "log": "typecheck.log",
+  "observedExitCode": 0,
+  "checks": ["Next route type generation", "application TypeScript project", "workflow-contract TypeScript project", "smoke TypeScript project"],
+  "provenance": "The root observed the completed shell tool result with exit_code 0 during the correction checks before this runtime lease. This is an explicit transcript attestation, not a new execution or a reconstructed raw shell record.",
+  "boundary": "Production source is identical to the final candidate. Final cancelable-event assertions changed test-only source afterward; the final 335-case unit run includes them."
+}

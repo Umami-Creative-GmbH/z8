@@ -1,0 +1,12 @@
+{
+  "processInventory": "Exact task PIDs and descendants only; no broad process enumeration",
+  "nativeSessionsClosed": 2,
+  "puppeteerPolicy": "Every driver awaited browser.close() in finally; all driver/wrapper sessions completed",
+  "privateFixtureManifestsPreserved": true,
+  "cacheMoved": false,
+  "nativeDaemonsAbsent": true,
+  "ownedProcessesRemaining": 0,
+  "ownedNextPortClosed": true,
+  "exactManifestContainersAbsent": 3,
+  "verifiedStoppedPidCount": 49
+}
