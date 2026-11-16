@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
+it("opts only the driving queue into page-owned headings", () => {
+	expect(appPageOwnsHeading("/en/team/driving")).toBe(true);
+	expect(appPageOwnsHeading("/de/team/driving/")).toBe(true);
+	expect(appPageOwnsHeading("/en/team/driving/detail")).toBe(false);
+	expect(appPageOwnsHeading("/en/team/driving-other")).toBe(false);
+});
+
 describe("route metadata", () => {
 	it("adopts only the report share-link settings heading without other settings or descendants", () => {
 		expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);
