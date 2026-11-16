@@ -25,10 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { useOrganization } from "@/hooks/use-organization";
-import {
-	formatInstant,
-	formatPlainDateRange,
-} from "@/lib/datetime/temporal-format";
+import { formatInstant, formatPlainDateRange } from "@/lib/datetime/temporal-format";
 import type {
 	ShareLinkStatus,
 	ShareLinkSummary,
@@ -36,6 +33,7 @@ import type {
 } from "@/lib/projects/report-share/report-share-links";
 import { queryKeys } from "@/lib/query/keys";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
+import { ReportScopeFailure } from "./report-scope-failure";
 
 function targetKey(target: ShareTarget | undefined) {
 	if (!target) return null;
@@ -80,22 +78,25 @@ function useOwnedShareKey(prefix: readonly unknown[], scope: ShareReadScope) {
 export function ReportShareLinkList(props: ReportShareLinkListProps) {
 	const scope = useOrganization();
 	const { t } = useTranslate();
-	if (scope.isLoading || !scope.userId || !scope.activeOrganizationId)
+	if (scope.isLoading)
 		return (
 			<p role="status">
-				{t(
-					"reports.share.list.scopeLoading",
-					"Loading the current share-link scope\u2026",
-				)}
+				{t("reports.share.list.scopeLoading", "Loading the current share-link scope\u2026")}
 			</p>
+		);
+	if (scope.error || !scope.userId || !scope.activeOrganizationId)
+		return (
+			<ReportScopeFailure
+				message={t(
+					"reports.share.list.scopeUnavailable",
+					"The current share-link scope could not be loaded.",
+				)}
+				onRetry={scope.refetch}
+			/>
 		);
 	return (
 		<ReportShareLinkArrival
-			key={JSON.stringify([
-				scope.userId,
-				scope.activeOrganizationId,
-				targetKey(props.target),
-			])}
+			key={JSON.stringify([scope.userId, scope.activeOrganizationId, targetKey(props.target)])}
 			{...props}
 			userId={scope.userId}
 			organizationId={scope.activeOrganizationId}
@@ -111,10 +112,7 @@ function ReportShareLinkArrival({
 }: ReportShareLinkListProps & { userId: string; organizationId: string }) {
 	const arrival = useId();
 	const scope = { userId, organizationId, arrival };
-	const queryKey = useOwnedShareKey(
-		queryKeys.reportShareLinks.list(targetKey(target)),
-		scope,
-	);
+	const queryKey = useOwnedShareKey(queryKeys.reportShareLinks.list(targetKey(target)), scope);
 	const { t } = useTranslate();
 	const query = useQuery({
 		queryKey,
@@ -129,10 +127,7 @@ function ReportShareLinkArrival({
 
 	if (query.isPending) {
 		return (
-			<p
-				className="flex items-center gap-2 text-sm text-muted-foreground"
-				role="status"
-			>
+			<p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
 				<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 				{t("reports.share.list.loading", "Loading share links…")}
 			</p>
@@ -142,11 +137,7 @@ function ReportShareLinkArrival({
 		return (
 			<div className="space-y-2 text-sm text-destructive" role="alert">
 				{t("reports.share.list.failed", "Share links could not be loaded.")}
-				<Button
-					variant="outline"
-					disabled={query.isFetching}
-					onClick={() => void query.refetch()}
-				>
+				<Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>
 					{t("common.retry", "Retry")}
 				</Button>
 			</div>
@@ -162,12 +153,7 @@ function ReportShareLinkArrival({
 	return (
 		<ul className="divide-y rounded-lg border">
 			{query.data.map((link) => (
-				<ReportShareLinkRow
-					key={link.id}
-					link={link}
-					showReport={showReport}
-					scope={scope}
-				/>
+				<ReportShareLinkRow key={link.id} link={link} showReport={showReport} scope={scope} />
 			))}
 		</ul>
 	);
@@ -179,17 +165,9 @@ function StatusBadge({ status }: { status: ShareLinkStatus }) {
 		return <Badge>{t("reports.share.status.active", "Active")}</Badge>;
 	}
 	if (status === "expired") {
-		return (
-			<Badge variant="secondary">
-				{t("reports.share.status.expired", "Expired")}
-			</Badge>
-		);
+		return <Badge variant="secondary">{t("reports.share.status.expired", "Expired")}</Badge>;
 	}
-	return (
-		<Badge variant="outline">
-			{t("reports.share.status.revoked", "Revoked")}
-		</Badge>
-	);
+	return <Badge variant="outline">{t("reports.share.status.revoked", "Revoked")}</Badge>;
 }
 
 function ReportShareLinkRow({
@@ -210,14 +188,14 @@ function ReportShareLinkRow({
 	const lifetime = useRef<object | null>(null);
 	const pending = useRef<object | null>(null);
 	useLayoutEffect(() => {
-		lifetime.current = { link };
+		lifetime.current = { linkId: link.id };
 		pending.current = null;
 		setRevoking(false);
 		return () => {
 			lifetime.current = null;
 			pending.current = null;
 		};
-	}, [link]);
+	}, [link.id]);
 	const at = (instant: string) =>
 		formatInstant(Temporal.Instant.from(instant), display, "dateTimeMedium");
 	const period = formatPlainDateRange(
@@ -252,7 +230,7 @@ function ReportShareLinkRow({
 
 	async function revoke() {
 		const generation = lifetime.current;
-		if (!generation || pending.current) return;
+		if (!generation || pending.current || !link.canRevoke || link.status !== "active") return;
 		pending.current = generation;
 		setRevoking(true);
 		await runWithCleanup(
@@ -263,12 +241,9 @@ function ReportShareLinkRow({
 					setRevoking(false);
 					setConfirming(false);
 					if (!result.success) {
-						toast.error(
-							t("reports.share.revoke.failed", "The link could not be revoked"),
-							{
-								description: result.error,
-							},
-						);
+						toast.error(t("reports.share.revoke.failed", "The link could not be revoked"), {
+							description: result.error,
+						});
 						return;
 					}
 					toast.success(t("reports.share.revoke.done", "Link revoked"));
@@ -277,9 +252,7 @@ function ReportShareLinkRow({
 					});
 				} catch {
 					if (lifetime.current === generation)
-						toast.error(
-							t("reports.share.revoke.failed", "The link could not be revoked"),
-						);
+						toast.error(t("reports.share.revoke.failed", "The link could not be revoked"));
 				}
 			},
 			() => {
@@ -297,8 +270,7 @@ function ReportShareLinkRow({
 				<StatusBadge status={link.status} />
 				{showReport && (
 					<span className="font-medium">
-						{link.reportName ??
-							t("reports.share.list.deletedReport", "Deleted")}
+						{link.reportName ?? t("reports.share.list.deletedReport", "Deleted")}
 						{" · "}
 						{link.kind === "project"
 							? t("reports.share.kind.project", "Project report")
@@ -315,10 +287,7 @@ function ReportShareLinkRow({
 					` · ${
 						link.includeEmployees
 							? t("reports.share.list.withEmployees", "With employee breakdown")
-							: t(
-									"reports.share.list.withoutEmployees",
-									"Without employee breakdown",
-								)
+							: t("reports.share.list.withoutEmployees", "Without employee breakdown")
 					}`}
 			</p>
 			<p className="text-muted-foreground">
@@ -337,22 +306,14 @@ function ReportShareLinkRow({
 					aria-expanded={showViews}
 				>
 					<IconEye aria-hidden="true" className="size-4" />
-					{t(
-						"reports.share.list.views",
-						"{count, plural, one {# view} other {# views}}",
-						{
-							count: link.viewCount,
-						},
-					)}
+					{t("reports.share.list.views", "{count, plural, one {# view} other {# views}}", {
+						count: link.viewCount,
+					})}
 					{link.lastViewedAt &&
 						` · ${t("reports.share.list.lastViewed", "last {date}", { date: at(link.lastViewedAt) })}`}
 				</Button>
 				{link.status === "active" && link.canRevoke && (
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => setConfirming(true)}
-					>
+					<Button variant="outline" size="sm" onClick={() => setConfirming(true)}>
 						<IconLinkOff aria-hidden="true" className="size-4" />
 						{t("reports.share.revoke.action", "Revoke")}
 					</Button>
@@ -377,18 +338,13 @@ function ReportShareLinkRow({
 							{t("reports.share.revoke.cancel", "Cancel")}
 						</AlertDialogCancel>
 						<AlertDialogAction
-							disabled={revoking}
+							disabled={revoking || !link.canRevoke || link.status !== "active"}
 							onClick={(event) => {
 								event.preventDefault();
 								void revoke();
 							}}
 						>
-							{revoking && (
-								<IconLoader2
-									aria-hidden="true"
-									className="size-4 animate-spin"
-								/>
-							)}
+							{revoking && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
 							{t("reports.share.revoke.confirm", "Revoke link")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -398,17 +354,8 @@ function ReportShareLinkRow({
 	);
 }
 
-function ReportShareLinkViews({
-	linkId,
-	scope,
-}: {
-	linkId: string;
-	scope: ShareReadScope;
-}) {
-	const queryKey = useOwnedShareKey(
-		queryKeys.reportShareLinks.views(linkId),
-		scope,
-	);
+function ReportShareLinkViews({ linkId, scope }: { linkId: string; scope: ShareReadScope }) {
+	const queryKey = useOwnedShareKey(queryKeys.reportShareLinks.views(linkId), scope);
 	const { t } = useTranslate();
 	const display = useDisplayContext();
 	const query = useQuery({
@@ -445,22 +392,13 @@ function ReportShareLinkViews({
 					className="grid gap-x-3 sm:grid-cols-[auto_auto_1fr]"
 				>
 					<span className="tabular-nums">
-						{formatInstant(
-							Temporal.Instant.from(view.viewedAt),
-							display,
-							"dateTimeMedium",
-						)}
+						{formatInstant(Temporal.Instant.from(view.viewedAt), display, "dateTimeMedium")}
 					</span>
 					<span className="tabular-nums text-muted-foreground">
-						{view.ipAddress ??
-							t("reports.share.views.unknownIp", "Unknown IP address")}
+						{view.ipAddress ?? t("reports.share.views.unknownIp", "Unknown IP address")}
 					</span>
-					<span
-						className="truncate text-muted-foreground"
-						title={view.userAgent ?? undefined}
-					>
-						{view.userAgent ??
-							t("reports.share.views.unknownAgent", "Unknown browser")}
+					<span className="truncate text-muted-foreground" title={view.userAgent ?? undefined}>
+						{view.userAgent ?? t("reports.share.views.unknownAgent", "Unknown browser")}
 					</span>
 				</li>
 			))}

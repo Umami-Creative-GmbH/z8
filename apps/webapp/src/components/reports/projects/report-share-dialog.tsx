@@ -1,11 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconCopy,
-	IconLoader2,
-	IconShare,
-} from "@tabler/icons-react";
+import { IconCheck, IconCopy, IconLoader2, IconShare } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -52,13 +47,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { ReportShareLinkList } from "./report-share-link-list";
 
-const EXPIRY_CHOICES = [
-	7,
-	14,
-	SHARE_LINK_DEFAULT_EXPIRY_DAYS,
-	60,
-	SHARE_LINK_MAX_EXPIRY_DAYS,
-];
+const EXPIRY_CHOICES = [7, 14, SHARE_LINK_DEFAULT_EXPIRY_DAYS, 60, SHARE_LINK_MAX_EXPIRY_DAYS];
 
 interface ShareFormValues {
 	figures: ShareLinkFigures;
@@ -85,8 +74,7 @@ interface ReportShareDialogProps {
  */
 export function ReportShareDialog(props: ReportShareDialogProps) {
 	const scope = useOrganization();
-	if (scope.isLoading || !scope.userId || !scope.activeOrganizationId)
-		return null;
+	if (scope.isLoading || !scope.userId || !scope.activeOrganizationId) return null;
 	return (
 		<ReportShareArrival
 			key={JSON.stringify([
@@ -151,8 +139,7 @@ function ReportShareArrival({
 		onSubmitMeta: { generation: null as object | null },
 		onSubmit: async ({ value, meta }) => {
 			const generation = meta.generation;
-			if (!generation || lifetime.current !== generation || pending.current)
-				return;
+			if (!generation || lifetime.current !== generation || pending.current) return;
 			pending.current = generation;
 			await runWithCleanup(
 				async () => {
@@ -167,15 +154,9 @@ function ReportShareArrival({
 						});
 						if (lifetime.current !== generation) return;
 						if (!result.success) {
-							toast.error(
-								t(
-									"reports.share.create.failed",
-									"The share link could not be created",
-								),
-								{
-									description: result.error,
-								},
-							);
+							toast.error(t("reports.share.create.failed", "The share link could not be created"), {
+								description: result.error,
+							});
 							return;
 						}
 						setCopied(false);
@@ -185,12 +166,7 @@ function ReportShareArrival({
 						});
 					} catch {
 						if (lifetime.current === generation)
-							toast.error(
-								t(
-									"reports.share.create.failed",
-									"The share link could not be created",
-								),
-							);
+							toast.error(t("reports.share.create.failed", "The share link could not be created"));
 					}
 				},
 				() => {
@@ -205,16 +181,10 @@ function ReportShareArrival({
 		if (!createdUrl || !generation) return;
 		try {
 			await navigator.clipboard.writeText(createdUrl);
-			if (lifetime.current === generation && copyTarget.current === createdUrl)
-				setCopied(true);
+			if (lifetime.current === generation && copyTarget.current === createdUrl) setCopied(true);
 		} catch {
 			if (lifetime.current === generation && copyTarget.current === createdUrl)
-				toast.error(
-					t(
-						"reports.share.created.copyFailed",
-						"Copy the link by selecting it",
-					),
-				);
+				toast.error(t("reports.share.created.copyFailed", "Copy the link by selecting it"));
 		}
 	}
 
@@ -271,26 +241,16 @@ function ReportShareArrival({
 						<form.Field name="figures">
 							{(field) => (
 								<TFormItem>
-									<TFormLabel>
-										{t("reports.share.form.figures", "Figures")}
-									</TFormLabel>
+									<TFormLabel>{t("reports.share.form.figures", "Figures")}</TFormLabel>
 									<TFormControl>
 										<RadioGroup
 											value={field.state.value}
-											onValueChange={(value) =>
-												field.handleChange(value as ShareLinkFigures)
-											}
+											onValueChange={(value) => field.handleChange(value as ShareLinkFigures)}
 											className="gap-2"
 										>
 											<div className="flex items-center gap-2">
-												<RadioGroupItem
-													id={`${id}-share-figures-hours`}
-													value="hours"
-												/>
-												<Label
-													htmlFor={`${id}-share-figures-hours`}
-													className="font-normal"
-												>
+												<RadioGroupItem id={`${id}-share-figures-hours`} value="hours" />
+												<Label htmlFor={`${id}-share-figures-hours`} className="font-normal">
 													{t("reports.share.figures.hours", "Hours only")}
 												</Label>
 											</div>
@@ -300,14 +260,8 @@ function ReportShareArrival({
 													value="revenue"
 													disabled={!canShareRevenue}
 												/>
-												<Label
-													htmlFor={`${id}-share-figures-revenue`}
-													className="font-normal"
-												>
-													{t(
-														"reports.share.figures.revenue",
-														"Hours + revenue",
-													)}
+												<Label htmlFor={`${id}-share-figures-revenue`} className="font-normal">
+													{t("reports.share.figures.revenue", "Hours + revenue")}
 												</Label>
 											</div>
 										</RadioGroup>
@@ -332,10 +286,7 @@ function ReportShareArrival({
 											{t("reports.share.form.employees", "Employee breakdown")}
 										</TFormLabel>
 										<TFormControl className="row-span-2">
-											<Switch
-												checked={field.state.value}
-												onCheckedChange={field.handleChange}
-											/>
+											<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
 										</TFormControl>
 										<TFormDescription className="text-xs">
 											{t(
@@ -351,13 +302,8 @@ function ReportShareArrival({
 						<form.Field name="expiresInDays">
 							{(field) => (
 								<TFormItem>
-									<TFormLabel>
-										{t("reports.share.form.expiry", "Expires after")}
-									</TFormLabel>
-									<Select
-										value={field.state.value}
-										onValueChange={field.handleChange}
-									>
+									<TFormLabel>{t("reports.share.form.expiry", "Expires after")}</TFormLabel>
+									<Select value={field.state.value} onValueChange={field.handleChange}>
 										<TFormControl>
 											<SelectTrigger className="w-full sm:w-56">
 												<SelectValue />
@@ -385,10 +331,7 @@ function ReportShareArrival({
 							{(isSubmitting) => (
 								<Button type="submit" disabled={isSubmitting}>
 									{isSubmitting && (
-										<IconLoader2
-											aria-hidden="true"
-											className="size-4 animate-spin"
-										/>
+										<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 									)}
 									{t("reports.share.form.create", "Create link")}
 								</Button>
@@ -397,10 +340,7 @@ function ReportShareArrival({
 					</form>
 				)}
 
-				<section
-					aria-labelledby={`${id}-share-links-title`}
-					className="space-y-2"
-				>
+				<section aria-labelledby={`${id}-share-links-title`} className="space-y-2">
 					<h3 id={`${id}-share-links-title`} className="font-medium">
 						{t("reports.share.list.title", "Links to this report")}
 					</h3>

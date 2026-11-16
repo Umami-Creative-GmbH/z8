@@ -1,10 +1,6 @@
 "use client";
 
-import {
-	IconAlertCircle,
-	IconBriefcase,
-	IconChartBar,
-} from "@tabler/icons-react";
+import { IconAlertCircle, IconBriefcase, IconChartBar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -43,51 +39,49 @@ import { ProjectReportDetails } from "./project-report-details";
 import { ProjectSummaryCards } from "./project-summary-cards";
 import { ProjectTaskBreakdown } from "./project-task-breakdown";
 import { ProjectTeamBreakdown } from "./project-team-breakdown";
+import { ReportScopeFailure } from "./report-scope-failure";
 import { ReportShareDialog } from "./report-share-dialog";
 
 export function ProjectReportsContainer() {
 	const scope = useOrganization();
 	const { t } = useTranslate();
-	if (scope.isLoading || !scope.userId || !scope.activeOrganizationId)
+	if (scope.isLoading)
 		return (
 			<p role="status" className="px-4 lg:px-6">
-				{t(
-					"reports.projects.scopeLoading",
-					"Loading the current report scope\u2026",
-				)}
+				{t("reports.projects.scopeLoading", "Loading the current report scope\u2026")}
 			</p>
 		);
+	if (scope.error || !scope.userId || !scope.activeOrganizationId)
+		return (
+			<ReportScopeFailure
+				className="mx-4 w-auto lg:mx-6"
+				message={t(
+					"reports.projects.scopeUnavailable",
+					"The current report scope could not be loaded.",
+				)}
+				onRetry={scope.refetch}
+			/>
+		);
 	return (
-		<ProjectReportWorkspace
-			key={JSON.stringify([scope.userId, scope.activeOrganizationId])}
-		/>
+		<ProjectReportWorkspace key={JSON.stringify([scope.userId, scope.activeOrganizationId])} />
 	);
 }
 
 function ProjectReportWorkspace() {
 	const { t } = useTranslate();
-	const [portfolioData, setPortfolioData] =
-		useState<ProjectPortfolioData | null>(null);
-	const [detailedReport, setDetailedReport] =
-		useState<ProjectDetailedReport | null>(null);
-	const [customerReport, setCustomerReport] =
-		useState<CustomerBillableReport | null>(null);
+	const [portfolioData, setPortfolioData] = useState<ProjectPortfolioData | null>(null);
+	const [detailedReport, setDetailedReport] = useState<ProjectDetailedReport | null>(null);
+	const [customerReport, setCustomerReport] = useState<CustomerBillableReport | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const dateRangeRef = useRef<ReportDateRange | null>(null);
-	const [generatedStatus, setGeneratedStatus] = useState<
-		string[] | undefined
-	>();
-	const [generatedRange, setGeneratedRange] = useState<ReportDateRange | null>(
-		null,
-	);
+	const [generatedStatus, setGeneratedStatus] = useState<string[] | undefined>();
+	const [generatedRange, setGeneratedRange] = useState<ReportDateRange | null>(null);
 	const statusFilterRef = useRef<string[] | undefined>(undefined);
 	const lifetime = useRef<object | null>(null);
 	const pending = useRef<object | null>(null);
 	const retry = useRef<null | (() => Promise<void>)>(null);
-	const [activeTab, setActiveTab] = useState<
-		"portfolio" | "customers" | "project"
-	>("portfolio");
+	const [activeTab, setActiveTab] = useState<"portfolio" | "customers" | "project">("portfolio");
 	useLayoutEffect(() => {
 		lifetime.current = {};
 		pending.current = null;
@@ -106,8 +100,7 @@ function ProjectReportWorkspace() {
 		if (!arrival || pending.current) return;
 		const operation = {};
 		pending.current = operation;
-		const current = () =>
-			lifetime.current === arrival && pending.current === operation;
+		const current = () => lifetime.current === arrival && pending.current === operation;
 		setIsLoading(true);
 		setError(null);
 		retry.current = again;
@@ -120,17 +113,9 @@ function ProjectReportWorkspace() {
 					setError(
 						err instanceof Error
 							? err.message
-							: t(
-									"reports.projects.toast.unexpectedError",
-									"An unexpected error occurred",
-								),
+							: t("reports.projects.toast.unexpectedError", "An unexpected error occurred"),
 					);
-					toast.error(
-						t(
-							"reports.projects.toast.failedGenerate",
-							"Failed to generate report",
-						),
-					);
+					toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"));
 				}
 			},
 			() => {
@@ -142,32 +127,18 @@ function ProjectReportWorkspace() {
 		);
 	}
 
-	const handleGeneratePortfolio = async (
-		range: ReportDateRange,
-		statusFilter?: string[],
-	) => {
+	const handleGeneratePortfolio = async (range: ReportDateRange, statusFilter?: string[]) => {
 		await readReport(
 			async (current) => {
-				const result = await getProjectsOverview(
-					range.startDate,
-					range.endDate,
-					statusFilter,
-				);
+				const result = await getProjectsOverview(range.startDate, range.endDate, statusFilter);
 				if (!current()) return;
 				if (!result.success)
 					throw new Error(
 						result.error ||
-							t(
-								"reports.projects.toast.failedPortfolio",
-								"Failed to generate portfolio report",
-							),
+							t("reports.projects.toast.failedPortfolio", "Failed to generate portfolio report"),
 					);
 				const customers = result.data.billableTime
-					? await getCustomerBillableReport(
-							range.startDate,
-							range.endDate,
-							statusFilter,
-						)
+					? await getCustomerBillableReport(range.startDate, range.endDate, statusFilter)
 					: null;
 				if (!current()) return;
 				if (customers && !customers.success) throw new Error(customers.error);
@@ -179,12 +150,7 @@ function ProjectReportWorkspace() {
 				setCustomerReport(customers?.success ? customers.data : null);
 				setDetailedReport(null);
 				setActiveTab("portfolio");
-				toast.success(
-					t(
-						"reports.projects.toast.portfolioGenerated",
-						"Portfolio report generated",
-					),
-				);
+				toast.success(t("reports.projects.toast.portfolioGenerated", "Portfolio report generated"));
 			},
 			() => handleGeneratePortfolio(range, statusFilter),
 		);
@@ -204,21 +170,14 @@ function ProjectReportWorkspace() {
 				if (!result.success)
 					throw new Error(
 						result.error ||
-							t(
-								"reports.projects.toast.failedProject",
-								"Failed to generate project report",
-							),
+							t("reports.projects.toast.failedProject", "Failed to generate project report"),
 					);
 				setDetailedReport(result.data);
 				setActiveTab("project");
 				toast.success(
-					t(
-						"reports.projects.toast.projectGenerated",
-						"Report generated for {name}",
-						{
-							name: result.data.project.name,
-						},
-					),
+					t("reports.projects.toast.projectGenerated", "Report generated for {name}", {
+						name: result.data.project.name,
+					}),
 				);
 			},
 			() => handleSelectProject(projectId),
@@ -227,45 +186,26 @@ function ProjectReportWorkspace() {
 
 	const refreshReports = async () => {
 		const range = dateRangeRef.current;
-		if (!range || !portfolioData || pending.current || !lifetime.current)
-			return;
+		if (!range || !portfolioData || pending.current || !lifetime.current) return;
 		const arrival = lifetime.current;
 		const operation = {};
 		pending.current = operation;
-		const current = () =>
-			lifetime.current === arrival && pending.current === operation;
+		const current = () => lifetime.current === arrival && pending.current === operation;
 		setIsLoading(true);
 		retry.current = refreshReports;
 		await runWithCleanup(
 			async () => {
 				const results = await Promise.all([
-					getProjectsOverview(
-						range.startDate,
-						range.endDate,
-						statusFilterRef.current,
-					),
+					getProjectsOverview(range.startDate, range.endDate, statusFilterRef.current),
 					portfolioData.billableTime
-						? getCustomerBillableReport(
-								range.startDate,
-								range.endDate,
-								statusFilterRef.current,
-							)
+						? getCustomerBillableReport(range.startDate, range.endDate, statusFilterRef.current)
 						: null,
 					detailedReport
-						? getProjectDetailedReport(
-								detailedReport.project.id,
-								range.startDate,
-								range.endDate,
-							)
+						? getProjectDetailedReport(detailedReport.project.id, range.startDate, range.endDate)
 						: null,
 				]).catch((err) => {
 					if (!current()) return null;
-					setError(
-						t(
-							"reports.projects.refreshFailed",
-							"Could not refresh project reports",
-						),
-					);
+					setError(t("reports.projects.refreshFailed", "Could not refresh project reports"));
 					return Promise.reject(err);
 				});
 				if (!current() || !results) return;
@@ -275,10 +215,7 @@ function ProjectReportWorkspace() {
 					(customers && !customers.success) ||
 					(details && !details.success)
 				) {
-					const message = t(
-						"reports.projects.refreshFailed",
-						"Could not refresh project reports",
-					);
+					const message = t("reports.projects.refreshFailed", "Could not refresh project reports");
 					setError(message);
 					return Promise.reject(new Error(message));
 				}
@@ -301,18 +238,13 @@ function ProjectReportWorkspace() {
 	return (
 		<div className="min-w-0 space-y-6 px-4 lg:px-6">
 			{/* Filters */}
-			<ProjectFilters
-				onGenerate={handleGeneratePortfolio}
-				isGenerating={isLoading}
-			/>
+			<ProjectFilters onGenerate={handleGeneratePortfolio} isGenerating={isLoading} />
 
 			{/* Error Alert */}
 			{error && (
 				<Alert variant="destructive">
 					<IconAlertCircle aria-hidden="true" className="size-4" />
-					<AlertTitle>
-						{t("reports.projects.container.error", "Error")}
-					</AlertTitle>
+					<AlertTitle>{t("reports.projects.container.error", "Error")}</AlertTitle>
 					<AlertDescription className="space-y-3">
 						<p>{error}</p>
 						<Button
@@ -329,10 +261,7 @@ function ProjectReportWorkspace() {
 			{/* Loading State */}
 			{isLoading && (
 				<Card>
-					<CardContent
-						role="status"
-						className="flex items-center justify-center py-6"
-					>
+					<CardContent role="status" className="flex items-center justify-center py-6">
 						<div className="flex flex-col items-center gap-4">
 							<IconBriefcase
 								aria-hidden="true"
@@ -340,10 +269,7 @@ function ProjectReportWorkspace() {
 							/>
 							<div className="text-center">
 								<p className="font-semibold">
-									{t(
-										"reports.projects.container.generating",
-										"Generating Report...",
-									)}
+									{t("reports.projects.container.generating", "Generating Report...")}
 								</p>
 								<p className="text-sm text-muted-foreground">
 									{t(
@@ -376,16 +302,10 @@ function ProjectReportWorkspace() {
 				<Card>
 					<CardContent className="flex items-center justify-center py-12">
 						<div className="flex flex-col items-center gap-4 text-center">
-							<IconChartBar
-								aria-hidden="true"
-								className="size-12 text-muted-foreground"
-							/>
+							<IconChartBar aria-hidden="true" className="size-12 text-muted-foreground" />
 							<div>
 								<p className="font-semibold">
-									{t(
-										"reports.projects.container.noReportYet",
-										"No report generated yet",
-									)}
+									{t("reports.projects.container.noReportYet", "No report generated yet")}
 								</p>
 								<p className="text-sm text-muted-foreground">
 									{t(
@@ -449,16 +369,11 @@ function ProjectReportResults({
 			</p>
 			<Tabs
 				value={activeTab}
-				onValueChange={(v) =>
-					onTabChange(v as "portfolio" | "customers" | "project")
-				}
+				onValueChange={(v) => onTabChange(v as "portfolio" | "customers" | "project")}
 			>
 				<TabsList className="h-auto w-full flex-wrap">
 					<TabsTrigger value="portfolio">
-						{t(
-							"reports.projects.container.portfolioOverview",
-							"Portfolio Overview",
-						)}
+						{t("reports.projects.container.portfolioOverview", "Portfolio Overview")}
 					</TabsTrigger>
 					{customerReport && (
 						<TabsTrigger value="customers">
@@ -472,10 +387,7 @@ function ProjectReportResults({
 					>
 						{detailedReport
 							? detailedReport.project.name
-							: t(
-									"reports.projects.container.projectDetails",
-									"Project Details",
-								)}
+							: t("reports.projects.container.projectDetails", "Project Details")}
 					</TabsTrigger>
 				</TabsList>
 
@@ -500,17 +412,12 @@ function ProjectReportResults({
 						onProjectSelect={onProjectSelect}
 					/>
 
-					<ProjectBudgetUtilizationSummary
-						totals={portfolioData.totals.budgetHealth}
-					/>
+					<ProjectBudgetUtilizationSummary totals={portfolioData.totals.budgetHealth} />
 				</TabsContent>
 
 				{customerReport && (
 					<TabsContent value="customers" className="space-y-6">
-						<CustomerBillableView
-							report={customerReport}
-							onProjectSelect={onProjectSelect}
-						/>
+						<CustomerBillableView report={customerReport} onProjectSelect={onProjectSelect} />
 					</TabsContent>
 				)}
 
@@ -544,9 +451,7 @@ function DetailedProjectReport({
 						/>
 						<ReportDocumentExportButtons
 							source={detailedReport}
-							buildDocument={(context) =>
-								buildProjectReportDocument(detailedReport, context)
-							}
+							buildDocument={(context) => buildProjectReportDocument(detailedReport, context)}
 						/>
 					</div>
 
@@ -554,8 +459,7 @@ function DetailedProjectReport({
 					<ProjectSummaryCards
 						data={{
 							totalProjects: 1,
-							activeProjects:
-								detailedReport.project.status === "active" ? 1 : 0,
+							activeProjects: detailedReport.project.status === "active" ? 1 : 0,
 							totalHours: detailedReport.summary.totalHours,
 							projectsOverBudget:
 								detailedReport.summary.percentBudgetUsed &&

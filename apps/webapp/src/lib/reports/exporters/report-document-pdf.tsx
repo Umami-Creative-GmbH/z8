@@ -5,11 +5,7 @@
  * initial bundle.
  */
 
-import {
-	formatReportCell,
-	type ReportCell,
-	type ReportDocument,
-} from "./report-document";
+import { formatReportCell, type ReportCell, type ReportDocument } from "./report-document";
 
 const styleDefinitions = {
 	page: { padding: 32, fontSize: 9, fontFamily: "Helvetica" },
@@ -99,10 +95,7 @@ function ReportPDF({
 							<Text style={styles.tableTitle}>{table.title}</Text>
 							<View style={styles.headerRow} fixed>
 								{table.columns.map((column, index) => (
-									<Text
-										key={column.key}
-										style={index === 0 ? styles.firstCell : styles.cell}
-									>
+									<Text key={column.key} style={index === 0 ? styles.firstCell : styles.cell}>
 										{column.header}
 									</Text>
 								))}
@@ -140,12 +133,8 @@ function ReportPDF({
 	);
 }
 
-export async function exportReportDocumentToPDF(
-	document: ReportDocument,
-): Promise<Uint8Array> {
+export async function exportReportDocumentToPDF(document: ReportDocument): Promise<Uint8Array> {
 	const renderer = await import("@react-pdf/renderer");
-	const blob = await renderer
-		.pdf(<ReportPDF document={document} renderer={renderer} />)
-		.toBlob();
+	const blob = await renderer.pdf(<ReportPDF document={document} renderer={renderer} />).toBlob();
 	return new Uint8Array(await blob.arrayBuffer());
 }

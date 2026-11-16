@@ -1,11 +1,5 @@
 // @vitest-environment jsdom
-import {
-	act,
-	cleanup,
-	fireEvent,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { Activity } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReportDocument } from "@/lib/reports/exporters/report-document";
@@ -53,9 +47,7 @@ beforeEach(() => {
 			revokeObjectURL: vi.fn(),
 		}),
 	);
-	click = vi
-		.spyOn(HTMLAnchorElement.prototype, "click")
-		.mockImplementation(() => {});
+	click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 });
 afterEach(() => {
 	cleanup();
@@ -83,9 +75,7 @@ it("keeps anonymous frozen-report export controls available and renders their tr
 			}}
 		/>,
 	);
-	expect(screen.getByRole("heading", { level: 1 }).textContent).toContain(
-		"Project report",
-	);
+	expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("Project report");
 	expect(screen.getAllByText("Frozen Delivery").length).toBeGreaterThan(0);
 	expect(screen.queryByText("Cost")).toBeNull();
 	expect(screen.queryByText("Margin")).toBeNull();

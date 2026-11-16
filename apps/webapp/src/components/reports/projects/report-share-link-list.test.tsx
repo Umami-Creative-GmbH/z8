@@ -83,9 +83,7 @@ it.each([
 		);
 		mocks.scope = {
 			...mocks.scope,
-			...(change === "organization"
-				? { activeOrganizationId: "B" }
-				: { userId: "other" }),
+			...(change === "organization" ? { activeOrganizationId: "B" } : { userId: "other" }),
 		};
 		view.rerender(tree());
 		expect(screen.queryByText(/Created by A creator/)).toBeNull();
@@ -105,9 +103,7 @@ it.each([
 		view.unmount();
 		expect(client.getQueryData(peerKey)).toBe("keep");
 		expect(
-			client
-				.getQueryCache()
-				.findAll({ queryKey: queryKeys.reportShareLinks.all }),
+			client.getQueryCache().findAll({ queryKey: queryKeys.reportShareLinks.all }),
 		).toHaveLength(1);
 	},
 );
