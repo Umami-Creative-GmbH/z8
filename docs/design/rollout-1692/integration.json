@@ -945,7 +945,9 @@
       "provisionalIntegrationCommit": "1513a20116706380dd65a93b35104ca4eeea6066",
       "provisionalCorrectionCommit": "9870df191c6b686106b38dcfa1bf6590ed611541",
       "provisionalCorrectionIntegrationCommit": "931c3f41d7a75a4b03d13f3dbad2e6de4eac4260",
-      "pendingAcceptance": "Fresh merger reproduced inherited initial organization-context503 with disabled Generate, no error/Retry in current and premerge controls. Root adds local existing-provider Retry/pending feedback, retains selected period and blocks generation while settings are unhydrated; neutral unavailable preset description avoids a false loading state. Public permanent3cases red/green;289selected units/51files, all3types/typegen, scoped13lint and owned6explicit100CRLF pass. Doctor13files0errors/1incoming roster-readiness warning; broader explicit1007 and ordinary6 formatter differences retained. Framework-router test boundary and stale vehicle-heading expectation reconciled without production metadata edits. Original sealed STOP preserved; first broader failed report/initialquality raw outputs were overwritten on follow-up and are explicitly unavailable beyond captured summaries. Fresh independent lifetimes/canonicalPG14/actual completed parsedCSV-XLSX-PDF/runtime/native/Next/matched acceptance pending. No provider/action/calculation/time/authorization/export/cache-owner change; verifiedCommit stays null."
+      "pendingAcceptance": "Second fresh verifier STOP reproduced both roster refusal/rejection missing localRetry through real provider/QueryClient/reports; settings recovery control passed and instrumentation-only refetch recovered roster. Root exposes a current-opening guarded refetch from the single-consumer report hook, local selectorRetry and accessible pending feedback; cancellation checked before dispatch and after read, existing exact-key/scope retirement preserved. Seven permanent public cases now cover settings+roster recovery, rejection/coalescing and Activity late results;293selectedunits/51files, all3types/typegen,13filelint pass. Owned3explicit100CRLF pass; broader explicit1005/ordinary8 format differences remain. Doctor13files0errors/1incoming roster-readiness warning. All new attempt outputs unique; initial settings-phase overwritten-intermediate limitations remain explicit. Fresh independent canonicalPG14/current application/complete parsedCSV-XLSX-PDF/native/Next/roles/preferences/matched acceptance pending; exports remain0verified. No provider/action/canonical query factory/authorization/calculation/time/export owner change; verifiedCommit null.",
+      "provisionalRosterCorrectionCommit": "2e78c69a1531750bdd744fdaf99f4f78fc65550d",
+      "provisionalRosterCorrectionIntegrationCommit": "9f9df79f46f203f7aaa75d3f39ceb1f94dac7f7c"
     },
     {
       "id": "R062",
@@ -1062,8 +1064,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1756#issuecomment-6930746417"
     },
     {
       "id": "R073",
