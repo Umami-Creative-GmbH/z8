@@ -1,0 +1,6 @@
+{
+  "code": 0,
+  "timedOut": false,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":4759075326389111361},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"not_configured\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"targetId\":\"38F5B6084F41FCF4B1674C9AA9C051BD\",\"title\":\"Work schedule setup | Z8\",\"url\":\"http://localhost:61505/en/onboarding/work-schedule\"},\"error\":null}\n",
+  "err": ""
+}

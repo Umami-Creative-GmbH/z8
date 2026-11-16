@@ -16,9 +16,7 @@ export type WorkClassification = "daily" | "weekly" | "monthly";
 
 function firstErrorMessage(errors: readonly unknown[]) {
 	const [error] = errors;
-	return typeof error === "string"
-		? error
-		: (error as { message?: string } | undefined)?.message;
+	return typeof error === "string" ? error : (error as { message?: string } | undefined)?.message;
 }
 
 export function WorkScheduleHeading() {
@@ -83,14 +81,8 @@ export function HoursPerWeekField({
 				onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
 				onBlur={onBlur}
 			/>
-			<p
-				id="work-schedule-hours-help"
-				className="text-sm text-muted-foreground"
-			>
-				{t(
-					"onboarding.workSchedule.hoursPerWeekDesc",
-					"Typical full-time is 40 hours per week.",
-				)}
+			<p id="work-schedule-hours-help" className="text-sm text-muted-foreground">
+				{t("onboarding.workSchedule.hoursPerWeekDesc", "Typical full-time is 40 hours per week.")}
 			</p>
 			{errors.length > 0 && (
 				<p
@@ -135,28 +127,16 @@ export function WorkClassificationField({
 					className="w-full"
 				>
 					<SelectValue
-						placeholder={t(
-							"onboarding.workSchedule.selectClassification",
-							"Select classification",
-						)}
+						placeholder={t("onboarding.workSchedule.selectClassification", "Select classification")}
 					/>
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="daily">
-						{t("onboarding.workSchedule.daily", "Daily")}
-					</SelectItem>
-					<SelectItem value="weekly">
-						{t("onboarding.workSchedule.weekly", "Weekly")}
-					</SelectItem>
-					<SelectItem value="monthly">
-						{t("onboarding.workSchedule.monthly", "Monthly")}
-					</SelectItem>
+					<SelectItem value="daily">{t("onboarding.workSchedule.daily", "Daily")}</SelectItem>
+					<SelectItem value="weekly">{t("onboarding.workSchedule.weekly", "Weekly")}</SelectItem>
+					<SelectItem value="monthly">{t("onboarding.workSchedule.monthly", "Monthly")}</SelectItem>
 				</SelectContent>
 			</Select>
-			<p
-				id="work-schedule-classification-help"
-				className="text-sm text-muted-foreground"
-			>
+			<p id="work-schedule-classification-help" className="text-sm text-muted-foreground">
 				{t(
 					"onboarding.workSchedule.classificationDesc",
 					"How you want to track your working hours.",

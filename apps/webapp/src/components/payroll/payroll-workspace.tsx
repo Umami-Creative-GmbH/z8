@@ -364,7 +364,8 @@ function usePayrollBlockerClearing({
 								!dismissalSucceeded &&
 								activatedControlHadFocus &&
 								activatedControl.isConnected &&
-								document.activeElement === document.body
+								(document.activeElement === activatedControl ||
+									document.activeElement === document.body)
 							) {
 								focusRequestIdRef.current += 1;
 								setFocusRequest({
