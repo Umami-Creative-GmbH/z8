@@ -1,0 +1,29 @@
+{
+  "source": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+  "files": [
+    "src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+    "src/components/personnel-file/delete-document-dialog.test.tsx",
+    "src/components/personnel-file/delete-document-dialog.tsx",
+    "src/components/personnel-file/document-list.tsx",
+    "src/components/personnel-file/document-requests-section.tsx",
+    "src/components/personnel-file/employee-file-loading-heading.tsx",
+    "src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+    "src/components/personnel-file/employee-file-workspace.test.tsx",
+    "src/components/personnel-file/employee-file-workspace.tsx",
+    "src/components/personnel-file/employee-sick-leave-card.tsx",
+    "src/components/personnel-file/personnel-file-panel.test.tsx",
+    "src/components/personnel-file/personnel-file-panel.tsx",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/lib/navigation/route-metadata.ts"
+  ],
+  "format": {
+    "exitCode": 1,
+    "log": "biome-all14-format.log",
+    "config": "explicit webapp 100-column CRLF"
+  },
+  "lint": {
+    "exitCode": 0,
+    "log": "biome-all14-lint.log",
+    "config": "explicit webapp formatter disabled"
+  }
+}

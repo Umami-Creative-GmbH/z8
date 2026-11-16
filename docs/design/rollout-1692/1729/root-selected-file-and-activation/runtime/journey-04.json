@@ -1,0 +1,1097 @@
+{
+  "stage": "settled-late-save",
+  "source": {
+    "head": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+        "raw": "39b787df3156a2b2c2eafb53821f51648fbf3cde234768a8a81270cb15a1124e",
+        "lf": "28d24d94a53fbbc7de0894518c82ec86eb5bad507aac002c5c3b1440efb37282"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/delete-document-dialog.tsx",
+        "raw": "f22f136ea4ac3816d2b73a12333707ffc09ce3c6d68779fb0e61058d5017d319",
+        "lf": "a714bf0abf2eedc8cfb7a3b678bb989fddb14909f5f8e3f4dd4f641aceea17ce"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+        "raw": "3698658a57622bf0c5886c700ceb278401d30587a64c921bb1e72f4a262ae542",
+        "lf": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-section.tsx",
+        "raw": "df85062b4cb3632daa0cbc7e77fd07e4ad175e339d51fb4d19a195ba3dce4662",
+        "lf": "86bbea5d4313dd54040a8b227476f32b19f9b15a023f0867e08c83f75ea1d0ae"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-file-loading-heading.tsx",
+        "raw": "561bc1bb1b19a8991b019cf8fd11b50265c231ee98616f1f55972d5ce577c469",
+        "lf": "13fba15f519cb36902e8e55f338499d643e78bc589dfdff4b8593690d1ce181e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx",
+        "raw": "6fb33d5f71126079245c64b42672b62c72739c59debc9398e707f1393e1f6509",
+        "lf": "b6240274c74cd80cd6cfaa92af891ecca0b9ea23555d58e14a9cc74d01beb598"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-sick-leave-card.tsx",
+        "raw": "a568df7142da6da735423057140cb634685e5fcbb919a5bef842570bc2d4074d",
+        "lf": "a8b442234467e29118ea5dfeb52781f4ca4f6af820b7e9184867571fafc9b252"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+        "raw": "e917fa953a8f73d512b2b1550537355e688db3a353650351925c94a2a0c48247",
+        "lf": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "3cb6f35d35f23a4d59af8276dabd1b58124aee1c94c79ba9533b3aace9d040df",
+        "lf": "232292abb66f836194899d0eaf6bdc42c54b734ff5933a813bcb6b566b8c36f9"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "00582764e922b06f2f237b23822bed88ef5073ffbe3801d9238e8a9548c03c59"
+  },
+  "checks": [
+    "Public feature enable confirmed with organization-scoped persisted readback.",
+    "Selected identity/personnel number/records-first tasks and one main h1 observed.",
+    "Actual held/canceled main query yields honest error with one heading; local Retry recovers certificate records.",
+    "Real cached query refetch failure retains document rows; actual local Retry recovers.",
+    "Public officer grant is certificate-only for exactly the selected employee.",
+    "Actual officer category and own-file denial; fresh nonofficer context denies selected employee."
+  ],
+  "captures": [
+    {
+      "file": "journey-04-current-desktop.png",
+      "sha256": "42a12007461c414c56992fb560ab74db64b15ee539d1f3e3e6e45782381ecde3",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "journey-04-current-phone.png",
+      "sha256": "e578001458a5474ead38d58e6d620e3a48bd6cf4f77cc3ef83b87940c8617ead",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 16,
+          "y": 112,
+          "width": 358,
+          "height": 32,
+          "top": 112,
+          "right": 374,
+          "bottom": 144,
+          "left": 16
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 16,
+          "y": 112,
+          "width": 358,
+          "height": 32,
+          "top": 112,
+          "right": 374,
+          "bottom": 144,
+          "left": 16
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "journey-04-current-wide-dark.png",
+      "sha256": "336f0f6cea9d61c9ffc017619c52b06ffaf050d0f0bdaf88c15687e31e6a07bc",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 552,
+          "y": 120,
+          "width": 1552,
+          "height": 36,
+          "top": 120,
+          "right": 2104,
+          "bottom": 156,
+          "left": 552
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 2144,
+          "height": 1200,
+          "top": 0,
+          "right": 2400,
+          "bottom": 1200,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1200,
+          "top": 0,
+          "right": 256,
+          "bottom": 1200,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 552,
+          "y": 120,
+          "width": 1552,
+          "height": 36,
+          "top": 120,
+          "right": 2104,
+          "bottom": 156,
+          "left": 552
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 2144,
+          "height": 1200,
+          "top": 0,
+          "right": 2400,
+          "bottom": 1200,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1200,
+          "top": 0,
+          "right": 256,
+          "bottom": 1200,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "bprogress-busy dark",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "journey-04-actual-pending.png",
+      "sha256": "b30b984b053c0421f7a3f771bbcd35b74a9aaa0daa13933ad3b9ff1008d17ecb",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "journey-04-actual-reader-failed.png",
+      "sha256": "442107bd03e87baae1568b472354220a98c906254316d2fe4fabd6c93a949e30",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "journey-04-retained-after-refetch-failure.png",
+      "sha256": "54ba242a3cc4aaf59360343290472f02f312540b88dc557d0c69014705a3e30a",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "journey-04-officer-category-denial.png",
+      "sha256": "76a3cd8aec0a82934d46fa2465a3aac000c05da02286a962a783a57da70fac5f",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "journey-04-failure-settled-late-save.png",
+      "sha256": "91ad5bdfb8c1ef458a1148c65978c0b5f76ecb6a1a2e50b6c53aa699f2e647f9",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 280,
+          "y": 120,
+          "width": 1296,
+          "height": 36,
+          "top": 120,
+          "right": 1576,
+          "bottom": 156,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 1,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    }
+  ],
+  "errors": [],
+  "transport": [
+    {
+      "stage": "selected-route",
+      "path": "/en/settings/organization",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "stage": "selected-route",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "stage": "selected-route",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2fd036ade24ee71f33098e0dcb243dace5e1028dbdfb309daecdc08d5e6d08d2"
+    },
+    {
+      "stage": "selected-route",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "0d965e9299f24bf1e34491082a29723d3bed56eccb990625cf562732d8f3df4b"
+    },
+    {
+      "stage": "selected-route",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2041d654566b9e22f4b492c02b606e21a2f1ef6bebe60718ed5ffa11948d316e"
+    },
+    {
+      "stage": "selected-route",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "stage": "selected-route",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2fd036ade24ee71f33098e0dcb243dace5e1028dbdfb309daecdc08d5e6d08d2"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2fd036ade24ee71f33098e0dcb243dace5e1028dbdfb309daecdc08d5e6d08d2"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2fd036ade24ee71f33098e0dcb243dace5e1028dbdfb309daecdc08d5e6d08d2"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "0d965e9299f24bf1e34491082a29723d3bed56eccb990625cf562732d8f3df4b"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2041d654566b9e22f4b492c02b606e21a2f1ef6bebe60718ed5ffa11948d316e"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "stage": "reader-failure",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2fd036ade24ee71f33098e0dcb243dace5e1028dbdfb309daecdc08d5e6d08d2"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "1057100d9e0eef0e6fce9717c448ad8abe0fc0d1be2a88d1513ba02ed6f01dce"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "6bc31bcecb7709ac011d88aed4a610ab5274cf90c5e039c954d29f8804c3c22a"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2fd036ade24ee71f33098e0dcb243dace5e1028dbdfb309daecdc08d5e6d08d2"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "0d965e9299f24bf1e34491082a29723d3bed56eccb990625cf562732d8f3df4b"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/personnel-files/8ddf2242-cb95-457d-8063-cbc42276f80a",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "stage": "public-specific-grant",
+      "path": "/en/personnel-files/8ddf2242-cb95-457d-8063-cbc42276f80a",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "stage": "open-metadata",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "2fd036ade24ee71f33098e0dcb243dace5e1028dbdfb309daecdc08d5e6d08d2"
+    },
+    {
+      "stage": "public-revoke",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "0d965e9299f24bf1e34491082a29723d3bed56eccb990625cf562732d8f3df4b"
+    },
+    {
+      "stage": "public-revoke",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "stage": "public-revoke",
+      "path": "/en/personnel-files/111c6760-43d3-4d5f-82c2-4bd1825c8f26",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    },
+    {
+      "stage": "public-revoke",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "stage": "public-revoke",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "35da0c99d42a4cdc4af0ca0ce46368cf6c1ee45970ce5490630fd2439ec55d8b"
+    },
+    {
+      "stage": "settled-late-save",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "1655f092de789ebd68ce64eb6573637a67cb7b0d6f54cc3e64f4689056a28939"
+    },
+    {
+      "stage": "settled-late-save",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "f41800d82cad1bf84fd21e46565a976a353f17e579e7f2d1b940520cbdf96f9f"
+    },
+    {
+      "stage": "settled-late-save",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "eac957653a9096912796088d914c25e641fecadb93743e9fdf1b3e992a63dcc5"
+    },
+    {
+      "stage": "settled-late-save",
+      "path": "/en/settings/personnel-files",
+      "status": 200,
+      "actionHash": "fb7ad84b6209920133f4f882657494a4a4860c6e4c25665e379191a5df0b7ad4"
+    }
+  ],
+  "seed": {
+    "metadataOnly": true,
+    "records": [
+      {
+        "id": "83d8203d-4038-48aa-a58f-297108319486",
+        "category": "certificate",
+        "visibility": "shared",
+        "title": "Safety qualification"
+      },
+      {
+        "id": "3df649d8-8c1b-4d37-ba10-7b8b6dd26861",
+        "category": "other",
+        "visibility": "hr_only",
+        "title": "Employment record"
+      },
+      {
+        "id": "a0b260fa-c15d-4701-be48-e7bba92e8d23",
+        "category": "sick_note",
+        "visibility": "hr_only",
+        "title": "Medical note"
+      }
+    ]
+  },
+  "ready": {
+    "h1": [
+      "Person 2"
+    ],
+    "text": "Toggle Sidebar\n\nZ8\n\n09:43\nUTC+01:00\nClock In\nToggle theme\nPersonnel files\nPerson 2\nPersonnel file\n\nContracts, payslips, certificates and other documents of this employee. Shared documents are visible to the employee.\n\nAll categories\nUpload document\nDownload personnel file\nMedical note\nSick note\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)\n\nEmployment record\nOther\nHR-only\n\nJan 15, 2026 · fixture.pdf (10 B)\n\nSafety qualification\nCertificate\nShared\n\nJan 15, 2026 · fixture.pdf (10 B)\n\nDocument requests\nCertificates and other documents asked of this employee, with their deadline and history.\nRequest a document\nSick leave\nPending and approved sick leave of this employee. Attach a new sick note, or link one that is already in the personnel file.",
+    "buttons": [
+      "Toggle Sidebar",
+      "Current timezone Europe/Berlin, 09:43, UTC+01:00",
+      "Clock In",
+      "Refresh data",
+      "Toggle theme",
+      "Notifications",
+      "Notifications",
+      "More actions",
+      "Filter by category",
+      "Upload document",
+      "Download personnel file",
+      "Link Medical note to sick leave",
+      "Edit Medical note",
+      "Delete Medical note",
+      "Edit Employment record",
+      "Delete Employment record",
+      "Choose the skill Safety qualification proves",
+      "Edit Safety qualification",
+      "Delete Safety qualification",
+      "Request a document"
+    ]
+  },
+  "personnelNumber": null,
+  "held": {
+    "lockPid": 175,
+    "reads": [
+      {
+        "pid": 166,
+        "queryHash": "c48ee4268ecc86b6c7029df7ca479531d191376884776b5e7bf5f248135f3d8b",
+        "blockers": [
+          175
+        ]
+      }
+    ]
+  },
+  "grant": {
+    "id": "3be3acc3-e94a-4aaa-a3e9-fd3cb5e984e1",
+    "scope": "specific",
+    "categories": [
+      "certificate"
+    ],
+    "employees": [
+      {
+        "employee_id": "111c6760-43d3-4d5f-82c2-4bd1825c8f26"
+      }
+    ]
+  },
+  "beforeDraft": {
+    "title": "Safety qualification authority-lost-97633cfc",
+    "fields": [
+      {
+        "tag": "BUTTON",
+        "type": "button",
+        "value": "",
+        "name": "",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "value": "certificate",
+        "name": "",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "value": "Safety qualification authority-lost-97633cfc",
+        "name": "",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "type": "button",
+        "value": "",
+        "name": "",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "value": "shared",
+        "name": "",
+        "disabled": false
+      }
+    ]
+  },
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting for selector `[role=dialog] [role=alert]` failed",
+    "stack": "TimeoutError: Waiting for selector `[role=dialog] [role=alert]` failed\n    at CSSQueryHandler.waitFor (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/QueryHandler.js:211:46)\n    at async CdpFrame.waitForSelector (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:546:21)\n    at async CdpPage.waitForSelector (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1487:20)\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1729-root-checks/runtime/journey.mjs:34:94"
+  }
+}

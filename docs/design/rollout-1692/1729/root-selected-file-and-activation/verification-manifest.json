@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "state": "SEALED_PUBLIC",
+  "source": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+  "merge": "e1e25677696ad9dce26b77e1fcb7047db8b2fe1c",
+  "preDelete": "ed1841d161a448561b329fae43903b0a2e606dfa",
+  "verifiedPredecessor": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+  "runtime": {
+    "status": "audited-after-release",
+    "contractsImplemented": true,
+    "contractVersion": "1729-public-fields-v1",
+    "publicFiles": 73,
+    "publicPngs": 31,
+    "sourcePins": 17,
+    "read": "journey-04 first four checks",
+    "roles": "journey-05",
+    "historicalComparison": "seven existing consumers only; partial application boundary"
+  },
+  "counts": {
+    "unit": {
+      "total": 175,
+      "passed": 175,
+      "physicalFiles": 25
+    },
+    "postgres": {
+      "total": 163,
+      "passed": 163,
+      "physicalFiles": 9
+    },
+    "uniqueCases": 338,
+    "physicalFiles": 34,
+    "focusedCases": 5,
+    "focusedNonadditive": true,
+    "originalMergerUnitCases": 164,
+    "newWorkspaceArrivalCases": 8,
+    "newDeleteActivationCases": 3
+  },
+  "provenance": {
+    "fullUnitAndTypes": "Same final production source; before final test-only cancelable-submit/defaultPrevented assertion. Final focused five passed after that assertion.",
+    "rootChangedPaths": 6,
+    "staticGitPins": 22,
+    "preserved1728Pins": 8,
+    "workerEvidence": "Historical, nonadditive; preserved unchanged."
+  },
+  "doctor": {
+    "files": 14,
+    "errors": 0,
+    "warnings": 1,
+    "review": "false-positive: explicit preventDefault plus cancelable submit-event assertion",
+    "suppressionAdded": false,
+    "base": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7"
+  },
+  "quality14": {
+    "status": "recorded-after-release",
+    "files": 14,
+    "formatExitCode": 1,
+    "formatErrors": 8,
+    "lintExitCode": 0,
+    "lintWarnings": 1,
+    "lintWarning": "Inherited unused noImgElement suppression at document-list.tsx:37; unchanged by this ticket and root fixes.",
+    "sixCorrectionFiles": "explicit 100-column CRLF pass"
+  },
+  "knownLimits": [
+    "Broad current-roster guard unresolved and unrun in this root acceptance; no blanket all-green claim.",
+    "Selected read nonce and preserved #1728 retirement guard are presentation lifetime only; passive same-scope Activity return is permitted. No hidden Activity fresh-read, shared late-command or complete ABA guarantee.",
+    "No API, authorization, schema or persistence changes. Metadata UPDATE/DELETE has no expectedRevision input.",
+    "Runtime former/cutoff transition, cross-account/org/employee ABA, sick-note link/unlink and skill assignment remain unpassed.",
+    "Earliest AuthenticatedAppShell no-h1 is source-only. Current #1728 cutoff-effective projection correction remains preserved.",
+    "Officer long-title row is below phone PNG viewport; DOM geometry proves its bounds. My Documents visibly shows the long title. Existing overlays may cover lower controls; no occlusion or physical touch certification.",
+    "Matched before/current images overlay seven cab40dc existing consumers only; all other app/framework/helpers/dependencies remain current. Baseline cramped phone and initial clock-loader/Next/Pets overlays stay qualified.",
+    "No full production build, catalog sync, provider/customer, physical device, true zoom or global readiness acceptance."
+  ]
+}

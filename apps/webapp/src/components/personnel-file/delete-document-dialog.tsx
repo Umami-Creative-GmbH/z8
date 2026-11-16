@@ -19,12 +19,10 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
+
+const defaultSubmission: { arrival: object | null } = { arrival: null };
 
 /** Deletes an employee document after a confirmation, with an optional reason for the audit log. */
 export function DeleteDocumentDialog({
@@ -68,18 +66,16 @@ function DeleteDocumentTask({
 	}, []);
 	const form = useForm({
 		defaultValues: { reason: "" },
-		onSubmit: async ({ value }) => {
-			if (!document || pending.current) return;
-			pending.current = true;
-			setWorking(true);
+		onSubmitMeta: defaultSubmission,
+		onSubmit: async ({ value, meta }) => {
+			if (!document || !meta.arrival || meta.arrival !== lifetime.current || !pending.current)
+				return;
 			setError(null);
-			const task = lifetime.current;
+			const task = meta.arrival;
 			const result = await deleteEmployeeDocumentAction({
 				documentId: document.id,
 				reason: value.reason,
 			}).catch(() => null);
-			pending.current = false;
-			setWorking(false);
 			if (lifetime.current !== task) return;
 			if (!result) {
 				setError(
@@ -94,9 +90,7 @@ function DeleteDocumentTask({
 				setError(result.error);
 				return;
 			}
-			toast.success(
-				t("settings.personnelFiles.delete.success", "Document deleted"),
-			);
+			toast.success(t("settings.personnelFiles.delete.success", "Document deleted"));
 			form.reset();
 			onOpenChange(false);
 			onDeleted();
@@ -117,7 +111,14 @@ function DeleteDocumentTask({
 					onSubmit={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
-						void form.handleSubmit();
+						if (!document || pending.current) return;
+						// Reserve at activation, before TanStack's asynchronous validation.
+						pending.current = true;
+						setWorking(true);
+						void form.handleSubmit({ arrival: lifetime.current }).finally(() => {
+							pending.current = false;
+							setWorking(false);
+						});
 					}}
 					className="grid gap-4"
 				>
@@ -137,10 +138,7 @@ function DeleteDocumentTask({
 						{(field) => (
 							<TFormItem>
 								<TFormLabel>
-									{t(
-										"settings.personnelFiles.delete.reason",
-										"Reason (optional)",
-									)}
+									{t("settings.personnelFiles.delete.reason", "Reason (optional)")}
 								</TFormLabel>
 								<TFormControl>
 									<Textarea
@@ -165,11 +163,7 @@ function DeleteDocumentTask({
 						</AlertDialogCancel>
 						<form.Subscribe selector={(state) => state.isSubmitting}>
 							{(isSubmitting) => (
-								<Button
-									type="submit"
-									variant="destructive"
-									disabled={isSubmitting}
-								>
+								<Button type="submit" variant="destructive" disabled={isSubmitting || working}>
 									{t("settings.personnelFiles.delete.confirm", "Delete")}
 								</Button>
 							)}
