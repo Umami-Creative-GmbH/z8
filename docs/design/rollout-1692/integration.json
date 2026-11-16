@@ -784,11 +784,13 @@
       "provisionalReconciliationCommit": "026a6c67730c325b264f9d4bad9c04d7ec32cb85",
       "provisionalCorrectionCommit": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
       "provisionalCorrectionIntegrationCommit": "0c96db4ed2ecc072688bba0a02d9661b3846d7a8",
-      "pendingAcceptance": "Local scope Retry, pending-command lifetime and completed-upload URL corrections pass459 case instances/65 files, all three type projects and scoped lint. Real Chromium transport tests prove same-PDF staging in successive batches and unfinished 5MiB resume after reload; canonical storage is modeled only in that transport test. Fresh prior-candidate PG20 and39 public runtime probes passed before a preserved completed-PDF TUS cache failure stopped broader acceptance. Exact c72 consumer control also failed. Current correction removes successful TUS fingerprints. Fresh full-application reused-PDF/ZIP/confirmation/readback/native/Next/matched acceptance remains pending. Doctor0errors/3retainedwarnings and formatter-profile limits remain explicit; verifiedCommit stays null.",
+      "pendingAcceptance": "Local scope Retry, command lifetime and completed-upload corrections pass460 cases/65 files and all three type projects. Real Chromium/HTTP controls cover ordinary repeated PDFs, a consumed URL retained by the actual previous-client transport and unfinished5MiB resume after reload. Batch-specific Uppy identity isolates old/cross-batch fingerprints; successful fingerprints are removed. Storage is modeled in these transport tests. Prior-candidate39 public probes andPG20 passed before the preserved reuse STOP; fresh current full-application reused-PDF/ZIP/confirmation/readback/download/native/Next/matched acceptance remains pending. Doctor0errors/3retainedwarnings; format qualifications retained. verifiedCommit stays null.",
       "provisionalCommandCorrectionCommit": "15b00b502bc2a2fd7f556433ba52c2da9768ea37",
       "provisionalCommandCorrectionIntegrationCommit": "a076560ff3fbf7d857c4258cee08e6c22f19609e",
       "provisionalUploadCorrectionCommit": "c0480cfd33e579d807264ff4c2017a66b799ae36",
-      "provisionalUploadCorrectionIntegrationCommit": "32c91479c1184a0080bf82db6a6bfc6731b57c6f"
+      "provisionalUploadCorrectionIntegrationCommit": "32c91479c1184a0080bf82db6a6bfc6731b57c6f",
+      "provisionalBatchUploadCorrectionCommit": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
+      "provisionalBatchUploadCorrectionIntegrationCommit": "6a114d85684004d9ca9bdc3cb08f313316f4e12a"
     },
     {
       "id": "R051",
@@ -847,10 +849,11 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1847#issuecomment-6922594257"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1847#issuecomment-6922594257",
+      "implementationCommit": "121ce8e7a691f446f72675c30207ac6e02354642"
     },
     {
       "id": "R056",
@@ -859,8 +862,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1848#issuecomment-6924052867"
     },
     {
       "id": "R057",
