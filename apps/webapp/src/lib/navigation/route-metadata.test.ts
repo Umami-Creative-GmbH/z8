@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the report share-link settings heading without other settings or descendants", () => {
+		expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);
+		expect(appPageOwnsHeading("/de/settings/report-share-links/")).toBe(true);
+		expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/other")).toBe(false);
+	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
