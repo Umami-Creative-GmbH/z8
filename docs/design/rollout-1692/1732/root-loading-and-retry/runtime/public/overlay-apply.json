@@ -1,0 +1,27 @@
+{
+  "mode": "apply",
+  "ref": "96e64b16a10c629cae6ec820b11862ac48511503",
+  "head": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "paths": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+      "originalRaw": "7857a9d62ed925a1c99ea89454207f529bc4565d84e10059014d46b0002da4d7",
+      "historicalRaw": "852e0d340781c2532d5bd4c92e7c4d3c3c248d2271e7145e7f33003df026c9f5",
+      "historicalLf": "852e0d340781c2532d5bd4c92e7c4d3c3c248d2271e7145e7f33003df026c9f5"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "originalRaw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+      "historicalRaw": "92cfb07f7030f2892a8ac3c000fd6b2aee56c235cd13a3ded31aa6e62455da1a",
+      "historicalLf": "92cfb07f7030f2892a8ac3c000fd6b2aee56c235cd13a3ded31aa6e62455da1a"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "originalRaw": "cca2112f55a8be84b77e0f092f668fcfa702e1d2006cda2e1b3fc7b7cb239562",
+      "historicalRaw": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6",
+      "historicalLf": "51a2dd572873673f71b0847b808ef6a819057d8da0f2b0b607a7cc36d326a5f6"
+    }
+  ],
+  "partialApplication": true,
+  "qualification": "Exact historical page/start/route-metadata existing consumers only. Current actions, new unused helpers and rest of app remain; site-header is unchanged between ref and candidate. Not an entire historical application or authority comparison."
+}

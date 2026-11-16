@@ -1,0 +1,50 @@
+{
+  "source": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
+  "provisionalIntegration": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+  "originalMerge": "29e56ae7b6c8214b8d404de52d834ac0d99313d8",
+  "lastVerified": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+  "status": "source checks complete; fresh runtime pending",
+  "rootPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batches-heading.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batches-loading.test.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+    "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx"
+  ],
+  "behavior": "Safe translated heading in actual route fallback and unconfirmed client scope. Old records/form remain gated; failed organization context exposes Retry through its existing refetch owner. No action, batch, authorization, date or notification semantics changed.",
+  "redGreen": {
+    "heading": {"red": "heading-red.json", "redPassed": 0, "redFailed": 1, "green": "heading-green.json", "greenPassed": 1},
+    "scope": {"red": "scope-red.json", "redPassed": 1, "redFailed": 4, "green": "scope-green.json", "greenPassed": 17, "boundary": "Green also includes 12 existing start cases. These focused runs overlap final units."},
+    "pendingControl": {"file": "lifetime-green.json", "passed": 18, "boundary": "Existing unchanged pending semantics: Activity keeps one unsettled start locked, ignores retired completion effects, retains draft and allows a deliberate new start after settlement. This is preservation coverage, not a code-fix red or server idempotency guarantee. Merger probe expecting immediate unlock remains a qualified failed assumption."}
+  },
+  "finalUnit": {
+    "groups": [
+      {"file": "unit-final.json", "physicalFiles": 58, "cases": 408, "passed": 408, "exit": 0},
+      {"file": "unit-additional.json", "physicalFiles": 4, "cases": 32, "passed": 32, "exit": 0}
+    ],
+    "distinctCases": 440,
+    "physicalFiles": 62,
+    "groupsHaveDisjointPhysicalFiles": true,
+    "defaultTimeoutMs": 5000,
+    "boundary": "First group is the 57-file merger-expanded selection plus the new five-case loading file and one new pending control. Four missing worker-compatibility files ran separately, without repeating passing files. Earlier merger 434 cases used its recorded 30,000ms timeout; root 440 pass at the unchanged default. Focused checks are nonadditive."
+  },
+  "types": {"file": "typecheck-final.log", "typegen": true, "projects": 3, "exit": 0, "attestation": "Root observed actual completed shell session96926 exit0; not a new reconstructed raw shell record."},
+  "quality": {
+    "rootFormat": {"file": "biome-root.log", "files": 3, "exit": 0, "profile": "explicit webapp config, 100 columns, CRLF; only heading/loading-test/scope formatted"},
+    "all": {"file": "quality.json", "files": 10, "formatExit": 1, "lintExit": 0, "formattingPaths": ["payslip-batches/page.tsx", "payslip-batch-start.test.tsx", "payslip-batch-start.tsx", "route-metadata.test.ts", "route-metadata.ts", "payslip-batch.integration.test.ts"], "boundary": "Same six file-level formatting boundaries remain; no broad rewrite of unrelated code."},
+    "doctor": {"file": "doctor.log", "files": 10, "exit": 0, "errors": 0, "warnings": 2, "review": "Existing contradictory preventDefault findings in unchanged start handler. Explicit preventDefault and a real cancelable native Event/defaultPrevented assertion establish intended TanStack submission behavior. No suppression; production bytes unchanged after this scan, later test-only assertion included in final440."},
+    "whitespace": {"exit": 0, "scope": "Root correction diff"}
+  },
+  "mergerPG": {"physicalFiles": 1, "cases": 20, "passed": 20, "boundary": "Fresh prior merger execution at ab1; not rerun by root. Runtime verifier may rerun this suite nonadditively at final source."},
+  "commands": [
+    "Every pnpm shell sets pnpm_config_verify_deps_before_run=false and supplies --config.verify-deps-before-run=false before node/exec/run.",
+    "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit --maxWorkers 2 src/components/personnel-file/payslip-batches-loading.test.tsx --reporter=json --outputFile=../../.tmp/1732-root-checks/heading-red.json",
+    "Focused heading-green uses same file. Scope-green and lifetime-green include payslip-batch-start.test.tsx.",
+    "Final units use exact .tmp/merge1732-audit/unit-targets.json paths plus new loading test; four remaining paths are the physical-name difference from unit-worker-compat.json. No globs or timeout override.",
+    "pnpm --config.verify-deps-before-run=false --filter webapp typecheck",
+    "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope changed --base b1e9a95c02374118deb9bba789f3aa8291b5e932 --include-untracked --verbose --no-supply-chain --no-telemetry --no-score --max-duration 90",
+    "Biome exact all-file list/exits stored in quality.json; explicit --config-path=./biome.jsonc --line-width=100 --line-ending=crlf, lint uses --formatter-enabled=false."
+  ],
+  "limits": ["Fresh browser/native/Next/matched capture and real scope-error/history/command recovery remain pending.", "No immediate second start while an unsettled command may already have created a batch; no new server idempotency semantics.", "No all-ABA/current-role snapshot freshness guarantee beyond existing guards.", "Broad four-path roster guard, full production generation, catalogs, providers, device and true zoom remain unpassed."],
+  "provenance": "Root intermediate red/green working stages were not separately committed or hash-sealed. Final source/test bytes are exactly the subsequently committed source above; no intermediate pin is fabricated."
+}

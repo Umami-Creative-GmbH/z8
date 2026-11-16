@@ -1,0 +1,351 @@
+{
+  "publicPngFiles": 19,
+  "png": [
+    {
+      "file": "public-before-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 25,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-before-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "chunks": 14,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 329160
+    },
+    {
+      "file": "public-before-wide-dark-large.png",
+      "width": 2200,
+      "height": 1100,
+      "chunks": 29,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 2420000
+    },
+    {
+      "file": "public-current-actual-streamed-loading.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 18,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-collapsed-draft.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 21,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-context-read-failed.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 19,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-context-read-recovered.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 26,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 27,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-history-read-recovered.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 27,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-history-real-read-failed.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 26,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-invalid-year.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 26,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-phone-dark-large-final-history.png",
+      "width": 390,
+      "height": 844,
+      "chunks": 14,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 329160
+    },
+    {
+      "file": "public-current-phone-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "chunks": 15,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 329160
+    },
+    {
+      "file": "public-current-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "chunks": 15,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 329160
+    },
+    {
+      "file": "public-current-real-batch-destination.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 23,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-restored-wide-dark-large.png",
+      "width": 2200,
+      "height": 1100,
+      "chunks": 30,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 2420000
+    },
+    {
+      "file": "public-current-start-held-disabled.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 26,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-transport-aborted-retained.png",
+      "width": 1600,
+      "height": 1000,
+      "chunks": 27,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 1600000
+    },
+    {
+      "file": "public-current-wide-dark-large.png",
+      "width": 2200,
+      "height": 1100,
+      "chunks": 30,
+      "allChunkCrcs": true,
+      "fullInflate": true,
+      "allRowsUnfiltered": true,
+      "decodedPixels": 2420000
+    }
+  ],
+  "jsonFiles": 15,
+  "json": [
+    "attempts.json",
+    "captures.json",
+    "cleanup.json",
+    "commands.json",
+    "harness-pins.json",
+    "matched-comparison.json",
+    "next-process-cleanup.json",
+    "next-runtime.json",
+    "overlay-apply.json",
+    "overlay-restore.json",
+    "pg-command.json",
+    "postgres20.json",
+    "preservation.json",
+    "runtime-observations.json",
+    "source-pins.json"
+  ],
+  "scriptsParsed": 33,
+  "scripts": [
+    {
+      "file": "harness/commands/001-login-feature.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/002-enable-and-stream.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/003-stream-continuation.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/004-stream-observation.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/005-context-recovery.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/006-context-continuation.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/007-context-verified-and-validation.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/008-start-transport-pending.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/009-history-recovery-native.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/010-role-denials-grant.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/011-role-inspect.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/012-grant-select-target.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/013-grant-target-keyboard.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/014-grant-revoke-held-start.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/015-grant-safe-inspect.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/016-grant-confirm-native-pointer.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/017-grant-revoke-continuation.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/018-grant-save-native-pointer.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/019-role-boundary-current-captures.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/020-keyboard-prefs-menu.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/021-prefs-settled-menu.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/022-large-theme-capture.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/023-historical-matched-captures.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/024-historical-selector-continuation.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/025-restored-final-runtime.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/commands/026-close.mjs",
+      "method": "AsyncFunction parse only"
+    },
+    {
+      "file": "harness/common.mjs",
+      "method": "node --check; no execution"
+    },
+    {
+      "file": "harness/controller.mjs",
+      "method": "node --check; no execution"
+    },
+    {
+      "file": "harness/dev.mjs",
+      "method": "node --check; no execution"
+    },
+    {
+      "file": "harness/overlay.mjs",
+      "method": "node --check; no execution"
+    },
+    {
+      "file": "harness/pg-run.mjs",
+      "method": "node --check; no execution"
+    },
+    {
+      "file": "harness/preflight.mjs",
+      "method": "node --check; no execution"
+    },
+    {
+      "file": "harness/preservation.mjs",
+      "method": "node --check; no execution"
+    }
+  ],
+  "archivedArtifactsExecuted": false,
+  "privateValueLeakMatches": 0,
+  "privacyScope": "Compared against current fresh private fixture contact/credential/secret URL values and actual TEMP paths in memory. No values or their hashes retained. Public screenshots separately pixel-inspected with contact footer redaction; generic source literals are allowed."
+}

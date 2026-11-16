@@ -1,0 +1,686 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "sha256",
+  "counts": {
+    "static": 14,
+    "merger": 8,
+    "runtime": 74,
+    "total": 96
+  },
+  "totalBytes": 2246775,
+  "digest": "a9ca6c651e428768dcd57577690a7201509510c27f92ac6920eb911505876901",
+  "files": [
+    {
+      "path": "merger/handoff.json",
+      "bytes": 8694,
+      "sha256": "ab6ca01bb09de1948e7a1503abf1a90d64d04a3dc4fe61fa257293866157e5b2",
+      "group": "merger",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "merger/heading-baseline.test.tsx",
+      "bytes": 2526,
+      "sha256": "de2367b827f97886a77db138a3a8daf7760ed61411fc76418840ded0780233e7",
+      "group": "merger",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "merger/heading-boundary.json",
+      "bytes": 672,
+      "sha256": "817e3c588bacb4dfc1acaee60bddff3ddb35b03ab0fbe29862217a0f21d53661",
+      "group": "merger",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "merger/heading-current.test.tsx",
+      "bytes": 2570,
+      "sha256": "8bc7cd075d7ba133b56aaf6503c53ab8c23855caa15742d42c0fb41c3183948e",
+      "group": "merger",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "merger/heading-probes.json",
+      "bytes": 3573,
+      "sha256": "4d9f8c88a9a9752dd3d74f4e99b9d00ca14c6b4a9fe460dec10bd7d3fd49d922",
+      "group": "merger",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "merger/lifetime-current.test.tsx",
+      "bytes": 4493,
+      "sha256": "d8570c536630e9910d057f6a91532bc9db720908ac65c9a73dd5b6943a683365",
+      "group": "merger",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "merger/lifetime-probes.json",
+      "bytes": 2387,
+      "sha256": "555758df9e50e0e43df4253071f0f37e290bd925ee17af8d9329df1909b6c647",
+      "group": "merger",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "merger/test-accounting.json",
+      "bytes": 179470,
+      "sha256": "b08fd7884873a3dc6fd6ce01b9c0c47ff707dae085fbee7cbae7b0fa2cebad47",
+      "group": "merger",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/artifact-hashes.json",
+      "bytes": 13238,
+      "sha256": "c08b9dccc1cf15454db4c9d341aab12de15f97555585dc4184b139fe7f77f274",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/HANDOFF-runtime.md",
+      "bytes": 8101,
+      "sha256": "a84edfb7b2551f054a70d7398884abb711fe9c13bf68ec67e0adf8a89d6e0e7b",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public-allowlist.json",
+      "bytes": 3867,
+      "sha256": "566a395860ff5e0159bc86a75651336ea96125d73a76dca11670f2dfe6136888",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/artifact-validation.json",
+      "bytes": 9385,
+      "sha256": "6c6ed4f546a501224caac080cbbe9eebb4dd8dbb3711a86c53deb6f8bb27081f",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/attempts.json",
+      "bytes": 9008,
+      "sha256": "97825b2d450ac85866f74350e15b1c10734b9fee1ab1dd38de3b13dfb51af56f",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/captures.json",
+      "bytes": 48824,
+      "sha256": "4a87ec7b3883c72dc910c35e64ef48ab3129f9fce5ff8d4d29dec8e299614668",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/cleanup.json",
+      "bytes": 763,
+      "sha256": "6fa1b42f832450917fd3d5670975744ca1bcc570a219750e87ceee29eb326f53",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/commands.json",
+      "bytes": 2182,
+      "sha256": "1879c64d51d92aeb8d0ad018afa20a4395d96e2fbc24f19d58b0b12ab925baa6",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness-pins.json",
+      "bytes": 13290,
+      "sha256": "a13804ed9e1db66fd7865771e9a43913418fff8ff2d63603f1d80a6ed5197ef9",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/001-login-feature.mjs",
+      "bytes": 283,
+      "sha256": "ab3a4ead6149737db3f30075657d61e015bb27c62e908dfcff24abbc6f85db59",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/002-enable-and-stream.mjs",
+      "bytes": 2732,
+      "sha256": "d022036c82c887017c31392c3573d775713e583e293ab8148eafd3d06063e043",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/003-stream-continuation.mjs",
+      "bytes": 2364,
+      "sha256": "bb3a004070057b8e6588609d25f8f629a4d23cb5396bf1fc9ed6eb56be9f4e11",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/004-stream-observation.mjs",
+      "bytes": 1673,
+      "sha256": "18c61b17fd3ef21bddb0a0583fe475df70d017d0d2bb9a3f770d5b81e646a5be",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/005-context-recovery.mjs",
+      "bytes": 2943,
+      "sha256": "8536b707f873c9796ecac368d71454de8a681eedcc523946fc6e02ea13b0c0e7",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/006-context-continuation.mjs",
+      "bytes": 273,
+      "sha256": "2b4a762286d1b2d4129025ab93c07e9629b98aabfa6ed3f6f22736555379fd15",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/007-context-verified-and-validation.mjs",
+      "bytes": 3431,
+      "sha256": "843875cb59b36a84fc78eb3f9ccfd2b13f8354076a95f1f2b912742d8d28b106",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/008-start-transport-pending.mjs",
+      "bytes": 4055,
+      "sha256": "d908b74402616f8eadfbb4b19fdd34f4e37a6c730a22afe4330364ccd872d179",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/009-history-recovery-native.mjs",
+      "bytes": 5680,
+      "sha256": "ecf8e70c280004cf7a97f0b4ec6e704df7ecc743ea20d9ebc751a95b59ddab45",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/010-role-denials-grant.mjs",
+      "bytes": 3909,
+      "sha256": "b688aa050b738aaa33c43ac0f76c28eb1e39253bc71d4e36ac23eb7a200c2180",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/011-role-inspect.mjs",
+      "bytes": 399,
+      "sha256": "b8cfeec9615c1f089b7b2eee43618c73010260b56f25eb784ad73016187ea8e9",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/012-grant-select-target.mjs",
+      "bytes": 389,
+      "sha256": "a5e870ee5d7cc47ce97a79ea4a889f796ec378fa0567ab71810dae549598073b",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/013-grant-target-keyboard.mjs",
+      "bytes": 590,
+      "sha256": "4d5bf7929699595fd7593a48f8c5c0353014ffd51a38b66135d88c5d8d54ad8d",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/014-grant-revoke-held-start.mjs",
+      "bytes": 5116,
+      "sha256": "fd842934df46eedafd65068d44ea8aedcfa50c3567791d32054925391a024c44",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/015-grant-safe-inspect.mjs",
+      "bytes": 849,
+      "sha256": "39daf9704745be8bde08aa892d14a9b53e398de0d10778bbf302ab278febdb7e",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/016-grant-confirm-native-pointer.mjs",
+      "bytes": 672,
+      "sha256": "4bca2c7af2410dfc73a3dfcfaefc4e98de5adf9e5d89b635c9c544927dd11da1",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/017-grant-revoke-continuation.mjs",
+      "bytes": 4596,
+      "sha256": "821cc5dbdfc0fe51455ca82a9672e2f58f6d26bacc188b798597c04fa5e3b8fd",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/018-grant-save-native-pointer.mjs",
+      "bytes": 928,
+      "sha256": "e6e5bc50caaccad1b68e5324ea15c819b3a389cefca4e7c22e71e637528f4dc5",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/019-role-boundary-current-captures.mjs",
+      "bytes": 2900,
+      "sha256": "28915b91a56eee45b35d3d9e68bd14034b0f6c877f5c7d0d6810f50ae2f3e22c",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/020-keyboard-prefs-menu.mjs",
+      "bytes": 2270,
+      "sha256": "0d609984051a5498ead49c9c9dc18cc5784932daf57fe78ceb3a3db622f7bd0b",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/021-prefs-settled-menu.mjs",
+      "bytes": 887,
+      "sha256": "4c80dd91feafdae531590f157e6b9fe0fb281f53c5be76425934f546b5bede51",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/022-large-theme-capture.mjs",
+      "bytes": 4058,
+      "sha256": "9a8d8cf139a2c4714506732938ae7d2c24c36d0f90c5a8a971585fabbe650ac0",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/023-historical-matched-captures.mjs",
+      "bytes": 2595,
+      "sha256": "44c8aef008489bb4cefd95b70dc9a640cbb0aa50dbb21e6e1b292287c6565086",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/024-historical-selector-continuation.mjs",
+      "bytes": 2599,
+      "sha256": "7e718fa88735f36a493e86802a2754cbbb7907271020569f8bf2e778e0238f5e",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/025-restored-final-runtime.mjs",
+      "bytes": 2781,
+      "sha256": "bf493b4871592b5047fffa71987c7fc71a72889ae9a986e8686000a905242cb4",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/commands/026-close.mjs",
+      "bytes": 6,
+      "sha256": "8341515f3d9d0bdbdaf9814007a425373fac7fb158efb3af76bb6be932c91fd5",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/common.mjs",
+      "bytes": 7331,
+      "sha256": "9af0bcb4df36e366035aa9fd309fb1b2409af6414ce826c69109c4ff39a7a071",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/controller.mjs",
+      "bytes": 3672,
+      "sha256": "1a8a85fb25d322353e02410c543d6ec31687ca1986dd34253d80c036448a39fe",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/dev.mjs",
+      "bytes": 3730,
+      "sha256": "9bb6c57f94a9907eaf0cc1ca60499a3cdd5b15b59ee4ced705f75b5bb6a00b58",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/overlay.mjs",
+      "bytes": 2270,
+      "sha256": "140c98e874b3e862a82a98906c76879f9df9c30142d3040e6d1ebf52809b7497",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/pg-run.mjs",
+      "bytes": 1333,
+      "sha256": "5a97551e5fa4018eb6d4907f1aa1f87b4e47e2afb6d195db558298d5c40c34b5",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/preflight.mjs",
+      "bytes": 3154,
+      "sha256": "80e89b4cc9ca650681fac4cc3395084fc12db8f323f4f3c606d19dd422665f80",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/preservation.mjs",
+      "bytes": 1657,
+      "sha256": "d2140680cd3de3153aa925a15dd6434a20bf678bf1a1af27869dc540e83a0c3e",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/harness/stop-next.ps1",
+      "bytes": 3049,
+      "sha256": "59646f02f67f69b8ae8fe2d8fea3e123bc125cf1dbddbf07bcb42c4fa70a2ce0",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/matched-comparison.json",
+      "bytes": 2127,
+      "sha256": "825554c83f970492793580358a220e48de6af42a974d9704e5a8c2a5ce8d05a8",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/next-process-cleanup.json",
+      "bytes": 5554,
+      "sha256": "b0eeaedb50c2ed1b4a840c6045534b69ec85309a6ac50bb25376148f596bb870",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/next-runtime.json",
+      "bytes": 7808,
+      "sha256": "1cfba94637625cb50942f0325c480f9a5c1da238541684633c8e4aae15000840",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/overlay-apply.json",
+      "bytes": 1528,
+      "sha256": "0e8b92d9b1a894173d51aab5790cba68b2483262b0a9eef96ce4898d6dd49efc",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/overlay-restore.json",
+      "bytes": 987,
+      "sha256": "93f6ba42d511f2d297ea24824edfc38cfd13d01d096aa2e32bbc38504d18e782",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/pg-command.json",
+      "bytes": 511,
+      "sha256": "783ff7d97bcb085880ca816925950f5afec7583714ea9e1171a4c6cb0d30a0ae",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/postgres20.json",
+      "bytes": 7158,
+      "sha256": "91ec84b8d9adbba66d5ed3fd3bffd302d42b0ff12f1250a5e40eb7636c9f5727",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/powershell-validation.json",
+      "bytes": 126,
+      "sha256": "bd010e86b77b87746f8addedb6e960eb643fe31941ff0fdd643e5a25a117aa2a",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/preservation.json",
+      "bytes": 534,
+      "sha256": "8ff5541a74e26b3d30b62cb7d324193569119fd2b6ae2fef69e724e7e7d3abdc",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-before-desktop-light.png",
+      "bytes": 89789,
+      "sha256": "937670abda4648ef0e76d49287bfae36eb5ecb792c6fd8ca9eb27c1935a2849d",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-before-phone-light.png",
+      "bytes": 44101,
+      "sha256": "b20e72a6c392964ecd1d7ebebe409c52937a53f01e0c55d1e99e9142dd52f2b9",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-before-wide-dark-large.png",
+      "bytes": 102996,
+      "sha256": "66bc3310d5b162fe2a67b3d48bda1f282a2737bdac9a2bdaa9a6f56f0cd31fb4",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-actual-streamed-loading.png",
+      "bytes": 59681,
+      "sha256": "176e3ac6362908b52875cc44b00777590e7a71b115716a02d303423e8ad7dedb",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-collapsed-draft.png",
+      "bytes": 72794,
+      "sha256": "bc3084faa219f9e8a1e9ee872a471467a785fb388522b6ddd8d90fd737bbafdd",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-context-read-failed.png",
+      "bytes": 62779,
+      "sha256": "d6ba72d76655b1a640f3ab580043a7dde8c27be212348e9da4c95822bb54d48a",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-context-read-recovered.png",
+      "bytes": 92025,
+      "sha256": "89eafd2e5f5bb772b380a5e4b177e4ba8b7e4f8e9c98e1150a6ac1eb26fe7a92",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-desktop-light.png",
+      "bytes": 95849,
+      "sha256": "3a6f2c343ed06b9619d9a7ae2742d6e25e5d7ee021084747710685abc5dbf7d7",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-history-read-recovered.png",
+      "bytes": 97151,
+      "sha256": "41cc128c2ba5dc385e1ca0eaeba7ba10e3aacb3421e2229c4e8e3219244ff8db",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-history-real-read-failed.png",
+      "bytes": 92374,
+      "sha256": "ca364b5cb78da008d781e23197efb02d4adf45b61566ee9318ef756ac78426e2",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-invalid-year.png",
+      "bytes": 92126,
+      "sha256": "737190ffc36b89b3e5354cb1ec75b75c0b9b0f57cd628f8fb837465fd6fc965a",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-phone-dark-large-final-history.png",
+      "bytes": 43682,
+      "sha256": "dc4525f85755ec56bdc4bc458bb3aa17622ce5672f5eba5760d54bcf8b5336b2",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-phone-dark-large.png",
+      "bytes": 46034,
+      "sha256": "196a909dc926125faaec60a3754ed56b883fec8c58124498e234f28f17f3b620",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-phone-light.png",
+      "bytes": 48041,
+      "sha256": "d1f5ec1fefc951523d3d00613f5232a4a6f47f65a1770b834a305f3c8d6881be",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-real-batch-destination.png",
+      "bytes": 78936,
+      "sha256": "c2cdaa01a5bd199e9aa12c37ac16ef8f47a4a53f2ce1a82598667e7a6eb85fc5",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-restored-wide-dark-large.png",
+      "bytes": 108531,
+      "sha256": "0cb00381af1f264f4b40f7e6bd5472b6905f02bdb8eb623317ad2838afb95890",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-start-held-disabled.png",
+      "bytes": 92740,
+      "sha256": "e1885774ffd44e7b7e136941a7f8651eace6ed4e7aa42d62e26869514b73e32f",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-transport-aborted-retained.png",
+      "bytes": 94722,
+      "sha256": "252cdb88776fb77287aaeb019c6707573c82ba647ae4796f590f20e120f5ff35",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/public-current-wide-dark-large.png",
+      "bytes": 108612,
+      "sha256": "e897d548bf83e177b61534cae3294f4b8599b454419974c6a7fd7a5fa1354123",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/runtime-observations.json",
+      "bytes": 9031,
+      "sha256": "c504af6a75ea41bf6d84469684a24118ae65f0c3a2e9ebc8f8f5258cc4dbb3db",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/public/source-pins.json",
+      "bytes": 8993,
+      "sha256": "209e16be2e9c3e2eab787ec8a283ba2db590850db170887d2aae40628f4e9e99",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "runtime/verification-manifest.json",
+      "bytes": 4875,
+      "sha256": "147d781138b1a8279fe20b77f8446f95b20937fe981f3b1a5a5598298bd30267",
+      "group": "runtime",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/biome-all-format.log",
+      "bytes": 32743,
+      "sha256": "5976bdb74234eda5446b319fbf0c3e818ea95e8ffb77605980a4fb7ca180d979",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/biome-all-lint.log",
+      "bytes": 44,
+      "sha256": "e261702a6a2e091d0ec8979f350280c34f3f1fe8c6a5f3a64eab5a03e033bf63",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/biome-root.log",
+      "bytes": 40,
+      "sha256": "2f6c1cf79111e414647e798fff6eb4b22538183481edbccb10b2dad400a30424",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/checks.json",
+      "bytes": 5874,
+      "sha256": "b42fcc2496d30ec706be528d43ad4a821f4f6ca502542e4bbf029a5c727c008d",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/doctor.sanitized.log",
+      "bytes": 2901,
+      "sha256": "026d71ad1cff0258401439568b02683efb7465e708c573c605b82c18f1b217f3",
+      "group": "static",
+      "provenance": "sanitized-clone; only actual diagnostics-path value omitted; raw original unmodified and not hashed"
+    },
+    {
+      "path": "static/heading-green.json",
+      "bytes": 1019,
+      "sha256": "d6173fa9d05414e6a3c9534747abdfd1c43210fda7667b76b84f017cfc457483",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/heading-red.json",
+      "bytes": 14382,
+      "sha256": "61952bde8001b94e907ec924886ef01bd78f52573d43f1c1cd64ee46c6f822f1",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/lifetime-green.json",
+      "bytes": 6463,
+      "sha256": "7e7e180a8b82520074da7b5c11ce4e18c6690b2efc06571fb048d29b171154af",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/quality.json",
+      "bytes": 698,
+      "sha256": "bfd214d0a4c94467d8f2694b1da09eb15ba2bbd8e9337b550353a02a82e72417",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/scope-green.json",
+      "bytes": 6136,
+      "sha256": "586d591852fce5a9a413817e614560dfa79b5858298a6b19d9e29f2d9f9a7a60",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/scope-red.json",
+      "bytes": 48434,
+      "sha256": "af7b54e7a60da309202db30baf76cadc9ef50d0c32461433511db49c5ab5fc1b",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/typecheck-final.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/unit-additional.json",
+      "bytes": 12287,
+      "sha256": "26f466624729ec9e7a14e96dea41b62f84ade749b7a352e896248d43a7b80852",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    },
+    {
+      "path": "static/unit-final.json",
+      "bytes": 145050,
+      "sha256": "babd3054c4a4ac84f3959b0f2ca6348201e90269d8f24419a2d47165d0b1c03e",
+      "group": "static",
+      "provenance": "raw-byte-identical"
+    }
+  ]
+}

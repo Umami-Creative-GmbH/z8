@@ -1,0 +1,506 @@
+src\app\[locale]\(app)\personnel-files\payslip-batches\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     31  31 │    * payslips; not found for everyone else.␍
+     32  32 │    */␍
+     33     │ - async·function·PayslipBatchesContent({␍
+     34     │ - → params,␍
+     35     │ - }:·{␍
+     36     │ - → params:·Promise<{·locale:·string·}>;␍
+     37     │ - })·{␍
+         33 │ + async·function·PayslipBatchesContent({·params·}:·{·params:·Promise<{·locale:·string·}>·})·{␍
+     38  34 │     const [t, current, { locale }] = await Promise.all([␍
+     39  35 │       getTranslate(),␍
+    ······· │ 
+     41  37 │       params,␍
+     42  38 │     ]);␍
+     43     │ - → if·(current.status·!==·"resolved"·||·!canRunPayslipBatches(current.access))␍
+     44     │ - → → notFound();␍
+         39 │ + → if·(current.status·!==·"resolved"·||·!canRunPayslipBatches(current.access))·notFound();␍
+     45  40 │     const [{ today }, history] = await Promise.all([␍
+     46  41 │       loadOrganizationDay(db, {␍
+    ······· │ 
+     62  57 │         <div className="@container/main mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col gap-6 p-4 md:p-6">␍
+     63  58 │           <PageHeader␍
+     64     │ - → → → → → title={t(␍
+     65     │ - → → → → → → "settings.personnelFiles.batch.pageTitle",␍
+     66     │ - → → → → → → "Payslip·batches",␍
+     67     │ - → → → → → )}␍
+         59 │ + → → → → → title={t("settings.personnelFiles.batch.pageTitle",·"Payslip·batches")}␍
+     68  60 │             scope={␍
+     69  61 │               <Link␍
+    ······· │ 
+     80  72 │             defaultPayPeriod={{ year: today.year, month: today.month }}␍
+     81  73 │           />␍
+     82     │ - → → → → <section␍
+     83     │ - → → → → → aria-labelledby="batch-history-heading"␍
+     84     │ - → → → → → className="min-w-0·space-y-3"␍
+     85     │ - → → → → >␍
+     86     │ - → → → → → <h2␍
+     87     │ - → → → → → → id="batch-history-heading"␍
+     88     │ - → → → → → → className="text-lg·font-semibold·tracking-tight"␍
+     89     │ - → → → → → >␍
+         74 │ + → → → → <section·aria-labelledby="batch-history-heading"·className="min-w-0·space-y-3">␍
+         75 │ + → → → → → <h2·id="batch-history-heading"·className="text-lg·font-semibold·tracking-tight">␍
+     90  76 │               {t("settings.personnelFiles.batch.recent", "Your batches")}␍
+     91  77 │             </h2>␍
+    ······· │ 
+    135 121 │                             </span>␍
+    136 122 │                             <span className="block text-sm text-muted-foreground tabular-nums">␍
+    137     │ - → → → → → → → → → → → → → → {t(␍
+    138     │ - → → → → → → → → → → → → → → → "settings.personnelFiles.batch.fileCount",␍
+    139     │ - → → → → → → → → → → → → → → → "{count}·files",␍
+    140     │ - → → → → → → → → → → → → → → → {␍
+    141     │ - → → → → → → → → → → → → → → → → count:·batch.fileCount,␍
+    142     │ - → → → → → → → → → → → → → → → },␍
+    143     │ - → → → → → → → → → → → → → → )}␍
+        123 │ + → → → → → → → → → → → → → → {t("settings.personnelFiles.batch.fileCount",·"{count}·files",·{␍
+        124 │ + → → → → → → → → → → → → → → → count:·batch.fileCount,␍
+        125 │ + → → → → → → → → → → → → → → })}␍
+    144 126 │                             </span>␍
+    145 127 │                           </span>␍
+    146     │ - → → → → → → → → → → → → <Badge␍
+    147     │ - → → → → → → → → → → → → → variant={␍
+    148     │ - → → → → → → → → → → → → → → batch.status·===·"open"·?·"outline"·:·"secondary"␍
+    149     │ - → → → → → → → → → → → → → }␍
+    150     │ - → → → → → → → → → → → → >␍
+        128 │ + → → → → → → → → → → → → <Badge·variant={batch.status·===·"open"·?·"outline"·:·"secondary"}>␍
+    151 129 │                             {batch.status === "open"␍
+    152     │ - → → → → → → → → → → → → → → ?·t(␍
+    153     │ - → → → → → → → → → → → → → → → → "settings.personnelFiles.batch.statusOpen",␍
+    154     │ - → → → → → → → → → → → → → → → → "Not·confirmed",␍
+    155     │ - → → → → → → → → → → → → → → → )␍
+    156     │ - → → → → → → → → → → → → → → :·t(␍
+    157     │ - → → → → → → → → → → → → → → → → "settings.personnelFiles.batch.statusConfirmed",␍
+    158     │ - → → → → → → → → → → → → → → → → "Confirmed",␍
+    159     │ - → → → → → → → → → → → → → → → )}␍
+        130 │ + → → → → → → → → → → → → → → ?·t("settings.personnelFiles.batch.statusOpen",·"Not·confirmed")␍
+        131 │ + → → → → → → → → → → → → → → :·t("settings.personnelFiles.batch.statusConfirmed",·"Confirmed")}␍
+    160 132 │                           </Badge>␍
+    161 133 │                           <IconChevronRight␍
+    ······· │ 
+    192 164 │   }␍
+    193 165 │   ␍
+    194     │ - export·default·function·PayslipBatchesPage(props:·{␍
+    195     │ - → params:·Promise<{·locale:·string·}>;␍
+    196     │ - })·{␍
+        166 │ + export·default·function·PayslipBatchesPage(props:·{·params:·Promise<{·locale:·string·}>·})·{␍
+    197 167 │     return (␍
+    198 168 │       <Suspense fallback={<PayslipBatchesLoading />}>␍
+  
+
+src\components\personnel-file\payslip-batch-start.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2     │ - import·{␍
+      3     │ - → act,␍
+      4     │ - → fireEvent,␍
+      5     │ - → render,␍
+      6     │ - → screen,␍
+      7     │ - → waitFor,␍
+      8     │ - }·from·"@testing-library/react";␍
+          2 │ + import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      9   3 │   import { Activity } from "react";␍
+     10   4 │   import { beforeEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     97  91 │       boundary.scope = {␍
+     98  92 │         ...boundary.scope,␍
+     99     │ - → → → ...(change·===·"account"␍
+    100     │ - → → → → ?·{·userId:·"other"·}␍
+    101     │ - → → → → :·{·activeOrganizationId:·"org-b"·}),␍
+         93 │ + → → → ...(change·===·"account"·?·{·userId:·"other"·}·:·{·activeOrganizationId:·"org-b"·}),␍
+    102  94 │       };␍
+    103  95 │       view.rerender(renderScope());␍
+    ······· │ 
+    196 188 │       target: { value: "2025" },␍
+    197 189 │     });␍
+    198     │ - → view.rerender(␍
+    199     │ - → → <PayslipBatchStart␍
+    200     │ - → → → {...props}␍
+    201     │ - → → → defaultPayPeriod={{·year:·2027,·month:·1·}}␍
+    202     │ - → → />,␍
+    203     │ - → );␍
+        190 │ + → view.rerender(<PayslipBatchStart·{...props}·defaultPayPeriod={{·year:·2027,·month:·1·}}·/>);␍
+    204 191 │     expect(␍
+    205 192 │       (␍
+    ······· │ 
+    299 286 │     fireEvent.click(screen.getByRole("button", { name: "Start batch" }));␍
+    300 287 │     await waitFor(() =>␍
+    301     │ - → → expect(boundary.push).toHaveBeenCalledWith(␍
+    302     │ - → → → "/personnel-files/payslip-batches/batch",␍
+    303     │ - → → ),␍
+        288 │ + → → expect(boundary.push).toHaveBeenCalledWith("/personnel-files/payslip-batches/batch"),␍
+    304 289 │     );␍
+    305 290 │     expect(boundary.start).toHaveBeenLastCalledWith({␍
+  
+
+src\components\personnel-file\payslip-batch-start.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      8   8 │   import { startPayslipBatchAction } from "@/app/[locale]/(app)/personnel-files/payslip-batches/actions";␍
+      9   9 │   import { Button } from "@/components/ui/button";␍
+     10     │ - import·{␍
+     11     │ - → Card,␍
+     12     │ - → CardContent,␍
+     13     │ - → CardDescription,␍
+     14     │ - → CardHeader,␍
+     15     │ - }·from·"@/components/ui/card";␍
+         10 │ + import·{·Card,·CardContent,·CardDescription,·CardHeader·}·from·"@/components/ui/card";␍
+     16  11 │   import { Input } from "@/components/ui/input";␍
+     17  12 │   import {␍
+    ······· │ 
+     30  25 │   } from "@/components/ui/tanstack-form";␍
+     31  26 │   import { fieldHasError } from "@/components/ui/tanstack-form-utils";␍
+     32     │ - import·type·{␍
+     33     │ - → DocumentVisibility,␍
+     34     │ - → PayPeriod,␍
+     35     │ - }·from·"@/lib/personnel-file/document.types";␍
+         27 │ + import·type·{·DocumentVisibility,·PayPeriod·}·from·"@/lib/personnel-file/document.types";␍
+     36  28 │   import { useRouter } from "@/navigation";␍
+     37  29 │   import { usePersonnelFileLabels } from "./document-labels";␍
+     38  30 │   ␍
+     39     │ - const·MONTHS·=·[␍
+     40     │ - → "1",␍
+     41     │ - → "2",␍
+     42     │ - → "3",␍
+     43     │ - → "4",␍
+     44     │ - → "5",␍
+     45     │ - → "6",␍
+     46     │ - → "7",␍
+     47     │ - → "8",␍
+     48     │ - → "9",␍
+     49     │ - → "10",␍
+     50     │ - → "11",␍
+     51     │ - → "12",␍
+     52     │ - ]·as·const;␍
+         31 │ + const·MONTHS·=·["1",·"2",·"3",·"4",·"5",·"6",·"7",·"8",·"9",·"10",·"11",·"12"]·as·const;␍
+     53  32 │   ␍
+     54  33 │   interface StartValues {␍
+    ······· │ 
+    126 105 │         <CardHeader>␍
+    127 106 │           <h2 className="text-lg font-semibold tracking-tight">␍
+    128     │ - → → → → → {t(␍
+    129     │ - → → → → → → "settings.personnelFiles.batch.startTitle",␍
+    130     │ - → → → → → → "Start·a·payslip·batch",␍
+    131     │ - → → → → → )}␍
+        107 │ + → → → → → {t("settings.personnelFiles.batch.startTitle",·"Start·a·payslip·batch")}␍
+    132 108 │           </h2>␍
+    133 109 │           <CardDescription>␍
+    ······· │ 
+    147 123 │               const started = lifetime.current;␍
+    148 124 │               await form.handleSubmit();␍
+    149     │ - → → → → → → if·(␍
+    150     │ - → → → → → → → started·===·lifetime.current·&&␍
+    151     │ - → → → → → → → form.state.fieldMeta.payPeriodYear?.errors.length␍
+    152     │ - → → → → → → )␍
+        125 │ + → → → → → → if·(started·===·lifetime.current·&&·form.state.fieldMeta.payPeriodYear?.errors.length)␍
+    153 126 │                 yearInput.current?.focus();␍
+    154 127 │             }}␍
+    ······· │ 
+    159 132 │                   <TFormItem>␍
+    160 133 │                     <TFormLabel required>␍
+    161     │ - → → → → → → → → → → {t(␍
+    162     │ - → → → → → → → → → → → "settings.personnelFiles.form.payPeriodMonth",␍
+    163     │ - → → → → → → → → → → → "Pay·period·month",␍
+    164     │ - → → → → → → → → → → )}␍
+        134 │ + → → → → → → → → → → {t("settings.personnelFiles.form.payPeriodMonth",·"Pay·period·month")}␍
+    165 135 │                     </TFormLabel>␍
+    166 136 │                     <Select␍
+    ······· │ 
+    169 139 │                     >␍
+    170 140 │                       <TFormControl>␍
+    171     │ - → → → → → → → → → → → <SelectTrigger␍
+    172     │ - → → → → → → → → → → → → className="w-full"␍
+    173     │ - → → → → → → → → → → → → onBlur={field.handleBlur}␍
+    174     │ - → → → → → → → → → → → >␍
+        141 │ + → → → → → → → → → → → <SelectTrigger·className="w-full"·onBlur={field.handleBlur}>␍
+    175 142 │                           <SelectValue />␍
+    176 143 │                         </SelectTrigger>␍
+    ······· │ 
+    193 160 │                     /^\d{4}$/.test(value)␍
+    194 161 │                       ? undefined␍
+    195     │ - → → → → → → → → → → :·t(␍
+    196     │ - → → → → → → → → → → → → "settings.personnelFiles.form.required",␍
+    197     │ - → → → → → → → → → → → → "{label}·is·required",␍
+    198     │ - → → → → → → → → → → → → {␍
+    199     │ - → → → → → → → → → → → → → label:·required,␍
+    200     │ - → → → → → → → → → → → → },␍
+    201     │ - → → → → → → → → → → → ),␍
+        162 │ + → → → → → → → → → → :·t("settings.personnelFiles.form.required",·"{label}·is·required",·{␍
+        163 │ + → → → → → → → → → → → → label:·required,␍
+        164 │ + → → → → → → → → → → → }),␍
+    202 165 │                 }}␍
+    203 166 │               >␍
+    ······· │ 
+    205 168 │                   <TFormItem>␍
+    206 169 │                     <TFormLabel hasError={fieldHasError(field)} required>␍
+    207     │ - → → → → → → → → → → {t(␍
+    208     │ - → → → → → → → → → → → "settings.personnelFiles.form.payPeriodYear",␍
+    209     │ - → → → → → → → → → → → "Pay·period·year",␍
+    210     │ - → → → → → → → → → → )}␍
+        170 │ + → → → → → → → → → → {t("settings.personnelFiles.form.payPeriodYear",·"Pay·period·year")}␍
+    211 171 │                     </TFormLabel>␍
+    212 172 │                     <TFormControl hasError={fieldHasError(field)}>␍
+    ······· │ 
+    218 178 │                         value={field.state.value}␍
+    219 179 │                         maxLength={4}␍
+    220     │ - → → → → → → → → → → → onChange={(event)·=>␍
+    221     │ - → → → → → → → → → → → → field.handleChange(event.target.value)␍
+    222     │ - → → → → → → → → → → → }␍
+        180 │ + → → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}␍
+    223 181 │                         onBlur={field.handleBlur}␍
+    224 182 │                       />␍
+    ······· │ 
+    237 195 │                   <Select␍
+    238 196 │                     value={field.state.value}␍
+    239     │ - → → → → → → → → → onValueChange={(value)·=>␍
+    240     │ - → → → → → → → → → → field.handleChange(value·as·DocumentVisibility)␍
+    241     │ - → → → → → → → → → }␍
+        197 │ + → → → → → → → → → onValueChange={(value)·=>·field.handleChange(value·as·DocumentVisibility)}␍
+    242 198 │                   >␍
+    243 199 │                     <TFormControl>␍
+    ······· │ 
+    247 203 │                     </TFormControl>␍
+    248 204 │                     <SelectContent>␍
+    249     │ - → → → → → → → → → → <SelectItem·value="shared">␍
+    250     │ - → → → → → → → → → → → {labels.visibilities.shared}␍
+    251     │ - → → → → → → → → → → </SelectItem>␍
+    252     │ - → → → → → → → → → → <SelectItem·value="hr_only">␍
+    253     │ - → → → → → → → → → → → {labels.visibilities.hr_only}␍
+    254     │ - → → → → → → → → → → </SelectItem>␍
+        205 │ + → → → → → → → → → → <SelectItem·value="shared">{labels.visibilities.shared}</SelectItem>␍
+        206 │ + → → → → → → → → → → <SelectItem·value="hr_only">{labels.visibilities.hr_only}</SelectItem>␍
+    255 207 │                     </SelectContent>␍
+    256 208 │                   </Select>␍
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{␍
+      3     │ - → appPageOwnsHeading,␍
+      4     │ - → normalizeAppPath,␍
+      5     │ - → resolveAppRouteMetadata,␍
+      6     │ - }·from·"./route-metadata";␍
+          2 │ + import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      7   3 │   ␍
+      8   4 │   describe("route metadata", () => {␍
+    ······· │ 
+     25  21 │     });␍
+     26  22 │     it("adopts only selected employee files, leaving other personnel workflows independently staged", () => {␍
+     27     │ - → → expect(␍
+     28     │ - → → → appPageOwnsHeading(␍
+     29     │ - → → → → "/de/personnel-files/af981290-0000-4000-8000-000000000001",␍
+     30     │ - → → → ),␍
+     31     │ - → → ).toBe(true);␍
+         23 │ + → → expect(appPageOwnsHeading("/de/personnel-files/af981290-0000-4000-8000-000000000001")).toBe(␍
+         24 │ + → → → true,␍
+         25 │ + → → );␍
+     32  26 │       expect(␍
+     33     │ - → → → appPageOwnsHeading(␍
+     34     │ - → → → → "/en/personnel-files/af981290-0000-4000-8000-000000000001/detail",␍
+     35     │ - → → → ),␍
+         27 │ + → → → appPageOwnsHeading("/en/personnel-files/af981290-0000-4000-8000-000000000001/detail"),␍
+     36  28 │       ).toBe(false);␍
+     37  29 │     });␍
+    ······· │ 
+     43  35 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     44  36 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     45     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+     46     │ - → → → true,␍
+     47     │ - → → );␍
+     48     │ - → → expect(␍
+     49     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),␍
+     50     │ - → → ).toBe(false);␍
+         37 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+         38 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     51  39 │     });␍
+     52  40 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │ 
+     77  65 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     78  66 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     79     │ - → → expect(␍
+     80     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+     81     │ - → → ).toBe(true);␍
+         67 │ + → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     82  68 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     83     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+     84     │ - → → → false,␍
+     85     │ - → → );␍
+         69 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     86  70 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     87  71 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │ 
+     93  77 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+     94  78 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     95     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+     96     │ - → → → true,␍
+     97     │ - → → );␍
+     98     │ - → → expect(␍
+     99     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+    100     │ - → → ).toBe(false);␍
+         79 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+         80 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+    101  81 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+    102  82 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │ 
+    105  85 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+    106  86 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    107     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+    108     │ - → → → true,␍
+    109     │ - → → );␍
+         87 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+    110  88 │     });␍
+    111  89 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+    112     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+    113     │ - → → → true,␍
+    114     │ - → → );␍
+    115     │ - → → expect(␍
+    116     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+    117     │ - → → ).toBe(false);␍
+         90 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+         91 │ + → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+    118  92 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+    119  93 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │ 
+    122  96 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+    123  97 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+    124     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+    125     │ - → → → true,␍
+    126     │ - → → );␍
+         98 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+    127  99 │     });␍
+    128 100 │     it("adopts only the complete review arrival route", () => {␍
+    129     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+    130     │ - → → → true,␍
+    131     │ - → → );␍
+    132     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+    133     │ - → → → false,␍
+    134     │ - → → );␍
+    135     │ - → → expect(␍
+    136     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+    137     │ - → → ).toBe(false);␍
+        101 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+        102 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+        103 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+    138 104 │     });␍
+    139 105 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+    140 106 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+    141     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+    142     │ - → → → false,␍
+    143     │ - → → );␍
+        107 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+    144 108 │     });␍
+    145 109 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+    146 110 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+    147     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+    148     │ - → → → false,␍
+    149     │ - → → );␍
+        111 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+    150 112 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+    151     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+    152     │ - → → → false,␍
+    153     │ - → → );␍
+        113 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+    154 114 │     });␍
+    155 115 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │ 
+    198 158 │   ␍
+    199 159 │     it("normalizes locale and trailing slash segments", () => {␍
+    200     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+    201     │ - → → → "/settings/security",␍
+    202     │ - → → );␍
+        160 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    203 161 │     });␍
+    204 162 │   });␍
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+    171     │ - → → (entry)·=>·({␍
+    172     │ - → → → id:·`settings-${entry.id}`,␍
+    173     │ - → → → href:·entry.href,␍
+    174     │ - → → → titleKey:·entry.titleKey,␍
+    175     │ - → → → titleDefault:·entry.titleDefault,␍
+    176     │ - → → }),␍
+    177     │ - → ),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+        171 │ + → → id:·`settings-${entry.id}`,␍
+        172 │ + → → href:·entry.href,␍
+        173 │ + → → titleKey:·entry.titleKey,␍
+        174 │ + → → titleDefault:·entry.titleDefault,␍
+        175 │ + → })),␍
+    178 176 │     {␍
+    179 177 │       id: "settings",␍
+    ······· │ 
+    192 190 │   ␍
+    193 191 │   export function normalizeAppPath(pathname: string): string {␍
+    194     │ - → const·[firstSegment,·...remainingSegments]·=·pathname␍
+    195     │ - → → .split("/")␍
+    196     │ - → → .filter(Boolean);␍
+    197     │ - → const·segments·=·ALL_LANGUAGES.includes(␍
+    198     │ - → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+    199     │ - → )␍
+        192 │ + → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+        193 │ + → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+    200 194 │       ? remainingSegments␍
+    201 195 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    262 256 │       [...APP_ROUTE_METADATA]␍
+    263 257 │         .sort((left, right) => right.href.length - left.href.length)␍
+    264     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+    265     │ - → → UNKNOWN_ROUTE_METADATA␍
+        258 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+    266 259 │     );␍
+    267 260 │   }␍
+  
+
+src\lib\personnel-file\payslip-batch.integration.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    312 312 │           [`${second}-member`, second],␍
+    313 313 │         );␍
+    314     │ - → → → const·{·loadCurrentPersonnelFileAccess·}·=·await·import(␍
+    315     │ - → → → → "./current-access"␍
+    316     │ - → → → );␍
+    317     │ - → → → const·{·canRunPayslipBatches,·listOwnPayslipBatches·}·=·await·import(␍
+    318     │ - → → → → "./payslip-batch-store"␍
+    319     │ - → → → );␍
+        314 │ + → → → const·{·loadCurrentPersonnelFileAccess·}·=·await·import("./current-access");␍
+        315 │ + → → → const·{·canRunPayslipBatches,·listOwnPayslipBatches·}·=·await·import("./payslip-batch-store");␍
+    320 316 │         try {␍
+    321 317 │           signIn("owner");␍
+    ······· │ 
+    359 355 │           await admin.query("delete from organization where id=$1", [second]);␍
+    360 356 │         }␍
+    361     │ - → → });␍
+    362     │ - ␍
+        357 │ + → → });␍
+    363 358 │   ␍
+    364 359 │       it("refuses an officer whose grant does not include payslips", async () => {␍
+  
+
+Checked 10 files in 11ms. No fixes applied.
+Found 6 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

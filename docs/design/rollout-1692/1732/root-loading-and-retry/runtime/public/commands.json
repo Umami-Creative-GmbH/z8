@@ -1,0 +1,68 @@
+{
+  "pnpmGuard": "pnpm_config_verify_deps_before_run=false set before first pnpm in every package shell; every direct pnpm invocation supplies --config.verify-deps-before-run=false.",
+  "commands": [
+    {
+      "command": "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs prepare <fresh-private-browser-directory>",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs prepare <different-fresh-private-pg-directory>",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false node .tmp/1732-root-checks/runtime/pg-run.mjs",
+      "exit": 0
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false node .tmp/1732-root-checks/runtime/dev.mjs dev <workspace> <private-browser-directory>",
+      "launches": 3,
+      "terminationExits": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false node .tmp/1732-root-checks/runtime/controller.mjs",
+      "exit": 0,
+      "boundary": "14 complete/11 failed command attempts; see attempts.json"
+    },
+    {
+      "command": "node .tmp/1732-root-checks/runtime/overlay.mjs apply",
+      "exit": 0
+    },
+    {
+      "command": "node .tmp/1732-root-checks/runtime/overlay.mjs restore",
+      "exit": 0
+    },
+    {
+      "command": "stop-next.ps1 exact owned process identity and descendants",
+      "executions": 3,
+      "exits": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs cleanup <own-private-directory>",
+      "executions": 2,
+      "exits": [
+        0,
+        0
+      ]
+    },
+    {
+      "command": "node .tmp/1732-root-checks/runtime/preflight.mjs <snapshot-basename>",
+      "completeSnapshots": 3,
+      "exit": 0
+    },
+    {
+      "command": "node .tmp/1732-root-checks/runtime/preservation.mjs",
+      "exit": 0
+    }
+  ],
+  "noInstallsUpgradesOrConfigurationChanges": true,
+  "noPhaseProviderDeliveryPaymentCalls": true,
+  "privateFixturePointer": "<private fixture pointer intentionally excluded>"
+}

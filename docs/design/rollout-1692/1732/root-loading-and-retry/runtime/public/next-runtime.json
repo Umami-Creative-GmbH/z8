@@ -1,0 +1,284 @@
+{
+  "currentBeforeOverlay": {
+    "stage": "candidate571 before overlay",
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "project": {
+      "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+      "devServerUrl": "http://localhost:64112"
+    },
+    "connectedRoute": [
+      {
+        "url": "/en/personnel-files/payslip-batches",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(app)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/personnel-files/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/(app)/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      }
+    ],
+    "payslipRouteRegistered": true,
+    "compilation": {
+      "issues": []
+    },
+    "errors": {
+      "configErrors": [],
+      "sessionErrors": []
+    }
+  },
+  "historicalConsumers": {
+    "stage": "exact96 partial existing consumers",
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "project": {
+      "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+      "devServerUrl": "http://localhost:64112"
+    },
+    "connectedRoute": [
+      {
+        "url": "/en/personnel-files/payslip-batches",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(app)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/personnel-files/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/(app)/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      }
+    ],
+    "payslipRouteRegistered": true,
+    "compilation": {
+      "issues": []
+    },
+    "errors": {
+      "configErrors": [],
+      "sessionErrors": []
+    }
+  },
+  "restoredCurrent": {
+    "stage": "candidate571 byte-restored final restart",
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "project": {
+      "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+      "devServerUrl": "http://localhost:64112"
+    },
+    "connectedRoute": [
+      {
+        "url": "/en/personnel-files/payslip-batches",
+        "routerType": "app",
+        "segments": [
+          {
+            "path": "app/[locale]/(app)/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/personnel-files/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/layout.tsx",
+            "type": "layout",
+            "isBoundary": false,
+            "isBuiltin": false
+          },
+          {
+            "path": "global-error.js",
+            "type": "boundary:global-error",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "not-found.js",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": true
+          },
+          {
+            "path": "app/[locale]/(app)/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/error.tsx",
+            "type": "boundary:error",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/not-found.tsx",
+            "type": "boundary:not-found",
+            "isBoundary": true,
+            "isBuiltin": false
+          },
+          {
+            "path": "app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+            "type": "page",
+            "isBoundary": false,
+            "isBuiltin": false
+          }
+        ]
+      }
+    ],
+    "payslipRouteRegistered": true,
+    "compilation": {
+      "issues": []
+    },
+    "errors": {
+      "configErrors": [],
+      "sessionErrors": []
+    }
+  }
+}

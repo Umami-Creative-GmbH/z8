@@ -1,0 +1,20 @@
+{
+  "head": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "base": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+  "ledgerVerifiedAncestors": 55,
+  "priorRolloutProofPaths": 5822,
+  "changedPriorPaths": [
+    "docs/design/rollout-1692/1731.md",
+    "docs/design/rollout-1692/README.md",
+    "docs/design/rollout-1692/integration.json"
+  ],
+  "root1731": {
+    "paths": 173,
+    "changed": 0
+  },
+  "root1730": {
+    "paths": 201,
+    "changed": 0
+  },
+  "treeDigest": "5cf02819c85f80364e7c2b01be253fb6b1bb170a18bd46ce2f40dbfdc035c5a9"
+}
