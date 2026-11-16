@@ -1,0 +1,77 @@
+{
+  "sourceCommit": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+  "base": "bd160d9af22214d473ea603870cdc161572bbcad",
+  "headingCorrection": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+  "payrollFocusCorrection": "4ba74f9910208242cb283e2461f78d15cbb807d0",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+    "apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx": "435b951e718013fce2d26ea2b69273ab2658c75de9665922ffa5dc2c7b55a3a1",
+    "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+    "apps/webapp/src/components/payroll/payroll-workspace.test.tsx": "769d56993d4d19d9ba0ac9fbdb59d7d925adfc9568f6ff294dd9aefbce320acc",
+    "apps/webapp/src/components/payroll/payroll-workspace.tsx": "260b7a3a425b69356ca1cf8b462bdec95ed7098c8c3fbd91d01da9c714a4b680"
+  },
+  "runs": [
+    {
+      "name": "compatibility",
+      "physicalFiles": 177,
+      "passed": 1888
+    },
+    {
+      "name": "independent",
+      "physicalFiles": 1,
+      "passed": 12
+    },
+    {
+      "name": "focused",
+      "physicalFiles": 1,
+      "passed": 31
+    },
+    {
+      "name": "payroll-settlement-green",
+      "physicalFiles": 1,
+      "passed": 73
+    }
+  ],
+  "unitFiles": 178,
+  "unitCases": 1900,
+  "doctor": {
+    "scannedRevision": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+    "commandSourcePinsExactlyMatch": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+    "errors": 0,
+    "warnings": 2,
+    "qualification": "Two retained work-schedule set-state-in-effect warnings; no added suppression. Doctor ran against dirty provisional HEAD1230 but all five command pins equal committed combined source."
+  },
+  "runtime": {
+    "before": {
+      "checks": 6,
+      "captures": 6
+    },
+    "after": {
+      "checks": 14,
+      "captures": 6
+    },
+    "native": {
+      "checks": 2,
+      "pendingOwner": "unpassed: two SPA gate timeouts",
+      "settledOwner": [
+        "WorkScheduleForm",
+        "WorkScheduleHeading"
+      ]
+    },
+    "qualification": "Consumer-only cold-process comparison: exact old client on corrected fields/actions/service, never full historical app. Actual get-session and checkIsAdmin traffic held before transport and released unchanged. Native settled tree only; pending native gate attempts timed out. Twelve accepted PNGs plus twelve failed-run current captures retained."
+  },
+  "postgres": {
+    "freshStandaloneSuites": 0,
+    "qualification": "Fresh production browser/server/DB progression and unchanged policy-count readback; prior worker PostgreSQL evidence stays at its recorded earlier snapshots and is not recounted here."
+  },
+  "qualifications": [
+    "Both initial-session and held-admission loading branches now retain one safe task heading. Two permanent page regressions fail before and pass after; no editable work fields or tenant names are exposed while admission is pending.",
+    "The broad run exposed the original Payroll focus assertion again. A permanent controlled public regression freezes rendering timers, proves initiator focus, settles refusal while disabled, then models native blur before enabled commit. It fails before and passes after the dedicated focus follow-up. Failed completion queues restoration when focus is still the initiator or body; deliberate focus on another control is preserved. All73 Payroll cases pass. Prior slow-pending repair and original findings remain distinct.",
+    "Initial new Payroll test passed without controlling rendering ticks; retained as inconclusive first attempt, not red. Initial combined1886/1887 failure remains; final178/1900 counts use multiset deduplication, not sum of overlapping suites.",
+    "First current browser attempt used an immediate Monthly selector and stopped before submission; second waited for the option but failed its multi-event numeric typing assertion. Final uses one native insertText event and waits for the actual value. Both failed runs and captures remain, no product cause is inferred from either harness failure.",
+    "Two native response-gate/SPA waits timed out despite entry hydration; no pending React-tree claim. A separate accepted transient native session inspects actual settled WorkScheduleForm and WorkScheduleHeading. No cookie/session file was copied, restored, minted or saved.",
+    "Legacy work-schedule writer intentionally persists onboarding progress only: admin vacation_policy and member wellness. Save and Skip preserve own organization policy/schedule/day/assignment counts; no hours/classification/effectiveFrom persistence or policy creation is claimed. Server actions, shared service, canonical settings authorization, schemas, calculations and date rules are unchanged.",
+    "The local Next launcher needed to wait for its log stream file descriptor under Node26; the initial launcher failed before spawning Next. Cold processes were stopped with exact path/creation/listener checks before the client-only overlay was restored byte-for-byte. No dependency repair/config overlay/cache move occurred.",
+    "Capture review confirms the phone task title fits; existing development/Pets overlays are present and qualified. No live Payroll dismissal/focus, held-session physical Activity, live revocation, true zoom, physical device, provider, remote Tolgee, full production generation or global-transition acceptance is claimed."
+  ]
+}

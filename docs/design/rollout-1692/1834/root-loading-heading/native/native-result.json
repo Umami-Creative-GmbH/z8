@@ -1,0 +1,56 @@
+{
+  "status": "failed-run",
+  "setupComplete": true,
+  "session": "next-dev-loop-1834-0cce998c-e0fc-4144-b55d-f557d2d15137",
+  "checks": [],
+  "qualification": "Unique transient native session, normal private-stdin sign-in. No saved/transferred/restored cookies or browser state. Actual checkIsAdmin HTTP200 Response delayed after transport by disclosed fetch wrapper; original Response released unchanged after inspecting WorkScheduleLoading and WorkScheduleHeading.",
+  "source": {
+    "head": "cc2c415d4e395279ad6bededc3c2e0fa3a39d1a6",
+    "baseline": "bd160d9af22214d473ea603870cdc161572bbcad",
+    "corrected": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+    "source": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+        "canonicalSha256": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+        "bytesSha256": "285d25ef8d36b8fe8f2899df7b2bbf8040e416fe27a366dc4d3b65da19a03c8c"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+        "canonicalSha256": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+        "bytesSha256": "a962ae8a33b458eb5193cc8751db9cac035742d64d68ea47cd9a3097ba846253"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+        "canonicalSha256": "2e7d4d41ac588f59f4da36f6e0e5baec4faa58bee466303ea607f25d42802766",
+        "bytesSha256": "77fefb7a4a3fce5a9da8f9335221d96d1e8377bea4017167d2c14579097eb163"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "expectedCommit": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+        "expectedCanonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+        "canonicalSha256": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+        "bytesSha256": "207f7f86d7ec147e8e95c2afbd3f884d6563a3be39d43d4017c46d9adf40f024"
+      }
+    ]
+  },
+  "auth": {
+    "signIn": 200,
+    "active": 200
+  },
+  "actions": {
+    "checkIsAdmin": "0056878b5833cc1f02bd10d3cf70031168b158996e",
+    "setWorkScheduleOnboarding": "40b573932907f41bdf3a701879d2612535fc193d92",
+    "skipWorkScheduleSetup": "000c9e6f522d9b6e103c90f7e7872b014b384cb4f1"
+  },
+  "failure": {
+    "name": "AssertionError",
+    "message": "Native CLI command failed\n\n1 !== 0\n",
+    "stack": "AssertionError [ERR_ASSERTION]: Native CLI command failed\n\n1 !== 0\n\n    at value (file:///C:/Users/KAIHEN%7E1/AppData/Local/Temp/z8-1834-checks-draft-ea828e83865b493d8c02bd5906cbfc8b/native.mjs:18:31)\n    at command (file:///C:/Users/KAIHEN%7E1/AppData/Local/Temp/z8-1834-checks-draft-ea828e83865b493d8c02bd5906cbfc8b/native.mjs:19:107)\n    at async file:///C:/Users/KAIHEN%7E1/AppData/Local/Temp/z8-1834-checks-draft-ea828e83865b493d8c02bd5906cbfc8b/native.mjs:32:67"
+  }
+}

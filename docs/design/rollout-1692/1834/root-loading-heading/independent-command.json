@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--config",
+    "../../.tmp/1834-root-checks/vitest.config.ts",
+    "--project",
+    "audit",
+    "--maxWorkers",
+    "1",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1834-root-checks\\independent.json"
+  ],
+  "exitCode": 0,
+  "sourceHead": "1230f61742be73ba436532cb1d1ad2ba61aa0cad",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx": "bb5327ec02004c02d4cec4b41bb21208dadefa6b1ba00b004ae58fa0040ecb60",
+    "apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx": "435b951e718013fce2d26ea2b69273ab2658c75de9665922ffa5dc2c7b55a3a1",
+    "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx": "5cebfdb210a80c1ae918b3d17c299163129d7c2a907191ce92bbeba39910b988",
+    "apps/webapp/src/components/payroll/payroll-workspace.tsx": "260b7a3a425b69356ca1cf8b462bdec95ed7098c8c3fbd91d01da9c714a4b680",
+    "apps/webapp/src/components/payroll/payroll-workspace.test.tsx": "769d56993d4d19d9ba0ac9fbdb59d7d925adfc9568f6ff294dd9aefbce320acc"
+  }
+}

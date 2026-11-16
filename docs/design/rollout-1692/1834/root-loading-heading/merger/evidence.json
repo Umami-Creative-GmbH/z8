@@ -1,0 +1,315 @@
+{
+  "merge": "bd160d9af22214d473ea603870cdc161572bbcad",
+  "parsedJson": [
+    "docs\\design\\rollout-1692\\1834\\cleanup-start.json",
+    "docs\\design\\rollout-1692\\1834\\cleanup.json",
+    "docs\\design\\rollout-1692\\1834\\dependency-topology.json",
+    "docs\\design\\rollout-1692\\1834\\evidence-audit.json",
+    "docs\\design\\rollout-1692\\1834\\license-artifact.json",
+    "docs\\design\\rollout-1692\\1834\\native-auth-status.json",
+    "docs\\design\\rollout-1692\\1834\\native-close.json",
+    "docs\\design\\rollout-1692\\1834\\native-initial\\native-auth-status.json",
+    "docs\\design\\rollout-1692\\1834\\native-initial\\native-close.json",
+    "docs\\design\\rollout-1692\\1834\\native-initial\\native-open.json",
+    "docs\\design\\rollout-1692\\1834\\native-initial\\native-source.json",
+    "docs\\design\\rollout-1692\\1834\\native-initial\\native-target-open.json",
+    "docs\\design\\rollout-1692\\1834\\native-initial\\native-tree.json",
+    "docs\\design\\rollout-1692\\1834\\native-initial\\native-wait.json",
+    "docs\\design\\rollout-1692\\1834\\native-initial\\next-final.json",
+    "docs\\design\\rollout-1692\\1834\\native-open.json",
+    "docs\\design\\rollout-1692\\1834\\native-source.json",
+    "docs\\design\\rollout-1692\\1834\\native-target-open.json",
+    "docs\\design\\rollout-1692\\1834\\native-tree.json",
+    "docs\\design\\rollout-1692\\1834\\native-wait.json",
+    "docs\\design\\rollout-1692\\1834\\next-final.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\cleanup.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\native-auth-status.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\native-close.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\native-open.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\native-source.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\native-target-open.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\native-tree.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\native-wait.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\next-final.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\quality.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\runtime.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\unit.json",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\usability.json",
+    "docs\\design\\rollout-1692\\1834\\privacy-audit.json",
+    "docs\\design\\rollout-1692\\1834\\quality-584\\quality.json",
+    "docs\\design\\rollout-1692\\1834\\quality-584\\unit.json",
+    "docs\\design\\rollout-1692\\1834\\quality-initial\\quality.json",
+    "docs\\design\\rollout-1692\\1834\\quality-initial\\unit.json",
+    "docs\\design\\rollout-1692\\1834\\quality.json",
+    "docs\\design\\rollout-1692\\1834\\runtime-observations.json",
+    "docs\\design\\rollout-1692\\1834\\runtime.json",
+    "docs\\design\\rollout-1692\\1834\\unit.json",
+    "docs\\design\\rollout-1692\\1834\\usability-finally-observations.json",
+    "docs\\design\\rollout-1692\\1834\\usability.json"
+  ],
+  "scriptSyntax": [
+    "docs\\design\\rollout-1692\\1834\\native.mjs",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\native.mjs",
+    "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\runtime.mjs",
+    "docs\\design\\rollout-1692\\1834\\runtime.mjs",
+    "docs\\design\\rollout-1692\\1834\\verify-evidence.mjs"
+  ],
+  "pngs": [
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\after-desktop.png",
+      "sha256": "a2b1dbdc78959e32dc416a2eafa04abc55b1d0923072a77bf32ceb0e564af1c6",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\after-phone-dark.png",
+      "sha256": "98df63013e39d9dc3e05b368d8c0f54a1fac67a8532d1e7cece6d9b25f88c2df",
+      "width": 390,
+      "height": 1306,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\after-wide.png",
+      "sha256": "711fdc8b0e80744d8c872083928bab17b51a885d561cabad773a5e824849cc1c",
+      "width": 1920,
+      "height": 1080,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\before-desktop.png",
+      "sha256": "76b22594bd2d3049aa266c0f27030109ae0bfe1ce3844192e501750b7302ff47",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\before-phone-dark.png",
+      "sha256": "67a1c474af83fe4443a4c575b163746980ec33c3184bf042368a557e271c3184",
+      "width": 390,
+      "height": 1175,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\before-wide.png",
+      "sha256": "d2ac10cde4a341de03642952425a3ac816894821deab9bea164497f0d161c94f",
+      "width": 1920,
+      "height": 1080,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\failed-retained.png",
+      "sha256": "ea5cca1c7a0701b4a385d19cde232efce2622a6c7984258b0751df7f69482dff",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\after-desktop.png",
+      "sha256": "ca28addeadfe84625f366af44fefc76bbb74af8ae97330645211f2e5b9963344",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\after-phone-dark.png",
+      "sha256": "98df63013e39d9dc3e05b368d8c0f54a1fac67a8532d1e7cece6d9b25f88c2df",
+      "width": 390,
+      "height": 1306,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\after-wide.png",
+      "sha256": "b3cfebd08fff2b901a11d71ecae80198e98dcf1ae4f64c6f7d809f9404c0ea37",
+      "width": 1920,
+      "height": 1080,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\before-desktop.png",
+      "sha256": "73ae7909b67bfe962131d0103e827556985626d3c1ca777eea980708a6f5cac4",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\before-phone-dark.png",
+      "sha256": "4787e0bb83046a9f5dbb0603740e6b0639bf14a1747361b643b976b2d5a654c7",
+      "width": 390,
+      "height": 1175,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\before-wide.png",
+      "sha256": "819e5d3890b69489661fda665f18cb9f7b8d0fd630990a19bd85cec98d21e831",
+      "width": 1920,
+      "height": 1080,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\failed-retained.png",
+      "sha256": "9cdaa09deb49e71f1ea822e77138572cd182a3b973c9e9d4555fece4f71b1e7c",
+      "width": 1600,
+      "height": 1000,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\prior-submit-guard\\skip-failed-retained.png",
+      "sha256": "1a8ae89e13d00393066612061d04aefc0c931862c5505161d3a032eff0ca911c",
+      "width": 800,
+      "height": 866,
+      "channels": 3
+    },
+    {
+      "path": "docs\\design\\rollout-1692\\1834\\skip-failed-retained.png",
+      "sha256": "cdb36a01b55efc1b8288a3ad2d24cb09c4876a773866134d6b061f20d389cff2",
+      "width": 800,
+      "height": 866,
+      "channels": 3
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+      "sha256": "26d67982df9a2d48dd347caaec4326b27fa70eb8ac8d02399660f46cde6e31c0",
+      "blob": "8d00b7d8b0a1b108c791ce4b21b27e781fc66782",
+      "allCurrentPinsMatch": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+      "sha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098",
+      "blob": "19a8713f860576eff0214f86507985cacb1a94af",
+      "allCurrentPinsMatch": true
+    }
+  ],
+  "capturePins": [
+    {
+      "capture": "before-desktop",
+      "width": 1600,
+      "pinsMatch": true
+    },
+    {
+      "capture": "before-phone-dark",
+      "width": 390,
+      "pinsMatch": true
+    },
+    {
+      "capture": "before-wide",
+      "width": 1920,
+      "pinsMatch": true
+    },
+    {
+      "capture": "after-desktop",
+      "width": 1600,
+      "pinsMatch": true
+    },
+    {
+      "capture": "after-phone-dark",
+      "width": 390,
+      "pinsMatch": true
+    },
+    {
+      "capture": "after-wide",
+      "width": 1920,
+      "pinsMatch": true
+    }
+  ],
+  "sharedOwners": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/actions.ts",
+      "currentBlob": "bee3af4076c94e5436716d0fdf5beffff7175908",
+      "incomingBlob": "bee3af4076c94e5436716d0fdf5beffff7175908",
+      "currentEqualsIncoming": true,
+      "preservedRoot": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/run-onboarding-action.ts",
+      "currentBlob": "1527ce57cc02420626bfd9f00e43b06991bce15b",
+      "incomingBlob": "1527ce57cc02420626bfd9f00e43b06991bce15b",
+      "currentEqualsIncoming": true,
+      "preservedRoot": true
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+      "currentBlob": "4ec2a1ffe6efcbf95b0c9c0c3c4e98f6639d59ad",
+      "incomingBlob": "72c017352e2150a7bf6627c4ee3ec2ccce61748b",
+      "currentEqualsIncoming": false,
+      "preservedRoot": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+      "currentBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "incomingBlob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+      "currentEqualsIncoming": true,
+      "preservedRoot": true
+    },
+    {
+      "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+      "currentBlob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "incomingBlob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+      "currentEqualsIncoming": true,
+      "preservedRoot": true
+    }
+  ],
+  "relativeLinks": [
+    {
+      "link": "1834/license-artifact.json",
+      "exists": true
+    },
+    {
+      "link": "1834/quality.ps1",
+      "exists": true
+    },
+    {
+      "link": "1834/quality.json",
+      "exists": true
+    },
+    {
+      "link": "1834/staged-whitespace.log",
+      "exists": true
+    },
+    {
+      "link": "1834/runtime.mjs",
+      "exists": true
+    },
+    {
+      "link": "1834/runtime.json",
+      "exists": true
+    },
+    {
+      "link": "1834/usability.json",
+      "exists": true
+    },
+    {
+      "link": "1834/native.mjs",
+      "exists": true
+    },
+    {
+      "link": "1834/native-source.json",
+      "exists": true
+    },
+    {
+      "link": "1834/next-final.json",
+      "exists": true
+    },
+    {
+      "link": "1834/cleanup.json",
+      "exists": true
+    }
+  ],
+  "whitespace": {
+    "archive": {
+      "exit": 2
+    },
+    "scoped": {
+      "exit": 0
+    }
+  },
+  "notes": [
+    "All141 incoming paths retain exact handed-off Git blobs.",
+    "Current route pins do not make historical browser, PG, native or Next execution fresh.",
+    "Raw incoming verifier was not executed: it writes tracked evidence and expects old584 shared owners.",
+    "Current canonical root service overrides the incoming report historical role-reader limitation.",
+    "No live runtime started: two independent public loading-heading cases are red."
+  ]
+}

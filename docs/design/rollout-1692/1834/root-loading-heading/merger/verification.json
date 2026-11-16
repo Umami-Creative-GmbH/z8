@@ -1,0 +1,273 @@
+{
+  "merge": "bd160d9af22214d473ea603870cdc161572bbcad",
+  "tree": "47beb676edcfeb47e277b7f3b5eab3ec83bb1c2a",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+      "gitBlob": "8d00b7d8b0a1b108c791ce4b21b27e781fc66782",
+      "rawSha256": "87758135de93fa1591be4dc0eb800a5f8369478dae1b12956f1033eb7ff93ac6",
+      "canonicalSha256": "26d67982df9a2d48dd347caaec4326b27fa70eb8ac8d02399660f46cde6e31c0"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+      "gitBlob": "c9752a0df4819f429f41588c42f0f9ef4d360947",
+      "rawSha256": "debf2b87fdd1b73ad79bebaf95a1df6e1b16d78f6c857c627e238e9a7dde640a",
+      "canonicalSha256": "c69764d325103ddfcd75c934fe1df8efda40e8f0127f1da9bdd8b38e50cf0e75"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+      "gitBlob": "19a8713f860576eff0214f86507985cacb1a94af",
+      "rawSha256": "ca5ca052dbad4fb0f27d6bf3501cbc5837c0b8c95fb9275108cea18408c306e9",
+      "canonicalSha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+    }
+  ],
+  "configPins": [
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "blob": "8b3443699f4cd49c80712705436546ca5934476a",
+      "sha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "blob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "blob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4",
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "blob": "72bd6c845fc48f077c52fd789d799cb0928b6873",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "blob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    }
+  ],
+  "unchangedConfig": [
+    "pnpm-lock.yaml",
+    "package.json",
+    "pnpm-workspace.yaml",
+    "apps/webapp/package.json",
+    "apps/webapp/next.config.ts"
+  ],
+  "commands": [
+    {
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "typecheck"
+      ],
+      "name": "types",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--config-path=./biome.jsonc",
+        "--line-ending=crlf",
+        "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+        "src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx"
+      ],
+      "name": "biome-scoped",
+      "exit": 1
+    },
+    {
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--config-path=./biome.jsonc",
+        "--line-ending=crlf",
+        "--line-width=100",
+        "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+        "src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx"
+      ],
+      "name": "biome-explicit100",
+      "exit": 1
+    },
+    {
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "--error-on-warnings",
+        "--config-path=./biome.jsonc",
+        "--formatter-enabled=false",
+        "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+        "src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx"
+      ],
+      "name": "biome-lint",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "react-doctor",
+        "apps/webapp",
+        "--scope",
+        "changed",
+        "--base",
+        "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
+        "--verbose",
+        "--no-supply-chain",
+        "--no-telemetry",
+        "--no-score",
+        "--json",
+        "--json-out",
+        "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1834-fresh-merger-20261116\\doctor.json",
+        "--max-duration",
+        "90"
+      ],
+      "name": "doctor",
+      "exit": 0
+    }
+  ],
+  "compatibility": {
+    "files": 177,
+    "passed": 1885,
+    "failed": 0
+  },
+  "currentExactIncomingSelection": {
+    "files": 19,
+    "cases": 250
+  },
+  "independent": {
+    "files": 1,
+    "passed": 8,
+    "failed": 2,
+    "failures": [
+      {
+        "file": "apps/webapp/src/app/[locale]/onboarding/work-schedule/1834-merger-public.test.tsx",
+        "fullName": "R039 independent public arrival review keeps the work-schedule heading during session loading",
+        "occurrence": 1,
+        "status": "failed",
+        "selection": "independent"
+      },
+      {
+        "file": "apps/webapp/src/app/[locale]/onboarding/work-schedule/1834-merger-public.test.tsx",
+        "fullName": "R039 independent public arrival review keeps the work-schedule heading during administrator loading",
+        "occurrence": 1,
+        "status": "failed",
+        "selection": "independent"
+      }
+    ]
+  },
+  "deduplicated": {
+    "by": "physical file + fullName + occurrence within each file",
+    "files": 178,
+    "cases": 1895,
+    "statuses": {
+      "passed": 1893,
+      "failed": 2
+    }
+  },
+  "reviewedRouteCounts": {
+    "schedule": [
+      {
+        "file": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page.test.tsx",
+        "cases": 29
+      }
+    ],
+    "wellness": [
+      {
+        "file": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+        "cases": 36
+      }
+    ],
+    "payroll": [
+      {
+        "file": "apps/webapp/src/components/payroll/payroll-workspace.test.tsx",
+        "cases": 72
+      }
+    ]
+  },
+  "doctor": {
+    "sourceRevision": "bd160d9af22214d473ea603870cdc161572bbcad",
+    "base": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
+    "changedFiles": 3,
+    "diagnostics": [
+      {
+        "filePath": "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "plugin": "react-hooks-js",
+        "rule": "set-state-in-effect",
+        "severity": "warning",
+        "title": "React Compiler can't optimize this",
+        "message": "This synchronous effect update causes an extra render: Calling setState synchronously within an effect can trigger cascading renders. Prefer deriving or initializing the value before render. If the effect must read a browser API after mount, treat this as advisory or suppress it with `// react-doctor-disable-next-line react-hooks-js/set-state-in-effect`.",
+        "help": "Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).",
+        "line": 58,
+        "column": 3,
+        "offset": 2054,
+        "length": 10,
+        "endLine": 58,
+        "category": "Performance",
+        "fingerprint": "0bfa7ef9b2fd279f7a791a3c2c1c9d0d5c2a4f8559fae627c408376aa34de448",
+        "id": "src/app/[locale]/onboarding/work-schedule/page-client.tsx::58:3::react-hooks-js/set-state-in-effect::ea4cf39e5ec7077bf5d80f87c47b52fd84c394b1e5ba5ea6780a680d02b8ef5c",
+        "normalizedFilePath": "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "tags": []
+      },
+      {
+        "filePath": "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "plugin": "react-hooks-js",
+        "rule": "set-state-in-effect",
+        "severity": "warning",
+        "title": "React Compiler can't optimize this",
+        "message": "This synchronous effect update causes an extra render: Calling setState synchronously within an effect can trigger cascading renders. Prefer deriving or initializing the value before render. If the effect must read a browser API after mount, treat this as advisory or suppress it with `// react-doctor-disable-next-line react-hooks-js/set-state-in-effect`.",
+        "help": "Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).",
+        "line": 170,
+        "column": 3,
+        "offset": 4708,
+        "length": 10,
+        "endLine": 170,
+        "category": "Performance",
+        "fingerprint": "83dd6824eb123f163d435fddf83cdc4ec598c3414da08e5f7e5e03baf03f29fc",
+        "id": "src/app/[locale]/onboarding/work-schedule/page-client.tsx::170:3::react-hooks-js/set-state-in-effect::ea4cf39e5ec7077bf5d80f87c47b52fd84c394b1e5ba5ea6780a680d02b8ef5c",
+        "normalizedFilePath": "src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+        "tags": []
+      }
+    ],
+    "summary": {
+      "errorCount": 0,
+      "warningCount": 2,
+      "affectedFileCount": 1,
+      "totalDiagnosticCount": 2,
+      "score": null,
+      "scoreLabel": null
+    }
+  },
+  "limits": [
+    "Two public loading-heading regressions remain red; root owns correction.",
+    "All three files have formatter-only failures under explicit app config and100-column CRLF profiles; lint/imports pass.",
+    "Doctor has two reviewed effect-state warnings; no zero-warning claim.",
+    "No fresh browser, Next/native or PostgreSQL runtime was started against knownbad loading source.",
+    "Incoming browser/PG/readback/native/Next evidence remains inherited and source-qualified.",
+    "No service/action/policy/grant/date/history changes; progress-only owner preserved."
+  ]
+}
