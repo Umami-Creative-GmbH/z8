@@ -777,20 +777,24 @@
       "blockedBy": [
         1853
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
       "implementationCommit": "258c18d2f7f87658f816f5276301297e9eaa60da",
       "provisionalIntegrationCommit": "5f46459f553b8c4a0d5fb112de46aabe1b1cda71",
       "provisionalReconciliationCommit": "026a6c67730c325b264f9d4bad9c04d7ec32cb85",
       "provisionalCorrectionCommit": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
       "provisionalCorrectionIntegrationCommit": "0c96db4ed2ecc072688bba0a02d9661b3846d7a8",
-      "pendingAcceptance": "Local scope Retry, command lifetime and completed-upload corrections pass460 cases/65 files and all three type projects. Real Chromium/HTTP controls cover ordinary repeated PDFs, a consumed URL retained by the actual previous-client transport and unfinished5MiB resume after reload. Batch-specific Uppy identity isolates old/cross-batch fingerprints; successful fingerprints are removed. Storage is modeled in these transport tests. Prior-candidate39 public probes andPG20 passed before the preserved reuse STOP; fresh current full-application reused-PDF/ZIP/confirmation/readback/download/native/Next/matched acceptance remains pending. Doctor0errors/3retainedwarnings; format qualifications retained. verifiedCommit stays null.",
       "provisionalCommandCorrectionCommit": "15b00b502bc2a2fd7f556433ba52c2da9768ea37",
       "provisionalCommandCorrectionIntegrationCommit": "a076560ff3fbf7d857c4258cee08e6c22f19609e",
       "provisionalUploadCorrectionCommit": "c0480cfd33e579d807264ff4c2017a66b799ae36",
       "provisionalUploadCorrectionIntegrationCommit": "32c91479c1184a0080bf82db6a6bfc6731b57c6f",
       "provisionalBatchUploadCorrectionCommit": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
-      "provisionalBatchUploadCorrectionIntegrationCommit": "6a114d85684004d9ca9bdc3cb08f313316f4e12a"
+      "provisionalBatchUploadCorrectionIntegrationCommit": "6a114d85684004d9ca9bdc3cb08f313316f4e12a",
+      "integrationCommit": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+      "verificationProofCommit": "5778c2280afcc11cfc99e0a6e549f81d9cfff89c",
+      "evidence": "docs/design/rollout-1692/1733.md",
+      "correctionCommit": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
+      "integrationVerification": "Fresh READY with qualifications on166975f3, source/application tree unchanged through verified proof merge. Root460 selected unit cases/65files plus fresh canonicalPG20/1 gives480/66 selection union; independent62/6 (public39/4,PG20/1,browser3/1) is separate/nonadditive. All3types/typegen and scoped lint pass; Doctor9files0errors/3reviewedwarnings, formatter boundaries unpassed. Actual same-PDF ordinary batches and historical-client/current-hook reuse use fresh distinct keys/exact bytes without state clearing; ZIP/manual/drop/duplicate, Cancel/Escape, held one confirmation persisted2docs/1notice, protected598bytePDF download/parse, role/grant/self/revoke refusal0newdocs, context/preview Retry pass. Three matched partial4consumer pairs, saved18/sidebar/Escape, nativeReact/axe0violations1incomplete and restoredNext clean.280proof files/266payload; original112/24/71allowlists and14source/36configpins verified;30PNGs fullydecoded; rootGitblob seal exact. No source blocker; livepartialretry/expiry/allABA/assistivetech/errorcontrast/reducedmotion/translations/devices/truezoom/fullbuild/catalog/providers/globalguard/formatter limits remain explicit."
     },
     {
       "id": "R051",
@@ -862,10 +866,11 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1848#issuecomment-6924052867"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1848#issuecomment-6924052867",
+      "implementationCommit": "8628986f2e036f1fea80533f1faeb6d7f6c9b434"
     },
     {
       "id": "R057",
@@ -874,8 +879,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1849#issuecomment-6924974031"
     },
     {
       "id": "R058",
