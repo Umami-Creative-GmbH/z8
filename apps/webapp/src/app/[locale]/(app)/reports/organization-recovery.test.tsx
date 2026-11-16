@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { Activity } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { ReportFilters } from "@/components/reports/report-filters";
@@ -61,6 +62,36 @@ function contextResponse() {
 			},
 		}),
 	);
+}
+
+function recoveredRoster() {
+	return {
+		success: true,
+		data: [
+			{
+				id: "employee-a",
+				name: "Synthetic Employee",
+				firstName: "Synthetic",
+				lastName: "Employee",
+				email: "employee@example.test",
+				role: "admin",
+				image: null,
+				pronouns: null,
+				position: null,
+			},
+			{
+				id: "colleague-b",
+				name: "Recovered Colleague",
+				firstName: "Recovered",
+				lastName: "Colleague",
+				email: "colleague@example.test",
+				role: "employee",
+				image: null,
+				pronouns: null,
+				position: null,
+			},
+		],
+	};
 }
 const clients: QueryClient[] = [];
 beforeEach(() => {
@@ -137,6 +168,95 @@ it("recovers failed organization settings through local Retry before enabling re
 	);
 	expect(screen.queryByText("Synthetic organization settings unavailable")).toBeNull();
 	expect(boundary.fetch).toHaveBeenCalledTimes(2);
+	expect(boundary.generate).not.toHaveBeenCalled();
+});
+
+it.each(["refusal", "rejection"])(
+	"recovers a roster %s through local Retry without generating a report",
+	async (outcome) => {
+		if (outcome === "refusal")
+			boundary.read.mockResolvedValue({ success: false, error: "Synthetic roster refusal" });
+		else boundary.read.mockRejectedValue(new Error("Synthetic roster rejection"));
+		mount();
+		await screen.findByText("Unable to load team members");
+		await waitFor(() =>
+			expect(screen.getByRole("button", { name: "Generate Report" })).toHaveProperty(
+				"disabled",
+				false,
+			),
+		);
+		expect(boundary.read).toHaveBeenCalledTimes(1);
+		boundary.read.mockResolvedValue(recoveredRoster());
+		await act(async () => fireEvent.click(screen.getByRole("button", { name: "Retry" })));
+		const selector = await screen.findByRole("combobox", { name: "Employee" });
+		expect(selector.textContent).toContain("Synthetic Employee");
+		expect(screen.queryByText("Unable to load team members")).toBeNull();
+		expect(boundary.read).toHaveBeenCalledTimes(2);
+		expect(boundary.generate).not.toHaveBeenCalled();
+	},
+);
+
+it("shows pending roster recovery and keeps a rejected retry recoverable without duplicate transport", async () => {
+	boundary.read.mockResolvedValue({ success: false, error: "Synthetic roster outage" });
+	mount();
+	const retry = await screen.findByRole("button", { name: "Retry" });
+	const held = Promise.withResolvers<ReturnType<typeof recoveredRoster>>();
+	boundary.read.mockReturnValueOnce(held.promise);
+	await act(async () => {
+		fireEvent.click(retry);
+		fireEvent.click(retry);
+	});
+	expect(boundary.read).toHaveBeenCalledTimes(2);
+	await waitFor(() => {
+		const pendingButton = screen.queryByRole("button", { name: "Retrying…" });
+		const loading = screen.queryByRole("status", { name: "Loading team members" });
+		expect(pendingButton ?? loading).not.toBeNull();
+		if (pendingButton) expect(pendingButton).toHaveProperty("disabled", true);
+	});
+	await act(async () => held.reject(new Error("Retry transport rejected")));
+	const nextRetry = await screen.findByRole("button", { name: "Retry" });
+	boundary.read.mockResolvedValue(recoveredRoster());
+	await act(async () => fireEvent.click(nextRetry));
+	await screen.findByRole("combobox", { name: "Employee" });
+	expect(boundary.read).toHaveBeenCalledTimes(3);
+	expect(boundary.generate).not.toHaveBeenCalled();
+});
+
+it("does not let a roster Retry retired by Activity replace the new opening's options", async () => {
+	boundary.read.mockResolvedValueOnce({ success: false, error: "Synthetic initial refusal" });
+	const held = Promise.withResolvers<ReturnType<typeof recoveredRoster>>();
+	boundary.read.mockReturnValueOnce(held.promise);
+	boundary.read.mockResolvedValue(recoveredRoster());
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	clients.push(client);
+	const tree = (mode: "visible" | "hidden") => (
+		<QueryClientProvider client={client}>
+			<OrganizationContextProvider initialContext={null}>
+				<Activity mode={mode}>
+					<ReportsContainer
+						currentEmployeeId="employee-a"
+						userId="actor-a"
+						organizationId="org-a"
+					/>
+				</Activity>
+			</OrganizationContextProvider>
+		</QueryClientProvider>
+	);
+	const view = render(tree("visible"));
+	await act(async () => fireEvent.click(await screen.findByRole("button", { name: "Retry" })));
+	expect(boundary.read).toHaveBeenCalledTimes(2);
+	await act(async () => view.rerender(tree("hidden")));
+	await act(async () => view.rerender(tree("visible")));
+	const selector = await screen.findByRole("combobox", { name: "Employee" });
+	expect(selector.textContent).toContain("Synthetic Employee");
+	expect(boundary.read).toHaveBeenCalledTimes(3);
+	const retired = recoveredRoster();
+	retired.data[0] = { ...retired.data[0], name: "Retired Employee", firstName: "Retired" };
+	await act(async () => held.resolve(retired));
+	expect(screen.queryByText("Retired Employee")).toBeNull();
+	expect(screen.getByRole("combobox", { name: "Employee" }).textContent).toContain(
+		"Synthetic Employee",
+	);
 	expect(boundary.generate).not.toHaveBeenCalled();
 });
 
