@@ -706,9 +706,18 @@
       "blockedBy": [
         1853
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
-      "implementationCommit": "8e14fcb945ccc6d0e5075407b00def0ed1050391"
+      "status": "integrated",
+      "verifiedCommit": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "implementationCommit": "8e14fcb945ccc6d0e5075407b00def0ed1050391",
+      "verifiedTree": "8ad92a5f0154c2f155bdfb123c13f8f416a333c1",
+      "integrationCommit": "e1e25677696ad9dce26b77e1fcb7047db8b2fe1c",
+      "correctionCommit": "e4d08accbee9b37b2f7bc5068a197f62f74c47a1",
+      "correctionCommits": [
+        "ed1841d161a448561b329fae43903b0a2e606dfa",
+        "e4d08accbee9b37b2f7bc5068a197f62f74c47a1"
+      ],
+      "evidence": "docs/design/rollout-1692/1729.md",
+      "integrationVerification": "Selected personnel file #1729 verified at e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9: completed RSC read identity and the unchanged verified directory retirement guard keep old actor/org/pending-session records and tasks hidden until a new admitted read; local Retry retains a safe heading. Delete confirmation now reserves activation before TanStack validation and refuses queued obsolete commands after parent removal or Activity, with retained reason and exact duplicate/retry counts. Fresh175unit/25files plus163PG/9files=338distinct cases; focused reruns overlap. Full3type projects/typegen pass against identical production source; final test-only submit-cancellation assertion passes focused5. Six correction-file CRLF checks pass; full14 lint/import passes with one inherited unused suppression warning, full14 format has8 preserved failures. Doctor14 has0errors/1 reviewed preventDefault false positive, actual cancelable-event proof retained. Normal isolated development sign-in: actual reader cancellation/Retry and retained refresh failure; public certificate-only specific grant/own+nonofficer+category denial/PUBLIC revoke/open metadata/settled Enter Save refusal retains exact visible fields, zero matching scoped writes and reload denial. Real Tus/protected native68byte download/parsed native274byte ZIP with exact extracted bytes/metadata edit/skill cancel/reasoned deletion pass. Saved18 reload and officer/self phone bounds, actual React target and exact connected Next probes pass. Seven exact historical consumers form a stopped-server partial comparison, restored byte exactly; six matched images/31 decoded PNGs. Officer long title is offscreen in its PNG, DOM proof separate; lower developer/Pets overlays are not occlusion-certified. All52 predecessor handoffs, prior proof groups and158links/6configs preserved; owned browser/Next/3services cleaned. Broad roster guard remains unresolved/unrun here. No expectedRevision API, hidden Activity fresh-read/all-ABA/shared late-callback, actual skill assignment/sick-note linking, provider/build/catalog/device/truezoom/global readiness claim."
     },
     {
       "id": "R047",
@@ -1129,8 +1138,10 @@
         1727,
         1729
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1772#issuecomment-6912422288"
     },
     {
       "id": "R096",
@@ -1757,10 +1768,12 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1747#issuecomment-6909500771"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1747#issuecomment-6909500771",
+      "implementationCommit": "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a",
+      "knownSharedAcceptanceFinding": "Shared legacy continuation pending-session navigation failure reproduced in R165. R166 implementation includes a compatible correction; it still requires fresh serial merger/runtime verification before R165 is verified."
     },
     {
       "id": "R166",
@@ -1769,10 +1782,11 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1748#issuecomment-6909502620"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1748#issuecomment-6909502620",
+      "implementationCommit": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8"
     },
     {
       "id": "R167",
