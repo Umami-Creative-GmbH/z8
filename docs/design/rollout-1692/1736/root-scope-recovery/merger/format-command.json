@@ -1,0 +1,21 @@
+{
+  "name": "format",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "biome",
+    "check",
+    "--error-on-warnings",
+    "--config-path=./biome.jsonc",
+    "--line-ending=crlf",
+    "--line-width=100"
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "startedAt": "2026-11-16T02:12:54.1274541+01:00",
+  "finishedAt": "2026-11-16T02:13:07.1804037+01:00",
+  "exitCode": 1
+}

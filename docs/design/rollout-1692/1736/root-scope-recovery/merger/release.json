@@ -1,0 +1,24 @@
+﻿{
+    "release":  true,
+    "commit":  "fe499a787b218523c07b7c904fe04b34700d6f2c",
+    "tree":  "a0fa398d5992e28d073db0e9a80dbbede5ef5a71",
+    "branch":  "ai/1692-app-wide-ui-refresh",
+    "trackedAndUntrackedStatus":  [
+
+                                  ],
+    "dependencyDifferences":  [
+
+                              ],
+    "verifiedInternalLinks":  158,
+    "ownedAuditProcesses":  0,
+    "fixtureServicesCreated":  0,
+    "browserSessionsCreated":  0,
+    "sourceFixes":  false,
+    "trackerWrites":  false,
+    "pushOrPr":  false,
+    "runtimeOrPostgresSkipped":  "Two confirmed public source findings remain; root owns correction",
+    "summary":  ".tmp/1736-merger/summary.json",
+    "preservation":  ".tmp/1736-merger/preservation.json",
+    "publicCapsule":  "apps/webapp/.tmp/1736-merger",
+    "retainedAttempts":  true
+}

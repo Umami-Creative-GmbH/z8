@@ -1,0 +1,56 @@
+{
+  "base": "fe499a787b218523c07b7c904fe04b34700d6f2c",
+  "source": "0fa4e6c93edf6d09ccfd04580811364a149bf774",
+  "tool": "existing esbuild 0.25.12",
+  "qualification": "Identical compiled/minified JavaScript for twelve scoped formatting-only files, with JSX automatic transform and comments removed. Two semantic consumers and two new recovery/test files are excluded. Initial TypeScript7 native package lacks createPrinter; that attempt did not compare source.",
+  "records": [
+    {
+      "path": "apps/webapp/src/components/reports/projects/customer-billable-view.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-filters.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/project-summary-cards.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/report-share-dialog.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/projects/shared-report-view.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-document-export-buttons.test.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-document-export-buttons.tsx",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+      "compiledJavaScriptIdentical": true
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+      "compiledJavaScriptIdentical": true
+    }
+  ]
+}
