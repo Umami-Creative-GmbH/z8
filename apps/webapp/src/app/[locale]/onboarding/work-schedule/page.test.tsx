@@ -1,12 +1,6 @@
 /* @vitest-environment jsdom */
 
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Activity, StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -83,6 +77,24 @@ describe("WorkSchedulePage load effect", () => {
 	afterEach(() => {
 		vi.useRealTimers();
 	});
+	it.each(["session", "access"])(
+		"keeps one safe task heading while %s is pending",
+		async (stage) => {
+			mocks.session.isPending = stage === "session";
+			mocks.checkIsAdmin.mockReturnValue(new Promise(() => {}));
+			render(<WorkSchedulePage />);
+			if (stage === "access")
+				await waitFor(() => expect(mocks.checkIsAdmin).toHaveBeenCalledOnce());
+			expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+			expect(
+				screen.getByRole("heading", { level: 1, name: "Set your work schedule" }),
+			).toBeTruthy();
+			expect(screen.getByRole("status", { name: "Checking work schedule access" })).toBeTruthy();
+			expect(screen.queryByLabelText("Hours per Week")).toBeNull();
+			expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
+			expect(screen.queryByRole("button", { name: "Skip for now" })).toBeNull();
+		},
+	);
 
 	it("captures a fresh UTC effective date for each mounted form", async () => {
 		vi.useFakeTimers({ toFake: ["Date"] });
@@ -97,9 +109,9 @@ describe("WorkSchedulePage load effect", () => {
 		await act(async () => undefined);
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 		await act(async () => undefined);
-		expect(
-			mocks.setWorkScheduleOnboarding.mock.calls[0]?.[0].effectiveFrom.toISOString(),
-		).toBe("2026-01-02T03:04:05.000Z");
+		expect(mocks.setWorkScheduleOnboarding.mock.calls[0]?.[0].effectiveFrom.toISOString()).toBe(
+			"2026-01-02T03:04:05.000Z",
+		);
 
 		first.unmount();
 		mocks.setWorkScheduleOnboarding.mockClear();
@@ -108,9 +120,9 @@ describe("WorkSchedulePage load effect", () => {
 		await act(async () => undefined);
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 		await act(async () => undefined);
-		expect(
-			mocks.setWorkScheduleOnboarding.mock.calls[0]?.[0].effectiveFrom.toISOString(),
-		).toBe("2026-07-30T12:13:14.000Z");
+		expect(mocks.setWorkScheduleOnboarding.mock.calls[0]?.[0].effectiveFrom.toISOString()).toBe(
+			"2026-07-30T12:13:14.000Z",
+		);
 	});
 
 	it("associates schedule fields with their visible labels", async () => {
@@ -134,9 +146,7 @@ describe("WorkSchedulePage load effect", () => {
 		});
 		fireEvent.click(continueButton);
 
-		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/vacation-policy"),
-		);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/vacation-policy"));
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(continueButton).toHaveProperty("disabled", true);
 	});
@@ -154,9 +164,7 @@ describe("WorkSchedulePage load effect", () => {
 		});
 		fireEvent.click(skipButton);
 
-		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/onboarding/vacation-policy"),
-		);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/onboarding/vacation-policy"));
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(skipButton).toHaveProperty("disabled", true);
 	});
@@ -171,20 +179,12 @@ describe("WorkSchedulePage load effect", () => {
 			name: "Continue",
 		});
 		fireEvent.click(continueButton);
-		await waitFor(() =>
-			expect(continueButton).toHaveProperty("disabled", true),
-		);
+		await waitFor(() => expect(continueButton).toHaveProperty("disabled", true));
 
-		await act(async () =>
-			request.reject(new Error("private schedule failure")),
-		);
+		await act(async () => request.reject(new Error("private schedule failure")));
 
-		await waitFor(() =>
-			expect(continueButton).toHaveProperty("disabled", false),
-		);
-		expect(mocks.toastError).toHaveBeenCalledWith(
-			"Failed to set work schedule",
-		);
+		await waitFor(() => expect(continueButton).toHaveProperty("disabled", false));
+		expect(mocks.toastError).toHaveBeenCalledWith("Failed to set work schedule");
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(mocks.push).not.toHaveBeenCalled();
 	});
@@ -204,9 +204,7 @@ describe("WorkSchedulePage load effect", () => {
 		await act(async () => request.reject(new Error("private skip failure")));
 
 		await waitFor(() => expect(skipButton).toHaveProperty("disabled", false));
-		expect(mocks.toastError).toHaveBeenCalledWith(
-			"Failed to skip work schedule setup",
-		);
+		expect(mocks.toastError).toHaveBeenCalledWith("Failed to skip work schedule setup");
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(mocks.push).not.toHaveBeenCalled();
 	});
@@ -232,9 +230,7 @@ describe("WorkSchedulePage load effect", () => {
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: false });
 		mocks.skipWorkScheduleSetup.mockReturnValue(request.promise);
 		const { unmount } = render(<WorkSchedulePage />);
-		await waitFor(() =>
-			expect(mocks.skipWorkScheduleSetup).toHaveBeenCalledOnce(),
-		);
+		await waitFor(() => expect(mocks.skipWorkScheduleSetup).toHaveBeenCalledOnce());
 
 		unmount();
 		await act(async () => {
@@ -257,9 +253,7 @@ describe("WorkSchedulePage load effect", () => {
 			request.reject(new Error("private access failure"));
 		});
 
-		await waitFor(() =>
-			expect(mocks.replace).toHaveBeenCalledWith("/onboarding/wellness"),
-		);
+		await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/onboarding/wellness"));
 	});
 
 	it("keeps a refused automatic skip visible and retries the existing owner", async () => {
@@ -269,19 +263,14 @@ describe("WorkSchedulePage load effect", () => {
 			error: "Skip refused",
 		});
 		render(<WorkSchedulePage />);
-		expect(await screen.findByRole("alert")).toHaveProperty(
-			"textContent",
-			"Skip refused",
-		);
+		expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Skip refused");
 		expect(mocks.replace).not.toHaveBeenCalled();
 		mocks.skipWorkScheduleSetup.mockResolvedValueOnce({
 			success: true,
 			data: { nextStep: "/onboarding/wellness" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-		await waitFor(() =>
-			expect(mocks.replace).toHaveBeenCalledWith("/onboarding/wellness"),
-		);
+		await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/onboarding/wellness"));
 	});
 
 	it("does not announce or navigate a save that finishes after unmount", async () => {
@@ -290,13 +279,9 @@ describe("WorkSchedulePage load effect", () => {
 		mocks.setWorkScheduleOnboarding.mockReturnValue(request.promise);
 		const view = render(<WorkSchedulePage />);
 		fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
-		await waitFor(() =>
-			expect(mocks.setWorkScheduleOnboarding).toHaveBeenCalledOnce(),
-		);
+		await waitFor(() => expect(mocks.setWorkScheduleOnboarding).toHaveBeenCalledOnce());
 		view.unmount();
-		await act(async () =>
-			request.resolve({ success: true, data: { nextStep: "/old-arrival" } }),
-		);
+		await act(async () => request.resolve({ success: true, data: { nextStep: "/old-arrival" } }));
 		expect(mocks.push).not.toHaveBeenCalled();
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 	});
@@ -307,9 +292,7 @@ describe("WorkSchedulePage load effect", () => {
 			const request = deferred<{ success: true; data: { nextStep: string } }>();
 			mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
 			const action =
-				kind === "save"
-					? mocks.setWorkScheduleOnboarding
-					: mocks.skipWorkScheduleSetup;
+				kind === "save" ? mocks.setWorkScheduleOnboarding : mocks.skipWorkScheduleSetup;
 			action.mockReturnValueOnce(request.promise);
 			const view = render(
 				<Activity mode="visible">
@@ -335,18 +318,14 @@ describe("WorkSchedulePage load effect", () => {
 					<WorkSchedulePage />
 				</Activity>,
 			);
-			expect(await screen.findByLabelText("Hours per Week")).toHaveProperty(
-				"value",
-				"32.5",
-			);
-			await act(async () =>
-				request.resolve({ success: true, data: { nextStep: "/old-arrival" } }),
-			);
+			expect(await screen.findByLabelText("Hours per Week")).toHaveProperty("value", "32.5");
+			await act(async () => request.resolve({ success: true, data: { nextStep: "/old-arrival" } }));
 			expect(mocks.push).not.toHaveBeenCalled();
 			expect(mocks.toastSuccess).not.toHaveBeenCalled();
-			expect(
-				screen.getByRole("button", { name: "Skip for now" }),
-			).toHaveProperty("disabled", false);
+			expect(screen.getByRole("button", { name: "Skip for now" })).toHaveProperty(
+				"disabled",
+				false,
+			);
 		},
 	);
 
@@ -381,10 +360,7 @@ describe("WorkSchedulePage load effect", () => {
 	])("ignores old %s refusals across %s A → B → A", async (kind, scope) => {
 		const old = deferred<{ success: false; error: string }>();
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
-		const action =
-			kind === "save"
-				? mocks.setWorkScheduleOnboarding
-				: mocks.skipWorkScheduleSetup;
+		const action = kind === "save" ? mocks.setWorkScheduleOnboarding : mocks.skipWorkScheduleSetup;
 		action.mockReturnValueOnce(old.promise);
 		const view = render(<WorkSchedulePage />);
 		fireEvent.click(
@@ -393,28 +369,18 @@ describe("WorkSchedulePage load effect", () => {
 			}),
 		);
 		await waitFor(() => expect(action).toHaveBeenCalledOnce());
-		if (scope === "organization")
-			mocks.session.data.session.activeOrganizationId = "org-b";
+		if (scope === "organization") mocks.session.data.session.activeOrganizationId = "org-b";
 		else mocks.session.data.user.id = "account-b";
 		view.rerender(<WorkSchedulePage />);
-		expect(await screen.findByLabelText("Hours per Week")).toHaveProperty(
-			"value",
-			"40",
-		);
-		if (scope === "organization")
-			mocks.session.data.session.activeOrganizationId = "org-a";
+		expect(await screen.findByLabelText("Hours per Week")).toHaveProperty("value", "40");
+		if (scope === "organization") mocks.session.data.session.activeOrganizationId = "org-a";
 		else mocks.session.data.user.id = "account-a";
 		view.rerender(<WorkSchedulePage />);
 		fireEvent.change(await screen.findByLabelText("Hours per Week"), {
 			target: { value: "24" },
 		});
-		await act(async () =>
-			old.resolve({ success: false, error: "Old organization refusal" }),
-		);
-		expect(screen.getByLabelText("Hours per Week")).toHaveProperty(
-			"value",
-			"24",
-		);
+		await act(async () => old.resolve({ success: false, error: "Old organization refusal" }));
+		expect(screen.getByLabelText("Hours per Week")).toHaveProperty("value", "24");
 		expect(mocks.toastError).not.toHaveBeenCalled();
 		expect(mocks.push).not.toHaveBeenCalled();
 		expect(screen.queryByRole("alert")).toBeNull();
@@ -424,9 +390,7 @@ describe("WorkSchedulePage load effect", () => {
 		const request = deferred<{ success: true; data: boolean }>();
 		mocks.checkIsAdmin.mockReturnValue(request.promise);
 		render(<WorkSchedulePage />);
-		expect(
-			screen.getByRole("status", { name: "Checking work schedule access" }),
-		).toBeTruthy();
+		expect(screen.getByRole("status", { name: "Checking work schedule access" })).toBeTruthy();
 		expect(screen.queryByLabelText("Hours per Week")).toBeNull();
 		await act(async () => request.resolve({ success: true, data: true }));
 		expect(await screen.findByLabelText("Hours per Week")).toBeTruthy();
@@ -438,9 +402,7 @@ describe("WorkSchedulePage load effect", () => {
 			error: "Unavailable",
 		});
 		render(<WorkSchedulePage />);
-		await waitFor(() =>
-			expect(mocks.replace).toHaveBeenCalledWith("/onboarding/wellness"),
-		);
+		await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/onboarding/wellness"));
 		expect(mocks.skipWorkScheduleSetup).not.toHaveBeenCalled();
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(mocks.toastError).toHaveBeenCalledWith(
@@ -450,9 +412,7 @@ describe("WorkSchedulePage load effect", () => {
 
 	it("retains a rejected automatic skip for retry without falling through to wellness", async () => {
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: false });
-		mocks.skipWorkScheduleSetup.mockRejectedValue(
-			new Error("Private transport error"),
-		);
+		mocks.skipWorkScheduleSetup.mockRejectedValue(new Error("Private transport error"));
 		render(<WorkSchedulePage />);
 		expect(await screen.findByRole("alert")).toHaveProperty(
 			"textContent",
@@ -474,24 +434,14 @@ describe("WorkSchedulePage load effect", () => {
 			target: { value: "32.5" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-		expect(await screen.findByRole("alert")).toHaveProperty(
-			"textContent",
-			"Save refused",
-		);
-		expect(screen.getByLabelText("Hours per Week")).toHaveProperty(
-			"value",
-			"32.5",
-		);
+		expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Save refused");
+		expect(screen.getByLabelText("Hours per Week")).toHaveProperty("value", "32.5");
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-		await waitFor(() =>
-			expect(mocks.push).toHaveBeenCalledWith("/server-chosen"),
-		);
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/server-chosen"));
 		expect(mocks.setWorkScheduleOnboarding.mock.calls[1][0]).toEqual(
 			mocks.setWorkScheduleOnboarding.mock.calls[0][0],
 		);
-		expect(mocks.toastSuccess).toHaveBeenCalledWith(
-			"Onboarding progress saved.",
-		);
+		expect(mocks.toastSuccess).toHaveBeenCalledWith("Onboarding progress saved.");
 	});
 
 	it("does not repeat a held automatic skip when Activity reconnects", async () => {
@@ -503,9 +453,7 @@ describe("WorkSchedulePage load effect", () => {
 				<WorkSchedulePage />
 			</Activity>,
 		);
-		await waitFor(() =>
-			expect(mocks.skipWorkScheduleSetup).toHaveBeenCalledOnce(),
-		);
+		await waitFor(() => expect(mocks.skipWorkScheduleSetup).toHaveBeenCalledOnce());
 		view.rerender(
 			<Activity mode="hidden">
 				<WorkSchedulePage />
@@ -518,18 +466,14 @@ describe("WorkSchedulePage load effect", () => {
 		);
 		expect(await screen.findByRole("alert")).toBeTruthy();
 		expect(mocks.skipWorkScheduleSetup).toHaveBeenCalledOnce();
-		await act(async () =>
-			request.resolve({ success: true, data: { nextStep: "/old-skip" } }),
-		);
+		await act(async () => request.resolve({ success: true, data: { nextStep: "/old-skip" } }));
 		expect(mocks.replace).not.toHaveBeenCalled();
 		mocks.skipWorkScheduleSetup.mockResolvedValueOnce({
 			success: true,
 			data: { nextStep: "/fresh-skip" },
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-		await waitFor(() =>
-			expect(mocks.replace).toHaveBeenCalledWith("/fresh-skip"),
-		);
+		await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/fresh-skip"));
 	});
 
 	it("does not start a queued submit from before an Activity reconnection", async () => {
@@ -574,31 +518,23 @@ describe("WorkSchedulePage load effect", () => {
 		await act(async () => undefined);
 		expect(mocks.skipWorkScheduleSetup).toHaveBeenCalledOnce();
 		expect(mocks.setWorkScheduleOnboarding).not.toHaveBeenCalled();
-		expect(screen.getByLabelText("Hours per Week")).toHaveProperty(
-			"disabled",
-			true,
-		);
-		await act(async () =>
-			request.resolve({ success: true, data: { nextStep: "/from-skip" } }),
-		);
+		expect(screen.getByLabelText("Hours per Week")).toHaveProperty("disabled", true);
+		await act(async () => request.resolve({ success: true, data: { nextStep: "/from-skip" } }));
 		expect(mocks.push).toHaveBeenCalledOnce();
 	});
 
-	it.each([-1, 169])(
-		"refuses %s weekly hours before any mutation",
-		async (hours) => {
-			mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
-			render(<WorkSchedulePage />);
-			const field = await screen.findByLabelText("Hours per Week");
-			fireEvent.change(field, { target: { value: String(hours) } });
-			const formElement = field.closest("form");
-			if (!formElement) throw new Error("Schedule form missing");
-			fireEvent.submit(formElement);
-			expect(await screen.findByRole("alert")).toBeTruthy();
-			expect(field.getAttribute("aria-invalid")).toBe("true");
-			expect(mocks.setWorkScheduleOnboarding).not.toHaveBeenCalled();
-		},
-	);
+	it.each([-1, 169])("refuses %s weekly hours before any mutation", async (hours) => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		render(<WorkSchedulePage />);
+		const field = await screen.findByLabelText("Hours per Week");
+		fireEvent.change(field, { target: { value: String(hours) } });
+		const formElement = field.closest("form");
+		if (!formElement) throw new Error("Schedule form missing");
+		fireEvent.submit(formElement);
+		expect(await screen.findByRole("alert")).toBeTruthy();
+		expect(field.getAttribute("aria-invalid")).toBe("true");
+		expect(mocks.setWorkScheduleOnboarding).not.toHaveBeenCalled();
+	});
 
 	it("keeps one live skip mutation during StrictMode replay", async () => {
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: false });
@@ -613,9 +549,7 @@ describe("WorkSchedulePage load effect", () => {
 			</StrictMode>,
 		);
 
-		await waitFor(() =>
-			expect(mocks.replace).toHaveBeenCalledWith("/onboarding/vacation-policy"),
-		);
+		await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/onboarding/vacation-policy"));
 		expect(mocks.checkIsAdmin).toHaveBeenCalledTimes(2);
 		expect(mocks.skipWorkScheduleSetup).toHaveBeenCalledOnce();
 		expect(mocks.replace).toHaveBeenCalledOnce();
