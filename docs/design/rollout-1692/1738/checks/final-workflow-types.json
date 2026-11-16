@@ -1,0 +1,19 @@
+{
+  "started": "2026-11-16T01:46:44.241Z",
+  "finished": "2026-11-16T01:47:04.774Z",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-a83e6a27-7bf4f7950a71b256\\apps\\webapp",
+  "env": "generated disposable local runtime; CI=true pnpm_config_verify_deps_before_run=false",
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "tsc",
+    "--project",
+    "tsconfig.workflow-contracts.json",
+    "--noEmit",
+    "--incremental",
+    "false"
+  ],
+  "exit": 0,
+  "source": "36c60f925612dbdab3e9ba5b6166dd816325300ee4ebe124726dd230a3b7f51d"
+}
