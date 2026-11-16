@@ -1,0 +1,22 @@
+{
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/lib/personnel-file/payslip-batch.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=<owned-output>"
+  ],
+  "exit": 0,
+  "error": null,
+  "standardGuard": true,
+  "integrationPools": true,
+  "physicalFiles": 1,
+  "ownLabelContainers": 3
+}

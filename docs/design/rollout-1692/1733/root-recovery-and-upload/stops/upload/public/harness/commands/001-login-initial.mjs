@@ -1,0 +1,12 @@
+await h.login(p,'small-admin');await h.go(p,'/settings/organization');await p.waitForSelector('#personnel-files-toggle');
+if(await p.$eval('#personnel-files-toggle',e=>e.getAttribute('aria-checked')!=='true'))await p.click('#personnel-files-toggle');
+await p.waitForFunction(()=>document.querySelector('#personnel-files-toggle')?.getAttribute('aria-checked')==='true');
+check('feature enabled through public settings action',true);check('explicit notification denied policy',await p.evaluate(()=>Notification.permission==='denied'));
+await h.go(p,'/personnel-files/payslip-batches');await p.waitForSelector('input[name=payPeriodYear]');await h.click(p,'Start batch');await p.waitForFunction(()=>/\/payslip-batches\/[^/]+$/.test(location.pathname));
+await p.waitForSelector('input[type=file]');globalThis.initialPath=await p.evaluate(()=>location.pathname);globalThis.initialId=initialPath.split('/').at(-1);globalThis.org=h.f.actors['small-admin'].organizationId;
+const{copyFile}=await import('node:fs/promises');const{join}=await import('node:path');await copyFile(join(h.directory,'inputs','100.pdf'),join(h.directory,'inputs','100-200.pdf'));
+await(await p.$('input[type=file]')).uploadFile(...['100.pdf','200.pdf','300.pdf','100-200.pdf','unknown.pdf'].map(n=>join(h.directory,'inputs',n)));
+await p.waitForFunction(()=>document.querySelector('main')?.innerText.includes('unknown.pdf')&&document.querySelector('main')?.innerText.includes('100-200.pdf')&&!document.querySelector('main')?.innerText.includes('Uploading'));
+await p.waitForFunction(()=>[...document.querySelectorAll('main button')].some(e=>e.textContent.trim()==='Save 3 payslips'));
+const count=(await db.query('select count(*)::int n from employee_document where organization_id=$1',[org])).rows[0].n;check('initial five public staged files create zero canonical documents',count===0);
+results.initial={path:initialPath,batchId:initialId,staged:5,documents:count,actor:'fresh small-admin',payPeriod:'2026-11',source:await h.source()};return{initialStaged:5,documents:count,h1:(await dom()).h1,main:(await dom()).main};

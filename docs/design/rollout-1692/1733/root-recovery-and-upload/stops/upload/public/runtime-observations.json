@@ -1,0 +1,487 @@
+{
+  "status": "STOP",
+  "source": {
+    "head": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+    "pins": [
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+        "raw": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+        "lf": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+        "raw": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+        "lf": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+        "raw": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+        "lf": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+        "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+        "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+        "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+        "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+        "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+        "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8"
+      },
+      {
+        "path": "apps/webapp/src/components/site-header.tsx",
+        "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+        "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+        "raw": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+        "lf": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+        "raw": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+        "lf": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+        "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+        "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+        "lf": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "b723feb2fb46e943b3123a3bf7e12208e7036b33f1ab7441ece944a50a3a063e"
+  },
+  "initial": {
+    "path": "/en/personnel-files/payslip-batches/4186fabc-629e-4f6e-ab55-93836a541f7e",
+    "batchId": "4186fabc-629e-4f6e-ab55-93836a541f7e",
+    "staged": 5,
+    "documents": 0,
+    "actor": "fresh small-admin",
+    "payPeriod": "2026-11",
+    "source": {
+      "head": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+      "pins": [
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+          "raw": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+          "lf": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+          "raw": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+          "lf": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+          "raw": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+          "lf": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+          "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+          "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+          "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+          "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+          "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+          "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8"
+        },
+        {
+          "path": "apps/webapp/src/components/site-header.tsx",
+          "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+          "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+          "raw": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+          "lf": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+          "raw": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+          "lf": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f"
+        },
+        {
+          "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+          "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+          "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "raw": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+          "lf": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+          "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+          "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+          "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+          "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+          "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+          "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+        }
+      ],
+      "digest": "b723feb2fb46e943b3123a3bf7e12208e7036b33f1ab7441ece944a50a3a063e"
+    }
+  },
+  "contextRecovery": {
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/api/auth/context",
+        "controlled503": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/auth/context",
+        "controlled503": false
+      }
+    ],
+    "mechanism": "One actual context GET controlled503 through HeaderRefresh; local Retry reaches real endpoint",
+    "scopeGateUnmountDraftRetention": false
+  },
+  "previewRecovery": {
+    "mechanism": "Own ACCESS EXCLUSIVE payslip_batch_file lock; only SELECTs proven blocked by own backend via pg_blocking_pids were cancelled; rollback finally",
+    "cancelledOwnSelects": 1,
+    "retryRestoresFive": true
+  },
+  "uploadStop": {
+    "confirmed": true,
+    "source": {
+      "head": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+      "pins": [
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+          "raw": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+          "lf": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+          "raw": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+          "lf": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+          "raw": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+          "lf": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+          "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+          "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+          "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+          "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+          "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+          "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8"
+        },
+        {
+          "path": "apps/webapp/src/components/site-header.tsx",
+          "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+          "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+          "raw": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+          "lf": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+          "raw": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+          "lf": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f"
+        },
+        {
+          "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+          "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+          "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "raw": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+          "lf": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+          "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+          "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+          "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+          "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+          "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+          "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+        }
+      ],
+      "digest": "b723feb2fb46e943b3123a3bf7e12208e7036b33f1ab7441ece944a50a3a063e"
+    },
+    "publicRepro": [
+      "Initial batch: upload300.pdf successfully",
+      "Start another ordinary batch with same actor/org",
+      "Select identical300.pdf again",
+      "Observe uploaded1/1 plus Processing failed; stage endpoint500 and zero batch files",
+      "Repeat same ordinary selection: same500/zero files",
+      "Same bytes renamed300-control.pdf stages successfully"
+    ],
+    "repeatedRequests": [
+      {
+        "method": "HEAD",
+        "route": "/api/tus/<upload>",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "route": "/api/upload/personnel-file/payslip-batch",
+        "status": 500
+      }
+    ],
+    "freshNameControlRequests": [
+      {
+        "method": "POST",
+        "route": "/api/tus/<upload>",
+        "status": 201
+      },
+      {
+        "method": "PATCH",
+        "route": "/api/tus/<upload>",
+        "status": 204
+      },
+      {
+        "method": "POST",
+        "route": "/api/upload/personnel-file/payslip-batch",
+        "status": 200
+      }
+    ],
+    "failedFileCount": 0,
+    "controlFileCount": 1,
+    "documents": 0,
+    "missingTemporaryObject": "Owned development log identifies NoSuchKey; underlying cause/fingerprint attribution remains an inference until controlled historical run",
+    "samePdfBytes": true,
+    "broaderAcceptanceStopped": true
+  },
+  "historicalUploadControl": {
+    "ref": "c72c947e0faa21966fa24decc493ae96df3115f8",
+    "source": {
+      "head": "786ae5a9c81dd5b60d00d74f9a3534b45ed90242",
+      "pins": [
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+          "raw": "a163347a6d913c1dba5c86d7b6803347fee515fdd24ffc91b6634912dab72a81",
+          "lf": "a163347a6d913c1dba5c86d7b6803347fee515fdd24ffc91b6634912dab72a81"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+          "raw": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+          "lf": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+          "raw": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+          "lf": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+          "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+          "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+          "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+          "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+          "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+          "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8"
+        },
+        {
+          "path": "apps/webapp/src/components/site-header.tsx",
+          "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+          "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+          "raw": "75308c61c79b24e8f7dc3c061437440312663c54b41438871d18b997640a742a",
+          "lf": "75308c61c79b24e8f7dc3c061437440312663c54b41438871d18b997640a742a"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+          "raw": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+          "lf": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f"
+        },
+        {
+          "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+          "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+          "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "raw": "b955e74a8dd5f9559e2d65091ca6b0a1b4359eb87de283418654ab55f9f7c23d",
+          "lf": "b955e74a8dd5f9559e2d65091ca6b0a1b4359eb87de283418654ab55f9f7c23d"
+        },
+        {
+          "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+          "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+          "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+          "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+          "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+          "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+          "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+        }
+      ],
+      "digest": "1c7a437f85765101b07fa2d76eb5483243f044fe2354ab8425079a7be8e56db7"
+    },
+    "requests": [
+      {
+        "method": "HEAD",
+        "route": "/api/tus/<upload>",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "route": "/api/upload/personnel-file/payslip-batch",
+        "status": 500
+      }
+    ],
+    "sameReusedFileFails": true,
+    "remainingControlFiles": 1,
+    "documents": 0,
+    "partialApplication": true,
+    "qualification": "Exact existing page/workspace/upload/metadata historical consumers only; unchanged current upload endpoint/actions/store and remaining application. This reproduces pre-existing reused-upload failure, not an introduced1733 authorization/storage policy regression."
+  },
+  "restored": {
+    "initialFiles": 5,
+    "documents": 0,
+    "notifications": 0
+  },
+  "checks": [
+    "feature enabled through public settings action",
+    "feature enabled through public settings action",
+    "notification fixture policy explicitly denied; API disabled by launch flag",
+    "initial five public staged files create zero canonical documents",
+    "actual failed context GET gates protected file preview and retains safe one-h1",
+    "local context Retry invokes second actual GET and restores same batch",
+    "actual preview SELECT failure replaces stale preview with generic error and local Retry",
+    "actual local preview Retry restores all five staged records",
+    "phone drawer closes on first Escape and returns trigger focus after transition",
+    "phone final complete file row reachable through local scroll without horizontal document overflow",
+    "actual saved Large18 and Dark survive reload",
+    "actual mounted file control reaches Workspace and BatchArrival input[type=file]",
+    "actual mounted file control reaches Workspace and BatchArrival [aria-label=\"Include 100.pdf\"]",
+    "connected Next exposes compilation/errors/route metadata",
+    "collapsed navigation persists after normal reload",
+    "ordinary repeated same-PDF selection reproduces public staging500 and zero added files",
+    "same-PDF-bytes fresh filename control stages one file with zero documents",
+    "exact c72 consumer/hook overlay reproduces same reused-upload failure without another staged file",
+    "restored current source reads initial five staged files with no documents/notifications"
+  ],
+  "attempts": [
+    {
+      "stage": "001-login-initial.mjs",
+      "status": "failed",
+      "error": {
+        "name": "ReferenceError",
+        "message": "Notification is not defined"
+      }
+    },
+    {
+      "stage": "002-login-initial-retry.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "003-context-preview-recovery.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "004-current-captures-native.mjs",
+      "status": "failed",
+      "error": {
+        "name": "AssertionError",
+        "message": "phone navigation closes on first Escape and restores trigger focus"
+      }
+    },
+    {
+      "stage": "005-phone-focus-observation.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "006-current-capture-continuation.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "007-operational-intake-confirm.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 45000ms exceeded"
+      }
+    },
+    {
+      "stage": "008-operational-observe.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "009-upload-repro-control.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "010-historical-upload-control.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "011-restored-current-final.mjs",
+      "status": "complete"
+    }
+  ],
+  "policy": "Controller exit0 means orderly close, not all-matrix pass. No canonical documents or notifications were created."
+}

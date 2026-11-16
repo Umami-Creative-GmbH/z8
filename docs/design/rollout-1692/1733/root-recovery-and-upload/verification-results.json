@@ -1,0 +1,50 @@
+{
+  "scope": "Publication verification only; no application test rerun. Commands below are actual Node child argv submitted by the pnpm-launched publication wrapper, not reconstructed shell argv.",
+  "syntax": {
+    "command": [
+      "node",
+      "--check",
+      "docs/design/rollout-1692/1733/root-recovery-and-upload/verify-proof.mjs"
+    ],
+    "exit": 0,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "modes": [
+    {
+      "command": [
+        "node",
+        "docs/design/rollout-1692/1733/root-recovery-and-upload/verify-proof.mjs"
+      ],
+      "exit": 0,
+      "stdout": "verification-default.log",
+      "stdoutSha256": "23a6deefde2234e41f1f98a370250df7ea8e3f003e6700ce0f07c6de3f47f44b"
+    },
+    {
+      "command": [
+        "node",
+        "docs/design/rollout-1692/1733/root-recovery-and-upload/verify-proof.mjs",
+        "--current-source"
+      ],
+      "exit": 0,
+      "stdout": "verification-current-source.log",
+      "stdoutSha256": "e17c543c5b39d95f273ee55fe443eedc3bdf1d79f6458590c4120eee31982ad0"
+    }
+  ],
+  "repeatedAfterFinalSeal": true,
+  "stableOutputExpected": true,
+  "qualifiedFailures": [
+    {
+      "stage": "Initial publication validator",
+      "exit": 1,
+      "reason": "Three archived journey aliases were initially treated as module scripts; their original command bodies contain top-level return. Explicit async-body classification fixed the publication validator; payload bytes were unchanged."
+    },
+    {
+      "stage": "First finalization wrapper",
+      "exit": 1,
+      "reason": "The new publication-preservation metadata had not yet been added to the exact outer file seal. Validator correctly refused an unindexed file. Sealing order was corrected; no payload or source byte changed."
+    }
+  ],
+  "testsOrHarnessesExecuted": 0,
+  "servicesStarted": 0,
+  "writesByVerifier": 0
+}

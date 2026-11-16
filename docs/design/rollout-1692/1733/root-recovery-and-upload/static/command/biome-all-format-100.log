@@ -1,0 +1,452 @@
+src\components\personnel-file\payslip-batch-workspace.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   // @vitest-environment jsdom␍
+      2   2 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      3     │ - import·{␍
+      4     │ - → act,␍
+      5     │ - → fireEvent,␍
+      6     │ - → render,␍
+      7     │ - → screen,␍
+      8     │ - → waitFor,␍
+      9     │ - }·from·"@testing-library/react";␍
+          3 │ + import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+     10   4 │   import { Activity } from "react";␍
+     11   5 │   import { beforeEach, expect, it, vi } from "vitest";␍
+    ······· │ 
+     30  24 │     useTranslate: () => ({␍
+     31  25 │       t: (_key: string, fallback: string, values?: Record<string, unknown>) =>␍
+     32     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>␍
+     33     │ - → → → → String(values?.[key]·??·match),␍
+     34     │ - → → → ),␍
+         26 │ + → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>·String(values?.[key]·??·match)),␍
+     35  27 │     }),␍
+     36  28 │   }));␍
+    ······· │ 
+    136 128 │     );␍
+    137 129 │     mount();␍
+    138     │ - → fireEvent.click(␍
+    139     │ - → → await·screen.findByRole("button",·{·name:·"Save·1·payslips"·}),␍
+    140     │ - → );␍
+        130 │ + → fireEvent.click(await·screen.findByRole("button",·{·name:·"Save·1·payslips"·}));␍
+    141 131 │     expect(boundary.confirm).not.toHaveBeenCalled();␍
+    142 132 │     fireEvent.click(screen.getByRole("button", { name: "Save payslips" }));␍
+    ······· │ 
+    227 217 │     );␍
+    228 218 │     const view = render(tree("visible"));␍
+    229     │ - → fireEvent.click(␍
+    230     │ - → → await·screen.findByRole("button",·{·name:·"Save·1·payslips"·}),␍
+    231     │ - → );␍
+        219 │ + → fireEvent.click(await·screen.findByRole("button",·{·name:·"Save·1·payslips"·}));␍
+    232 220 │     fireEvent.click(screen.getByRole("button", { name: "Save payslips" }));␍
+    233 221 │     view.rerender(tree("hidden"));␍
+    ······· │ 
+    288 276 │     });␍
+    289 277 │     mount();␍
+    290     │ - → fireEvent.click(␍
+    291     │ - → → await·screen.findByRole("button",·{·name:·"Retry·1·failed·files"·}),␍
+    292     │ - → );␍
+        278 │ + → fireEvent.click(await·screen.findByRole("button",·{·name:·"Retry·1·failed·files"·}));␍
+    293 279 │     await waitFor(() => expect(boundary.confirm).toHaveBeenCalledTimes(1));␍
+    294 280 │     expect(screen.queryByLabelText("Payslip files")).toBeNull();␍
+    295 281 │     expect(␍
+    296     │ - → → screen␍
+    297     │ - → → → .getByRole("checkbox",·{·name:·"Include·100.pdf"·})␍
+    298     │ - → → → .getAttribute("aria-disabled"),␍
+        282 │ + → → screen.getByRole("checkbox",·{·name:·"Include·100.pdf"·}).getAttribute("aria-disabled"),␍
+    299 283 │     ).toBe("true");␍
+    300 284 │   });␍
+  
+
+src\components\personnel-file\payslip-batch-workspace.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      12  12 │   import { useQuery, useQueryClient } from "@tanstack/react-query";␍
+      13  13 │   import { useTranslate } from "@tolgee/react";␍
+      14     │ - import·{␍
+      15     │ - → createContext,␍
+      16     │ - → use,␍
+      17     │ - → useId,␍
+      18     │ - → useLayoutEffect,␍
+      19     │ - → useMemo,␍
+      20     │ - → useRef,␍
+      21     │ - → useState,␍
+      22     │ - }·from·"react";␍
+          14 │ + import·{·createContext,·use,·useId,·useLayoutEffect,·useMemo,·useRef,·useState·}·from·"react";␍
+      23  15 │   import { toast } from "sonner";␍
+      24  16 │   import {␍
+    ········ │ 
+      43  35 │   import { Badge } from "@/components/ui/badge";␍
+      44  36 │   import { Button } from "@/components/ui/button";␍
+      45     │ - import·{␍
+      46     │ - → Card,␍
+      47     │ - → CardContent,␍
+      48     │ - → CardDescription,␍
+      49     │ - → CardHeader,␍
+      50     │ - → CardTitle,␍
+      51     │ - }·from·"@/components/ui/card";␍
+          37 │ + import·{·Card,·CardContent,·CardDescription,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+      52  38 │   import { Checkbox } from "@/components/ui/checkbox";␍
+      53  39 │   import { Input } from "@/components/ui/input";␍
+    ········ │ 
+     101  87 │             )}␍
+     102  88 │           </p>␍
+     103     │ - → → → → <Button␍
+     104     │ - → → → → → type="button"␍
+     105     │ - → → → → → variant="outline"␍
+     106     │ - → → → → → onClick={()·=>·void·current.refetch()}␍
+     107     │ - → → → → >␍
+          89 │ + → → → → <Button·type="button"·variant="outline"·onClick={()·=>·void·current.refetch()}>␍
+     108  90 │             {t("common.retry", "Retry")}␍
+     109  91 │           </Button>␍
+    ········ │ 
+     111  93 │       ) : (␍
+     112  94 │         <p role="status">␍
+     113     │ - → → → → {t(␍
+     114     │ - → → → → → "settings.personnelFiles.batch.scopeLoading",␍
+     115     │ - → → → → → "Loading·the·current·payslip·scope…",␍
+     116     │ - → → → → )}␍
+          95 │ + → → → → {t("settings.personnelFiles.batch.scopeLoading",·"Loading·the·current·payslip·scope…")}␍
+     117  96 │         </p>␍
+     118  97 │       );␍
+    ········ │ 
+     130 109 │     const arrival = useId();␍
+     131 110 │     const queryKey = useMemo(␍
+     132     │ - → → ()·=>·[␍
+     133     │ - → → → ...queryKeys.personnelFile.payslipBatch(batchId),␍
+     134     │ - → → → userId,␍
+     135     │ - → → → organizationId,␍
+     136     │ - → → → arrival,␍
+     137     │ - → → ],␍
+         111 │ + → → ()·=>·[...queryKeys.personnelFile.payslipBatch(batchId),·userId,·organizationId,·arrival],␍
+     138 112 │       [batchId, userId, organizationId, arrival],␍
+     139 113 │     );␍
+    ········ │ 
+     192 166 │       setError(null);␍
+     193 167 │       await runWithCleanup(async () => {␍
+     194     │ - → → → const·updated·=·await·updatePayslipBatchFileAction(input).catch(␍
+     195     │ - → → → → ()·=>·null,␍
+     196     │ - → → → );␍
+         168 │ + → → → const·updated·=·await·updatePayslipBatchFileAction(input).catch(()·=>·null);␍
+     197 169 │         if (lifetime.current === started && !updated?.success)␍
+     198 170 │           setError(␍
+    ········ │ 
+     209 181 │   ␍
+     210 182 │     async function confirm() {␍
+     211     │ - → → if·(command.current·||·uploading·||·query.isFetching·||·query.isError)␍
+     212     │ - → → → return;␍
+         183 │ + → → if·(command.current·||·uploading·||·query.isFetching·||·query.isError)·return;␍
+     213 184 │       const started = lifetime.current;␍
+     214 185 │       if (!started) return;␍
+    ········ │ 
+     217 188 │       setError(null);␍
+     218 189 │       await runWithCleanup(async () => {␍
+     219     │ - → → → const·confirmed·=·await·confirmPayslipBatchAction({·batchId·}).catch(␍
+     220     │ - → → → → ()·=>·null,␍
+     221     │ - → → → );␍
+         190 │ + → → → const·confirmed·=·await·confirmPayslipBatchAction({·batchId·}).catch(()·=>·null);␍
+     222 191 │         if (lifetime.current === started) {␍
+     223 192 │           if (!confirmed?.success) {␍
+    ········ │ 
+     233 202 │             if (confirmed.data.failed.length === 0)␍
+     234 203 │               toast.success(␍
+     235     │ - → → → → → → → t(␍
+     236     │ - → → → → → → → → "settings.personnelFiles.batch.confirmed",␍
+     237     │ - → → → → → → → → "{count}·payslips·saved",␍
+     238     │ - → → → → → → → → {·count:·confirmed.data.created.length·},␍
+     239     │ - → → → → → → → ),␍
+         204 │ + → → → → → → → t("settings.personnelFiles.batch.confirmed",·"{count}·payslips·saved",·{␍
+         205 │ + → → → → → → → → count:·confirmed.data.created.length,␍
+         206 │ + → → → → → → → }),␍
+     240 207 │               );␍
+     241 208 │             else␍
+    ········ │ 
+     264 231 │       return (␍
+     265 232 │         <div role="alert" className="space-y-3 text-sm text-destructive">␍
+     266     │ - → → → → {t(␍
+     267     │ - → → → → → "settings.personnelFiles.batch.loadFailed",␍
+     268     │ - → → → → → "The·payslip·batch·could·not·be·loaded.",␍
+     269     │ - → → → → )}␍
+     270     │ - → → → → <Button␍
+     271     │ - → → → → → variant="outline"␍
+     272     │ - → → → → → onClick={()·=>·void·query.refetch()}␍
+     273     │ - → → → → → disabled={query.isFetching}␍
+     274     │ - → → → → >␍
+         233 │ + → → → → {t("settings.personnelFiles.batch.loadFailed",·"The·payslip·batch·could·not·be·loaded.")}␍
+         234 │ + → → → → <Button·variant="outline"·onClick={()·=>·void·query.refetch()}·disabled={query.isFetching}>␍
+     275 235 │             {t("common.retry", "Retry")}␍
+     276 236 │           </Button>␍
+    ········ │ 
+     283 243 │     const pendingFiles = preview.files.filter((file) => file.state !== "created");␍
+     284 244 │     const toSave = pendingFiles.filter(␍
+     285     │ - → → (file)·=>␍
+     286     │ - → → → file.included·&&·file.employeeId·!==·null·&&·file.state·!==·"expired",␍
+         245 │ + → → (file)·=>·file.included·&&·file.employeeId·!==·null·&&·file.state·!==·"expired",␍
+     287 246 │     );␍
+     288     │ - → const·unresolved·=·pendingFiles.filter(␍
+     289     │ - → → (file)·=>·file.included·&&·file.employeeId·===·null,␍
+     290     │ - → );␍
+     291     │ - → const·retryable·=·preview.files.filter(␍
+     292     │ - → → (file)·=>·file.state·===·"failed"·&&·file.included,␍
+     293     │ - → );␍
+         247 │ + → const·unresolved·=·pendingFiles.filter((file)·=>·file.included·&&·file.employeeId·===·null);␍
+         248 │ + → const·retryable·=·preview.files.filter((file)·=>·file.state·===·"failed"·&&·file.included);␍
+     294 249 │     const busy = confirming || editing || uploading || query.isFetching;␍
+     295 250 │   ␍
+    ········ │ 
+     304 259 │         <div className="flex min-w-0 flex-col gap-6">␍
+     305 260 │           <BatchSummary preview={preview} />␍
+     306     │ - → → → → <BatchProgress␍
+     307     │ - → → → → → status={preview.batch.status}␍
+     308     │ - → → → → → fileCount={preview.files.length}␍
+     309     │ - → → → → />␍
+         261 │ + → → → → <BatchProgress·status={preview.batch.status}·fileCount={preview.files.length}·/>␍
+     310 262 │           {error ? (␍
+     311 263 │             <p role="alert" className="text-sm text-destructive">␍
+    ········ │ 
+     324 276 │           <fieldset disabled={busy || confirmOpen} className="min-w-0">␍
+     325 277 │             <legend className="mb-3 text-lg font-semibold">␍
+     326     │ - → → → → → → {t(␍
+     327     │ - → → → → → → → "settings.personnelFiles.batch.matchHeading",␍
+     328     │ - → → → → → → → "Confirm·employee·matches",␍
+     329     │ - → → → → → → )}␍
+         278 │ + → → → → → → {t("settings.personnelFiles.batch.matchHeading",·"Confirm·employee·matches")}␍
+     330 279 │             </legend>␍
+     331 280 │             <FileList preview={preview} />␍
+    ········ │ 
+     353 302 │               <AlertDialogHeader>␍
+     354 303 │                 <AlertDialogTitle>␍
+     355     │ - → → → → → → → → {t(␍
+     356     │ - → → → → → → → → → "settings.personnelFiles.batch.confirmTitle",␍
+     357     │ - → → → → → → → → → "Save·{count}·payslips?",␍
+     358     │ - → → → → → → → → → {␍
+     359     │ - → → → → → → → → → → count:·toSave.length,␍
+     360     │ - → → → → → → → → → },␍
+     361     │ - → → → → → → → → )}␍
+         304 │ + → → → → → → → → {t("settings.personnelFiles.batch.confirmTitle",·"Save·{count}·payslips?",·{␍
+  338 more lines truncated
+  
+
+src\components\personnel-file\use-payslip-batch-upload.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     77  77 │           onStaged.current();␍
+     78  78 │         } catch (error) {␍
+     79     │ - → → → → fail(␍
+     80     │ - → → → → → fileName,␍
+     81     │ - → → → → → error·instanceof·Error·?·error.message·:·"Upload·failed",␍
+     82     │ - → → → → );␍
+         79 │ + → → → → fail(fileName,·error·instanceof·Error·?·error.message·:·"Upload·failed");␍
+     83  80 │         } finally {␍
+     84  81 │           if (active) uppy.removeFile(file.id);␍
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{␍
+      3     │ - → appPageOwnsHeading,␍
+      4     │ - → normalizeAppPath,␍
+      5     │ - → resolveAppRouteMetadata,␍
+      6     │ - }·from·"./route-metadata";␍
+          2 │ + import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      7   3 │   ␍
+      8   4 │   describe("route metadata", () => {␍
+    ······· │ 
+     25  21 │     });␍
+     26  22 │     it("adopts only selected employee files, leaving other personnel workflows independently staged", () => {␍
+     27     │ - → → expect(␍
+     28     │ - → → → appPageOwnsHeading(␍
+     29     │ - → → → → "/de/personnel-files/af981290-0000-4000-8000-000000000001",␍
+     30     │ - → → → ),␍
+     31     │ - → → ).toBe(true);␍
+         23 │ + → → expect(appPageOwnsHeading("/de/personnel-files/af981290-0000-4000-8000-000000000001")).toBe(␍
+         24 │ + → → → true,␍
+         25 │ + → → );␍
+     32  26 │       expect(␍
+     33     │ - → → → appPageOwnsHeading(␍
+     34     │ - → → → → "/en/personnel-files/af981290-0000-4000-8000-000000000001/detail",␍
+     35     │ - → → → ),␍
+         27 │ + → → → appPageOwnsHeading("/en/personnel-files/af981290-0000-4000-8000-000000000001/detail"),␍
+     36  28 │       ).toBe(false);␍
+     37  29 │     });␍
+    ······· │ 
+     43  35 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     44  36 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     45     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+     46     │ - → → → true,␍
+     47     │ - → → );␍
+     48     │ - → → expect(␍
+     49     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),␍
+     50     │ - → → ).toBe(false);␍
+         37 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+         38 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     51  39 │     });␍
+     52  40 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │ 
+     77  65 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     78  66 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     79     │ - → → expect(␍
+     80     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+     81     │ - → → ).toBe(true);␍
+         67 │ + → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     82  68 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     83     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+     84     │ - → → → false,␍
+     85     │ - → → );␍
+         69 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     86  70 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     87  71 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │ 
+     93  77 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+     94  78 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     95     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+     96     │ - → → → true,␍
+     97     │ - → → );␍
+     98     │ - → → expect(␍
+     99     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+    100     │ - → → ).toBe(false);␍
+         79 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+         80 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+    101  81 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+    102  82 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │ 
+    105  85 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+    106  86 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    107     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+    108     │ - → → → true,␍
+    109     │ - → → );␍
+         87 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+    110  88 │     });␍
+    111  89 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+    112     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+    113     │ - → → → true,␍
+    114     │ - → → );␍
+    115     │ - → → expect(␍
+    116     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+    117     │ - → → ).toBe(false);␍
+         90 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+         91 │ + → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+    118  92 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+    119  93 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │ 
+    122  96 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+    123  97 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+    124     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+    125     │ - → → → true,␍
+    126     │ - → → );␍
+         98 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+    127  99 │     });␍
+    128 100 │     it("adopts only the complete review arrival route", () => {␍
+    129     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+    130     │ - → → → true,␍
+    131     │ - → → );␍
+    132     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+    133     │ - → → → false,␍
+    134     │ - → → );␍
+    135     │ - → → expect(␍
+    136     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+    137     │ - → → ).toBe(false);␍
+        101 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+        102 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+        103 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+    138 104 │     });␍
+    139 105 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+    140 106 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+    141     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+    142     │ - → → → false,␍
+    143     │ - → → );␍
+        107 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+    144 108 │     });␍
+    145 109 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+    146 110 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+    147     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+    148     │ - → → → false,␍
+    149     │ - → → );␍
+        111 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+    150 112 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+    151     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+    152     │ - → → → false,␍
+    153     │ - → → );␍
+        113 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+    154 114 │     });␍
+    155 115 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │ 
+    198 158 │   ␍
+    199 159 │     it("normalizes locale and trailing slash segments", () => {␍
+    200     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+    201     │ - → → → "/settings/security",␍
+    202     │ - → → );␍
+        160 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    203 161 │     });␍
+    204 162 │   });␍
+    205 163 │   it("adopts only the exact payslip batch detail heading", () => {␍
+    206     │ - → expect(␍
+    207     │ - → → appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-1"),␍
+    208     │ - → ).toBe(true);␍
+    209     │ - → expect(␍
+    210     │ - → → appPageOwnsHeading("/de/personnel-files/payslip-batches/batch-1/detail"),␍
+    211     │ - → ).toBe(false);␍
+        164 │ + → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-1")).toBe(true);␍
+        165 │ + → expect(appPageOwnsHeading("/de/personnel-files/payslip-batches/batch-1/detail")).toBe(false);␍
+    212 166 │   });␍
+    213 167 │   
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+    171     │ - → → (entry)·=>·({␍
+    172     │ - → → → id:·`settings-${entry.id}`,␍
+    173     │ - → → → href:·entry.href,␍
+    174     │ - → → → titleKey:·entry.titleKey,␍
+    175     │ - → → → titleDefault:·entry.titleDefault,␍
+    176     │ - → → }),␍
+    177     │ - → ),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+        171 │ + → → id:·`settings-${entry.id}`,␍
+        172 │ + → → href:·entry.href,␍
+        173 │ + → → titleKey:·entry.titleKey,␍
+        174 │ + → → titleDefault:·entry.titleDefault,␍
+        175 │ + → })),␍
+    178 176 │     {␍
+    179 177 │       id: "settings",␍
+    ······· │ 
+    192 190 │   ␍
+    193 191 │   export function normalizeAppPath(pathname: string): string {␍
+    194     │ - → const·[firstSegment,·...remainingSegments]·=·pathname␍
+    195     │ - → → .split("/")␍
+    196     │ - → → .filter(Boolean);␍
+    197     │ - → const·segments·=·ALL_LANGUAGES.includes(␍
+    198     │ - → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+    199     │ - → )␍
+        192 │ + → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+        193 │ + → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+    200 194 │       ? remainingSegments␍
+    201 195 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    263 257 │       [...APP_ROUTE_METADATA]␍
+    264 258 │         .sort((left, right) => right.href.length - left.href.length)␍
+    265     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+    266     │ - → → UNKNOWN_ROUTE_METADATA␍
+        259 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+    267 260 │     );␍
+    268 261 │   }␍
+  
+
+Checked 8 files in 14ms. No fixes applied.
+Found 5 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

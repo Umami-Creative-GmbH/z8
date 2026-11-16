@@ -1,0 +1,41 @@
+{
+  "containers": [
+    {
+      "fixture": "runtime",
+      "service": "postgres",
+      "exactNameAbsent": true,
+      "queryExit": 0
+    },
+    {
+      "fixture": "runtime",
+      "service": "redis",
+      "exactNameAbsent": true,
+      "queryExit": 0
+    },
+    {
+      "fixture": "runtime",
+      "service": "storage",
+      "exactNameAbsent": true,
+      "queryExit": 0
+    },
+    {
+      "fixture": "pg",
+      "service": "postgres",
+      "exactNameAbsent": true,
+      "queryExit": 0
+    },
+    {
+      "fixture": "pg",
+      "service": "redis",
+      "exactNameAbsent": true,
+      "queryExit": 0
+    },
+    {
+      "fixture": "pg",
+      "service": "storage",
+      "exactNameAbsent": true,
+      "queryExit": 0
+    }
+  ],
+  "remaining": 0
+}

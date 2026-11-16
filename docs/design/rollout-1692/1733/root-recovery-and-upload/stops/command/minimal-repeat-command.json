@@ -1,0 +1,23 @@
+{
+  "executable": "pnpm",
+  "argv": [
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "--maxWorkers",
+    "1",
+    "src/components/personnel-file/independent1733-command-probe.test.tsx",
+    "--testNamePattern",
+    "prevents a duplicate pending confirmation",
+    "--reporter=json",
+    "--outputFile=../../.tmp/1733-root-checks/runtime/minimal-repeat.json"
+  ],
+  "exit": 1,
+  "physicalFiles": 1,
+  "selectedCaseInstances": 2
+}

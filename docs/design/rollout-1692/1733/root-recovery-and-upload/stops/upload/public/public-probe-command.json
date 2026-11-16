@@ -1,0 +1,24 @@
+{
+  "executable": "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\package-manager-store\\v11\\links\\@\\pnpm\\12.16.1\\6c9a58b7993869b11fe8475664e98da88ac738dfe315f849b208c4fcd3713254\\node_modules\\pnpm\\pnpm.exe",
+  "argv": [
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "--maxWorkers",
+    "2",
+    "src/components/personnel-file/independent1733v2-command-probe.test.tsx",
+    "src/components/personnel-file/independent1733v2-heading-probe.test.tsx",
+    "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+    "src/components/personnel-file/payslip-batch-start.test.tsx",
+    "--reporter=json",
+    "--outputFile=../../.tmp/1733-command-checks/runtime/public-probes.json"
+  ],
+  "exit": 0,
+  "spawnError": null,
+  "physicalFiles": 4
+}

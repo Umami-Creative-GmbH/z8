@@ -1,0 +1,14 @@
+{
+  "noOtherResourcesStopped": true,
+  "controllerBrowserProcesses": 0,
+  "runtimeFixtureContainersRemoved": 3,
+  "temporaryTestBridgesRemoved": 2,
+  "controllerExit": 0,
+  "ownListeners": 0,
+  "checkoutNodePnpmProcesses": 0,
+  "allForegroundPackageCommandsExited": true,
+  "nativeCloseExit": 0,
+  "pgFixtureContainersRemoved": 3,
+  "sourceRawByteRestored": true,
+  "exactLabelCleanup": true
+}

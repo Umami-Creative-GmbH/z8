@@ -1,0 +1,632 @@
+{
+  "head": "166975f3c981d7f1f8d9e51bbce09fbe63b32568",
+  "tree": "02a53818fa6160423339a36e371c52630ca569cc",
+  "applicationTree": "e47b421aaa5617f6c270e11b8859938204fde16b",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+      "rawSha256": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+      "lfSha256": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db",
+      "gitBlob": "5af47d41c2e64a8dfa75d620a31d044c5bed0ced",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "rawSha256": "73ef4069f318f17da900331409f3d97941c39e86d794b61053e313baa705a248",
+      "lfSha256": "d47097f4a836f9eb1959fb2ad99db4928ccf86f8fe300761945571168b9a5dfa",
+      "gitBlob": "bcded9ee75492bbde64f11ed62933d1866fe9e38",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "rawSha256": "0e989f59fb4c59ac8e481d00c627500ee82d47f496a84c91a97273117aeb1a55",
+      "lfSha256": "ea84cf54e8efdb0e6cf029bbe36147eb3df0ec2600dcf5809ab435a4c2b339ec",
+      "gitBlob": "9eec146c690f3076c6cc1f32f753282cb53d9a93",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+      "rawSha256": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+      "lfSha256": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08",
+      "gitBlob": "a6473e380609a6cc5569b8c1dceec10a6118c3d1",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+      "rawSha256": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+      "lfSha256": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695",
+      "gitBlob": "bcdf2bfa6596c82c077188f1c4bd6de01be6ec6e",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "rawSha256": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+      "lfSha256": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e",
+      "gitBlob": "cb5258989e1ea98f63aeb1288a56b43bd16589a1",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "rawSha256": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+      "lfSha256": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43",
+      "gitBlob": "e9db902ead4f397cfa5a8e4b5d6c3a27a30032a7",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+      "rawSha256": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+      "lfSha256": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8",
+      "gitBlob": "78ce1d2278988ce0719e7b7ab0a7bbfa0edeb2d4",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.tsx",
+      "rawSha256": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+      "lfSha256": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12",
+      "gitBlob": "ce04338a66447465689b321227db26da97cabe56",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+      "rawSha256": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+      "lfSha256": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086",
+      "gitBlob": "5ee6065fc71213f2068237949951efa2a5909ef9",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+      "rawSha256": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+      "lfSha256": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f",
+      "gitBlob": "ecdef9fa66c9c18473c30ca6621f6815e8ed46b7",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "rawSha256": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+      "lfSha256": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af",
+      "gitBlob": "323245b2faafb355b8a562caa24d9679828ad2dd",
+      "matchesHeadLF": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "rawSha256": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+      "lfSha256": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f",
+      "gitBlob": "7db5fd1cc4042ffde22c50850b6822afa69d1620",
+      "matchesHeadLF": true
+    }
+  ],
+  "configPins": [
+    {
+      "path": ".npmrc",
+      "rawSha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "expectedRawSha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "match": true
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "rawSha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "expectedRawSha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "match": true
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "rawSha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "expectedRawSha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "match": true
+    },
+    {
+      "path": "apps/desktop/tsconfig.node.json",
+      "rawSha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "expectedRawSha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "match": true
+    },
+    {
+      "path": "apps/desktop/vitest.config.ts",
+      "rawSha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "expectedRawSha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "match": true
+    },
+    {
+      "path": "apps/docs/next.config.mjs",
+      "rawSha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "expectedRawSha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "match": true
+    },
+    {
+      "path": "apps/docs/package.json",
+      "rawSha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "expectedRawSha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "match": true
+    },
+    {
+      "path": "apps/docs/tsconfig.json",
+      "rawSha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "expectedRawSha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "match": true
+    },
+    {
+      "path": "apps/marketing/biome.jsonc",
+      "rawSha256": "2e9f25762a0f614245768779d41720c5dadfaf34c55b1941fe47a4e4f3d2365e",
+      "expectedRawSha256": "2e9f25762a0f614245768779d41720c5dadfaf34c55b1941fe47a4e4f3d2365e",
+      "match": true
+    },
+    {
+      "path": "apps/marketing/next.config.ts",
+      "rawSha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "expectedRawSha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "match": true
+    },
+    {
+      "path": "apps/marketing/package.json",
+      "rawSha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "expectedRawSha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "match": true
+    },
+    {
+      "path": "apps/marketing/tsconfig.json",
+      "rawSha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "expectedRawSha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "match": true
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "rawSha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "expectedRawSha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "match": true
+    },
+    {
+      "path": "apps/mobile/tsconfig.json",
+      "rawSha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "expectedRawSha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "rawSha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+      "expectedRawSha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "expectedRawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "rawSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "expectedRawSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "rawSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "expectedRawSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "rawSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "expectedRawSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "rawSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "expectedRawSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "rawSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "expectedRawSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "rawSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "expectedRawSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "match": true
+    },
+    {
+      "path": "docker/targets/db-seed/package.json",
+      "rawSha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "expectedRawSha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "match": true
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-lock.yaml",
+      "rawSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "expectedRawSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "match": true
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-workspace.yaml",
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "expectedRawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "match": true
+    },
+    {
+      "path": "docker/targets/migration/package.json",
+      "rawSha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "expectedRawSha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "match": true
+    },
+    {
+      "path": "docker/targets/migration/pnpm-lock.yaml",
+      "rawSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "expectedRawSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "match": true
+    },
+    {
+      "path": "docker/targets/migration/pnpm-workspace.yaml",
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "expectedRawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "match": true
+    },
+    {
+      "path": "docker/targets/worker/package.json",
+      "rawSha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "expectedRawSha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "match": true
+    },
+    {
+      "path": "docker/targets/worker/pnpm-lock.yaml",
+      "rawSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "expectedRawSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "match": true
+    },
+    {
+      "path": "docker/targets/worker/pnpm-workspace.yaml",
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "expectedRawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "match": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1831/root-authority-and-loading/vitest.config.ts",
+      "rawSha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "expectedRawSha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "match": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1834/root-loading-heading/vitest.config.ts",
+      "rawSha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "expectedRawSha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "match": true
+    },
+    {
+      "path": "package.json",
+      "rawSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "expectedRawSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "match": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "rawSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "expectedRawSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "match": true
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "rawSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "expectedRawSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "match": true
+    }
+  ],
+  "dependencyParents": [
+    {
+      "path": "node_modules",
+      "directory": true,
+      "link": false
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "directory": true,
+      "link": false
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "directory": true,
+      "link": false
+    }
+  ],
+  "dependencyLinks": 158,
+  "dependencyLinksUnchanged": true,
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "verifiedAncestors": [
+    {
+      "issue": 1693,
+      "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "ancestor": true
+    },
+    {
+      "issue": 1694,
+      "commit": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "ancestor": true
+    },
+    {
+      "issue": 1695,
+      "commit": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "ancestor": true
+    },
+    {
+      "issue": 1853,
+      "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    },
+    {
+      "issue": 1700,
+      "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "ancestor": true
+    },
+    {
+      "issue": 1701,
+      "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "ancestor": true
+    },
+    {
+      "issue": 1820,
+      "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "ancestor": true
+    },
+    {
+      "issue": 1702,
+      "commit": "416c04fc1b65f798422ddeecb8413249b064f715",
+      "ancestor": true
+    },
+    {
+      "issue": 1703,
+      "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "ancestor": true
+    },
+    {
+      "issue": 1704,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1705,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1706,
+      "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "ancestor": true
+    },
+    {
+      "issue": 1707,
+      "commit": "6fa8147fae492939056a76e83e327e520d921ae1",
+      "ancestor": true
+    },
+    {
+      "issue": 1708,
+      "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "ancestor": true
+    },
+    {
+      "issue": 1709,
+      "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "ancestor": true
+    },
+    {
+      "issue": 1710,
+      "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "ancestor": true
+    },
+    {
+      "issue": 1711,
+      "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "ancestor": true
+    },
+    {
+      "issue": 1712,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1713,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1714,
+      "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "ancestor": true
+    },
+    {
+      "issue": 1715,
+      "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "ancestor": true
+    },
+    {
+      "issue": 1716,
+      "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "ancestor": true
+    },
+    {
+      "issue": 1717,
+      "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "ancestor": true
+    },
+    {
+      "issue": 1718,
+      "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "ancestor": true
+    },
+    {
+      "issue": 1719,
+      "commit": "a9b472e5864f386d881604605d593cffc189d61a",
+      "ancestor": true
+    },
+    {
+      "issue": 1821,
+      "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1822,
+      "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "ancestor": true
+    },
+    {
+      "issue": 1823,
+      "commit": "65b74963b69e9536af5e862199fa43a8583473cc",
+      "ancestor": true
+    },
+    {
+      "issue": 1824,
+      "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "ancestor": true
+    },
+    {
+      "issue": 1825,
+      "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "ancestor": true
+    },
+    {
+      "issue": 1826,
+      "commit": "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "ancestor": true
+    },
+    {
+      "issue": 1720,
+      "commit": "ced095089163e69b232c2bce96a40cba800186d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1721,
+      "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "ancestor": true
+    },
+    {
+      "issue": 1722,
+      "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "ancestor": true
+    },
+    {
+      "issue": 1723,
+      "commit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "ancestor": true
+    },
+    {
+      "issue": 1827,
+      "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "ancestor": true
+    },
+    {
+      "issue": 1828,
+      "commit": "752c500833e751df9988a3b2434d240124b89a51",
+      "ancestor": true
+    },
+    {
+      "issue": 1829,
+      "commit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "ancestor": true
+    },
+    {
+      "issue": 1830,
+      "commit": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+      "ancestor": true
+    },
+    {
+      "issue": 1831,
+      "commit": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+      "ancestor": true
+    },
+    {
+      "issue": 1832,
+      "commit": "5646e7b320376d2605b80e231b6b828f4b35f670",
+      "ancestor": true
+    },
+    {
+      "issue": 1833,
+      "commit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+      "ancestor": true
+    },
+    {
+      "issue": 1834,
+      "commit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+      "ancestor": true
+    },
+    {
+      "issue": 1835,
+      "commit": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "ancestor": true
+    },
+    {
+      "issue": 1724,
+      "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "ancestor": true
+    },
+    {
+      "issue": 1725,
+      "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "ancestor": true
+    },
+    {
+      "issue": 1726,
+      "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "ancestor": true
+    },
+    {
+      "issue": 1727,
+      "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "ancestor": true
+    },
+    {
+      "issue": 1728,
+      "commit": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "ancestor": true
+    },
+    {
+      "issue": 1729,
+      "commit": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "ancestor": true
+    },
+    {
+      "issue": 1730,
+      "commit": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "ancestor": true
+    },
+    {
+      "issue": 1731,
+      "commit": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+      "ancestor": true
+    },
+    {
+      "issue": 1732,
+      "commit": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "ancestor": true
+    },
+    {
+      "issue": 1736,
+      "commit": "c9a56648c81206527d1935bfcb46e0a959a4157f",
+      "ancestor": true
+    },
+    {
+      "issue": 1737,
+      "commit": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "ancestor": true
+    },
+    {
+      "issue": 1745,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    }
+  ],
+  "baselineAncestor": true,
+  "priorRolloutPaths": 6008,
+  "unchangedPriorRolloutPaths": 6006,
+  "changedPriorRolloutPathsAtGrant": [
+    "docs/design/rollout-1692/README.md",
+    "docs/design/rollout-1692/integration.json"
+  ],
+  "grantChangeBoundary": "These two root publication status files already differ at pinned grant786ae5a9. No verifier write; every tracked file remains exactly HEAD.",
+  "incomingProofPaths": 106,
+  "changedIncomingProofPaths": [],
+  "root1732ProofPaths": 107,
+  "root1731ProofPaths": 173,
+  "root1730ProofPaths": 201,
+  "status": ""
+}

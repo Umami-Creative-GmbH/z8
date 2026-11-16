@@ -1,0 +1,687 @@
+{
+  "state": "SEALED_RECORDED_CANDIDATE",
+  "candidate": "166975f3c981d7f1f8d9e51bbce09fbe63b32568",
+  "tree": "02a53818fa6160423339a36e371c52630ca569cc",
+  "applicationTree": "e47b421aaa5617f6c270e11b8859938204fde16b",
+  "source": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
+  "verifiedCommit": null,
+  "lastVerified": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+  "scope": "Recorded source/configuration pins; no independent Git/source readiness advancement by publisher.",
+  "corrections": [
+    {
+      "source": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
+      "purpose": "Provider-error scope recovery"
+    },
+    {
+      "source": "15b00b502bc2a2fd7f556433ba52c2da9768ea37",
+      "purpose": "Pending command reservation through Activity and current readback"
+    },
+    {
+      "source": "c0480cfd33e579d807264ff4c2017a66b799ae36",
+      "purpose": "Remove successful TUS fingerprint after staging consumes temporary bytes"
+    },
+    {
+      "source": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
+      "purpose": "Stable per-batch uploader identity isolates old unscoped/cross-batch completed URLs and preserves unfinished same-batch resume"
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+      "rawSha256": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+      "lfSha256": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db",
+      "gitBlob": "5af47d41c2e64a8dfa75d620a31d044c5bed0ced",
+      "matchesHeadLF": true,
+      "bytes": 29982
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "rawSha256": "73ef4069f318f17da900331409f3d97941c39e86d794b61053e313baa705a248",
+      "lfSha256": "d47097f4a836f9eb1959fb2ad99db4928ccf86f8fe300761945571168b9a5dfa",
+      "gitBlob": "bcded9ee75492bbde64f11ed62933d1866fe9e38",
+      "matchesHeadLF": true,
+      "bytes": 4464
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "rawSha256": "0e989f59fb4c59ac8e481d00c627500ee82d47f496a84c91a97273117aeb1a55",
+      "lfSha256": "ea84cf54e8efdb0e6cf029bbe36147eb3df0ec2600dcf5809ab435a4c2b339ec",
+      "gitBlob": "9eec146c690f3076c6cc1f32f753282cb53d9a93",
+      "matchesHeadLF": true,
+      "bytes": 11657
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+      "rawSha256": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+      "lfSha256": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08",
+      "gitBlob": "a6473e380609a6cc5569b8c1dceec10a6118c3d1",
+      "matchesHeadLF": true,
+      "bytes": 13951
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+      "rawSha256": "40e85cbb877bff7c824ddb09f29c60cf781cb8b94220bc555b97675ef3e9b000",
+      "lfSha256": "6e93a9488d2b27265132ffacc3667fced88f9b78331cfbf358f16ff5633df695",
+      "gitBlob": "bcdf2bfa6596c82c077188f1c4bd6de01be6ec6e",
+      "matchesHeadLF": true,
+      "bytes": 9131
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "rawSha256": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+      "lfSha256": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e",
+      "gitBlob": "cb5258989e1ea98f63aeb1288a56b43bd16589a1",
+      "matchesHeadLF": true,
+      "bytes": 8641
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "rawSha256": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+      "lfSha256": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43",
+      "gitBlob": "e9db902ead4f397cfa5a8e4b5d6c3a27a30032a7",
+      "matchesHeadLF": true,
+      "bytes": 10041
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+      "rawSha256": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+      "lfSha256": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8",
+      "gitBlob": "78ce1d2278988ce0719e7b7ab0a7bbfa0edeb2d4",
+      "matchesHeadLF": true,
+      "bytes": 2074
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.tsx",
+      "rawSha256": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+      "lfSha256": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12",
+      "gitBlob": "ce04338a66447465689b321227db26da97cabe56",
+      "matchesHeadLF": true,
+      "bytes": 5117
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx",
+      "rawSha256": "820acc15bc720a535ca1e7bc87977298370b404f158b67a02826974072cbefce",
+      "lfSha256": "67b5e3e5bd124f4a294ce30911ffc46985c153ee0dfc86132b8647113a1c9086",
+      "gitBlob": "5ee6065fc71213f2068237949951efa2a5909ef9",
+      "matchesHeadLF": true,
+      "bytes": 2777
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-loading-heading.tsx",
+      "rawSha256": "cc5aeff7694e2c1a1384968ab1ba03f5024cb47dc03faf914f92781b44b65609",
+      "lfSha256": "ed88db235694fee00333092a48e3d942346b335b8367cf9d8a0644e91021767f",
+      "gitBlob": "ecdef9fa66c9c18473c30ca6621f6815e8ed46b7",
+      "matchesHeadLF": true,
+      "bytes": 296
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "rawSha256": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+      "lfSha256": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af",
+      "gitBlob": "323245b2faafb355b8a562caa24d9679828ad2dd",
+      "matchesHeadLF": true,
+      "bytes": 33233
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "rawSha256": "ca6954d70ae794e995354fef1f87c7696cc445c6d94f7c54340d066ba26a3bac",
+      "lfSha256": "aaebb7680b9b21b842d80f0f9a488de58ad35010b4c1f4a527df9ec56114f56f",
+      "gitBlob": "7db5fd1cc4042ffde22c50850b6822afa69d1620",
+      "matchesHeadLF": true,
+      "bytes": 7364
+    },
+    {
+      "path": "apps/webapp/src/lib/run-with-cleanup.ts",
+      "rawSha256": "914bdbeffcfc6ebcebc63f5a8a8dddceafe2c4f34def8552360376661780c151",
+      "lfSha256": "7de9598c3232e22ba4783f9e4851bea572c652dee3c6a3098721002262cd2dc8",
+      "bytes": 179,
+      "gitBlob": "c86518134ffb792b1299137170a990a1f2e2ca10",
+      "provenance": "unchanged helper identified in historical command checks; publication byte pin only"
+    }
+  ],
+  "configPins": [
+    {
+      "path": ".npmrc",
+      "rawSha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "lfSha256": "dd998aaa9f9922968f3267afc734950541138c7d0e00665590907f81824641c0",
+      "bytes": 105,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "rawSha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "lfSha256": "67b6912a0634c8d1c1d504e99bc4dbc3273c305d96d6c678e1459ccef9b28ebf",
+      "bytes": 1294,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "rawSha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "lfSha256": "f59bde5e2e38c1470a5aac02b87339f56a94b99a240f3505eb9a74ed9407eb01",
+      "bytes": 633,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/desktop/tsconfig.node.json",
+      "rawSha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "lfSha256": "9e2abb169ea87b7190613a1d4da57ca608463a453bd4231fa3aeee5e308370dd",
+      "bytes": 223,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/desktop/vitest.config.ts",
+      "rawSha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "lfSha256": "c2dbb9dfc889a5e75e47ffc12f69a322de097cf5fec3ecf441c0801857263502",
+      "bytes": 156,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/docs/next.config.mjs",
+      "rawSha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "lfSha256": "86ab8a58ffa347d40b42acc70fe78bfa297b7ea70d18e84cf1fd1fb236795d55",
+      "bytes": 207,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/docs/package.json",
+      "rawSha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "lfSha256": "1b2cc9cf320f8502a224271a8979d576cb65a5db3062c78133ce6fc084f023ac",
+      "bytes": 745,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/docs/tsconfig.json",
+      "rawSha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "lfSha256": "6fa9a44e852f873578c5d92c4d5e0e801c90bf13a0f724e5fe6761e772bb4ee8",
+      "bytes": 854,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/marketing/biome.jsonc",
+      "rawSha256": "2e9f25762a0f614245768779d41720c5dadfaf34c55b1941fe47a4e4f3d2365e",
+      "lfSha256": "aaadb426502d0d513c908b00d7fb2af0e1c5932fb540959e50ea168534456904",
+      "bytes": 1450,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/marketing/next.config.ts",
+      "rawSha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "lfSha256": "a713b10723519883797a0234aed41c1926511030635b89f6a09a4f70158416d6",
+      "bytes": 280,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/marketing/package.json",
+      "rawSha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "lfSha256": "f8453307c0a5cd240b2c24bd683fcd8d262c127a93154e302730add2d94cb1f2",
+      "bytes": 816,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/marketing/tsconfig.json",
+      "rawSha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "lfSha256": "38279c637fd0e81d04f624c839d610c39d62158fdd5efb7da64f6f1a2f45d950",
+      "bytes": 654,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "rawSha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "lfSha256": "1fd56c297b4e087ea8048d00eb546897e7c720ef8934d908c1a125e6cffa3fe4",
+      "bytes": 1375,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/mobile/tsconfig.json",
+      "rawSha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "lfSha256": "d71de2c271d2a8020017f4944e0e929b62fee1cedb676f5d043e5cf2abccb310",
+      "bytes": 371,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "rawSha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+      "lfSha256": "b0f8500d2fb0110c4ee2915ddf00fd12f9c146544f016b9422f651f93a029b68",
+      "bytes": 1756,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "bytes": 4308,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "rawSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "lfSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "bytes": 8541,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "rawSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "lfSha256": "50472f8b36a981c8effe81d9d5baa553bdf296b6a278915a8ceb33f06fa80811",
+      "bytes": 687,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "rawSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "lfSha256": "ab0528266ab5497c9c64126a6cfa4a8c3a341367698b47e522fc96607b0938e8",
+      "bytes": 213,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "rawSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "lfSha256": "0b755d59ffbf4403f4479175b90f431bbb24abadca50355c478157060541eab2",
+      "bytes": 252,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "rawSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "lfSha256": "95c674a4a56c799f5a590eaa5d920de0e14be79368c9d45dffbfed19826b21fa",
+      "bytes": 453,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "rawSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "lfSha256": "a94e9b9763f925665a469c7e23e689f4a512d9ac8aa067bc4bebe64ca54cc4a2",
+      "bytes": 1840,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/db-seed/package.json",
+      "rawSha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "lfSha256": "617ac9f1ac1b9af81652aa095888963b1fc20634cca2001186412ab02e689e8e",
+      "bytes": 401,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-lock.yaml",
+      "rawSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "lfSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "bytes": 34617,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-workspace.yaml",
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "lfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "bytes": 1411,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/migration/package.json",
+      "rawSha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "lfSha256": "fd7eca485085fc9e71c850e3ac6149b1848a9e90978735a430fb9f864cb1da3d",
+      "bytes": 272,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/migration/pnpm-lock.yaml",
+      "rawSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "lfSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "bytes": 22958,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/migration/pnpm-workspace.yaml",
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "lfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "bytes": 1411,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/worker/package.json",
+      "rawSha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "lfSha256": "3b2a2afb8d560a8c12626802acf4436eff50f708dc215f40bfa6e4c00a679cd6",
+      "bytes": 1534,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/worker/pnpm-lock.yaml",
+      "rawSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "lfSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "bytes": 188668,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docker/targets/worker/pnpm-workspace.yaml",
+      "rawSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "lfSha256": "bc6352fc9c323a0c8f9168241a535de448317b2fd17827ab267a7c3781e13988",
+      "bytes": 1411,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docs/design/rollout-1692/1831/root-authority-and-loading/vitest.config.ts",
+      "rawSha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "lfSha256": "275338b163b78082598c96456718d272b66b108dbe3d524bc3e3a6df9071fb33",
+      "bytes": 942,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "docs/design/rollout-1692/1834/root-loading-heading/vitest.config.ts",
+      "rawSha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "lfSha256": "077cdcfa5215c7ea365847ad26773bcc796bc635fdda5fd1a7c023e7346e6f24",
+      "bytes": 971,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "package.json",
+      "rawSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "lfSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "bytes": 6018,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "rawSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "lfSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "bytes": 771361,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "rawSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "lfSha256": "efb7e1bfe1a46818eab9623e4e793ba735be90ae3d58e60dc2792f04565fb877",
+      "bytes": 1880,
+      "provenance": "inherited runtime raw pin; LF digest measured read-only for publication"
+    }
+  ],
+  "dependencyParents": 3,
+  "dependencyLinks": 158,
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "verifiedAncestors": [
+    {
+      "issue": 1693,
+      "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "ancestor": true
+    },
+    {
+      "issue": 1694,
+      "commit": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "ancestor": true
+    },
+    {
+      "issue": 1695,
+      "commit": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "ancestor": true
+    },
+    {
+      "issue": 1853,
+      "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    },
+    {
+      "issue": 1700,
+      "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "ancestor": true
+    },
+    {
+      "issue": 1701,
+      "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "ancestor": true
+    },
+    {
+      "issue": 1820,
+      "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "ancestor": true
+    },
+    {
+      "issue": 1702,
+      "commit": "416c04fc1b65f798422ddeecb8413249b064f715",
+      "ancestor": true
+    },
+    {
+      "issue": 1703,
+      "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "ancestor": true
+    },
+    {
+      "issue": 1704,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1705,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1706,
+      "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "ancestor": true
+    },
+    {
+      "issue": 1707,
+      "commit": "6fa8147fae492939056a76e83e327e520d921ae1",
+      "ancestor": true
+    },
+    {
+      "issue": 1708,
+      "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "ancestor": true
+    },
+    {
+      "issue": 1709,
+      "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "ancestor": true
+    },
+    {
+      "issue": 1710,
+      "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "ancestor": true
+    },
+    {
+      "issue": 1711,
+      "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "ancestor": true
+    },
+    {
+      "issue": 1712,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1713,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1714,
+      "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "ancestor": true
+    },
+    {
+      "issue": 1715,
+      "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "ancestor": true
+    },
+    {
+      "issue": 1716,
+      "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "ancestor": true
+    },
+    {
+      "issue": 1717,
+      "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "ancestor": true
+    },
+    {
+      "issue": 1718,
+      "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "ancestor": true
+    },
+    {
+      "issue": 1719,
+      "commit": "a9b472e5864f386d881604605d593cffc189d61a",
+      "ancestor": true
+    },
+    {
+      "issue": 1821,
+      "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1822,
+      "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "ancestor": true
+    },
+    {
+      "issue": 1823,
+      "commit": "65b74963b69e9536af5e862199fa43a8583473cc",
+      "ancestor": true
+    },
+    {
+      "issue": 1824,
+      "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "ancestor": true
+    },
+    {
+      "issue": 1825,
+      "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "ancestor": true
+    },
+    {
+      "issue": 1826,
+      "commit": "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "ancestor": true
+    },
+    {
+      "issue": 1720,
+      "commit": "ced095089163e69b232c2bce96a40cba800186d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1721,
+      "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "ancestor": true
+    },
+    {
+      "issue": 1722,
+      "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "ancestor": true
+    },
+    {
+      "issue": 1723,
+      "commit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "ancestor": true
+    },
+    {
+      "issue": 1827,
+      "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "ancestor": true
+    },
+    {
+      "issue": 1828,
+      "commit": "752c500833e751df9988a3b2434d240124b89a51",
+      "ancestor": true
+    },
+    {
+      "issue": 1829,
+      "commit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "ancestor": true
+    },
+    {
+      "issue": 1830,
+      "commit": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+      "ancestor": true
+    },
+    {
+      "issue": 1831,
+      "commit": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+      "ancestor": true
+    },
+    {
+      "issue": 1832,
+      "commit": "5646e7b320376d2605b80e231b6b828f4b35f670",
+      "ancestor": true
+    },
+    {
+      "issue": 1833,
+      "commit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+      "ancestor": true
+    },
+    {
+      "issue": 1834,
+      "commit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+      "ancestor": true
+    },
+    {
+      "issue": 1835,
+      "commit": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "ancestor": true
+    },
+    {
+      "issue": 1724,
+      "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "ancestor": true
+    },
+    {
+      "issue": 1725,
+      "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "ancestor": true
+    },
+    {
+      "issue": 1726,
+      "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "ancestor": true
+    },
+    {
+      "issue": 1727,
+      "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "ancestor": true
+    },
+    {
+      "issue": 1728,
+      "commit": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "ancestor": true
+    },
+    {
+      "issue": 1729,
+      "commit": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "ancestor": true
+    },
+    {
+      "issue": 1730,
+      "commit": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "ancestor": true
+    },
+    {
+      "issue": 1731,
+      "commit": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+      "ancestor": true
+    },
+    {
+      "issue": 1732,
+      "commit": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "ancestor": true
+    },
+    {
+      "issue": 1736,
+      "commit": "c9a56648c81206527d1935bfcb46e0a959a4157f",
+      "ancestor": true
+    },
+    {
+      "issue": 1737,
+      "commit": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "ancestor": true
+    },
+    {
+      "issue": 1745,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    }
+  ],
+  "reportOriginalPrefix": {
+    "path": "docs/design/rollout-1692/1733.md",
+    "bytes": 20265,
+    "sha256": "961f333e05f39edecc4614b81c5b274eb338ca40eb72d71866f6f8e088f44db9",
+    "canonicalLfSha256": "f4929345520a3780020026fa2c2142955028fe31f9e3b173df1e86e9bd54ef2c"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "tsx",
+    "<workspace>\\.tmp\\1733-command-checks\\runtime\\seed.ts",
+    "<owned-private-fixture>"
+  ],
+  "exit": 0,
+  "initialDomainPrerequisitesOnly": true,
+  "canonicalGuard": true
+}

@@ -1,0 +1,83 @@
+{
+  "source": "22ebe15b3a0e2d6067445d2ac26b6a4576545e9d",
+  "provisionalIntegration": "6a114d85684004d9ca9bdc3cb08f313316f4e12a",
+  "previousPublished": "16d54bb18dad3932509caf3d49068a8823469e64",
+  "lastVerified": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "rawSha256": "73ef4069f318f17da900331409f3d97941c39e86d794b61053e313baa705a248",
+      "lfSha256": "d47097f4a836f9eb1959fb2ad99db4928ccf86f8fe300761945571168b9a5dfa",
+      "gitBlob": "bcded9ee75492bbde64f11ed62933d1866fe9e38"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "rawSha256": "0e989f59fb4c59ac8e481d00c627500ee82d47f496a84c91a97273117aeb1a55",
+      "lfSha256": "ea84cf54e8efdb0e6cf029bbe36147eb3df0ec2600dcf5809ab435a4c2b339ec",
+      "gitBlob": "9eec146c690f3076c6cc1f32f753282cb53d9a93"
+    }
+  ],
+  "behavior": "Set a stable per-batch Uppy ID so generated file IDs/TUS fingerprints cannot reuse old unscoped or cross-batch URLs; retain successful-fingerprint cleanup and unfinished same-batch resume. No application storage/auth/domain owner changes or automatic staging retries.",
+  "red": {
+    "file": "../1733-upload-diagnosis/previous-client-red.json",
+    "passed": 2,
+    "failed": 1
+  },
+  "green": {
+    "file": "../1733-upload-diagnosis/previous-client-green.json",
+    "passed": 3
+  },
+  "final": {
+    "file": "unit-final.json",
+    "command": "unit-command.json",
+    "cases": 460,
+    "files": 65,
+    "passed": 460,
+    "failed": 0
+  },
+  "types": {
+    "file": "typecheck.log",
+    "typegen": true,
+    "projects": 3,
+    "exit": 0,
+    "observedSession": 24481
+  },
+  "quality": {
+    "newBrowserFormat100CrlfExit": 0,
+    "hookFormat80CrlfExit": 0,
+    "lint2Exit": 0,
+    "doctor": {
+      "file": "doctor.log",
+      "base": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "files": 9,
+      "errors": 0,
+      "warnings": 3,
+      "exit": 0,
+      "observedSession": 27558
+    },
+    "preservedOtherProfileQualifications": true
+  },
+  "priorProof": {
+    "upload": ".tmp/1733-upload-diagnosis/checks.json",
+    "commandStop": ".tmp/1733-root-checks/runtime/HANDOFF-runtime.md",
+    "uploadStop": ".tmp/1733-command-checks/runtime/HANDOFF-runtime.md",
+    "boundary": "Earlier snapshots and artifacts remain byte-preserved; no current full-app claim made from them."
+  },
+  "preservation": {
+    "verifiedAncestors": 56,
+    "changedPaths": [
+      "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.ts",
+      "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts"
+    ],
+    "tree": "13908ccca20c2d1293452bae00a3492c4286a0a9",
+    "applicationTree": "e47b421aaa5617f6c270e11b8859938204fde16b",
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  "counts": {
+    "integrated": 56,
+    "awaiting-integration": 22,
+    "implementing": 1,
+    "pending": 78
+  },
+  "pending": "Fresh independent public checks, canonicalPG20 and actual application reused-PDF/ZIP/edit/drop/confirmation/readback/download/roles/preferences/native/Next/matched acceptance. Global production/catalog/provider/device/zoom/transition/roster limits stay unpassed."
+}

@@ -1,0 +1,15 @@
+{
+  "kind": "pg",
+  "operation": "prepare",
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "node",
+    "scripts/performance/fixture.mjs",
+    "prepare",
+    "<owned-private-fixture>"
+  ],
+  "exit": 0,
+  "spawnError": null
+}
