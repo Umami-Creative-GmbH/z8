@@ -6,8 +6,53 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { type ReportDocument, reportFileName } from "@/lib/reports/exporters/report-document";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 
 type Format = "pdf" | "xlsx" | "csv";
+
+async function buildVehicleExportFile(format: Format, document: ReportDocument) {
+	const data =
+		format === "pdf"
+			? await (
+					await import("@/lib/reports/exporters/report-document-pdf")
+				).exportReportDocumentToPDF(document)
+			: format === "xlsx"
+				? await (
+						await import("@/lib/reports/exporters/report-document-excel")
+					).exportReportDocumentToExcel(document)
+				: (await import("@/lib/reports/exporters/report-document-csv")).exportReportDocumentToCSV(
+						document,
+					);
+	return {
+		data: data as BlobPart,
+		filename: reportFileName(document, format),
+		mimeType:
+			format === "pdf"
+				? "application/pdf"
+				: format === "xlsx"
+					? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+					: "text/csv;charset=utf-8;",
+	};
+}
+
+function downloadVehicleExportFile(file: { data: BlobPart; filename: string; mimeType: string }) {
+	const url = URL.createObjectURL(new Blob([file.data], { type: file.mimeType }));
+	try {
+		const anchor = window.document.createElement("a");
+		anchor.href = url;
+		anchor.download = file.filename;
+		window.document.body.appendChild(anchor);
+		anchor.click();
+		anchor.remove();
+	} finally {
+		// Give the browser's download task time to consume the blob.
+		window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+	}
+}
+
+function exportErrorMessage(cause: unknown, fallback: string) {
+	return cause instanceof Error ? cause.message : fallback;
+}
 
 // Vehicle-only lifetime control. Shared project/customer/snapshot export controls
 // remain with their owner; all three file serializers and the document are canonical.
@@ -39,57 +84,39 @@ export function VehicleReportExports({
 		pending.current = request;
 		setLoading(format);
 		setError(null);
-		try {
-			const document = buildDocument();
-			const data =
-				format === "pdf"
-					? await (
-							await import("@/lib/reports/exporters/report-document-pdf")
-						).exportReportDocumentToPDF(document)
-					: format === "xlsx"
-						? await (
-								await import("@/lib/reports/exporters/report-document-excel")
-							).exportReportDocumentToExcel(document)
-						: (
-								await import("@/lib/reports/exporters/report-document-csv")
-							).exportReportDocumentToCSV(document);
-			if (!arrival.active || !isCurrent() || pending.current !== request) return;
-			const type =
-				format === "pdf"
-					? "application/pdf"
-					: format === "xlsx"
-						? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-						: "text/csv;charset=utf-8;";
-			const url = URL.createObjectURL(new Blob([data as BlobPart], { type }));
-			try {
-				const anchor = window.document.createElement("a");
-				anchor.href = url;
-				anchor.download = reportFileName(document, format);
-				window.document.body.appendChild(anchor);
-				anchor.click();
-				anchor.remove();
-				toast.success(t("reports.export.success", "Export successful"), {
-					description: t("reports.export.downloaded", "Downloaded {filename}", {
-						filename: anchor.download,
-					}),
-				});
-			} finally {
-				// Give the browser's download task time to consume the blob.
-				window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
-			}
-		} catch (cause) {
-			if (arrival.active && pending.current === request)
-				setError(
-					cause instanceof Error
-						? cause.message
-						: t("reports.export.errorDescription", "An error occurred while exporting the report"),
-				);
-		} finally {
-			if (arrival.active && pending.current === request) {
-				pending.current = null;
-				setLoading(null);
-			}
-		}
+		const ownsRequest = () => arrival.active && pending.current === request;
+		const canDownload = () => ownsRequest() && isCurrent();
+		await runWithCleanup(
+			async () => {
+				try {
+					const file = await buildVehicleExportFile(format, buildDocument());
+					if (!canDownload()) return;
+					downloadVehicleExportFile(file);
+					toast.success(t("reports.export.success", "Export successful"), {
+						description: t("reports.export.downloaded", "Downloaded {filename}", {
+							filename: file.filename,
+						}),
+					});
+				} catch (cause) {
+					if (ownsRequest())
+						setError(
+							exportErrorMessage(
+								cause,
+								t(
+									"reports.export.errorDescription",
+									"An error occurred while exporting the report",
+								),
+							),
+						);
+				}
+			},
+			() => {
+				if (arrival.active && pending.current === request) {
+					pending.current = null;
+					setLoading(null);
+				}
+			},
+		);
 	}
 	return (
 		<div className="space-y-2">

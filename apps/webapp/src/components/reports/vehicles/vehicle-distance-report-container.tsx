@@ -7,6 +7,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { getVehicleDistanceReport } from "@/app/[locale]/(app)/reports/vehicles/actions";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
+import { ReportScopeFailure } from "@/components/reports/projects/report-scope-failure";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,18 @@ export function VehicleDistanceReportContainer() {
 	const scope = useOrganization();
 	const session = useSession();
 	const { t } = useTranslate();
+	if (scope.error && !scope.isLoading && !session.isPending) {
+		return (
+			<ReportScopeFailure
+				className="mx-4 w-auto lg:mx-6"
+				message={t(
+					"reports.vehicles.scopeUnavailable",
+					"The current vehicle report scope could not be loaded.",
+				)}
+				onRetry={scope.refetch}
+			/>
+		);
+	}
 	if (
 		scope.isLoading ||
 		scope.error ||
