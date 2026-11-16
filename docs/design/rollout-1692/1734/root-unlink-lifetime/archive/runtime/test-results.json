@@ -1,0 +1,1155 @@
+{
+  "runs": [
+    {
+      "name": "public-attempt-1",
+      "cases": 8,
+      "passed": 7,
+      "failed": 1,
+      "pending": 0,
+      "files": [
+        {
+          "path": "src/.tmp/1734-independent-checks/public.test.tsx",
+          "cases": [
+            {
+              "name": "reserves selected to shared across actor A-B-A and releases after refusal",
+              "status": "passed",
+              "durationMs": 174.35400000000004
+            },
+            {
+              "name": "reserves selected to shared across actor A-B-A and releases after rejection",
+              "status": "passed",
+              "durationMs": 122.78969999999981
+            },
+            {
+              "name": "accepted shared unlink refreshes visible public readers after target retirement",
+              "status": "passed",
+              "durationMs": 81.44849999999997
+            },
+            {
+              "name": "accepted shared unlink refreshes visible public readers after unmount retirement",
+              "status": "passed",
+              "durationMs": 74.70129999999995
+            },
+            {
+              "name": "retains current pending unlink through session refresh (retained=true)",
+              "status": "passed",
+              "durationMs": 61.05989999999997
+            },
+            {
+              "name": "retains current pending unlink through session refresh (retained=false)",
+              "status": "passed",
+              "durationMs": 62.688499999999976
+            },
+            {
+              "name": "keeps separate QueryClient lifetimes independent for the same actor organization document",
+              "status": "passed",
+              "durationMs": 50.408500000000004
+            },
+            {
+              "name": "retries an actual failed panel read locally and retires an older held target read",
+              "status": "failed",
+              "durationMs": 1026.0538000000001,
+              "failureExcerpt": "Error: Unable to find an element with the text: No sick notes you can open.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+            }
+          ]
+        }
+      ],
+      "reportRawSha256": "59fceb1f5f30725f81fbb2c3286c30f9a7031f05a18523169cc1309cf26fbdb0"
+    },
+    {
+      "name": "public-attempt-2",
+      "cases": 8,
+      "passed": 8,
+      "failed": 0,
+      "pending": 0,
+      "files": [
+        {
+          "path": "src/.tmp/1734-independent-checks/public.test.tsx",
+          "cases": [
+            {
+              "name": "reserves selected to shared across actor A-B-A and releases after refusal",
+              "status": "passed",
+              "durationMs": 196.41419999999994
+            },
+            {
+              "name": "reserves selected to shared across actor A-B-A and releases after rejection",
+              "status": "passed",
+              "durationMs": 115.00450000000001
+            },
+            {
+              "name": "accepted shared unlink refreshes visible public readers after target retirement",
+              "status": "passed",
+              "durationMs": 62.35309999999981
+            },
+            {
+              "name": "accepted shared unlink refreshes visible public readers after unmount retirement",
+              "status": "passed",
+              "durationMs": 44.984300000000076
+            },
+            {
+              "name": "retains current pending unlink through session refresh (retained=true)",
+              "status": "passed",
+              "durationMs": 62.00330000000008
+            },
+            {
+              "name": "retains current pending unlink through session refresh (retained=false)",
+              "status": "passed",
+              "durationMs": 45.499300000000176
+            },
+            {
+              "name": "keeps separate QueryClient lifetimes independent for the same actor organization document",
+              "status": "passed",
+              "durationMs": 49.66730000000007
+            },
+            {
+              "name": "retries an actual failed panel read locally and retires an older held target read",
+              "status": "passed",
+              "durationMs": 44.27880000000005
+            }
+          ]
+        }
+      ],
+      "reportRawSha256": "82ad84a094a31ef47e5edecdceb12bb0f931d2bc02163f01c3b745caec665d1a"
+    },
+    {
+      "name": "public-confirmed",
+      "cases": 8,
+      "passed": 8,
+      "failed": 0,
+      "pending": 0,
+      "files": [
+        {
+          "path": "src/.tmp/1734-independent-checks/public.test.tsx",
+          "cases": [
+            {
+              "name": "reserves selected to shared across actor A-B-A and releases after refusal",
+              "status": "passed",
+              "durationMs": 175.35840000000007
+            },
+            {
+              "name": "reserves selected to shared across actor A-B-A and releases after rejection",
+              "status": "passed",
+              "durationMs": 114.63380000000006
+            },
+            {
+              "name": "accepted shared unlink refreshes visible public readers after target retirement",
+              "status": "passed",
+              "durationMs": 62.68170000000009
+            },
+            {
+              "name": "accepted shared unlink refreshes visible public readers after unmount retirement",
+              "status": "passed",
+              "durationMs": 45.74770000000012
+            },
+            {
+              "name": "retains current pending unlink through session refresh (retained=true)",
+              "status": "passed",
+              "durationMs": 61.57679999999982
+            },
+            {
+              "name": "retains current pending unlink through session refresh (retained=false)",
+              "status": "passed",
+              "durationMs": 63.146799999999985
+            },
+            {
+              "name": "keeps separate QueryClient lifetimes independent for the same actor organization document",
+              "status": "passed",
+              "durationMs": 49.13489999999979
+            },
+            {
+              "name": "retries an actual failed panel read locally and retires an older held target read",
+              "status": "passed",
+              "durationMs": 43.65740000000005
+            }
+          ]
+        }
+      ],
+      "reportRawSha256": "b6d4030a9af4bbe9455e927acb0c638365ec47dd572cbf1037e97108e6b1dd3c"
+    },
+    {
+      "name": "protected-focused",
+      "cases": 40,
+      "passed": 40,
+      "failed": 0,
+      "pending": 0,
+      "files": [
+        {
+          "path": "src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+          "cases": [
+            {
+              "name": "keeps an admitted matching session usable while its session refresh is pending",
+              "status": "passed",
+              "durationMs": 60.3125
+            },
+            {
+              "name": "recovers the batch through local organization Retry after the real provider read fails",
+              "status": "passed",
+              "durationMs": 106.88799999999992
+            },
+            {
+              "name": "preserves the start-page control through the same provider failure and Retry",
+              "status": "passed",
+              "durationMs": 60.95839999999998
+            },
+            {
+              "name": "holds one confirmation through Activity until success settles and readback finishes",
+              "status": "passed",
+              "durationMs": 138.00659999999993
+            },
+            {
+              "name": "holds one confirmation through Activity until refusal settles and readback finishes",
+              "status": "passed",
+              "durationMs": 94.85020000000009
+            },
+            {
+              "name": "holds one confirmation through Activity until rejection settles and readback finishes",
+              "status": "passed",
+              "durationMs": 115.25590000000011
+            },
+            {
+              "name": "keeps an edit reserved through Activity and recovers a failed readback without overlapping confirmation",
+              "status": "passed",
+              "durationMs": 85.03939999999989
+            },
+            {
+              "name": "releases a confirmation that settles while hidden before restoring the workspace",
+              "status": "passed",
+              "durationMs": 93.92730000000006
+            }
+          ]
+        },
+        {
+          "path": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+          "cases": [
+            {
+              "name": "retries the authorized preview after a read failure",
+              "status": "passed",
+              "durationMs": 123.46540000000005
+            },
+            {
+              "name": "does not issue a preview command for an abandoned organization arrival",
+              "status": "passed",
+              "durationMs": 1.7963999999999487
+            },
+            {
+              "name": "freezes file edits until the confirmed command and readback settle",
+              "status": "passed",
+              "durationMs": 80.09289999999987
+            },
+            {
+              "name": "requires resolving included unmatched files and preserves manual drop commands",
+              "status": "passed",
+              "durationMs": 39.51129999999989
+            },
+            {
+              "name": "does not publish an old preview after organization ABA",
+              "status": "passed",
+              "durationMs": 45.90300000000002
+            },
+            {
+              "name": "discards late confirmation effects while cached Activity is hidden and revalidates on return",
+              "status": "passed",
+              "durationMs": 77.2065
+            },
+            {
+              "name": "does not submit a queued match edit into a new Activity lifetime",
+              "status": "passed",
+              "durationMs": 34.732299999999896
+            },
+            {
+              "name": "offers retry only for included failed files in a confirmed batch",
+              "status": "passed",
+              "durationMs": 34.550500000000056
+            }
+          ]
+        },
+        {
+          "path": "src/components/personnel-file/payslip-batches-loading.test.tsx",
+          "cases": [
+            {
+              "name": "keeps one safe main heading during the actual route admission fallback",
+              "status": "passed",
+              "durationMs": 63.52500000000009
+            },
+            {
+              "name": "keeps a safe title and hides stale records while loading prevents scope confirmation",
+              "status": "passed",
+              "durationMs": 8.235900000000129
+            },
+            {
+              "name": "keeps a safe title and hides stale records while error prevents scope confirmation",
+              "status": "passed",
+              "durationMs": 13.821100000000115
+            },
+            {
+              "name": "keeps a safe title and hides stale records while organization prevents scope confirmation",
+              "status": "passed",
+              "durationMs": 23.323199999999815
+            },
+            {
+              "name": "keeps a safe title and hides stale records while account prevents scope confirmation",
+              "status": "passed",
+              "durationMs": 8.020700000000033
+            }
+          ]
+        },
+        {
+          "path": "src/components/personnel-file/sick-leave-overview.test.tsx",
+          "cases": [
+            {
+              "name": "SickLeaveOverview retires an accepted unlink completion across hidden and reads afresh",
+              "status": "passed",
+              "durationMs": 192.1287000000002
+            },
+            {
+              "name": "SickLeaveOverview retires an accepted unlink completion across target and reads afresh",
+              "status": "passed",
+              "durationMs": 61.15689999999995
+            },
+            {
+              "name": "SickLeaveOverview retires an in-flight note read across Activity hide and reveal",
+              "status": "passed",
+              "durationMs": 96.85729999999967
+            },
+            {
+              "name": "SickLeaveOverview prevents duplicate pending unlink and keeps the note after a fresh refusal",
+              "status": "passed",
+              "durationMs": 48.881899999999405
+            },
+            {
+              "name": "SickLeaveOverview requires a fresh note read when reopening after the displayed organization changed",
+              "status": "passed",
+              "durationMs": 82.63360000000011
+            },
+            {
+              "name": "SickLeaveOverview keeps a failed panel read distinct from an absence with no note",
+              "status": "passed",
+              "durationMs": 69.44410000000062
+            },
+            {
+              "name": "SickLeaveOverview provides a named keyboard comparison region with all fields and no reminder actions",
+              "status": "passed",
+              "durationMs": 12.515600000000632
+            },
+            {
+              "name": "SickLeaveOverview lists each absence with its employee's sick note file, its notes to open and former employees marked",
+              "status": "passed",
+              "durationMs": 13.42370000000028
+            },
+            {
+              "name": "SickLeaveOverview pages through the URL, keeping the filters",
+              "status": "passed",
+              "durationMs": 19.354199999999764
+            },
+            {
+              "name": "SickLeaveOverview withholds records and actions belonging to another displayed account or organization",
+              "status": "passed",
+              "durationMs": 1.065400000000409
+            },
+            {
+              "name": "SickLeaveOverview resets the entire URL filter scope, including paging and page size",
+              "status": "passed",
+              "durationMs": 16.91269999999986
+            }
+          ]
+        },
+        {
+          "path": "src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+          "cases": [
+            {
+              "name": "refreshes real marker, employee-count and document observers after an accepted shared unlink retires",
+              "status": "passed",
+              "durationMs": 187.23340000000007
+            },
+            {
+              "name": "refreshes real marker, employee-count and document observers after an accepted personnel-file unlink retires",
+              "status": "passed",
+              "durationMs": 62.66779999999994
+            },
+            {
+              "name": "shares the pending document unlink when navigating from the overview to its personnel file",
+              "status": "passed",
+              "durationMs": 98.04939999999988
+            },
+            {
+              "name": "reserves an unlink across organization A-B-A and releases it after refusal",
+              "status": "passed",
+              "durationMs": 121.51909999999998
+            },
+            {
+              "name": "reserves an unlink across organization A-B-A and releases it after rejection",
+              "status": "passed",
+              "durationMs": 138.9369999999999
+            },
+            {
+              "name": "keeps an unrelated actor unlink independent",
+              "status": "passed",
+              "durationMs": 99.6863999999996
+            },
+            {
+              "name": "keeps an unrelated organization unlink independent",
+              "status": "passed",
+              "durationMs": 89.84349999999995
+            },
+            {
+              "name": "keeps an unrelated document unlink independent",
+              "status": "passed",
+              "durationMs": 93.29260000000022
+            }
+          ]
+        }
+      ],
+      "reportRawSha256": "91fbb2ea9f4e7a8487f25bbe2ea65cec62b65ee128d48e7092d80ba00295d3e7"
+    },
+    {
+      "name": "public-final",
+      "cases": 40,
+      "passed": 40,
+      "failed": 0,
+      "pending": 0,
+      "files": [
+        {
+          "path": "src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+          "cases": [
+            {
+              "name": "keeps an admitted matching session usable while its session refresh is pending",
+              "status": "passed",
+              "durationMs": 47.87760000000003
+            },
+            {
+              "name": "recovers the batch through local organization Retry after the real provider read fails",
+              "status": "passed",
+              "durationMs": 106.15700000000004
+            },
+            {
+              "name": "preserves the start-page control through the same provider failure and Retry",
+              "status": "passed",
+              "durationMs": 62.8347
+            },
+            {
+              "name": "holds one confirmation through Activity until success settles and readback finishes",
+              "status": "passed",
+              "durationMs": 99.4643000000001
+            },
+            {
+              "name": "holds one confirmation through Activity until refusal settles and readback finishes",
+              "status": "passed",
+              "durationMs": 77.10169999999994
+            },
+            {
+              "name": "holds one confirmation through Activity until rejection settles and readback finishes",
+              "status": "passed",
+              "durationMs": 61.48130000000015
+            },
+            {
+              "name": "keeps an edit reserved through Activity and recovers a failed readback without overlapping confirmation",
+              "status": "passed",
+              "durationMs": 88.61099999999988
+            },
+            {
+              "name": "releases a confirmation that settles while hidden before restoring the workspace",
+              "status": "passed",
+              "durationMs": 69.70309999999995
+            }
+          ]
+        },
+        {
+          "path": "src/components/personnel-file/payslip-batch-workspace.test.tsx",
+          "cases": [
+            {
+              "name": "retries the authorized preview after a read failure",
+              "status": "passed",
+              "durationMs": 85.9547
+            },
+            {
+              "name": "does not issue a preview command for an abandoned organization arrival",
+              "status": "passed",
+              "durationMs": 1.2735000000000127
+            },
+            {
+              "name": "freezes file edits until the confirmed command and readback settle",
+              "status": "passed",
+              "durationMs": 60.137800000000084
+            },
+            {
+              "name": "requires resolving included unmatched files and preserves manual drop commands",
+              "status": "passed",
+              "durationMs": 38.56859999999995
+            },
+            {
+              "name": "does not publish an old preview after organization ABA",
+              "status": "passed",
+              "durationMs": 39.23680000000002
+            },
+            {
+              "name": "discards late confirmation effects while cached Activity is hidden and revalidates on return",
+              "status": "passed",
+              "durationMs": 61.841699999999946
+            },
+            {
+              "name": "does not submit a queued match edit into a new Activity lifetime",
+              "status": "passed",
+              "durationMs": 33.673400000000015
+            },
+            {
+              "name": "offers retry only for included failed files in a confirmed batch",
+              "status": "passed",
+              "durationMs": 33.01279999999997
+            }
+          ]
+        },
+        {
+          "path": "src/components/personnel-file/payslip-batches-loading.test.tsx",
+          "cases": [
+            {
+              "name": "keeps one safe main heading during the actual route admission fallback",
+              "status": "passed",
+              "durationMs": 36.8454999999999
+            },
+            {
+              "name": "keeps a safe title and hides stale records while loading prevents scope confirmation",
+              "status": "passed",
+              "durationMs": 7.266200000000026
+            },
+            {
+              "name": "keeps a safe title and hides stale records while error prevents scope confirmation",
+              "status": "passed",
+              "durationMs": 6.021099999999933
+            },
+            {
+              "name": "keeps a safe title and hides stale records while organization prevents scope confirmation",
+              "status": "passed",
+              "durationMs": 3.701200000000199
+            },
+            {
+              "name": "keeps a safe title and hides stale records while account prevents scope confirmation",
+              "status": "passed",
+              "durationMs": 3.636700000000019
+            }
+          ]
+        },
+        {
+          "path": "src/components/personnel-file/sick-leave-overview.test.tsx",
+          "cases": [
+            {
+              "name": "SickLeaveOverview retires an accepted unlink completion across hidden and reads afresh",
+              "status": "passed",
+              "durationMs": 111.99380000000019
+            },
+            {
+              "name": "SickLeaveOverview retires an accepted unlink completion across target and reads afresh",
+              "status": "passed",
+              "durationMs": 42.301800000000185
+            },
+            {
+              "name": "SickLeaveOverview retires an in-flight note read across Activity hide and reveal",
+              "status": "passed",
+              "durationMs": 79.52390000000014
+            },
+            {
+              "name": "SickLeaveOverview prevents duplicate pending unlink and keeps the note after a fresh refusal",
+              "status": "passed",
+              "durationMs": 62.29079999999976
+            },
+            {
+              "name": "SickLeaveOverview requires a fresh note read when reopening after the displayed organization changed",
+              "status": "passed",
+              "durationMs": 67.72710000000006
+            },
+            {
+              "name": "SickLeaveOverview keeps a failed panel read distinct from an absence with no note",
+              "status": "passed",
+              "durationMs": 71.33240000000023
+            },
+            {
+              "name": "SickLeaveOverview provides a named keyboard comparison region with all fields and no reminder actions",
+              "status": "passed",
+              "durationMs": 10.710699999999633
+            },
+            {
+              "name": "SickLeaveOverview lists each absence with its employee's sick note file, its notes to open and former employees marked",
+              "status": "passed",
+              "durationMs": 9.58829999999989
+            },
+            {
+              "name": "SickLeaveOverview pages through the URL, keeping the filters",
+              "status": "passed",
+              "durationMs": 15.49350000000004
+            },
+            {
+              "name": "SickLeaveOverview withholds records and actions belonging to another displayed account or organization",
+              "status": "passed",
+              "durationMs": 0.7554999999997563
+            },
+            {
+              "name": "SickLeaveOverview resets the entire URL filter scope, including paging and page size",
+              "status": "passed",
+              "durationMs": 11.12980000000016
+            }
+          ]
+        },
+        {
+          "path": "src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+          "cases": [
+            {
+              "name": "refreshes real marker, employee-count and document observers after an accepted shared unlink retires",
+              "status": "passed",
+              "durationMs": 139.29470000000015
+            },
+            {
+              "name": "refreshes real marker, employee-count and document observers after an accepted personnel-file unlink retires",
+              "status": "passed",
+              "durationMs": 45.534999999999854
+            },
+            {
+              "name": "shares the pending document unlink when navigating from the overview to its personnel file",
+              "status": "passed",
+              "durationMs": 67.8581999999999
+            },
+            {
+              "name": "reserves an unlink across organization A-B-A and releases it after refusal",
+              "status": "passed",
+              "durationMs": 101.68909999999983
+            },
+            {
+              "name": "reserves an unlink across organization A-B-A and releases it after rejection",
+              "status": "passed",
+              "durationMs": 124.89419999999996
+            },
+            {
+              "name": "keeps an unrelated actor unlink independent",
+              "status": "passed",
+              "durationMs": 62.99569999999994
+            },
+            {
+              "name": "keeps an unrelated organization unlink independent",
+              "status": "passed",
+              "durationMs": 48.18830000000003
+            },
+            {
+              "name": "keeps an unrelated document unlink independent",
+              "status": "passed",
+              "durationMs": 75.62740000000008
+            }
+          ]
+        }
+      ],
+      "reportRawSha256": "d68d436f02537fcb55e583ee231307a958d9e2958e781bc7a304cbea5a715f70"
+    },
+    {
+      "name": "public-nine-final",
+      "cases": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "files": [
+        {
+          "path": "src/.tmp/1734-independent-checks/public.test.tsx",
+          "cases": [
+            {
+              "name": "reserves selected to shared across actor A-B-A and releases after refusal",
+              "status": "passed",
+              "durationMs": 189.2935
+            },
+            {
+              "name": "reserves selected to shared across actor A-B-A and releases after rejection",
+              "status": "passed",
+              "durationMs": 105.85899999999992
+            },
+            {
+              "name": "accepted shared unlink refreshes visible public readers after target retirement",
+              "status": "passed",
+              "durationMs": 57.70970000000011
+            },
+            {
+              "name": "accepted shared unlink refreshes visible public readers after unmount retirement",
+              "status": "passed",
+              "durationMs": 30.29449999999997
+            },
+            {
+              "name": "retains current pending unlink through session refresh (retained=true)",
+              "status": "passed",
+              "durationMs": 47.85889999999995
+            },
+            {
+              "name": "retains current pending unlink through session refresh (retained=false)",
+              "status": "passed",
+              "durationMs": 61.33969999999999
+            },
+            {
+              "name": "keeps separate QueryClient lifetimes independent for the same actor organization document",
+              "status": "passed",
+              "durationMs": 36.678499999999985
+            },
+            {
+              "name": "retries an actual failed panel read locally and retires an older held target read",
+              "status": "passed",
+              "durationMs": 17.10250000000019
+            },
+            {
+              "name": "keeps the public loading heading safe while no session identity is available",
+              "status": "passed",
+              "durationMs": 1.3499000000001615
+            }
+          ]
+        }
+      ],
+      "reportRawSha256": "16e62a21f8fd62d9c5df25c88c5a6af3bf79486d4ddd04789ceea291ccebb631"
+    },
+    {
+      "name": "postgres",
+      "cases": 85,
+      "passed": 85,
+      "failed": 0,
+      "pending": 0,
+      "files": [
+        {
+          "path": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+          "cases": [
+            {
+              "name": "payslip batches matched by personnel number (#868) starting a batch refuses displayed scope drift even when the actor administers both organizations",
+              "status": "passed",
+              "durationMs": 129.74120000000016
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) starting a batch refuses an officer whose grant does not include payslips",
+              "status": "passed",
+              "durationMs": 38.50249999999983
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) starting a batch shows a batch only to whoever started it",
+              "status": "passed",
+              "durationMs": 29.458500000000186
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) starting a batch holds at most 500 files, counting staged files whose objects expired",
+              "status": "passed",
+              "durationMs": 52.89059999999995
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) starting a batch takes PDF files only",
+              "status": "passed",
+              "durationMs": 20.974699999999984
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) matching matches the whole personnel number token, never part of a longer number",
+              "status": "passed",
+              "durationMs": 71.03729999999996
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) matching makes a number two employees share ambiguous, to be assigned by hand",
+              "status": "passed",
+              "durationMs": 106.49279999999999
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) matching leaves a file of an out-of-scope employee unmatched for the officer",
+              "status": "passed",
+              "durationMs": 89.52169999999978
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) matching never matches or assigns the officer's own payslip, even with their team in scope",
+              "status": "passed",
+              "durationMs": 110.29510000000028
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) matching lets the officer assign a file of an employee without a personnel number, or drop it",
+              "status": "passed",
+              "durationMs": 102.08519999999999
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) confirmation stores nothing as an employee document before confirmation",
+              "status": "passed",
+              "durationMs": 48.344600000000355
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) confirmation creates a payslip per included file with the batch's pay period and visibility",
+              "status": "passed",
+              "durationMs": 79.44549999999981
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) confirmation stores a confirmed payslip under the employee's key and cleans up the staged object",
+              "status": "passed",
+              "durationMs": 72.72029999999995
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) confirmation keeps the staged file when storing the payslip fails, and confirms it on retry",
+              "status": "passed",
+              "durationMs": 97.56169999999975
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) confirmation flags an employee who already has a payslip for the pay period and keeps both",
+              "status": "passed",
+              "durationMs": 185.0558000000001
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) confirmation creates no duplicates when a confirmation is retried after a partial failure",
+              "status": "passed",
+              "durationMs": 153.2491
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) confirmation notifies each employee once per shared batch, however many files are theirs",
+              "status": "passed",
+              "durationMs": 162.1614999999997
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) confirmation audits every created document and one batch summary per confirmation",
+              "status": "passed",
+              "durationMs": 111.93820000000005
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) cleanup cleans up staged files that are never confirmed, after a day",
+              "status": "passed",
+              "durationMs": 97.02490000000034
+            },
+            {
+              "name": "payslip batches matched by personnel number (#868) cleanup releases dropped files once every included file is a document",
+              "status": "passed",
+              "durationMs": 89.88900000000012
+            }
+          ]
+        },
+        {
+          "path": "src/lib/personnel-file/sick-leave-overview.integration.test.ts",
+          "cases": [
+            {
+              "name": "sick leave overview shows an officer only the sick leave of the employees their sick note grant covers, never their own",
+              "status": "passed",
+              "durationMs": 43.480699999999956
+            },
+            {
+              "name": "sick leave overview shows owners and admins every employee's sick leave of their organization only",
+              "status": "passed",
+              "durationMs": 20.329799999999977
+            },
+            {
+              "name": "sick leave overview never shows an owner their own sick leave, whatever the filters say",
+              "status": "passed",
+              "durationMs": 46.222999999999956
+            },
+            {
+              "name": "sick leave overview refuses the query for an officer whose grant does not cover sick notes",
+              "status": "passed",
+              "durationMs": 4.072800000000029
+            },
+            {
+              "name": "sick leave overview \"with certificate, no note\" lists exactly the with-certificate absences without a linked note",
+              "status": "passed",
+              "durationMs": 14.32389999999998
+            },
+            {
+              "name": "sick leave overview \"has note\" lists the absences with at least one linked sick note",
+              "status": "passed",
+              "durationMs": 12.158699999999953
+            },
+            {
+              "name": "sick leave overview shows each absence's linked sick note count and marks former employees",
+              "status": "passed",
+              "durationMs": 13.21729999999991
+            },
+            {
+              "name": "sick leave overview filters by employee, team, sick detail, status and date range",
+              "status": "passed",
+              "durationMs": 56.25369999999998
+            },
+            {
+              "name": "sick leave overview never widens the officer's scope through a filter",
+              "status": "passed",
+              "durationMs": 17.654700000000048
+            },
+            {
+              "name": "sick leave overview is paginated, with the total over every page and a page past the end showing the last one",
+              "status": "passed",
+              "durationMs": 19.73829999999998
+            },
+            {
+              "name": "sick leave overview names the linked sick notes of each listed absence, to open them",
+              "status": "passed",
+              "durationMs": 12.934499999999957
+            },
+            {
+              "name": "sick leave overview shows each absence's duration in absence days",
+              "status": "passed",
+              "durationMs": 13.029499999999985
+            },
+            {
+              "name": "sick leave overview offers the employees and teams in the viewer's sick note scope as filters",
+              "status": "passed",
+              "durationMs": 11.016700000000014
+            },
+            {
+              "name": "sick leave overview lists only the sick leave of the access's organization",
+              "status": "passed",
+              "durationMs": 10.025899999999979
+            }
+          ]
+        },
+        {
+          "path": "src/lib/personnel-file/sick-notes-officer.integration.test.ts",
+          "cases": [
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note links a shared note the employee sees, while the manager sees only the marker",
+              "status": "passed",
+              "durationMs": 151.1431
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note notifies the covering officer naming the recorder, and audits the upload as theirs",
+              "status": "passed",
+              "durationMs": 46.99440000000004
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note lets an admin record and attach for anyone, without notifying themselves",
+              "status": "passed",
+              "durationMs": 38.3143
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note records the absence but attaches nothing to a vacation, and deletes the uploads",
+              "status": "passed",
+              "durationMs": 24.6712
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note records the absence but attaches nothing while personnel files are off",
+              "status": "passed",
+              "durationMs": 21.871999999999844
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note stores nothing and deletes the uploads when the recording fails",
+              "status": "passed",
+              "durationMs": 28.740400000000136
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note deletes the uploads of someone who may not record absences, and records nothing",
+              "status": "passed",
+              "durationMs": 3.2736999999999625
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note deletes the recorder's own uploads of a refused payload, and nobody else's",
+              "status": "passed",
+              "durationMs": 1.5356000000001586
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note binds the recorder's authority to the absence it was granted for",
+              "status": "passed",
+              "durationMs": 8.704799999999977
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) recording sick leave with a sick note refuses a manager attaching to an absence outside the recording",
+              "status": "passed",
+              "durationMs": 12.017399999999952
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers attaching a new note attaches an HR-only note the employee counts but cannot open",
+              "status": "passed",
+              "durationMs": 39.574299999999994
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers attaching a new note may share it with the employee, who is told",
+              "status": "passed",
+              "durationMs": 26.191800000000057
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers attaching a new note refuses an officer without sick notes in their grant",
+              "status": "passed",
+              "durationMs": 14.485699999999952
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers attaching a new note refuses an officer's own absence",
+              "status": "passed",
+              "durationMs": 11.255400000000009
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers attaching a new note refuses a rejected absence or one that is no sick leave",
+              "status": "passed",
+              "durationMs": 26.146999999999935
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers attaching a new note refuses another employee's absence under this employee's file",
+              "status": "passed",
+              "durationMs": 11.298900000000003
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes links an unlinked sick note, switches the certificate detail, and unlinks it again",
+              "status": "passed",
+              "durationMs": 38.2818000000002
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes lists the employee's sick leave to link to, newest first, without rejected or other leave",
+              "status": "passed",
+              "durationMs": 24.714299999999866
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes refuses an officer without sick notes in their grant",
+              "status": "passed",
+              "durationMs": 14.639700000000175
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes refuses another employee's document",
+              "status": "passed",
+              "durationMs": 15.853199999999788
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes refuses a certificate",
+              "status": "passed",
+              "durationMs": 13.771099999999933
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes tells an officer who sees a certificate that only sick notes can be linked",
+              "status": "passed",
+              "durationMs": 13.721900000000005
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes never tells a sick-note officer that a certificate they cannot see exists",
+              "status": "passed",
+              "durationMs": 22.968200000000024
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes refuses a document or an absence of another organization",
+              "status": "passed",
+              "durationMs": 26.19049999999993
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes refuses a rejected absence or one that is no sick leave",
+              "status": "passed",
+              "durationMs": 31.432599999999866
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes refuses a note already linked to another absence",
+              "status": "passed",
+              "durationMs": 18.971199999999953
+            },
+            {
+              "name": "sick notes recorded on the employee's behalf and managed by officers (#984) officers linking and unlinking existing notes refuses an officer acting on their own personnel file",
+              "status": "passed",
+              "durationMs": 35.067999999999984
+            }
+          ]
+        },
+        {
+          "path": "src/lib/personnel-file/sick-notes.integration.test.ts",
+          "cases": [
+            {
+              "name": "sick notes on absences (#982, legacy) attaches each file as a shared sick note linked to the absence, notifying the covering officer per note",
+              "status": "passed",
+              "durationMs": 156.62509999999997
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) turns without certificate into with certificate, audited once",
+              "status": "passed",
+              "durationMs": 100.0947000000001
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) leaves child sick as it is",
+              "status": "passed",
+              "durationMs": 68.67919999999958
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) shows a manager that notes are attached without letting them open one",
+              "status": "passed",
+              "durationMs": 103.96849999999995
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) lets the employee delete their own note within 24 hours only, and officers at any time",
+              "status": "passed",
+              "durationMs": 146.89169999999967
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) deletes every note with a cancelled absence, audited with the canceller, and cleans up their files",
+              "status": "passed",
+              "durationMs": 125.23590000000013
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) keeps the notes of a rejected absence and refuses new ones",
+              "status": "passed",
+              "durationMs": 102.20469999999978
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) removes the link when an officer moves a note to another category",
+              "status": "passed",
+              "durationMs": 73.29219999999987
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) server refusals refuses while the setting is off, and the setting needs personnel files",
+              "status": "passed",
+              "durationMs": 60.52170000000024
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) server refusals refuses another employee's absence, a vacation and another organization's absence",
+              "status": "passed",
+              "durationMs": 109.4701
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) server refusals never tells a colleague whether someone's absence has sick notes",
+              "status": "passed",
+              "durationMs": 73.06839999999966
+            },
+            {
+              "name": "sick notes on absences (#982, legacy) server refusals refuses a former employee",
+              "status": "passed",
+              "durationMs": 9.394000000000233
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) attaches each file as a shared sick note linked to the absence, notifying the covering officer per note",
+              "status": "passed",
+              "durationMs": 133.25990000000002
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) turns without certificate into with certificate, audited once",
+              "status": "passed",
+              "durationMs": 108.1547999999998
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) leaves child sick as it is",
+              "status": "passed",
+              "durationMs": 86.95550000000003
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) shows a manager that notes are attached without letting them open one",
+              "status": "passed",
+              "durationMs": 107.04759999999987
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) lets the employee delete their own note within 24 hours only, and officers at any time",
+              "status": "passed",
+              "durationMs": 163.5897
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) deletes every note with a cancelled absence, audited with the canceller, and cleans up their files",
+              "status": "passed",
+              "durationMs": 185.0371
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) keeps the notes of a rejected absence and refuses new ones",
+              "status": "passed",
+              "durationMs": 143.04520000000048
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) removes the link when an officer moves a note to another category",
+              "status": "passed",
+              "durationMs": 93.9400999999998
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) server refusals refuses while the setting is off, and the setting needs personnel files",
+              "status": "passed",
+              "durationMs": 82.07770000000073
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) server refusals refuses another employee's absence, a vacation and another organization's absence",
+              "status": "passed",
+              "durationMs": 153.39539999999943
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) server refusals never tells a colleague whether someone's absence has sick notes",
+              "status": "passed",
+              "durationMs": 95.64930000000004
+            },
+            {
+              "name": "sick notes on absences (#982, canonical) server refusals refuses a former employee",
+              "status": "passed",
+              "durationMs": 10.529199999999946
+            }
+          ]
+        }
+      ],
+      "reportRawSha256": "e49b3dc8a12bc892c8e9ba208012faebf7798e88137ace6bbb174096d9280d10"
+    }
+  ]
+}

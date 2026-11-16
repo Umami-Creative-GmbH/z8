@@ -1,0 +1,37 @@
+{
+  "bridges": [
+    {
+      "path": "apps/webapp/src/.tmp/merge1734-audit.probe.test.tsx",
+      "archive": "public-probes.test.tsx",
+      "sha256": "7b81d944a0f98ddb37fb2fe5cd2d2012f917457b9968d03b0b250ae10c1bd98d",
+      "removedAfterExactEquality": true
+    },
+    {
+      "path": "apps/webapp/src/.tmp/canonical-provider.test.tsx",
+      "archive": "canonical-provider.test.tsx",
+      "sha256": "ee4ecfe022ad2b7b0ceac6328c43dfd033d0228ae9e9b4e6efd7543551440580",
+      "removedAfterExactEquality": true
+    },
+    {
+      "path": "apps/webapp/src/.tmp/parent-overview.tsx",
+      "archive": "parent-overview.tsx",
+      "sha256": "32419064c4165cea13e6526961e7fba5d0531777789ec1bc919146311018f50b",
+      "removedAfterExactEquality": true
+    },
+    {
+      "path": "apps/webapp/src/.tmp/parent-panel.tsx",
+      "archive": "parent-panel.tsx",
+      "sha256": "2c131cc89e240dedd6c1fef73db4be3b8a9dde3a50ea8acc18366fa457a43c2c",
+      "removedAfterExactEquality": true
+    }
+  ],
+  "trackedStatus": "clean",
+  "servicesCreated": 0,
+  "containersCreated": 0,
+  "browsersCreated": 0,
+  "nativeSessionsCreated": 0,
+  "nextProcessesCreated": 0,
+  "foregroundSessions": "All exec calls completed; no yielded or interactive sessions",
+  "processStop": "No owned processes launched; no process enumeration or kill performed",
+  "notTouched": "Active1849 isolated services; prior root/peer services/private fixtures/caches; no recursive cleanup"
+}

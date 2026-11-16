@@ -1,0 +1,10 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+const previous=JSON.parse(readFileSync('.tmp/1733-batch-upload-checks/unit-command.json','utf8'));
+const args=previous.args.slice(0,previous.args.indexOf('--reporter=json'));
+args.push('src/components/absences/sick-notes','src/components/absences/absence-entries-table.test.tsx','src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx','--reporter=json','--outputFile=../../.tmp/1734-root-checks/unit-final.json');
+const env={...process.env,pnpm_config_verify_deps_before_run:'false',Z8_TEST_CHROME_PATH:'C:/Program Files/Google/Chrome/Application/chrome.exe'};
+const result=spawnSync(previous.executable,args,{env,windowsHide:true,encoding:'utf8',maxBuffer:20*1024*1024});
+writeFileSync('.tmp/1734-root-checks/unit-final.log',(result.stdout??'')+(result.stderr??''));
+writeFileSync('.tmp/1734-root-checks/unit-command.json',JSON.stringify({executable:previous.executable,args,exit:result.status,error:result.error?.message,defaultTimeoutMs:5000},null,2)+'\n');
+if(result.status===0){const report=JSON.parse(readFileSync('.tmp/1734-root-checks/unit-final.json','utf8'));console.log(JSON.stringify({files:report.testResults.length,total:report.numTotalTests,passed:report.numPassedTests,failed:report.numFailedTests,pending:report.numPendingTests}));}else console.log((result.stdout??'')+(result.stderr??''));process.exitCode=result.status??1;

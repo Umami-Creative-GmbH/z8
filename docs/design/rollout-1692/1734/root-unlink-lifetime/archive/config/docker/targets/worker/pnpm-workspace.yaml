@@ -1,0 +1,50 @@
+allowBuilds:
+  "@parcel/watcher": true
+  "@posthog/cli": true
+  "@swc/core": true
+  "core-js": false
+  "esbuild": true
+  "msgpackr-extract": true
+  "msw": true
+  "protobufjs": true
+  "sharp": true
+
+minimumReleaseAgeExclude:
+  - "@turbo/darwin-64@2.9.15"
+  - "@turbo/darwin-arm64@2.9.15"
+  - "@turbo/linux-64@2.9.15"
+  - "@turbo/linux-arm64@2.9.15"
+  - "@turbo/windows-64@2.9.15"
+  - "@turbo/windows-arm64@2.9.15"
+  - "turbo@2.9.15"
+  - "tmp@0.2.6"
+  - "oxlint-plugin-react-doctor@0.5.1"
+  - "react-doctor@0.5.1"
+  - "bullmq@6.0.7"
+  - "@better-auth/api-key@1.7.2"
+  - "@better-auth/core@1.7.2"
+  - "@better-auth/drizzle-adapter@1.7.2"
+  - "@better-auth/kysely-adapter@1.7.2"
+  - "@better-auth/memory-adapter@1.7.2"
+  - "@better-auth/mongo-adapter@1.7.2"
+  - "@better-auth/passkey@1.7.2"
+  - "@better-auth/prisma-adapter@1.7.2"
+  - "@better-auth/scim@1.7.2"
+  - "@better-auth/sso@1.7.2"
+  - "@better-auth/telemetry@1.7.2"
+  - "better-auth@1.7.2"
+  - "@next/env@16.4.0"
+  - "@next/swc-darwin-arm64@16.4.0"
+  - "@next/swc-darwin-x64@16.4.0"
+  - "@next/swc-linux-arm64-gnu@16.4.0"
+  - "@next/swc-linux-arm64-musl@16.4.0"
+  - "@next/swc-linux-x64-gnu@16.4.0"
+  - "@next/swc-linux-x64-musl@16.4.0"
+  - "@next/swc-win32-arm64-msvc@16.4.0"
+  - "@next/swc-win32-x64-msvc@16.4.0"
+  - "next@16.4.0"
+
+overrides:
+  "esbuild": "0.25.12"
+  "pako": "1.0.11"
+  "uuid": "14.0.3"

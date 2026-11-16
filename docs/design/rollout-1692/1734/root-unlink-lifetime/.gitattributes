@@ -1,0 +1,3 @@
+* -text whitespace=cr-at-eol
+archive/static/*.log whitespace=cr-at-eol,-blank-at-eof,-blank-at-eol
+archive/merger-stop/*.log whitespace=cr-at-eol,-blank-at-eof,-blank-at-eol
