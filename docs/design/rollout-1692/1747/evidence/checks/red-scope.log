@@ -1,0 +1,61 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-dda21ee3-9d32a4e0612eb222/apps/webapp
+
+ ❯ |unit| src/components/travel-expenses/travel-expense-management.test.tsx (19 tests | 1 failed | 18 skipped) 42ms
+   ❯ creating reports (5)
+     × retires a held creation when a retained session becomes pending and returns 41ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/travel-expense-management.test.tsx > creating reports > retires a held creation when a retained session becomes pending and returns
+AssertionError: expected <button …(4)>…(1)</button> to be null
+
+- Expected:
+null
+
++ Received:
+<button
+  aria-busy="true"
+  class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 min-h-11 w-full justify-start sm:w-auto"
+  data-slot="button"
+  disabled=""
+>
+  <svg
+    aria-hidden="true"
+    class="tabler-icon tabler-icon-loader-2 size-4 animate-spin"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M12 3a9 9 0 1 0 9 9"
+    />
+  </svg>
+  New receipt
+</button>
+
+ ❯ src/components/travel-expenses/travel-expense-management.test.tsx:166:65
+    164|   fireEvent.click(screen.getByRole("button", { name: "New receipt" }));
+    165|   identity.pending = true; view.rerender(tree());
+    166|   expect(screen.queryByRole("button", { name: "New receipt" })).toBeNu…
+       |                                                                 ^
+    167|   identity.pending = false; view.rerender(tree());
+    168|   await act(async () => complete({ success: true, data: { reportId: "r…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  07:57:57
+   Duration  1.05s (environment 48%, import 34%, transform 8%, tests 5%, setup 3%, worker 1%)
+

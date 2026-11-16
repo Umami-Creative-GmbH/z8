@@ -1,0 +1,8 @@
+file:///X:/t3-code/worktrees/z8/t3-dda21ee3-9d32a4e0612eb222/.tmp/1747/browser.mjs:27
+result.auth=login;if(login.login!==200||login.active!==200)throw Error('Normal development auth refused: '+JSON.stringify(login));
+                                                                 ^
+
+Error: Normal development auth refused: {"login":500}
+    at file:///X:/t3-code/worktrees/z8/t3-dda21ee3-9d32a4e0612eb222/.tmp/1747/browser.mjs:27:66
+
+Node.js v26.9.0
