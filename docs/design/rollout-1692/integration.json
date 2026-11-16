@@ -759,14 +759,16 @@
       "blockedBy": [
         1853
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
       "implementationCommit": "df20c5d11bda382ccbe9104398600c6278a5038e",
-      "provisionalIntegrationCommit": "29e56ae7b6c8214b8d404de52d834ac0d99313d8",
-      "provisionalReconciliationCommit": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
-      "provisionalCorrectionCommit": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
-      "provisionalCorrectionIntegrationCommit": "25a23e58c0ca84e87ece89e8ac633b0a951bbb11",
-      "pendingAcceptance": "Safe route/client-scope headings and local organization Retry pass 440 unit cases and all three type projects; fresh authenticated runtime/native/Next/matched capture verification remains pending. Existing unsettled start stays locked until its result settles; no new idempotency semantics."
+      "verifiedTree": "365e46b433269575a1b4a3845a126d89a52533c7",
+      "integrationCommit": "29e56ae7b6c8214b8d404de52d834ac0d99313d8",
+      "reconciliationCommit": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+      "correctionCommit": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
+      "correctionIntegrationCommit": "25a23e58c0ca84e87ece89e8ac633b0a951bbb11",
+      "evidence": "docs/design/rollout-1692/1732.md",
+      "integrationVerification": "Verified #1732 at 7cfbab79e202fffc17661f8eaefb8e5cce958834. Safe task headings remain in the actual route Suspense fallback and unconfirmed client scope, with local organization Retry through its existing refetch owner. Fresh source checks pass 440 unit case instances in 62 files, typegen and all three type projects; fresh final-source PostgreSQL passes 20 cases in one file, nonadditive with earlier PG20: 460 cases across 63 physical files. Ten-file lint and three correction-file CRLF checks pass; six full-format boundaries and two reviewed Doctor warnings remain. Real blocked Suspense, context GET failure/Retry, history SELECT failure/Retry with retained period/visibility, predispatch abort and one deliberate held Start with duplicate prevention pass. Exactly one open HR-only batch persists with no files, documents or notifications. Existing unsettled Activity commands stay locked until settlement; no server idempotency claim. Manager/restricted denials pass; optional saved-officer/held-revocation remains unpassed after bounded attempts. Native target ancestry, connected final Next probes, saved Large/dark/reload, collapse/refresh draft, first Escape/focus and three matched historical/current partial-consumer pairs pass. All 14 completed and 11 failed command attempts, source boundaries and visible overlays remain explicit. Previous 55 verified ancestors and all existing proofs survive. Broad roster guard, actual account/org ABA, exhaustive matrices, full generation, catalogs, providers, devices and true zoom remain unpassed."
     },
     {
       "id": "R050",
@@ -797,8 +799,10 @@
       "blockedBy": [
         1693
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1844#issuecomment-6919907573"
     },
     {
       "id": "R053",
@@ -930,10 +934,11 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1836#issuecomment-6917756540"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1836#issuecomment-6917756540",
+      "implementationCommit": "d4f25597134cf31241230935f506aeeda5a3d569"
     },
     {
       "id": "R065",
@@ -954,10 +959,11 @@
       "blockedBy": [
         1693
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1752#issuecomment-6918900834"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1752#issuecomment-6918900834",
+      "implementationCommit": "231107200d159af6d22ecfca1418c0ecacb41d97"
     },
     {
       "id": "R068",
