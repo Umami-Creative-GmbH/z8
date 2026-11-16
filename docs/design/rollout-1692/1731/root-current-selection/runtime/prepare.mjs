@@ -1,0 +1,10 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {spawn} from 'node:child_process';
+import {resolve,join} from 'node:path';
+const out=resolve('.tmp/1731-root-checks/runtime');
+const directory=(await readFile(join(out,'fixture-pointer-private.txt'),'utf8')).trim();
+const args=['--config.verify-deps-before-run=false','node','scripts/performance/fixture.mjs','prepare',directory];
+const started=new Date().toISOString();
+const code=await new Promise((done,reject)=>{const child=spawn(process.env.npm_execpath,args,{cwd:resolve('.'),env:{...process.env,pnpm_config_verify_deps_before_run:'false'},windowsHide:true,stdio:'inherit'});child.once('error',reject);child.once('exit',done);});
+await writeFile(join(out,'prepare-command.json'),JSON.stringify({command:['pnpm',...args.slice(0,-1),'<new-owned-private-fixture>'],started,ended:new Date().toISOString(),exit:code,kind:'Fresh canonical disposable initial prerequisite generation; not public account or offboarding proof.'},null,2)+'\n');
+process.exitCode=code;

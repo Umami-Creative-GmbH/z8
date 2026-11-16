@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile,lstat,readlink,realpath,mkdir} from 'node:fs/promises';
+import {resolve,join} from 'node:path';
+import {createHash,randomBytes} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+const out=resolve('.tmp/1731-root-checks/runtime');await mkdir(out,{recursive:true});
+const sha=b=>createHash('sha256').update(b).digest('hex');
+const git=(...a)=>execFileSync('git',a,{encoding:'utf8',windowsHide:true,stdio:['ignore','pipe','pipe'],maxBuffer:32*1024*1024}).trim();
+const previous=JSON.parse(await readFile('.tmp/merge1731-audit/baseline.json','utf8'));
+const info=async path=>{const s=await lstat(path);return{path,realpath:await realpath(path),isDirectory:s.isDirectory(),isSymbolicLink:s.isSymbolicLink(),birthtimeMs:s.birthtimeMs,mtimeMs:s.mtimeMs,...(s.isSymbolicLink()?{target:await readlink(path)}:{})};};
+const manifests={};for(const path of Object.keys(previous.manifests))manifests[path]=sha(await readFile(path));
+assert.equal(manifests['pnpm-lock.yaml'],'2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799');
+const roots=await Promise.all(previous.dependencyRoots.map(x=>info(x.path))),links=await Promise.all(previous.links.map(x=>info(x.path)));
+assert.equal(roots.length,3);assert.equal(links.length,158);assert.deepEqual(roots,previous.dependencyRoots);assert.deepEqual(links,previous.links);assert.deepEqual(manifests,previous.manifests);
+const tracked=git('ls-files','-s').split('\n'),ancestors=previous.ancestors.map(x=>({...x,ancestor:(()=>{try{git('merge-base','--is-ancestor',x.sha,'HEAD');return true;}catch{return false;}})()}));assert.ok(ancestors.every(x=>x.ancestor));
+const paths=JSON.parse(await readFile('.tmp/merge1731-audit/quality-commands.json','utf8')).files.map(p=>'apps/webapp/'+p);
+paths.push('apps/webapp/src/lib/personnel-file/retention-store.ts','apps/webapp/src/lib/personnel-file/retention.ts','apps/webapp/src/lib/personnel-file/current-access.ts','apps/webapp/src/lib/personnel-file/access-store.ts','apps/webapp/src/lib/personnel-file/upload-ledger.ts','apps/webapp/src/lib/personnel-file/audit.ts','apps/webapp/src/lib/personnel-file/audit-minimisation.ts','scripts/performance/fixture.mjs');
+const pins=[];for(const path of paths){const b=await readFile(path);pins.push({path,raw:sha(b),lf:sha(b.toString().replaceAll('\r\n','\n')),gitBlob:git('hash-object',path)});}
+const result={created:new Date().toISOString(),head:git('rev-parse','HEAD'),tree:git('rev-parse','HEAD^{tree}'),branch:git('branch','--show-current'),status:git('status','--porcelain=v1'),lastVerified:'8e3876c39725b7a8ef5218439766395401d64b80',ancestors,manifests,dependencyRoots:roots,links,tracked,pins,preservation:{all54VerifiedAncestors:true,prior1730EightCorrectionsAnd201Proof:'No tracked changes permitted; full index snapshot retained',groups:{1729:152,1728:163,1835:203,1737:211,1736:266}},qualification:'Topology/manifests only; no exhaustive byte-pristine dependency claim.'};
+assert.equal(result.head,'87b431bd6116ab90aed9d822db835dc78107bffb');assert.equal(result.status,'');
+await writeFile(join(out,'source-start.json'),JSON.stringify(result,null,2)+'\n');
+const directory=join(tmpdir(),'z8-1731-runtime-'+randomBytes(16).toString('hex'));await writeFile(join(out,'fixture-pointer-private.txt'),directory,{mode:0o600});
+console.log(JSON.stringify({head:result.head,clean:true,pins:pins.length,dependencyRoots:roots.length,leafLinks:links.length,ancestors:ancestors.length,privateFixturePointerCreated:true}));

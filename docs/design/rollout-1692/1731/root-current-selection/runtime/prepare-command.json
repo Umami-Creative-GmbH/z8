@@ -1,0 +1,14 @@
+{
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "node",
+    "scripts/performance/fixture.mjs",
+    "prepare",
+    "<new-owned-private-fixture>"
+  ],
+  "started": "2026-11-16T12:12:05.917Z",
+  "ended": "2026-11-16T12:12:37.245Z",
+  "exit": 0,
+  "kind": "Fresh canonical disposable initial prerequisite generation; not public account or offboarding proof."
+}

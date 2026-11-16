@@ -1,0 +1,8 @@
+{
+  "seam": "Actual exported DueForDeletionList, real TanStack QueryClient invalidation and real shared controls. Replaced only server actions, organization/locale/translation boundaries as in existing accepted tests.",
+  "expected": "A newly due record can be selected after prior selections leave the current result. Visible count zero must not disable every new choice.",
+  "currentSource": "2bc61301c7c04ef3e07c4de13cb5f1f720dc5cb5",
+  "controlSourceCommit": "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+  "controlSourceBlob": "745f8c461de99707f92676734d09916c58e7e3e8",
+  "controlOnlyAdaptation": "Relative document-labels import rebased from copied private ignored location; original source otherwise unchanged."
+}
