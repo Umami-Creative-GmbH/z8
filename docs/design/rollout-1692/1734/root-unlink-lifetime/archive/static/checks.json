@@ -1,0 +1,114 @@
+{
+  "source": "81a94f940b7b7fbd13a823665b993b616973b2ae",
+  "provisionalIntegration": "a5b0f7d8ff912c30197b81ba6ffe574ef68d6215",
+  "incomingMerge": "eba7258abf1071997dd5e1c3ea13f08fb88b5a5b",
+  "lastVerified": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+      "rawSha256": "9b6cefb865e360e1f899f2ee22e8278fb4dd979fbf30dded0c71f254ef75dd81",
+      "lfSha256": "da7b84ce2f970bc8c261174f154edd7ad79a7af1ef04e77c019b3610ee8ed98b",
+      "gitBlob": "a076b2b49071332e383bd2c3b428cfb30e6f1d27"
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+      "rawSha256": "6b61dbde2e1ae753fae4d70ff46a0a77c2de018ac71a7e70b0832692b6bf07d0",
+      "lfSha256": "94e127ad5e8e21921ce5fe65e687ec5eee604d31901064647502eb87b00be7bb",
+      "gitBlob": "6acd2a096ff0778dfc9d4c1fabf58a61d6ea2d8a"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "rawSha256": "5a25257f626362474baa0beeb022fa3e4d3967aa34c480537f82d26bcc9debec",
+      "lfSha256": "a38b5844f7ce9f19a700aecabb65d2c9c8243bed7e5b3cc5133911c64f0bf690",
+      "gitBlob": "2f1595d157c30dbdd3fe220ff75e1b5200d58ed5"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx",
+      "rawSha256": "77417fecd6f77218837e8d5382348233677f5d2c991c6ab31c259ec4c98810b2",
+      "lfSha256": "4c9b8c3842aa44ffc236c70a26b78df5f3f59cdabec48c68ee59c165e861495e",
+      "gitBlob": "2af40c4e9b8497e56cb466734d93c40be9e2d411"
+    }
+  ],
+  "behavior": "Identity-only pending unlink reservations live in a WeakMap keyed by the existing QueryClient, scoped to actor/organization/document. useSyncExternalStore updates replacement controls; runWithCleanup releases reservations for all promise outcomes. Both public callers retain current feedback guards; accepted retired selected-file writes now invalidate original read prefixes before feedback retirement. No new domain/auth/storage/time/automatic retry/server idempotency policy.",
+  "redGreen": {
+    "remountRed": "unlink-red.json",
+    "identityRed": "unlink-identity-red.log",
+    "remountGreen": "unlink-green.json",
+    "crossConsumerRed": "unlink-cross-consumer-red.json",
+    "crossConsumerGreen": "unlink-cross-consumer-green.json",
+    "observerRed": "unlink-observers-red.json",
+    "observerGreen": "unlink-observers-green.json",
+    "finalControls": "unlink-outcomes-and-scope.json",
+    "permanentCases": 8,
+    "boundary": "Real OrganizationContextProvider/QueryClient and actual public components/hooks; auth and action transport mocked. Root red stages were uncommitted intermediate test shapes; no invented source hash. Original sealed merger provides pinned current/parent controls."
+  },
+  "unit": {
+    "file": "unit-final.json",
+    "command": "unit-command.json",
+    "cases": 509,
+    "files": 70,
+    "passed": 509,
+    "failed": 0,
+    "skipped": 0,
+    "defaultTimeoutMs": 5000
+  },
+  "types": {
+    "file": "typecheck.log",
+    "typegen": true,
+    "projects": 3,
+    "exit": 0,
+    "observedSession": 35398
+  },
+  "quality": {
+    "file": "quality.json",
+    "lintFiles": 9,
+    "lintExit": 0,
+    "ownedExistingFormat80CrlfExit": 0,
+    "ownedNewFormat100CrlfExit": 0,
+    "fullFormat100Exit": 1,
+    "fullFormat100Files": 7,
+    "ordinaryExit": 1,
+    "ordinaryFiles": 3,
+    "doctor": {
+      "file": "doctor.log",
+      "base": "a904b3d19815bd511c67514fb48078cd4aec262f",
+      "files": 9,
+      "errors": 0,
+      "warnings": 0,
+      "exit": 0,
+      "observedSession": 43564
+    }
+  },
+  "preservedStop": {
+    "directory": ".tmp/merge1734-audit",
+    "files": 30,
+    "sealSha256": "d7aa836a9cd8e66a3ef1778784bb67dfd0bb05f509ec02fcb64a8b1b54103917",
+    "cases": 7,
+    "filesWithTests": 2,
+    "passed": 4,
+    "failed": 3,
+    "boundary": "Includes failing premerge control; no prior real runtime/PG/quality claim."
+  },
+  "preservation": {
+    "verifiedAncestors": 57,
+    "tree": "b867d565f5bb60ebf974123a845b4e3873258756",
+    "applicationTree": "4b73ae53152a8dd08703811ad2e5232b62cf6065",
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "runWithCleanupBlob": "c86518134ffb792b1299137170a990a1f2e2ca10",
+    "serverOwnersChanged": false,
+    "compatiblePriorConsumer": "PersonnelFilePanel (#1729): public cross-view overlap and accepted-retired observer regressions demonstrated before compatible correction; former source proof remains unchanged."
+  },
+  "pending": [
+    "Fresh independent public lifetime and real downstream observer probes.",
+    "Canonical sick-leave/sick-note PostgreSQL65 plus protected R049 payslipPG20.",
+    "Actual current application intake/unlink/relink/recovery/held navigation and permissions, source-pinned matched preferences/layout/native/Next.",
+    "Client reservation is scoped to one QueryClient, not server cancellation/idempotency or a cross-tab/full-reload mutex.",
+    "Full production generation/catalogs/providers/devices/truezoom/allABA/globalroster guard and formatter boundaries remain unpassed."
+  ],
+  "counts": {
+    "integrated": 57,
+    "awaiting-integration": 24,
+    "implementing": 1,
+    "pending": 75
+  }
+}

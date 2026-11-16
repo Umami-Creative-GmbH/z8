@@ -1,0 +1,21 @@
+{
+  "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "historical": "a904b3d19815bd511c67514fb48078cd4aec262f",
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+      "index": 0,
+      "currentRawSha256": "c0892fb16b400539574b5033a47bc3bdee5d33c6eb82f3b62df5fab405bce2d9",
+      "historicalRawSha256": "9794a721cfb9b787727a28dd5293087a1500a72d800fcff836794f65ad5ae3d4",
+      "historicalGitBlob": "559a1eafcae904e244fbcf516bef4a6cd77f8c8e"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+      "index": 1,
+      "currentRawSha256": "06e69cbf71b9958c70dcee378e67815d2a67f8c895b546da28e10689200f7b5d",
+      "historicalRawSha256": "ff740dfa2d89e1b9fab7edbde1f4f294f5b80829ceb03f42b9cb7e643f62a342",
+      "historicalGitBlob": "3c3cdc86fbe674ce73629409af07345a7db814ed"
+    }
+  ],
+  "boundary": "Only these two exact consumers. Current shared heading opt-ins, shell, providers, actions, storage, auth, dependencies and config retained."
+}

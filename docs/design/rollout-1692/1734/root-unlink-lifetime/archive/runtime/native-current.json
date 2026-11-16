@@ -1,0 +1,33 @@
+{
+  "version": "0.39.1",
+  "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "actualAdmittedTarget": true,
+  "reactSuccess": true,
+  "ownerLines": [
+    "67 291 290 QueryClientProvider",
+    "106 374 373 Forget(OrganizationContextProvider)",
+    "188 511 492 Forget(SickLeaveOverview)",
+    "189 512 511 Forget(SickLeaveRecord) key=\"perf-small-0-62e662cae4e2:perf-small-62e662cae4e2\"",
+    "202 718 717 Forget(SickNotesCell)",
+    "202 744 743 Forget(SickNotesCell)",
+    "202 772 771 Forget(SickNotesCell)",
+    "202 798 797 Forget(SickNotesCell)",
+    "202 824 823 Forget(SickNotesCell)",
+    "202 850 849 Forget(SickNotesCell)",
+    "202 878 877 Forget(SickNotesCell)",
+    "202 904 903 Forget(SickNotesCell)",
+    "202 932 931 Forget(SickNotesCell)",
+    "202 958 957 Forget(SickNotesCell)"
+  ],
+  "rawTreeSha256": "fd9d2671d175f89555d1a6dc96a24f33c832fe549d75522f7688da7e9727491b",
+  "restoreStatus": "not_configured",
+  "restoreSave": "never",
+  "restoreKey": null,
+  "restoreSavedPath": null,
+  "sessionClosed": true,
+  "limits": [
+    "Initial snapshot wrapper timed out after returning actual target text.",
+    "Late-hook and wrong-active-tab React attempts were retained; explicit t1 selection and native reload yielded the actual current component tree.",
+    "No native performance profile, full render-count audit or mobile device claim."
+  ]
+}

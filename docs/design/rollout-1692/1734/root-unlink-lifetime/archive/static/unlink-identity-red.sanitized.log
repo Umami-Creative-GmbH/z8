@@ -1,0 +1,44 @@
+[SANITIZED PUBLIC CLONE: original excluded; deterministic replacements in provenance/sanitization.json]
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 [CHECKOUT]/apps/webapp
+
+stdout | src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx > keeps one unlink request reserved while organization A-B-A remounts the actual workspace
+[DEBUG-1734-reservation] {"dispatches":[{"actorId":"actor-a","organizationId":"org-a","input":{"documentId":"note-1"}},{"actorId":"actor-a","organizationId":"org-a","input":{"documentId":"note-1"}}],"settledBeforeRelease":0}
+
+ × |unit| src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx > keeps one unlink request reserved while organization A-B-A remounts the actual workspace 137ms
+   → expected 2 to be 1 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx > keeps one unlink request reserved while organization A-B-A remounts the actual workspace
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/components/personnel-file/sick-leave-unlink-lifetime.test.tsx:93:16
+     91|  console.info("[DEBUG-1734-reservation]", JSON.stringify({ dispatches,…
+     92|  await act(async () => { for (const finish of resolves) finish({ succe…
+     93|  expect(count).toBe(1);
+       |                ^
+     94| });
+     95|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  18:51:21
+   Duration  2.86s (import 64%, transform 19%, environment 11%, tests 5%, setup 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in [CHECKOUT]\apps\webapp
+

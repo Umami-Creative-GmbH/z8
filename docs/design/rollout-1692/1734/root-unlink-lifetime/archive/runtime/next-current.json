@@ -1,0 +1,58 @@
+{
+  "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "postRestore": true,
+  "browserConnectedAtObservation": true,
+  "ui": {
+    "headings": [
+      "Sick leave"
+    ],
+    "recordRows": 10,
+    "font": "18px",
+    "notificationPermission": "denied",
+    "notificationOverlays": 0
+  },
+  "compilation": [
+    {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"issues\":[]}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1
+    }
+  ],
+  "errors": [
+    {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1
+    }
+  ],
+  "pageMetadata": [
+    {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"sessions\":[{\"url\":\"/en/personnel-files/sick-leave?from=2026-11-01&to=2026-11-15&pageSize=10\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/sick-leave/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1
+    }
+  ],
+  "routeMapObserved": true,
+  "rawPrivateDiagnosticSha256": "4b67fcf5a17221b8412abef82856fe24035de9d49f88e6794543b8bfb4bb17b8"
+}

@@ -1,0 +1,840 @@
+src\app\[locale]\(app)\personnel-files\sick-leave\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     40  40 │       searchParams,␍
+     41  41 │     ]);␍
+     42     │ - → if·(␍
+     43     │ - → → current.status·!==·"resolved"·||␍
+     44     │ - → → !managesCategory(current.access,·"sick_note")␍
+     45     │ - → )␍
+     46     │ - → → notFound();␍
+         42 │ + → if·(current.status·!==·"resolved"·||·!managesCategory(current.access,·"sick_note"))·notFound();␍
+     47  43 │     const { access } = current;␍
+     48  44 │     const { today } = await loadOrganizationDay(db, {␍
+  
+
+src\components\absences\sick-notes\absence-sick-notes-panel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → IconLink,␍
+      5     │ - → IconPaperclip,␍
+      6     │ - → IconTrash,␍
+      7     │ - → IconUnlink,␍
+      8     │ - }·from·"@tabler/icons-react";␍
+          3 │ + import·{·IconLink,·IconPaperclip,·IconTrash,·IconUnlink·}·from·"@tabler/icons-react";␍
+      9   4 │   import { useQuery, useQueryClient } from "@tanstack/react-query";␍
+     10   5 │   import { useTranslate } from "@tolgee/react";␍
+     11     │ - import·{␍
+     12     │ - → useEffectEvent,␍
+     13     │ - → useId,␍
+     14     │ - → useLayoutEffect,␍
+     15     │ - → useMemo,␍
+     16     │ - → useRef,␍
+     17     │ - → useState,␍
+     18     │ - }·from·"react";␍
+          6 │ + import·{·useEffectEvent,·useId,·useLayoutEffect,·useMemo,·useRef,·useState·}·from·"react";␍
+     19   7 │   import { toast } from "sonner";␍
+     20   8 │   import { listAbsenceSickNotesAction } from "@/app/[locale]/(app)/absences/sick-note-actions";␍
+    ······· │ 
+     39  27 │   import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";␍
+     40  28 │   import { queryKeys } from "@/lib/query/keys";␍
+     41     │ - import·{␍
+     42     │ - → AttachSickNoteDialog,␍
+     43     │ - → type·SickNoteAbsenceTarget,␍
+     44     │ - }·from·"./attach-sick-note-dialog";␍
+         29 │ + import·{·AttachSickNoteDialog,·type·SickNoteAbsenceTarget·}·from·"./attach-sick-note-dialog";␍
+     45  30 │   import { useSickNoteUnlinkReservation } from "./use-sick-note-unlink-reservation";␍
+     46  31 │   ␍
+     47     │ - function·useSickNoteOpening(␍
+     48     │ - → absenceId:·string,␍
+     49     │ - → open:·boolean,␍
+     50     │ - → onRetire:·()·=>·void,␍
+     51     │ - )·{␍
+         32 │ + function·useSickNoteOpening(absenceId:·string,·open:·boolean,·onRetire:·()·=>·void)·{␍
+     52  33 │     const queryClient = useQueryClient();␍
+     53  34 │     const retire = useEffectEvent(onRetire);␍
+    ······· │ 
+     65  46 │     const lifetime = useRef({ live: false, arrival: 0, absenceId });␍
+     66  47 │     const queryKey = useMemo(␍
+     67     │ - → → ()·=>·[␍
+     68     │ - → → → ...queryKeys.personnelFile.absenceSickNotes(absenceId),␍
+     69     │ - → → → owner,␍
+     70     │ - → → → openingId,␍
+     71     │ - → → → arrival,␍
+     72     │ - → → ],␍
+         48 │ + → → ()·=>·[...queryKeys.personnelFile.absenceSickNotes(absenceId),·owner,·openingId,·arrival],␍
+     73  49 │       [absenceId, owner, openingId, arrival],␍
+     74  50 │     );␍
+    ······· │ 
+    101  77 │       queryFn: async ({ signal }) => {␍
+    102  78 │         const result = await listAbsenceSickNotesAction(absenceId);␍
+    103     │ - → → → if·(signal.aborted)␍
+    104     │ - → → → → throw·new·DOMException("Retired·note·read",·"AbortError");␍
+         79 │ + → → → if·(signal.aborted)·throw·new·DOMException("Retired·note·read",·"AbortError");␍
+    105  80 │         if (!result.success) throw new Error(result.error);␍
+    106  81 │         return result.data;␍
+    ······· │ 
+    146 121 │     const [linking, setLinking] = useState(false);␍
+    147 122 │     const [unlinkingId, setUnlinkingId] = useState<string | null>(null);␍
+    148     │ - → const·{·query,·inScope,·arrival,·lifetime,·owner·}·=·useSickNoteOpening(␍
+    149     │ - → → absence.id,␍
+    150     │ - → → open,␍
+    151     │ - → → ()·=>·{␍
+    152     │ - → → → setAttaching(false);␍
+    153     │ - → → → setDeleting(null);␍
+    154     │ - → → → setLinking(false);␍
+    155     │ - → → → setUnlinkingId(null);␍
+    156     │ - → → },␍
+    157     │ - → );␍
+        123 │ + → const·{·query,·inScope,·arrival,·lifetime,·owner·}·=·useSickNoteOpening(absence.id,·open,·()·=>·{␍
+        124 │ + → → setAttaching(false);␍
+        125 │ + → → setDeleting(null);␍
+        126 │ + → → setLinking(false);␍
+        127 │ + → → setUnlinkingId(null);␍
+        128 │ + → });␍
+    158 129 │     const unlinkReservation = useSickNoteUnlinkReservation(owner);␍
+    159 130 │   ␍
+    160 131 │     function refresh() {␍
+    161 132 │       void queryClient.invalidateQueries({␍
+    162     │ - → → → queryKey:·manage␍
+    163     │ - → → → → ?·queryKeys.personnelFile.all␍
+    164     │ - → → → → :·queryKeys.personnelFile.sickNotesAll(),␍
+        133 │ + → → → queryKey:·manage·?·queryKeys.personnelFile.all·:·queryKeys.personnelFile.sickNotesAll(),␍
+    165 134 │       });␍
+    166     │ - → → if·(lifetime.current.live·&&·lifetime.current.arrival·===·arrival)␍
+    167     │ - → → → onChanged();␍
+        135 │ + → → if·(lifetime.current.live·&&·lifetime.current.arrival·===·arrival)·onChanged();␍
+    168 136 │     }␍
+    169 137 │   ␍
+    ······· │ 
+    192 160 │               toast.error(␍
+    193 161 │                 result.error ||␍
+    194     │ - → → → → → → → → t(␍
+    195     │ - → → → → → → → → → "absences.sickNotes.panel.unlinkFailed",␍
+    196     │ - → → → → → → → → → "The·sick·note·could·not·be·unlinked.",␍
+    197     │ - → → → → → → → → ),␍
+        162 │ + → → → → → → → → t("absences.sickNotes.panel.unlinkFailed",·"The·sick·note·could·not·be·unlinked."),␍
+    198 163 │               );␍
+    199 164 │               return;␍
+    200 165 │             }␍
+    201     │ - → → → → → toast.success(␍
+    202     │ - → → → → → → t("absences.sickNotes.panel.unlinked",·"Sick·note·unlinked"),␍
+    203     │ - → → → → → );␍
+        166 │ + → → → → → toast.success(t("absences.sickNotes.panel.unlinked",·"Sick·note·unlinked"));␍
+    204 167 │             refresh();␍
+    205 168 │           })␍
+    ······· │ 
+    207 170 │             if (activation.live)␍
+    208 171 │               toast.error(␍
+    209     │ - → → → → → → → t(␍
+    210     │ - → → → → → → → → "absences.sickNotes.panel.unlinkFailed",␍
+    211     │ - → → → → → → → → "The·sick·note·could·not·be·unlinked.",␍
+    212     │ - → → → → → → → ),␍
+        172 │ + → → → → → → → t("absences.sickNotes.panel.unlinkFailed",·"The·sick·note·could·not·be·unlinked."),␍
+    213 173 │               );␍
+    214 174 │           })␍
+    ······· │ 
+    220 180 │     }␍
+    221 181 │   ␍
+    222     │ - → const·dateRange·=·formatAbsenceDateRange(␍
+    223     │ - → → absence.startDate,␍
+    224     │ - → → absence.endDate,␍
+    225     │ - → → locale,␍
+    226     │ - → );␍
+        182 │ + → const·dateRange·=·formatAbsenceDateRange(absence.startDate,·absence.endDate,·locale);␍
+    227 183 │     if (!inScope) return null;␍
+    228 184 │   ␍
+    ······· │ 
+    232 188 │           <ActionPanelContent>␍
+    233 189 │             <ActionPanelHeader>␍
+    234     │ - → → → → → → <ActionPanelTitle>␍
+    235     │ - → → → → → → → {t("absences.sickNotes.panel.title",·"Sick·notes")}␍
+    236     │ - → → → → → → </ActionPanelTitle>␍
+        190 │ + → → → → → → <ActionPanelTitle>{t("absences.sickNotes.panel.title",·"Sick·notes")}</ActionPanelTitle>␍
+    237 191 │               <ActionPanelDescription>␍
+    238 192 │                 {t(␍
+    ······· │ 
+    253 207 │                 <div className="space-y-3">␍
+    254 208 │                   <p role="alert" className="text-sm text-destructive">␍
+    255     │ - → → → → → → → → → {t(␍
+    256     │ - → → → → → → → → → → "absences.sickNotes.panel.loadFailed",␍
+    257     │ - → → → → → → → → → → "The·sick·notes·could·not·be·loaded.",␍
+    258     │ - → → → → → → → → → )}␍
+        209 │ + → → → → → → → → → {t("absences.sickNotes.panel.loadFailed",·"The·sick·notes·could·not·be·loaded.")}␍
+    259 210 │                   </p>␍
+    260 211 │                   <Button␍
+    ······· │ 
+    269 220 │               ) : query.data.length === 0 ? (␍
+    270 221 │                 <p className="text-sm text-muted-foreground">␍
+    271     │ - → → → → → → → → {t(␍
+    272     │ - → → → → → → → → → "absences.sickNotes.panel.empty",␍
+    273     │ - → → → → → → → → → "No·sick·notes·you·can·open.",␍
+    274     │ - → → → → → → → → )}␍
+        222 │ + → → → → → → → → {t("absences.sickNotes.panel.empty",·"No·sick·notes·you·can·open.")}␍
+    275 223 │                 </p>␍
+    276 224 │               ) : (␍
+  67 more lines truncated
+  
+
+src\components\personnel-file\personnel-file-panel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      9   9 │     IconUpload,␍
+     10  10 │   } from "@tabler/icons-react";␍
+     11     │ - import·{␍
+     12     │ - → type·UseQueryResult,␍
+     13     │ - → useQuery,␍
+     14     │ - → useQueryClient,␍
+     15     │ - }·from·"@tanstack/react-query";␍
+         11 │ + import·{·type·UseQueryResult,·useQuery,·useQueryClient·}·from·"@tanstack/react-query";␍
+     16  12 │   import { useTranslate } from "@tolgee/react";␍
+     17  13 │   import { type ReactNode, useEffect, useRef, useState } from "react";␍
+    ······· │ 
+     68  64 │     });␍
+     69  65 │     const queryClient = useQueryClient();␍
+     70     │ - → const·[category,·setCategory]·=·useState<DocumentCategory·|·null>(␍
+     71     │ - → → initialCategory,␍
+     72     │ - → );␍
+         66 │ + → const·[category,·setCategory]·=·useState<DocumentCategory·|·null>(initialCategory);␍
+     73  67 │     const [uploading, setUploading] = useState(false);␍
+     74  68 │     const [editing, setEditing] = useState<EmployeeDocumentView | null>(null);␍
+     75  69 │     const [deleting, setDeleting] = useState<EmployeeDocumentView | null>(null);␍
+     76  70 │     const [linking, setLinking] = useState<EmployeeDocumentView | null>(null);␍
+     77     │ - → const·[namingSkill,·setNamingSkill]·=·useState<EmployeeDocumentView·|·null>(␍
+     78     │ - → → null,␍
+     79     │ - → );␍
+         71 │ + → const·[namingSkill,·setNamingSkill]·=·useState<EmployeeDocumentView·|·null>(null);␍
+     80  72 │     const [unlinkingId, setUnlinkingId] = useState<string | null>(null);␍
+     81  73 │     const unlinkPending = useRef(false);␍
+    ······· │ 
+    103  95 │       },␍
+    104  96 │     });␍
+    105     │ - → const·unavailable·=␍
+    106     │ - → → query.isError·&&·query.error.message·===·"Personnel·file·not·found";␍
+         97 │ + → const·unavailable·=·query.isError·&&·query.error.message·===·"Personnel·file·not·found";␍
+    107  98 │   ␍
+    108  99 │     function refresh() {␍
+    ······· │ 
+    149 140 │               return;␍
+    150 141 │             }␍
+    151     │ - → → → → → toast.success(␍
+    152     │ - → → → → → → t(␍
+    153     │ - → → → → → → → "settings.personnelFiles.sickNotes.unlinked",␍
+    154     │ - → → → → → → → "Sick·note·unlinked",␍
+    155     │ - → → → → → → ),␍
+    156     │ - → → → → → );␍
+        142 │ + → → → → → toast.success(t("settings.personnelFiles.sickNotes.unlinked",·"Sick·note·unlinked"));␍
+    157 143 │           })␍
+    158 144 │           .catch(() => {␍
+    ······· │ 
+    194 180 │                 value={category ?? ALL_CATEGORIES}␍
+    195 181 │                 onValueChange={(value) =>␍
+    196     │ - → → → → → → → → setCategory(␍
+    197     │ - → → → → → → → → → value·===·ALL_CATEGORIES·?·null·:·(value·as·DocumentCategory),␍
+    198     │ - → → → → → → → → )␍
+        182 │ + → → → → → → → → setCategory(value·===·ALL_CATEGORIES·?·null·:·(value·as·DocumentCategory))␍
+    199 183 │                 }␍
+    200 184 │               >␍
+    201 185 │                 <SelectTrigger␍
+    202 186 │                   className="w-44"␍
+    203     │ - → → → → → → → → aria-label={t(␍
+    204     │ - → → → → → → → → → "settings.personnelFiles.panel.filter",␍
+    205     │ - → → → → → → → → → "Filter·by·category",␍
+    206     │ - → → → → → → → → )}␍
+        187 │ + → → → → → → → → aria-label={t("settings.personnelFiles.panel.filter",·"Filter·by·category")}␍
+    207 188 │                 >␍
+    208 189 │                   <SelectValue />␍
+    ······· │ 
+    210 191 │                 <SelectContent>␍
+    211 192 │                   <SelectItem value={ALL_CATEGORIES}>␍
+    212     │ - → → → → → → → → → {t(␍
+    213     │ - → → → → → → → → → → "settings.personnelFiles.panel.allCategories",␍
+    214     │ - → → → → → → → → → → "All·categories",␍
+    215     │ - → → → → → → → → → )}␍
+        193 │ + → → → → → → → → → {t("settings.personnelFiles.panel.allCategories",·"All·categories")}␍
+    216 194 │                   </SelectItem>␍
+    217 195 │                   {capability.categories.map((option) => (␍
+    ······· │ 
+    242 220 │             <PersonnelFileDocumentActions␍
+    243 221 │               document={document}␍
+    244     │ - → → → → → → unlinkingId={␍
+    245     │ - → → → → → → → unlinkReservation.isPending(document.id)␍
+    246     │ - → → → → → → → → ?·document.id␍
+    247     │ - → → → → → → → → :·unlinkingId␍
+    248     │ - → → → → → → }␍
+        222 │ + → → → → → → unlinkingId={unlinkReservation.isPending(document.id)·?·document.id·:·unlinkingId}␍
+    249 223 │               onUnlink={unlink}␍
+    250 224 │               onLink={setLinking}␍
+    ······· │ 
+    417 391 │   }) {␍
+    418 392 │     const { t } = useTranslate();␍
+    419     │ - → const·unavailable·=␍
+    420     │ - → → query.isError·&&·query.error.message·===·"Personnel·file·not·found";␍
+        393 │ + → const·unavailable·=·query.isError·&&·query.error.message·===·"Personnel·file·not·found";␍
+    421 394 │     const documents = unavailable ? undefined : query.data;␍
+    422 395 │     return (␍
+    ······· │ 
+    424 397 │         {query.isFetching && !query.isPending ? (␍
+    425 398 │           <p role="status" className="text-sm text-muted-foreground">␍
+    426     │ - → → → → → {t(␍
+    427     │ - → → → → → → "settings.personnelFiles.employeeFile.refreshing",␍
+    428     │ - → → → → → → "Refreshing·documents…",␍
+    429     │ - → → → → → )}␍
+        399 │ + → → → → → {t("settings.personnelFiles.employeeFile.refreshing",·"Refreshing·documents…")}␍
+    430 400 │           </p>␍
+    431 401 │         ) : null}␍
+    432     │ - → → → <PersonnelFileReadFailure␍
+    433     │ - → → → → query={query}␍
+    434     │ - → → → → hasDocuments={Boolean(documents)}␍
+    435     │ - → → → />␍
+        402 │ + → → → <PersonnelFileReadFailure·query={query}·hasDocuments={Boolean(documents)}·/>␍
+    436 403 │         {query.isPending ? (␍
+    437 404 │           <div␍
+    ······· │ 
+    439 406 │             aria-busy="true"␍
+    440 407 │             role="status"␍
+    441     │ - → → → → → aria-label={t(␍
+    442     │ - → → → → → → "settings.personnelFiles.area.loadingFile",␍
+    443     │ - → → → → → → "Loading·the·personnel·file",␍
+    444     │ - → → → → → )}␍
+        408 │ + → → → → → aria-label={t("settings.personnelFiles.area.loadingFile",·"Loading·the·personnel·file")}␍
+    445 409 │           >␍
+    446 410 │             <Skeleton className="h-16 w-full" />␍
+    ······· │ 
+    450 414 │           <p className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">␍
+    451 415 │             {category␍
+    452     │ - → → → → → → ?·t(␍
+    453     │ - → → → → → → → → "settings.personnelFiles.panel.emptyCategory",␍
+    454     │ - → → → → → → → → "No·documents·in·this·category·yet.",␍
+    455     │ - → → → → → → → )␍
+        416 │ + → → → → → → ?·t("settings.personnelFiles.panel.emptyCategory",·"No·documents·in·this·category·yet.")␍
+    456 417 │               : t("settings.personnelFiles.panel.empty", "No documents yet.")}␍
+    457 418 │           </p>␍
+  
+
+src\components\personnel-file\sick-leave-overview.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      2   2 │   ␍
+      3   3 │   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";␍
+      4     │ - import·{␍
+      5     │ - → act,␍
+      6     │ - → fireEvent,␍
+      7     │ - → render,␍
+      8     │ - → screen,␍
+      9     │ - → waitFor,␍
+     10     │ - → within,␍
+     11     │ - }·from·"@testing-library/react";␍
+          4 │ + import·{·act,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+     12   5 │   import { Activity, type ReactNode } from "react";␍
+     13   6 │   import { Temporal } from "temporal-polyfill";␍
+    ······· │ 
+     89  82 │   }␍
+     90  83 │   ␍
+     91     │ - function·renderOverview(␍
+     92     │ - → rows:·SickLeaveOverviewRow[],␍
+     93     │ - → page·=·{·page:·1,·pageCount:·1·},␍
+     94     │ - )·{␍
+         84 │ + function·renderOverview(rows:·SickLeaveOverviewRow[],·page·=·{·page:·1,·pageCount:·1·})·{␍
+     95  85 │     return render(␍
+     96  86 │       <QueryClientProvider␍
+     97     │ - → → → client={␍
+     98     │ - → → → → new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·})␍
+     99     │ - → → → }␍
+         87 │ + → → → client={new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·})}␍
+    100  88 │       >␍
+    101  89 │         <SickLeaveOverview␍
+    ······· │ 
+    173 161 │         fireEvent.click(await screen.findByRole("button", { name: /^Unlink/ }));␍
+    174 162 │         const nextTarget = change === "target" ? "a2" : "a1";␍
+    175     │ - → → → view.rerender(␍
+    176     │ - → → → → content(change·===·"hidden"·?·"hidden"·:·"visible",·nextTarget),␍
+    177     │ - → → → );␍
+        163 │ + → → → view.rerender(content(change·===·"hidden"·?·"hidden"·:·"visible",·nextTarget));␍
+    178 164 │         await act(async () => settle({ success: true, data: undefined }));␍
+    179 165 │         view.rerender(content("visible", nextTarget));␍
+    180     │ - → → → expect(␍
+    181     │ - → → → → await·screen.findByText("No·sick·notes·you·can·open."),␍
+    182     │ - → → → ).toBeTruthy();␍
+        166 │ + → → → expect(await·screen.findByText("No·sick·notes·you·can·open.")).toBeTruthy();␍
+    183 167 │         expect(onChanged).not.toHaveBeenCalled();␍
+    184 168 │         expect(feedback.success).not.toHaveBeenCalled();␍
+    ······· │ 
+    217 201 │       );␍
+    218 202 │       const view = render(content("visible"));␍
+    219     │ - → → fireEvent.click(␍
+    220     │ - → → → screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}),␍
+    221     │ - → → );␍
+        203 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}));␍
+    222 204 │       await waitFor(() => expect(noteActions.list).toHaveBeenCalled());␍
+    223 205 │       view.rerender(content("hidden"));␍
+    ······· │ 
+    260 242 │       );␍
+    261 243 │       renderOverview([row({})]);␍
+    262     │ - → → fireEvent.click(␍
+    263     │ - → → → screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}),␍
+    264     │ - → → );␍
+        244 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}));␍
+    265 245 │       const unlink = await screen.findByRole("button", { name: /^Unlink/ });␍
+    266 246 │       fireEvent.click(unlink);␍
+    ······· │ 
+    313 293 │         .mockImplementationOnce(() => new Promise(() => {}));␍
+    314 294 │       const view = render(content());␍
+    315     │ - → → fireEvent.click(␍
+    316     │ - → → → screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}),␍
+    317     │ - → → );␍
+        295 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}));␍
+    318 296 │       await screen.findByText("Retired health note");␍
+    319 297 │       scope.activeOrganizationId = "other";␍
+    ······· │ 
+    322 300 │       scope.activeOrganizationId = "organization";␍
+    323 301 │       view.rerender(content());␍
+    324     │ - → → fireEvent.click(␍
+    325     │ - → → → screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}),␍
+    326     │ - → → );␍
+        302 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}));␍
+    327 303 │       expect(screen.queryByText("Retired health note")).toBeNull();␍
+    328 304 │     });␍
+    ······· │ 
+    335 311 │         .mockResolvedValueOnce({ success: true, data: [] });␍
+    336 312 │       renderOverview([row({})]);␍
+    337     │ - → → fireEvent.click(␍
+    338     │ - → → → screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}),␍
+    339     │ - → → );␍
+        313 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·/Attach·or·link·sick·notes·for/·}));␍
+    340 314 │       const dialog = await screen.findByRole("dialog");␍
+    341 315 │       expect((await within(dialog).findByRole("alert")).textContent).toBe(␍
+    342 316 │         "The sick notes could not be loaded.",␍
+    343 317 │       );␍
+    344     │ - → → expect(␍
+    345     │ - → → → within(dialog).queryByText("No·sick·notes·you·can·open."),␍
+    346     │ - → → ).toBeNull();␍
+        318 │ + → → expect(within(dialog).queryByText("No·sick·notes·you·can·open.")).toBeNull();␍
+    347 319 │       fireEvent.click(within(dialog).getByRole("button", { name: "Retry" }));␍
+    348     │ - → → expect(␍
+    349     │ - → → → await·within(dialog).findByText("No·sick·notes·you·can·open."),␍
+    350     │ - → → ).toBeTruthy();␍
+        320 │ + → → expect(await·within(dialog).findByText("No·sick·notes·you·can·open.")).toBeTruthy();␍
+    351 321 │     });␍
+    352 322 │     beforeEach(() => {␍
+    ······· │ 
+    365 335 │       expect(within(comparison).getByText("Pending")).toBeTruthy();␍
+    366 336 │       expect(within(comparison).getByText("0017")).toBeTruthy();␍
+    367     │ - → → expect(␍
+    368     │ - → → → screen.queryByRole("button",·{·name:·/remind|request/i·}),␍
+    369     │ - → → ).toBeNull();␍
+        337 │ + → → expect(screen.queryByRole("button",·{·name:·/remind|request/i·})).toBeNull();␍
+    370 338 │     });␍
+    371 339 │     it("lists each absence with its employee's sick note file, its notes to open and former employees marked", () => {␍
+    ······· │ 
+    386 354 │   ␍
+    387 355 │       const [, anna, lea] = screen.getAllByRole("row");␍
+    388     │ - → → expect(␍
+    389     │ - → → → within(anna)␍
+    390     │ - → → → → .getByRole("link",·{·name:·"Anna·Example"·})␍
+    391     │ - → → → → .getAttribute("href"),␍
+    392     │ - → → ).toBe(␍
+        356 │ + → → expect(within(anna).getByRole("link",·{·name:·"Anna·Example"·}).getAttribute("href")).toBe(␍
+    393 357 │         "/personnel-files/e9850000-0000-4000-8000-000000000004?category=sick_note",␍
+    394 358 │       );␍
+    395     │ - → → expect(␍
+    396     │ - → → → within(anna)␍
+    397     │ - → → → → .getByRole("link",·{·name:·"Open·{title}"·})␍
+    398     │ - → → → → .getAttribute("href"),␍
+    399     │ - → → ).toBe("/api/personnel-files/documents/d1");␍
+        359 │ + → → expect(within(anna).getByRole("link",·{·name:·"Open·{title}"·}).getAttribute("href")).toBe(␍
+        360 │ + → → → "/api/personnel-files/documents/d1",␍
+        361 │ + → → );␍
+    400 362 │       expect(within(anna).getByText("With certificate")).toBeTruthy();␍
+    401 363 │       expect(within(lea).getByText("Former employee")).toBeTruthy();␍
+  
+
+src\components\personnel-file\sick-leave-overview.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   "use client";␍
+      2   2 │   ␍
+      3     │ - import·{␍
+      4     │ - → IconChevronLeft,␍
+      5     │ - → IconChevronRight,␍
+      6     │ - → IconFileText,␍
+      7     │ - → IconX,␍
+      8     │ - }·from·"@tabler/icons-react";␍
+          3 │ + import·{·IconChevronLeft,·IconChevronRight,·IconFileText,·IconX·}·from·"@tabler/icons-react";␍
+      9   4 │   import { useTranslate } from "@tolgee/react";␍
+     10   5 │   import { useSearchParams } from "next/navigation";␍
+    ······· │ 
+     67  62 │     const { t } = useTranslate();␍
+     68  63 │     const sickDetails: Record<SickDetail, string> = {␍
+     69     │ - → → child_sick:·t(␍
+     70     │ - → → → "settings.personnelFiles.sickLeave.sickDetail.childSick",␍
+     71     │ - → → → "Child·sick",␍
+     72     │ - → → ),␍
+         64 │ + → → child_sick:·t("settings.personnelFiles.sickLeave.sickDetail.childSick",·"Child·sick"),␍
+     73  65 │       with_certificate: t(␍
+     74  66 │         "settings.personnelFiles.sickLeave.sickDetail.withCertificate",␍
+    ······· │ 
+     83  75 │     const statuses: Record<SickLeaveStatus, string> = {␍
+     84  76 │       pending: t("settings.personnelFiles.sickLeave.status.pending", "Pending"),␍
+     85     │ - → → approved:·t(␍
+     86     │ - → → → "settings.personnelFiles.sickLeave.status.approved",␍
+     87     │ - → → → "Approved",␍
+     88     │ - → → ),␍
+         77 │ + → → approved:·t("settings.personnelFiles.sickLeave.status.approved",·"Approved"),␍
+     89  78 │     };␍
+     90  79 │     const notes: Record<SickLeaveNotesFilter, string> = {␍
+    ······· │ 
+     94  83 │         "With certificate, no note",␍
+     95  84 │       ),␍
+     96     │ - → → present:·t(␍
+     97     │ - → → → "settings.personnelFiles.sickLeave.filters.notesPresent",␍
+     98     │ - → → → "Has·note",␍
+     99     │ - → → ),␍
+         85 │ + → → present:·t("settings.personnelFiles.sickLeave.filters.notesPresent",·"Has·note"),␍
+    100  86 │     };␍
+    101  87 │     return { sickDetails, statuses, notes };␍
+    102  88 │   }␍
+    103  89 │   ␍
+    104     │ - function·FilterField({␍
+    105     │ - → label,␍
+    106     │ - → children,␍
+    107     │ - }:·{␍
+    108     │ - → label:·string;␍
+    109     │ - → children:·(id:·string)·=>·ReactNode;␍
+    110     │ - })·{␍
+         90 │ + function·FilterField({·label,·children·}:·{·label:·string;·children:·(id:·string)·=>·ReactNode·})·{␍
+    111  91 │     const id = useId();␍
+    112  92 │     return (␍
+    ······· │ 
+    146 126 │                 rel="noopener noreferrer"␍
+    147 127 │                 className="inline-flex max-w-56 items-center gap-1 text-sm underline-offset-4 hover:underline"␍
+    148     │ - → → → → → → → aria-label={t(␍
+    149     │ - → → → → → → → → "settings.personnelFiles.list.open",␍
+    150     │ - → → → → → → → → "Open·{title}",␍
+    151     │ - → → → → → → → → {␍
+    152     │ - → → → → → → → → → title:·note.title,␍
+    153     │ - → → → → → → → → },␍
+    154     │ - → → → → → → → )}␍
+        128 │ + → → → → → → → aria-label={t("settings.personnelFiles.list.open",·"Open·{title}",·{␍
+        129 │ + → → → → → → → → title:·note.title,␍
+        130 │ + → → → → → → → })}␍
+    155 131 │               >␍
+    156 132 │                 <IconFileText aria-hidden="true" className="size-3.5 shrink-0" />␍
+    ······· │ 
+    171 147 │   export function SickLeaveLoadingHeading() {␍
+    172 148 │     const { t } = useTranslate();␍
+    173     │ - → return·(␍
+    174     │ - → → <PageHeader␍
+    175     │ - → → → title={t("settings.personnelFiles.sickLeave.title",·"Sick·leave")}␍
+    176     │ - → → />␍
+    177     │ - → );␍
+        149 │ + → return·<PageHeader·title={t("settings.personnelFiles.sickLeave.title",·"Sick·leave")}·/>;␍
+    178 150 │   }␍
+    179 151 │   ␍
+    180 152 │   export function SickLeaveOverview(props: SickLeaveOverviewProps) {␍
+    181 153 │     const current = useOrganization();␍
+    182     │ - → if·(␍
+    183     │ - → → current.userId·!==·props.userId·||␍
+    184     │ - → → current.activeOrganizationId·!==·props.organizationId␍
+    185     │ - → )␍
+        154 │ + → if·(current.userId·!==·props.userId·||·current.activeOrganizationId·!==·props.organizationId)␍
+    186 155 │       return null;␍
+    187     │ - → return·(␍
+    188     │ - → → <SickLeaveRecord␍
+    189     │ - → → → key={`${props.userId}:${props.organizationId}`}␍
+    190     │ - → → → {...props}␍
+    191     │ - → → />␍
+    192     │ - → );␍
+        156 │ + → return·<SickLeaveRecord·key={`${props.userId}:${props.organizationId}`}·{...props}·/>;␍
+    193 157 │   }␍
+    194 158 │   ␍
+    ······· │ 
+    224 188 │       filters.notes !== "all" ||␍
+    225 189 │       filters.status !== null;␍
+    226     │ - → const·firstItem·=␍
+    227     │ - → → props.total·===·0·?·0·:·(props.page·-·1)·*·filters.pageSize·+·1;␍
+        190 │ + → const·firstItem·=·props.total·===·0·?·0·:·(props.page·-·1)·*·filters.pageSize·+·1;␍
+    228 191 │     const lastItem = Math.min(props.page * filters.pageSize, props.total);␍
+    229 192 │   ␍
+    ······· │ 
+    237 200 │           className="grid gap-4 border-b p-4 sm:grid-cols-2 xl:grid-cols-4"␍
+    238 201 │         >␍
+    239     │ - → → → → <FilterField␍
+    240     │ - → → → → → label={t("settings.personnelFiles.sickLeave.filters.from",·"From")}␍
+    241     │ - → → → → >␍
+        202 │ + → → → → <FilterField·label={t("settings.personnelFiles.sickLeave.filters.from",·"From")}>␍
+    242 203 │             {(id) => (␍
+    243 204 │               <DatePicker␍
+    ······· │ 
+    247 208 │                 required␍
+    248 209 │                 disabled={isPending}␍
+    249     │ - → → → → → → → onChange={(from)·=>␍
+    250     │ - → → → → → → → → update({·from:·from·===·props.defaultRange.from·?·null·:·from·})␍
+    251     │ - → → → → → → → }␍
+        210 │ + → → → → → → → onChange={(from)·=>·update({·from:·from·===·props.defaultRange.from·?·null·:·from·})}␍
+    252 211 │               />␍
+    253 212 │             )}␍
+    254 213 │           </FilterField>␍
+    255     │ - → → → → <FilterField␍
+    256     │ - → → → → → label={t("settings.personnelFiles.sickLeave.filters.to",·"To")}␍
+    257     │ - → → → → >␍
+        214 │ + → → → → <FilterField·label={t("settings.personnelFiles.sickLeave.filters.to",·"To")}>␍
+    258 215 │             {(id) => (␍
+    259 216 │               <DatePicker␍
+    ······· │ 
+    263 220 │                 required␍
+    264 221 │                 disabled={isPending}␍
+    265     │ - → → → → → → → onChange={(to)·=>␍
+    266     │ - → → → → → → → → update({·to:·to·===·props.defaultRange.to·?·null·:·to·})␍
+    267     │ - → → → → → → → }␍
+        222 │ + → → → → → → → onChange={(to)·=>·update({·to:·to·===·props.defaultRange.to·?·null·:·to·})}␍
+    268 223 │               />␍
+    269 224 │             )}␍
+    270 225 │           </FilterField>␍
+    271     │ - → → → → <FilterField␍
+    272     │ - → → → → → label={t(␍
+    273     │ - → → → → → → "settings.personnelFiles.sickLeave.filters.employee",␍
+    274     │ - → → → → → → "Employee",␍
+    275     │ - → → → → → )}␍
+    276     │ - → → → → >␍
+        226 │ + → → → → <FilterField·label={t("settings.personnelFiles.sickLeave.filters.employee",·"Employee")}>␍
+    277 227 │             {(id) => (␍
+    278 228 │               <Select␍
+    ······· │ 
+    286 236 │                 <SelectContent>␍
+    287 237 │                   <SelectItem value={ALL}>␍
+    288     │ - → → → → → → → → → {t(␍
+    289     │ - → → → → → → → → → → "settings.personnelFiles.sickLeave.filters.allEmployees",␍
+    290     │ - → → → → → → → → → → "All·employees",␍
+    291     │ - → → → → → → → → → )}␍
+        238 │ + → → → → → → → → → {t("settings.personnelFiles.sickLeave.filters.allEmployees",·"All·employees")}␍
+    292 239 │                   </SelectItem>␍
+    293 240 │                   {props.employees.map((employee) => (␍
+    ······· │ 
+    306 253 │             )}␍
+    307 254 │           </FilterField>␍
+  253 more lines truncated
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1   1 │   import { describe, expect, it } from "vitest";␍
+      2     │ - import·{␍
+      3     │ - → appPageOwnsHeading,␍
+      4     │ - → normalizeAppPath,␍
+      5     │ - → resolveAppRouteMetadata,␍
+      6     │ - }·from·"./route-metadata";␍
+          2 │ + import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      7   3 │   ␍
+      8   4 │   describe("route metadata", () => {␍
+    ······· │ 
+     25  21 │     });␍
+     26  22 │     it("adopts only selected employee files, leaving other personnel workflows independently staged", () => {␍
+     27     │ - → → expect(␍
+     28     │ - → → → appPageOwnsHeading(␍
+     29     │ - → → → → "/de/personnel-files/af981290-0000-4000-8000-000000000001",␍
+     30     │ - → → → ),␍
+     31     │ - → → ).toBe(true);␍
+         23 │ + → → expect(appPageOwnsHeading("/de/personnel-files/af981290-0000-4000-8000-000000000001")).toBe(␍
+         24 │ + → → → true,␍
+         25 │ + → → );␍
+     32  26 │       expect(␍
+     33     │ - → → → appPageOwnsHeading(␍
+     34     │ - → → → → "/en/personnel-files/af981290-0000-4000-8000-000000000001/detail",␍
+     35     │ - → → → ),␍
+         27 │ + → → → appPageOwnsHeading("/en/personnel-files/af981290-0000-4000-8000-000000000001/detail"),␍
+     36  28 │       ).toBe(false);␍
+     37  29 │     });␍
+    ······· │ 
+     42  34 │     it("adopts only the sick-leave overview heading, preserving independent personnel routes", () => {␍
+     43  35 │       expect(appPageOwnsHeading("/de/personnel-files/sick-leave")).toBe(true);␍
+     44     │ - → → expect(appPageOwnsHeading("/en/personnel-files/sick-leave/detail")).toBe(␍
+     45     │ - → → → false,␍
+     46     │ - → → );␍
+         36 │ + → → expect(appPageOwnsHeading("/en/personnel-files/sick-leave/detail")).toBe(false);␍
+     47  37 │     });␍
+     48  38 │     it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {␍
+     49  39 │       expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     50  40 │       expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     51     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(␍
+     52     │ - → → → true,␍
+     53     │ - → → );␍
+     54     │ - → → expect(␍
+     55     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),␍
+     56     │ - → → ).toBe(false);␍
+         41 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+         42 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     57  43 │     });␍
+     58  44 │     it("adopts only the notification timeline heading, retaining settings and descendants", () => {␍
+    ······· │ 
+     84  70 │       expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     85  71 │       expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     86     │ - → → expect(␍
+     87     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),␍
+     88     │ - → → ).toBe(true);␍
+         72 │ + → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     89  73 │       expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     90     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(␍
+     91     │ - → → → false,␍
+     92     │ - → → );␍
+         74 │ + → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     93  75 │       expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     94  76 │       expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+    ······· │ 
+    100  82 │     it("adopts the licence workspace and employee check while retaining other descendants and settings headings", () => {␍
+    101  83 │       expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+    102     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(␍
+    103     │ - → → → true,␍
+    104     │ - → → );␍
+    105     │ - → → expect(␍
+    106     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),␍
+    107     │ - → → ).toBe(false);␍
+         84 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+         85 │ + → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+    108  86 │       expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+    109  87 │       expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+    ······· │ 
+    112  90 │       expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+    113  91 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    114     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(␍
+    115     │ - → → → true,␍
+    116     │ - → → );␍
+         92 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+    117  93 │     });␍
+    118  94 │     it("adopts only the deputy history record, preserving other approval headings", () => {␍
+    119     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(␍
+    120     │ - → → → true,␍
+    121     │ - → → );␍
+    122     │ - → → expect(␍
+    123     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),␍
+    124     │ - → → ).toBe(false);␍
+         95 │ + → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+         96 │ + → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+    125  97 │       expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+    126  98 │       expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+    ······· │ 
+    129 101 │       expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+    130 102 │       expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+    131     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(␍
+    132     │ - → → → true,␍
+    133     │ - → → );␍
+        103 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+    134 104 │     });␍
+    135 105 │     it("adopts only the complete review arrival route", () => {␍
+    136     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(␍
+    137     │ - → → → true,␍
+    138     │ - → → );␍
+    139     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(␍
+    140     │ - → → → false,␍
+    141     │ - → → );␍
+    142     │ - → → expect(␍
+    143     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),␍
+    144     │ - → → ).toBe(false);␍
+        106 │ + → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+        107 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+        108 │ + → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+    145 109 │     });␍
+    146 110 │     it("adopts the exact vacation route while retaining staged descendants", () => {␍
+    147 111 │       expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+    148     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(␍
+    149     │ - → → → false,␍
+    150     │ - → → );␍
+        112 │ + → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+    151 113 │     });␍
+    152 114 │     it("adopts only refreshed analytics routes while retaining staged descendants", () => {␍
+    153 115 │       expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+    154     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(␍
+    155     │ - → → → false,␍
+    156     │ - → → );␍
+        116 │ + → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+    157 117 │       expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+    158     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(␍
+    159     │ - → → → false,␍
+    160     │ - → → );␍
+        118 │ + → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+    161 119 │     });␍
+    162 120 │     it("adopts refreshed analytics without adopting unconverted descendants", () => {␍
+    ······· │ 
+    205 163 │   ␍
+    206 164 │     it("normalizes locale and trailing slash segments", () => {␍
+    207     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe(␍
+    208     │ - → → → "/settings/security",␍
+    209     │ - → → );␍
+        165 │ + → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    210 166 │     });␍
+    211 167 │   });␍
+    212 168 │   it("adopts only the exact payslip batch detail heading", () => {␍
+    213     │ - → expect(␍
+    214     │ - → → appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-1"),␍
+    215     │ - → ).toBe(true);␍
+    216     │ - → expect(␍
+    217     │ - → → appPageOwnsHeading("/de/personnel-files/payslip-batches/batch-1/detail"),␍
+    218     │ - → ).toBe(false);␍
+        169 │ + → expect(appPageOwnsHeading("/en/personnel-files/payslip-batches/batch-1")).toBe(true);␍
+        170 │ + → expect(appPageOwnsHeading("/de/personnel-files/payslip-batches/batch-1/detail")).toBe(false);␍
+    219 171 │   });␍
+    220 172 │   
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    168 168 │     // Equipment's new title still needs Tolgee sync. Until then the shell uses␍
+    169 169 │     // its catalog-backed Settings ancestor; the page/nav have dedicated defaults.␍
+    170     │ - → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map(␍
+    171     │ - → → (entry)·=>·({␍
+    172     │ - → → → id:·`settings-${entry.id}`,␍
+    173     │ - → → → href:·entry.href,␍
+    174     │ - → → → titleKey:·entry.titleKey,␍
+    175     │ - → → → titleDefault:·entry.titleDefault,␍
+    176     │ - → → }),␍
+    177     │ - → ),␍
+        170 │ + → ...SETTINGS_ENTRIES.filter((entry)·=>·entry.id·!==·"equipment").map((entry)·=>·({␍
+        171 │ + → → id:·`settings-${entry.id}`,␍
+        172 │ + → → href:·entry.href,␍
+        173 │ + → → titleKey:·entry.titleKey,␍
+        174 │ + → → titleDefault:·entry.titleDefault,␍
+        175 │ + → })),␍
+    178 176 │     {␍
+    179 177 │       id: "settings",␍
+    ······· │ 
+    192 190 │   ␍
+    193 191 │   export function normalizeAppPath(pathname: string): string {␍
+    194     │ - → const·[firstSegment,·...remainingSegments]·=·pathname␍
+    195     │ - → → .split("/")␍
+    196     │ - → → .filter(Boolean);␍
+    197     │ - → const·segments·=·ALL_LANGUAGES.includes(␍
+    198     │ - → → firstSegment·as·(typeof·ALL_LANGUAGES)[number],␍
+    199     │ - → )␍
+        192 │ + → const·[firstSegment,·...remainingSegments]·=·pathname.split("/").filter(Boolean);␍
+        193 │ + → const·segments·=·ALL_LANGUAGES.includes(firstSegment·as·(typeof·ALL_LANGUAGES)[number])␍
+    200 194 │       ? remainingSegments␍
+    201 195 │       : [firstSegment, ...remainingSegments].filter(Boolean);␍
+    ······· │ 
+    264 258 │       [...APP_ROUTE_METADATA]␍
+    265 259 │         .sort((left, right) => right.href.length - left.href.length)␍
+    266     │ - → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??␍
+    267     │ - → → UNKNOWN_ROUTE_METADATA␍
+        260 │ + → → → .find((route)·=>·routeMatches(normalizedPath,·route.href))·??·UNKNOWN_ROUTE_METADATA␍
+    268 261 │     );␍
+    269 262 │   }␍
+  
+
+Checked 9 files in 7ms. No fixes applied.
+Found 7 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

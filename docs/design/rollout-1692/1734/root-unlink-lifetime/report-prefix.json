@@ -1,0 +1,9 @@
+{
+  "path": "docs/design/rollout-1692/1734.md",
+  "bytes": 18486,
+  "rawSha256": "6b485ccb5569ed22b2168a69d9d222416400d524fe53c7f6079942e98f124d03",
+  "lfBytes": 18240,
+  "lfSha256": "c56f8d1aef673926060a105d4ba4bca60e9be3b77cfe5e6a6adf58daff5bc985",
+  "computedCanonicalGitBlob": "dea4afc3587dd3eb17cbb52ba7239151dd1ead97",
+  "boundary": "Original raw prefix; computed LF blob is publication provenance, root independently audits actual Git bytes."
+}
