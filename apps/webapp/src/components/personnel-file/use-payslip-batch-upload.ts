@@ -47,6 +47,8 @@ export function usePayslipBatchUpload(options: {
 			autoProceed: true,
 		}).use(Tus, {
 			endpoint: "/api/tus",
+			// Staging consumes these bytes; a completed URL cannot serve another batch.
+			removeFingerprintOnSuccess: true,
 			retryDelays: [0, 1000, 3000, 5000],
 			chunkSize: 5 * 1024 * 1024,
 			limit: 4,
