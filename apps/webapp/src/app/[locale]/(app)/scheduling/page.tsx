@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
 import { parseSchedulerFocus } from "@/components/scheduling/scheduler/shift-scheduler-utils";
-import { LoadingRegion } from "@/components/ui/loading-region";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
 import { db } from "@/db";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
+import SchedulingPageLoading from "./loading";
 
 type SchedulingSearchParams = {
 	employeeId?: string | string[];
@@ -22,9 +22,7 @@ function single(value: string | string[] | undefined): string | undefined {
 	return typeof value === "string" ? value : undefined;
 }
 
-async function SchedulingPageContent({
-	searchParams,
-}: SchedulingPageProps = {}) {
+async function SchedulingPageContent({ searchParams }: SchedulingPageProps = {}) {
 	const [authContext, t, query] = await Promise.all([
 		getAuthContext(),
 		getTranslate(),
@@ -38,7 +36,7 @@ async function SchedulingPageContent({
 	const emp = authContext.employee;
 	const org = await db.query.organization.findFirst({
 		where: (table, { eq }) => eq(table.id, emp.organizationId),
-		columns: { timezone: true },
+		columns: { timezone: true, name: true },
 	});
 
 	const isManager = emp.role === "manager" || emp.role === "admin";
@@ -48,32 +46,35 @@ async function SchedulingPageContent({
 	});
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-2">
-			<div className="flex flex-1 flex-col gap-4 p-4">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-bold tracking-tight">
-							{isManager
-								? t("scheduling:scheduling.page.title", "Shift Schedule")
-								: t("scheduling:scheduling.page.employeeTitle", "My Schedule")}
-						</h1>
-						<p className="text-muted-foreground">
-							{isManager
-								? t(
-										"scheduling:scheduling.page.managerDescription",
-										"Manage and plan employee shifts",
-									)
-								: t(
-										"scheduling:scheduling.page.employeeScheduleDescription",
-										"Your published shifts, week by week",
-									)}
-						</p>
-					</div>
-				</div>
+		<div className="@container/main flex min-w-0 flex-1 flex-col">
+			<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
+				<PageHeader
+					title={
+						isManager
+							? t("scheduling:scheduling.page.title", "Shift Schedule")
+							: t("scheduling:scheduling.page.employeeTitle", "My Schedule")
+					}
+					scope={
+						<span>
+							{org?.name} · {org?.timezone ?? "UTC"}
+						</span>
+					}
+					description={
+						isManager
+							? t(
+									"scheduling:scheduling.page.planningDescription",
+									"Plan and publish shifts. Planned shifts do not record working time.",
+								)
+							: t(
+									"scheduling:scheduling.page.employeeScheduleDescription",
+									"Your published shifts, week by week",
+								)
+					}
+				/>
 
 				<ShiftScheduler
 					// A new focus from the URL opens a fresh schedule view.
-					key={`${focus.employeeId ?? ""}:${focus.date ?? ""}`}
+					key={`${emp.organizationId}:${emp.id}:${emp.role}:${focus.employeeId ?? ""}:${focus.date ?? ""}`}
 					organizationId={emp.organizationId}
 					organizationTimezone={org?.timezone ?? "UTC"}
 					employeeId={emp.id}
@@ -84,25 +85,6 @@ async function SchedulingPageContent({
 				/>
 			</div>
 		</div>
-	);
-}
-
-function SchedulingPageLoading() {
-	return (
-		<LoadingRegion
-			label={{
-				labelKey: "common.loadingRegions.shiftSchedule",
-				labelDefault: "Loading shift schedule",
-			}}
-			className="@container/main flex flex-1 flex-col gap-2"
-			role="status"
-		>
-			<div className="space-y-4 p-4">
-				<Skeleton aria-hidden="true" className="h-8 w-56" />
-				<Skeleton aria-hidden="true" className="h-5 w-80" />
-				<Skeleton aria-hidden="true" className="h-[520px] w-full" />
-			</div>
-		</LoadingRegion>
 	);
 }
 

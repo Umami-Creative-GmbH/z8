@@ -26,8 +26,9 @@ interface UseShiftDialogFormOptions {
 	shift: ShiftWithRelations | null;
 	templates: ShiftTemplate[];
 	defaultDate: string | null;
+	defaultTemplateId?: string | null;
 	organizationTimezone: string;
-	onSubmit: (values: ShiftDialogFormValues) => void;
+	onSubmit: (values: ShiftDialogFormValues) => void | Promise<void>;
 }
 
 const DEFAULT_START_TIME = "09:00";
@@ -94,17 +95,26 @@ export function useShiftDialogForm({
 	shift,
 	templates,
 	defaultDate,
+	defaultTemplateId = null,
 	organizationTimezone,
 	onSubmit,
 }: UseShiftDialogFormOptions) {
+	const submitting = useRef(false);
 	const form = useForm({
 		defaultValues: getDefaultShiftDialogValues(defaultDate, organizationTimezone),
 		onSubmit: async ({ value }) => {
-			onSubmit(value);
+			if (submitting.current) return;
+			submitting.current = true;
+			await Promise.resolve()
+				.then(() => onSubmit(value))
+				.finally(() => {
+					submitting.current = false;
+				});
 		},
 	});
 
 	const formValues = useStore(form.store, (state) => state.values);
+	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
 
 	const appliedTemplateId = useRef<string | null>(null);
 	useEditSession({
@@ -117,8 +127,11 @@ export function useShiftDialogForm({
 			}
 
 			const nextValues = shift
-			? getShiftDialogValues(shift, organizationTimezone)
-			: getDefaultShiftDialogValues(defaultDate, organizationTimezone);
+				? getShiftDialogValues(shift, organizationTimezone)
+				: {
+						...getDefaultShiftDialogValues(defaultDate, organizationTimezone),
+						templateId: defaultTemplateId,
+					};
 
 			form.setFieldValue("employeeId", nextValues.employeeId);
 			form.setFieldValue("templateId", nextValues.templateId);
@@ -185,6 +198,7 @@ export function useShiftDialogForm({
 	return {
 		form,
 		formValues,
+		isSubmitting,
 	};
 }
 
