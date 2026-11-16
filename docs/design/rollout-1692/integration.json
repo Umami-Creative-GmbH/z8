@@ -879,9 +879,14 @@
       "blockedBy": [
         1694
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
-      "implementationCommit": "6175e84f63208e234ac55c7c3933620072d0fb3c"
+      "status": "integrated",
+      "verifiedCommit": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "implementationCommit": "6175e84f63208e234ac55c7c3933620072d0fb3c",
+      "verifiedTree": "8e3c4302eef4b5b6d2b41e3b7330b0f6cd38e5be",
+      "integrationCommit": "6d20638f06a1ebf84fd4db8c0c35a66c11da4089",
+      "correctionCommit": "2fceadad70ac1ebe8459c497de5f2496bce9ee82",
+      "evidence": "docs/design/rollout-1692/1737.md",
+      "integrationVerification": "Vehicle reports #1737 is verified at `90a7e5bd`: initial organization-context failure now exposes local Retry, with a real-provider transport regression red before/green after. Route-local export helpers compile successfully with zero actual React Compiler errors and retain arrival/revision/duplicate guards and canonical serializers. Final66 unique files/607cases, all3type projects, nine-file explicit100CRLF/lint and Doctor0errors/6retained warnings pass. Actual context failure/recovery passes5checks per phase with10captures; actual completed3554byte PDF parses Jan101/Feb46/tenzero months,total147,archived118/own29,identities/period/generation. Three PDF captures and native actual generated owner tree2checks are archived. Phone PDF operational image is scrolled, not matched top composition. Prior CSV/XLSX and PG1/6 remain inherited, not new root all-format/standalonePG runs. All49 prior verified ancestors,14603 unaffected paths,85 original artifacts and266 prior1736paths preserved;158links/6hashes unchanged. Browsers/Next/64135/3services cleaned. Vehicle Next probes clear; retained settings/global findings and production/catalog/provider/device/zoom/live-revocation limits remain."
     },
     {
       "id": "R064",
@@ -1649,8 +1654,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
-      "verifiedCommit": null
+      "status": "awaiting-integration",
+      "verifiedCommit": null,
+      "implementationCommit": "6473c5b41f387f9bfe1798b91be415c0f43dec02",
+      "handoffLimitation": "Worker reports128unit/component and61PostgreSQL tests,Doctor100 and browser recording/roles/preferences/navigation/phone evidence. Generated licenses, native React inspection and full build/catalog limits remain; fresh integration review owns readiness."
     },
     {
       "id": "R159",
@@ -1659,8 +1666,10 @@
       "blockedBy": [
         1694
       ],
-      "status": "implementing",
-      "verifiedCommit": null
+      "status": "awaiting-integration",
+      "verifiedCommit": null,
+      "implementationCommit": "bf0197401f2e07ff29b8fd5889b3f3f3f3677f62",
+      "handoffLimitation": "Worker reports57tests,Doctor100/100 and native accessibility; main types blocked by generated licenses.json and React introspection remains unpassed. Fresh integration review must complete the typecheck safely and preserve all runtime/build/catalog limits."
     },
     {
       "id": "R160",
@@ -1669,7 +1678,7 @@
       "blockedBy": [
         1694
       ],
-      "status": "pending",
+      "status": "implementing",
       "verifiedCommit": null
     },
     {
@@ -1679,7 +1688,7 @@
       "blockedBy": [
         1693
       ],
-      "status": "pending",
+      "status": "implementing",
       "verifiedCommit": null
     },
     {
