@@ -158,3 +158,19 @@ it("refreshes cached Activity arrivals before exposing old targets", () => {
 	rendered.rerender(<Activity mode="visible">{view(snapshot())}</Activity>);
 	expect(screen.getByText("First aid")).toBeTruthy();
 });
+
+it("keeps a failed Activity arrival retryable until a successful read arrives", () => {
+	const rendered = render(<Activity mode="visible">{view(null)}</Activity>);
+	expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+	rendered.rerender(<Activity mode="hidden">{view(null)}</Activity>);
+	rendered.rerender(<Activity mode="visible">{view(null)}</Activity>);
+	expect(boundary.refresh).toHaveBeenCalledOnce();
+	rendered.rerender(<Activity mode="visible">{view(null)}</Activity>);
+	expect(screen.queryByText("First aid")).toBeNull();
+	expect(screen.queryByRole("button", { name: "Request from several" })).toBeNull();
+	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+	expect(boundary.refresh).toHaveBeenCalledTimes(2);
+	rendered.rerender(<Activity mode="visible">{view(snapshot())}</Activity>);
+	expect(screen.getByText("First aid")).toBeTruthy();
+	expect(screen.getByRole("button", { name: "Request from several" })).toBeTruthy();
+});

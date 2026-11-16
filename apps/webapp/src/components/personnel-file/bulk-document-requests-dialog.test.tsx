@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { Activity, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDocumentRequestsInBulkAction } from "@/app/[locale]/(app)/personnel-files/document-request-actions";
@@ -24,6 +25,52 @@ vi.mock("@/components/ui/action-panel", () => {
 		ActionPanelHeader: Pass,
 		ActionPanelTitle: ({ children }: { children?: ReactNode }) => <h2>{children}</h2>,
 	};
+});
+
+it("retires queued bulk validation on Activity return and accepts a fresh confirmation", async () => {
+	vi.mocked(createDocumentRequestsInBulkAction).mockResolvedValue({
+		success: false,
+		error: "Refused",
+		code: "too_many_recipients",
+	});
+	const onCreated = vi.fn();
+	const page = (mode: "visible" | "hidden") => (
+		<Activity mode={mode}>
+			<BulkDocumentRequestsDialog
+				open
+				onOpenChange={vi.fn()}
+				options={certificateOptions}
+				today="2026-10-18"
+				onCreated={onCreated}
+			/>
+		</Activity>
+	);
+	const view = render(page("visible"));
+	fireEvent.click(screen.getByRole("switch", { name: "Berlin" }));
+	fillRequest();
+	const form = screen.getByRole("button", { name: "Request" }).closest("form");
+	if (!form) throw new Error("Bulk request form missing");
+	act(() => {
+		const submission = new Event("submit", { bubbles: true, cancelable: true });
+		fireEvent(form, submission);
+		expect(submission.defaultPrevented).toBe(true);
+		expect(createDocumentRequestsInBulkAction).not.toHaveBeenCalled();
+		flushSync(() => view.rerender(page("hidden")));
+		flushSync(() => view.rerender(page("visible")));
+	});
+	await act(async () => new Promise((resolve) => setTimeout(resolve, 30)));
+	expect(createDocumentRequestsInBulkAction).not.toHaveBeenCalled();
+	expect(onCreated).not.toHaveBeenCalled();
+	fireEvent.click(screen.getByRole("button", { name: "Request" }));
+	await waitFor(() => expect(createDocumentRequestsInBulkAction).toHaveBeenCalledOnce());
+	expect(createDocumentRequestsInBulkAction).toHaveBeenCalledWith({
+		category: "certificate",
+		teamIds: ["berlin"],
+		employeeIds: [],
+		title: "First aid refresher",
+		note: "Please upload the new card.",
+		deadline: "2026-11-30",
+	});
 });
 vi.mock("@/components/ui/date-picker", () => ({
 	DatePicker: ({ value, onChange }: { value?: string | null; onChange: (v: string) => void }) => (

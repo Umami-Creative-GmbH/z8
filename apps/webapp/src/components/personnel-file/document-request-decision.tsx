@@ -1,7 +1,7 @@
 "use client";
 
 import { IconArrowBackUp, IconCheck } from "@tabler/icons-react";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import {
 	acceptDocumentRequestAction,
 	returnDocumentRequestAction,
 } from "@/app/[locale]/(app)/personnel-files/document-request-actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	AlertDialog,
 	AlertDialogCancel,
@@ -27,6 +28,10 @@ import {
 	type DocumentRequestView,
 } from "@/lib/personnel-file/document-request.types";
 import { useDocumentRequestErrorMessage } from "./document-request-labels";
+import {
+	documentRequestSubmissionMeta,
+	useDocumentRequestConfirmation,
+} from "./use-document-request-confirmation";
 
 /**
  * Accept and Return for a submitted request (#1402), for whoever covers it.
@@ -164,16 +169,34 @@ function ReturnDocumentRequestDialog({
 }) {
 	const { t } = useTranslate();
 	const errorMessage = useDocumentRequestErrorMessage();
+	const confirmation = useDocumentRequestConfirmation(request, open);
+	const [error, setError] = useState<string | null>(null);
 	const form = useForm({
 		defaultValues: { reason: "" },
-		onSubmit: async ({ value }) => {
+		onSubmitMeta: documentRequestSubmissionMeta,
+		onSubmit: async ({ value, meta }) => {
+			const submission = meta.submission;
+			if (!submission || !confirmation.isCurrent(submission)) return;
+			setError(null);
 			const result = await returnDocumentRequestAction({
-				requestId: request.id,
+				requestId: submission.requestId,
 				reason: value.reason,
-				expectedVersion: request.version,
-			});
+				expectedVersion: submission.expectedVersion,
+			}).catch(() => null);
+			if (!confirmation.isCurrent(submission)) return;
+			if (!result) {
+				setError(
+					t(
+						"settings.personnelFiles.requests.return.failed",
+						"The request could not be returned. Your reason is kept. Try again.",
+					),
+				);
+				return;
+			}
 			if (!result.success) {
-				toast.error(errorMessage(result));
+				const message = errorMessage(result);
+				setError(message);
+				toast.error(message);
 				if (result.code === "conflict") onDecided();
 				return;
 			}
@@ -183,19 +206,28 @@ function ReturnDocumentRequestDialog({
 			onDecided();
 		},
 	});
+	const pending = useStore(form.store, (state) => state.isSubmitting);
 
 	return (
 		<AlertDialog
 			open={open}
 			onOpenChange={(next) => {
-				if (!next) form.reset();
+				if (confirmation.isPending() || form.state.isSubmitting) return;
+				if (!next) {
+					form.reset();
+					setError(null);
+				}
 				onOpenChange(next);
 			}}
 		>
 			<AlertDialogContent>
 				<form
-					action={() => {
-						void form.handleSubmit();
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						const submission = confirmation.reserve();
+						if (!submission) return;
+						void form.handleSubmit({ submission }).finally(() => confirmation.release(submission));
 					}}
 					className="grid gap-4"
 				>
@@ -211,6 +243,11 @@ function ReturnDocumentRequestDialog({
 							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
+					{error ? (
+						<Alert variant="destructive">
+							<AlertDescription>{error}</AlertDescription>
+						</Alert>
+					) : null}
 					<form.Field
 						name="reason"
 						validators={{
@@ -227,6 +264,7 @@ function ReturnDocumentRequestDialog({
 								</TFormLabel>
 								<TFormControl hasError={fieldHasError(field)}>
 									<Textarea
+										disabled={pending}
 										value={field.state.value}
 										maxLength={DOCUMENT_REQUEST_TEXT_MAX_LENGTH}
 										onChange={(event) => field.handleChange(event.target.value)}
@@ -238,7 +276,9 @@ function ReturnDocumentRequestDialog({
 						)}
 					</form.Field>
 					<AlertDialogFooter>
-						<AlertDialogCancel type="button">{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogCancel type="button" disabled={pending}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
 						<form.Subscribe selector={(state) => state.isSubmitting}>
 							{(isSubmitting) => (
 								<Button type="submit" disabled={isSubmitting}>
