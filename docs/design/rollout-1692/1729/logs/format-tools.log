@@ -1,0 +1,18 @@
+src\components\personnel-file\delete-document-dialog.test.tsx:75:3 lint/style/noNonNullAssertion ━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    73 │ 	expect(closed).not.toHaveBeenCalled();
+    74 │ 	fireEvent.submit(
+  > 75 │ 		screen.getByRole("button", { name: "Delete" }).closest("form")!,
+       │ 		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    76 │ 	);
+    77 │ 	expect(deleteEmployeeDocumentAction).toHaveBeenCalledTimes(1);
+  
+  i A non-null assertion tells TypeScript to ignore a possible null or undefined value. If the value is missing at runtime, the code fails with an error that the compiler could not catch.
+  
+  i Check that the value is defined before using it, for example with an if statement or optional chaining, instead of asserting it.
+  
+
+Checked 9 files in 13ms. Fixed 8 files.
+Found 1 warning.

@@ -6,7 +6,13 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { listEmployeeDocumentRequestsAction } from "@/app/[locale]/(app)/personnel-files/document-request-actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	DOCUMENT_REQUEST_CATEGORIES,
@@ -38,7 +44,13 @@ export function DocumentRequestsSection({
 		capability.categories.includes(category),
 	);
 	if (categories.length === 0) return null;
-	return <DocumentRequestsCard capability={capability} categories={categories} former={former} />;
+	return (
+		<DocumentRequestsCard
+			capability={capability}
+			categories={categories}
+			former={former}
+		/>
+	);
 }
 
 function DocumentRequestsCard({
@@ -65,14 +77,20 @@ function DocumentRequestsCard({
 	});
 
 	function refresh() {
-		void queryClient.invalidateQueries({ queryKey: queryKeys.personnelFile.documentRequestsAll() });
+		void queryClient.invalidateQueries({
+			queryKey: queryKeys.personnelFile.documentRequestsAll(),
+		});
 	}
 
 	return (
 		<Card>
 			<CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
 				<div className="space-y-1.5">
-					<CardTitle>{t("settings.personnelFiles.requests.title", "Document requests")}</CardTitle>
+					<CardTitle>
+						<h2>
+							{t("settings.personnelFiles.requests.title", "Document requests")}
+						</h2>
+					</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.personnelFiles.requests.description",
@@ -81,9 +99,16 @@ function DocumentRequestsCard({
 					</CardDescription>
 				</div>
 				{former ? null : (
-					<Button type="button" onClick={() => setCreating(true)}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => setCreating(true)}
+					>
 						<IconFilePlus aria-hidden="true" className="size-4" />
-						{t("settings.personnelFiles.requests.create.open", "Request a document")}
+						{t(
+							"settings.personnelFiles.requests.create.open",
+							"Request a document",
+						)}
 					</Button>
 				)}
 			</CardHeader>
@@ -93,15 +118,28 @@ function DocumentRequestsCard({
 						<Skeleton className="h-16 w-full" />
 					</div>
 				) : query.isError ? (
-					<p role="alert" className="text-sm text-destructive">
-						{t(
-							"settings.personnelFiles.requests.loadFailed",
-							"The document requests could not be loaded.",
-						)}
-					</p>
+					<div role="alert" className="space-y-3 text-sm text-destructive">
+						<p>
+							{t(
+								"settings.personnelFiles.requests.loadFailed",
+								"The document requests could not be loaded.",
+							)}
+						</p>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={query.isFetching}
+							onClick={() => void query.refetch()}
+						>
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
 				) : query.data.length === 0 ? (
 					<p className="text-sm text-muted-foreground">
-						{t("settings.personnelFiles.requests.empty", "No documents requested yet.")}
+						{t(
+							"settings.personnelFiles.requests.empty",
+							"No documents requested yet.",
+						)}
 					</p>
 				) : (
 					<DocumentRequestList

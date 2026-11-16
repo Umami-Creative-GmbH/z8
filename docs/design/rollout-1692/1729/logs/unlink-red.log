@@ -1,0 +1,61 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-c42af28b-eda920ca028710b9/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/personnel-file-panel.test.tsx (3 tests | 1 failed) 181ms
+   × keeps a sick-note link after rejected transport and offers its action again 84ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/personnel-file-panel.test.tsx > keeps a sick-note link after rejected transport and offers its action again
+AssertionError: expected "vi.fn()" to be called with arguments: [ Array(1) ]
+
+Number of calls: 0
+
+ ❯ src/components/personnel-file/personnel-file-panel.test.tsx:19:22
+     17|  await screen.findByRole("button",{name:"Unlink Medical note from its …
+     18|  await act(async()=>{});
+     19|  expect(toast.error).toHaveBeenCalledWith("The sick note could not be …
+       |                      ^
+     20|  expect((button as HTMLButtonElement).disabled).toBe(false);
+     21| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: offline
+ ❯ src/components/personnel-file/personnel-file-panel.test.tsx:12:56
+
+ ❯ ../../node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35
+ ❯ ../../node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26
+ ❯ ../../node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20
+ ❯ runWithCancel ../../node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10
+ ❯ ../../node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20
+ ❯ runWithTimeout ../../node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3276:10
+ ❯ ../../node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3922:64
+
+This error originated in "src/components/personnel-file/personnel-file-panel.test.tsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "keeps a sick-note link after rejected transport and offers its action again". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+     Errors  1 error
+   Start at  18:38:14
+   Duration  1.34s (import 46%, environment 28%, tests 15%, transform 8%, setup 2%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-c42af28b-
+  │ eda920ca028710b9\apps\webapp
+

@@ -1,0 +1,1919 @@
+src\app\[locale]\(app)\personnel-files\[employeeId]\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·notFound·}·from·"next/navigation";
+     2    │ - import·{·Suspense·}·from·"react";
+     3    │ - import·{·DocumentRequestsSection·}·from·"@/components/personnel-file/document-requests-section";
+     4    │ - import·{·EmployeeFileLoadingHeading·}·from·"@/components/personnel-file/employee-file-loading-heading";
+     5    │ - import·{·EmployeeFileWorkspace·}·from·"@/components/personnel-file/employee-file-workspace";
+     6    │ - import·{·EmployeeSickLeaveCard·}·from·"@/components/personnel-file/employee-sick-leave-card";
+     7    │ - import·{·PersonnelFilePanel·}·from·"@/components/personnel-file/personnel-file-panel";
+     8    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+     9    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";
+    10    │ - import·{·db·}·from·"@/db";
+    11    │ - import·{·listManagedEmployees·}·from·"@/lib/personnel-file/access-store";
+    12    │ - import·{·loadCurrentPersonnelFileAccess·}·from·"@/lib/personnel-file/current-access";
+    13    │ - import·{·isDocumentCategory·}·from·"@/lib/personnel-file/document.types";
+    14    │ - import·{·personnelFilePanelCapabilityFor·}·from·"@/lib/personnel-file/panel";
+    15    │ - import·{·isCanonicalUuid·}·from·"@/lib/validations/canonical-uuid";
+    16    │ - 
+    17    │ - interface·PersonnelFilePageProps·{
+    18    │ - → params:·Promise<{·employeeId:·string·}>;
+    19    │ - → searchParams:·Promise<{·category?:·string·|·string[]·}>;
+    20    │ - }
+    21    │ - 
+    22    │ - /**
+    23    │ - ·*·One·employee's·personnel·file·in·the·officer·area·(#866),·for·whoever
+    24    │ - ·*·manages·at·least·one·of·its·categories.·Not·found·for·everyone·else.
+    25    │ - ·*·`?category=`·opens·it·filtered,·e.g.·from·a·sick·note·notification·(#982).
+    26    │ - ·*·Its·requests·section·(#1401)·shows·to·whoever·covers·certificates·or·other
+    27    │ - ·*·documents·of·the·employee.
+    28    │ - ·*/
+    29    │ - async·function·PersonnelFileContent({
+    30    │ - → params,
+    31    │ - → searchParams,
+    32    │ - }:·PersonnelFilePageProps)·{
+    33    │ - → const·[current,·{·employeeId·},·{·category·}]·=·await·Promise.all([
+    34    │ - → → loadCurrentPersonnelFileAccess(),
+    35    │ - → → params,
+    36    │ - → → searchParams,
+    37    │ - → ]);
+    38    │ - → if·(current.status·!==·"resolved"·||·!isCanonicalUuid(employeeId))·notFound();
+    39    │ - → const·[capability,·[employee]]·=·await·Promise.all([
+    40    │ - → → personnelFilePanelCapabilityFor(current.access,·employeeId),
+    41    │ - → → listManagedEmployees(db,·current.access,·{·employeeId·}),
+    42    │ - → ]);
+    43    │ - → if·(!capability·||·!employee)·notFound();
+    44    │ - 
+    45    │ - → return·(
+    46    │ - → → <EmployeeFileWorkspace
+    47    │ - → → → key={`${current.access.userId}:${current.access.organizationId}:${employeeId}:${capability.categories.join(",")}`}
+    48    │ - → → → userId={current.access.userId}
+    49    │ - → → → organizationId={current.access.organizationId}
+    50    │ - → → → employee={employee}
+    51    │ - → → >
+    52    │ - → → → <PersonnelFilePanel
+    53    │ - → → → → key={isDocumentCategory(category)·?·category·:·"all"}
+    54    │ - → → → → capability={capability}
+    55    │ - → → → → initialCategory={
+    56    │ - → → → → → isDocumentCategory(category)·&&
+    57    │ - → → → → → capability.categories.includes(category)
+    58    │ - → → → → → → ?·category
+    59    │ - → → → → → → :·null
+    60    │ - → → → → }
+    61    │ - → → → />
+    62    │ - → → → <DocumentRequestsSection
+    63    │ - → → → → capability={capability}
+    64    │ - → → → → former={!employee.isActive}
+    65    │ - → → → />
+    66    │ - → → → {capability.categories.includes("sick_note")·?·(
+    67    │ - → → → → <EmployeeSickLeaveCard·employeeId={capability.employeeId}·/>
+    68    │ - → → → )·:·null}
+    69    │ - → → </EmployeeFileWorkspace>
+    70    │ - → );
+    71    │ - }
+    72    │ - 
+    73    │ - function·PersonnelFileLoading()·{
+    74    │ - → return·(
+    75    │ - → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·p-4·md:p-6">
+    76    │ - → → → <EmployeeFileLoadingHeading·/>
+    77    │ - → → → <LoadingRegion
+    78    │ - → → → → label={{
+    79    │ - → → → → → labelKey:·"settings.personnelFiles.area.loadingFile",
+    80    │ - → → → → → labelDefault:·"Loading·the·personnel·file",
+    81    │ - → → → → }}
+    82    │ - → → → → className="@container/main·flex·flex-1·flex-col·gap-6·p-4·md:p-6"
+    83    │ - → → → → role="status"
+    84    │ - → → → >
+    85    │ - → → → → <Skeleton·aria-hidden="true"·className="h-8·w-48"·/>
+    86    │ - → → → → <Skeleton·aria-hidden="true"·className="h-64·w-full"·/>
+    87    │ - → → → </LoadingRegion>
+    88    │ - → → </div>
+    89    │ - → );
+    90    │ - }
+    91    │ - 
+    92    │ - export·default·function·PersonnelFilePage(props:·PersonnelFilePageProps)·{
+    93    │ - → return·(
+    94    │ - → → <Suspense·fallback={<PersonnelFileLoading·/>}>
+    95    │ - → → → <PersonnelFileContent·{...props}·/>
+    96    │ - → → </Suspense>
+    97    │ - → );
+    98    │ - }
+        1 │ + import·{·notFound·}·from·"next/navigation";␍
+        2 │ + import·{·Suspense·}·from·"react";␍
+        3 │ + import·{·DocumentRequestsSection·}·from·"@/components/personnel-file/document-requests-section";␍
+        4 │ + import·{·EmployeeFileLoadingHeading·}·from·"@/components/personnel-file/employee-file-loading-heading";␍
+        5 │ + import·{·EmployeeFileWorkspace·}·from·"@/components/personnel-file/employee-file-workspace";␍
+        6 │ + import·{·EmployeeSickLeaveCard·}·from·"@/components/personnel-file/employee-sick-leave-card";␍
+        7 │ + import·{·PersonnelFilePanel·}·from·"@/components/personnel-file/personnel-file-panel";␍
+        8 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+        9 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+       10 │ + import·{·db·}·from·"@/db";␍
+       11 │ + import·{·listManagedEmployees·}·from·"@/lib/personnel-file/access-store";␍
+       12 │ + import·{·loadCurrentPersonnelFileAccess·}·from·"@/lib/personnel-file/current-access";␍
+       13 │ + import·{·isDocumentCategory·}·from·"@/lib/personnel-file/document.types";␍
+       14 │ + import·{·personnelFilePanelCapabilityFor·}·from·"@/lib/personnel-file/panel";␍
+       15 │ + import·{·isCanonicalUuid·}·from·"@/lib/validations/canonical-uuid";␍
+       16 │ + ␍
+       17 │ + interface·PersonnelFilePageProps·{␍
+       18 │ + → params:·Promise<{·employeeId:·string·}>;␍
+       19 │ + → searchParams:·Promise<{·category?:·string·|·string[]·}>;␍
+       20 │ + }␍
+       21 │ + ␍
+       22 │ + /**␍
+       23 │ + ·*·One·employee's·personnel·file·in·the·officer·area·(#866),·for·whoever␍
+       24 │ + ·*·manages·at·least·one·of·its·categories.·Not·found·for·everyone·else.␍
+       25 │ + ·*·`?category=`·opens·it·filtered,·e.g.·from·a·sick·note·notification·(#982).␍
+       26 │ + ·*·Its·requests·section·(#1401)·shows·to·whoever·covers·certificates·or·other␍
+       27 │ + ·*·documents·of·the·employee.␍
+       28 │ + ·*/␍
+       29 │ + async·function·PersonnelFileContent({␍
+       30 │ + → params,␍
+       31 │ + → searchParams,␍
+       32 │ + }:·PersonnelFilePageProps)·{␍
+       33 │ + → const·[current,·{·employeeId·},·{·category·}]·=·await·Promise.all([␍
+       34 │ + → → loadCurrentPersonnelFileAccess(),␍
+       35 │ + → → params,␍
+       36 │ + → → searchParams,␍
+       37 │ + → ]);␍
+       38 │ + → if·(current.status·!==·"resolved"·||·!isCanonicalUuid(employeeId))·notFound();␍
+       39 │ + → const·[capability,·[employee]]·=·await·Promise.all([␍
+       40 │ + → → personnelFilePanelCapabilityFor(current.access,·employeeId),␍
+       41 │ + → → listManagedEmployees(db,·current.access,·{·employeeId·}),␍
+       42 │ + → ]);␍
+       43 │ + → if·(!capability·||·!employee)·notFound();␍
+       44 │ + ␍
+       45 │ + → return·(␍
+       46 │ + → → <EmployeeFileWorkspace␍
+       47 │ + → → → key={`${current.access.userId}:${current.access.organizationId}:${employeeId}:${capability.categories.join(",")}`}␍
+       48 │ + → → → userId={current.access.userId}␍
+       49 │ + → → → organizationId={current.access.organizationId}␍
+       50 │ + → → → employee={employee}␍
+       51 │ + → → >␍
+       52 │ + → → → <PersonnelFilePanel␍
+  47 more lines truncated
+  
+
+src\components\personnel-file\delete-document-dialog.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom
+      2     │ - 
+      3     │ - import·{
+      4     │ - → act,
+      5     │ - → fireEvent,
+      6     │ - → render,
+      7     │ - → screen,
+      8     │ - → waitFor,
+      9     │ - }·from·"@testing-library/react";
+     10     │ - import·{·Activity·}·from·"react";
+     11     │ - import·{·expect,·it,·vi·}·from·"vitest";
+     12     │ - import·{·deleteEmployeeDocumentAction·}·from·"@/app/[locale]/(app)/personnel-files/actions";
+     13     │ - import·type·{·EmployeeDocumentView·}·from·"@/lib/personnel-file/document-store";
+     14     │ - import·{·DeleteDocumentDialog·}·from·"./delete-document-dialog";
+     15     │ - 
+     16     │ - vi.mock("@/app/[locale]/(app)/personnel-files/actions",·()·=>·({
+     17     │ - → deleteEmployeeDocumentAction:·vi.fn(),
+     18     │ - }));
+     19     │ - vi.mock("@tolgee/react",·()·=>·({
+     20     │ - → useTranslate:·()·=>·({
+     21     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>
+     22     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>
+     23     │ - → → → → String(params?.[key]·??·match),
+     24     │ - → → → ),
+     25     │ - → }),
+     26     │ - }));
+     27     │ - const·document:·EmployeeDocumentView·=·{
+     28     │ - → id:·"doc",
+     29     │ - → employeeId:·"employee",
+     30     │ - → title:·"Safety·qualification",
+     31     │ - → category:·"certificate",
+     32     │ - → visibility:·"shared",
+     33     │ - → documentDate:·"2026-01-15",
+     34     │ - → payPeriod:·null,
+     35     │ - → expiryDate:·null,
+     36     │ - → fileName:·"safety.pdf",
+     37     │ - → mimeType:·"application/pdf",
+     38     │ - → sizeBytes:·10,
+     39     │ - → createdAt:·"2026-01-15T12:00:00Z",
+     40     │ - → absence:·null,
+     41     │ - → skill:·null,
+     42     │ - };
+     43     │ - 
+     44     │ - it("retains·the·audit·reason·through·rejected·transport,·guards·pending·dismissal/duplicates,·and·retries",·async·()·=>·{
+     45     │ - → let·finish!:·(value:·{·success:·false;·error:·string·})·=>·void;
+     46     │ - → vi.mocked(deleteEmployeeDocumentAction)
+     47     │ - → → .mockReset()
+     48     │ - → → .mockImplementationOnce(
+     49     │ - → → → ()·=>
+     50     │ - → → → → new·Promise((resolve)·=>·{
+     51     │ - → → → → → finish·=·resolve;
+     52     │ - → → → → }),
+     53     │ - → → )
+     54     │ - → → .mockResolvedValueOnce({·success:·false,·error:·"Document·not·found"·})
+     55     │ - → → .mockResolvedValue({·success:·true,·data:·{·documentId:·"doc"·}·});
+     56     │ - → const·closed·=·vi.fn(),
+     57     │ - → → deleted·=·vi.fn();
+     58     │ - → render(
+     59     │ - → → <DeleteDocumentDialog
+     60     │ - → → → document={document}
+     61     │ - → → → onOpenChange={closed}
+     62     │ - → → → onDeleted={deleted}
+     63     │ - → → />,
+     64     │ - → );
+     65     │ - → fireEvent.change(screen.getByRole("textbox",·{·name:·"Reason·(optional)"·}),·{
+     66     │ - → → target:·{·value:·"Duplicate·scan"·},
+     67     │ - → });
+     68     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Delete"·}));
+     69     │ - → await·waitFor(()·=>
+     70     │ - → → expect(deleteEmployeeDocumentAction).toHaveBeenCalledTimes(1),
+     71     │ - → );
+     72     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Cancel"·}));
+     73     │ - → expect(closed).not.toHaveBeenCalled();
+     74     │ - → const·form·=·screen.getByRole("button",·{·name:·"Delete"·}).closest("form");
+     75     │ - → if·(!form)·throw·new·Error("Delete·confirmation·form·missing");
+     76     │ - → fireEvent.submit(form);
+     77     │ - → expect(deleteEmployeeDocumentAction).toHaveBeenCalledTimes(1);
+     78     │ - → await·act(async·()·=>
+     79     │ - → → finish({·success:·false,·error:·"Document·not·found"·}),
+     80     │ - → );
+     81     │ - → await·screen.findByRole("alert");
+     82     │ - → expect((screen.getByRole("textbox")·as·HTMLTextAreaElement).value).toBe(
+     83     │ - → → "Duplicate·scan",
+     84     │ - → );
+     85     │ - → vi.mocked(deleteEmployeeDocumentAction).mockRejectedValueOnce(
+     86     │ - → → new·Error("offline"),
+     87     │ - → );
+     88     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Delete"·}));
+     89     │ - → await·screen.findByText(
+     90     │ - → → "Could·not·delete·the·document.·Your·reason·is·kept.·Try·again.",
+     91     │ - → );
+     92     │ - → expect((screen.getByRole("textbox")·as·HTMLTextAreaElement).value).toBe(
+     93     │ - → → "Duplicate·scan",
+     94     │ - → );
+     95     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Delete"·}));
+     96     │ - → await·waitFor(()·=>·expect(deleted).toHaveBeenCalledTimes(1));
+     97     │ - → expect(deleteEmployeeDocumentAction).toHaveBeenLastCalledWith({
+     98     │ - → → documentId:·"doc",
+     99     │ - → → reason:·"Duplicate·scan",
+    100     │ - → });
+    101     │ - });
+    102     │ - 
+    103     │ - it("does·not·close·a·resumed·task·or·announce·late·completion·after·Activity·suspension",·async·()·=>·{
+    104     │ - → let·finish!:·(value:·{·success:·true;·data:·{·documentId:·string·}·})·=>·void;
+    105     │ - → vi.mocked(deleteEmployeeDocumentAction)
+    106     │ - → → .mockReset()
+    107     │ - → → .mockImplementation(
+    108     │ - → → → ()·=>
+    109     │ - → → → → new·Promise((resolve)·=>·{
+    110     │ - → → → → → finish·=·resolve;
+    111     │ - → → → → }),
+    112     │ - → → );
+    113     │ - → const·deleted·=·vi.fn(),
+    114     │ - → → closed·=·vi.fn();
+    115     │ - → const·view·=·render(
+    116     │ - → → <Activity·mode="visible">
+    117     │ - → → → <DeleteDocumentDialog
+    118     │ - → → → → document={document}
+    119     │ - → → → → onOpenChange={closed}
+    120     │ - → → → → onDeleted={deleted}
+    121     │ - → → → />
+    122     │ - → → </Activity>,
+    123     │ - → );
+    124     │ - → fireEvent.click(screen.getByRole("button",·{·name:·"Delete"·}));
+    125     │ - → await·waitFor(()·=>
+    126     │ - → → expect(deleteEmployeeDocumentAction).toHaveBeenCalledTimes(1),
+    127     │ - → );
+    128     │ - → view.rerender(
+    129     │ - → → <Activity·mode="hidden">
+    130     │ - → → → <DeleteDocumentDialog
+    131     │ - → → → → document={document}
+    132     │ - → → → → onOpenChange={closed}
+    133     │ - → → → → onDeleted={deleted}
+    134     │ - → → → />
+    135     │ - → → </Activity>,
+    136     │ - → );
+    137     │ - → view.rerender(
+    138     │ - → → <Activity·mode="visible">
+    139     │ - → → → <DeleteDocumentDialog
+    140     │ - → → → → document={document}
+    141     │ - → → → → onOpenChange={closed}
+    142     │ - → → → → onDeleted={deleted}
+    143     │ - → → → />
+    144     │ - → → </Activity>,
+    145     │ - → );
+    146     │ - → await·act(async·()·=>·finish({·success:·true,·data:·{·documentId:·"doc"·}·}));
+    147     │ - → expect(deleted).not.toHaveBeenCalled();
+    148     │ - → expect(closed).not.toHaveBeenCalled();
+    149     │ - });
+          1 │ + //·@vitest-environment·jsdom␍
+  149 more lines truncated
+  
+
+src\components\personnel-file\delete-document-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·useForm·}·from·"@tanstack/react-form";
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      5     │ - import·{·useEffect,·useRef,·useState·}·from·"react";
+      6     │ - import·{·toast·}·from·"sonner";
+      7     │ - import·{
+      8     │ - → deleteEmployeeDocumentAction,
+      9     │ - → type·EmployeeDocumentView,
+     10     │ - }·from·"@/app/[locale]/(app)/personnel-files/actions";
+     11     │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";
+     12     │ - import·{
+     13     │ - → AlertDialog,
+     14     │ - → AlertDialogCancel,
+     15     │ - → AlertDialogContent,
+     16     │ - → AlertDialogDescription,
+     17     │ - → AlertDialogFooter,
+     18     │ - → AlertDialogHeader,
+     19     │ - → AlertDialogTitle,
+     20     │ - }·from·"@/components/ui/alert-dialog";
+     21     │ - import·{·Button·}·from·"@/components/ui/button";
+     22     │ - import·{
+     23     │ - → TFormControl,
+     24     │ - → TFormItem,
+     25     │ - → TFormLabel,
+     26     │ - }·from·"@/components/ui/tanstack-form";
+     27     │ - import·{·Textarea·}·from·"@/components/ui/textarea";
+     28     │ - 
+     29     │ - /**·Deletes·an·employee·document·after·a·confirmation,·with·an·optional·reason·for·the·audit·log.·*/
+     30     │ - export·function·DeleteDocumentDialog({
+     31     │ - → document,
+     32     │ - → onOpenChange,
+     33     │ - → onDeleted,
+     34     │ - }:·{
+     35     │ - → document:·EmployeeDocumentView·|·null;
+     36     │ - → onOpenChange:·(open:·boolean)·=>·void;
+     37     │ - → onDeleted:·()·=>·void;
+     38     │ - })·{
+     39     │ - → return·(
+     40     │ - → → <DeleteDocumentTask
+     41     │ - → → → key={document?.id·??·"closed"}
+     42     │ - → → → document={document}
+     43     │ - → → → onOpenChange={onOpenChange}
+     44     │ - → → → onDeleted={onDeleted}
+     45     │ - → → />
+     46     │ - → );
+     47     │ - }
+     48     │ - 
+     49     │ - function·DeleteDocumentTask({
+     50     │ - → document,
+     51     │ - → onOpenChange,
+     52     │ - → onDeleted,
+     53     │ - }:·{
+     54     │ - → document:·EmployeeDocumentView·|·null;
+     55     │ - → onOpenChange:·(open:·boolean)·=>·void;
+     56     │ - → onDeleted:·()·=>·void;
+     57     │ - })·{
+     58     │ - → const·{·t·}·=·useTranslate();
+     59     │ - → const·pending·=·useRef(false);
+     60     │ - → const·lifetime·=·useRef({});
+     61     │ - → const·[working,·setWorking]·=·useState(false);
+     62     │ - → const·[error,·setError]·=·useState<string·|·null>(null);
+     63     │ - → useEffect(()·=>·{
+     64     │ - → → lifetime.current·=·{};
+     65     │ - → → return·()·=>·{
+     66     │ - → → → lifetime.current·=·{};
+     67     │ - → → };
+     68     │ - → },·[]);
+     69     │ - → const·form·=·useForm({
+     70     │ - → → defaultValues:·{·reason:·""·},
+     71     │ - → → onSubmit:·async·({·value·})·=>·{
+     72     │ - → → → if·(!document·||·pending.current)·return;
+     73     │ - → → → pending.current·=·true;
+     74     │ - → → → setWorking(true);
+     75     │ - → → → setError(null);
+     76     │ - → → → const·task·=·lifetime.current;
+     77     │ - → → → const·result·=·await·deleteEmployeeDocumentAction({
+     78     │ - → → → → documentId:·document.id,
+     79     │ - → → → → reason:·value.reason,
+     80     │ - → → → }).catch(()·=>·null);
+     81     │ - → → → pending.current·=·false;
+     82     │ - → → → setWorking(false);
+     83     │ - → → → if·(lifetime.current·!==·task)·return;
+     84     │ - → → → if·(!result)·{
+     85     │ - → → → → setError(
+     86     │ - → → → → → t(
+     87     │ - → → → → → → "settings.personnelFiles.delete.failed",
+     88     │ - → → → → → → "Could·not·delete·the·document.·Your·reason·is·kept.·Try·again.",
+     89     │ - → → → → → ),
+     90     │ - → → → → );
+     91     │ - → → → → return;
+     92     │ - → → → }
+     93     │ - → → → if·(!result.success)·{
+     94     │ - → → → → setError(result.error);
+     95     │ - → → → → return;
+     96     │ - → → → }
+     97     │ - → → → toast.success(
+     98     │ - → → → → t("settings.personnelFiles.delete.success",·"Document·deleted"),
+     99     │ - → → → );
+    100     │ - → → → form.reset();
+    101     │ - → → → onOpenChange(false);
+    102     │ - → → → onDeleted();
+    103     │ - → → },
+    104     │ - → });
+    105     │ - 
+    106     │ - → return·(
+    107     │ - → → <AlertDialog
+    108     │ - → → → open={document·!==·null}
+    109     │ - → → → onOpenChange={(open)·=>·{
+    110     │ - → → → → if·(pending.current)·return;
+    111     │ - → → → → if·(!open)·form.reset();
+    112     │ - → → → → onOpenChange(open);
+    113     │ - → → → }}
+    114     │ - → → >
+    115     │ - → → → <AlertDialogContent>
+    116     │ - → → → → <form
+    117     │ - → → → → → onSubmit={(event)·=>·{
+    118     │ - → → → → → → event.preventDefault();
+    119     │ - → → → → → → event.stopPropagation();
+    120     │ - → → → → → → void·form.handleSubmit();
+    121     │ - → → → → → }}
+    122     │ - → → → → → className="grid·gap-4"
+    123     │ - → → → → >
+    124     │ - → → → → → <AlertDialogHeader>
+    125     │ - → → → → → → <AlertDialogTitle>
+    126     │ - → → → → → → → {t("settings.personnelFiles.delete.title",·"Delete·document?")}
+    127     │ - → → → → → → </AlertDialogTitle>
+    128     │ - → → → → → → <AlertDialogDescription>
+    129     │ - → → → → → → → {t(
+    130     │ - → → → → → → → → "settings.personnelFiles.delete.description",
+    131     │ - → → → → → → → → '"{title}"·and·its·file·are·deleted·for·good.·The·deletion·is·recorded·in·the·audit·log.',
+    132     │ - → → → → → → → → {·title:·document?.title·??·""·},
+    133     │ - → → → → → → → )}
+    134     │ - → → → → → → </AlertDialogDescription>
+    135     │ - → → → → → </AlertDialogHeader>
+    136     │ - → → → → → <form.Field·name="reason">
+    137     │ - → → → → → → {(field)·=>·(
+    138     │ - → → → → → → → <TFormItem>
+    139     │ - → → → → → → → → <TFormLabel>
+    140     │ - → → → → → → → → → {t(
+    141     │ - → → → → → → → → → → "settings.personnelFiles.delete.reason",
+    142     │ - → → → → → → → → → → "Reason·(optional)",
+    143     │ - → → → → → → → → → )}
+    144     │ - → → → → → → → → </TFormLabel>
+    145     │ - → → → → → → → → <TFormControl>
+    146     │ - → → → → → → → → → <Textarea
+    147     │ - → → → → → → → → → → disabled={working}
+    148     │ - → → → → → → → → → → value={field.state.value}
+    149     │ - → → → → → → → → → → maxLength={1000}
+    150     │ - → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}
+  215 more lines truncated
+  
+
+src\components\personnel-file\document-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{
+      4     │ - → IconCalendarOff,
+      5     │ - → IconCertificate,
+      6     │ - → IconDownload,
+      7     │ - → IconExternalLink,
+      8     │ - → IconFileText,
+      9     │ - }·from·"@tabler/icons-react";
+     10     │ - import·{·useTranslate·}·from·"@tolgee/react";
+     11     │ - import·type·{·ReactNode·}·from·"react";
+     12     │ - import·type·{·EmployeeDocumentView·}·from·"@/app/[locale]/(app)/personnel-files/actions";
+     13     │ - import·{·useAppLocale·}·from·"@/components/providers/app-locale-provider";
+     14     │ - import·{·Badge·}·from·"@/components/ui/badge";
+     15     │ - import·{·Button·}·from·"@/components/ui/button";
+     16     │ - import·{·formatDateOnly·}·from·"@/components/ui/date-picker-utils";
+     17     │ - import·{·formatAbsenceDateRange·}·from·"@/lib/personnel-file/sick-note-labels";
+     18     │ - import·{
+     19     │ - → formatFileSize,
+     20     │ - → formatPayPeriod,
+     21     │ - → personnelDocumentUrl,
+     22     │ - → usePersonnelFileLabels,
+     23     │ - }·from·"./document-labels";
+     24     │ - 
+     25     │ - function·DocumentThumbnail({·document·}:·{·document:·EmployeeDocumentView·})·{
+     26     │ - → if·(!document.mimeType.startsWith("image/"))·{
+     27     │ - → → return·(
+     28     │ - → → → <div·className="flex·size-12·shrink-0·items-center·justify-center·rounded-md·border·bg-muted">
+     29     │ - → → → → <IconFileText
+     30     │ - → → → → → aria-hidden="true"
+     31     │ - → → → → → className="size-5·text-muted-foreground"
+     32     │ - → → → → />
+     33     │ - → → → </div>
+     34     │ - → → );
+     35     │ - → }
+     36     │ - → return·(
+     37     │ - → → //·biome-ignore·lint/performance/noImgElement:·a·private,·access-checked·preview,·not·an·optimizable·asset.
+     38     │ - → → <img
+     39     │ - → → → src={personnelDocumentUrl(document.id,·{·thumb:·true·})}
+     40     │ - → → → alt=""
+     41     │ - → → → loading="lazy"
+     42     │ - → → → className="size-12·shrink-0·rounded-md·border·object-cover"
+     43     │ - → → />
+     44     │ - → );
+     45     │ - }
+     46     │ - 
+     47     │ - /**·Employee·documents·with·their·metadata,·an·open·and·a·download·link,·and·optional·actions.·*/
+     48     │ - export·function·DocumentList({
+     49     │ - → documents,
+     50     │ - → showVisibility,
+     51     │ - → actions,
+     52     │ - }:·{
+     53     │ - → documents:·readonly·EmployeeDocumentView[];
+     54     │ - → showVisibility:·boolean;
+     55     │ - → actions?:·(document:·EmployeeDocumentView)·=>·ReactNode;
+     56     │ - })·{
+     57     │ - → const·{·t·}·=·useTranslate();
+     58     │ - → const·locale·=·useAppLocale();
+     59     │ - → const·labels·=·usePersonnelFileLabels();
+     60     │ - 
+     61     │ - → return·(
+     62     │ - → → <ul·className="divide-y·rounded-md·border">
+     63     │ - → → → {documents.map((document)·=>·(
+     64     │ - → → → → <li
+     65     │ - → → → → → key={document.id}
+     66     │ - → → → → → className="grid·grid-cols-[auto_minmax(0,1fr)]·items-start·gap-3·p-3·sm:flex·sm:items-center·sm:flex-nowrap"
+     67     │ - → → → → >
+     68     │ - → → → → → <DocumentThumbnail·document={document}·/>
+     69     │ - → → → → → <div·className="min-w-0·flex-1·space-y-1·break-words·[overflow-wrap:anywhere]">
+     70     │ - → → → → → → <div·className="flex·flex-wrap·items-center·gap-2">
+     71     │ - → → → → → → → <span·className="min-w-0·font-medium">{document.title}</span>
+     72     │ - → → → → → → → <Badge·variant="secondary">
+     73     │ - → → → → → → → → {labels.categories[document.category]}
+     74     │ - → → → → → → → </Badge>
+     75     │ - → → → → → → → {showVisibility·?·(
+     76     │ - → → → → → → → → <Badge
+     77     │ - → → → → → → → → → variant={
+     78     │ - → → → → → → → → → → document.visibility·===·"shared"·?·"outline"·:·"secondary"
+     79     │ - → → → → → → → → → }
+     80     │ - → → → → → → → → >
+     81     │ - → → → → → → → → → {labels.visibilities[document.visibility]}
+     82     │ - → → → → → → → → </Badge>
+     83     │ - → → → → → → → )·:·null}
+     84     │ - → → → → → → </div>
+     85     │ - → → → → → → <p·className="text-sm·text-muted-foreground">
+     86     │ - → → → → → → → {document.payPeriod
+     87     │ - → → → → → → → → ?·t(
+     88     │ - → → → → → → → → → → "settings.personnelFiles.list.payPeriod",
+     89     │ - → → → → → → → → → → "Pay·period·{period}",
+     90     │ - → → → → → → → → → → {
+     91     │ - → → → → → → → → → → → period:·formatPayPeriod(document.payPeriod,·locale),
+     92     │ - → → → → → → → → → → },
+     93     │ - → → → → → → → → → )
+     94     │ - → → → → → → → → :·formatDateOnly(document.documentDate,·locale)}
+     95     │ - → → → → → → → {document.expiryDate
+     96     │ - → → → → → → → → ?·`···${t(
+     97     │ - → → → → → → → → → → "settings.personnelFiles.list.expires",
+     98     │ - → → → → → → → → → → "Expires·{date}",
+     99     │ - → → → → → → → → → → {
+    100     │ - → → → → → → → → → → → date:·formatDateOnly(document.expiryDate,·locale),
+    101     │ - → → → → → → → → → → },
+    102     │ - → → → → → → → → → )}`
+    103     │ - → → → → → → → → :·null}
+    104     │ - → → → → → → → {`···${document.fileName}·(${formatFileSize(document.sizeBytes,·locale)})`}
+    105     │ - → → → → → → </p>
+    106     │ - → → → → → → {document.absence·?·(
+    107     │ - → → → → → → → <p·className="flex·items-center·gap-1·text-sm·text-muted-foreground">
+    108     │ - → → → → → → → → <IconCalendarOff·aria-hidden="true"·className="size-3.5"·/>
+    109     │ - → → → → → → → → {t(
+    110     │ - → → → → → → → → → "settings.personnelFiles.list.absence",
+    111     │ - → → → → → → → → → "For·sick·leave·{dateRange}",
+    112     │ - → → → → → → → → → {
+    113     │ - → → → → → → → → → → dateRange:·formatAbsenceDateRange(
+    114     │ - → → → → → → → → → → → document.absence.startDate,
+    115     │ - → → → → → → → → → → → document.absence.endDate,
+    116     │ - → → → → → → → → → → → locale,
+    117     │ - → → → → → → → → → → ),
+    118     │ - → → → → → → → → → },
+    119     │ - → → → → → → → → )}
+    120     │ - → → → → → → → </p>
+    121     │ - → → → → → → )·:·null}
+    122     │ - → → → → → → {document.skill·?·(
+    123     │ - → → → → → → → <p·className="flex·items-center·gap-1·text-sm·text-muted-foreground">
+    124     │ - → → → → → → → → <IconCertificate·aria-hidden="true"·className="size-3.5"·/>
+    125     │ - → → → → → → → → {t(
+    126     │ - → → → → → → → → → "settings.personnelFiles.list.provesSkill",
+    127     │ - → → → → → → → → → "Proves·{skill}",
+    128     │ - → → → → → → → → → {
+    129     │ - → → → → → → → → → → skill:·document.skill.name,
+    130     │ - → → → → → → → → → },
+    131     │ - → → → → → → → → )}
+    132     │ - → → → → → → → </p>
+    133     │ - → → → → → → )·:·null}
+    134     │ - → → → → → </div>
+    135     │ - → → → → → <div·className="col-span-2·flex·flex-wrap·items-center·justify-end·gap-1·sm:shrink-0">
+    136     │ - → → → → → → <Button·asChild·variant="ghost"·size="icon">
+    137     │ - → → → → → → → <a
+    138     │ - → → → → → → → → href={personnelDocumentUrl(document.id)}
+    139     │ - → → → → → → → → target="_blank"
+    140     │ - → → → → → → → → rel="noopener·noreferrer"
+    141     │ - → → → → → → → → aria-label={t(
+    142     │ - → → → → → → → → → "settings.personnelFiles.list.open",
+    143     │ - → → → → → → → → → "Open·{title}",
+    144     │ - → → → → → → → → → {
+    145     │ - → → → → → → → → → → title:·document.title,
+    146     │ - → → → → → → → → → },
+    147     │ - → → → → → → → → )}
+    148     │ - → → → → → → → >
+    149     │ - → → → → → → → → <IconExternalLink·aria-hidden="true"·className="size-4"·/>
+    150     │ - → → → → → → → </a>
+  195 more lines truncated
+  
+
+src\components\personnel-file\document-requests-section.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·IconFilePlus·}·from·"@tabler/icons-react";
+      4     │ - import·{·useQuery,·useQueryClient·}·from·"@tanstack/react-query";
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      6     │ - import·{·useState·}·from·"react";
+      7     │ - import·{·listEmployeeDocumentRequestsAction·}·from·"@/app/[locale]/(app)/personnel-files/document-request-actions";
+      8     │ - import·{·Button·}·from·"@/components/ui/button";
+      9     │ - import·{
+     10     │ - → Card,
+     11     │ - → CardContent,
+     12     │ - → CardDescription,
+     13     │ - → CardHeader,
+     14     │ - → CardTitle,
+     15     │ - }·from·"@/components/ui/card";
+     16     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";
+     17     │ - import·{
+     18     │ - → DOCUMENT_REQUEST_CATEGORIES,
+     19     │ - → type·DocumentRequestCategory,
+     20     │ - }·from·"@/lib/personnel-file/document-request.types";
+     21     │ - import·type·{·PersonnelFilePanelCapability·}·from·"@/lib/personnel-file/panel";
+     22     │ - import·{·queryKeys·}·from·"@/lib/query/keys";
+     23     │ - import·{·CreateDocumentRequestDialog·}·from·"./create-document-request-dialog";
+     24     │ - import·{·DocumentRequestList·}·from·"./document-request-list";
+     25     │ - import·{·DocumentRequestOfficerActions·}·from·"./document-request-officer-actions";
+     26     │ - 
+     27     │ - /**
+     28     │ - ·*·The·requests·section·of·one·employee's·personnel·file·(#1401),·for·whoever
+     29     │ - ·*·covers·the·employee's·certificates·or·other·documents:·their·requests·with
+     30     │ - ·*·status·and·history,·create,·and·edit·and·cancel·(#1403,
+     31     │ - ·*·`DocumentRequestOfficerActions`).·Nothing·for·anyone·else;·the
+     32     │ - ·*·server·decides·what·is·listed.·A·former·employee's·file·offers·no·new
+     33     │ - ·*·request·(the·server·refuses·one·with·`former_employee`).
+     34     │ - ·*/
+     35     │ - export·function·DocumentRequestsSection({
+     36     │ - → capability,
+     37     │ - → former·=·false,
+     38     │ - }:·{
+     39     │ - → capability:·PersonnelFilePanelCapability;
+     40     │ - → /**·The·employee's·employment·has·ended.·*/
+     41     │ - → former?:·boolean;
+     42     │ - })·{
+     43     │ - → const·categories·=·DOCUMENT_REQUEST_CATEGORIES.filter((category)·=>
+     44     │ - → → capability.categories.includes(category),
+     45     │ - → );
+     46     │ - → if·(categories.length·===·0)·return·null;
+     47     │ - → return·(
+     48     │ - → → <DocumentRequestsCard
+     49     │ - → → → capability={capability}
+     50     │ - → → → categories={categories}
+     51     │ - → → → former={former}
+     52     │ - → → />
+     53     │ - → );
+     54     │ - }
+     55     │ - 
+     56     │ - function·DocumentRequestsCard({
+     57     │ - → capability,
+     58     │ - → categories,
+     59     │ - → former,
+     60     │ - }:·{
+     61     │ - → capability:·PersonnelFilePanelCapability;
+     62     │ - → categories:·DocumentRequestCategory[];
+     63     │ - → former:·boolean;
+     64     │ - })·{
+     65     │ - → const·{·t·}·=·useTranslate();
+     66     │ - → const·queryClient·=·useQueryClient();
+     67     │ - → const·[creating,·setCreating]·=·useState(false);
+     68     │ - → const·employeeId·=·capability.employeeId;
+     69     │ - 
+     70     │ - → const·query·=·useQuery({
+     71     │ - → → queryKey:·queryKeys.personnelFile.employeeDocumentRequests(employeeId),
+     72     │ - → → queryFn:·async·()·=>·{
+     73     │ - → → → const·result·=·await·listEmployeeDocumentRequestsAction({·employeeId·});
+     74     │ - → → → if·(!result.success)·throw·new·Error(result.error);
+     75     │ - → → → return·result.data;
+     76     │ - → → },
+     77     │ - → });
+     78     │ - 
+     79     │ - → function·refresh()·{
+     80     │ - → → void·queryClient.invalidateQueries({
+     81     │ - → → → queryKey:·queryKeys.personnelFile.documentRequestsAll(),
+     82     │ - → → });
+     83     │ - → }
+     84     │ - 
+     85     │ - → return·(
+     86     │ - → → <Card>
+     87     │ - → → → <CardHeader·className="flex·flex-row·flex-wrap·items-start·justify-between·gap-3">
+     88     │ - → → → → <div·className="space-y-1.5">
+     89     │ - → → → → → <CardTitle>
+     90     │ - → → → → → → <h2>
+     91     │ - → → → → → → → {t("settings.personnelFiles.requests.title",·"Document·requests")}
+     92     │ - → → → → → → </h2>
+     93     │ - → → → → → </CardTitle>
+     94     │ - → → → → → <CardDescription>
+     95     │ - → → → → → → {t(
+     96     │ - → → → → → → → "settings.personnelFiles.requests.description",
+     97     │ - → → → → → → → "Certificates·and·other·documents·asked·of·this·employee,·with·their·deadline·and·history.",
+     98     │ - → → → → → → )}
+     99     │ - → → → → → </CardDescription>
+    100     │ - → → → → </div>
+    101     │ - → → → → {former·?·null·:·(
+    102     │ - → → → → → <Button
+    103     │ - → → → → → → type="button"
+    104     │ - → → → → → → variant="outline"
+    105     │ - → → → → → → onClick={()·=>·setCreating(true)}
+    106     │ - → → → → → >
+    107     │ - → → → → → → <IconFilePlus·aria-hidden="true"·className="size-4"·/>
+    108     │ - → → → → → → {t(
+    109     │ - → → → → → → → "settings.personnelFiles.requests.create.open",
+    110     │ - → → → → → → → "Request·a·document",
+    111     │ - → → → → → → )}
+    112     │ - → → → → → </Button>
+    113     │ - → → → → )}
+    114     │ - → → → </CardHeader>
+    115     │ - → → → <CardContent>
+    116     │ - → → → → {query.isPending·?·(
+    117     │ - → → → → → <div·className="space-y-2"·aria-busy="true">
+    118     │ - → → → → → → <Skeleton·className="h-16·w-full"·/>
+    119     │ - → → → → → </div>
+    120     │ - → → → → )·:·query.isError·?·(
+    121     │ - → → → → → <div·role="alert"·className="space-y-3·text-sm·text-destructive">
+    122     │ - → → → → → → <p>
+    123     │ - → → → → → → → {t(
+    124     │ - → → → → → → → → "settings.personnelFiles.requests.loadFailed",
+    125     │ - → → → → → → → → "The·document·requests·could·not·be·loaded.",
+    126     │ - → → → → → → → )}
+    127     │ - → → → → → → </p>
+    128     │ - → → → → → → <Button
+    129     │ - → → → → → → → type="button"
+    130     │ - → → → → → → → variant="outline"
+    131     │ - → → → → → → → disabled={query.isFetching}
+    132     │ - → → → → → → → onClick={()·=>·void·query.refetch()}
+    133     │ - → → → → → → >
+    134     │ - → → → → → → → {t("common.retry",·"Retry")}
+    135     │ - → → → → → → </Button>
+    136     │ - → → → → → </div>
+    137     │ - → → → → )·:·query.data.length·===·0·?·(
+    138     │ - → → → → → <p·className="text-sm·text-muted-foreground">
+    139     │ - → → → → → → {t(
+    140     │ - → → → → → → → "settings.personnelFiles.requests.empty",
+    141     │ - → → → → → → → "No·documents·requested·yet.",
+    142     │ - → → → → → → )}
+    143     │ - → → → → → </p>
+    144     │ - → → → → )·:·(
+    145     │ - → → → → → <DocumentRequestList
+    146     │ - → → → → → → requests={query.data}
+    147     │ - → → → → → → timezone={capability.timezone}
+    148     │ - → → → → → → actions={(request)·=>·(
+    149     │ - → → → → → → → <DocumentRequestOfficerActions
+    150     │ - → → → → → → → → request={request}
+  187 more lines truncated
+  
+
+src\components\personnel-file\employee-file-loading-heading.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";
+     2    │ - import·{·useTranslate·}·from·"@tolgee/react";
+     3    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";
+     4    │ - 
+     5    │ - export·function·EmployeeFileLoadingHeading()·{
+     6    │ - → const·{·t·}·=·useTranslate();
+     7    │ - → return·(
+     8    │ - → → <PageHeader
+     9    │ - → → → title={t("settings.personnelFiles.panel.title",·"Personnel·file")}
+    10    │ - → → />
+    11    │ - → );
+    12    │ - }
+        1 │ + "use·client";␍
+        2 │ + import·{·useTranslate·}·from·"@tolgee/react";␍
+        3 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+        4 │ + ␍
+        5 │ + export·function·EmployeeFileLoadingHeading()·{␍
+        6 │ + → const·{·t·}·=·useTranslate();␍
+        7 │ + → return·(␍
+        8 │ + → → <PageHeader␍
+        9 │ + → → → title={t("settings.personnelFiles.panel.title",·"Personnel·file")}␍
+       10 │ + → → />␍
+       11 │ + → );␍
+       12 │ + }␍
+    13 13 │   
+  
+
+src\components\personnel-file\employee-file-workspace.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - //·@vitest-environment·jsdom
+     2    │ - import·{·render,·screen·}·from·"@testing-library/react";
+     3    │ - import·{·beforeEach,·expect,·it,·vi·}·from·"vitest";
+     4    │ - import·{·EmployeeFileWorkspace·}·from·"./employee-file-workspace";
+     5    │ - 
+     6    │ - const·boundary·=·vi.hoisted(()·=>·({
+     7    │ - → scope:·{·userId:·"officer",·activeOrganizationId:·"org"·},
+     8    │ - }));
+     9    │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({
+    10    │ - → useOrganization:·()·=>·boundary.scope,
+    11    │ - }));
+    12    │ - vi.mock("@tolgee/react",·()·=>·({
+    13    │ - → useTranslate:·()·=>·({
+    14    │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>
+    15    │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>
+    16    │ - → → → → String(params?.[key]·??·match),
+    17    │ - → → → ),
+    18    │ - → }),
+    19    │ - }));
+    20    │ - vi.mock("@/navigation",·()·=>·({
+    21    │ - → Link:·({·children,·href·}:·{·children:·React.ReactNode;·href:·string·})·=>·(
+    22    │ - → → <a·href={href}>{children}</a>
+    23    │ - → ),
+    24    │ - }));
+    25    │ - const·props·=·{
+    26    │ - → userId:·"officer",
+    27    │ - → organizationId:·"org",
+    28    │ - → employee:·{
+    29    │ - → → id:·"target",
+    30    │ - → → name:·"Morgan·Taylor",
+    31    │ - → → employeeNumber:·"P-104",
+    32    │ - → → isActive:·false,
+    33    │ - → },
+    34    │ - };
+    35    │ - beforeEach(()·=>·{
+    36    │ - → boundary.scope·=·{·userId:·"officer",·activeOrganizationId:·"org"·};
+    37    │ - });
+    38    │ - 
+    39    │ - it("leads·with·the·selected·employee,·former·status·and·personnel·number·before·the·records",·()·=>·{
+    40    │ - → render(
+    41    │ - → → <EmployeeFileWorkspace·{...props}>
+    42    │ - → → → <section>Permitted·documents</section>
+    43    │ - → → </EmployeeFileWorkspace>,
+    44    │ - → );
+    45    │ - → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe(
+    46    │ - → → "Morgan·Taylor",
+    47    │ - → );
+    48    │ - → expect(screen.getByText("Former·employee")).toBeTruthy();
+    49    │ - → expect(screen.getByText("Personnel·number:·P-104")).toBeTruthy();
+    50    │ - → expect(
+    51    │ - → → screen.getByRole("link",·{·name:·"Personnel·files"·}).getAttribute("href"),
+    52    │ - → ).toBe("/personnel-files");
+    53    │ - });
+    54    │ - 
+    55    │ - it.each([
+    56    │ - → {·userId:·"other",·activeOrganizationId:·"org"·},
+    57    │ - → {·userId:·"officer",·activeOrganizationId:·"other"·},
+    58    │ - ])(
+    59    │ - → "removes·prior·employee·identity·and·open·tasks·on·display-scope·change",
+    60    │ - → (scope)·=>·{
+    61    │ - → → const·view·=·render(
+    62    │ - → → → <EmployeeFileWorkspace·{...props}>
+    63    │ - → → → → <button·type="button">Open·document·task</button>
+    64    │ - → → → </EmployeeFileWorkspace>,
+    65    │ - → → );
+    66    │ - → → boundary.scope·=·scope;
+    67    │ - → → view.rerender(
+    68    │ - → → → <EmployeeFileWorkspace·{...props}>
+    69    │ - → → → → <button·type="button">Open·document·task</button>
+    70    │ - → → → </EmployeeFileWorkspace>,
+    71    │ - → → );
+    72    │ - → → expect(screen.queryByText("Morgan·Taylor")).toBeNull();
+    73    │ - → → expect(
+    74    │ - → → → screen.queryByRole("button",·{·name:·"Open·document·task"·}),
+    75    │ - → → ).toBeNull();
+    76    │ - → },
+    77    │ - );
+        1 │ + //·@vitest-environment·jsdom␍
+        2 │ + import·{·render,·screen·}·from·"@testing-library/react";␍
+        3 │ + import·{·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+        4 │ + import·{·EmployeeFileWorkspace·}·from·"./employee-file-workspace";␍
+        5 │ + ␍
+        6 │ + const·boundary·=·vi.hoisted(()·=>·({␍
+        7 │ + → scope:·{·userId:·"officer",·activeOrganizationId:·"org"·},␍
+        8 │ + }));␍
+        9 │ + vi.mock("@/components/providers/organization-context-provider",·()·=>·({␍
+       10 │ + → useOrganization:·()·=>·boundary.scope,␍
+       11 │ + }));␍
+       12 │ + vi.mock("@tolgee/react",·()·=>·({␍
+       13 │ + → useTranslate:·()·=>·({␍
+       14 │ + → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>␍
+       15 │ + → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>␍
+       16 │ + → → → → String(params?.[key]·??·match),␍
+       17 │ + → → → ),␍
+       18 │ + → }),␍
+       19 │ + }));␍
+       20 │ + vi.mock("@/navigation",·()·=>·({␍
+       21 │ + → Link:·({·children,·href·}:·{·children:·React.ReactNode;·href:·string·})·=>·(␍
+       22 │ + → → <a·href={href}>{children}</a>␍
+       23 │ + → ),␍
+       24 │ + }));␍
+       25 │ + const·props·=·{␍
+       26 │ + → userId:·"officer",␍
+       27 │ + → organizationId:·"org",␍
+       28 │ + → employee:·{␍
+       29 │ + → → id:·"target",␍
+       30 │ + → → name:·"Morgan·Taylor",␍
+       31 │ + → → employeeNumber:·"P-104",␍
+       32 │ + → → isActive:·false,␍
+       33 │ + → },␍
+       34 │ + };␍
+       35 │ + beforeEach(()·=>·{␍
+       36 │ + → boundary.scope·=·{·userId:·"officer",·activeOrganizationId:·"org"·};␍
+       37 │ + });␍
+       38 │ + ␍
+       39 │ + it("leads·with·the·selected·employee,·former·status·and·personnel·number·before·the·records",·()·=>·{␍
+       40 │ + → render(␍
+       41 │ + → → <EmployeeFileWorkspace·{...props}>␍
+       42 │ + → → → <section>Permitted·documents</section>␍
+       43 │ + → → </EmployeeFileWorkspace>,␍
+       44 │ + → );␍
+       45 │ + → expect(screen.getByRole("heading",·{·level:·1·}).textContent).toBe(␍
+       46 │ + → → "Morgan·Taylor",␍
+       47 │ + → );␍
+       48 │ + → expect(screen.getByText("Former·employee")).toBeTruthy();␍
+       49 │ + → expect(screen.getByText("Personnel·number:·P-104")).toBeTruthy();␍
+       50 │ + → expect(␍
+       51 │ + → → screen.getByRole("link",·{·name:·"Personnel·files"·}).getAttribute("href"),␍
+       52 │ + → ).toBe("/personnel-files");␍
+       53 │ + });␍
+       54 │ + ␍
+       55 │ + it.each([␍
+       56 │ + → {·userId:·"other",·activeOrganizationId:·"org"·},␍
+       57 │ + → {·userId:·"officer",·activeOrganizationId:·"other"·},␍
+       58 │ + ])(␍
+       59 │ + → "removes·prior·employee·identity·and·open·tasks·on·display-scope·change",␍
+       60 │ + → (scope)·=>·{␍
+       61 │ + → → const·view·=·render(␍
+       62 │ + → → → <EmployeeFileWorkspace·{...props}>␍
+       63 │ + → → → → <button·type="button">Open·document·task</button>␍
+       64 │ + → → → </EmployeeFileWorkspace>,␍
+       65 │ + → → );␍
+       66 │ + → → boundary.scope·=·scope;␍
+       67 │ + → → view.rerender(␍
+       68 │ + → → → <EmployeeFileWorkspace·{...props}>␍
+       69 │ + → → → → <button·type="button">Open·document·task</button>␍
+       70 │ + → → → </EmployeeFileWorkspace>,␍
+       71 │ + → → );␍
+       72 │ + → → expect(screen.queryByText("Morgan·Taylor")).toBeNull();␍
+       73 │ + → → expect(␍
+  5 more lines truncated
+  
+
+src\components\personnel-file\employee-file-workspace.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";
+     2    │ - 
+     3    │ - import·{·IconArrowLeft·}·from·"@tabler/icons-react";
+     4    │ - import·{·useTranslate·}·from·"@tolgee/react";
+     5    │ - import·type·{·ReactNode·}·from·"react";
+     6    │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";
+     7    │ - import·{·Badge·}·from·"@/components/ui/badge";
+     8    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";
+     9    │ - import·type·{·ManagedEmployee·}·from·"@/lib/personnel-file/access-store";
+    10    │ - import·{·Link·}·from·"@/navigation";
+    11    │ - import·{·EmployeeFileLoadingHeading·}·from·"./employee-file-loading-heading";
+    12    │ - 
+    13    │ - /**·Display·guard·only.·Every·reader,·command·and·content·URL·still·authorizes·independently.·*/
+    14    │ - export·function·EmployeeFileWorkspace({
+    15    │ - → userId,
+    16    │ - → organizationId,
+    17    │ - → employee,
+    18    │ - → children,
+    19    │ - }:·{
+    20    │ - → userId:·string;
+    21    │ - → organizationId:·string;
+    22    │ - → employee:·ManagedEmployee;
+    23    │ - → children:·ReactNode;
+    24    │ - })·{
+    25    │ - → const·{·t·}·=·useTranslate();
+    26    │ - → const·current·=·useOrganization();
+    27    │ - → if·(
+    28    │ - → → current.userId·!==·userId·||
+    29    │ - → → current.activeOrganizationId·!==·organizationId
+    30    │ - → )
+    31    │ - → → return·(
+    32    │ - → → → <div·className="p-4·md:p-6">
+    33    │ - → → → → <EmployeeFileLoadingHeading·/>
+    34    │ - → → → </div>
+    35    │ - → → );
+    36    │ - → return·(
+    37    │ - → → <div·className="@container/main·mx-auto·flex·w-full·max-w-[100rem]·flex-1·flex-col·gap-6·p-4·md:p-6">
+    38    │ - → → → <PageHeader
+    39    │ - → → → → title={employee.name}
+    40    │ - → → → → scope={
+    41    │ - → → → → → <Link
+    42    │ - → → → → → → href="/personnel-files"
+    43    │ - → → → → → → className="inline-flex·items-center·gap-1·rounded-sm·hover:text-foreground·focus-visible:outline-2·focus-visible:outline-ring"
+    44    │ - → → → → → >
+    45    │ - → → → → → → <IconArrowLeft·aria-hidden="true"·className="size-4"·/>
+    46    │ - → → → → → → {t("settings.personnelFiles.area.back",·"Personnel·files")}
+    47    │ - → → → → → </Link>
+    48    │ - → → → → }
+    49    │ - → → → → description={
+    50    │ - → → → → → <div·className="flex·flex-wrap·items-center·gap-2">
+    51    │ - → → → → → → {employee.isActive·?·null·:·(
+    52    │ - → → → → → → → <Badge·variant="secondary">
+    53    │ - → → → → → → → → {t("settings.personnelFiles.area.former",·"Former·employee")}
+    54    │ - → → → → → → → </Badge>
+    55    │ - → → → → → → )}
+    56    │ - → → → → → → {employee.employeeNumber·?·(
+    57    │ - → → → → → → → <span>
+    58    │ - → → → → → → → → {t(
+    59    │ - → → → → → → → → → "settings.personnelFiles.employeeFile.number",
+    60    │ - → → → → → → → → → "Personnel·number:·{number}",
+    61    │ - → → → → → → → → → {·number:·employee.employeeNumber·},
+    62    │ - → → → → → → → → )}
+    63    │ - → → → → → → → </span>
+    64    │ - → → → → → → )·:·null}
+    65    │ - → → → → → </div>
+    66    │ - → → → → }
+    67    │ - → → → />
+    68    │ - → → → {children}
+    69    │ - → → </div>
+    70    │ - → );
+    71    │ - }
+        1 │ + "use·client";␍
+        2 │ + ␍
+        3 │ + import·{·IconArrowLeft·}·from·"@tabler/icons-react";␍
+        4 │ + import·{·useTranslate·}·from·"@tolgee/react";␍
+        5 │ + import·type·{·ReactNode·}·from·"react";␍
+        6 │ + import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";␍
+        7 │ + import·{·Badge·}·from·"@/components/ui/badge";␍
+        8 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+        9 │ + import·type·{·ManagedEmployee·}·from·"@/lib/personnel-file/access-store";␍
+       10 │ + import·{·Link·}·from·"@/navigation";␍
+       11 │ + import·{·EmployeeFileLoadingHeading·}·from·"./employee-file-loading-heading";␍
+       12 │ + ␍
+       13 │ + /**·Display·guard·only.·Every·reader,·command·and·content·URL·still·authorizes·independently.·*/␍
+       14 │ + export·function·EmployeeFileWorkspace({␍
+       15 │ + → userId,␍
+       16 │ + → organizationId,␍
+       17 │ + → employee,␍
+       18 │ + → children,␍
+       19 │ + }:·{␍
+       20 │ + → userId:·string;␍
+       21 │ + → organizationId:·string;␍
+       22 │ + → employee:·ManagedEmployee;␍
+       23 │ + → children:·ReactNode;␍
+       24 │ + })·{␍
+       25 │ + → const·{·t·}·=·useTranslate();␍
+       26 │ + → const·current·=·useOrganization();␍
+       27 │ + → if·(␍
+       28 │ + → → current.userId·!==·userId·||␍
+       29 │ + → → current.activeOrganizationId·!==·organizationId␍
+       30 │ + → )␍
+       31 │ + → → return·(␍
+       32 │ + → → → <div·className="p-4·md:p-6">␍
+       33 │ + → → → → <EmployeeFileLoadingHeading·/>␍
+       34 │ + → → → </div>␍
+       35 │ + → → );␍
+       36 │ + → return·(␍
+       37 │ + → → <div·className="@container/main·mx-auto·flex·w-full·max-w-[100rem]·flex-1·flex-col·gap-6·p-4·md:p-6">␍
+       38 │ + → → → <PageHeader␍
+       39 │ + → → → → title={employee.name}␍
+       40 │ + → → → → scope={␍
+       41 │ + → → → → → <Link␍
+       42 │ + → → → → → → href="/personnel-files"␍
+       43 │ + → → → → → → className="inline-flex·items-center·gap-1·rounded-sm·hover:text-foreground·focus-visible:outline-2·focus-visible:outline-ring"␍
+       44 │ + → → → → → >␍
+       45 │ + → → → → → → <IconArrowLeft·aria-hidden="true"·className="size-4"·/>␍
+       46 │ + → → → → → → {t("settings.personnelFiles.area.back",·"Personnel·files")}␍
+       47 │ + → → → → → </Link>␍
+       48 │ + → → → → }␍
+       49 │ + → → → → description={␍
+       50 │ + → → → → → <div·className="flex·flex-wrap·items-center·gap-2">␍
+       51 │ + → → → → → → {employee.isActive·?·null·:·(␍
+       52 │ + → → → → → → → <Badge·variant="secondary">␍
+       53 │ + → → → → → → → → {t("settings.personnelFiles.area.former",·"Former·employee")}␍
+       54 │ + → → → → → → → </Badge>␍
+       55 │ + → → → → → → )}␍
+       56 │ + → → → → → → {employee.employeeNumber·?·(␍
+       57 │ + → → → → → → → <span>␍
+       58 │ + → → → → → → → → {t(␍
+       59 │ + → → → → → → → → → "settings.personnelFiles.employeeFile.number",␍
+       60 │ + → → → → → → → → → "Personnel·number:·{number}",␍
+       61 │ + → → → → → → → → → {·number:·employee.employeeNumber·},␍
+       62 │ + → → → → → → → → )}␍
+       63 │ + → → → → → → → </span>␍
+       64 │ + → → → → → → )·:·null}␍
+       65 │ + → → → → → </div>␍
+       66 │ + → → → → }␍
+       67 │ + → → → />␍
+       68 │ + → → → {children}␍
+       69 │ + → → </div>␍
+       70 │ + → );␍
+       71 │ + }␍
+    72 72 │   
+  
+
+src\components\personnel-file\employee-sick-leave-card.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{·IconFileText·}·from·"@tabler/icons-react";
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";
+      5     │ - import·{·useState·}·from·"react";
+      6     │ - import·type·{·LinkableSickLeave·}·from·"@/app/[locale]/(app)/personnel-files/sick-note-actions";
+      7     │ - import·{·AbsenceSickNotesPanel·}·from·"@/components/absences/sick-notes/absence-sick-notes-panel";
+      8     │ - import·{·useAppLocale·}·from·"@/components/providers/app-locale-provider";
+      9     │ - import·{·Badge·}·from·"@/components/ui/badge";
+     10     │ - import·{·Button·}·from·"@/components/ui/button";
+     11     │ - import·{
+     12     │ - → Card,
+     13     │ - → CardContent,
+     14     │ - → CardDescription,
+     15     │ - → CardHeader,
+     16     │ - → CardTitle,
+     17     │ - }·from·"@/components/ui/card";
+     18     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";
+     19     │ - import·{·formatAbsenceDateRange·}·from·"@/lib/personnel-file/sick-note-labels";
+     20     │ - import·{·useSickLeaveLabels·}·from·"./sick-leave-overview";
+     21     │ - import·{·useEmployeeSickLeave·}·from·"./sick-note-links";
+     22     │ - 
+     23     │ - /**
+     24     │ - ·*·The·employee's·pending·and·approved·sick·leave·in·their·personnel·file
+     25     │ - ·*·(#984),·for·whoever·manages·the·employee's·sick·notes:·how·many·notes·each
+     26     │ - ·*·absence·has,·and·its·sick·notes·to·attach,·link·and·unlink.·Team·absence
+     27     │ - ·*·views·list·no·single·absences,·so·this·is·where·officers·work·on·them.
+     28     │ - ·*/
+     29     │ - export·function·EmployeeSickLeaveCard({·employeeId·}:·{·employeeId:·string·})·{
+     30     │ - → const·{·t·}·=·useTranslate();
+     31     │ - → const·locale·=·useAppLocale();
+     32     │ - → const·labels·=·useSickLeaveLabels();
+     33     │ - → const·query·=·useEmployeeSickLeave(employeeId);
+     34     │ - → const·[selected,·setSelected]·=·useState<LinkableSickLeave·|·null>(null);
+     35     │ - 
+     36     │ - → return·(
+     37     │ - → → <Card>
+     38     │ - → → → <CardHeader>
+     39     │ - → → → → <CardTitle>
+     40     │ - → → → → → <h2>
+     41     │ - → → → → → → {t("settings.personnelFiles.sickNotes.cardTitle",·"Sick·leave")}
+     42     │ - → → → → → </h2>
+     43     │ - → → → → </CardTitle>
+     44     │ - → → → → <CardDescription>
+     45     │ - → → → → → {t(
+     46     │ - → → → → → → "settings.personnelFiles.sickNotes.cardDescription",
+     47     │ - → → → → → → "Pending·and·approved·sick·leave·of·this·employee.·Attach·a·new·sick·note,·or·link·one·that·is·already·in·the·personnel·file.",
+     48     │ - → → → → → )}
+     49     │ - → → → → </CardDescription>
+     50     │ - → → → </CardHeader>
+     51     │ - → → → <CardContent>
+     52     │ - → → → → {query.isPending·?·(
+     53     │ - → → → → → <div·className="space-y-2"·aria-busy="true">
+     54     │ - → → → → → → <Skeleton·className="h-12·w-full"·/>
+     55     │ - → → → → → → <Skeleton·className="h-12·w-full"·/>
+     56     │ - → → → → → </div>
+     57     │ - → → → → )·:·query.isError·?·(
+     58     │ - → → → → → <div·role="alert"·className="space-y-3·text-sm·text-destructive">
+     59     │ - → → → → → → <p>
+     60     │ - → → → → → → → {t(
+     61     │ - → → → → → → → → "settings.personnelFiles.sickNotes.loadFailed",
+     62     │ - → → → → → → → → "The·list·could·not·be·loaded.",
+     63     │ - → → → → → → → )}
+     64     │ - → → → → → → </p>
+     65     │ - → → → → → → <Button
+     66     │ - → → → → → → → type="button"
+     67     │ - → → → → → → → variant="outline"
+     68     │ - → → → → → → → disabled={query.isFetching}
+     69     │ - → → → → → → → onClick={()·=>·void·query.refetch()}
+     70     │ - → → → → → → >
+     71     │ - → → → → → → → {t("common.retry",·"Retry")}
+     72     │ - → → → → → → </Button>
+     73     │ - → → → → → </div>
+     74     │ - → → → → )·:·query.data.length·===·0·?·(
+     75     │ - → → → → → <p·className="text-sm·text-muted-foreground">
+     76     │ - → → → → → → {t(
+     77     │ - → → → → → → → "settings.personnelFiles.sickNotes.noSickLeave",
+     78     │ - → → → → → → → "This·employee·has·no·pending·or·approved·sick·leave.",
+     79     │ - → → → → → → )}
+     80     │ - → → → → → </p>
+     81     │ - → → → → )·:·(
+     82     │ - → → → → → <ul·className="divide-y·rounded-md·border">
+     83     │ - → → → → → → {query.data.map((absence)·=>·{
+     84     │ - → → → → → → → const·dateRange·=·formatAbsenceDateRange(
+     85     │ - → → → → → → → → absence.startDate,
+     86     │ - → → → → → → → → absence.endDate,
+     87     │ - → → → → → → → → locale,
+     88     │ - → → → → → → → );
+     89     │ - → → → → → → → return·(
+     90     │ - → → → → → → → → <li
+     91     │ - → → → → → → → → → key={absence.id}
+     92     │ - → → → → → → → → → className="flex·flex-wrap·items-center·gap-3·p-3·sm:flex-nowrap"
+     93     │ - → → → → → → → → >
+     94     │ - → → → → → → → → → <div·className="min-w-0·flex-1·space-y-1">
+     95     │ - → → → → → → → → → → <div·className="flex·flex-wrap·items-center·gap-2">
+     96     │ - → → → → → → → → → → → <span·className="font-medium">{dateRange}</span>
+     97     │ - → → → → → → → → → → → <Badge
+     98     │ - → → → → → → → → → → → → variant={
+     99     │ - → → → → → → → → → → → → → absence.status·===·"approved"
+    100     │ - → → → → → → → → → → → → → → ?·"outline"
+    101     │ - → → → → → → → → → → → → → → :·"secondary"
+    102     │ - → → → → → → → → → → → → }
+    103     │ - → → → → → → → → → → → >
+    104     │ - → → → → → → → → → → → → {labels.statuses[absence.status]}
+    105     │ - → → → → → → → → → → → </Badge>
+    106     │ - → → → → → → → → → → → {absence.sickDetail·?·(
+    107     │ - → → → → → → → → → → → → <Badge·variant="secondary">
+    108     │ - → → → → → → → → → → → → → {labels.sickDetails[absence.sickDetail]}
+    109     │ - → → → → → → → → → → → → </Badge>
+    110     │ - → → → → → → → → → → → )·:·null}
+    111     │ - → → → → → → → → → → </div>
+    112     │ - → → → → → → → → → → <p·className="text-sm·text-muted-foreground·tabular-nums">
+    113     │ - → → → → → → → → → → → {absence.sickNoteCount·===·0
+    114     │ - → → → → → → → → → → → → ?·t(
+    115     │ - → → → → → → → → → → → → → → "settings.personnelFiles.sickLeave.notes.none",
+    116     │ - → → → → → → → → → → → → → → "No·note",
+    117     │ - → → → → → → → → → → → → → )
+    118     │ - → → → → → → → → → → → → :·t(
+    119     │ - → → → → → → → → → → → → → → "settings.personnelFiles.sickLeave.notes.count",
+    120     │ - → → → → → → → → → → → → → → "{count,·plural,·one·{#·note}·other·{#·notes}}",
+    121     │ - → → → → → → → → → → → → → → {·count:·absence.sickNoteCount·},
+    122     │ - → → → → → → → → → → → → → )}
+    123     │ - → → → → → → → → → → </p>
+    124     │ - → → → → → → → → → </div>
+    125     │ - → → → → → → → → → <Button
+    126     │ - → → → → → → → → → → type="button"
+    127     │ - → → → → → → → → → → variant="outline"
+    128     │ - → → → → → → → → → → size="sm"
+    129     │ - → → → → → → → → → → onClick={()·=>·setSelected(absence)}
+    130     │ - → → → → → → → → → → aria-label={t(
+    131     │ - → → → → → → → → → → → "settings.personnelFiles.sickNotes.openNotes",
+    132     │ - → → → → → → → → → → → "Sick·notes·for·{dateRange}",
+    133     │ - → → → → → → → → → → → {·dateRange·},
+    134     │ - → → → → → → → → → → )}
+    135     │ - → → → → → → → → → >
+    136     │ - → → → → → → → → → → <IconFileText·aria-hidden="true"·className="size-4"·/>
+    137     │ - → → → → → → → → → → {t("settings.personnelFiles.sickNotes.notes",·"Sick·notes")}
+    138     │ - → → → → → → → → → </Button>
+    139     │ - → → → → → → → → </li>
+    140     │ - → → → → → → → );
+    141     │ - → → → → → → })}
+    142     │ - → → → → → </ul>
+    143     │ - → → → → )}
+    144     │ - → → → </CardContent>
+    145     │ - → → → {selected·?·(
+    146     │ - → → → → <AbsenceSickNotesPanel
+    147     │ - → → → → → key={selected.id}
+    148     │ - → → → → → absence={{·...selected,·employeeId·}}
+    149     │ - → → → → → open
+    150     │ - → → → → → onOpenChange={(open)·=>·{
+  171 more lines truncated
+  
+
+src\components\personnel-file\personnel-file-panel.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";
+      3     │ - import·{·act,·fireEvent,·render,·screen·}·from·"@testing-library/react";
+      4     │ - import·{·Activity·}·from·"react";
+      5     │ - import·{·toast·}·from·"sonner";
+      6     │ - import·{·expect,·it,·vi·}·from·"vitest";
+      7     │ - import·{·getPersonnelFileAction·}·from·"@/app/[locale]/(app)/personnel-files/actions";
+      8     │ - import·{·unlinkSickNoteAction·}·from·"@/app/[locale]/(app)/personnel-files/sick-note-actions";
+      9     │ - import·{·PersonnelFilePanel·}·from·"./personnel-file-panel";
+     10     │ - 
+     11     │ - vi.mock("sonner",·()·=>·({·toast:·{·success:·vi.fn(),·error:·vi.fn()·}·}));
+     12     │ - 
+     13     │ - it("keeps·a·sick-note·link·after·rejected·transport·and·offers·its·action·again",·async·()·=>·{
+     14     │ - → vi.mocked(unlinkSickNoteAction).mockRejectedValueOnce(new·Error("offline"));
+     15     │ - → vi.mocked(getPersonnelFileAction).mockResolvedValue({
+     16     │ - → → success:·true,
+     17     │ - → → data:·{
+     18     │ - → → → capability,
+     19     │ - → → → documents:·[
+     20     │ - → → → → {
+     21     │ - → → → → → id:·"note",
+     22     │ - → → → → → employeeId:·"employee",
+     23     │ - → → → → → category:·"sick_note",
+     24     │ - → → → → → title:·"Medical·note",
+     25     │ - → → → → → visibility:·"hr_only",
+     26     │ - → → → → → documentDate:·"2026-01-15",
+     27     │ - → → → → → payPeriod:·null,
+     28     │ - → → → → → expiryDate:·null,
+     29     │ - → → → → → fileName:·"note.pdf",
+     30     │ - → → → → → mimeType:·"application/pdf",
+     31     │ - → → → → → sizeBytes:·10,
+     32     │ - → → → → → createdAt:·"2026-01-15T12:00:00Z",
+     33     │ - → → → → → skill:·null,
+     34     │ - → → → → → absence:·{
+     35     │ - → → → → → → id:·"absence",
+     36     │ - → → → → → → startDate:·"2026-01-15",
+     37     │ - → → → → → → endDate:·"2026-01-15",
+     38     │ - → → → → → },
+     39     │ - → → → → },
+     40     │ - → → → ],
+     41     │ - → → },
+     42     │ - → });
+     43     │ - → setup();
+     44     │ - → const·button·=·await·screen.findByRole("button",·{
+     45     │ - → → name:·"Unlink·Medical·note·from·its·sick·leave",
+     46     │ - → });
+     47     │ - → fireEvent.click(button);
+     48     │ - → await·screen.findByRole("button",·{
+     49     │ - → → name:·"Unlink·Medical·note·from·its·sick·leave",
+     50     │ - → });
+     51     │ - → await·act(async·()·=>·{});
+     52     │ - → expect(toast.error).toHaveBeenCalledWith(
+     53     │ - → → "The·sick·note·could·not·be·unlinked.",
+     54     │ - → );
+     55     │ - → expect((button·as·HTMLButtonElement).disabled).toBe(false);
+     56     │ - });
+     57     │ - 
+     58     │ - vi.mock("@/app/[locale]/(app)/personnel-files/actions",·()·=>·({
+     59     │ - → getPersonnelFileAction:·vi.fn(),
+     60     │ - → updateEmployeeDocumentAction:·vi.fn(),
+     61     │ - → deleteEmployeeDocumentAction:·vi.fn(),
+     62     │ - }));
+     63     │ - vi.mock("@/app/[locale]/(app)/personnel-files/sick-note-actions",·()·=>·({
+     64     │ - → unlinkSickNoteAction:·vi.fn(),
+     65     │ - → listSickLeaveForLinkingAction:·vi.fn(),
+     66     │ - → linkSickNoteAction:·vi.fn(),
+     67     │ - }));
+     68     │ - vi.mock(
+     69     │ - → "@/app/[locale]/(app)/personnel-files/skill-certificate-actions",
+     70     │ - → ()·=>·({
+     71     │ - → → listCertificateSkillOptionsAction:·vi.fn(),
+     72     │ - → → setCertificateSkillAction:·vi.fn(),
+     73     │ - → }),
+     74     │ - );
+     75     │ - vi.mock("@tolgee/react",·()·=>·({
+     76     │ - → useTranslate:·()·=>·({
+     77     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>
+     78     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·key:·string)·=>
+     79     │ - → → → → String(params?.[key]·??·match),
+     80     │ - → → → ),
+     81     │ - → }),
+     82     │ - }));
+     83     │ - vi.mock("@/components/providers/app-locale-provider",·()·=>·({
+     84     │ - → useAppLocale:·()·=>·"en-GB",
+     85     │ - }));
+     86     │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({
+     87     │ - → useOrganization:·()·=>·({·userId:·"officer",·activeOrganizationId:·"org"·}),
+     88     │ - }));
+     89     │ - const·capability·=·{
+     90     │ - → employeeId:·"employee",
+     91     │ - → categories:·["certificate"·as·const],
+     92     │ - → today:·"2026-11-15",
+     93     │ - → timezone:·"Europe/Berlin",
+     94     │ - };
+     95     │ - 
+     96     │ - it("blocks·concurrent·unlink·actions·and·ignores·late·completion·across·Activity·suspension",·async·()·=>·{
+     97     │ - → let·finish:·(value:·{·success:·true;·data:·{·documentId:·string·}·})·=>·void·=
+     98     │ - → → ()·=>·{
+     99     │ - → → → throw·new·Error("Action·not·started");
+    100     │ - → → };
+    101     │ - → vi.mocked(toast.success).mockClear();
+    102     │ - → vi.mocked(unlinkSickNoteAction)
+    103     │ - → → .mockReset()
+    104     │ - → → .mockImplementation(
+    105     │ - → → → ()·=>
+    106     │ - → → → → new·Promise((resolve)·=>·{
+    107     │ - → → → → → finish·=·resolve;
+    108     │ - → → → → }),
+    109     │ - → → );
+    110     │ - → const·note·=·{
+    111     │ - → → id:·"note",
+    112     │ - → → employeeId:·"employee",
+    113     │ - → → category:·"sick_note"·as·const,
+    114     │ - → → title:·"Medical·note",
+    115     │ - → → visibility:·"hr_only"·as·const,
+    116     │ - → → documentDate:·"2026-01-15",
+    117     │ - → → payPeriod:·null,
+    118     │ - → → expiryDate:·null,
+    119     │ - → → fileName:·"note.pdf",
+    120     │ - → → mimeType:·"application/pdf",
+    121     │ - → → sizeBytes:·10,
+    122     │ - → → createdAt:·"2026-01-15T12:00:00Z",
+    123     │ - → → skill:·null,
+    124     │ - → → absence:·{·id:·"absence",·startDate:·"2026-01-15",·endDate:·"2026-01-15"·},
+    125     │ - → };
+    126     │ - → vi.mocked(getPersonnelFileAction).mockResolvedValue({
+    127     │ - → → success:·true,
+    128     │ - → → data:·{
+    129     │ - → → → capability,
+    130     │ - → → → documents:·[note,·{·...note,·id:·"note-2",·title:·"Second·note"·}],
+    131     │ - → → },
+    132     │ - → });
+    133     │ - → const·client·=·new·QueryClient({
+    134     │ - → → defaultOptions:·{·queries:·{·retry:·false·}·},
+    135     │ - → });
+    136     │ - → const·content·=·(mode:·"visible"·|·"hidden")·=>·(
+    137     │ - → → <QueryClientProvider·client={client}>
+    138     │ - → → → <Activity·mode={mode}>
+    139     │ - → → → → <PersonnelFilePanel·capability={capability}·/>
+    140     │ - → → → </Activity>
+    141     │ - → → </QueryClientProvider>
+    142     │ - → );
+    143     │ - → const·view·=·render(content("visible"));
+    144     │ - → fireEvent.click(
+    145     │ - → → await·screen.findByRole("button",·{
+    146     │ - → → → name:·"Unlink·Medical·note·from·its·sick·leave",
+    147     │ - → → }),
+    148     │ - → );
+    149     │ - → fireEvent.click(
+    150     │ - → → screen.getByRole("button",·{
+  337 more lines truncated
+  
+
+src\components\personnel-file\personnel-file-panel.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";
+      2     │ - 
+      3     │ - import·{
+      4     │ - → IconCertificate,
+      5     │ - → IconLink,
+      6     │ - → IconPencil,
+      7     │ - → IconTrash,
+      8     │ - → IconUnlink,
+      9     │ - → IconUpload,
+     10     │ - }·from·"@tabler/icons-react";
+     11     │ - import·{
+     12     │ - → type·UseQueryResult,
+     13     │ - → useQuery,
+     14     │ - → useQueryClient,
+     15     │ - }·from·"@tanstack/react-query";
+     16     │ - import·{·useTranslate·}·from·"@tolgee/react";
+     17     │ - import·{·type·ReactNode,·useEffect,·useRef,·useState·}·from·"react";
+     18     │ - import·{·toast·}·from·"sonner";
+     19     │ - import·{
+     20     │ - → type·EmployeeDocumentView,
+     21     │ - → getPersonnelFileAction,
+     22     │ - }·from·"@/app/[locale]/(app)/personnel-files/actions";
+     23     │ - import·{·unlinkSickNoteAction·}·from·"@/app/[locale]/(app)/personnel-files/sick-note-actions";
+     24     │ - import·{·DataTableToolbar·}·from·"@/components/data-table-server/data-table-toolbar";
+     25     │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";
+     26     │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";
+     27     │ - import·{·Button·}·from·"@/components/ui/button";
+     28     │ - import·{
+     29     │ - → Select,
+     30     │ - → SelectContent,
+     31     │ - → SelectItem,
+     32     │ - → SelectTrigger,
+     33     │ - → SelectValue,
+     34     │ - }·from·"@/components/ui/select";
+     35     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";
+     36     │ - import·type·{·DocumentCategory·}·from·"@/lib/personnel-file/document.types";
+     37     │ - import·type·{·PersonnelFilePanelCapability·}·from·"@/lib/personnel-file/panel";
+     38     │ - import·{·queryKeys·}·from·"@/lib/query/keys";
+     39     │ - import·{·CertificateSkillDialog·}·from·"./certificate-skill-dialog";
+     40     │ - import·{·DeleteDocumentDialog·}·from·"./delete-document-dialog";
+     41     │ - import·{·DocumentDialog·}·from·"./document-dialog";
+     42     │ - import·{·usePersonnelFileLabels·}·from·"./document-labels";
+     43     │ - import·{·DocumentList·}·from·"./document-list";
+     44     │ - import·{·DownloadPersonnelFile·}·from·"./download-personnel-file";
+     45     │ - import·{·LinkSickNoteToAbsenceDialog·}·from·"./sick-note-links";
+     46     │ - 
+     47     │ - const·ALL_CATEGORIES·=·"all";
+     48     │ - 
+     49     │ - /**
+     50     │ - ·*·One·employee's·personnel·file·for·someone·who·manages·it·(#865):·the
+     51     │ - ·*·documents·of·the·categories·they·manage,·filterable·by·category,·with
+     52     │ - ·*·upload,·metadata·edits·and·deletion.·The·server·decides·what·is·listed.
+     53     │ - ·*/
+     54     │ - export·function·PersonnelFilePanel({
+     55     │ - → capability,
+     56     │ - → initialCategory·=·null,
+     57     │ - }:·{
+     58     │ - → capability:·PersonnelFilePanelCapability;
+     59     │ - → initialCategory?:·DocumentCategory·|·null;
+     60     │ - })·{
+     61     │ - → const·{·t·}·=·useTranslate();
+     62     │ - → const·labels·=·usePersonnelFileLabels();
+     63     │ - → const·scope·=·useOrganization();
+     64     │ - → const·queryClient·=·useQueryClient();
+     65     │ - → const·[category,·setCategory]·=·useState<DocumentCategory·|·null>(
+     66     │ - → → initialCategory,
+     67     │ - → );
+     68     │ - → const·[uploading,·setUploading]·=·useState(false);
+     69     │ - → const·[editing,·setEditing]·=·useState<EmployeeDocumentView·|·null>(null);
+     70     │ - → const·[deleting,·setDeleting]·=·useState<EmployeeDocumentView·|·null>(null);
+     71     │ - → const·[linking,·setLinking]·=·useState<EmployeeDocumentView·|·null>(null);
+     72     │ - → const·[namingSkill,·setNamingSkill]·=·useState<EmployeeDocumentView·|·null>(
+     73     │ - → → null,
+     74     │ - → );
+     75     │ - → const·[unlinkingId,·setUnlinkingId]·=·useState<string·|·null>(null);
+     76     │ - → const·unlinkPending·=·useRef(false);
+     77     │ - → const·lifetime·=·useRef({});
+     78     │ - → useEffect(()·=>·{
+     79     │ - → → lifetime.current·=·{};
+     80     │ - → → return·()·=>·{
+     81     │ - → → → lifetime.current·=·{};
+     82     │ - → → };
+     83     │ - → },·[]);
+     84     │ - → const·employeeId·=·capability.employeeId;
+     85     │ - 
+     86     │ - → const·query·=·useQuery({
+     87     │ - → → queryKey:·[
+     88     │ - → → → ...queryKeys.personnelFile.employee(employeeId,·category),
+     89     │ - → → → scope.userId,
+     90     │ - → → → scope.activeOrganizationId,
+     91     │ - → → → capability.categories,
+     92     │ - → → ],
+     93     │ - → → retry:·false,
+     94     │ - → → queryFn:·async·()·=>·{
+     95     │ - → → → const·result·=·await·getPersonnelFileAction({·employeeId,·category·});
+     96     │ - → → → if·(!result.success)·throw·new·Error(result.error);
+     97     │ - → → → return·result.data.documents;
+     98     │ - → → },
+     99     │ - → });
+    100     │ - → const·unavailable·=
+    101     │ - → → query.isError·&&·query.error.message·===·"Personnel·file·not·found";
+    102     │ - 
+    103     │ - → function·refresh()·{
+    104     │ - → → void·queryClient.invalidateQueries({
+    105     │ - → → → queryKey:·queryKeys.personnelFile.employeeAll(employeeId),
+    106     │ - → → });
+    107     │ - → }
+    108     │ - 
+    109     │ - → function·refreshSickNotes()·{
+    110     │ - → → refresh();
+    111     │ - → → void·queryClient.invalidateQueries({
+    112     │ - → → → queryKey:·queryKeys.personnelFile.sickNotesAll(),
+    113     │ - → → });
+    114     │ - → }
+    115     │ - 
+    116     │ - → function·refreshSkillCertificates()·{
+    117     │ - → → refresh();
+    118     │ - → → void·queryClient.invalidateQueries({
+    119     │ - → → → queryKey:·queryKeys.skills.employee(employeeId),
+    120     │ - → → });
+    121     │ - → }
+    122     │ - 
+    123     │ - → async·function·unlink(document:·EmployeeDocumentView)·{
+    124     │ - → → if·(unlinkPending.current)·return;
+    125     │ - → → unlinkPending.current·=·true;
+    126     │ - → → const·task·=·lifetime.current;
+    127     │ - → → setUnlinkingId(document.id);
+    128     │ - → → //·Promise#finally·rather·than·try/finally:·the·React·Compiler·cannot
+    129     │ - → → //·compile·try·statements·without·a·catch·clause.
+    130     │ - → → await·unlinkSickNoteAction({·documentId:·document.id·})
+    131     │ - → → → .then((result)·=>·{
+    132     │ - → → → → if·(lifetime.current·!==·task)·return;
+    133     │ - → → → → if·(!result.success)·{
+    134     │ - → → → → → toast.error(
+    135     │ - → → → → → → result.error·||
+    136     │ - → → → → → → → t(
+    137     │ - → → → → → → → → "settings.personnelFiles.sickNotes.unlinkFailed",
+    138     │ - → → → → → → → → "The·sick·note·could·not·be·unlinked.",
+    139     │ - → → → → → → → ),
+    140     │ - → → → → → );
+    141     │ - → → → → → return;
+    142     │ - → → → → }
+    143     │ - → → → → toast.success(
+    144     │ - → → → → → t("settings.personnelFiles.sickNotes.unlinked",·"Sick·note·unlinked"),
+    145     │ - → → → → );
+    146     │ - → → → → refreshSickNotes();
+    147     │ - → → → })
+    148     │ - → → → .catch(()·=>·{
+    149     │ - → → → → if·(lifetime.current·===·task)
+    150     │ - → → → → → toast.error(
+  835 more lines truncated
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·describe,·expect,·it·}·from·"vitest";
+      2     │ - import·{
+      3     │ - → appPageOwnsHeading,
+      4     │ - → normalizeAppPath,
+      5     │ - → resolveAppRouteMetadata,
+      6     │ - }·from·"./route-metadata";
+      7     │ - 
+      8     │ - describe("route·metadata",·()·=>·{
+      9     │ - → it("adopts·only·selected·employee·files,·leaving·other·personnel·workflows·independently·staged",·()·=>·{
+     10     │ - → → expect(
+     11     │ - → → → appPageOwnsHeading(
+     12     │ - → → → → "/de/personnel-files/af981290-0000-4000-8000-000000000001",
+     13     │ - → → → ),
+     14     │ - → → ).toBe(true);
+     15     │ - → → expect(appPageOwnsHeading("/en/personnel-files/document-requests")).toBe(
+     16     │ - → → → false,
+     17     │ - → → );
+     18     │ - → → expect(
+     19     │ - → → → appPageOwnsHeading(
+     20     │ - → → → → "/en/personnel-files/af981290-0000-4000-8000-000000000001/detail",
+     21     │ - → → → ),
+     22     │ - → → ).toBe(false);
+     23     │ - → });
+     24     │ - → it("adopts·payroll,·the·work-balance·directory·and·selected·balance·without·deeper·descendants",·()·=>·{
+     25     │ - → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);
+     26     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
+     27     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(
+     28     │ - → → → true,
+     29     │ - → → );
+     30     │ - → → expect(
+     31     │ - → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),
+     32     │ - → → ).toBe(false);
+     33     │ - → });
+     34     │ - → it("adopts·only·the·notification·timeline·heading,·retaining·settings·and·descendants",·()·=>·{
+     35     │ - → → expect(appPageOwnsHeading("/de/notifications")).toBe(true);
+     36     │ - → → expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);
+     37     │ - → → expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);
+     38     │ - → });
+     39     │ - → it("adopts·only·the·personal·requests·page·heading",·()·=>·{
+     40     │ - → → expect(appPageOwnsHeading("/de/my-requests")).toBe(true);
+     41     │ - → → expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);
+     42     │ - → });
+     43     │ - → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{
+     44     │ - → → expect(appPageOwnsHeading("/de/my-documents")).toBe(true);
+     45     │ - → → expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);
+     46     │ - → → expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);
+     47     │ - → });
+     48     │ - → it("adopts·equipment·overview·and·exact·assignment·headings,·keeping·other·descendants·independent",·()·=>·{
+     49     │ - → → expect(appPageOwnsHeading("/de/equipment")).toBe(true);
+     50     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);
+     51     │ - → → expect(
+     52     │ - → → → appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment"),
+     53     │ - → → ).toBe(true);
+     54     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);
+     55     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(
+     56     │ - → → → false,
+     57     │ - → → );
+     58     │ - → → expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);
+     59     │ - → → expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);
+     60     │ - → });
+     61     │ - → it("adopts·the·employee·equipment·record·heading·without·adopting·its·collection",·()·=>·{
+     62     │ - → → expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);
+     63     │ - → → expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);
+     64     │ - → });
+     65     │ - → it("adopts·the·licence·workspace·and·employee·check·while·retaining·other·descendants·and·settings·headings",·()·=>·{
+     66     │ - → → expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);
+     67     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(
+     68     │ - → → → true,
+     69     │ - → → );
+     70     │ - → → expect(
+     71     │ - → → → appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail"),
+     72     │ - → → ).toBe(false);
+     73     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);
+     74     │ - → → expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);
+     75     │ - → });
+     76     │ - → it("retains·independent·approvals·page·headings",·()·=>·{
+     77     │ - → → expect(appPageOwnsHeading("/de/approvals")).toBe(true);
+     78     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
+     79     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(
+     80     │ - → → → true,
+     81     │ - → → );
+     82     │ - → });
+     83     │ - → it("adopts·only·the·deputy·history·record,·preserving·other·approval·headings",·()·=>·{
+     84     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(
+     85     │ - → → → true,
+     86     │ - → → );
+     87     │ - → → expect(
+     88     │ - → → → appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail"),
+     89     │ - → → ).toBe(false);
+     90     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);
+     91     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);
+     92     │ - → });
+     93     │ - → it("adopts·the·exact·inbox·heading,·retaining·independent·review·route·ownership",·()·=>·{
+     94     │ - → → expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);
+     95     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);
+     96     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(
+     97     │ - → → → true,
+     98     │ - → → );
+     99     │ - → });
+    100     │ - → it("adopts·only·the·complete·review·arrival·route",·()·=>·{
+    101     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(
+    102     │ - → → → true,
+    103     │ - → → );
+    104     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(
+    105     │ - → → → false,
+    106     │ - → → );
+    107     │ - → → expect(
+    108     │ - → → → appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail"),
+    109     │ - → → ).toBe(false);
+    110     │ - → });
+    111     │ - → it("adopts·the·exact·vacation·route·while·retaining·staged·descendants",·()·=>·{
+    112     │ - → → expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);
+    113     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(
+    114     │ - → → → false,
+    115     │ - → → );
+    116     │ - → });
+    117     │ - → it("adopts·only·refreshed·analytics·routes·while·retaining·staged·descendants",·()·=>·{
+    118     │ - → → expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);
+    119     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(
+    120     │ - → → → false,
+    121     │ - → → );
+    122     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);
+    123     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(
+    124     │ - → → → false,
+    125     │ - → → );
+    126     │ - → });
+    127     │ - → it("adopts·refreshed·analytics·without·adopting·unconverted·descendants",·()·=>·{
+    128     │ - → → expect(appPageOwnsHeading("/de/analytics")).toBe(true);
+    129     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);
+    130     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);
+    131     │ - → → expect(appPageOwnsHeading("/en/calendar")).toBe(true);
+    132     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);
+    133     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);
+    134     │ - → });
+    135     │ - → it("adopts·only·the·portfolio·pilot·title,·leaving·other·reports·and·descendants·with·shell·titles",·()·=>·{
+    136     │ - → → expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);
+    137     │ - → → expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);
+    138     │ - → → expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);
+    139     │ - → });
+    140     │ - → it.each([
+    141     │ - → → ["/en",·"Dashboard"],
+    142     │ - → → ["/de/my-requests",·"My·Requests"],
+    143     │ - → → ["/en/organization",·"Org·Explorer"],
+    144     │ - → → ["/en/payroll",·"Payroll"],
+    145     │ - → → ["/en/scheduling",·"Scheduling"],
+    146     │ - → → ["/en/approvals/inbox",·"Approvals"],
+    147     │ - → → ["/en/compliance",·"Compliance"],
+    148     │ - → → ["/en/works-council",·"Works·Council"],
+    149     │ - → → ["/en/team/absences",·"Team·Absences"],
+    150     │ - → → ["/en/team/driving",·"Driving·Details"],
+  201 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";
+      3     │ - 
+      4     │ - export·type·AppRouteMetadata·=·{
+      5     │ - → id:·string;
+      6     │ - → href:·string;
+      7     │ - → titleKey:·string;
+      8     │ - → titleDefault:·string;
+      9     │ - };
+     10     │ - 
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[
+     12     │ - → {
+     13     │ - → → id:·"dashboard",
+     14     │ - → → href:·"/",
+     15     │ - → → titleKey:·"nav.dashboard",
+     16     │ - → → titleDefault:·"Dashboard",
+     17     │ - → },
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.
+     21     │ - → {
+     22     │ - → → id:·"equipment",
+     23     │ - → → href:·"/equipment",
+     24     │ - → → titleKey:·"nav.equipment",
+     25     │ - → → titleDefault:·"Equipment",
+     26     │ - → },
+     27     │ - → {
+     28     │ - → → id:·"my-equipment",
+     29     │ - → → href:·"/my-equipment",
+     30     │ - → → titleKey:·"nav.my-equipment",
+     31     │ - → → titleDefault:·"My·equipment",
+     32     │ - → },
+     33     │ - → {
+     34     │ - → → id:·"notifications",
+     35     │ - → → href:·"/notifications",
+     36     │ - → → titleKey:·"notifications.title",
+     37     │ - → → titleDefault:·"Notifications",
+     38     │ - → },
+     39     │ - → {
+     40     │ - → → id:·"calendar",
+     41     │ - → → href:·"/calendar",
+     42     │ - → → titleKey:·"nav.calendar",
+     43     │ - → → titleDefault:·"Calendar",
+     44     │ - → },
+     45     │ - → {
+     46     │ - → → id:·"time-tracking",
+     47     │ - → → href:·"/time-tracking",
+     48     │ - → → titleKey:·"nav.time-tracking",
+     49     │ - → → titleDefault:·"Time·Tracking",
+     50     │ - → },
+     51     │ - → {
+     52     │ - → → id:·"my-requests",
+     53     │ - → → href:·"/my-requests",
+     54     │ - → → titleKey:·"nav.my-requests",
+     55     │ - → → titleDefault:·"My·Requests",
+     56     │ - → },
+     57     │ - → {
+     58     │ - → → id:·"org-explorer",
+     59     │ - → → href:·"/organization",
+     60     │ - → → titleKey:·"nav.org-explorer",
+     61     │ - → → titleDefault:·"Org·Explorer",
+     62     │ - → },
+     63     │ - → {
+     64     │ - → → id:·"absences",
+     65     │ - → → href:·"/absences",
+     66     │ - → → titleKey:·"nav.absences",
+     67     │ - → → titleDefault:·"Absences",
+     68     │ - → },
+     69     │ - → {
+     70     │ - → → id:·"travel-expenses",
+     71     │ - → → href:·"/travel-expenses",
+     72     │ - → → titleKey:·"nav.travel-expenses",
+     73     │ - → → titleDefault:·"Travel·Expenses",
+     74     │ - → },
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.
+     77     │ - → {
+     78     │ - → → id:·"driving-licence",
+     79     │ - → → href:·"/driving-licence",
+     80     │ - → → titleKey:·"drivingLicence.myTitle",
+     81     │ - → → titleDefault:·"My·driving·authorization",
+     82     │ - → },
+     83     │ - → {
+     84     │ - → → id:·"reports-projects",
+     85     │ - → → href:·"/reports/projects",
+     86     │ - → → titleKey:·"reports.projects.title",
+     87     │ - → → titleDefault:·"Project·Reports",
+     88     │ - → },
+     89     │ - → {
+     90     │ - → → id:·"reports-vehicles",
+     91     │ - → → href:·"/reports/vehicles",
+     92     │ - → → titleKey:·"reports.vehicles.title",
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",
+     94     │ - → },
+     95     │ - → {
+     96     │ - → → id:·"reports",
+     97     │ - → → href:·"/reports",
+     98     │ - → → titleKey:·"nav.reports",
+     99     │ - → → titleDefault:·"Reports",
+    100     │ - → },
+    101     │ - → {
+    102     │ - → → id:·"team-absences",
+    103     │ - → → href:·"/team/absences",
+    104     │ - → → titleKey:·"nav.teamAbsences",
+    105     │ - → → titleDefault:·"Team·Absences",
+    106     │ - → },
+    107     │ - → {
+    108     │ - → → id:·"team-presence",
+    109     │ - → → href:·"/team/presence",
+    110     │ - → → titleKey:·"nav.teamPresence",
+    111     │ - → → titleDefault:·"Who·Is·In",
+    112     │ - → },
+    113     │ - → {
+    114     │ - → → id:·"team-period-submissions",
+    115     │ - → → href:·"/team/period-submissions",
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",
+    117     │ - → → titleDefault:·"Period·Submissions",
+    118     │ - → },
+    119     │ - → {
+    120     │ - → → id:·"team-driving",
+    121     │ - → → href:·"/team/driving",
+    122     │ - → → titleKey:·"nav.teamDriving",
+    123     │ - → → titleDefault:·"Driving·Details",
+    124     │ - → },
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},
+    126     │ - → {
+    127     │ - → → id:·"approvals",
+    128     │ - → → href:·"/approvals",
+    129     │ - → → titleKey:·"nav.approvals",
+    130     │ - → → titleDefault:·"Approvals",
+    131     │ - → },
+    132     │ - → {
+    133     │ - → → id:·"analytics",
+    134     │ - → → href:·"/analytics",
+    135     │ - → → titleKey:·"nav.analytics",
+    136     │ - → → titleDefault:·"Analytics",
+    137     │ - → },
+    138     │ - → {
+    139     │ - → → id:·"payroll",
+    140     │ - → → href:·"/payroll",
+    141     │ - → → titleKey:·"nav.payroll",
+    142     │ - → → titleDefault:·"Payroll",
+    143     │ - → },
+    144     │ - → {
+    145     │ - → → id:·"scheduling",
+    146     │ - → → href:·"/scheduling",
+    147     │ - → → titleKey:·"nav.scheduling",
+    148     │ - → → titleDefault:·"Scheduling",
+    149     │ - → },
+    150     │ - → {
+  373 more lines truncated
+  
+
+Checked 13 files in 9ms. No fixes applied.
+Found 13 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-c42af28b-
+  │ eda920ca028710b9\apps\webapp
+

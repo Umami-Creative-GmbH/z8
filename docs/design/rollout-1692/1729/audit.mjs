@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';
+import {lstatSync,readdirSync,realpathSync,readFileSync,writeFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {resolve,join,relative} from 'node:path';
+import {createHash} from 'node:crypto';
+import {sourceEvidence} from './source.mjs';
+const root=realpathSync(process.cwd()),inside=p=>!relative(root,p).startsWith('..');const parents=[];for(const p of ['node_modules','apps/webapp/node_modules','node_modules/.pnpm']){assert(!lstatSync(p).isSymbolicLink());parents.push({path:p,physical:true,realpath:realpathSync(p)});assert(inside(realpathSync(p)));}
+const links=[];function scan(parent){for(const e of readdirSync(parent,{withFileTypes:true})){if(e.name.startsWith('.'))continue;const path=join(parent,e.name);if(e.name.startsWith('@')&&!lstatSync(path).isSymbolicLink()){scan(path);continue;}if(lstatSync(path).isSymbolicLink()){const target=realpathSync(path);assert(inside(target),path+' leaves checkout');links.push({path,target});}}}scan('node_modules');scan('apps/webapp/node_modules');const req=createRequire(resolve('apps/webapp/package.json')),resolutions=[];for(const name of ['next','react','vitest','babel-plugin-react-compiler']){const path=req.resolve(name);assert(inside(realpathSync(path)));resolutions.push({name,path});}const lock=createHash('sha256').update(readFileSync('pnpm-lock.yaml')).digest('hex').toUpperCase();assert.equal(lock,'2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799');writeFileSync('docs/design/rollout-1692/1729/dependency-audit.json',JSON.stringify({parents,linkCount:links.length,links,resolutions,lock,source:await sourceEvidence()},null,2));console.log(links.length+' internal package links verified');

@@ -1,0 +1,13 @@
+import {spawn,execFileSync} from 'node:child_process';
+import {readFile,writeFile} from 'node:fs/promises';
+import {createWriteStream} from 'node:fs';
+import {resolve,join} from 'node:path';
+const repo=process.cwd(),r=JSON.parse(await readFile('.tmp/1729/fixture/runtime-private.json','utf8')),s=JSON.parse(await readFile('.tmp/1729/fixture/services.json','utf8'));
+if(r.env.POSTGRES_HOST!=='127.0.0.1'||!/^approval_workflow_repository_test_perf_[a-f0-9]{12}$/.test(r.env.POSTGRES_DB))throw Error('Not own fixture');
+for(const c of s.containers)if(execFileSync('docker',['inspect','--format','{{ index .Config.Labels "z8.agent-owned" }}',c],{encoding:'utf8',windowsHide:true}).trim()!==s.label)throw Error('Label mismatch');
+const mode='pg-tools';
+const args=mode==='pg-tools'?['--filter','webapp','exec','vitest','run','--project','integration','--maxWorkers','1','src/lib/personnel-file/personnel-file-zip.integration.test.ts','src/lib/personnel-file/skill-certificates.integration.test.ts','src/lib/personnel-file/sick-notes-officer.integration.test.ts','src/lib/personnel-file/document-request-review.integration.test.ts','src/lib/personnel-file/employee-uploads.integration.test.ts']:['--filter','webapp','run','typecheck'];
+const log=createWriteStream(resolve('.tmp/1729/'+mode+'.log'));const start=Date.now();
+await new Promise((done,reject)=>{log.once('open',done);log.once('error',reject);});
+const child=spawn(process.env.npm_execpath,['--config.verify-deps-before-run=false',...args],{cwd:repo,env:{...process.env,...r.env,NODE_ENV:'test',pnpm_config_verify_deps_before_run:'false',BILLING_ENABLED:'false',TELEMETRY_ENABLED:'false',ENABLE_CRON_JOBS:'false'},windowsHide:true,stdio:['ignore',log,log]});
+child.on('exit',async code=>{log.end();await writeFile('.tmp/1729/'+mode+'-result.json',JSON.stringify({mode,code,elapsedMs:Date.now()-start,args:['pnpm','--config.verify-deps-before-run=false',...args]}));console.log(mode+' exit '+code);process.exitCode=code;});

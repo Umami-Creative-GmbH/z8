@@ -1,0 +1,99 @@
+{
+  "stage": "before",
+  "checks": [
+    "Feature enabled using public settings UI with scoped readback. Three metadata-only synthetic records seeded; not binary uploads."
+  ],
+  "captures": [
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\before-desktop-light.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Z8",
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\before-wide-dark.png",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Z8",
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\before-phone-light.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Z8",
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\before-phone-dark-large.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Z8",
+        "Person 2"
+      ]
+    }
+  ],
+  "errors": [
+    "Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\nhttps://react.dev/link/hydration-mismatch\n\n  ...\n    <div className=\"flex min-w...\" data-slot=\"card\" id=\"organizati...\">\n      <CardHeader>\n      <CardContent>\n        <div className=\"min-w-0 px-6\" data-slot=\"card-content\">\n          <form ref={{current:null}} noValidate={true} onSubmit={function OrganizationProfileCard[<form>.onSubmit]} ...>\n            <fieldset disabled={false} className=\"grid min-w...\">\n              <legend>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField>\n              <APIField name=\"country\">\n                <Field name=\"country\" form={{options:{...}, ...}}>\n                  <TFormItem className={undefined}>\n                    <div data-slot=\"form-item\" className=\"grid conte...\">\n                      <TFormLabel>\n                      <TFormControl hasError={false}>\n                        <Slot data-slot=\"form-control\" id=\"_R_1sql5et...\" aria-describedby=\"_R_1sql5et...\" ...>\n                          <select aria-label=\"Country\" className=\"rounded-md...\" name=\"country\" autoComplete=\"country\" ...>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option>\n                            <option value=\"FK\">\n+                             Falkland Islands (Islas Malvinas)\n-                             Falkland Islands\n                            ...\n                      ...\n              ...\n            ...\n"
+  ],
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "fixture": {
+    "actor": "small-admin",
+    "organizationId": "perf-small-5b90dc2f199e",
+    "employeeId": "6e71ae07-24f0-4276-a9a3-9c1ca5c0a092"
+  },
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+      "sha256": "e1f3ad4dfe92eac27efc165e58e79063b10dc10989d57f6e4aafa70290c46b11",
+      "canonicalSha256": "3a35295b57b69024f11fa766bc5d2743169239388b1f33659a761ec655061639"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "sha256": "c77c74125f2a253f6ac74508cdaf97a11d0964aa48d8ec88b3050c77927a73a1",
+      "canonicalSha256": "9972405860dd356b001d304081c3c384435a27bd2490aa972a404d216228d838"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+      "sha256": "f00c9f3b131726042afd81bb4068fb9b51bdda7e638bc921430a91e1d49c8758",
+      "canonicalSha256": "5ec5e01a124a394eacdb77e929ac8749c711516f9d2d1b6a37587a7a2d484852"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c",
+      "canonicalSha256": "44b3f3f82719e29c62715d62aa65e8bbf87565634c8188017e46f6cfcfe97ffd"
+    }
+  ]
+}

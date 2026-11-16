@@ -12,6 +12,21 @@ describe("route metadata", () => {
 		expect(appPageOwnsHeading("/en/settings/report-share-links/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/settings/other")).toBe(false);
 	});
+	it("adopts only selected employee files, leaving other personnel workflows independently staged", () => {
+		expect(
+			appPageOwnsHeading(
+				"/de/personnel-files/af981290-0000-4000-8000-000000000001",
+			),
+		).toBe(true);
+		expect(appPageOwnsHeading("/en/personnel-files/document-requests")).toBe(
+			false,
+		);
+		expect(
+			appPageOwnsHeading(
+				"/en/personnel-files/af981290-0000-4000-8000-000000000001/detail",
+			),
+		).toBe(false);
+	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);

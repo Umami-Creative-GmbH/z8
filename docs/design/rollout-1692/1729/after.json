@@ -1,0 +1,91 @@
+{
+  "stage": "after",
+  "checks": [],
+  "captures": [
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\after-desktop-light.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\after-wide-dark.png",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\after-phone-light.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\after-phone-dark-large.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    }
+  ],
+  "errors": [],
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "fixture": {
+    "actor": "small-admin",
+    "organizationId": "perf-small-5b90dc2f199e",
+    "employeeId": "6e71ae07-24f0-4276-a9a3-9c1ca5c0a092"
+  },
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+      "sha256": "41359afe9da85b28553b723eedd436bc5d92955ad8a5e707cf4fa903c219ca5f",
+      "canonicalSha256": "41359afe9da85b28553b723eedd436bc5d92955ad8a5e707cf4fa903c219ca5f"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "sha256": "3e85c46422a22b5a46a7adcbb22fedb6aa0499771fab63cf1af1c3fafc117287",
+      "canonicalSha256": "3e85c46422a22b5a46a7adcbb22fedb6aa0499771fab63cf1af1c3fafc117287"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+      "sha256": "f00c9f3b131726042afd81bb4068fb9b51bdda7e638bc921430a91e1d49c8758",
+      "canonicalSha256": "5ec5e01a124a394eacdb77e929ac8749c711516f9d2d1b6a37587a7a2d484852"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "f566fdc3898ea7f89fb98f15ad537bbf3bb2f3b35f5d306ab82cfd6b2b64f3ee",
+      "canonicalSha256": "f566fdc3898ea7f89fb98f15ad537bbf3bb2f3b35f5d306ab82cfd6b2b64f3ee"
+    }
+  ]
+}

@@ -208,6 +208,9 @@ export function normalizeAppPath(pathname: string): string {
 export function appPageOwnsHeading(pathname: string): boolean {
 	const path = normalizeAppPath(pathname);
 	return (
+		/^\/personnel-files\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+			path,
+		) ||
 		/^\/equipment\/assignments\/[^/]+$/.test(path) ||
 		/^\/equipment\/employees\/[^/]+$/.test(path) ||
 		/^\/driving-licence\/checks\/[^/]+$/.test(path) ||
