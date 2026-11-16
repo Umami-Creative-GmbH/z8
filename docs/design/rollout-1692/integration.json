@@ -761,7 +761,12 @@
       ],
       "status": "awaiting-integration",
       "verifiedCommit": null,
-      "implementationCommit": "df20c5d11bda382ccbe9104398600c6278a5038e"
+      "implementationCommit": "df20c5d11bda382ccbe9104398600c6278a5038e",
+      "provisionalIntegrationCommit": "29e56ae7b6c8214b8d404de52d834ac0d99313d8",
+      "provisionalReconciliationCommit": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+      "provisionalCorrectionCommit": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
+      "provisionalCorrectionIntegrationCommit": "25a23e58c0ca84e87ece89e8ac633b0a951bbb11",
+      "pendingAcceptance": "Safe route/client-scope headings and local organization Retry pass 440 unit cases and all three type projects; fresh authenticated runtime/native/Next/matched capture verification remains pending. Existing unsettled start stays locked until its result settles; no new idempotency semantics."
     },
     {
       "id": "R050",
@@ -949,8 +954,10 @@
       "blockedBy": [
         1693
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1752#issuecomment-6918900834"
     },
     {
       "id": "R068",
@@ -1822,10 +1829,11 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1750#issuecomment-6915801907"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1750#issuecomment-6915801907",
+      "implementationCommit": "b8e3a5ad188396d8759738b8dfd804af3bc99c01"
     },
     {
       "id": "R169",
