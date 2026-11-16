@@ -1,0 +1,7 @@
+{
+  "phase": "before",
+  "sqlState23505Observed": true,
+  "defaultIndexObserved": true,
+  "source": "Own stopped historical-process dev log; only stable SQLSTATE/index markers exported",
+  "logBytesBeforeCurrent": 29662
+}

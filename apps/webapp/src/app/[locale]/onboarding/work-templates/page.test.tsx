@@ -110,12 +110,15 @@ describe("WorkTemplatesPage load effect", () => {
 		expect(screen.getByText("4 working days, 8.1 hours per day")).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Save and continue" }));
 		await waitFor(() => expect(mocks.push).toHaveBeenCalledOnce());
-		expect(mocks.createWorkTemplateOnboarding).toHaveBeenLastCalledWith({
-			name: "Four day",
-			hoursPerWeek: 32.5,
-			workingDays: ["monday", "tuesday", "wednesday", "thursday"],
-			setAsDefault: false,
-		});
+		expect(mocks.createWorkTemplateOnboarding).toHaveBeenLastCalledWith(
+			{
+				name: "Four day",
+				hoursPerWeek: 32.5,
+				workingDays: ["monday", "tuesday", "wednesday", "thursday"],
+				setAsDefault: false,
+			},
+			{ userId: "actor-a", organizationId: "org-a" },
+		);
 	});
 
 	it("does not navigate or announce an abandoned save after organization A→B→A", async () => {
@@ -175,12 +178,15 @@ describe("WorkTemplatesPage load effect", () => {
 		fireEvent.click(continueButton);
 
 		await waitFor(() => {
-			expect(mocks.createWorkTemplateOnboarding).toHaveBeenCalledWith({
-				name: "Compressed",
-				hoursPerWeek: 50,
-				workingDays: ["tuesday", "wednesday", "thursday", "friday", "saturday"],
-				setAsDefault: true,
-			});
+			expect(mocks.createWorkTemplateOnboarding).toHaveBeenCalledWith(
+				{
+					name: "Compressed",
+					hoursPerWeek: 50,
+					workingDays: ["tuesday", "wednesday", "thursday", "friday", "saturday"],
+					setAsDefault: true,
+				},
+				{ userId: "actor-a", organizationId: "org-a" },
+			);
 			expect(continueButton).toHaveProperty("disabled", true);
 			expect(screen.getByLabelText("Hours per Week")).toHaveProperty("disabled", true);
 		});
@@ -375,6 +381,7 @@ describe("WorkTemplatesPage load effect", () => {
 		await waitFor(() =>
 			expect(mocks.createWorkTemplateOnboarding).toHaveBeenCalledWith(
 				expect.objectContaining({ hoursPerWeek: 32.5 }),
+				{ userId: "actor-a", organizationId: "org-a" },
 			),
 		);
 	});

@@ -5,7 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
@@ -25,7 +25,10 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { useSession } from "@/lib/auth-client";
-import type { OnboardingWorkTemplateFormValues } from "@/lib/validations/onboarding";
+import type {
+	OnboardingOrganizationExpectation,
+	OnboardingWorkTemplateFormValues,
+} from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
 import { checkIsAdmin, createWorkTemplateOnboarding, skipWorkTemplateSetup } from "./actions";
@@ -50,6 +53,12 @@ function getShortWeekdayLabel(locale: string, dayIndex: number) {
 type DayOfWeek = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+
+type WorkTemplateCommand = {
+	arrival: symbol;
+	started: boolean;
+	expected: OnboardingOrganizationExpectation;
+};
 
 function getFieldErrorMessage(error: unknown) {
 	if (typeof error === "string") {
@@ -354,22 +363,26 @@ export default function WorkTemplatesPage() {
 	return (
 		<WorkTemplateSetup
 			key={`${session.user.id}:${session.session.activeOrganizationId ?? "none"}`}
+			expected={{
+				userId: session.user.id,
+				organizationId: session.session.activeOrganizationId ?? null,
+			}}
 		/>
 	);
 }
 
-function WorkTemplateSetup() {
+function useWorkTemplateSetup(expected: OnboardingOrganizationExpectation) {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const arrival = useRef<symbol | null>(null);
-	const running = useRef(false);
+	const running = useRef<WorkTemplateCommand | null>(null);
 	const formElement = useRef<HTMLFormElement>(null);
 	useLayoutEffect(() => {
 		arrival.current = Symbol("work-template arrival");
-		running.current = false;
+		running.current = null;
 		// react-doctor-disable-next-line react-hooks-js/set-state-in-effect -- Activity reconnect invalidates only transient pending state; the form draft survives.
 		setLoading(false);
 		// react-doctor-disable-next-line react-hooks-js/set-state-in-effect -- Reconnected Activity must recheck administrator authority before revealing its retained draft.
@@ -379,12 +392,27 @@ function WorkTemplateSetup() {
 		};
 	}, []);
 
-	async function perform(kind: "save" | "skip", value?: OnboardingWorkTemplateFormValues) {
+	function reserveCommand() {
 		const owner = arrival.current;
-		if (!owner || running.current || isAdmin !== true) return;
-		running.current = true;
+		if (!owner || running.current || isAdmin !== true) return null;
+		const command = { arrival: owner, started: false, expected };
+		running.current = command;
+		return command;
+	}
+
+	function currentCommand(command: WorkTemplateCommand) {
+		return arrival.current === command.arrival && running.current === command;
+	}
+
+	async function perform(
+		kind: "save" | "skip",
+		value?: OnboardingWorkTemplateFormValues,
+		command = reserveCommand(),
+	) {
+		if (!command || !currentCommand(command) || isAdmin !== true) return;
+		command.started = true;
 		setError(null);
-		const current = () => arrival.current === owner;
+		const current = () => currentCommand(command);
 		const fallback =
 			kind === "save"
 				? t("onboarding.workTemplates.error", "Failed to create work schedule template")
@@ -397,11 +425,22 @@ function WorkTemplateSetup() {
 		};
 		await runOnboardingAction({
 			action: () =>
-				kind === "save" && value ? createWorkTemplateOnboarding(value) : skipWorkTemplateSetup(),
+				kind === "save" && value
+					? createWorkTemplateOnboarding(value, command.expected)
+					: skipWorkTemplateSetup(command.expected),
 			onResult: (result) => {
 				if (!current()) return true;
 				if (!result.success) {
-					fail(result.error || fallback);
+					fail(
+						result.refusal === "work_template_default_exists"
+							? t(
+									"onboarding.workTemplates.defaultExists",
+									"An organization default already exists. Create a non-default template or manage work policies in settings.",
+								)
+							: result.code === "DatabaseError"
+								? fallback
+								: result.error || fallback,
+					);
 					return;
 				}
 				if (kind === "save")
@@ -413,30 +452,27 @@ function WorkTemplateSetup() {
 			setLoading: (pending) => {
 				if (current()) {
 					setLoading(pending);
-					if (!pending) running.current = false;
+					if (!pending) running.current = null;
 				}
 			},
 		});
 	}
 
 	const form = useForm({
+		onSubmitMeta: { command: null as WorkTemplateCommand | null },
 		defaultValues: {
 			name: t("onboarding.workTemplates.defaultName", "Standard"),
 			hoursPerWeek: "40",
 			workingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"] as DayOfWeek[],
 			setAsDefault: true,
 		},
-		onSubmit: async ({ value }) => {
+		onSubmit: async ({ value, meta }) => {
 			if (value.workingDays.length > 0)
-				await perform("save", { ...value, hoursPerWeek: Number(value.hoursPerWeek) });
+				await perform("save", { ...value, hoursPerWeek: Number(value.hoursPerWeek) }, meta.command);
 		},
 		onSubmitInvalid: () =>
 			formElement.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
 	});
-
-	const formValues = useStore(form.store, (state) => state.values);
-	const workingDays = formValues.workingDays;
-	const hoursPerWeek = Number(formValues.hoursPerWeek);
 
 	// Check if user is admin, redirect if not
 	useEffect(() => {
@@ -473,6 +509,37 @@ function WorkTemplateSetup() {
 	async function handleSkip() {
 		await perform("skip");
 	}
+
+	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		event.stopPropagation();
+		const command = reserveCommand();
+		if (!command) return;
+		try {
+			await form.handleSubmit({ command });
+		} catch {
+			if (!currentCommand(command)) return;
+			running.current = null;
+			setLoading(false);
+			const message = t(
+				"onboarding.workTemplates.error",
+				"Failed to create work schedule template",
+			);
+			setError(message);
+			toast.error(message);
+		}
+		if (currentCommand(command) && !command.started) running.current = null;
+	}
+
+	return { t, form, formElement, loading, isAdmin, error, handleSubmit, handleSkip };
+}
+
+function WorkTemplateSetup({ expected }: { expected: OnboardingOrganizationExpectation }) {
+	const { t, form, formElement, loading, isAdmin, error, handleSubmit, handleSkip } =
+		useWorkTemplateSetup(expected);
+	const formValues = useStore(form.store, (state) => state.values);
+	const workingDays = formValues.workingDays;
+	const hoursPerWeek = Number(formValues.hoursPerWeek);
 
 	// Show loading while checking admin status
 	if (isAdmin !== true) {
@@ -517,11 +584,7 @@ function WorkTemplateSetup() {
 					<CardContent>
 						<form
 							ref={formElement}
-							onSubmit={(event) => {
-								event.preventDefault();
-								event.stopPropagation();
-								void form.handleSubmit();
-							}}
+							onSubmit={handleSubmit}
 							noValidate
 							aria-busy={loading}
 							className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] lg:gap-8"

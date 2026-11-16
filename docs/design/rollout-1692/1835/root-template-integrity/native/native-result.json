@@ -1,0 +1,264 @@
+{
+  "status": "accepted",
+  "checks": [
+    "Actual native default refusal retains the form with one heading and no blocking dialog",
+    "Actual native template setup and field owner tree"
+  ],
+  "qualification": "Fresh unique native browser with normal private-stdin development login, no cookie/state copy/restore/save. --disable-notifications is a fixture-only launch policy, verified in the browser; no production permission change. Actual template default refusal and form owner React tree; deferred timing remains separate public-seam proof.",
+  "source": {
+    "phase": "after",
+    "sourceCommit": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+    "beforeService": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+    "digest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d",
+    "sourcePins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "0bbf6dabdda5df4ce12d822dd62729b678f676ac40f3cc99fced6dd936a68955"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "9da7d43961645d4d30e6b779a77669db7377a944c0b365afae8ca074b5f81c16"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "382aa71824fdaecab2bf6b5afadda5f01bae53caf1bd84060443f61ba4f70437"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/submission-arrival.test.tsx",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "8a17b22c399da68bf95c03a6b7fce16d4d719636c046aabc77452b031ec62d07"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "15a3bb27a4d5ba7ab63b13b2c06c5705e06560e19b3df422876f8da582d8450f"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "7af76c4768f036610e9105b966b72b7fe818410c4ff064608a92a82bcec3a8f9"
+      },
+      {
+        "path": "apps/webapp/src/lib/user-preferences/user-settings-mutation.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "cea2b01dc366c892cbc742c3cb05a06710880ac399e82142f51b525f9b9487e5"
+      },
+      {
+        "path": "apps/webapp/src/lib/onboarding/work-template-mutation.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "e63df58118269453859e5975ac20d7ad20a3701e5437cbbaf890f6be58720e5c"
+      },
+      {
+        "path": "apps/webapp/src/db/schema/work-policy.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "56fb115e3b957111ccb34e99745ba612bd298b274b7adfda3a102148da1ff54c"
+      },
+      {
+        "path": "apps/webapp/src/db/schema/user-settings.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "141b42b6aaaaa097832fde7a609e4c94c6101d16cc7f95459ae9a0e0a3756e87"
+      },
+      {
+        "path": "apps/webapp/src/db/auth-schema.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "72404cd241eb9588426d54449742b4292f296daa960069c45f699c4ab7ed5814"
+      },
+      {
+        "path": "apps/webapp/src/lib/validations/onboarding.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "94656a41622221f5737469b86979b2a0fb0f2a9b84d718ee065ef64395c82ec3"
+      },
+      {
+        "path": "apps/webapp/src/lib/organization-action/settings-access.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "4da7941cfc3d6575ceb661428a98f37cdbe840cb7ccbc8b5a963d1979209783e"
+      },
+      {
+        "path": "apps/webapp/src/lib/organization-action/settings-access-level.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "7cbdae627f562b8c4e7dc49eda46ba507f7ede251a5492349ea350a51644e462"
+      },
+      {
+        "path": "apps/webapp/src/lib/auth/organization-role.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "d6a44f99bce3ba3150e3a44daa4e2e4e010dd63fc0a37006459ca2bb70a95877"
+      },
+      {
+        "path": "apps/webapp/src/lib/employee-lifecycle/current-roster.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "ec657c3bcd473ec462f286621fde20cd89789925faba3e7506264f70f60cc759"
+      },
+      {
+        "path": "apps/webapp/src/lib/time-tracking/work-transaction/index.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "b0a5f2be115bb6c55dac9c2c0d297d7eeca362421ca3ac44528d5e65dbbe2a8d"
+      }
+    ],
+    "onlyHistoricalServiceOverlay": false
+  },
+  "auth": {
+    "active": 200,
+    "signIn": 200
+  },
+  "permission": {
+    "permission": "unavailable"
+  },
+  "next": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/onboarding/work-templates\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/onboarding/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/onboarding/work-templates/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "sourceAtEnd": {
+    "phase": "after",
+    "sourceCommit": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+    "beforeService": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+    "digest": "07b0c3d1481651d4b46cbb1119c5a9d493ccb5613475d2061f378c2bd719c64d",
+    "sourcePins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "0bbf6dabdda5df4ce12d822dd62729b678f676ac40f3cc99fced6dd936a68955"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "9da7d43961645d4d30e6b779a77669db7377a944c0b365afae8ca074b5f81c16"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "382aa71824fdaecab2bf6b5afadda5f01bae53caf1bd84060443f61ba4f70437"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/submission-arrival.test.tsx",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "8a17b22c399da68bf95c03a6b7fce16d4d719636c046aabc77452b031ec62d07"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "15a3bb27a4d5ba7ab63b13b2c06c5705e06560e19b3df422876f8da582d8450f"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/onboarding.service.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "7af76c4768f036610e9105b966b72b7fe818410c4ff064608a92a82bcec3a8f9"
+      },
+      {
+        "path": "apps/webapp/src/lib/user-preferences/user-settings-mutation.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "cea2b01dc366c892cbc742c3cb05a06710880ac399e82142f51b525f9b9487e5"
+      },
+      {
+        "path": "apps/webapp/src/lib/onboarding/work-template-mutation.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "e63df58118269453859e5975ac20d7ad20a3701e5437cbbaf890f6be58720e5c"
+      },
+      {
+        "path": "apps/webapp/src/db/schema/work-policy.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "56fb115e3b957111ccb34e99745ba612bd298b274b7adfda3a102148da1ff54c"
+      },
+      {
+        "path": "apps/webapp/src/db/schema/user-settings.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "141b42b6aaaaa097832fde7a609e4c94c6101d16cc7f95459ae9a0e0a3756e87"
+      },
+      {
+        "path": "apps/webapp/src/db/auth-schema.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "72404cd241eb9588426d54449742b4292f296daa960069c45f699c4ab7ed5814"
+      },
+      {
+        "path": "apps/webapp/src/lib/validations/onboarding.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "94656a41622221f5737469b86979b2a0fb0f2a9b84d718ee065ef64395c82ec3"
+      },
+      {
+        "path": "apps/webapp/src/lib/organization-action/settings-access.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "4da7941cfc3d6575ceb661428a98f37cdbe840cb7ccbc8b5a963d1979209783e"
+      },
+      {
+        "path": "apps/webapp/src/lib/organization-action/settings-access-level.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "7cbdae627f562b8c4e7dc49eda46ba507f7ede251a5492349ea350a51644e462"
+      },
+      {
+        "path": "apps/webapp/src/lib/auth/organization-role.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "d6a44f99bce3ba3150e3a44daa4e2e4e010dd63fc0a37006459ca2bb70a95877"
+      },
+      {
+        "path": "apps/webapp/src/lib/employee-lifecycle/current-roster.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "ec657c3bcd473ec462f286621fde20cd89789925faba3e7506264f70f60cc759"
+      },
+      {
+        "path": "apps/webapp/src/lib/time-tracking/work-transaction/index.ts",
+        "ref": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+        "canonicalSha256": "b0a5f2be115bb6c55dac9c2c0d297d7eeca362421ca3ac44528d5e65dbbe2a8d"
+      }
+    ],
+    "onlyHistoricalServiceOverlay": false
+  },
+  "closed": true
+}

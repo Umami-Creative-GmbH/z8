@@ -1,0 +1,8 @@
+{
+  "qualifiedHistoricalMessageOnly": true,
+  "parent": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+  "path": "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx",
+  "currentCanonicalSha256": "9da7d43961645d4d30e6b779a77669db7377a944c0b365afae8ca074b5f81c16",
+  "redCanonicalSha256": "727343dd512047f8102ff0772904ddbb56e50566b4fdacf2718d5f7178031306",
+  "restoredByteExactly": true
+}

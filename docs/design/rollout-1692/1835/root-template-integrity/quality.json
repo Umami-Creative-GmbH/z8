@@ -1,0 +1,112 @@
+{
+  "base": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+  "source": "cda10d3e2e42fee034ab9ad1df2bc4eafda091e8",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts": "0bbf6dabdda5df4ce12d822dd62729b678f676ac40f3cc99fced6dd936a68955",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx": "9da7d43961645d4d30e6b779a77669db7377a944c0b365afae8ca074b5f81c16",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx": "382aa71824fdaecab2bf6b5afadda5f01bae53caf1bd84060443f61ba4f70437",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/submission-arrival.test.tsx": "8a17b22c399da68bf95c03a6b7fce16d4d719636c046aabc77452b031ec62d07",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts": "15a3bb27a4d5ba7ab63b13b2c06c5705e06560e19b3df422876f8da582d8450f",
+    "apps/webapp/src/lib/onboarding/work-template-mutation.ts": "e63df58118269453859e5975ac20d7ad20a3701e5437cbbaf890f6be58720e5c",
+    "apps/webapp/src/lib/effect/services/onboarding.service.ts": "7af76c4768f036610e9105b966b72b7fe818410c4ff064608a92a82bcec3a8f9",
+    "apps/webapp/src/lib/user-preferences/user-settings-mutation.ts": "cea2b01dc366c892cbc742c3cb05a06710880ac399e82142f51b525f9b9487e5",
+    "apps/webapp/src/lib/effect/services/onboarding.service.test.ts": "56e578ab67c6cb1eec69619d0062ccf4d71bb1a31365a6319815c798f546b4c4"
+  },
+  "unit": {
+    "files": 30,
+    "cases": 383
+  },
+  "postgres": {
+    "files": 1,
+    "cases": 13
+  },
+  "unique": {
+    "files": 31,
+    "cases": 396
+  },
+  "types": {
+    "routeGeneration": true,
+    "application": true,
+    "workflowContracts": true,
+    "smoke": true
+  },
+  "lint": {
+    "files": 9,
+    "passed": true
+  },
+  "format": {
+    "files": 7,
+    "passed": true,
+    "wholeServiceFormattingPassed": false
+  },
+  "doctor": {
+    "version": "0.9.22",
+    "scannedFiles": 7,
+    "errors": 0,
+    "warnings": 0,
+    "inheritedPageDirectives": 2,
+    "newSuppressions": 0
+  },
+  "runtime": {
+    "canonicalBefore": {
+      "checks": 2,
+      "pngs": 2,
+      "initial": [
+        3,
+        3,
+        14,
+        1
+      ],
+      "refused": [
+        4,
+        4,
+        21,
+        1
+      ]
+    },
+    "canonicalAfter": {
+      "checks": 2,
+      "pngs": 4,
+      "initial": [
+        4,
+        4,
+        21,
+        1
+      ],
+      "refused": [
+        4,
+        4,
+        21,
+        1
+      ],
+      "accepted": [
+        5,
+        5,
+        28,
+        1
+      ]
+    },
+    "saveCommands": 3,
+    "setupRequests": 4,
+    "operationalPNGs": 6,
+    "native": {
+      "checks": 2,
+      "independentTransportCounter": false
+    },
+    "initialProgress": "wellness",
+    "observedFinalProgress": "wellness",
+    "acceptedDestination": "/en/onboarding/notifications"
+  },
+  "qualifications": [
+    "Before replaces only old service source; other current application sources remain corrected.",
+    "Random artwork and Pets/Next overlays remain; raw operational images have transient toast/compilation obstruction.",
+    "Initial progress already wellness; actual retry shows it retained and navigates to notifications, not a fresh progress transition.",
+    "Next after-success probe covers notifications; before/native cover work templates. Earlier settings/global findings remain.",
+    "Commands recorded provisional HEAD with exact canonical source pins; not bare-provisional execution.",
+    "Some intermediate output filenames were overwritten; original independent red and final evidence remain, not every intermediate raw log.",
+    "Service-wide formatting remains unpassed; unrelated service/test formatting was preserved.",
+    "Optional expected actor/org input is a compatibility contract; no inference of unseen draft scope or tenant authority from that hint.",
+    "No simultaneous revocation/idempotency/replacement/backfill guarantee.",
+    "Full generation, remote catalogs, devices/true zoom, providers, exhaustive accessibility/locales and global transitions remain open."
+  ]
+}
