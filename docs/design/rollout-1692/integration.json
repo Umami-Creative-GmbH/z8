@@ -690,9 +690,14 @@
       "blockedBy": [
         1694
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
-      "implementationCommit": "a146813a73b12c443f59c56727b7f5b33557b740"
+      "status": "integrated",
+      "verifiedCommit": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "implementationCommit": "a146813a73b12c443f59c56727b7f5b33557b740",
+      "verifiedTree": "c3a2f3affeeb07ebcae8283a56e92a98303fe0fe",
+      "integrationCommit": "80ca442bd36692f0b9a87c4f94d106a3d81492de",
+      "correctionCommit": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+      "evidence": "docs/design/rollout-1692/1728.md",
+      "integrationVerification": "Personnel directory #1728 verified at `e50692c3bc5194ab1c16d2fe8d12664ab11aafd7`: current/former marking uses canonical employee access at the departure cutoff while retaining managed files; directory and expiry share one captured instant. Permanent real canonical schedule/cutoff/execution/rehire and deactivated/own/foreign controls pass. Completed server-read nonce and local client/session retirement prevent the reproduced old-scope/pending-session revival and retain safe heading/Retry;12assembled workspace cases pass without fresh-read-on-Activity or shared queued-command claims. Final327unit pass/1known unchanged broad-guard failure in26files +149/149PG in11files =477unique/37files,476pass1fail. Four implicated guard blobs exactly match previous verified/provisional/source; guard not relaxed. Full3types,12-filelint andDoctor0/0 pass;5formatfailures remain. Real expiry lock/cancel/pointerRetry retains directory. Actual public certificate-only one-target grant/own+nonofficer denial/PUBLIC revoke/settled renewal refusal preserves correct Title,note,Certificate,Nov20deadline and0->0 scoped request rows; reload denial and saved18px/reload pass. Runtime08 accepted;07 BUTTON.value/setup hydration qualified. Native03 actual owner tree/close passes, permission API unavailable. Three partial-consumer before/current viewport pairs,19source pins,33decodedPNGs;109sealed artifacts/108public plus private-log hash-only exclusion. Persistent progress/dev/Pets/initial clipping and historical2h1 qualified; dark/16px comparison emulated, savedLarge18 separate. All51ancestors,15038 unaffected paths,original artifacts and1835sources/proof preserved;158links/6hashes unchanged. Owned Next56769/native/3services cleaned. Reverse directory/live cutoff/account-org/queued shared-dialog/firstEscape/a11y/binary/build/catalog/provider/device/zoom/global limits remain."
     },
     {
       "id": "R046",
@@ -1315,7 +1320,8 @@
         1853
       ],
       "status": "pending",
-      "verifiedCommit": null
+      "verifiedCommit": null,
+      "knownRuntimeFinding": "During actual #1728 runtime07 organization setup, country-select labels produced a recorded hydration mismatch (Falkland naming). Source/cause not diagnosed. Current personnel-file target probes and later matched sessions are clear; those do not erase the setup finding. Evidence: docs/design/rollout-1692/1728/root-lifecycle-and-snapshot/acceptance/runtime-07.json. Review under R118/#1791; no source fix claimed."
     },
     {
       "id": "R120",
@@ -1709,10 +1715,13 @@
       "blockedBy": [
         1694
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1744#issuecomment-6907472854"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1744#issuecomment-6907472854",
+      "implementationCommit": "9e686dd62df119b8534600ff39c58506c9d5f08a",
+      "evidence": "docs/design/rollout-1692/1744.md",
+      "handoffLimitation": "Worker reports82unit/12PostgreSQL,full3types,explicitlint/format,Doctor100 and actual normal browser/native preference/Retry/ended-work refresh. Current role/live authority races, source provenance, alternate format/raw whitespace and all broader limits await fresh merger review."
     },
     {
       "id": "R163",
@@ -1733,10 +1742,13 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1746#issuecomment-6907474529"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1746#issuecomment-6907474529",
+      "implementationCommit": "1816c3e7e00bec6d7f7612be82e3ca320e5db3e5",
+      "evidence": "docs/design/rollout-1692/1746.md",
+      "handoffLimitation": "Worker reports156unit/12PG,full3types,scopedlint/format,Next andmainaxe0,actual fixture decision persisted through publicInbox. TwoDoctorwarnings,incremental capture boundaries,live revocation andbuild/catalog/device/zoom limits await fresh merger review."
     },
     {
       "id": "R165",
@@ -1745,8 +1757,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1747#issuecomment-6909500771"
     },
     {
       "id": "R166",
@@ -1755,8 +1769,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1748#issuecomment-6909502620"
     },
     {
       "id": "R167",
