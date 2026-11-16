@@ -2,8 +2,9 @@ import { Effect, Layer } from "effect";
 import { headers } from "next/headers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "@/lib/auth";
-import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
+import { SETTINGS_ACCESS_FACTS_QUERY } from "@/lib/organization-action/settings-access";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { AuthService } from "./auth.service";
 import { DatabaseService } from "./database.service";
 import { OnboardingService, OnboardingServiceLive } from "./onboarding.service";
@@ -37,9 +38,11 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-// Settings rows are written through the protected writer (#312).
+// The writer port runs additional domain work before its progress upsert.
 vi.mock("@/lib/user-preferences/user-settings-mutation", () => ({
-	writeUserSettings: vi.fn(async () => undefined),
+	writeUserSettings: vi.fn(async (database: object, _userId: string, _values: unknown, beforeWrite?: (transaction: object) => Promise<void>) => {
+		await beforeWrite?.(database);
+	}),
 }));
 
 vi.mock("@/lib/organization/creation-policy", () => ({
@@ -621,7 +624,9 @@ describe("OnboardingService work-template authorization", () => {
 			DatabaseService,
 			DatabaseService.of({
 				db: withTransaction(mockDb) as never,
-				query: (_name, query) => Effect.promise(query) as never,
+				query: (name, query) => (name === SETTINGS_ACCESS_FACTS_QUERY
+					? Effect.succeed({ membershipRole: role ?? null, employee: null })
+					: Effect.promise(query)) as never,
 			}),
 		);
 
@@ -670,7 +675,6 @@ describe("OnboardingService work-template authorization", () => {
 				failure: expect.any(AuthorizationError),
 			});
 			expect(insert).not.toHaveBeenCalled();
-			expect(writeUserSettings).not.toHaveBeenCalled();
 		},
 	);
 
@@ -690,7 +694,6 @@ describe("OnboardingService work-template authorization", () => {
 			});
 			expect(findMembership).not.toHaveBeenCalled();
 			expect(insert).not.toHaveBeenCalled();
-			expect(writeUserSettings).not.toHaveBeenCalled();
 		},
 	);
 

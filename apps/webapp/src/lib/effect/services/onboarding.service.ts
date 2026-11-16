@@ -10,8 +10,6 @@ import {
 	vacationAllowance,
 	workPolicy,
 	workPolicyAssignment,
-	workPolicySchedule,
-	workPolicyScheduleDay,
 } from "@/db/schema";
 import { env } from "@/env";
 import { defaultStatutoryMinimumDays } from "@/lib/absences/vacation-policy-settings";
@@ -24,6 +22,10 @@ import {
 	type NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import {
+	createOnboardingWorkTemplate,
+	skipOnboardingWorkTemplate,
+} from "@/lib/onboarding/work-template-mutation";
 import {
 	isOrganizationCreationDisabled,
 	normalizeOrganizationCreationFlag,
@@ -137,13 +139,16 @@ export class OnboardingService extends Context.Service<
 		// Admin setup - Work Schedule Templates
 		readonly createWorkTemplate: (
 			data: OnboardingWorkTemplateFormValues,
+			expected?: OnboardingOrganizationExpectation,
 		) => Effect.Effect<
 			void,
-			AuthenticationError | AuthorizationError | DatabaseError
+			AuthenticationError | AuthorizationError | DatabaseError | ValidationError
 		>;
-		readonly skipWorkTemplateSetup: () => Effect.Effect<
+		readonly skipWorkTemplateSetup: (
+			expected?: OnboardingOrganizationExpectation,
+		) => Effect.Effect<
 			void,
-			AuthenticationError | AuthorizationError | DatabaseError
+			AuthenticationError | AuthorizationError | DatabaseError | ValidationError
 		>;
 
 		// Wellness setup
@@ -230,48 +235,6 @@ export const OnboardingServiceLive = Layer.effect(
 				}
 				return caller;
 			});
-		const requireWorkTemplateAdmin = (
-			userId: string,
-			activeOrganizationId: string | null,
-		) =>
-			Effect.gen(function* () {
-				if (!activeOrganizationId) {
-					return yield* Effect.fail(
-						new AuthorizationError({
-							action: "manage",
-							message: "An active organization owner or admin is required",
-							resource: "work_template",
-							userId,
-						}),
-					);
-				}
-
-				const membership = yield* dbService.query(
-					"requireWorkTemplateAdmin",
-					async () =>
-						dbService.db.query.member.findFirst({
-							where: and(
-								eq(member.userId, userId),
-								eq(member.organizationId, activeOrganizationId),
-							),
-						}),
-				);
-
-				if (membership?.role !== "owner" && membership?.role !== "admin") {
-					return yield* Effect.fail(
-						new AuthorizationError({
-							action: "manage",
-							message:
-								"Only organization owners and admins can manage work templates",
-							resource: "work_template",
-							userId,
-						}),
-					);
-				}
-
-				return activeOrganizationId;
-			});
-
 		return OnboardingService.of({
 			// Start onboarding
 			startOnboarding: () =>
@@ -662,109 +625,11 @@ export const OnboardingServiceLive = Layer.effect(
 					});
 				}),
 
-			// Admin setup - Create work schedule template
-			createWorkTemplate: (data: OnboardingWorkTemplateFormValues) =>
-				Effect.gen(function* () {
-					const session = yield* authService.getSession();
-					const activeOrgId = yield* requireWorkTemplateAdmin(
-						session.user.id,
-						session.session.activeOrganizationId,
-					);
-
-					yield* dbService.query("createWorkTemplate", async () => {
-						// Create work policy
-						const [policy] = await dbService.db
-							.insert(workPolicy)
-							.values({
-								organizationId: activeOrgId,
-								name: data.name,
-								description: "Created during onboarding",
-								scheduleEnabled: true,
-								regulationEnabled: false,
-								isActive: true,
-								isDefault: data.setAsDefault,
-								createdBy: session.user.id,
-								updatedAt: new Date(),
-							})
-							.returning();
-
-						// Create schedule configuration
-						if (policy) {
-							const [schedule] = await dbService.db
-								.insert(workPolicySchedule)
-								.values({
-									policyId: policy.id,
-									scheduleCycle: "weekly",
-									scheduleType: "simple",
-									workingDaysPreset: "weekdays",
-									hoursPerCycle: data.hoursPerWeek.toString(),
-									homeOfficeDaysPerCycle: 0,
-								})
-								.returning();
-
-							// Create schedule days
-							if (schedule) {
-								const allDays = [
-									"monday",
-									"tuesday",
-									"wednesday",
-									"thursday",
-									"friday",
-									"saturday",
-									"sunday",
-								] as const;
-								const hoursPerDay =
-									data.workingDays.length > 0
-										? data.hoursPerWeek / data.workingDays.length
-										: 0;
-
-								await dbService.db.insert(workPolicyScheduleDay).values(
-									allDays.map((day) => ({
-										scheduleId: schedule.id,
-										dayOfWeek: day,
-										hoursPerDay: data.workingDays.includes(day)
-											? hoursPerDay.toFixed(1)
-											: "0",
-										isWorkDay: data.workingDays.includes(day),
-									})),
-								);
-							}
-
-							// Assign to organization if setAsDefault
-							if (data.setAsDefault) {
-								await dbService.db.insert(workPolicyAssignment).values({
-									policyId: policy.id,
-									organizationId: activeOrgId,
-									assignmentType: "organization",
-									priority: 0,
-									effectiveFrom: new Date(),
-									isActive: true,
-									createdBy: session.user.id,
-								});
-							}
-						}
-
-						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "wellness",
-						});
-					});
-				}),
-
-			// Skip work template setup
-			skipWorkTemplateSetup: () =>
-				Effect.gen(function* () {
-					const session = yield* authService.getSession();
-					yield* requireWorkTemplateAdmin(
-						session.user.id,
-						session.session.activeOrganizationId,
-					);
-
-					yield* dbService.query("skipWorkTemplateSetup", async () => {
-						await writeUserSettings(dbService.db, session.user.id, {
-							onboardingStep: "wellness",
-						});
-					});
-				}),
+			// Work policy graph and progress share the settings owner's user-protected transaction.
+			createWorkTemplate: (data, expected) =>
+				createOnboardingWorkTemplate({ database: dbService, authentication }, data, expected),
+			skipWorkTemplateSetup: (expected) =>
+				skipOnboardingWorkTemplate({ database: dbService, authentication }, expected),
 
 			// Configure wellness (water reminders)
 			configureWellness: (data: OnboardingWellnessFormValues) =>
