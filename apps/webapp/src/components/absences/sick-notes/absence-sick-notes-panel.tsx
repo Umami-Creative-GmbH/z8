@@ -42,6 +42,7 @@ import {
 	AttachSickNoteDialog,
 	type SickNoteAbsenceTarget,
 } from "./attach-sick-note-dialog";
+import { useSickNoteUnlinkReservation } from "./use-sick-note-unlink-reservation";
 
 function useSickNoteOpening(
 	absenceId: string,
@@ -108,7 +109,7 @@ function useSickNoteOpening(
 		gcTime: 0,
 	});
 
-	return { query, inScope, arrival, lifetime };
+	return { query, inScope, arrival, lifetime, owner };
 }
 
 /**
@@ -144,7 +145,7 @@ export function AbsenceSickNotesPanel({
 	const [deleting, setDeleting] = useState<EmployeeDocumentView | null>(null);
 	const [linking, setLinking] = useState(false);
 	const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
-	const { query, inScope, arrival, lifetime } = useSickNoteOpening(
+	const { query, inScope, arrival, lifetime, owner } = useSickNoteOpening(
 		absence.id,
 		open,
 		() => {
@@ -154,6 +155,7 @@ export function AbsenceSickNotesPanel({
 			setUnlinkingId(null);
 		},
 	);
+	const unlinkReservation = useSickNoteUnlinkReservation(owner);
 
 	function refresh() {
 		void queryClient.invalidateQueries({
@@ -167,51 +169,54 @@ export function AbsenceSickNotesPanel({
 
 	async function unlink(document: EmployeeDocumentView) {
 		if (pendingUnlink.current || !lifetime.current.live) return;
-		const command = Symbol();
-		pendingUnlink.current = command;
 		const activation = lifetime.current;
-		setUnlinkingId(document.id);
-		// Promise#finally rather than try/finally: the React Compiler cannot
-		// compile try statements without a catch clause.
-		await unlinkSickNoteAction({ documentId: document.id })
-			.then((result) => {
-				if (result.success) {
-					// An accepted write still invalidates its original record after the UI retires.
-					void queryClient.invalidateQueries({
-						queryKey: manage
-							? queryKeys.personnelFile.all
-							: queryKeys.personnelFile.sickNotesAll(),
-					});
-				}
-				if (!activation.live) return;
-				if (!result.success) {
-					toast.error(
-						result.error ||
+		await unlinkReservation.run(document.id, async () => {
+			if (!activation.live) return;
+			const command = Symbol();
+			pendingUnlink.current = command;
+			setUnlinkingId(document.id);
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await unlinkSickNoteAction({ documentId: document.id })
+				.then((result) => {
+					if (result.success) {
+						// An accepted write still invalidates its original record after the UI retires.
+						void queryClient.invalidateQueries({
+							queryKey: manage
+								? queryKeys.personnelFile.all
+								: queryKeys.personnelFile.sickNotesAll(),
+						});
+					}
+					if (!activation.live) return;
+					if (!result.success) {
+						toast.error(
+							result.error ||
+								t(
+									"absences.sickNotes.panel.unlinkFailed",
+									"The sick note could not be unlinked.",
+								),
+						);
+						return;
+					}
+					toast.success(
+						t("absences.sickNotes.panel.unlinked", "Sick note unlinked"),
+					);
+					refresh();
+				})
+				.catch(() => {
+					if (activation.live)
+						toast.error(
 							t(
 								"absences.sickNotes.panel.unlinkFailed",
 								"The sick note could not be unlinked.",
 							),
-					);
-					return;
-				}
-				toast.success(
-					t("absences.sickNotes.panel.unlinked", "Sick note unlinked"),
-				);
-				refresh();
-			})
-			.catch(() => {
-				if (activation.live)
-					toast.error(
-						t(
-							"absences.sickNotes.panel.unlinkFailed",
-							"The sick note could not be unlinked.",
-						),
-					);
-			})
-			.finally(() => {
-				if (pendingUnlink.current === command) pendingUnlink.current = null;
-				if (activation.live) setUnlinkingId(null);
-			});
+						);
+				})
+				.finally(() => {
+					if (pendingUnlink.current === command) pendingUnlink.current = null;
+					if (activation.live) setUnlinkingId(null);
+				});
+		});
 	}
 
 	const dateRange = formatAbsenceDateRange(
@@ -279,7 +284,11 @@ export function AbsenceSickNotesPanel({
 												type="button"
 												variant="ghost"
 												size="icon"
-												disabled={unlinkingId !== null}
+												disabled={
+													unlinkingId !== null ||
+													unlinkReservation.isPending(document.id)
+												}
+												aria-busy={unlinkReservation.isPending(document.id)}
 												onClick={() => void unlink(document)}
 												aria-label={t(
 													"absences.sickNotes.panel.unlink",
