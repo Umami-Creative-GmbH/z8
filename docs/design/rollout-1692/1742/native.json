@@ -1,0 +1,31 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 14956169911145544000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "ownedComponents": [
+    "187 7890 7889 Forget(PeriodSubmissionsClient)",
+    "188 7891 7890 Forget(Workspace) key=\"[\\\"perf-small-0-f5ac318ebd1d\\\",\\\"perf-small-f5ac318ebd1d\\\",\\\"2026-11-02\\\"]\"",
+    "190 7917 7892 Forget(PeriodSubmissionOverview)",
+    "192 7919 7918 Forget(DataTableToolbar)",
+    "193 7961 7960 Forget(Table)"
+  ],
+  "inspectSuccess": true,
+  "dom": {
+    "headings": [
+      "Period submissions"
+    ],
+    "rows": 8,
+    "notificationPermission": "API-disabled-by-native-fixture-policy",
+    "dialogs": 0
+  }
+}
