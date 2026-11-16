@@ -192,3 +192,16 @@ it("does not turn an unavailable first read into zero counts and recovers locall
 	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 	await screen.findByText("Anna");
 });
+it("drops the previous wider snapshot when the server narrows the admitted scope", async () => {
+	seam.read.mockResolvedValueOnce(result);
+	const view = render(<PeriodSubmissionsClient access={access} requestedPeriod={null} />);
+	await screen.findByText("Anna");
+	const narrowed = deferred<typeof result>();
+	seam.read.mockReturnValueOnce(narrowed.promise);
+	view.rerender(
+		<PeriodSubmissionsClient access={{ ...access, scope: "managed" }} requestedPeriod={null} />,
+	);
+	expect(screen.queryByText("Anna")).toBeNull();
+	expect(seam.read).toHaveBeenCalledTimes(2);
+	await act(async () => narrowed.resolve(result));
+});

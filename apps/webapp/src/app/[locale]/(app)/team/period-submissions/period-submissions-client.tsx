@@ -46,7 +46,7 @@ export function PeriodSubmissionsClient({
 		return <PeriodSubmissionsLoading />;
 	return (
 		<Workspace
-			key={JSON.stringify([access.userId, access.organizationId, requestedPeriod])}
+			key={JSON.stringify([access.userId, access.organizationId, access.scope, requestedPeriod])}
 			access={access}
 			requestedPeriod={requestedPeriod}
 		/>
