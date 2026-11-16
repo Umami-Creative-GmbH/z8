@@ -1,9 +1,9 @@
 {
   "schemaVersion": 3,
-  "sourceRevision": "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+  "sourceRevision": "ad24fd4729d2a6ea36693c98756c0c35f2567129",
   "mode": "baseline",
   "baseline": {
-    "baseRef": "5646e7b320376d2605b80e231b6b828f4b35f670",
+    "baseRef": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
     "source": "base",
     "matchedCount": 2,
     "newCount": 6,
@@ -15,7 +15,7 @@
   "ok": true,
   "directory": "X:\\t3-code\\worktrees\\z8\\t3-bf423a4e-ecad4ddf4d6bc793\\apps\\webapp",
   "diff": {
-    "baseBranch": "5646e7b320376d2605b80e231b6b828f4b35f670",
+    "baseBranch": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
     "currentBranch": "feature/1736-project-reports",
     "changedFileCount": 14,
     "isCurrentChanges": false
@@ -230,7 +230,7 @@
       "analyzedFileCount": 14,
       "complete": true,
       "scannedFileCount": 14,
-      "elapsedMilliseconds": 21069.805
+      "elapsedMilliseconds": 25608.1217
     }
   ],
   "diagnostics": [
@@ -363,6 +363,6 @@
     "score": null,
     "scoreLabel": null
   },
-  "elapsedMilliseconds": 23175.6281,
+  "elapsedMilliseconds": 29436.247099999997,
   "error": null
 }

@@ -1,30 +1,37 @@
 [
   {
     "File": "apps/webapp/src/components/reports/reports-container.tsx",
-    "Unchanged": true
+    "Unchanged": true,
+    "Checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e"
   },
   {
     "File": "apps/webapp/src/components/reports/report-filters.tsx",
-    "Unchanged": true
+    "Unchanged": true,
+    "Checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e"
   },
   {
     "File": "apps/webapp/src/components/reports/report-employee-selector.tsx",
-    "Unchanged": true
+    "Unchanged": true,
+    "Checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e"
   },
   {
     "File": "apps/webapp/src/components/reports/report-summary-cards.tsx",
-    "Unchanged": true
+    "Unchanged": true,
+    "Checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e"
   },
   {
     "File": "apps/webapp/src/components/reports/report-preview-table.tsx",
-    "Unchanged": true
+    "Unchanged": true,
+    "Checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e"
   },
   {
     "File": "apps/webapp/src/components/reports/export-buttons.tsx",
-    "Unchanged": true
+    "Unchanged": true,
+    "Checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e"
   },
   {
     "File": "apps/webapp/src/hooks/use-report-employees.ts",
-    "Unchanged": true
+    "Unchanged": true,
+    "Checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e"
   }
 ]

@@ -7,5 +7,8 @@
   "sessionErrors": 0,
   "routesRead": true,
   "pageMetadataRead": true,
-  "notes": "Raw errors from the earlier compiled PDF failure are preserved separately; this records the final connected page."
+  "notes": "Raw errors from the earlier compiled PDF failure are preserved separately; this records the final connected page.",
+  "capturedBeforeLatestCheckpoint": "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+  "reportSourcesUnchangedAfterLatestMerge": true,
+  "latestCombinedBrowserRerun": false
 }

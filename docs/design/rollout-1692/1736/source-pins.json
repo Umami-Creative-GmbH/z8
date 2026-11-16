@@ -1,6 +1,6 @@
 {
   "base": "5646e7b320376d2605b80e231b6b828f4b35f670",
-  "checkpoint": "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+  "checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
   "dirtySourcePins": [
     {
       "file": "apps/webapp/src/components/reports/projects/customer-billable-view.tsx",
@@ -243,5 +243,10 @@
   },
   "secretScan": {
     "generatedShareTokenAndFixturePasswordsAbsent": true
-  }
+  },
+  "captureCheckpoint": "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+  "latestVerifiedProduct": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+  "integrationMerge": "ad24fd4729d2a6ea36693c98756c0c35f2567129",
+  "reportSourcesUnchangedAfterLatestMerge": true,
+  "latestCombinedBrowserRerun": false
 }
