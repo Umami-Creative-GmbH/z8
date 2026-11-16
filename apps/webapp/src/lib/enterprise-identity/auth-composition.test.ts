@@ -38,15 +38,27 @@ vi.mock("@/db", async () => {
 				return [await infrastructure.organization()];
 			case "employee":
 				return [await infrastructure.employee()];
+			case "member":
+				return [{ id: "membership", role: "owner", status: "approved" }];
 			default:
 				return [];
 		}
 	};
-	// SSO provisioning runs its reads and writes in one guarded transaction (#314).
+	// SSO provisioning and joining read the existing approved member and current
+	// employee inside one guarded transaction (#314, #1664).
 	const transaction = {
 		execute: infrastructure.guard,
+		query: {
+			user: { findFirst: async () => ({ email: "actor@example.test" }) },
+			employee: { findFirst: infrastructure.employee },
+		},
 		select: () => ({
-			from: (table: never) => ({ where: () => ({ limit: () => rows(table) }) }),
+			from: (table: never) => ({
+				where: () => {
+					const result = rows(table);
+					return Object.assign(result, { limit: () => result });
+				},
+			}),
 		}),
 		insert: () => ({ values: async () => undefined }),
 	};
@@ -100,6 +112,7 @@ vi.mock("@/lib/organization-mfa/store", () => ({
 vi.mock("@/lib/organization-mfa/organization-access", () => ({
 	organizationSsoVerification: async () => null,
 }));
+
 // Import the actual factory result. No plugin factory, middleware, or provisionUser is mocked.
 import { auth as productionAuth } from "@/lib/auth";
 
