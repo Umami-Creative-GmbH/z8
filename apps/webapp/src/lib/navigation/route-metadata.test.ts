@@ -2,6 +2,19 @@ import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the team directory heading, preserving descendant ownership", () => {
+		expect(appPageOwnsHeading("/de/team")).toBe(true);
+		for (const path of [
+			"/en/team/absences",
+			"/en/team/presence",
+			"/en/team/driving",
+			"/en/team/period-submissions",
+			"/en/team/other",
+			"/en/teamwork",
+		]) {
+			expect(appPageOwnsHeading(path)).toBe(false);
+		}
+	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);

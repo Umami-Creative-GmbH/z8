@@ -1,0 +1,28 @@
+[
+  {
+    "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+    "blobs": [
+      {
+        "ref": "38a16f7cb605f0929743de5e74b57332f471ac00",
+        "blob": "e5c4873d1522d5f2c7151ebf471bbd3dbb787ebd"
+      },
+      {
+        "ref": "58ea18603a936d102f0625e3303f4c05689a9961",
+        "blob": "e5c4873d1522d5f2c7151ebf471bbd3dbb787ebd"
+      }
+    ]
+  },
+  {
+    "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+    "blobs": [
+      {
+        "ref": "38a16f7cb605f0929743de5e74b57332f471ac00",
+        "blob": "c2e616c4909a6a6fdef867544283a9a316b88dad"
+      },
+      {
+        "ref": "58ea18603a936d102f0625e3303f4c05689a9961",
+        "blob": "c2e616c4909a6a6fdef867544283a9a316b88dad"
+      }
+    ]
+  }
+]

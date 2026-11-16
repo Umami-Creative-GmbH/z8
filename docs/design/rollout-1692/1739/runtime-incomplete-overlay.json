@@ -1,0 +1,1058 @@
+{
+  "head": "58ea18603a936d102f0625e3303f4c05689a9961",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+      "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+      "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+      "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+      "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+      "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+    }
+  ],
+  "fixture": "owned generated small-manager, four visible members; same fixture for paired captures",
+  "commands": [
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "set",
+      "viewport",
+      "1600",
+      "1000"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/before-desktop.png"
+    ],
+    [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/before-phone.png"
+    ],
+    [
+      "set",
+      "viewport",
+      "2560",
+      "1200"
+    ],
+    [
+      "set",
+      "media",
+      "dark"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/before-wide-dark.png"
+    ],
+    [
+      "snapshot",
+      "-i"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "set",
+      "viewport",
+      "1600",
+      "1000"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/after-desktop.png"
+    ],
+    [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/after-phone.png"
+    ],
+    [
+      "set",
+      "viewport",
+      "2560",
+      "1200"
+    ],
+    [
+      "set",
+      "media",
+      "dark"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/after-wide-dark.png"
+    ],
+    [
+      "snapshot",
+      "-i"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Table view"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('table')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Card view"
+    ],
+    [
+      "find",
+      "role",
+      "textbox",
+      "fill",
+      "Person 3",
+      "--name",
+      "Search team members"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "textbox",
+      "fill",
+      "missing-person",
+      "--name",
+      "Search team members"
+    ],
+    [
+      "wait",
+      "--text",
+      "No results found"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "button",
+      "click",
+      "--name",
+      "Clear search"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('[role=\"dialog\"]') && !document.querySelector('[aria-label=\"Loading balance adjustments\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/history-phone.png"
+    ],
+    [
+      "press",
+      "Escape"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "switch",
+      "click",
+      "--name",
+      "Show former employees"
+    ]
+  ],
+  "captures": [
+    {
+      "path": "before-desktop.png",
+      "state": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Team",
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 1600,
+        "path": "/en/team",
+        "theme": "light bprogress-busy",
+        "viewport": [
+          1600,
+          1000
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "4f7407bc4706d9cd60ff8a638c91696fe852d15835596f86552f7dad88b1078f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "e4377240f21a0a3105075caffd64433b8c8f36aa41eff8d41b2499c660618c17"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Three original consumer files temporarily substituted; other integration files unchanged."
+    },
+    {
+      "path": "before-phone.png",
+      "state": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Team",
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "light bprogress-busy",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "4f7407bc4706d9cd60ff8a638c91696fe852d15835596f86552f7dad88b1078f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "e4377240f21a0a3105075caffd64433b8c8f36aa41eff8d41b2499c660618c17"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Three original consumer files temporarily substituted; other integration files unchanged."
+    },
+    {
+      "path": "before-wide-dark.png",
+      "state": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Team",
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 2560,
+        "path": "/en/team",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          2560,
+          1200
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "4f7407bc4706d9cd60ff8a638c91696fe852d15835596f86552f7dad88b1078f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "e4377240f21a0a3105075caffd64433b8c8f36aa41eff8d41b2499c660618c17"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Three original consumer files temporarily substituted; other integration files unchanged."
+    },
+    {
+      "path": "after-desktop.png",
+      "state": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 1600,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          1600,
+          1000
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Current owned source at recorded hashes."
+    },
+    {
+      "path": "after-phone.png",
+      "state": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Current owned source at recorded hashes."
+    },
+    {
+      "path": "after-wide-dark.png",
+      "state": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 2560,
+        "path": "/en/team",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          2560,
+          1200
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Current owned source at recorded hashes."
+    }
+  ],
+  "checks": [
+    {
+      "name": "single heading and scope",
+      "value": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 2560,
+        "path": "/en/team",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          2560,
+          1200
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "phone table reachable and local overflow",
+      "value": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1Youperf-small-1-6160ea8e831f@example.test"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3You are the primary managerperf-small-3-6160ea8e831f@example.testlast activity 31.12."
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5You are the primary managerperf-small-5-6160ea8e831f@example.testlast activity 31.12."
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7You are the primary managerperf-small-7-6160ea8e831f@example.testlast activity 31.12."
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "search scoped record",
+      "value": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "no match and clear recovery",
+      "value": {
+        "dialogs": [],
+        "font": "16px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "real authorized history read",
+      "value": {
+        "dialogs": [
+          "Balance adjustmentsOvertime payouts and opening balances on this work balance. A mistaken one is cancelled, never deleted, so cancelled ones stay listed.No balance adjustments yet.Close"
+        ],
+        "font": "16px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "history escape focus",
+      "value": {
+        "dialog": true,
+        "focus": null
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "edc0d9353bb194c8d6c76a89d0917b9fe0cdf98a65ada29277dd6b876cdd223d"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "c1a6855b99107022d9e040313abaeb519f9f17f44758c3a5edec81d0bed2c198"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    }
+  ],
+  "failure": {
+    "message": "Command failed: C:/Users/KaiHentschel/AppData/Local/pnpm/global/v11/bf86bf49b40726ed136d2d0acb80e5862fa90fc3a766ffc0e05622cbe6aa30a8/node_modules/agent-browser/bin/agent-browser-win32-x64.exe --namespace z8-1739 --session z8-1739-transient find role switch click --name Show former employees\n✗ Element '@e224' is covered by <div.motion-safe:data-[starting-style]:animate-in.motion-safe:data-[ending-style]:animate-out inside div#_r_2n_> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).\n",
+    "stack": "Error: Command failed: C:/Users/KaiHentschel/AppData/Local/pnpm/global/v11/bf86bf49b40726ed136d2d0acb80e5862fa90fc3a766ffc0e05622cbe6aa30a8/node_modules/agent-browser/bin/agent-browser-win32-x64.exe --namespace z8-1739 --session z8-1739-transient find role switch click --name Show former employees\n✗ Element '@e224' is covered by <div.motion-safe:data-[starting-style]:animate-in.motion-safe:data-[ending-style]:animate-out inside div#_r_2n_> at its click point, so the input would land on that element instead. Dismiss or interact with the covering element first (it is often a dialog, banner, or sticky header).\n\n    at genericNodeError (node:internal/errors:999:15)\n    at wrappedFn (node:internal/errors:544:14)\n    at checkExecSyncError (node:child_process:942:11)\n    at execFileSync (node:child_process:978:15)\n    at cli (file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/.tmp/1739-checks/native.mjs:6:9)\n    at file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/.tmp/1739-checks/runtime.mjs:54:2"
+  }
+}

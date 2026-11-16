@@ -1,0 +1,28 @@
+{
+  "label": "z8-team-directory-fixture-1739",
+  "servicesManifestSha256": "30a2459da72892840973787ff05b39f61dfa74c372cfeddb8455c3cb4f46a1a8",
+  "runtimePrivateSha256": "8be07a956d4d07ea0e1b839e78f892d4c2616681b512d69f477a5fd031a20c3b",
+  "fixturePrivateSha256": "b286974b1914b3e538465e2f066ee055e4cd9492266707a82457b8bc2dd047bd",
+  "containers": [
+    {
+      "name": "z8_perf_ac55f4233fce_postgres",
+      "absent": true
+    },
+    {
+      "name": "z8_perf_ac55f4233fce_redis",
+      "absent": true
+    },
+    {
+      "name": "z8_perf_ac55f4233fce_storage",
+      "absent": true
+    }
+  ],
+  "developmentPort": 55845,
+  "nextPids": [
+    100572,
+    110624
+  ],
+  "browserNamespace": "z8-1739",
+  "browserRestore": "not configured; close issued",
+  "qualification": "Private pointer/manifests and credentials were never copied to this artifact set. Exact PID/path/creation/parent metadata and cleanup command outputs retained. No peer process cleanup."
+}

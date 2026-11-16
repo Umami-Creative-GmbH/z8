@@ -1,0 +1,1326 @@
+{
+  "head": "58ea18603a936d102f0625e3303f4c05689a9961",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+      "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+      "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+      "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+      "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+      "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+    }
+  ],
+  "fixture": "owned generated small-manager, four visible members; same fixture for paired captures",
+  "commands": [
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "set",
+      "viewport",
+      "1600",
+      "1000"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/before-desktop.png"
+    ],
+    [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/before-phone.png"
+    ],
+    [
+      "set",
+      "viewport",
+      "2560",
+      "1200"
+    ],
+    [
+      "set",
+      "media",
+      "dark"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/before-wide-dark.png"
+    ],
+    [
+      "snapshot",
+      "-i"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "set",
+      "viewport",
+      "1600",
+      "1000"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/after-desktop.png"
+    ],
+    [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/after-phone.png"
+    ],
+    [
+      "set",
+      "viewport",
+      "2560",
+      "1200"
+    ],
+    [
+      "set",
+      "media",
+      "dark"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.endsWith('/team') && document.querySelector('input[aria-label=\"Search team members\"]') && !document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/after-wide-dark.png"
+    ],
+    [
+      "snapshot",
+      "-i"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    [
+      "set",
+      "media",
+      "light"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Table view"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('table')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Card view"
+    ],
+    [
+      "find",
+      "role",
+      "textbox",
+      "fill",
+      "Person 3",
+      "--name",
+      "Search team members"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "textbox",
+      "fill",
+      "missing-person",
+      "--name",
+      "Search team members"
+    ],
+    [
+      "wait",
+      "--text",
+      "No results found"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "button",
+      "click",
+      "--name",
+      "Clear search"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('[role=\"dialog\"]') && !document.querySelector('[aria-label=\"Loading balance adjustments\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\docs\\design\\rollout-1692\\1739/history-phone.png"
+    ],
+    [
+      "press",
+      "Escape"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!document.querySelector('[role=\"dialog\"]') && !document.querySelector('[data-slot=\"dialog-overlay\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "switch",
+      "click",
+      "--name",
+      "Show former employees"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.search==='?former=1'"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "switch",
+      "click",
+      "--name",
+      "Show former employees"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.search===''"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "--json",
+      "a11y"
+    ],
+    [
+      "--json",
+      "react",
+      "tree"
+    ]
+  ],
+  "captures": [
+    {
+      "path": "before-desktop.png",
+      "state": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Team",
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 1600,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          1600,
+          1000
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "4f7407bc4706d9cd60ff8a638c91696fe852d15835596f86552f7dad88b1078f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "e4377240f21a0a3105075caffd64433b8c8f36aa41eff8d41b2499c660618c17"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Three original consumer files temporarily substituted; other integration files unchanged."
+    },
+    {
+      "path": "before-phone.png",
+      "state": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Team",
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "4f7407bc4706d9cd60ff8a638c91696fe852d15835596f86552f7dad88b1078f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "e4377240f21a0a3105075caffd64433b8c8f36aa41eff8d41b2499c660618c17"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Three original consumer files temporarily substituted; other integration files unchanged."
+    },
+    {
+      "path": "before-wide-dark.png",
+      "state": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Team",
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 2560,
+        "path": "/en/team",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          2560,
+          1200
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "4f7407bc4706d9cd60ff8a638c91696fe852d15835596f86552f7dad88b1078f"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "e4377240f21a0a3105075caffd64433b8c8f36aa41eff8d41b2499c660618c17"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "ca326875c8c29fd4b93b2c1d334d79e2efac15ea8ef78ad961172133a416ff2c"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Three original consumer files temporarily substituted; other integration files unchanged."
+    },
+    {
+      "path": "after-desktop.png",
+      "state": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 1600,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          1600,
+          1000
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Current owned source at recorded hashes."
+    },
+    {
+      "path": "after-phone.png",
+      "state": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Current owned source at recorded hashes."
+    },
+    {
+      "path": "after-wide-dark.png",
+      "state": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 2560,
+        "path": "/en/team",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          2560,
+          1200
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ],
+      "qualification": "Current owned source at recorded hashes."
+    }
+  ],
+  "checks": [
+    {
+      "name": "single heading and scope",
+      "value": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 2560,
+        "path": "/en/team",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          2560,
+          1200
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "phone table reachable and local overflow",
+      "value": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1Youperf-small-1-6160ea8e831f@example.test"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3You are the primary managerperf-small-3-6160ea8e831f@example.testlast activity 31.12."
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5You are the primary managerperf-small-5-6160ea8e831f@example.testlast activity 31.12."
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7You are the primary managerperf-small-7-6160ea8e831f@example.testlast activity 31.12."
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "search scoped record",
+      "value": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "no match and clear recovery",
+      "value": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "real authorized history read",
+      "value": {
+        "dialogs": [
+          "Balance adjustmentsOvertime payouts and opening balances on this work balance. A mistaken one is cancelled, never deleted, so cancelled ones stay listed.No balance adjustments yet.Close"
+        ],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "history escape focus",
+      "value": {
+        "dialog": false,
+        "focus": "All-time balance: No balance"
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "former URL action readback",
+      "value": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team?former=1",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "former URL return",
+      "value": {
+        "dialogs": [],
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          {
+            "href": "/en/settings/employees/777fe4c3-3529-4531-951d-125a0a59fb90",
+            "text": "Person 1"
+          },
+          {
+            "href": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+            "text": "Person 3"
+          },
+          {
+            "href": "/en/settings/employees/1c417ab0-b957-46fb-bddb-b8232633ae86",
+            "text": "Person 5"
+          },
+          {
+            "href": "/en/settings/employees/8297ad9a-f0bd-4e16-98f6-678d3578be0b",
+            "text": "Person 7"
+          }
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "theme": "bprogress-busy light",
+        "viewport": [
+          390,
+          844
+        ]
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "accessibility",
+      "value": {
+        "success": true,
+        "data": {
+          "axeVersion": "4.12.1",
+          "counts": {
+            "inapplicable": 48,
+            "incomplete": 0,
+            "passes": 41,
+            "violations": 0
+          },
+          "incomplete": [],
+          "lifecycle": {
+            "effectiveLaunch": {
+              "browserLaunched": true,
+              "engine": "chrome",
+              "launchHash": 4759075326389112000
+            },
+            "launched": false,
+            "relaunchedBrowser": false,
+            "restartedBackground": false,
+            "restoreStatus": "not_configured",
+            "reused": true,
+            "saveStatus": "not_attempted"
+          },
+          "url": "http://localhost:55845/en/team",
+          "violations": []
+        },
+        "error": null
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    },
+    {
+      "name": "react tree",
+      "value": {
+        "success": true,
+        "data": {
+          "lifecycle": {
+            "effectiveLaunch": {
+              "browserLaunched": true,
+              "engine": "chrome",
+              "launchHash": 4759075326389112000
+            },
+            "launched": false,
+            "relaunchedBrowser": false,
+            "restartedBackground": false,
+            "restoreStatus": "not_configured",
+            "reused": true,
+            "saveStatus": "not_attempted"
+          },
+          "tree": "# React component tree\n# Columns: depth id parent name [key=...]\n# Use `react inspect <id>` for props/hooks/state. IDs valid until next navigation.\n0 2801 - Root\n1 2802 2801 HeadManagerContext.Provider\n2 2803 2802 Root\n3 2804 2803 ServerRoot\n4 2805 2804 Context.Provider\n5 2806 2805 AppRouter\n6 2807 2806 RootErrorBoundary\n7 2808 2807 ErrorBoundary\n8 2809 2808 ErrorBoundaryHandler\n9 2810 2809 Router\n10 2811 2810 HistoryUpdater\n10 2812 2810 NavigationPromisesContext.Provider\n11 2813 2812 PathParamsContext.Provider\n12 2814 2813 PathnameContext.Provider\n13 2815 2814 SearchParamsContext.Provider\n14 2816 2815 GlobalLayoutRouterContext.Provider\n15 2817 2816 AppRouterContext.Provider\n16 2818 2817 LayoutRouterContext.Provider\n17 2819 2818 HotReload\n18 2820 2819 AppDevOverlayErrorBoundary\n19 2821 2820 ReplaySsrOnlyErrors\n19 2822 2820 DevRootHTTPAccessFallbackBoundary\n20 2823 2822 HTTPAccessFallbackBoundary\n21 2824 2823 HTTPAccessFallbackErrorBoundary\n22 2825 2824 RedirectBoundary\n23 2826 2825 RedirectErrorBoundary\n24 2827 2826 Head key=\"[\\\"/$d$locale/!KGFwcCk/team/__PAGE__/_head\\\",\\\"\\\",\\\"en\\\"]\"\n25 2828 2827 Fragment key=\"h\"\n26 2829 2828 Prerender(ViewportWrapper)\n27 2830 2829 __next_viewport_boundary__\n28 2831 2830 meta key=\"0\"\n28 2832 2830 meta key=\"1\"\n26 2833 2828 Prerender(MetadataWrapper)\n27 2834 2833 __next_metadata_boundary__\n28 2835 2834 div\n29 2836 2835 Suspense\n24 2837 2826 __next_root_layout_boundary__\n25 2838 2837 Fragment key=\"c\"\n26 2839 2838 OuterLayoutRouter\n27 2840 2839 Activity key=\"locale|en|d\"\n28 2842 2840 SegmentStateProvider key=\"locale|en|d\"\n29 2843 2842 Context.Provider key=\"0\"\n30 2844 2843 TemplateContext.Provider key=\"locale|en|d\"\n31 2845 2844 RenderFromTemplateContext\n32 2846 2845 ScrollHandler\n33 2847 2846 InnerScrollHandler\n34 2848 2847 ErrorBoundary\n35 2849 2848 LoadingBoundary\n36 2850 2849 HTTPAccessFallbackBoundary\n37 2851 2850 HTTPAccessFallbackErrorBoundary\n38 2852 2851 RedirectBoundary\n39 2853 2852 RedirectErrorBoundary\n40 2854 2853 InnerLayoutRouter\n41 2855 2854 LayoutRouterContext.Provider\n42 2856 2855 NavigationPromisesContext.Provider\n43 2857 2856 SegmentViewNode key=\"layout\"\n44 2858 2857 SegmentTrieNode key=\"layout\"\n44 2859 2857 Fragment key=\"c\"\n45 2860 2859 link key=\"0\"\n45 2861 2859 script key=\"script-0\"\n45 2862 2859 script key=\"script-1\"\n45 2863 2859 script key=\"script-2\"\n45 2864 2859 script key=\"script-3\"\n45 2865 2859 script key=\"script-4\"\n45 2866 2859 script key=\"script-5\"\n45 2867 2859 script key=\"script-6\"\n45 2868 2859 script key=\"script-7\"\n45 2869 2859 Prerender(LocaleLayout)\n46 2870 2869 html\n47 2871 2870 head\n48 2872 2871 meta\n48 2873 2871 meta\n48 2874 2871 meta\n48 2875 2871 meta\n48 2876 2871 link\n48 2877 2871 link\n48 2878 2871 link\n48 2879 2871 link\n48 2880 2871 link\n48 2881 2871 link\n48 2882 2871 meta\n48 2883 2871 meta\n48 2884 2871 meta\n48 2885 2871 meta\n48 2886 2871 meta\n48 2887 2871 meta\n48 2888 2871 Prerender(TranslatedMeta)\n49 2889 2888 title\n49 2890 2888 meta\n49 2891 2888 meta\n47 2892 2870 body\n48 2893 2892 Prerender(AppProviders)\n49 2894 2893 ThemeProvider\n50 2895 2894 Context.Provider\n51 2896 2895 Forget(FontSizeProvider)\n52 2897 2896 Context.Provider\n53 2898 2897 Suspense\n54 2905 2898 Prerender(Server(TranslationProvider))\n55 2906 2905 Forget(TranslationProviders)\n56 2907 2906 Forget(TolgeeNextProvider)\n57 2908 2907 Context.Provider\n58 2909 2908 TolgeeProvider key=\"en\"\n59 2910 2909 Context.Provider\n60 2911 2910 NextIntlClientProvider\n61 2912 2911 IntlProvider\n62 2913 2912 Context.Provider\n63 2914 2913 Forget(AppLocaleProvider)\n64 2915 2914 Context.Provider\n65 2916 2915 Server(ApplicationContent)\n66 2917 2916 Forget(QueryProvider)\n67 2918 2917 QueryClientProvider\n68 2919 2918 Context.Provider\n69 2920 2919 Forget(ViewRefreshProvider)\n70 2921 2920 Context.Provider\n71 2922 2921 Context.Provider\n72 2923 2922 Forget(BProgressBar)\n72 2924 2922 Forget(TooltipProvider)\n73 2925 2924 Context.Provider\n74 2926 2925 TooltipProvider\n75 2927 2926 TooltipProviderContext.Provider\n76 2928 2927 FloatingDelayGroup\n77 2929 2928 FloatingDelayGroupContext.Provider\n78 2930 2929 Forget(SWUpdatePrompt)\n78 2931 2929 Suspense\n79 4140 2931 Forget(DeploymentRefreshChecker)\n78 2932 2929 OuterLayoutRouter\n79 2933 2932 Activity key=\"(app)\"\n80 2939 2933 SegmentStateProvider key=\"(app)\"\n81 2940 2939 Context.Provider key=\"0\"\n82 2941 2940 TemplateContext.Provider key=\"(app)\"\n83 2942 2941 RenderFromTemplateContext\n84 2943 2942 ScrollHandler\n85 2944 2943 InnerScrollHandler\n86 2945 2944 ErrorBoundary\n87 2946 2945 ErrorBoundaryHandler\n88 2947 2946 LoadingBoundary\n89 2948 2947 HTTPAccessFallbackBoundary\n90 2949 2948 HTTPAccessFallbackErrorBoundary\n91 2950 2949 RedirectBoundary\n92 2951 2950 RedirectErrorBoundary\n93 2952 2951 InnerLayoutRouter\n94 2953 2952 LayoutRouterContext.Provider\n95 2954 2953 NavigationPromisesContext.Provider\n96 2955 2954 SegmentViewNode key=\"layout\"\n97 2956 2955 SegmentTrieNode key=\"layout\"\n97 2957 2955 Fragment key=\"c\"\n98 2958 2957 link key=\"0\"\n98 2959 2957 script key=\"script-0\"\n98 2960 2957 script key=\"script-1\"\n98 2961 2957 script key=\"script-2\"\n98 2962 2957 script key=\"script-3\"\n98 2963 2957 script key=\"script-4\"\n98 2964 2957 script key=\"script-5\"\n98 2965 2957 script key=\"script-6\"\n98 2966 2957 script key=\"script-7\"\n98 2967 2957 script key=\"script-8\"\n98 2968 2957 script key=\"script-9\"\n98 2969 2957 script key=\"script-10\"\n98 2970 2957 script key=\"script-11\"\n98 2971 2957 script key=\"script-12\"\n98 2972 2957 script key=\"script-13\"\n98 2973 2957 script key=\"script-14\"\n98 2974 2957 script key=\"script-15\"\n98 2975 2957 script key=\"script-16\"\n98 2976 2957 script key=\"script-17\"\n98 2977 2957 script key=\"script-18\"\n98 2978 2957 script key=\"script-19\"\n98 2979 2957 script key=\"script-20\"\n98 2980 2957 script key=\"script-21\"\n98 2981 2957 script key=\"script-22\"\n98 2982 2957 script key=\"script-23\"\n98 2983 2957 script key=\"script-24\"\n98 2984 2957 script key=\"script-25\"\n98 2985 2957 script key=\"script-26\"\n98 2986 2957 script key=\"script-27\"\n98 2987 2957 Prerender(AppLayout)\n99 2988 2987 Suspense\n100 2995 2988 Prerender(Server(AuthenticatedAppContent))\n101 2996 2995 Forget(PostHogProvider)\n102 2997 2996 Forget(PushPermissionProvider)\n103 2998 2997 Forget(UserPreferencesProvider)\n104 2999 2998 Context.Provider\n105 3000 2999 Forget(OrganizationSettingsProvider)\n106 3001 3000 Forget(OrganizationContextProvider)\n107 3002 3001 Forget(OrganizationSettingsStoreProvider) key=\"[\\\"perf-small-1-6160ea8e831f\\\",\\\"perf-small-6160ea8e831f\\\"]\"\n108 3003 3002 Context.Provider\n109 3004 3003 Context.Provider\n110 3005 3004 Forget(SynchronizeOrganization)\n110 3006 3004 Forget(SidebarProvider)\n111 3007 3006 Context.Provider\n112 3008 3007 Forget(TooltipProvider)\n113 3009 3008 Context.Provider\n114 3010 3009 TooltipProvider\n115 3011 3010 TooltipProviderContext.Provider\n116 3012 3011 FloatingDelayGroup\n117 3013 3012 FloatingDelayGroupContext.Provider\n118 3014 3013 div\n119 3015 3014 Forget(AppSkipLink)\n120 3016 3015 a\n119 3017 3014 Server(ServerSidebarRegion)\n120 3018 3017 Suspense\n121 3452 3018 Server(ServerAppSidebar)\n122 3453 3452 Forget(AppSidebar)\n123 3454 3453 Forget(Sidebar)\n124 3455 3454 div\n125 3456 3455 div\n125 3457 3455 div\n126 3458 3457 div\n127 3459 3458 Forget(SidebarHeader)\n128 3460 3459 div\n129 3461 3460 Forget(OrganizationSwitcher)\n130 3462 3461 Forget(SidebarMenu)\n131 3463 3462 ul\n132 3464 3463 Forget(SidebarMenuItem)\n133 3465 3464 li\n134 3466 3465 Forget(DropdownMenu)\n135 3467 3466 MenuRoot\n136 3468 3467 MenuRootInternal\n137 3469 3468 FloatingTree\n138 3470 3469 FloatingTreeContext.Provider\n139 3471 3470 MenuRootContext.Provider\n140 3472 3471 Forget(DropdownMenuTrigger)\n141 3473 3472 MenuTrigger\n142 3474 3473 Fragment key=\"base-ui-_R_3ajad5red9etb_\"\n143 3475 3474 Forget(SidebarMenuButton)\n144 3476 3475 Forget(Tooltip)\n145 3477 3476 TooltipRoot\n146 3478 3477 TooltipRootContext.Provider\n147 3479 3478 Forget(TooltipTrigger)\n148 3480 3479 TooltipTrigger\n149 3481 3480 button\n150 3482 3481 div\n151 3483 3482 Forget(OrganizationLogo)\n152 3484 3483 Forget(Avatar)\n153 3485 3484 AvatarRoot\n154 3486 3485 AvatarRootContext.Provider\n155 3487 3486 span\n156 3488 3487 Forget(AvatarFallback)\n157 3489 3488 AvatarFallback\n158 3490 3489 span\n159 3491 3490 Building\n160 3492 3491 svg\n161 3493 3492 path key=\"svg-0\"\n161 3494 3492 path key=\"svg-1\"\n161 3495 3492 path key=\"svg-2\"\n161 3496 3492 path key=\"svg-3\"\n161 3497 3492 path key=\"svg-4\"\n161 3498 3492 path key=\"svg-5\"\n161 3499 3492 path key=\"svg-6\"\n161 3500 3492 path key=\"svg-7\"\n150 3501 3481 div\n151 3502 3501 span\n151 3503 3501 span\n150 3504 3481 ChevronDown\n151 3505 3504 svg\n152 3506 3505 path key=\"svg-0\"\n147 3507 3478 Forget(TooltipContent)\n148 3508 3507 TooltipPortal\n140 3509 3471 Forget(DropdownMenuContent)\n141 3510 3509 MenuPortal\n134 3511 3465 Forget(CreateOrganizationDialog)\n135 3512 3511 Forget(ActionPanel)\n136 3513 3512 Forget(Sheet)\n137 3514 3513 Context.Provider\n138 3515 3514 DialogRoot\n139 3516 3515 DialogRootContext.Provider\n140 3517 3516 Forget(ActionPanelContent)\n141 3518 3517 Forget(SheetContent)\n142 3519 3518 Forget(SheetPortal)\n143 3520 3519 DialogPortal\n127 3521 3458 Forget(SidebarContent)\n128 3522 3521 div\n129 3523 3522 Forget(AppSearch)\n130 3524 3523 Forget(SidebarGroup)\n131 3525 3524 div\n132 3526 3525 Forget(SidebarGroupContent)\n133 3527 3526 div\n134 3528 3527 Forget(SidebarMenu)\n135 3529 3528 ul\n136 3530 3529 Forget(SidebarMenuItem)\n137 3531 3530 li\n138 3532 3531 Forget(SidebarMenuButton)\n139 3533 3532 Forget(Tooltip)\n140 3534 3533 TooltipRoot\n141 3535 3534 TooltipRootContext.Provider\n142 3536 3535 Forget(TooltipTrigger)\n143 3537 3536 TooltipTrigger\n144 3538 3537 button\n145 3539 3538 Search\n146 3540 3539 svg\n147 3541 3540 path key=\"svg-0\"\n147 3542 3540 path key=\"svg-1\"\n145 3543 3538 span\n145 3544 3538 Forget(Kbd)\n146 3545 3544 kbd\n142 3546 3535 Forget(TooltipContent)\n143 3547 3546 TooltipPortal\n130 3548 3523 Forget(CommandDialog)\n131 3549 3548 Forget(Dialog)\n132 3550 3549 Context.Provider\n133 3551 3550 DialogRoot\n134 3552 3551 DialogRootContext.Provider\n135 3553 3552 Forget(DialogPortal)\n136 3554 3553 DialogPortal\n129 3555 3522 Suspense\n130 3618 3555 Forget(NavMain)\n131 3619 3618 Forget(SidebarGroup)\n132 3620 3619 div\n133 3621 3620 nav\n134 3622 3621 Forget(SidebarGroupLabel)\n135 3623 3622 div\n134 3624 3621 Forget(SidebarGroupContent)\n135 3625 3624 div\n136 3626 3625 Forget(SidebarMenu)\n137 3627 3626 ul\n138 3628 3627 Forget(SidebarMenuItem) key=\"Dashboard\"\n139 3629 3628 li\n140 3630 3629 Forget(SidebarMenuButton)\n141 3631 3630 Forget(Tooltip)\n142 3632 3631 TooltipRoot\n143 3633 3632 TooltipRootContext.Provider\n144 3634 3633 Forget(TooltipTrigger)\n145 3635 3634 TooltipTrigger\n146 3636 3635 Slot\n147 3637 3636 ForwardRef(Link)\n148 3638 3637 ForwardRef(BaseLink)\n149 3639 3638 LinkComponent\n150 3640 3639 Context.Provider\n151 3641 3640 a\n152 3642 3641 Dashboard\n153 3643 3642 svg\n154 3644 3643 path key=\"svg-0\"\n154 3645 3643 path key=\"svg-1\"\n154 3646 3643 path key=\"svg-2\"\n152 3647 3641 span\n144 3648 3633 Forget(TooltipContent)\n145 3649 3648 TooltipPortal\n138 3650 3627 Forget(SidebarMenuItem) key=\"Time Tracking\"\n139 3651 3650 li\n140 3652 3651 Forget(SidebarMenuButton)\n141 3653 3652 Forget(Tooltip)\n142 3654 3653 TooltipRoot\n143 3655 3654 TooltipRootContext.Provider\n144 3656 3655 Forget(TooltipTrigger)\n145 3657 3656 TooltipTrigger\n146 3658 3657 Slot\n147 3659 3658 ForwardRef(Link)\n148 3660 3659 ForwardRef(BaseLink)\n149 3661 3660 LinkComponent\n150 3662 3661 Context.Provider\n151 3663 3662 a\n152 3664 3663 Clock\n153 3665 3664 svg\n154 3666 3665 path key=\"svg-0\"\n154 3667 3665 path key=\"svg-1\"\n152 3668 3663 span\n144 3669 3655 Forget(TooltipContent)\n145 3670 3669 TooltipPortal\n138 3671 3627 Forget(SidebarMenuItem) key=\"Calendar\"\n139 3672 3671 li\n140 3673 3672 Forget(SidebarMenuButton)\n141 3674 3673 Forget(Tooltip)\n142 3675 3674 TooltipRoot\n143 3676 3675 TooltipRootContext.Provider\n144 3677 3676 Forget(TooltipTrigger)\n145 3678 3677 TooltipTrigger\n146 3679 3678 Slot\n147 3680 3679 ForwardRef(Link)\n148 3681 3680 ForwardRef(BaseLink)\n149 3682 3681 LinkComponent\n150 3683 3682 Context.Provider\n151 3684 3683 a\n152 3685 3684 CalendarEvent\n153 3686 3685 svg\n154 3687 3686 path key=\"svg-0\"\n154 3688 3686 path key=\"svg-1\"\n154 3689 3686 path key=\"svg-2\"\n154 3690 3686 path key=\"svg-3\"\n154 3691 3686 path key=\"svg-4\"\n152 3692 3684 span\n144 3693 3676 Forget(TooltipContent)\n145 3694 3693 TooltipPortal\n138 3695 3627 Forget(SidebarMenuItem) key=\"Absences\"\n139 3696 3695 li\n140 3697 3696 Forget(SidebarMenuButton)\n141 3698 3697 Forget(Tooltip)\n142 3699 3698 TooltipRoot\n143 3700 3699 TooltipRootContext.Provider\n144 3701 3700 Forget(TooltipTrigger)\n145 3702 3701 TooltipTrigger\n146 3703 3702 Slot\n147 3704 3703 ForwardRef(Link)\n148 3705 3704 ForwardRef(BaseLink)\n149 3706 3705 LinkComponent\n150 3707 3706 Context.Provider\n151 3708 3707 a\n152 3709 3708 Beach\n153 3710 3709 svg\n154 3711 3710 path key=\"svg-0\"\n154 3712 3710 path key=\"svg-1\"\n154 3713 3710 path key=\"svg-2\"\n154 3714 3710 path key=\"svg-3\"\n154 3715 3710 path key=\"svg-4\"\n152 3716 3708 span\n144 3717 3700 Forget(TooltipContent)\n145 3718 3717 TooltipPortal\n138 3719 3627 Forget(SidebarMenuItem) key=\"Travel Expenses\"\n139 3720 3719 li\n140 3721 3720 Forget(SidebarMenuButton)\n141 3722 3721 Forget(Tooltip)\n142 3723 3722 TooltipRoot\n143 3724 3723 TooltipRootContext.Provider\n144 3725 3724 Forget(TooltipTrigger)\n145 3726 3725 TooltipTrigger\n146 3727 3726 Slot\n147 3728 3727 ForwardRef(Link)\n148 3729 3728 ForwardRef(BaseLink)\n149 3730 3729 LinkComponent\n150 3731 3730 Context.Provider\n151 3732 3731 a\n152 3733 3732 Receipt\n153 3734 3733 svg\n154 3735 3734 path key=\"svg-0\"\n152 3736 3732 span\n144 3737 3724 Forget(TooltipContent)\n145 3738 3737 TooltipPortal\n138 3739 3627 Forget(SidebarMenuItem) key=\"My Requests\"\n139 3740 3739 li\n140 3741 3740 Forget(SidebarMenuButton)\n141 3742 3741 Forget(Tooltip)\n142 3743 3742 TooltipRoot\n143 3744 3743 TooltipRootContext.Provider\n144 3745 3744 Forget(TooltipTrigger)\n145 3746 3745 TooltipTrigger\n146 3747 3746 Slot\n147 3748 3747 ForwardRef(Link)\n148 3749 3748 ForwardRef(BaseLink)\n149 3750 3749 LinkComponent\n150 3751 3750 Context.Provider\n151 3752 3751 a\n152 3753 3752 FileDescription\n153 3754 3753 svg\n154 3755 3754 path key=\"svg-0\"\n154 3756 3754 path key=\"svg-1\"\n154 3757 3754 path key=\"svg-2\"\n154 3758 3754 path key=\"svg-3\"\n152 3759 3752 span\n144 3760 3744 Forget(TooltipContent)\n145 3761 3760 TooltipPortal\n138 3762 3627 Forget(SidebarMenuItem) key=\"Reports\"\n139 3763 3762 li\n140 3764 3763 Forget(SidebarMenuButton)\n141 3765 3764 Forget(Tooltip)\n142 3766 3765 TooltipRoot\n143 3767 3766 TooltipRootContext.Provider\n144 3768 3767 Forget(TooltipTrigger)\n145 3769 3768 TooltipTrigger\n146 3770 3769 Slot\n147 3771 3770 ForwardRef(Link)\n148 3772 3771 ForwardRef(BaseLink)\n149 3773 3772 LinkComponent\n150 3774 3773 Context.Provider\n151 3775 3774 a\n152 3776 3775 Report\n153 3777 3776 svg\n154 3778 3777 path key=\"svg-0\"\n154 3779 3777 path key=\"svg-1\"\n154 3780 3777 path key=\"svg-2\"\n154 3781 3777 path key=\"svg-3\"\n154 3782 3777 path key=\"svg-4\"\n154 3783 3777 path key=\"svg-5\"\n154 3784 3777 path key=\"svg-6\"\n152 3785 3775 span\n144 3786 3767 Forget(TooltipContent)\n145 3787 3786 TooltipPortal\n138 3788 3627 Forget(SidebarMenuItem) key=\"Org Explorer\"\n139 3789 3788 li\n140 3790 3789 Forget(SidebarMenuButton)\n141 3791 3790 Forget(Tooltip)\n142 3792 3791 TooltipRoot\n143 3793 3792 TooltipRootContext.Provider\n144 3794 3793 Forget(TooltipTrigger)\n145 3795 3794 TooltipTrigger\n146 3796 3795 Slot\n147 3797 3796 ForwardRef(Link)\n148 3798 3797 ForwardRef(BaseLink)\n149 3799 3798 LinkComponent\n150 3800 3799 Context.Provider\n151 3801 3800 a\n152 3802 3801 Hierarchy\n153 3803 3802 svg\n154 3804 3803 path key=\"svg-0\"\n154 3805 3803 path key=\"svg-1\"\n154 3806 3803 path key=\"svg-2\"\n154 3807 3803 path key=\"svg-3\"\n154 3808 3803 path key=\"svg-4\"\n152 3809 3801 span\n144 3810 3793 Forget(TooltipContent)\n145 3811 3810 TooltipPortal\n129 3556 3522 Suspense\n130 3812 3556 Forget(NavTeam)\n131 3813 3812 Forget(SidebarGroup)\n132 3814 3813 div\n133 3815 3814 nav\n134 3816 3815 Forget(SidebarGroupLabel)\n135 3817 3816 div\n134 3818 3815 Forget(SidebarGroupContent)\n135 3819 3818 div\n136 3820 3819 Forget(SidebarMenu)\n137 3821 3820 ul\n138 3822 3821 Forget(SidebarMenuItem) key=\"Team\"\n139 3823 3822 li\n140 3824 3823 Forget(SidebarMenuButton)\n141 3825 3824 Forget(Tooltip)\n142 3826 3825 TooltipRoot\n143 3827 3826 TooltipRootContext.Provider\n144 3828 3827 Forget(TooltipTrigger)\n145 3829 3828 TooltipTrigger\n146 3830 3829 Slot\n147 3831 3830 ForwardRef(Link)\n148 3832 3831 ForwardRef(BaseLink)\n149 3833 3832 LinkComponent\n150 3834 3833 Context.Provider\n151 3835 3834 a\n152 3836 3835 Users\n153 3837 3836 svg\n154 3838 3837 path key=\"svg-0\"\n154 3839 3837 path key=\"svg-1\"\n154 3840 3837 path key=\"svg-2\"\n154 3841 3837 path key=\"svg-3\"\n152 3842 3835 span\n144 3843 3827 Forget(TooltipContent)\n145 3844 3843 TooltipPortal\n138 3845 3821 Forget(SidebarMenuItem) key=\"Team Absences\"\n139 3846 3845 li\n140 3847 3846 Forget(SidebarMenuButton)\n141 3848 3847 Forget(Tooltip)\n142 3849 3848 TooltipRoot\n143 3850 3849 TooltipRootContext.Provider\n144 3851 3850 Forget(TooltipTrigger)\n145 3852 3851 TooltipTrigger\n146 3853 3852 Slot\n147 3854 3853 ForwardRef(Link)\n148 3855 3854 ForwardRef(BaseLink)\n149 3856 3855 LinkComponent\n150 3857 3856 Context.Provider\n151 3858 3857 a\n152 3859 3858 Beach\n153 3860 3859 svg\n154 3861 3860 path key=\"svg-0\"\n154 3862 3860 path key=\"svg-1\"\n154 3863 3860 path key=\"svg-2\"\n154 3864 3860 path key=\"svg-3\"\n154 3865 3860 path key=\"svg-4\"\n152 3866 3858 span\n144 3867 3850 Forget(TooltipContent)\n145 3868 3867 TooltipPortal\n138 3869 3821 Forget(SidebarMenuItem) key=\"Approvals\"\n139 3870 3869 li\n140 3871 3870 Forget(SidebarMenuButton)\n141 3872 3871 Forget(Tooltip)\n142 3873 3872 TooltipRoot\n143 3874 3873 TooltipRootContext.Provider\n144 3875 3874 Forget(TooltipTrigger)\n145 3876 3875 TooltipTrigger\n146 3877 3876 Slot\n147 3878 3877 ForwardRef(Link)\n148 3879 3878 ForwardRef(BaseLink)\n149 3880 3879 LinkComponent\n150 3881 3880 Context.Provider\n151 3882 3881 a\n152 3883 3882 ClipboardCheck\n153 3884 3883 svg\n154 3885 3884 path key=\"svg-0\"\n154 3886 3884 path key=\"svg-1\"\n154 3887 3884 path key=\"svg-2\"\n152 3888 3882 span\n144 3889 3874 Forget(TooltipContent)\n145 3890 3889 TooltipPortal\n129 3557 3522 Suspense\n130 3891 3557 Forget(NavSecondary)\n131 3892 3891 Forget(SidebarGroup)\n132 3893 3892 div\n133 3894 3893 nav\n134 3895 3894 Forget(SidebarGroupContent)\n135 3896 3895 div\n136 3897 3896 Forget(SidebarMenu)\n137 3898 3897 ul\n138 3899 3898 Forget(SidebarMenuItem) key=\"Settings\"\n139 3900 3899 li\n140 3901 3900 Forget(SidebarMenuButton)\n141 3902 3901 Forget(Tooltip)\n142 3903 3902 TooltipRoot\n143 3904 3903 TooltipRootContext.Provider\n144 3905 3904 Forget(TooltipTrigger)\n145 3906 3905 TooltipTrigger\n146 3907 3906 Slot\n147 3908 3907 ForwardRef(Link)\n148 3909 3908 ForwardRef(BaseLink)\n149 3910 3909 LinkComponent\n150 3911 3910 Context.Provider\n151 3912 3911 a\n152 3913 3912 Settings\n153 3914 3913 svg\n154 3915 3914 path key=\"svg-0\"\n154 3916 3914 path key=\"svg-1\"\n152 3917 3912 span\n144 3918 3904 Forget(TooltipContent)\n145 3919 3918 TooltipPortal\n138 3920 3898 Forget(SidebarMenuItem) key=\"Get Help\"\n139 3921 3920 li\n140 3922 3921 Forget(SidebarMenuButton)\n141 3923 3922 Forget(Tooltip)\n142 3924 3923 TooltipRoot\n143 3925 3924 TooltipRootContext.Provider\n144 3926 3925 Forget(TooltipTrigger)\n145 3927 3926 TooltipTrigger\n146 3928 3927 Slot\n147 3929 3928 ForwardRef(Link)\n148 3930 3929 ForwardRef(BaseLink)\n149 3931 3930 LinkComponent\n150 3932 3931 Context.Provider\n151 3933 3932 a\n152 3934 3933 Help\n153 3935 3934 svg\n154 3936 3935 path key=\"svg-0\"\n154 3937 3935 path key=\"svg-1\"\n154 3938 3935 path key=\"svg-2\"\n152 3939 3933 span\n152 3940 3933 ExternalLink\n153 3941 3940 svg\n154 3942 3941 path key=\"svg-0\"\n154 3943 3941 path key=\"svg-1\"\n154 3944 3941 path key=\"svg-2\"\n144 3945 3925 Forget(TooltipContent)\n145 3946 3945 TooltipPortal\n138 3947 3898 Forget(SidebarMenuItem) key=\"Feedback\"\n139 3948 3947 li\n140 3949 3948 Forget(SidebarMenuButton)\n141 3950 3949 Forget(Tooltip)\n142 3951 3950 TooltipRoot\n143 3952 3951 TooltipRootContext.Provider\n144 3953 3952 Forget(TooltipTrigger)\n145 3954 3953 TooltipTrigger\n146 3955 3954 Slot\n147 3956 3955 ForwardRef(Link)\n148 3957 3956 ForwardRef(BaseLink)\n149 3958 3957 LinkComponent\n150 3959 3958 Context.Provider\n151 3960 3959 a\n152 3961 3960 MessageCircle\n153 3962 3961 svg\n154 3963 3962 path key=\"svg-0\"\n152 3964 3960 span\n152 3965 3960 ExternalLink\n153 3966 3965 svg\n154 3967 3966 path key=\"svg-0\"\n154 3968 3966 path key=\"svg-1\"\n154 3969 3966 path key=\"svg-2\"\n144 3970 3952 Forget(TooltipContent)\n145 3971 3970 TooltipPortal\n127 3558 3458 Forget(SidebarFooter)\n128 3559 3558 div\n129 3560 3559 Forget(SidebarUser)\n130 3561 3560 Forget(NavUser)\n131 3562 3561 Forget(SidebarMenu)\n132 3563 3562 ul\n133 3564 3563 Forget(SidebarMenuItem)\n134 3565 3564 li\n135 3566 3565 Forget(SidebarMenuButton)\n136 3567 3566 button\n137 3568 3567 Forget(Skeleton)\n138 3569 3568 div\n137 3570 3567 div\n138 3571 3570 Forget(Skeleton)\n139 3572 3571 div\n138 3573 3570 Forget(Skeleton)\n139 3574 3573 div\n135 3575 3565 Forget(DropdownMenu)\n136 3576 3575 MenuRoot\n137 3577 3576 MenuRootInternal\n138 3578 3577 FloatingTree\n139 3579 3578 FloatingTreeContext.Provider\n140 3580 3579 MenuRootContext.Provider\n141 3581 3580 Forget(DropdownMenuTrigger)\n142 3582 3581 MenuTrigger\n143 3583 3582 Fragment key=\"base-ui-_r_h_\"\n144 3584 3583 Forget(SidebarMenuButton)\n145 3585 3584 Forget(Tooltip)\n146 3586 3585 TooltipRoot\n147 3587 3586 TooltipRootContext.Provider\n148 3588 3587 Forget(TooltipTrigger)\n149 3589 3588 TooltipTrigger\n150 3590 3589 button\n151 3591 3590 Forget(UserAvatar)\n152 3592 3591 span\n153 3593 3592 Forget(Avatar)\n154 3594 3593 AvatarRoot\n155 3595 3594 AvatarRootContext.Provider\n156 3596 3595 span\n157 3597 3596 Forget(AvatarImage)\n158 3598 3597 AvatarImage\n159 3617 3598 img\n157 3599 3596 Forget(AvatarFallback)\n158 3600 3599 AvatarFallback\n159 3601 3600 span\n160 3602 3601 Loader2\n161 3603 3602 svg\n162 3604 3603 path key=\"svg-0\"\n151 3605 3590 div\n152 3606 3605 span\n152 3607 3605 span\n151 3608 3590 DotsVertical\n152 3609 3608 svg\n153 3610 3609 path key=\"svg-0\"\n153 3611 3609 path key=\"svg-1\"\n153 3612 3609 path key=\"svg-2\"\n148 3613 3587 Forget(TooltipContent)\n149 3614 3613 TooltipPortal\n141 3615 3580 Forget(DropdownMenuContent)\n142 3616 3615 MenuPortal\n124 4141 3454 Forget(Sheet)\n125 4142 4141 Context.Provider\n126 4143 4142 DialogRoot\n127 4144 4143 DialogRootContext.Provider\n128 4145 4144 Forget(SheetContent)\n129 4146 4145 Forget(SheetPortal)\n130 4147 4146 DialogPortal\n124 4148 3454 div\n125 4149 4148 div\n125 4150 4148 div\n126 4151 4150 div\n127 4152 4151 Forget(SidebarHeader)\n128 4153 4152 div\n129 4154 4153 Forget(OrganizationSwitcher)\n130 4155 4154 Forget(SidebarMenu)\n131 4156 4155 ul\n132 4157 4156 Forget(SidebarMenuItem)\n133 4158 4157 li\n134 4159 4158 Forget(DropdownMenu)\n135 4160 4159 MenuRoot\n136 4161 4160 MenuRootInternal\n137 4162 4161 FloatingTree\n138 4163 4162 FloatingTreeContext.Provider\n139 4164 4163 MenuRootContext.Provider\n140 4165 4164 Forget(DropdownMenuTrigger)\n141 4166 4165 MenuTrigger\n142 4167 4166 Fragment key=\"base-ui-_r_10_\"\n143 4168 4167 Forget(SidebarMenuButton)\n144 4169 4168 Forget(Tooltip)\n145 4170 4169 TooltipRoot\n146 4171 4170 TooltipRootContext.Provider\n147 4172 4171 Forget(TooltipTrigger)\n148 4173 4172 TooltipTrigger\n149 4174 4173 button\n150 4175 4174 div\n151 4176 4175 Forget(OrganizationLogo)\n152 4177 4176 Forget(Avatar)\n153 4178 4177 AvatarRoot\n154 4179 4178 AvatarRootContext.Provider\n155 4180 4179 span\n156 4181 4180 Forget(AvatarFallback)\n157 4182 4181 AvatarFallback\n158 4183 4182 span\n159 4184 4183 Building\n160 4185 4184 svg\n161 4186 4185 path key=\"svg-0\"\n161 4187 4185 path key=\"svg-1\"\n161 4188 4185 path key=\"svg-2\"\n161 4189 4185 path key=\"svg-3\"\n161 4190 4185 path key=\"svg-4\"\n161 4191 4185 path key=\"svg-5\"\n161 4192 4185 path key=\"svg-6\"\n161 4193 4185 path key=\"svg-7\"\n150 4194 4174 div\n151 4195 4194 span\n151 4196 4194 span\n150 4197 4174 ChevronDown\n151 4198 4197 svg\n152 4199 4198 path key=\"svg-0\"\n147 4200 4171 Forget(TooltipContent)\n148 4201 4200 TooltipPortal\n140 4202 4164 Forget(DropdownMenuContent)\n141 4203 4202 MenuPortal\n134 4204 4158 Forget(CreateOrganizationDialog)\n135 4205 4204 Forget(ActionPanel)\n136 4206 4205 Forget(Sheet)\n137 4207 4206 Context.Provider\n138 4208 4207 DialogRoot\n139 4209 4208 DialogRootContext.Provider\n140 4210 4209 Forget(ActionPanelContent)\n141 4211 4210 Forget(SheetContent)\n142 4212 4211 Forget(SheetPortal)\n143 4213 4212 DialogPortal\n127 4214 4151 Forget(SidebarContent)\n128 4215 4214 div\n129 4216 4215 Forget(AppSearch)\n130 4217 4216 Forget(SidebarGroup)\n131 4218 4217 div\n132 4219 4218 Forget(SidebarGroupContent)\n133 4220 4219 div\n134 4221 4220 Forget(SidebarMenu)\n135 4222 4221 ul\n136 4223 4222 Forget(SidebarMenuItem)\n137 4224 4223 li\n138 4225 4224 Forget(SidebarMenuButton)\n139 4226 4225 Forget(Tooltip)\n140 4227 4226 TooltipRoot\n141 4228 4227 TooltipRootContext.Provider\n142 4229 4228 Forget(TooltipTrigger)\n143 4230 4229 TooltipTrigger\n144 4231 4230 button\n145 4232 4231 Search\n146 4233 4232 svg\n147 4234 4233 path key=\"svg-0\"\n147 4235 4233 path key=\"svg-1\"\n145 4236 4231 span\n145 4237 4231 Forget(Kbd)\n146 4238 4237 kbd\n142 4239 4228 Forget(TooltipContent)\n143 4240 4239 TooltipPortal\n130 4241 4216 Forget(CommandDialog)\n131 4242 4241 Forget(Dialog)\n132 4243 4242 Context.Provider\n133 4244 4243 DialogRoot\n134 4245 4244 DialogRootContext.Provider\n135 4246 4245 Forget(DialogPortal)\n136 4247 4246 DialogPortal\n129 4248 4215 Suspense\n130 4249 4248 Forget(NavMain)\n131 4250 4249 Forget(SidebarGroup)\n132 4251 4250 div\n133 4252 4251 nav\n134 4253 4252 Forget(SidebarGroupLabel)\n135 4254 4253 div\n134 4255 4252 Forget(SidebarGroupContent)\n135 4256 4255 div\n136 4257 4256 Forget(SidebarMenu)\n137 4258 4257 ul\n138 4259 4258 Forget(SidebarMenuItem) key=\"Dashboard\"\n139 4260 4259 li\n140 4261 4260 Forget(SidebarMenuButton)\n141 4262 4261 Forget(Tooltip)\n142 4263 4262 TooltipRoot\n143 4264 4263 TooltipRootContext.Provider\n144 4265 4264 Forget(TooltipTrigger)\n145 4266 4265 TooltipTrigger\n146 4267 4266 Slot\n147 4268 4267 ForwardRef(Link)\n148 4269 4268 ForwardRef(BaseLink)\n149 4270 4269 LinkComponent\n150 4271 4270 Context.Provider\n151 4272 4271 a\n152 4273 4272 Dashboard\n153 4274 4273 svg\n154 4275 4274 path key=\"svg-0\"\n154 4276 4274 path key=\"svg-1\"\n154 4277 4274 path key=\"svg-2\"\n152 4278 4272 span\n144 4279 4264 Forget(TooltipContent)\n145 4280 4279 TooltipPortal\n138 4281 4258 Forget(SidebarMenuItem) key=\"Time Tracking\"\n139 4282 4281 li\n140 4283 4282 Forget(SidebarMenuButton)\n141 4284 4283 Forget(Tooltip)\n142 4285 4284 TooltipRoot\n143 4286 4285 TooltipRootContext.Provider\n144 4287 4286 Forget(TooltipTrigger)\n145 4288 4287 TooltipTrigger\n146 4289 4288 Slot\n147 4290 4289 ForwardRef(Link)\n148 4291 4290 ForwardRef(BaseLink)\n149 4292 4291 LinkComponent\n150 4293 4292 Context.Provider\n151 4294 4293 a\n152 4295 4294 Clock\n153 4296 4295 svg\n154 4297 4296 path key=\"svg-0\"\n154 4298 4296 path key=\"svg-1\"\n152 4299 4294 span\n144 4300 4286 Forget(TooltipContent)\n145 4301 4300 TooltipPortal\n138 4302 4258 Forget(SidebarMenuItem) key=\"Calendar\"\n139 4303 4302 li\n140 4304 4303 Forget(SidebarMenuButton)\n141 4305 4304 Forget(Tooltip)\n142 4306 4305 TooltipRoot\n143 4307 4306 TooltipRootContext.Provider\n144 4308 4307 Forget(TooltipTrigger)\n145 4309 4308 TooltipTrigger\n146 4310 4309 Slot\n147 4311 4310 ForwardRef(Link)\n148 4312 4311 ForwardRef(BaseLink)\n149 4313 4312 LinkComponent\n150 4314 4313 Context.Provider\n151 4315 4314 a\n152 4316 4315 CalendarEvent\n153 4317 4316 svg\n154 4318 4317 path key=\"svg-0\"\n154 4319 4317 path key=\"svg-1\"\n154 4320 4317 path key=\"svg-2\"\n154 4321 4317 path key=\"svg-3\"\n154 4322 4317 path key=\"svg-4\"\n152 4323 4315 span\n144 4324 4307 Forget(TooltipContent)\n145 4325 4324 TooltipPortal\n138 4326 4258 Forget(SidebarMenuItem) key=\"Absences\"\n139 4327 4326 li\n140 4328 4327 Forget(SidebarMenuButton)\n141 4329 4328 Forget(Tooltip)\n142 4330 4329 TooltipRoot\n143 4331 4330 TooltipRootContext.Provider\n144 4332 4331 Forget(TooltipTrigger)\n145 4333 4332 TooltipTrigger\n146 4334 4333 Slot\n147 4335 4334 ForwardRef(Link)\n148 4336 4335 ForwardRef(BaseLink)\n149 4337 4336 LinkComponent\n150 4338 4337 Context.Provider\n151 4339 4338 a\n152 4340 4339 Beach\n153 4341 4340 svg\n154 4342 4341 path key=\"svg-0\"\n154 4343 4341 path key=\"svg-1\"\n154 4344 4341 path key=\"svg-2\"\n154 4345 4341 path key=\"svg-3\"\n154 4346 4341 path key=\"svg-4\"\n152 4347 4339 span\n144 4348 4331 Forget(TooltipContent)\n145 4349 4348 TooltipPortal\n138 4350 4258 Forget(SidebarMenuItem) key=\"Travel Expenses\"\n139 4351 4350 li\n140 4352 4351 Forget(SidebarMenuButton)\n141 4353 4352 Forget(Tooltip)\n142 4354 4353 TooltipRoot\n143 4355 4354 TooltipRootContext.Provider\n144 4356 4355 Forget(TooltipTrigger)\n145 4357 4356 TooltipTrigger\n146 4358 4357 Slot\n147 4359 4358 ForwardRef(Link)\n148 4360 4359 ForwardRef(BaseLink)\n149 4361 4360 LinkComponent\n150 4362 4361 Context.Provider\n151 4363 4362 a\n152 4364 4363 Receipt\n153 4365 4364 svg\n154 4366 4365 path key=\"svg-0\"\n152 4367 4363 span\n144 4368 4355 Forget(TooltipContent)\n145 4369 4368 TooltipPortal\n138 4370 4258 Forget(SidebarMenuItem) key=\"My Requests\"\n139 4371 4370 li\n140 4372 4371 Forget(SidebarMenuButton)\n141 4373 4372 Forget(Tooltip)\n142 4374 4373 TooltipRoot\n143 4375 4374 TooltipRootContext.Provider\n144 4376 4375 Forget(TooltipTrigger)\n145 4377 4376 TooltipTrigger\n146 4378 4377 Slot\n147 4379 4378 ForwardRef(Link)\n148 4380 4379 ForwardRef(BaseLink)\n149 4381 4380 LinkComponent\n150 4382 4381 Context.Provider\n151 4383 4382 a\n152 4384 4383 FileDescription\n153 4385 4384 svg\n154 4386 4385 path key=\"svg-0\"\n154 4387 4385 path key=\"svg-1\"\n154 4388 4385 path key=\"svg-2\"\n154 4389 4385 path key=\"svg-3\"\n152 4390 4383 span\n144 4391 4375 Forget(TooltipContent)\n145 4392 4391 TooltipPortal\n138 4393 4258 Forget(SidebarMenuItem) key=\"Reports\"\n139 4394 4393 li\n140 4395 4394 Forget(SidebarMenuButton)\n141 4396 4395 Forget(Tooltip)\n142 4397 4396 TooltipRoot\n143 4398 4397 TooltipRootContext.Provider\n144 4399 4398 Forget(TooltipTrigger)\n145 4400 4399 TooltipTrigger\n146 4401 4400 Slot\n147 4402 4401 ForwardRef(Link)\n148 4403 4402 ForwardRef(BaseLink)\n149 4404 4403 LinkComponent\n150 4405 4404 Context.Provider\n151 4406 4405 a\n152 4407 4406 Report\n153 4408 4407 svg\n154 4409 4408 path key=\"svg-0\"\n154 4410 4408 path key=\"svg-1\"\n154 4411 4408 path key=\"svg-2\"\n154 4412 4408 path key=\"svg-3\"\n154 4413 4408 path key=\"svg-4\"\n154 4414 4408 path key=\"svg-5\"\n154 4415 4408 path key=\"svg-6\"\n152 4416 4406 span\n144 4417 4398 Forget(TooltipContent)\n145 4418 4417 TooltipPortal\n138 4419 4258 Forget(SidebarMenuItem) key=\"Org Explorer\"\n139 4420 4419 li\n140 4421 4420 Forget(SidebarMenuButton)\n141 4422 4421 Forget(Tooltip)\n142 4423 4422 TooltipRoot\n143 4424 4423 TooltipRootContext.Provider\n144 4425 4424 Forget(TooltipTrigger)\n145 4426 4425 TooltipTrigger\n146 4427 4426 Slot\n147 4428 4427 ForwardRef(Link)\n148 4429 4428 ForwardRef(BaseLink)\n149 4430 4429 LinkComponent\n150 4431 4430 Context.Provider\n151 4432 4431 a\n152 4433 4432 Hierarchy\n153 4434 4433 svg\n154 4435 4434 path key=\"svg-0\"\n154 4436 4434 path key=\"svg-1\"\n154 4437 4434 path key=\"svg-2\"\n154 4438 4434 path key=\"svg-3\"\n154 4439 4434 path key=\"svg-4\"\n152 4440 4432 span\n144 4441 4424 Forget(TooltipContent)\n145 4442 4441 TooltipPortal\n129 4443 4215 Suspense\n130 4444 4443 Forget(NavTeam)\n131 4445 4444 Forget(SidebarGroup)\n132 4446 4445 div\n133 4447 4446 nav\n134 4448 4447 Forget(SidebarGroupLabel)\n135 4449 4448 div\n134 4450 4447 Forget(SidebarGroupContent)\n135 4451 4450 div\n136 4452 4451 Forget(SidebarMenu)\n137 4453 4452 ul\n138 4454 4453 Forget(SidebarMenuItem) key=\"Team\"\n139 4455 4454 li\n140 4456 4455 Forget(SidebarMenuButton)\n141 4457 4456 Forget(Tooltip)\n142 4458 4457 TooltipRoot\n143 4459 4458 TooltipRootContext.Provider\n144 4460 4459 Forget(TooltipTrigger)\n145 4461 4460 TooltipTrigger\n146 4462 4461 Slot\n147 4463 4462 ForwardRef(Link)\n148 4464 4463 ForwardRef(BaseLink)\n149 4465 4464 LinkComponent\n150 4466 4465 Context.Provider\n151 4467 4466 a\n152 4468 4467 Users\n153 4469 4468 svg\n154 4470 4469 path key=\"svg-0\"\n154 4471 4469 path key=\"svg-1\"\n154 4472 4469 path key=\"svg-2\"\n154 4473 4469 path key=\"svg-3\"\n152 4474 4467 span\n144 4475 4459 Forget(TooltipContent)\n145 4476 4475 TooltipPortal\n138 4477 4453 Forget(SidebarMenuItem) key=\"Team Absences\"\n139 4478 4477 li\n140 4479 4478 Forget(SidebarMenuButton)\n141 4480 4479 Forget(Tooltip)\n142 4481 4480 TooltipRoot\n143 4482 4481 TooltipRootContext.Provider\n144 4483 4482 Forget(TooltipTrigger)\n145 4484 4483 TooltipTrigger\n146 4485 4484 Slot\n147 4486 4485 ForwardRef(Link)\n148 4487 4486 ForwardRef(BaseLink)\n149 4488 4487 LinkComponent\n150 4489 4488 Context.Provider\n151 4490 4489 a\n152 4491 4490 Beach\n153 4492 4491 svg\n154 4493 4492 path key=\"svg-0\"\n154 4494 4492 path key=\"svg-1\"\n154 4495 4492 path key=\"svg-2\"\n154 4496 4492 path key=\"svg-3\"\n154 4497 4492 path key=\"svg-4\"\n152 4498 4490 span\n144 4499 4482 Forget(TooltipContent)\n145 4500 4499 TooltipPortal\n138 4501 4453 Forget(SidebarMenuItem) key=\"Approvals\"\n139 4502 4501 li\n140 4503 4502 Forget(SidebarMenuButton)\n141 4504 4503 Forget(Tooltip)\n142 4505 4504 TooltipRoot\n143 4506 4505 TooltipRootContext.Provider\n144 4507 4506 Forget(TooltipTrigger)\n145 4508 4507 TooltipTrigger\n146 4509 4508 Slot\n147 4510 4509 ForwardRef(Link)\n148 4511 4510 ForwardRef(BaseLink)\n149 4512 4511 LinkComponent\n150 4513 4512 Context.Provider\n151 4514 4513 a\n152 4515 4514 ClipboardCheck\n153 4516 4515 svg\n154 4517 4516 path key=\"svg-0\"\n154 4518 4516 path key=\"svg-1\"\n154 4519 4516 path key=\"svg-2\"\n152 4520 4514 span\n144 4521 4506 Forget(TooltipContent)\n145 4522 4521 TooltipPortal\n129 4523 4215 Suspense\n130 4524 4523 Forget(NavSecondary)\n131 4525 4524 Forget(SidebarGroup)\n132 4526 4525 div\n133 4527 4526 nav\n134 4528 4527 Forget(SidebarGroupContent)\n135 4529 4528 div\n136 4530 4529 Forget(SidebarMenu)\n137 4531 4530 ul\n138 4532 4531 Forget(SidebarMenuItem) key=\"Settings\"\n139 4533 4532 li\n140 4534 4533 Forget(SidebarMenuButton)\n141 4535 4534 Forget(Tooltip)\n142 4536 4535 TooltipRoot\n143 4537 4536 TooltipRootContext.Provider\n144 4538 4537 Forget(TooltipTrigger)\n145 4539 4538 TooltipTrigger\n146 4540 4539 Slot\n147 4541 4540 ForwardRef(Link)\n148 4542 4541 ForwardRef(BaseLink)\n149 4543 4542 LinkComponent\n150 4544 4543 Context.Provider\n151 4545 4544 a\n152 4546 4545 Settings\n153 4547 4546 svg\n154 4548 4547 path key=\"svg-0\"\n154 4549 4547 path key=\"svg-1\"\n152 4550 4545 span\n144 4551 4537 Forget(TooltipContent)\n145 4552 4551 TooltipPortal\n138 4553 4531 Forget(SidebarMenuItem) key=\"Get Help\"\n139 4554 4553 li\n140 4555 4554 Forget(SidebarMenuButton)\n141 4556 4555 Forget(Tooltip)\n142 4557 4556 TooltipRoot\n143 4558 4557 TooltipRootContext.Provider\n144 4559 4558 Forget(TooltipTrigger)\n145 4560 4559 TooltipTrigger\n146 4561 4560 Slot\n147 4562 4561 ForwardRef(Link)\n148 4563 4562 ForwardRef(BaseLink)\n149 4564 4563 LinkComponent\n150 4565 4564 Context.Provider\n151 4566 4565 a\n152 4567 4566 Help\n153 4568 4567 svg\n154 4569 4568 path key=\"svg-0\"\n154 4570 4568 path key=\"svg-1\"\n154 4571 4568 path key=\"svg-2\"\n152 4572 4566 span\n152 4573 4566 ExternalLink\n153 4574 4573 svg\n154 4575 4574 path key=\"svg-0\"\n154 4576 4574 path key=\"svg-1\"\n154 4577 4574 path key=\"svg-2\"\n144 4578 4558 Forget(TooltipContent)\n145 4579 4578 TooltipPortal\n138 4580 4531 Forget(SidebarMenuItem) key=\"Feedback\"\n139 4581 4580 li\n140 4582 4581 Forget(SidebarMenuButton)\n141 4583 4582 Forget(Tooltip)\n142 4584 4583 TooltipRoot\n143 4585 4584 TooltipRootContext.Provider\n144 4586 4585 Forget(TooltipTrigger)\n145 4587 4586 TooltipTrigger\n146 4588 4587 Slot\n147 4589 4588 ForwardRef(Link)\n148 4590 4589 ForwardRef(BaseLink)\n149 4591 4590 LinkComponent\n150 4592 4591 Context.Provider\n151 4593 4592 a\n152 4594 4593 MessageCircle\n153 4595 4594 svg\n154 4596 4595 path key=\"svg-0\"\n152 4597 4593 span\n152 4598 4593 ExternalLink\n153 4599 4598 svg\n154 4600 4599 path key=\"svg-0\"\n154 4601 4599 path key=\"svg-1\"\n154 4602 4599 path key=\"svg-2\"\n144 4603 4585 Forget(TooltipContent)\n145 4604 4603 TooltipPortal\n127 4605 4151 Forget(SidebarFooter)\n128 4606 4605 div\n129 4607 4606 Forget(SidebarUser)\n130 4608 4607 Forget(NavUser)\n131 4609 4608 Forget(SidebarMenu)\n132 4610 4609 ul\n133 4611 4610 Forget(SidebarMenuItem)\n134 4612 4611 li\n135 4613 4612 Forget(DropdownMenu)\n136 4614 4613 MenuRoot\n137 4615 4614 MenuRootInternal\n138 4616 4615 FloatingTree\n139 4617 4616 FloatingTreeContext.Provider\n140 4618 4617 MenuRootContext.Provider\n141 4619 4618 Forget(DropdownMenuTrigger)\n142 4620 4619 MenuTrigger\n143 4621 4620 Fragment key=\"base-ui-_r_28_\"\n144 4622 4621 Forget(SidebarMenuButton)\n145 4623 4622 Forget(Tooltip)\n146 4624 4623 TooltipRoot\n147 4625 4624 TooltipRootContext.Provider\n148 4626 4625 Forget(TooltipTrigger)\n149 4627 4626 TooltipTrigger\n150 4628 4627 button\n151 4629 4628 Forget(UserAvatar)\n152 4630 4629 span\n153 4631 4630 Forget(Avatar)\n154 4632 4631 AvatarRoot\n155 4633 4632 AvatarRootContext.Provider\n156 4634 4633 span\n157 4635 4634 Forget(AvatarImage)\n158 4636 4635 AvatarImage\n159 4655 4636 img\n157 4637 4634 Forget(AvatarFallback)\n158 4638 4637 AvatarFallback\n159 4639 4638 span\n160 4640 4639 Loader2\n161 4641 4640 svg\n162 4642 4641 path key=\"svg-0\"\n151 4643 4628 div\n152 4644 4643 span\n152 4645 4643 span\n151 4646 4628 DotsVertical\n152 4647 4646 svg\n153 4648 4647 path key=\"svg-0\"\n153 4649 4647 path key=\"svg-1\"\n153 4650 4647 path key=\"svg-2\"\n148 4651 4625 Forget(TooltipContent)\n149 4652 4651 TooltipPortal\n141 4653 4618 Forget(DropdownMenuContent)\n142 4654 4653 MenuPortal\n124 4656 3454 Forget(Sheet)\n125 4657 4656 Context.Provider\n126 4658 4657 DialogRoot\n127 4659 4658 DialogRootContext.Provider\n128 4660 4659 Forget(SheetContent)\n129 4661 4660 Forget(SheetPortal)\n130 4662 4661 DialogPortal\n119 3019 3014 Forget(SidebarInset)\n120 3020 3019 main\n121 3021 3020 Suspense\n122 3972 3021 Forget(SiteHeader)\n123 3973 3972 header\n124 3974 3973 div\n125 3975 3974 Forget(SidebarTrigger)\n126 3976 3975 Forget(Button)\n127 3977 3976 button\n128 3978 3977 LayoutSidebar\n129 3979 3978 svg\n130 3980 3979 path key=\"svg-0\"\n130 3981 3979 path key=\"svg-1\"\n128 3982 3977 span\n125 3983 3974 span\n125 3984 3974 p\n125 3985 3974 div\n126 3986 3985 div\n127 3987 3986 HeaderTimezoneControl\n128 3988 3987 Forget(Popover)\n129 3989 3988 PopoverRoot\n130 3990 3989 FloatingTree\n131 3991 3990 FloatingTreeContext.Provider\n132 3992 3991 PopoverRootComponent\n133 3993 3992 PopoverRootContext.Provider\n134 3994 3993 Forget(PopoverTrigger)\n135 3995 3994 PopoverTrigger\n136 3996 3995 Fragment key=\"base-ui-_R_v38ud5red9etb_\"\n137 3997 3996 Forget(Button)\n138 3998 3997 button\n139 3999 3998 Clock\n140 4000 3999 svg\n141 4001 4000 path key=\"svg-0\"\n141 4002 4000 path key=\"svg-1\"\n139 4003 3998 span\n139 4004 3998 Forget(Badge)\n140 4005 4004 span\n134 4006 3993 Forget(PopoverContent)\n135 4007 4006 PopoverPortal\n126 4008 3985 Forget(TimeClockPopover)\n127 4009 4008 Forget(TimeClockLoadingButton)\n128 4010 4009 Forget(Button)\n129 4011 4010 button\n130 4012 4011 Loader2\n131 4013 4012 svg\n132 4014 4013 path key=\"svg-0\"\n130 4015 4011 span\n127 4121 4008 div\n128 4122 4121 Forget(Popover)\n129 4123 4122 PopoverRoot\n130 4124 4123 FloatingTree\n131 4125 4124 FloatingTreeContext.Provider\n132 4126 4125 PopoverRootComponent\n133 4127 4126 PopoverRootContext.Provider\n134 4128 4127 Forget(PopoverTrigger)\n135 4129 4128 PopoverTrigger\n136 4130 4129 Fragment key=\"base-ui-_r_r_\"\n137 4131 4130 Forget(Button)\n138 4132 4131 button\n139 4133 4132 Forget(TimeClockTriggerContent)\n140 4134 4133 PlayerPlay\n141 4135 4134 svg\n142 4136 4135 path key=\"svg-0\"\n140 4137 4133 span\n134 4138 4127 Forget(PopoverContent)\n135 4139 4138 PopoverPortal\n126 4016 3985 div\n127 4017 4016 Forget(HeaderRefreshButton)\n128 4018 4017 Forget(Tooltip)\n129 4019 4018 TooltipRoot\n130 4020 4019 TooltipRootContext.Provider\n131 4021 4020 Forget(TooltipTrigger)\n132 4022 4021 TooltipTrigger\n133 4023 4022 Forget(Button)\n134 4024 4023 button\n135 4025 4024 span\n136 4026 4025 Reload\n137 4027 4026 svg\n138 4028 4027 path key=\"svg-0\"\n138 4029 4027 path key=\"svg-1\"\n131 4030 4020 Forget(TooltipContent)\n132 4031 4030 TooltipPortal\n126 4032 3985 div\n127 4033 4032 Forget(ThemeToggle)\n128 4034 4033 Forget(Button)\n129 4035 4034 button\n130 4036 4035 Sun\n131 4037 4036 svg\n132 4038 4037 path key=\"svg-0\"\n132 4039 4037 path key=\"svg-1\"\n128 4095 4033 Forget(DropdownMenu)\n129 4096 4095 MenuRoot\n130 4097 4096 MenuRootInternal\n131 4098 4097 FloatingTree\n132 4099 4098 FloatingTreeContext.Provider\n133 4100 4099 MenuRootContext.Provider\n134 4101 4100 Forget(DropdownMenuTrigger)\n135 4102 4101 MenuTrigger\n136 4103 4102 Fragment key=\"base-ui-_r_o_\"\n137 4104 4103 Forget(Button)\n138 4105 4104 button\n139 4106 4105 Sun\n140 4107 4106 svg\n141 4108 4107 path key=\"svg-0\"\n141 4109 4107 path key=\"svg-1\"\n139 4110 4105 span\n134 4111 4100 Forget(DropdownMenuContent)\n135 4112 4111 MenuPortal\n126 4040 3985 Forget(NotificationBell)\n127 4041 4040 Forget(NotificationPopover)\n128 4042 4041 div\n129 4043 4042 Forget(Sheet)\n130 4044 4043 Context.Provider\n131 4045 4044 DialogRoot\n132 4046 4045 DialogRootContext.Provider\n133 4047 4046 Forget(SheetTrigger)\n134 4048 4047 DialogTrigger\n135 4049 4048 Forget(Button)\n136 4050 4049 button\n137 4051 4050 Bell\n138 4052 4051 svg\n139 4053 4052 path key=\"svg-0\"\n139 4054 4052 path key=\"svg-1\"\n133 4055 4046 Forget(SheetContent)\n134 4056 4055 Forget(SheetPortal)\n135 4057 4056 DialogPortal\n128 4058 4041 div\n129 4059 4058 Forget(Popover)\n130 4060 4059 PopoverRoot\n131 4061 4060 FloatingTree\n132 4062 4061 FloatingTreeContext.Provider\n133 4063 4062 PopoverRootComponent\n134 4064 4063 PopoverRootContext.Provider\n135 4065 4064 Forget(PopoverTrigger)\n136 4066 4065 PopoverTrigger\n137 4067 4066 Fragment key=\"base-ui-_R_vb8ud5red9etb_\"\n138 4068 4067 Forget(Button)\n139 4069 4068 button\n140 4070 4069 Bell\n141 4071 4070 svg\n142 4072 4071 path key=\"svg-0\"\n142 4073 4071 path key=\"svg-1\"\n135 4074 4064 Forget(PopoverContent)\n136 4075 4074 PopoverPortal\n126 4076 3985 Forget(Popover)\n127 4077 4076 PopoverRoot\n128 4078 4077 FloatingTree\n129 4079 4078 FloatingTreeContext.Provider\n130 4080 4079 PopoverRootComponent\n131 4081 4080 PopoverRootContext.Provider\n132 4082 4081 Forget(PopoverTrigger)\n133 4083 4082 PopoverTrigger\n134 4084 4083 Fragment key=\"base-ui-_R_7t8ud5red9etb_\"\n135 4085 4084 Forget(Button)\n136 4086 4085 button\n137 4087 4086 Dots\n138 4088 4087 svg\n139 4089 4088 path key=\"svg-0\"\n139 4090 4088 path key=\"svg-1\"\n139 4091 4088 path key=\"svg-2\"\n137 4092 4086 span\n132 4093 4081 Forget(PopoverContent)\n133 4094 4093 PopoverPortal\n121 3022 3020 Forget(OfflineBanner)\n122 3438 3022 div\n123 3439 3438 div\n124 3440 3439 div\n125 3441 3440 Refresh\n126 3442 3441 svg\n127 3443 3442 path key=\"svg-0\"\n127 3444 3442 path key=\"svg-1\"\n125 3445 3440 span\n122 4113 3022 div\n123 4114 4113 div\n124 4115 4114 div\n125 4116 4115 Refresh\n126 4117 4116 svg\n127 4118 4117 path key=\"svg-0\"\n127 4119 4117 path key=\"svg-1\"\n125 4120 4115 span\n121 3023 3020 Suspense\n121 3024 3020 Forget(OrganizationDeletionBanner)\n121 3025 3020 PositionConsentDialogHost\n122 3026 3025 Forget(Dialog)\n123 3027 3026 Context.Provider\n124 3028 3027 DialogRoot\n125 3029 3028 DialogRootContext.Provider\n126 3030 3029 Forget(DialogContent)\n127 3031 3030 Forget(DialogPortal)\n128 3032 3031 DialogPortal\n121 3033 3020 div\n122 3034 3033 OuterLayoutRouter\n123 3035 3034 Activity key=\"team\"\n124 3048 3035 SegmentStateProvider key=\"team\"\n125 3049 3048 Context.Provider key=\"0\"\n126 3050 3049 TemplateContext.Provider key=\"team\"\n127 3051 3050 RenderFromTemplateContext\n128 3052 3051 ScrollHandler\n129 3053 3052 InnerScrollHandler\n130 3054 3053 ErrorBoundary\n131 3055 3054 ErrorBoundaryHandler\n132 3056 3055 LoadingBoundary\n133 3057 3056 HTTPAccessFallbackBoundary\n134 3058 3057 HTTPAccessFallbackErrorBoundary\n135 3059 3058 RedirectBoundary\n136 3060 3059 RedirectErrorBoundary\n137 3061 3060 InnerLayoutRouter\n138 3062 3061 LayoutRouterContext.Provider\n139 3063 3062 NavigationPromisesContext.Provider\n140 3064 3063 SegmentViewNode key=\"layout\"\n141 3065 3064 SegmentTrieNode key=\"layout\"\n141 3066 3064 Fragment key=\"c\"\n142 3067 3066 Prerender(FeatureLayout)\n143 3068 3067 Prerender(RouteTranslationBoundary)\n144 3069 3068 Suspense\n145 3076 3069 Prerender(Server(RouteCatalog))\n146 3077 3076 Forget(FeatureTranslationProvider)\n147 3078 3077 Context.Provider\n148 3079 3078 TolgeeProvider\n149 3080 3079 Context.Provider\n150 3081 3080 OuterLayoutRouter\n151 3082 3081 Activity key=\"__PAGE__\"\n152 3083 3082 SegmentStateProvider key=\"__PAGE__\"\n153 3084 3083 Context.Provider key=\"0\"\n154 3085 3084 TemplateContext.Provider key=\"__PAGE__\"\n155 3086 3085 RenderFromTemplateContext\n156 3087 3086 ScrollHandler\n157 3088 3087 InnerScrollHandler\n158 3089 3088 ErrorBoundary\n159 3090 3089 LoadingBoundary\n160 3091 3090 HTTPAccessFallbackBoundary\n161 3092 3091 RedirectBoundary\n162 3093 3092 RedirectErrorBoundary\n163 3094 3093 InnerLayoutRouter\n164 3095 3094 LayoutRouterContext.Provider\n165 3096 3095 Fragment key=\"c\"\n166 3097 3096 SegmentViewNode key=\"c-page\"\n167 3098 3097 SegmentTrieNode key=\"page\"\n167 3099 3097 Prerender(TeamPage)\n168 3100 3099 Suspense\n169 3101 3100 Forget(TeamDirectoryRecords) key=\"perf-small-6160ea8e831f:perf-small-1-6160ea8e831f:777fe4c3-3529-4531-951d-125a0a59fb90\"\n170 3102 3101 div\n171 3103 3102 Forget(PageHeader)\n172 3104 3103 div\n173 3105 3104 div\n174 3106 3105 div\n174 3107 3105 h1\n174 3108 3105 div\n171 3109 3102 Forget(TeamMembersList)\n172 3110 3109 div\n173 3111 3110 Forget(TeamMembersToolbar)\n174 3112 3111 div\n175 3113 3112 div\n176 3114 3113 Search\n177 3115 3114 svg\n178 3116 3115 path key=\"svg-0\"\n178 3117 3115 path key=\"svg-1\"\n176 3118 3113 Forget(Input)\n177 3119 3118 input\n175 3120 3112 Forget(ShowFormerEmployeesSwitch)\n176 3121 3120 div\n177 3122 3121 Forget(Switch)\n178 3123 3122 SwitchRoot\n179 3124 3123 SwitchRootContext.Provider\n180 3125 3124 button\n181 3126 3125 SwitchThumb\n182 3127 3126 span\n180 3128 3124 input\n177 3129 3121 Forget(Label)\n178 3130 3129 label\n175 3131 3112 Forget(ToggleGroup)\n176 3132 3131 ToggleGroup\n177 3133 3132 ToggleGroupContext.Provider\n178 3134 3133 CompositeRoot\n179 3135 3134 CompositeRootContext.Provider\n180 3136 3135 CompositeList\n181 3137 3136 CompositeListContext.Provider\n182 3138 3137 div\n183 3139 3138 Context.Provider\n184 3140 3139 Forget(ToggleGroupItem)\n185 3141 3140 Toggle\n186 3142 3141 CompositeItem\n187 3143 3142 button\n188 3144 3143 LayoutGrid\n189 3145 3144 svg\n190 3146 3145 path key=\"svg-0\"\n190 3147 3145 path key=\"svg-1\"\n190 3148 3145 path key=\"svg-2\"\n190 3149 3145 path key=\"svg-3\"\n184 3150 3139 Forget(ToggleGroupItem)\n185 3151 3150 Toggle\n186 3152 3151 CompositeItem\n187 3153 3152 button\n188 3154 3153 LayoutList\n189 3155 3154 svg\n190 3156 3155 path key=\"svg-0\"\n190 3157 3155 path key=\"svg-1\"\n173 3158 3110 Forget(TeamMemberCards)\n174 3159 3158 div\n175 3160 3159 Forget(Card) key=\"777fe4c3-3529-4531-951d-125a0a59fb90\"\n176 3161 3160 div\n177 3162 3161 Forget(CardContent)\n178 3163 3162 div\n179 3164 3163 div\n180 3165 3164 Forget(UserAvatar)\n181 3166 3165 span\n182 3167 3166 Forget(Avatar)\n183 3168 3167 AvatarRoot\n184 3169 3168 AvatarRootContext.Provider\n185 3170 3169 span\n186 3171 3170 Forget(AvatarImage)\n187 3172 3171 AvatarImage\n188 3416 3172 img\n186 3173 3170 Forget(AvatarFallback)\n187 3174 3173 AvatarFallback\n188 3175 3174 span\n189 3176 3175 Loader2\n190 3177 3176 svg\n191 3178 3177 path key=\"svg-0\"\n180 3179 3164 div\n181 3180 3179 div\n182 3181 3180 h2\n183 3182 3181 ForwardRef(Link)\n184 3183 3182 ForwardRef(BaseLink)\n185 3184 3183 LinkComponent\n186 3185 3184 Context.Provider\n187 3186 3185 a\n182 3187 3180 Forget(YouBadge)\n183 3188 3187 Forget(Badge)\n184 3189 3188 span\n181 3190 3179 p\n181 3191 3179 Forget(EmployeeActivityText)\n179 3192 3163 div\n180 3193 3192 div\n181 3194 3193 Forget(Badge)\n182 3195 3194 span\n181 3196 3193 Forget(TimeBalanceBadge)\n182 3197 3196 Forget(BalanceAdjustmentHistoryDialog)\n183 3198 3197 Forget(Dialog)\n184 3199 3198 Context.Provider\n185 3200 3199 DialogRoot\n186 3201 3200 DialogRootContext.Provider\n187 3202 3201 Forget(DialogTrigger)\n188 3203 3202 DialogTrigger\n189 3204 3203 Forget(Badge)\n190 3205 3204 Slot\n191 3206 3205 button\n187 3207 3201 Forget(DialogContent)\n188 3208 3207 Forget(DialogPortal)\n189 3209 3208 DialogPortal\n181 3210 3193 Forget(Badge)\n182 3211 3210 span\n181 3212 3193 Forget(Badge)\n182 3213 3212 span\n180 3214 3192 ArrowRight\n181 3215 3214 svg\n182 3216 3215 path key=\"svg-0\"\n182 3217 3215 path key=\"svg-1\"\n182 3218 3215 path key=\"svg-2\"\n175 3219 3159 Forget(Card) key=\"d76616c1-45c3-4aba-b381-88b27e61b12c\"\n176 3220 3219 div\n177 3221 3220 Forget(CardContent)\n178 3222 3221 div\n179 3223 3222 div\n180 3224 3223 Forget(UserAvatar)\n181 3225 3224 span\n182 3226 3225 Forget(Avatar)\n183 3227 3226 AvatarRoot\n184 3228 3227 AvatarRootContext.Provider\n185 3229 3228 span\n186 3230 3229 Forget(AvatarImage)\n187 3231 3230 AvatarImage\n188 3417 3231 img\n186 3232 3229 Forget(AvatarFallback)\n187 3233 3232 AvatarFallback\n188 3234 3233 span\n189 3235 3234 Loader2\n190 3236 3235 svg\n191 3237 3236 path key=\"svg-0\"\n182 3446 3225 output\n180 3238 3223 div\n181 3239 3238 div\n182 3240 3239 h2\n183 3241 3240 ForwardRef(Link)\n184 3242 3241 ForwardRef(BaseLink)\n185 3243 3242 LinkComponent\n186 3244 3243 Context.Provider\n187 3245 3244 a\n182 3246 3239 UserCheck\n183 3247 3246 svg\n184 3248 3247 title key=\"svg-title\"\n184 3249 3247 path key=\"svg-0\"\n184 3250 3247 path key=\"svg-1\"\n184 3251 3247 path key=\"svg-2\"\n182 3252 3239 Forget(YouBadge)\n181 3253 3238 p\n181 3254 3238 Forget(EmployeeActivityText)\n182 3447 3254 p\n179 3255 3222 div\n180 3256 3255 div\n181 3257 3256 Forget(Badge)\n182 3258 3257 span\n181 3259 3256 Forget(TimeBalanceBadge)\n182 3260 3259 Forget(BalanceAdjustmentHistoryDialog)\n183 3261 3260 Forget(Dialog)\n184 3262 3261 Context.Provider\n185 3263 3262 DialogRoot\n186 3264 3263 DialogRootContext.Provider\n187 3265 3264 Forget(DialogTrigger)\n188 3266 3265 DialogTrigger\n189 3267 3266 Forget(Badge)\n190 3268 3267 Slot\n191 3269 3268 button\n187 3270 3264 Forget(DialogContent)\n188 3271 3270 Forget(DialogPortal)\n189 3272 3271 DialogPortal\n181 3273 3256 Forget(Badge)\n182 3274 3273 span\n181 3275 3256 Forget(Badge)\n182 3276 3275 span\n180 3277 3255 ArrowRight\n181 3278 3277 svg\n182 3279 3278 path key=\"svg-0\"\n182 3280 3278 path key=\"svg-1\"\n182 3281 3278 path key=\"svg-2\"\n175 3282 3159 Forget(Card) key=\"1c417ab0-b957-46fb-bddb-b8232633ae86\"\n176 3283 3282 div\n177 3284 3283 Forget(CardContent)\n178 3285 3284 div\n179 3286 3285 div\n180 3287 3286 Forget(UserAvatar)\n181 3288 3287 span\n182 3289 3288 Forget(Avatar)\n183 3290 3289 AvatarRoot\n184 3291 3290 AvatarRootContext.Provider\n185 3292 3291 span\n186 3293 3292 Forget(AvatarImage)\n187 3294 3293 AvatarImage\n188 3418 3294 img\n186 3295 3292 Forget(AvatarFallback)\n187 3296 3295 AvatarFallback\n188 3297 3296 span\n189 3298 3297 Loader2\n190 3299 3298 svg\n191 3300 3299 path key=\"svg-0\"\n182 3448 3288 output\n180 3301 3286 div\n181 3302 3301 div\n182 3303 3302 h2\n183 3304 3303 ForwardRef(Link)\n184 3305 3304 ForwardRef(BaseLink)\n185 3306 3305 LinkComponent\n186 3307 3306 Context.Provider\n187 3308 3307 a\n182 3309 3302 UserCheck\n183 3310 3309 svg\n184 3311 3310 title key=\"svg-title\"\n184 3312 3310 path key=\"svg-0\"\n184 3313 3310 path key=\"svg-1\"\n184 3314 3310 path key=\"svg-2\"\n182 3315 3302 Forget(YouBadge)\n181 3316 3301 p\n181 3317 3301 Forget(EmployeeActivityText)\n182 3449 3317 p\n179 3318 3285 div\n180 3319 3318 div\n181 3320 3319 Forget(Badge)\n182 3321 3320 span\n181 3322 3319 Forget(TimeBalanceBadge)\n182 3323 3322 Forget(BalanceAdjustmentHistoryDialog)\n183 3324 3323 Forget(Dialog)\n184 3325 3324 Context.Provider\n185 3326 3325 DialogRoot\n186 3327 3326 DialogRootContext.Provider\n187 3328 3327 Forget(DialogTrigger)\n188 3329 3328 DialogTrigger\n189 3330 3329 Forget(Badge)\n190 3331 3330 Slot\n191 3332 3331 button\n187 3333 3327 Forget(DialogContent)\n188 3334 3333 Forget(DialogPortal)\n189 3335 3334 DialogPortal\n181 3336 3319 Forget(Badge)\n182 3337 3336 span\n181 3338 3319 Forget(Badge)\n182 3339 3338 span\n180 3340 3318 ArrowRight\n181 3341 3340 svg\n182 3342 3341 path key=\"svg-0\"\n182 3343 3341 path key=\"svg-1\"\n182 3344 3341 path key=\"svg-2\"\n175 3345 3159 Forget(Card) key=\"8297ad9a-f0bd-4e16-98f6-678d3578be0b\"\n176 3346 3345 div\n177 3347 3346 Forget(CardContent)\n178 3348 3347 div\n179 3349 3348 div\n180 3350 3349 Forget(UserAvatar)\n181 3351 3350 span\n182 3352 3351 Forget(Avatar)\n183 3353 3352 AvatarRoot\n184 3354 3353 AvatarRootContext.Provider\n185 3355 3354 span\n186 3356 3355 Forget(AvatarImage)\n187 3357 3356 AvatarImage\n188 3419 3357 img\n186 3358 3355 Forget(AvatarFallback)\n187 3359 3358 AvatarFallback\n188 3360 3359 span\n189 3361 3360 Loader2\n190 3362 3361 svg\n191 3363 3362 path key=\"svg-0\"\n182 3450 3351 output\n180 3364 3349 div\n181 3365 3364 div\n182 3366 3365 h2\n183 3367 3366 ForwardRef(Link)\n184 3368 3367 ForwardRef(BaseLink)\n185 3369 3368 LinkComponent\n186 3370 3369 Context.Provider\n187 3371 3370 a\n182 3372 3365 UserCheck\n183 3373 3372 svg\n184 3374 3373 title key=\"svg-title\"\n184 3375 3373 path key=\"svg-0\"\n184 3376 3373 path key=\"svg-1\"\n184 3377 3373 path key=\"svg-2\"\n182 3378 3365 Forget(YouBadge)\n181 3379 3364 p\n181 3380 3364 Forget(EmployeeActivityText)\n182 3451 3380 p\n179 3381 3348 div\n180 3382 3381 div\n181 3383 3382 Forget(Badge)\n182 3384 3383 span\n181 3385 3382 Forget(TimeBalanceBadge)\n182 3386 3385 Forget(BalanceAdjustmentHistoryDialog)\n183 3387 3386 Forget(Dialog)\n184 3388 3387 Context.Provider\n185 3389 3388 DialogRoot\n186 3390 3389 DialogRootContext.Provider\n187 3391 3390 Forget(DialogTrigger)\n188 3392 3391 DialogTrigger\n189 3393 3392 Forget(Badge)\n190 3394 3393 Slot\n191 3395 3394 button\n187 3396 3390 Forget(DialogContent)\n188 3397 3396 Forget(DialogPortal)\n189 3398 3397 DialogPortal\n181 3399 3382 Forget(Badge)\n182 3400 3399 span\n181 3401 3382 Forget(Badge)\n182 3402 3401 span\n180 3403 3381 ArrowRight\n181 3404 3403 svg\n182 3405 3404 path key=\"svg-0\"\n182 3406 3404 path key=\"svg-1\"\n182 3407 3404 path key=\"svg-2\"\n173 4663 3110 Forget(TeamMembersTable)\n174 4664 4663 div\n175 4665 4664 section\n176 4666 4665 Forget(Table)\n177 4667 4666 Context.Provider\n178 4668 4667 div\n179 4669 4668 table\n180 4670 4669 Forget(TableHeader)\n181 4671 4670 thead\n182 4672 4671 Forget(TableRow) key=\"0\"\n183 4673 4672 tr\n184 4674 4673 Forget(TableHead) key=\"user_name\"\n185 4675 4674 th\n184 4676 4673 Forget(TableHead) key=\"position\"\n185 4677 4676 th\n184 4678 4673 Forget(TableHead) key=\"team_name\"\n185 4679 4678 th\n184 4680 4673 Forget(TableHead) key=\"timeBalance\"\n185 4681 4680 th\n186 4682 4681 t9\n187 4683 4682 Forget(Button)\n188 4684 4683 button\n189 4685 4684 span\n189 4686 4684 ArrowsSort\n190 4687 4686 svg\n191 4688 4687 path key=\"svg-0\"\n191 4689 4687 path key=\"svg-1\"\n184 4690 4673 Forget(TableHead) key=\"role\"\n185 4691 4690 th\n184 4692 4673 Forget(TableHead) key=\"isFormer\"\n185 4693 4692 th\n180 4694 4669 Forget(TableBody)\n181 4695 4694 tbody\n182 4696 4695 Forget(TableRow) key=\"0\"\n183 4697 4696 tr\n184 4698 4697 Forget(TableCell) key=\"0_user_name\"\n185 4699 4698 td\n186 4700 4699 div\n187 4701 4700 t3\n188 4702 4701 ForwardRef(Link)\n189 4703 4702 ForwardRef(BaseLink)\n190 4704 4703 LinkComponent\n191 4705 4704 Context.Provider\n192 4706 4705 a\n193 4707 4706 Forget(UserAvatar)\n194 4708 4707 span\n195 4709 4708 Forget(Avatar)\n196 4710 4709 AvatarRoot\n197 4711 4710 AvatarRootContext.Provider\n198 4712 4711 span\n199 4713 4712 Forget(AvatarImage)\n200 4714 4713 AvatarImage\n201 5002 4714 img\n199 4715 4712 Forget(AvatarFallback)\n200 4716 4715 AvatarFallback\n201 4717 4716 span\n202 4718 4717 Loader2\n203 4719 4718 svg\n204 4720 4719 path key=\"svg-0\"\n193 4721 4706 div\n194 4722 4721 div\n195 4723 4722 Forget(YouBadge)\n196 4724 4723 Forget(Badge)\n197 4725 4724 span\n194 4726 4721 div\n194 4727 4721 Forget(EmployeeActivityText)\n184 4728 4697 Forget(TableCell) key=\"0_position\"\n185 4729 4728 td\n186 4730 4729 div\n187 4731 4730 _temp\n184 4732 4697 Forget(TableCell) key=\"0_team_name\"\n185 4733 4732 td\n186 4734 4733 div\n187 4735 4734 _temp2\n188 4736 4735 Forget(Badge)\n189 4737 4736 span\n184 4738 4697 Forget(TableCell) key=\"0_timeBalance\"\n185 4739 4738 td\n186 4740 4739 div\n187 4741 4740 t10\n188 4742 4741 Forget(TimeBalanceBadge)\n189 4743 4742 Forget(BalanceAdjustmentHistoryDialog)\n190 4744 4743 Forget(Dialog)\n191 4745 4744 Context.Provider\n192 4746 4745 DialogRoot\n193 4747 4746 DialogRootContext.Provider\n194 4748 4747 Forget(DialogTrigger)\n195 4749 4748 DialogTrigger\n196 4750 4749 Forget(Badge)\n197 4751 4750 Slot\n198 4752 4751 button\n194 4753 4747 Forget(DialogContent)\n195 4754 4753 Forget(DialogPortal)\n196 4755 4754 DialogPortal\n184 4756 4697 Forget(TableCell) key=\"0_role\"\n185 4757 4756 td\n186 4758 4757 div\n187 4759 4758 _temp4\n188 4760 4759 Forget(Badge)\n189 4761 4760 span\n184 4762 4697 Forget(TableCell) key=\"0_isFormer\"\n185 4763 4762 td\n186 4764 4763 div\n187 4765 4764 t15\n188 4766 4765 Forget(Badge)\n189 4767 4766 span\n182 4768 4695 Forget(TableRow) key=\"1\"\n183 4769 4768 tr\n184 4770 4769 Forget(TableCell) key=\"1_user_name\"\n185 4771 4770 td\n186 4772 4771 div\n187 4773 4772 t3\n188 4774 4773 ForwardRef(Link)\n189 4775 4774 ForwardRef(BaseLink)\n190 4776 4775 LinkComponent\n191 4777 4776 Context.Provider\n192 4778 4777 a\n193 4779 4778 Forget(UserAvatar)\n194 4780 4779 span\n195 4781 4780 Forget(Avatar)\n196 4782 4781 AvatarRoot\n197 4783 4782 AvatarRootContext.Provider\n198 4784 4783 span\n199 4785 4784 Forget(AvatarImage)\n200 4786 4785 AvatarImage\n201 5003 4786 img\n199 4787 4784 Forget(AvatarFallback)\n200 4788 4787 AvatarFallback\n201 4789 4788 span\n202 4790 4789 Loader2\n203 4791 4790 svg\n204 4792 4791 path key=\"svg-0\"\n195 4793 4780 output\n193 4794 4778 div\n194 4795 4794 div\n195 4796 4795 UserCheck\n196 4797 4796 svg\n197 4798 4797 title key=\"svg-title\"\n197 4799 4797 path key=\"svg-0\"\n197 4800 4797 path key=\"svg-1\"\n197 4801 4797 path key=\"svg-2\"\n195 4802 4795 Forget(YouBadge)\n194 4803 4794 div\n194 4804 4794 Forget(EmployeeActivityText)\n195 4805 4804 p\n184 4806 4769 Forget(TableCell) key=\"1_position\"\n185 4807 4806 td\n186 4808 4807 div\n187 4809 4808 _temp\n184 4810 4769 Forget(TableCell) key=\"1_team_name\"\n185 4811 4810 td\n186 4812 4811 div\n187 4813 4812 _temp2\n188 4814 4813 Forget(Badge)\n189 4815 4814 span\n184 4816 4769 Forget(TableCell) key=\"1_timeBalance\"\n185 4817 4816 td\n186 4818 4817 div\n187 4819 4818 t10\n188 4820 4819 Forget(TimeBalanceBadge)\n189 4821 4820 Forget(BalanceAdjustmentHistoryDialog)\n190 4822 4821 Forget(Dialog)\n191 4823 4822 Context.Provider\n192 4824 4823 DialogRoot\n193 4825 4824 DialogRootContext.Provider\n194 4826 4825 Forget(DialogTrigger)\n195 4827 4826 DialogTrigger\n196 4828 4827 Forget(Badge)\n197 4829 4828 Slot\n198 4830 4829 button\n194 4831 4825 Forget(DialogContent)\n195 4832 4831 Forget(DialogPortal)\n196 4833 4832 DialogPortal\n184 4834 4769 Forget(TableCell) key=\"1_role\"\n185 4835 4834 td\n186 4836 4835 div\n187 4837 4836 _temp4\n188 4838 4837 Forget(Badge)\n189 4839 4838 span\n184 4840 4769 Forget(TableCell) key=\"1_isFormer\"\n185 4841 4840 td\n186 4842 4841 div\n187 4843 4842 t15\n188 4844 4843 Forget(Badge)\n189 4845 4844 span\n182 4846 4695 Forget(TableRow) key=\"2\"\n183 4847 4846 tr\n184 4848 4847 Forget(TableCell) key=\"2_user_name\"\n185 4849 4848 td\n186 4850 4849 div\n187 4851 4850 t3\n188 4852 4851 ForwardRef(Link)\n189 4853 4852 ForwardRef(BaseLink)\n190 4854 4853 LinkComponent\n191 4855 4854 Context.Provider\n192 4856 4855 a\n193 4857 4856 Forget(UserAvatar)\n194 4858 4857 span\n195 4859 4858 Forget(Avatar)\n196 4860 4859 AvatarRoot\n197 4861 4860 AvatarRootContext.Provider\n198 4862 4861 span\n199 4863 4862 Forget(AvatarImage)\n200 4864 4863 AvatarImage\n201 5009 4864 img\n199 4865 4862 Forget(AvatarFallback)\n200 4866 4865 AvatarFallback\n201 4867 4866 span\n202 4868 4867 Loader2\n203 4869 4868 svg\n204 4870 4869 path key=\"svg-0\"\n195 4871 4858 output\n193 4872 4856 div\n194 4873 4872 div\n195 4874 4873 UserCheck\n196 4875 4874 svg\n197 4876 4875 title key=\"svg-title\"\n197 4877 4875 path key=\"svg-0\"\n197 4878 4875 path key=\"svg-1\"\n197 4879 4875 path key=\"svg-2\"\n195 4880 4873 Forget(YouBadge)\n194 4881 4872 div\n194 4882 4872 Forget(EmployeeActivityText)\n195 4883 4882 p\n184 4884 4847 Forget(TableCell) key=\"2_position\"\n185 4885 4884 td\n186 4886 4885 div\n187 4887 4886 _temp\n184 4888 4847 Forget(TableCell) key=\"2_team_name\"\n185 4889 4888 td\n186 4890 4889 div\n187 4891 4890 _temp2\n188 4892 4891 Forget(Badge)\n189 4893 4892 span\n184 4894 4847 Forget(TableCell) key=\"2_timeBalance\"\n185 4895 4894 td\n186 4896 4895 div\n187 4897 4896 t10\n188 4898 4897 Forget(TimeBalanceBadge)\n189 4899 4898 Forget(BalanceAdjustmentHistoryDialog)\n190 4900 4899 Forget(Dialog)\n191 4901 4900 Context.Provider\n192 4902 4901 DialogRoot\n193 4903 4902 DialogRootContext.Provider\n194 4904 4903 Forget(DialogTrigger)\n195 4905 4904 DialogTrigger\n196 4906 4905 Forget(Badge)\n197 4907 4906 Slot\n198 4908 4907 button\n194 4909 4903 Forget(DialogContent)\n195 4910 4909 Forget(DialogPortal)\n196 4911 4910 DialogPortal\n184 4912 4847 Forget(TableCell) key=\"2_role\"\n185 4913 4912 td\n186 4914 4913 div\n187 4915 4914 _temp4\n188 4916 4915 Forget(Badge)\n189 4917 4916 span\n184 4918 4847 Forget(TableCell) key=\"2_isFormer\"\n185 4919 4918 td\n186 4920 4919 div\n187 4921 4920 t15\n188 4922 4921 Forget(Badge)\n189 4923 4922 span\n182 4924 4695 Forget(TableRow) key=\"3\"\n183 4925 4924 tr\n184 4926 4925 Forget(TableCell) key=\"3_user_name\"\n185 4927 4926 td\n186 4928 4927 div\n187 4929 4928 t3\n188 4930 4929 ForwardRef(Link)\n189 4931 4930 ForwardRef(BaseLink)\n190 4932 4931 LinkComponent\n191 4933 4932 Context.Provider\n192 4934 4933 a\n193 4935 4934 Forget(UserAvatar)\n194 4936 4935 span\n195 4937 4936 Forget(Avatar)\n196 4938 4937 AvatarRoot\n197 4939 4938 AvatarRootContext.Provider\n198 4940 4939 span\n199 4941 4940 Forget(AvatarImage)\n200 4942 4941 AvatarImage\n201 5010 4942 img\n199 4943 4940 Forget(AvatarFallback)\n200 4944 4943 AvatarFallback\n201 4945 4944 span\n202 4946 4945 Loader2\n203 4947 4946 svg\n204 4948 4947 path key=\"svg-0\"\n195 4949 4936 output\n193 4950 4934 div\n194 4951 4950 div\n195 4952 4951 UserCheck\n196 4953 4952 svg\n197 4954 4953 title key=\"svg-title\"\n197 4955 4953 path key=\"svg-0\"\n197 4956 4953 path key=\"svg-1\"\n197 4957 4953 path key=\"svg-2\"\n195 4958 4951 Forget(YouBadge)\n194 4959 4950 div\n194 4960 4950 Forget(EmployeeActivityText)\n195 4961 4960 p\n184 4962 4925 Forget(TableCell) key=\"3_position\"\n185 4963 4962 td\n186 4964 4963 div\n187 4965 4964 _temp\n184 4966 4925 Forget(TableCell) key=\"3_team_name\"\n185 4967 4966 td\n186 4968 4967 div\n187 4969 4968 _temp2\n188 4970 4969 Forget(Badge)\n189 4971 4970 span\n184 4972 4925 Forget(TableCell) key=\"3_timeBalance\"\n185 4973 4972 td\n186 4974 4973 div\n187 4975 4974 t10\n188 4976 4975 Forget(TimeBalanceBadge)\n189 4977 4976 Forget(BalanceAdjustmentHistoryDialog)\n190 4978 4977 Forget(Dialog)\n191 4979 4978 Context.Provider\n192 4980 4979 DialogRoot\n193 4981 4980 DialogRootContext.Provider\n194 4982 4981 Forget(DialogTrigger)\n195 4983 4982 DialogTrigger\n196 4984 4983 Forget(Badge)\n197 4985 4984 Slot\n198 4986 4985 button\n194 4987 4981 Forget(DialogContent)\n195 4988 4987 Forget(DialogPortal)\n196 4989 4988 DialogPortal\n184 4990 4925 Forget(TableCell) key=\"3_role\"\n185 4991 4990 td\n186 4992 4991 div\n187 4993 4992 _temp4\n188 4994 4993 Forget(Badge)\n189 4995 4994 span\n184 4996 4925 Forget(TableCell) key=\"3_isFormer\"\n185 4997 4996 td\n186 4998 4997 div\n187 4999 4998 t15\n188 5000 4999 Forget(Badge)\n189 5001 5000 span\n173 5011 3110 Forget(TeamMemberCards)\n174 5012 5011 div\n175 5013 5012 Forget(Card) key=\"777fe4c3-3529-4531-951d-125a0a59fb90\"\n176 5014 5013 div\n177 5015 5014 Forget(CardContent)\n178 5016 5015 div\n179 5017 5016 div\n180 5018 5017 Forget(UserAvatar)\n181 5019 5018 span\n182 5020 5019 Forget(Avatar)\n183 5021 5020 AvatarRoot\n184 5022 5021 AvatarRootContext.Provider\n185 5023 5022 span\n186 5024 5023 Forget(AvatarImage)\n187 5025 5024 AvatarImage\n188 5267 5025 img\n186 5026 5023 Forget(AvatarFallback)\n187 5027 5026 AvatarFallback\n188 5028 5027 span\n189 5029 5028 Loader2\n190 5030 5029 svg\n191 5031 5030 path key=\"svg-0\"\n180 5032 5017 div\n181 5033 5032 div\n182 5034 5033 h2\n183 5035 5034 ForwardRef(Link)\n184 5036 5035 ForwardRef(BaseLink)\n185 5037 5036 LinkComponent\n186 5038 5037 Context.Provider\n187 5039 5038 a\n182 5040 5033 Forget(YouBadge)\n183 5041 5040 Forget(Badge)\n184 5042 5041 span\n181 5043 5032 p\n181 5044 5032 Forget(EmployeeActivityText)\n179 5045 5016 div\n180 5046 5045 div\n181 5047 5046 Forget(Badge)\n182 5048 5047 span\n181 5049 5046 Forget(TimeBalanceBadge)\n182 5050 5049 Forget(BalanceAdjustmentHistoryDialog)\n183 5051 5050 Forget(Dialog)\n184 5052 5051 Context.Provider\n185 5053 5052 DialogRoot\n186 5054 5053 DialogRootContext.Provider\n187 5055 5054 Forget(DialogTrigger)\n188 5056 5055 DialogTrigger\n189 5057 5056 Forget(Badge)\n190 5058 5057 Slot\n191 5059 5058 button\n187 5060 5054 Forget(DialogContent)\n188 5061 5060 Forget(DialogPortal)\n189 5062 5061 DialogPortal\n181 5063 5046 Forget(Badge)\n182 5064 5063 span\n181 5065 5046 Forget(Badge)\n182 5066 5065 span\n180 5067 5045 ArrowRight\n181 5068 5067 svg\n182 5069 5068 path key=\"svg-0\"\n182 5070 5068 path key=\"svg-1\"\n182 5071 5068 path key=\"svg-2\"\n175 5072 5012 Forget(Card) key=\"d76616c1-45c3-4aba-b381-88b27e61b12c\"\n176 5073 5072 div\n177 5074 5073 Forget(CardContent)\n178 5075 5074 div\n179 5076 5075 div\n180 5077 5076 Forget(UserAvatar)\n181 5078 5077 span\n182 5079 5078 Forget(Avatar)\n183 5080 5079 AvatarRoot\n184 5081 5080 AvatarRootContext.Provider\n185 5082 5081 span\n186 5083 5082 Forget(AvatarImage)\n187 5084 5083 AvatarImage\n188 5268 5084 img\n186 5085 5082 Forget(AvatarFallback)\n187 5086 5085 AvatarFallback\n188 5087 5086 span\n189 5088 5087 Loader2\n190 5089 5088 svg\n191 5090 5089 path key=\"svg-0\"\n182 5091 5078 output\n180 5092 5076 div\n181 5093 5092 div\n182 5094 5093 h2\n183 5095 5094 ForwardRef(Link)\n184 5096 5095 ForwardRef(BaseLink)\n185 5097 5096 LinkComponent\n186 5098 5097 Context.Provider\n187 5099 5098 a\n182 5100 5093 UserCheck\n183 5101 5100 svg\n184 5102 5101 title key=\"svg-title\"\n184 5103 5101 path key=\"svg-0\"\n184 5104 5101 path key=\"svg-1\"\n184 5105 5101 path key=\"svg-2\"\n182 5106 5093 Forget(YouBadge)\n181 5107 5092 p\n181 5108 5092 Forget(EmployeeActivityText)\n182 5109 5108 p\n179 5110 5075 div\n180 5111 5110 div\n181 5112 5111 Forget(Badge)\n182 5113 5112 span\n181 5114 5111 Forget(TimeBalanceBadge)\n182 5115 5114 Forget(BalanceAdjustmentHistoryDialog)\n183 5116 5115 Forget(Dialog)\n184 5117 5116 Context.Provider\n185 5118 5117 DialogRoot\n186 5119 5118 DialogRootContext.Provider\n187 5120 5119 Forget(DialogTrigger)\n188 5121 5120 DialogTrigger\n189 5122 5121 Forget(Badge)\n190 5123 5122 Slot\n191 5124 5123 button\n187 5125 5119 Forget(DialogContent)\n188 5126 5125 Forget(DialogPortal)\n189 5127 5126 DialogPortal\n181 5128 5111 Forget(Badge)\n182 5129 5128 span\n181 5130 5111 Forget(Badge)\n182 5131 5130 span\n180 5132 5110 ArrowRight\n181 5133 5132 svg\n182 5134 5133 path key=\"svg-0\"\n182 5135 5133 path key=\"svg-1\"\n182 5136 5133 path key=\"svg-2\"\n175 5137 5012 Forget(Card) key=\"1c417ab0-b957-46fb-bddb-b8232633ae86\"\n176 5138 5137 div\n177 5139 5138 Forget(CardContent)\n178 5140 5139 div\n179 5141 5140 div\n180 5142 5141 Forget(UserAvatar)\n181 5143 5142 span\n182 5144 5143 Forget(Avatar)\n183 5145 5144 AvatarRoot\n184 5146 5145 AvatarRootContext.Provider\n185 5147 5146 span\n186 5148 5147 Forget(AvatarImage)\n187 5149 5148 AvatarImage\n188 5269 5149 img\n186 5150 5147 Forget(AvatarFallback)\n187 5151 5150 AvatarFallback\n188 5152 5151 span\n189 5153 5152 Loader2\n190 5154 5153 svg\n191 5155 5154 path key=\"svg-0\"\n182 5156 5143 output\n180 5157 5141 div\n181 5158 5157 div\n182 5159 5158 h2\n183 5160 5159 ForwardRef(Link)\n184 5161 5160 ForwardRef(BaseLink)\n185 5162 5161 LinkComponent\n186 5163 5162 Context.Provider\n187 5164 5163 a\n182 5165 5158 UserCheck\n183 5166 5165 svg\n184 5167 5166 title key=\"svg-title\"\n184 5168 5166 path key=\"svg-0\"\n184 5169 5166 path key=\"svg-1\"\n184 5170 5166 path key=\"svg-2\"\n182 5171 5158 Forget(YouBadge)\n181 5172 5157 p\n181 5173 5157 Forget(EmployeeActivityText)\n182 5174 5173 p\n179 5175 5140 div\n180 5176 5175 div\n181 5177 5176 Forget(Badge)\n182 5178 5177 span\n181 5179 5176 Forget(TimeBalanceBadge)\n182 5180 5179 Forget(BalanceAdjustmentHistoryDialog)\n183 5181 5180 Forget(Dialog)\n184 5182 5181 Context.Provider\n185 5183 5182 DialogRoot\n186 5184 5183 DialogRootContext.Provider\n187 5185 5184 Forget(DialogTrigger)\n188 5186 5185 DialogTrigger\n189 5187 5186 Forget(Badge)\n190 5188 5187 Slot\n191 5189 5188 button\n187 5190 5184 Forget(DialogContent)\n188 5191 5190 Forget(DialogPortal)\n189 5192 5191 DialogPortal\n181 5193 5176 Forget(Badge)\n182 5194 5193 span\n181 5195 5176 Forget(Badge)\n182 5196 5195 span\n180 5197 5175 ArrowRight\n181 5198 5197 svg\n182 5199 5198 path key=\"svg-0\"\n182 5200 5198 path key=\"svg-1\"\n182 5201 5198 path key=\"svg-2\"\n175 5202 5012 Forget(Card) key=\"8297ad9a-f0bd-4e16-98f6-678d3578be0b\"\n176 5203 5202 div\n177 5204 5203 Forget(CardContent)\n178 5205 5204 div\n179 5206 5205 div\n180 5207 5206 Forget(UserAvatar)\n181 5208 5207 span\n182 5209 5208 Forget(Avatar)\n183 5210 5209 AvatarRoot\n184 5211 5210 AvatarRootContext.Provider\n185 5212 5211 span\n186 5213 5212 Forget(AvatarImage)\n187 5214 5213 AvatarImage\n188 5270 5214 img\n186 5215 5212 Forget(AvatarFallback)\n187 5216 5215 AvatarFallback\n188 5217 5216 span\n189 5218 5217 Loader2\n190 5219 5218 svg\n191 5220 5219 path key=\"svg-0\"\n182 5221 5208 output\n180 5222 5206 div\n181 5223 5222 div\n182 5224 5223 h2\n183 5225 5224 ForwardRef(Link)\n184 5226 5225 ForwardRef(BaseLink)\n185 5227 5226 LinkComponent\n186 5228 5227 Context.Provider\n187 5229 5228 a\n182 5230 5223 UserCheck\n183 5231 5230 svg\n184 5232 5231 title key=\"svg-title\"\n184 5233 5231 path key=\"svg-0\"\n184 5234 5231 path key=\"svg-1\"\n184 5235 5231 path key=\"svg-2\"\n182 5236 5223 Forget(YouBadge)\n181 5237 5222 p\n181 5238 5222 Forget(EmployeeActivityText)\n182 5239 5238 p\n179 5240 5205 div\n180 5241 5240 div\n181 5242 5241 Forget(Badge)\n182 5243 5242 span\n181 5244 5241 Forget(TimeBalanceBadge)\n182 5245 5244 Forget(BalanceAdjustmentHistoryDialog)\n183 5246 5245 Forget(Dialog)\n184 5247 5246 Context.Provider\n185 5248 5247 DialogRoot\n186 5249 5248 DialogRootContext.Provider\n187 5250 5249 Forget(DialogTrigger)\n188 5251 5250 DialogTrigger\n189 5252 5251 Forget(Badge)\n190 5253 5252 Slot\n191 5254 5253 button\n187 5255 5249 Forget(DialogContent)\n188 5256 5255 Forget(DialogPortal)\n189 5257 5256 DialogPortal\n181 5258 5241 Forget(Badge)\n182 5259 5258 span\n181 5260 5241 Forget(Badge)\n182 5261 5260 span\n180 5262 5240 ArrowRight\n181 5263 5262 svg\n182 5264 5263 path key=\"svg-0\"\n182 5265 5263 path key=\"svg-1\"\n182 5266 5263 path key=\"svg-2\"\n173 5275 3110 Forget(NoTeamMemberResults)\n174 5276 5275 Forget(Card)\n175 5277 5276 div\n176 5278 5277 Forget(CardContent)\n177 5279 5278 div\n178 5280 5279 Search\n179 5281 5280 svg\n180 5282 5281 path key=\"svg-0\"\n180 5283 5281 path key=\"svg-1\"\n178 5284 5279 h2\n178 5285 5279 p\n178 5286 5279 Forget(Button)\n179 5287 5286 button\n173 5288 3110 Forget(TeamMemberCards)\n174 5289 5288 div\n175 5290 5289 Forget(Card) key=\"777fe4c3-3529-4531-951d-125a0a59fb90\"\n176 5291 5290 div\n177 5292 5291 Forget(CardContent)\n178 5293 5292 div\n179 5294 5293 div\n180 5295 5294 Forget(UserAvatar)\n181 5296 5295 span\n182 5297 5296 Forget(Avatar)\n183 5298 5297 AvatarRoot\n184 5299 5298 AvatarRootContext.Provider\n185 5300 5299 span\n186 5301 5300 Forget(AvatarImage)\n187 5302 5301 AvatarImage\n188 5544 5302 img\n186 5303 5300 Forget(AvatarFallback)\n187 5304 5303 AvatarFallback\n188 5305 5304 span\n189 5306 5305 Loader2\n190 5307 5306 svg\n191 5308 5307 path key=\"svg-0\"\n180 5309 5294 div\n181 5310 5309 div\n182 5311 5310 h2\n183 5312 5311 ForwardRef(Link)\n184 5313 5312 ForwardRef(BaseLink)\n185 5314 5313 LinkComponent\n186 5315 5314 Context.Provider\n187 5316 5315 a\n182 5317 5310 Forget(YouBadge)\n183 5318 5317 Forget(Badge)\n184 5319 5318 span\n181 5320 5309 p\n181 5321 5309 Forget(EmployeeActivityText)\n179 5322 5293 div\n180 5323 5322 div\n181 5324 5323 Forget(Badge)\n182 5325 5324 span\n181 5326 5323 Forget(TimeBalanceBadge)\n182 5327 5326 Forget(BalanceAdjustmentHistoryDialog)\n183 5328 5327 Forget(Dialog)\n184 5329 5328 Context.Provider\n185 5330 5329 DialogRoot\n186 5331 5330 DialogRootContext.Provider\n187 5332 5331 Forget(DialogTrigger)\n188 5333 5332 DialogTrigger\n189 5334 5333 Forget(Badge)\n190 5335 5334 Slot\n191 5336 5335 button\n187 5337 5331 Forget(DialogContent)\n188 5338 5337 Forget(DialogPortal)\n189 5339 5338 DialogPortal\n190 5549 5339 DialogPortalContext.Provider\n191 5550 5549 FloatingPortal\n192 5551 5550 PortalContext.Provider\n193 5553 5551 InternalBackdrop\n194 5554 5553 div\n193 5555 5551 Forget(DialogOverlay)\n194 5556 5555 DialogBackdrop\n195 5557 5556 div\n193 5558 5551 DialogPopup\n194 5559 5558 FloatingFocusManager\n195 5560 5559 FocusGuard\n196 5561 5560 span\n195 5562 5559 div\n196 5563 5562 Forget(DialogHeader)\n197 5564 5563 div\n198 5565 5564 Forget(DialogTitle)\n199 5566 5565 DialogTitle\n200 5567 5566 h2\n198 5568 5564 Forget(DialogDescription)\n199 5569 5568 DialogDescription\n200 5570 5569 p\n196 5571 5562 Forget(HistoryBody)\n197 5572 5571 output\n198 5573 5572 Loader2\n199 5574 5573 svg\n200 5575 5574 path key=\"svg-0\"\n197 5585 5571 Forget(BalanceAdjustmentHistory)\n198 5586 5585 p\n196 5576 5562 DialogClose\n197 5577 5576 button\n198 5578 5577 X\n199 5579 5578 svg\n200 5580 5579 path key=\"svg-0\"\n200 5581 5579 path key=\"svg-1\"\n198 5582 5577 span\n195 5583 5559 FocusGuard\n196 5584 5583 span\n192 5552 5550 div\n187 5548 5331 DialogInteractions\n181 5340 5323 Forget(Badge)\n182 5341 5340 span\n181 5342 5323 Forget(Badge)\n182 5343 5342 span\n180 5344 5322 ArrowRight\n181 5345 5344 svg\n182 5346 5345 path key=\"svg-0\"\n182 5347 5345 path key=\"svg-1\"\n182 5348 5345 path key=\"svg-2\"\n175 5349 5289 Forget(Card) key=\"d76616c1-45c3-4aba-b381-88b27e61b12c\"\n176 5350 5349 div\n177 5351 5350 Forget(CardContent)\n178 5352 5351 div\n179 5353 5352 div\n180 5354 5353 Forget(UserAvatar)\n181 5355 5354 span\n182 5356 5355 Forget(Avatar)\n183 5357 5356 AvatarRoot\n184 5358 5357 AvatarRootContext.Provider\n185 5359 5358 span\n186 5360 5359 Forget(AvatarImage)\n187 5361 5360 AvatarImage\n188 5545 5361 img\n186 5362 5359 Forget(AvatarFallback)\n187 5363 5362 AvatarFallback\n188 5364 5363 span\n189 5365 5364 Loader2\n190 5366 5365 svg\n191 5367 5366 path key=\"svg-0\"\n182 5368 5355 output\n180 5369 5353 div\n181 5370 5369 div\n182 5371 5370 h2\n183 5372 5371 ForwardRef(Link)\n184 5373 5372 ForwardRef(BaseLink)\n185 5374 5373 LinkComponent\n186 5375 5374 Context.Provider\n187 5376 5375 a\n182 5377 5370 UserCheck\n183 5378 5377 svg\n184 5379 5378 title key=\"svg-title\"\n184 5380 5378 path key=\"svg-0\"\n184 5381 5378 path key=\"svg-1\"\n184 5382 5378 path key=\"svg-2\"\n182 5383 5370 Forget(YouBadge)\n181 5384 5369 p\n181 5385 5369 Forget(EmployeeActivityText)\n182 5386 5385 p\n179 5387 5352 div\n180 5388 5387 div\n181 5389 5388 Forget(Badge)\n182 5390 5389 span\n181 5391 5388 Forget(TimeBalanceBadge)\n182 5392 5391 Forget(BalanceAdjustmentHistoryDialog)\n183 5393 5392 Forget(Dialog)\n184 5394 5393 Context.Provider\n185 5395 5394 DialogRoot\n186 5396 5395 DialogRootContext.Provider\n187 5397 5396 Forget(DialogTrigger)\n188 5398 5397 DialogTrigger\n189 5399 5398 Forget(Badge)\n190 5400 5399 Slot\n191 5401 5400 button\n187 5402 5396 Forget(DialogContent)\n188 5403 5402 Forget(DialogPortal)\n189 5404 5403 DialogPortal\n181 5405 5388 Forget(Badge)\n182 5406 5405 span\n181 5407 5388 Forget(Badge)\n182 5408 5407 span\n180 5409 5387 ArrowRight\n181 5410 5409 svg\n182 5411 5410 path key=\"svg-0\"\n182 5412 5410 path key=\"svg-1\"\n182 5413 5410 path key=\"svg-2\"\n175 5414 5289 Forget(Card) key=\"1c417ab0-b957-46fb-bddb-b8232633ae86\"\n176 5415 5414 div\n177 5416 5415 Forget(CardContent)\n178 5417 5416 div\n179 5418 5417 div\n180 5419 5418 Forget(UserAvatar)\n181 5420 5419 span\n182 5421 5420 Forget(Avatar)\n183 5422 5421 AvatarRoot\n184 5423 5422 AvatarRootContext.Provider\n185 5424 5423 span\n186 5425 5424 Forget(AvatarImage)\n187 5426 5425 AvatarImage\n188 5546 5426 img\n186 5427 5424 Forget(AvatarFallback)\n187 5428 5427 AvatarFallback\n188 5429 5428 span\n189 5430 5429 Loader2\n190 5431 5430 svg\n191 5432 5431 path key=\"svg-0\"\n182 5433 5420 output\n180 5434 5418 div\n181 5435 5434 div\n182 5436 5435 h2\n183 5437 5436 ForwardRef(Link)\n184 5438 5437 ForwardRef(BaseLink)\n185 5439 5438 LinkComponent\n186 5440 5439 Context.Provider\n187 5441 5440 a\n182 5442 5435 UserCheck\n183 5443 5442 svg\n184 5444 5443 title key=\"svg-title\"\n184 5445 5443 path key=\"svg-0\"\n184 5446 5443 path key=\"svg-1\"\n184 5447 5443 path key=\"svg-2\"\n182 5448 5435 Forget(YouBadge)\n181 5449 5434 p\n181 5450 5434 Forget(EmployeeActivityText)\n182 5451 5450 p\n179 5452 5417 div\n180 5453 5452 div\n181 5454 5453 Forget(Badge)\n182 5455 5454 span\n181 5456 5453 Forget(TimeBalanceBadge)\n182 5457 5456 Forget(BalanceAdjustmentHistoryDialog)\n183 5458 5457 Forget(Dialog)\n184 5459 5458 Context.Provider\n185 5460 5459 DialogRoot\n186 5461 5460 DialogRootContext.Provider\n187 5462 5461 Forget(DialogTrigger)\n188 5463 5462 DialogTrigger\n189 5464 5463 Forget(Badge)\n190 5465 5464 Slot\n191 5466 5465 button\n187 5467 5461 Forget(DialogContent)\n188 5468 5467 Forget(DialogPortal)\n189 5469 5468 DialogPortal\n181 5470 5453 Forget(Badge)\n182 5471 5470 span\n181 5472 5453 Forget(Badge)\n182 5473 5472 span\n180 5474 5452 ArrowRight\n181 5475 5474 svg\n182 5476 5475 path key=\"svg-0\"\n182 5477 5475 path key=\"svg-1\"\n182 5478 5475 path key=\"svg-2\"\n175 5479 5289 Forget(Card) key=\"8297ad9a-f0bd-4e16-98f6-678d3578be0b\"\n176 5480 5479 div\n177 5481 5480 Forget(CardContent)\n178 5482 5481 div\n179 5483 5482 div\n180 5484 5483 Forget(UserAvatar)\n181 5485 5484 span\n182 5486 5485 Forget(Avatar)\n183 5487 5486 AvatarRoot\n184 5488 5487 AvatarRootContext.Provider\n185 5489 5488 span\n186 5490 5489 Forget(AvatarImage)\n187 5491 5490 AvatarImage\n188 5547 5491 img\n186 5492 5489 Forget(AvatarFallback)\n187 5493 5492 AvatarFallback\n188 5494 5493 span\n189 5495 5494 Loader2\n190 5496 5495 svg\n191 5497 5496 path key=\"svg-0\"\n182 5498 5485 output\n180 5499 5483 div\n181 5500 5499 div\n182 5501 5500 h2\n183 5502 5501 ForwardRef(Link)\n184 5503 5502 ForwardRef(BaseLink)\n185 5504 5503 LinkComponent\n186 5505 5504 Context.Provider\n187 5506 5505 a\n182 5507 5500 UserCheck\n183 5508 5507 svg\n184 5509 5508 title key=\"svg-title\"\n184 5510 5508 path key=\"svg-0\"\n184 5511 5508 path key=\"svg-1\"\n184 5512 5508 path key=\"svg-2\"\n182 5513 5500 Forget(YouBadge)\n181 5514 5499 p\n181 5515 5499 Forget(EmployeeActivityText)\n182 5516 5515 p\n179 5517 5482 div\n180 5518 5517 div\n181 5519 5518 Forget(Badge)\n182 5520 5519 span\n181 5521 5518 Forget(TimeBalanceBadge)\n182 5522 5521 Forget(BalanceAdjustmentHistoryDialog)\n183 5523 5522 Forget(Dialog)\n184 5524 5523 Context.Provider\n185 5525 5524 DialogRoot\n186 5526 5525 DialogRootContext.Provider\n187 5527 5526 Forget(DialogTrigger)\n188 5528 5527 DialogTrigger\n189 5529 5528 Forget(Badge)\n190 5530 5529 Slot\n191 5531 5530 button\n187 5532 5526 Forget(DialogContent)\n188 5533 5532 Forget(DialogPortal)\n189 5534 5533 DialogPortal\n181 5535 5518 Forget(Badge)\n182 5536 5535 span\n181 5537 5518 Forget(Badge)\n182 5538 5537 span\n180 5539 5517 ArrowRight\n181 5540 5539 svg\n182 5541 5540 path key=\"svg-0\"\n182 5542 5540 path key=\"svg-1\"\n182 5543 5540 path key=\"svg-2\"\n166 3408 3096 link key=\"0\"\n166 3409 3096 script key=\"script-0\"\n166 3410 3096 script key=\"script-1\"\n166 3411 3096 Prerender(Next.MetadataOutlet)\n167 3412 3411 __next_outlet_boundary__\n168 3413 3412 Suspense\n163 3414 3093 SegmentBoundaryTriggerNode\n158 3415 3088 SegmentViewStateNode key=\"/en/team\"\n158 5588 3088 SegmentViewStateNode key=\"/en/team?former=1\"\n158 5602 3088 SegmentViewStateNode key=\"/en/team\"\n137 3070 3060 SegmentBoundaryTriggerNode\n130 3071 3053 SegmentViewStateNode key=\"/en/team\"\n130 5589 3053 SegmentViewStateNode key=\"/en/team?former=1\"\n130 5603 3053 SegmentViewStateNode key=\"/en/team\"\n126 3072 3049 SegmentViewNode\n127 3073 3072 SegmentTrieNode key=\"boundary:not-found\"\n126 3074 3049 SegmentViewNode\n127 3075 3074 SegmentTrieNode key=\"boundary:error\"\n121 3036 3020 Forget(GetTheAppBanner)\n103 3037 2997 Forget(NativePushBridge)\n103 3038 2997 Forget(PushPermissionModal)\n104 3039 3038 Forget(ActionPanel)\n105 3040 3039 Forget(Sheet)\n106 3041 3040 Context.Provider\n107 3042 3041 DialogRoot\n108 3043 3042 DialogRootContext.Provider\n109 3044 3043 Forget(ActionPanelContent)\n110 3045 3044 Forget(SheetContent)\n111 3046 3045 Forget(SheetPortal)\n112 3047 3046 DialogPortal\n93 2989 2951 SegmentBoundaryTriggerNode\n86 2990 2944 SegmentViewStateNode key=\"/en/team\"\n86 5590 2944 SegmentViewStateNode key=\"/en/team?former=1\"\n86 5604 2944 SegmentViewStateNode key=\"/en/team\"\n82 2991 2940 SegmentViewNode\n83 2992 2991 SegmentTrieNode key=\"boundary:not-found\"\n82 2993 2940 SegmentViewNode\n83 2994 2993 SegmentTrieNode key=\"boundary:error\"\n78 2934 2929 Forget(Toaster)\n79 2935 2934 ForwardRef(Toaster)\n80 2936 2935 section\n69 2937 2919 ReactQueryDevtools\n70 2938 2937 div\n40 2899 2853 SegmentBoundaryTriggerNode\n34 2900 2847 SegmentViewStateNode key=\"/en/team\"\n34 5591 2847 SegmentViewStateNode key=\"/en/team?former=1\"\n34 5605 2847 SegmentViewStateNode key=\"/en/team\"\n30 2901 2843 SegmentViewNode\n31 2902 2901 SegmentTrieNode key=\"boundary:not-found\"\n30 2903 2843 SegmentViewNode\n31 2904 2903 SegmentTrieNode key=\"boundary:global-error\"\n24 2841 2826 AppRouterAnnouncer\n24 5587 2826 Head key=\"[\\\"/$d$locale/!KGFwcCk/team/__PAGE__/_head\\\",\\\"?former=1\\\",\\\"en\\\"]\"\n25 5592 5587 Fragment key=\"h\"\n26 5593 5592 Prerender(ViewportWrapper) key=\"e98de8e7v\"\n27 5594 5593 __next_viewport_boundary__ key=\"e98de8e7v\"\n28 5595 5594 meta key=\"0\"\n28 5596 5594 meta key=\"1\"\n26 5597 5592 Prerender(MetadataWrapper) key=\"e98de8e7m\"\n27 5598 5597 __next_metadata_boundary__ key=\"e98de8e7m\"\n28 5599 5598 div\n29 5600 5599 Suspense\n24 5601 2826 Head key=\"[\\\"/$d$locale/!KGFwcCk/team/__PAGE__/_head\\\",\\\"\\\",\\\"en\\\"]\"\n25 5606 5601 Fragment key=\"h\"\n26 5607 5606 Prerender(ViewportWrapper) key=\"e6307c68v\"\n27 5608 5607 __next_viewport_boundary__ key=\"e6307c68v\"\n28 5609 5608 meta key=\"0\"\n28 5610 5608 meta key=\"1\"\n26 5611 5606 Prerender(MetadataWrapper) key=\"e6307c68m\"\n27 5612 5611 __next_metadata_boundary__ key=\"e6307c68m\"\n28 5613 5612 div\n29 5614 5613 Suspense"
+        },
+        "error": null
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+          "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+          "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "sha256": "354413b013d2348423fb18329c8a7c8d46978b40350e84b06d512c473088973d"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+          "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+          "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+          "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+        }
+      ]
+    }
+  ],
+  "finished": true
+}
