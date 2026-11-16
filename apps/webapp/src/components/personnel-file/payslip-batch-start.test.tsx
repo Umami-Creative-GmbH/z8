@@ -39,6 +39,50 @@ const props = {
 	expectedScope: scope,
 };
 
+it("keeps one start pending through Activity until its result settles", async () => {
+	let finish!: (value: unknown) => void;
+	boundary.start
+		.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		)
+		.mockResolvedValueOnce({ success: true, data: { id: "fresh" } });
+	const tree = (mode: "visible" | "hidden") => (
+		<Activity mode={mode}>
+			<PayslipBatchStart {...props} />
+		</Activity>
+	);
+	const view = render(tree("visible"));
+	fireEvent.change(screen.getByRole("textbox", { name: /Pay period year/ }), {
+		target: { value: "2025" },
+	});
+	const form = screen.getByRole("button", { name: "Start batch" }).closest("form");
+	if (!form) throw new Error("The start button must belong to its form");
+	const submit = new Event("submit", { bubbles: true, cancelable: true });
+	fireEvent(form, submit);
+	expect(submit.defaultPrevented).toBe(true);
+	await waitFor(() => expect(boundary.start).toHaveBeenCalledTimes(1));
+	view.rerender(tree("hidden"));
+	view.rerender(tree("visible"));
+	const start = screen.getByRole("button", { name: "Start batch" });
+	expect(start.hasAttribute("disabled")).toBe(true);
+	fireEvent.click(start);
+	expect(boundary.start).toHaveBeenCalledTimes(1);
+	await act(async () => finish({ success: true, data: { id: "retired" } }));
+	await waitFor(() => expect(start.hasAttribute("disabled")).toBe(false));
+	expect(boundary.push).not.toHaveBeenCalled();
+	expect(boundary.toastError).not.toHaveBeenCalled();
+	expect(screen.queryByRole("alert")).toBeNull();
+	expect(screen.getByDisplayValue("2025")).toBeTruthy();
+	fireEvent.click(start);
+	await waitFor(() => expect(boundary.start).toHaveBeenCalledTimes(2));
+	await waitFor(() =>
+		expect(boundary.push).toHaveBeenCalledWith("/personnel-files/payslip-batches/fresh"),
+	);
+});
+
 it.each(["account", "organization"])(
 	"drops validation-queued work across an %s switch and return",
 	async (change) => {
