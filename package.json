@@ -54,14 +54,20 @@
 		"docker:sync:non-web-targets": "pnpm node docker/scripts/prepare-target-runtime.mjs manifest worker && pnpm node docker/scripts/prepare-target-runtime.mjs manifest migration && pnpm node docker/scripts/prepare-target-runtime.mjs manifest db-seed && pnpm --dir docker/targets/worker install --lockfile-only && pnpm --dir docker/targets/migration install --lockfile-only && pnpm --dir docker/targets/db-seed install --lockfile-only",
 		"docker:prod:up": "docker compose -f docker-compose.prod.yml up -d",
 		"docker:prod:down": "docker compose -f docker-compose.prod.yml down",
-		"docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f"
+		"docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
+		"lint": "oxlint apps/webapp/src apps/marketing/src",
+		"lint:fix": "oxlint --fix apps/webapp/src apps/marketing/src",
+		"format": "oxfmt apps/webapp/src apps/marketing/src",
+		"format:check": "oxfmt --check apps/webapp/src apps/marketing/src"
 	},
 	"devDependencies": {
 		"@esbuild/win32-x64": "^0.28.2",
 		"puppeteer-core": "^25.17.0",
 		"react-doctor": "^0.9.23",
 		"shadcn": "^4.23.0",
-		"turbo": "^2.11.11"
+		"turbo": "^2.11.11",
+		"oxlint": "1.94.0",
+		"oxfmt": "0.79.0"
 	},
 	"packageManager": "pnpm@12.21.0"
 }

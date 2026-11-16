@@ -63,6 +63,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 COPY --from=pruner /app/out/full/ ./
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY .oxfmtrc.json ./
 
 FROM workspace AS webapp-builder
 ARG NEXT_DEPLOYMENT_ID

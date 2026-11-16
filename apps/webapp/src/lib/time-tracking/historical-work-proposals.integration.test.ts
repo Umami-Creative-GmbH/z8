@@ -108,7 +108,7 @@ const ids = {
 const users = [ids.ownerUser, ids.adminUser, ids.managerUser, ids.workerUser, ids.foreignUser];
 const july = { startDate: "2026-07-01", endDate: "2026-07-31" };
 
-// biome-ignore lint/suspicious/noExplicitAny: route bodies are asserted field by field
+// oxlint-disable-next-line typescript/no-explicit-any -- route bodies are asserted field by field
 type RouteResult = { status: number; body: Record<string, any> };
 
 let entrySequence = 0;

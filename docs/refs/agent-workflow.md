@@ -20,6 +20,24 @@ pnpm test:integration # PostgreSQL suites in a disposable Docker database (run f
 pnpm drizzle-kit push # Push schema to database
 ```
 
+## Linting and Formatting
+
+Use oxlint and oxfmt with the root `.oxlintrc.json` and `.oxfmtrc.json`. The root
+`lint`, `lint:fix`, `format`, and `format:check` scripts cover webapp and marketing
+source. For focused checks, run `pnpm exec oxlint <files>` and
+`pnpm exec oxfmt --check <files>` from the root. Existing source has lint and
+formatting debt; report it separately from findings in changed code.
+
+The general code-quality workflow remains manual-only, matching its prior
+trigger. Oxlint rule coverage is not identical to Biome: React compiler factory
+checks and CSS linting have no direct replacement in this configuration. Oxfmt
+does not sort imports. Preserve meaningful suppression explanations when a rule
+has no equivalent.
+
+The Bun feasibility assessment is in [Bun adoption](bun-adoption.md). Node and
+pnpm remain the supported runtime and package manager until that migration is
+implemented and verified.
+
 ## Opening Files and URLs in WSL
 
 In WSL sessions, use `wslview "<path-or-url>"` first to open reports, files, and URLs in Windows.

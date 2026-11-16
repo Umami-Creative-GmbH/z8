@@ -29,7 +29,7 @@ function selectResult() {
 	return {
 		orderBy: vi.fn(async () => execute()),
 		limit: vi.fn(async () => execute()),
-		// biome-ignore lint/suspicious/noThenProperty: a thenable query builder stand-in
+		// oxlint-disable-next-line unicorn/no-thenable -- a thenable query builder stand-in
 		then: (resolve: (value: unknown[]) => unknown, reject?: (error: unknown) => unknown) =>
 			execute().then(resolve, reject),
 	};

@@ -25,7 +25,7 @@ const harness = vi.hoisted(() => ({
 		memberCommitted: boolean;
 	}[],
 	notices: [] as unknown[],
-	// biome-ignore lint/suspicious/noExplicitAny: the admin pool, assigned below.
+	// oxlint-disable-next-line typescript/no-explicit-any -- the admin pool, assigned below.
 	admin: null as any,
 }));
 

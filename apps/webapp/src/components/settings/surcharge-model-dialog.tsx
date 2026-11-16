@@ -303,7 +303,7 @@ export function SurchargeModelDialog({
 											</div>
 										) : (
 											field.state.value.map((_, ruleIndex) => (
-												// biome-ignore lint/suspicious/noArrayIndexKey: Dynamic form array - no stable IDs for new rules
+												// oxlint-disable-next-line react/no-array-index-key -- Dynamic form array - no stable IDs for new rules
 												<form.Field key={ruleIndex} name={`rules[${ruleIndex}]`}>
 													{() => (
 														<SurchargeRuleEditor

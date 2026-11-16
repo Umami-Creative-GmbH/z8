@@ -32,9 +32,9 @@ export type AuthTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0
 
 type TransactionalDatabase = {
 	transaction: (
-		// biome-ignore lint/suspicious/noExplicitAny: mirrors drizzle's generic transaction signature.
+		// oxlint-disable-next-line typescript/no-explicit-any -- mirrors drizzle's generic transaction signature.
 		callback: (transaction: any) => Promise<any>,
-		// biome-ignore lint/suspicious/noExplicitAny: drizzle's transaction config differs per driver.
+		// oxlint-disable-next-line typescript/no-explicit-any -- drizzle's transaction config differs per driver.
 		config?: any,
 	) => Promise<unknown>;
 };

@@ -54,7 +54,7 @@ export async function exportReportDocumentToPDF(document: ReportDocument): Promi
 	const { Document, Page, pdf, StyleSheet, Text, View } = await import("@react-pdf/renderer");
 	const styles = StyleSheet.create(styleDefinitions);
 
-	// biome-ignore lint/correctness/noComponentHookFactories: one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
+	// one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
 	const ReportPDF = () => (
 		<Document title={document.title}>
 			<Page size="A4" orientation="landscape" style={styles.page}>
@@ -91,7 +91,7 @@ export async function exportReportDocumentToPDF(document: ReportDocument): Promi
 								))}
 							</View>
 							{table.rows.map((row, rowIndex) => (
-								// biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
+								// oxlint-disable-next-line react/no-array-index-key -- rows are positional
 								<View key={rowIndex} style={styles.row} wrap={false}>
 									{cells(row)}
 								</View>

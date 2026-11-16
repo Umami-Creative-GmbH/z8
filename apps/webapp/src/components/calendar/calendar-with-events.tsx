@@ -29,7 +29,7 @@ export function CalendarWithEvents({
 			onMonthChange={onMonthChange}
 			captionLayout="dropdown"
 			components={{
-				// biome-ignore lint/correctness/noComponentHookFactories: React Compiler memoizes this on eventsByDate, so day buttons remount only when the events change.
+				// React Compiler memoizes this on eventsByDate, so day buttons remount only when the events change.
 				DayButton: (props) => <DayButtonWithEvents {...props} eventsByDate={eventsByDate} />,
 			}}
 			className="rounded-md border"

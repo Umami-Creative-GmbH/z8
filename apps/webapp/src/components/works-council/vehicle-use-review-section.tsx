@@ -128,7 +128,7 @@ export function VehicleUseReviewSection({ review, t }: { review: VehicleUseRevie
 							<ul className="divide-y rounded-md border text-sm">
 								{review.employeeAssignments.rows.map((row, index) => (
 									<li
-										// biome-ignore lint/suspicious/noArrayIndexKey: read-only redacted server snapshot
+										// oxlint-disable-next-line react/no-array-index-key -- read-only redacted server snapshot
 										key={index}
 										className="flex justify-between gap-4 px-3 py-2"
 									>
