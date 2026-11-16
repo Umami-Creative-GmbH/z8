@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { appPageOwnsHeading, normalizeAppPath, resolveAppRouteMetadata } from "./route-metadata";
 
+it("adopts only the presence selection heading, preserving detail ownership", () => {
+	expect(appPageOwnsHeading("/de/team/presence")).toBe(true);
+	expect(appPageOwnsHeading("/en/team/presence/berlin")).toBe(false);
+	expect(appPageOwnsHeading("/en/team")).toBe(false);
+});
+
 describe("route metadata", () => {
 	it("adopts only the report share-link settings heading without other settings or descendants", () => {
 		expect(appPageOwnsHeading("/en/settings/report-share-links")).toBe(true);
