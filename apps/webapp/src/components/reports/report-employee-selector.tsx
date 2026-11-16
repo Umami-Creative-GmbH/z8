@@ -36,12 +36,8 @@ export function ReportEmployeeSelector({
 	disabled = false,
 }: ReportEmployeeSelectorProps) {
 	const { t } = useTranslate();
-	const { employees, isLoading, error, canViewMultiple } = useReportEmployees(currentEmployeeId);
-
-	// Don't render for regular employees (only one option: themselves)
-	if (!canViewMultiple && !isLoading) {
-		return null;
-	}
+	const { employees, isLoading, error, canViewMultiple } =
+		useReportEmployees(currentEmployeeId);
 
 	// Loading state
 	if (isLoading) {
@@ -61,6 +57,8 @@ export function ReportEmployeeSelector({
 			</div>
 		);
 	}
+	// A failed read is not the employee's one-person scope.
+	if (!canViewMultiple) return null;
 
 	return (
 		<EmployeeSingleSelect
@@ -68,7 +66,10 @@ export function ReportEmployeeSelector({
 			onChange={onEmployeeChange}
 			employees={employees}
 			showFilters={false}
-			placeholder={t("reports.employeeSelector.placeholder", "Select employee...")}
+			placeholder={t(
+				"reports.employeeSelector.placeholder",
+				"Select employee...",
+			)}
 			disabled={disabled}
 			className="space-y-0"
 			label={t("reports.employeeSelector.label", "Employee")}

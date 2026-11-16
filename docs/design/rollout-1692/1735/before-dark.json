@@ -1,0 +1,14 @@
+{
+  "route": "/en/reports",
+  "viewport": {
+    "width": 1600,
+    "height": 1100
+  },
+  "headings": [
+    "Employee Reports"
+  ],
+  "pageOverflow": false,
+  "mainOverflow": false,
+  "theme": "bprogress-busy dark",
+  "body": "Toggle Sidebar\n\nReports\n\n23:25\nUTC+01:00\nClock In\nToggle theme\nEmployee Reports\nGenerate comprehensive work hour and absence reports with tax-relevant home office data\nDistance per Vehicle\nEmployee\nFixture Person 0\nPeriod\nCurrent Month\nNov 1, 2026 - Nov 30, 2026\nGenerate Report\nClosed months\nNovember 2026\nOpen\nTotal Work Hours\n0h\n\n0 work days\n\nAvg: 0h/day\n\nHome Office Days\n0\n\n0h worked from home\n\nTax relevant\n\nVacation Days\n0\n\n0 pending\n\nTotal Absences\n0\n\nSick: 0 days\n\nOther: 0 days\n\nExport Report\n\nDownload this report in your preferred format\n\nExport PDF\nExport Excel\nExport CSV\nHome Office Summary (Tax Relevant)\n\nImportant for German tax purposes - shows home office days and hours worked\n\nTotal Home Office Days\n\n0\n\nTotal Hours Worked from Home\n\n0h\n\nNo home office days recorded in this period.\n\nCompliance Metrics\nAttendance Percentage\n100%\nOvertime\n0h\nUndertime\n168h"
+}

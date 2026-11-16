@@ -1,8 +1,9 @@
 "use client";
 
 import { IconChartBar } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,74 +32,107 @@ export function ReportFilters({
 		})),
 	);
 	const hasUserChangedRange = useRef(false);
-	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(currentEmployeeId);
-	const [dateRange, setDateRange] = useState<ReportDateRange | null>(null);
+	const form = useForm({
+		defaultValues: {
+			employeeId: currentEmployeeId as string | null,
+			dateRange: null as ReportDateRange | null,
+		},
+		onSubmit: ({ value }) => {
+			if (value.employeeId && value.dateRange && !isGenerating)
+				onGenerate(value.employeeId, value.dateRange);
+		},
+	});
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
 			return;
 		}
 
-		setDateRange(getDateRangeForPreset("current_month", { timezone }));
-	}, [isHydrated, timezone]);
-
-	const handleDateRangeChange = (range: ReportDateRange) => {
-		hasUserChangedRange.current = true;
-		setDateRange(range);
-	};
-
-	const handleGenerate = () => {
-		if (selectedEmployeeId && dateRange) {
-			onGenerate(selectedEmployeeId, dateRange);
-		}
-	};
+		form.setFieldValue(
+			"dateRange",
+			getDateRangeForPreset("current_month", { timezone }),
+		);
+	}, [form, isHydrated, timezone]);
 
 	return (
 		<Card>
 			<CardContent className="pt-6">
-				<div className="flex flex-col gap-4">
+				<form
+					className="flex flex-col gap-4"
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						void form.handleSubmit();
+					}}
+				>
+					<h2 className="font-semibold">
+						{t("reports.filter.title", "Generate an employee report")}
+					</h2>
 					<div className="grid gap-4 md:grid-cols-2">
 						{/* Employee Selector - rendered by ReportEmployeeSelector, hidden for regular employees */}
-						<ReportEmployeeSelector
-							currentEmployeeId={currentEmployeeId}
-							selectedEmployeeId={selectedEmployeeId}
-							onEmployeeChange={setSelectedEmployeeId}
-							disabled={isGenerating}
-						/>
+						<form.Field name="employeeId">
+							{(field) => (
+								<ReportEmployeeSelector
+									currentEmployeeId={currentEmployeeId}
+									selectedEmployeeId={field.state.value}
+									onEmployeeChange={field.handleChange}
+									disabled={isGenerating}
+								/>
+							)}
+						</form.Field>
 
 						{/* Date Range Picker */}
-						<fieldset className="space-y-2">
-							<legend className="text-sm font-medium leading-none">
-								{t("reports.filter.period", "Period")}
-							</legend>
-							{dateRange ? (
-								<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
-							) : (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"reports.filter.loadingSettings",
-										"Loading organization settings before enabling presets.",
+						<form.Field name="dateRange">
+							{(field) => (
+								<fieldset
+									className="min-w-0 space-y-2 [&>div]:flex-wrap [&>div>*]:min-w-0 [&>div>*]:max-w-full [&>div>div]:h-auto [&>div>div]:min-h-9 [&>div>div]:py-2"
+									disabled={isGenerating}
+								>
+									<legend className="text-sm font-medium leading-none">
+										{t("reports.filter.period", "Period")}
+									</legend>
+									{field.state.value ? (
+										<DateRangePicker
+											value={field.state.value}
+											onChange={(range) => {
+												hasUserChangedRange.current = true;
+												field.handleChange(range);
+											}}
+										/>
+									) : (
+										<p className="text-sm text-muted-foreground">
+											{t(
+												"reports.filter.loadingSettings",
+												"Loading organization settings before enabling presets.",
+											)}
+										</p>
 									)}
-								</p>
+								</fieldset>
 							)}
-						</fieldset>
+						</form.Field>
 					</div>
 
 					{/* Generate Button */}
 					<div className="flex justify-end">
-						<Button
-							onClick={handleGenerate}
-							disabled={isGenerating || !selectedEmployeeId || !dateRange}
-							size="lg"
-							className="w-full sm:w-auto"
-						>
-							<IconChartBar className="mr-2 size-4" aria-hidden="true" />
-							{isGenerating
-								? t("reports.generating", "Generating Report…")
-								: t("reports.generate", "Generate Report")}
-						</Button>
+						<form.Subscribe selector={(state) => state.values}>
+							{(values) => (
+								<Button
+									type="submit"
+									disabled={
+										isGenerating || !values.employeeId || !values.dateRange
+									}
+									size="lg"
+									className="w-full sm:w-auto"
+								>
+									<IconChartBar className="mr-2 size-4" aria-hidden="true" />
+									{isGenerating
+										? t("reports.generating", "Generating Report…")
+										: t("reports.generate", "Generate Report")}
+								</Button>
+							)}
+						</form.Subscribe>
 					</div>
-				</div>
+				</form>
 			</CardContent>
 		</Card>
 	);

@@ -1,8 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import {
+	CancelledError,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { getAccessibleEmployeesAction } from "@/app/[locale]/(app)/reports/actions";
 import type { SelectableEmployee } from "@/components/employee-select/types";
+import { authClient, useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
 import type { AccessibleEmployee } from "@/lib/reports/types";
 
@@ -25,7 +31,9 @@ export interface UseReportEmployeesResult {
 /**
  * Transform AccessibleEmployee to SelectableEmployee format
  */
-function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmployee {
+function transformAccessibleEmployee(
+	emp: AccessibleEmployee,
+): SelectableEmployee {
 	return {
 		id: emp.id,
 		userId: emp.id, // Use same ID as seed for avatar
@@ -69,23 +77,103 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
  *
  * @param currentEmployeeId - The current user's employee ID (used for query key)
  */
-export function useReportEmployees(currentEmployeeId?: string): UseReportEmployeesResult {
+export function useReportEmployees(
+	currentEmployeeId?: string,
+): UseReportEmployeesResult {
+	const client = useQueryClient();
+	const session = useSession();
+	const actor = session.data?.user.id;
+	const organization = session.data?.session.activeOrganizationId;
+	const scope = JSON.stringify([actor, organization]);
+	const ready =
+		!session.isPending && !!actor && !!organization && !!currentEmployeeId;
+	const openingId = useId();
+	const sequence = useRef(0);
+	const active = useRef<object | null>(null);
+	const [revision, setRevision] = useState(0);
+	const [opening, setOpening] = useState<{
+		owner: object;
+		scope: string;
+		key: readonly unknown[];
+		revision: number;
+	} | null>(null);
+	// react-doctor-disable-next-line react-hooks-js/set-state-in-effect -- This read opening must reconnect after Activity/StrictMode cleanup; the assembled public regression verifies fresh options and exact retirement.
+	useLayoutEffect(() => {
+		if (!ready) {
+			setOpening(null);
+			return;
+		}
+		const owner = {};
+		const key = [
+			...queryKeys.reports.employees(currentEmployeeId ?? ""),
+			actor,
+			organization,
+			openingId,
+			++sequence.current,
+		];
+		active.current = owner;
+		setOpening({ owner, scope, key, revision });
+		const retire = () => {
+			if (active.current === owner) active.current = null;
+			// TanStack cancels acceptance, not the server-action transport. Never touch
+			// another opening's cache or an unrelated reports consumer.
+			void client.cancelQueries({ queryKey: key, exact: true }).then(() => {
+				client.removeQueries({ queryKey: key, exact: true });
+			});
+		};
+		let previous = scope;
+		const unsubscribe = authClient.$store.atoms.session.subscribe((value) => {
+			const next = JSON.stringify([
+				value.data?.user.id,
+				value.data?.session.activeOrganizationId,
+			]);
+			if (next !== previous) {
+				previous = next;
+				retire();
+				setRevision((value) => value + 1);
+			}
+		});
+		return () => {
+			unsubscribe();
+			retire();
+		};
+	}, [
+		client,
+		currentEmployeeId,
+		actor,
+		organization,
+		scope,
+		ready,
+		openingId,
+		revision,
+	]);
+	const admitted =
+		ready && opening?.scope === scope && opening.revision === revision;
 	const { data, isLoading, error } = useQuery({
-		queryKey: queryKeys.reports.employees(currentEmployeeId ?? ""),
-		queryFn: async () => {
+		queryKey: opening?.key ?? [
+			...queryKeys.reports.employees(currentEmployeeId ?? ""),
+			actor,
+			organization,
+			openingId,
+			"pending",
+		],
+		queryFn: async ({ signal }) => {
 			const result = await getAccessibleEmployeesAction();
+			if (signal.aborted || active.current !== opening?.owner)
+				throw new CancelledError({ silent: true });
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch accessible employees");
 			}
 			return result.data;
 		},
 		staleTime: 5 * 60 * 1000, // 5 minutes - employee lists don't change frequently
-		enabled: !!currentEmployeeId,
+		gcTime: 0, // An unobserved opening is retired, including the disabled placeholder.
+		enabled: admitted,
 	});
 
 	// Transform AccessibleEmployee[] to SelectableEmployee[]
 	const employees = (() => {
-		if (!data) return [];
+		if (!admitted || !data) return [];
 		return data.map(transformAccessibleEmployee);
 	})();
 
@@ -97,8 +185,8 @@ export function useReportEmployees(currentEmployeeId?: string): UseReportEmploye
 
 	return {
 		employees,
-		isLoading,
-		error: error instanceof Error ? error : null,
+		isLoading: !admitted || isLoading,
+		error: admitted && error instanceof Error ? error : null,
 		currentEmployee,
 		canViewMultiple,
 	};
