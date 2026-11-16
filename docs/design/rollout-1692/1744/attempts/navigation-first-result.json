@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "Actual employee link opens the existing employee settings destination",
+    "Browser Back restores selected presence location"
+  ],
+  "employeeHref": "/en/settings/employees/9a7b03f1-9a10-48df-ad22-acfa62e85814",
+  "status": "failed",
+  "failure": {
+    "message": "Waiting failed: 60000ms exceeded",
+    "stack": "TimeoutError: Waiting failed: 60000ms exceeded\n    at new WaitTask (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)\n    at IsolatedWorld.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)\n    at CdpFrame.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:585:43)\n    at CdpFrame.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)\n    at CdpPage.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1547:37)\n    at file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/.tmp/1744/navigation.mjs:12:59"
+  }
+}

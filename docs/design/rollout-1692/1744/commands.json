@@ -1,0 +1,60 @@
+{
+  "cwd": "X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c",
+  "environmentOnEveryPnpmShell": "pnpm_config_verify_deps_before_run=false",
+  "pnpmPrefix": "pnpm --config.verify-deps-before-run=false",
+  "privilege": "Normal auto-review escalation for pnpm C: engine lock, network gh reads/comment, browser/process/docker runtime, and Git worktree index; no rejected approval bypass.",
+  "unitSelection": [
+    "src/app/[locale]/(app)/team/presence",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/lib/time-tracking/who-is-in/shape.test.ts",
+    "src/lib/time-tracking/who-is-in/format.test.ts",
+    "src/tolgee/extracted-key-defaults.test.ts",
+    "src/components/ui/table.test.tsx",
+    "src/components/font-size-preference.test.tsx",
+    "src/components/site-header.test.tsx"
+  ],
+  "formatSelection": [
+    "src/app/[locale]/(app)/team/presence/[locationId]",
+    "src/app/[locale]/(app)/team/presence/location-presence-list.tsx",
+    "src/app/[locale]/(app)/team/presence/location-presence-list.test.tsx",
+    "src/lib/navigation/route-metadata.ts"
+  ],
+  "commands": [
+    {"args":"--config.verify-store-integrity=true install --offline --frozen-lockfile --ignore-scripts --package-import-method=copy","result":"initial sandbox engine-lock failure; approved retry exit 0","log":"attempts/install-approved.log"},
+    {"args":"--dir apps/webapp exec vitest run --project unit src/app/[locale]/(app)/team/presence/location-presence-list.test.tsx","result":"red: 1 file/1 failed; green: 1 file/1 passed","logs":["checks/red-record.log","checks/green-record.log"]},
+    {"args":"--dir apps/webapp exec vitest run --project unit src/app/[locale]/(app)/team/presence/[locationId]/heading.test.ts","exit":1,"result":"1 file/1 failed behavior assertion","log":"checks/red-heading.log"},
+    {"args":"--dir apps/webapp exec vitest run --project unit src/app/[locale]/(app)/team/presence/[locationId]/states.test.tsx","exit":1,"result":"new component imports did not exist; 0 collected tests, not counted as behavior red","log":"checks/red-states.log"},
+    {"args":"--dir apps/webapp exec vitest run --project unit <unitSelection entries as separate literal arguments>","exit":0,"files":10,"cases":82,"log":"checks/final-units.log"},
+    {"args":"node .tmp/1744/run.mjs exec vitest run --project integration src/lib/time-tracking/who-is-in/who-is-in.integration.test.ts","exit":0,"files":1,"cases":6,"log":"checks/postgres.log"},
+    {"args":"node .tmp/1744/run.mjs exec vitest run --project integration src/lib/time-tracking/assigned-locations/assigned-locations.integration.test.ts","exit":0,"files":1,"cases":6,"log":"checks/postgres-assignment.log"},
+    {"args":"node .tmp/1744/run.mjs exec next typegen","exit":0,"log":"checks/typegen.log"},
+    {"args":"--dir apps/webapp exec tsc --project tsconfig.typecheck.json --noEmit --incremental false","exit":0,"log":"checks/tsconfig.typecheck.json.log"},
+    {"args":"--dir apps/webapp exec tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false","exit":0,"log":"checks/tsconfig.workflow-contracts.json.log"},
+    {"args":"--dir apps/webapp exec tsc --project tsconfig.smoke.json --noEmit --incremental false","exit":0,"log":"checks/tsconfig.smoke.json.log"},
+    {"args":"--dir apps/webapp exec biome check --formatter-enabled=true --line-width=100 --line-ending=crlf <formatSelection>","exit":0,"files":10,"log":"checks/biome-explicit.log"},
+    {"args":"--dir apps/webapp exec biome check <formatSelection>","exit":1,"formatDifferences":10,"log":"checks/biome-ordinary-final.log"},
+    {"args":"--dir apps/webapp exec biome check --line-ending=crlf <formatSelection>","exit":1,"formatDifferences":7,"log":"checks/biome-ordinary-crlf.log"},
+    {"args":"--dir apps/webapp exec biome lint <formatSelection>","exit":0,"files":10,"log":"checks/biome-lint.log"},
+    {"args":"exec react-doctor apps/webapp --scope changed --base 16443982de929de4f885a6cfb6de5b377374cb3e --verbose --no-parallel --json --output-dir .tmp/1744/doctor-staged","exit":0,"changedFiles":10,"score":100,"errors":0,"warnings":0,"log":"checks/doctor-staged.log"},
+    {"args":"node scripts/performance/fixture.mjs prepare .tmp/1744/fixture","exit":0,"log":"attempts/fixture-prepare-approved.log"},
+    {"args":"node .tmp/1744/run.mjs exec tsx --import ./src/worker-preload.mjs ../../.tmp/1744/seed.ts","exit":0,"result":"first attempt failed CJS top-level await; corrected launcher passed","logs":["attempts/seed.log","attempts/seed-2.log"]},
+    {"args":"node .tmp/1744/dev.mjs dev . .tmp/1744/fixture","result":"owned normal Next development process; repeated only around stopped-server source overlays"},
+    {"args":"node .tmp/1744/browser.mjs before before-matched","exit":0,"checks":21,"captures":8,"evidence":"before-matched/result.json"},
+    {"args":"node .tmp/1744/browser.mjs after after-cold --end-work","exit":0,"checks":46,"captures":16,"evidence":"after-cold/result.json"},
+    {"args":"node .tmp/1744/native.mjs","exit":0,"checks":2,"evidence":"native/result.json"},
+    {"args":"node .tmp/1744/navigation.mjs","exit":0,"checks":4,"result":"four earlier locator/retained-hidden-DOM attempts preserved separately","evidence":"navigation/result.json"},
+    {"shell":"& .tmp/1744/stop-next.ps1 -FixturePointer .tmp/1744/fixture-pointer.txt -RecordPath <owned cleanup record>","exit":0,"result":"exact owned path/PID/creation/listener checks; no cache move"},
+    {"args":"node .tmp/1744/overlay.mjs before","exit":0,"evidence":"checks/overlay-public.json"},
+    {"args":"node .tmp/1744/overlay.mjs restore","exit":0,"evidence":"checks/overlay-restored.json"},
+    {"args":"node scripts/performance/fixture.mjs cleanup .tmp/1744/fixture","exit":0,"evidence":"checks/cleanup.json"},
+    {"args":"node .tmp/1744/verify.mjs","exit":0,"evidence":"verification.json"}
+  ],
+  "deduplication": {"unitFiles":10,"unitCases":82,"postgresFiles":2,"postgresCases":12,"rule":"Selected earlier red/green and 55-case unit runs overlap the final 82; repeated browser attempts are not unique regression cases. No summed screenshot/test acceptance count is claimed."},
+  "otherRawAttempts": [
+    "Initial nested-working-directory sandbox Out-File denied creation of red-record.log; no Vitest run occurred in that attempt.",
+    "First preview_open about:blank failed unsupported-protocol; blank incognito retry succeeded and that owned tab was closed. Fixture journeys used the explicitly requested isolated/native Chromium.",
+    "Initial git add failed to create its outside-root worktree index.lock; normal approved git add succeeded. No reset/checkout/worktree creation occurred.",
+    "Initial license PowerShell count was 1 returned container; actual verifier parses 125 records. Artifact hash/provenance are unchanged.",
+    "Browser attempts preserve Windows ESM URL, inherited busy progress CSS and missing/hidden locator failures in attempts; they are not silently counted as passes."
+  ]
+}

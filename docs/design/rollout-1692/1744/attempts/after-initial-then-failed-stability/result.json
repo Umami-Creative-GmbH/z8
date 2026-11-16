@@ -1,0 +1,27 @@
+{
+  "phase": "after",
+  "permissionPolicy": "isolated context notifications denied for fixture origin",
+  "checks": [],
+  "captures": [],
+  "errors": [],
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx",
+      "sha256": "5b1ea103c50b679312c0dddf2bbef1eccf1f1a948f804a85963e9361b00a9992"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-list.tsx",
+      "sha256": "221c4886712345a5541f0cdc4e313fcab50aeaa93d27d2b1164f0b91415d0f12"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "e96cdf9bc6b62d439cb718fe9f7b10c76e7e7ca734e4bb167aebecff0d49b509"
+    }
+  ],
+  "qualification": "Before and after run the actual route and canonical read owners in this own normal development fixture; no mocked records or saved/copied/restored session state. Historical rerun overlays exactly the original three consumers on otherwise current supporting code; route-local state files remain unused in that phase. This is a consumer comparison, not full historical application execution.",
+  "status": "failed",
+  "failure": {
+    "message": "Waiting failed: 60000ms exceeded",
+    "stack": "TimeoutError: Waiting failed: 60000ms exceeded\n    at new WaitTask (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)\n    at IsolatedWorld.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)\n    at CdpFrame.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:585:43)\n    at CdpFrame.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)\n    at CdpPage.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1547:37)\n    at capture (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/.tmp/1744/browser.mjs:25:139)\n    at async file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/.tmp/1744/browser.mjs:26:83"
+  }
+}
