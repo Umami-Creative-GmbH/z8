@@ -1010,7 +1010,11 @@
       "status": "awaiting-integration",
       "verifiedCommit": null,
       "implementationCommit": "6744b09d2bc3e8df7de9fa5683f8b30214770838",
-      "handoffLimitation": "Authenticated visual/runtime acceptance incomplete; automatic review rejected compiled production login as bypassing inherited development Turnstile guard. It did not run. Fresh root verification must use normal approved development authentication, not bypass the rejection."
+      "handoffLimitation": "Authenticated visual/runtime acceptance incomplete; automatic review rejected compiled production login as bypassing inherited development Turnstile guard. It did not run. Fresh root verification must use normal approved development authentication, not bypass the rejection.",
+      "integrationCommit": "11abc6c16bfb770ee6a9bff6053ee4cc9c501178",
+      "correctionCommit": "55e1fee84317b4239efeb1f419c8b9cfce53512f",
+      "correctionIntegrationCommit": "c41f1fcfb9b581b0f746b01ca68a079449f5a831",
+      "integrationVerification": "PROVISIONAL. Merger reproduced unknown coverage presented as healthy-empty with no Retry. Root public red/green adds explicit coverage read state/local recovery, planner-scoped key suffix, retained-data labeling and supporting Retry pending/coalescing. 47 files/298 unit cases pass; final message-only followup reruns same8cases nonadditively, all3type projects pass,6owned explicit100CRLF Biome pass. Doctor21files0errors/2inherited scheduler warnings;ordinary6formatting differences retained. Independent merge tree matches,all59verifiedticket anchors plus baseline and17277 prior paths preserved. No fresh PG/browser/roles/actions/matched visual acceptance yet. verifiedCommit remains null; normal development auth required. Original failed/partial harness outputs preserved privately."
     },
     {
       "id": "R066",
@@ -1114,10 +1118,12 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1759#issuecomment-6932393742"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1759#issuecomment-6932393742",
+      "implementationCommit": "9cf362151acf25e0c453e659739c5c93e2f02e9f",
+      "handoffLimitation": "220 distinct cases (168unit+52PG);1495attemptinstances are not unique coverage. Latest refusal supplement unit/type/lint/Doctor only;browser pinned6662dc9d. Provider/runtime/collapsed-reload/full-generation/catalog/device limits retained. Fresh root merger/readiness pending."
     },
     {
       "id": "R076",
@@ -1138,8 +1144,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1761#issuecomment-6934385122"
     },
     {
       "id": "R078",
