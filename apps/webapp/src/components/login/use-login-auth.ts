@@ -92,6 +92,7 @@ export function useLoginAuth(
 		active: false,
 		epoch: 0,
 		pendingEpoch: null as number | null,
+		navigationEpoch: null as number | null,
 		token: null as string | null,
 	});
 	const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -112,6 +113,11 @@ export function useLoginAuth(
 		owner.active = true;
 		owner.epoch++;
 		owner.token = null;
+		if (owner.navigationEpoch !== null) {
+			owner.navigationEpoch = null;
+			owner.pendingEpoch = null;
+			updateUi({ pendingMethod: null });
+		}
 		updateUi("resume");
 		loadAuthPageClient().catch(() => {});
 		return () => {
@@ -146,6 +152,7 @@ export function useLoginAuth(
 		// Only its matching settlement releases the same-instance reservation.
 		if (lifetime.current.pendingEpoch !== epoch) return;
 		lifetime.current.pendingEpoch = null;
+		if (lifetime.current.navigationEpoch === epoch) lifetime.current.navigationEpoch = null;
 		setPendingMethod(null);
 	};
 	const resetVerification = (state: VerificationState = "waiting") => {
@@ -336,6 +343,7 @@ export function useLoginAuth(
 					window.location.assign(
 						`/api/auth/social-org/${method}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`,
 					);
+					lifetime.current.navigationEpoch = epoch;
 					return;
 				}
 				const client = await loadAuthPageClient();
@@ -367,7 +375,9 @@ export function useLoginAuth(
 				finish(epoch);
 			}
 		};
-		return execute().finally(() => finish(epoch));
+		return execute().finally(() => {
+			if (lifetime.current.navigationEpoch !== epoch) finish(epoch);
+		});
 	};
 	return {
 		form,
