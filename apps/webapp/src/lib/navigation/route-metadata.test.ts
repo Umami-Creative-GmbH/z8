@@ -20,6 +20,11 @@ it("adopts presence selection and selected-location headings, preserving deeper 
 });
 
 describe("route metadata", () => {
+	it("adopts the manager Today briefing heading without descendants", () => {
+		expect(appPageOwnsHeading("/en/today")).toBe(true);
+		expect(appPageOwnsHeading("/de/today/")).toBe(true);
+		expect(appPageOwnsHeading("/en/today/detail")).toBe(false);
+	});
 	it("adopts the team absence heading, retaining team ownership and independent descendants", () => {
 		expect(appPageOwnsHeading("/en/team/absences")).toBe(true);
 		expect(appPageOwnsHeading("/de/team/absences/")).toBe(true);

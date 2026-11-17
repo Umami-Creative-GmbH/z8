@@ -222,6 +222,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		/^\/personnel-files\/payslip-batches\/[^/]+$/.test(path) ||
 		path === "/" ||
 		path === "/time-tracking" ||
+		path === "/today" ||
 		path === "/team/presence" ||
 		path === "/personnel-files/payslip-batches" ||
 		path === "/notifications" ||

@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { startTransition, useState, useTransition } from "react";
+import { startTransition, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,9 @@ import { Link } from "@/navigation";
 type TodayApprovalsPanelProps = {
 	items: BriefingApprovalActionItem[];
 	error?: string;
+	onRetry?: () => void;
+	onDecision?: () => void;
+	stale?: boolean;
 };
 
 type ApprovalDecision = "approve" | "reject";
@@ -24,24 +27,57 @@ type ApprovalDecisionResponse = {
 
 const REJECT_REASON = "Rejected from manager daily briefing.";
 
-export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) {
+export function TodayApprovalsPanel({
+	items,
+	error,
+	onRetry,
+	onDecision,
+	stale,
+}: TodayApprovalsPanelProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [actingApprovalId, setActingApprovalId] = useState<string | null>(null);
 	const [isRefreshPending, startRefreshTransition] = useTransition();
+	const [decisionError, setDecisionError] = useState<string | null>(null);
+	const [decided, setDecided] = useState<Set<string>>(() => new Set());
+	const active = useRef(false);
+	const generation = useRef(0);
+	const pending = useRef(false);
+	useEffect(() => {
+		active.current = true;
+		setActingApprovalId(null);
+		return () => {
+			active.current = false;
+			generation.current++;
+			pending.current = false;
+		};
+	}, []);
 	const isBusy = actingApprovalId !== null || isRefreshPending;
 
 	function decideApproval(item: BriefingApprovalActionItem, decision: ApprovalDecision) {
-		if (isBusy) {
+		if (
+			pending.current ||
+			isBusy ||
+			error ||
+			stale ||
+			!active.current ||
+			decided.has(item.approvalId)
+		) {
 			return;
 		}
 
+		pending.current = true;
+		const request = generation.current;
+		setDecisionError(null);
 		setActingApprovalId(item.approvalId);
 
 		postApprovalDecision(item.approvalId, decision)
 			.then((result) => {
+				if (!active.current || request !== generation.current) return;
 				if (!result.success) {
-					toast.error(result.error || fallbackError(t, decision));
+					const message = result.error || fallbackError(t, decision);
+					setDecisionError(message);
+					toast.error(message);
 					return;
 				}
 
@@ -50,6 +86,8 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 						? t("today.approvals.toast.approved", "Request approved")
 						: t("today.approvals.toast.rejected", "Request rejected"),
 				);
+				setDecided((previous) => new Set(previous).add(item.approvalId));
+				onDecision?.();
 				startTransition(() => {
 					startRefreshTransition(() => {
 						refresh();
@@ -57,15 +95,19 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 				});
 			})
 			.catch(() => {
+				if (!active.current || request !== generation.current) return;
+				setDecisionError(fallbackError(t, decision));
 				toast.error(fallbackError(t, decision));
 			})
 			.finally(() => {
+				if (!active.current || request !== generation.current) return;
+				pending.current = false;
 				setActingApprovalId(null);
 			});
 	}
 
 	return (
-		<Card className="gap-4">
+		<Card className="min-w-0 gap-4" aria-busy={isBusy}>
 			<CardHeader className="gap-2">
 				<div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0 space-y-1">
@@ -77,7 +119,9 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 						</CardDescription>
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
-						<Badge variant={items.length > 0 ? "default" : "secondary"}>{items.length}</Badge>
+						<Badge variant={items.length > 0 ? "default" : "secondary"}>
+							{error || stale ? t("today.briefing.unavailable", "Unavailable") : items.length}
+						</Badge>
 						<Button asChild size="sm" variant="outline">
 							<Link href="/approvals/inbox">{t("today.approvals.openInbox", "Open inbox")}</Link>
 						</Button>
@@ -85,7 +129,16 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-3">
-				{error ? <SectionError message={error} /> : null}
+				{error ? <SectionError message={error} onRetry={onRetry} /> : null}
+				{decisionError ? <SectionError message={decisionError} /> : null}
+				{error && items.length > 0 ? (
+					<p role="status" className="text-sm text-muted-foreground">
+						{t(
+							"today.briefing.retainedSection",
+							"Previous results shown. Retry to check for changes.",
+						)}
+					</p>
+				) : null}
 				{items.length > 0 ? (
 					<ul
 						aria-label={t("today.approvals.pendingAriaLabel", "Pending approvals")}
@@ -97,13 +150,25 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 								key={item.id}
 							>
 								<div className="min-w-0 space-y-1">
-									<p className="break-words font-medium text-sm">{item.title}</p>
+									<Link
+										href={item.href}
+										className="break-words font-medium text-sm underline underline-offset-4"
+									>
+										{item.title}
+									</Link>
 									<p className="break-words text-muted-foreground text-sm">{item.summary}</p>
-									<p className="truncate text-muted-foreground text-xs">
+									<p className="break-words text-muted-foreground text-xs">
 										{item.requesterName} - {item.description}
 									</p>
 								</div>
-								{item.ownRequest ? (
+								{decided.has(item.approvalId) ? (
+									<p role="status" className="text-sm text-muted-foreground">
+										{t(
+											"today.approvals.decided",
+											"Decision saved. Refresh to load the current queue.",
+										)}
+									</p>
+								) : item.ownRequest ? (
 									<p className="shrink-0 font-medium text-muted-foreground text-xs leading-5 sm:max-w-48 sm:text-right">
 										{t(
 											"today.approvals.ownRequest",
@@ -116,7 +181,7 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 											aria-label={t("today.approvals.rejectLabel", "Reject {title}", {
 												title: item.title,
 											})}
-											disabled={isBusy}
+											disabled={isBusy || Boolean(error) || stale}
 											onClick={() => decideApproval(item, "reject")}
 											size="sm"
 											type="button"
@@ -128,7 +193,7 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 											aria-label={t("today.approvals.approveLabel", "Approve {title}", {
 												title: item.title,
 											})}
-											disabled={isBusy}
+											disabled={isBusy || Boolean(error) || stale}
 											onClick={() => decideApproval(item, "approve")}
 											size="sm"
 											type="button"
@@ -140,11 +205,11 @@ export function TodayApprovalsPanel({ items, error }: TodayApprovalsPanelProps) 
 							</li>
 						))}
 					</ul>
-				) : (
+				) : !error && !stale ? (
 					<p className="rounded-lg border border-dashed bg-muted/30 px-3 py-4 text-sm text-muted-foreground">
 						{t("today.approvals.empty", "No approvals are waiting.")}
 					</p>
-				)}
+				) : null}
 			</CardContent>
 		</Card>
 	);
@@ -195,13 +260,19 @@ function fallbackError(t: ReturnType<typeof useTranslate>["t"], decision: Approv
 		: t("today.approvals.toast.rejectError", "Unable to reject request");
 }
 
-function SectionError({ message }: { message: string }) {
+function SectionError({ message, onRetry }: { message: string; onRetry?: () => void }) {
+	const { t } = useTranslate();
 	return (
 		<div
 			className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-sm"
 			role="alert"
 		>
 			{message}
+			{onRetry ? (
+				<Button type="button" size="sm" variant="outline" onClick={onRetry} className="mt-2">
+					{t("today.approvals.retry", "Retry approvals")}
+				</Button>
+			) : null}
 		</div>
 	);
 }

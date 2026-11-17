@@ -1,0 +1,38 @@
+/* @vitest-environment jsdom */
+import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { TodayBriefing } from "./today-briefing";
+import { briefingFixture } from "./today-test-fixture";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
+}));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+			Object.entries(params ?? {}).reduce(
+				(text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
+				fallback,
+			),
+	}),
+}));
+
+describe("manager Today briefing", () => {
+	it("leads with urgent evidence and never announces all-clear when a section failed", () => {
+		const briefing = briefingFixture();
+		briefing.sections.attendance.error = "Section could not be loaded.";
+		render(<TodayBriefing briefing={briefing} />);
+		expect(screen.queryByText(/All clear/i)).toBeNull();
+		const summary = screen.getByRole("region", { name: "Today summary" });
+		expect(within(summary).getAllByText("Unavailable")).toHaveLength(2);
+		expect(
+			screen.getByRole("heading", { name: "Needs Action" }).compareDocumentPosition(summary) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Retry Attendance" })).toBeTruthy();
+	});
+});

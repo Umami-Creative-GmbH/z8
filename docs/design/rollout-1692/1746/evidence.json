@@ -1,0 +1,373 @@
+{
+    "source":  "c48870f6784bf070d4ee20b30da76b5039425c91",
+    "preparedMetadata":  "a5c7f741c0df6816e0e2b10290d79b7409fc606f",
+    "directlyVerifiedProduct":  "16443982de929de4f885a6cfb6de5b377374cb3e",
+    "date":  "2026-11-16",
+    "sourceFiles":  [
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/actions.integration.test.ts",
+                            "gitBlob":  "3637223c00d5ba32d2a6db62a69db835d3d1a927",
+                            "workingByteSha256":  "f97d46adcebaa6f69d187d47c5f1853076679cb593e4f1ad1224b113fa239eaf"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/actions.ts",
+                            "gitBlob":  "3034b657e5abd3b5db0d5b1ccca449de777a0079",
+                            "workingByteSha256":  "a71fb5f43147e6f28acbb10b3474fa02fc073aecf678c08fdc1551fe1f3fc884"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/page.tsx",
+                            "gitBlob":  "555cba72c8670c1d2296fa9b462d08b483064e0c",
+                            "workingByteSha256":  "a35c24738fb11f5ff4c9e1e3cb1d5c9d39b3b2714b4ecdcd180f462a9cc3bf84"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-approvals-panel.test.tsx",
+                            "gitBlob":  "6d9433edf7bc7db07b9f45b0f728534ed8d16ee2",
+                            "workingByteSha256":  "38fb47661775d799dfc6d89a6f2901cbcce1dac244b0a136a3604a14dda7ee43"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-approvals-panel.tsx",
+                            "gitBlob":  "acdd804ba1fb61ad927a72b9ab02e3376fc3a240",
+                            "workingByteSha256":  "06d0238f00681146ca477a50aff70646df034de33745ba485dae3014fedeea67"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-briefing.test.tsx",
+                            "gitBlob":  "7491154685c427a95f994b01eb1ba76dfe706de2",
+                            "workingByteSha256":  "7aa8041bf418fbec968096eaa796732d63eb96d02cf0da2640257c27f0a8cfef"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-briefing.tsx",
+                            "gitBlob":  "fb6a47b1c7815de96e8ea99be3685225fce88663",
+                            "workingByteSha256":  "567232a16e3e4fea4cc0ba04251c367db348fe2a53d766555fd856c7140d9cd4"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-loading.tsx",
+                            "gitBlob":  "4253b1f1389176edc2ef6aadb13dbbe102bc9e71",
+                            "workingByteSha256":  "ec870c0da6f611f8e73af720504b25260ff5b161e9c080e0d5465a0cbe0436c4"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-test-fixture.ts",
+                            "gitBlob":  "10c119ddb0e9ce3a0f458a390f9ba49945b2f1da",
+                            "workingByteSha256":  "1735301fafc1b5b6b0784dcc26bdb71de017360d0920f8dff5cc22fd7bb09a9d"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-title.tsx",
+                            "gitBlob":  "f09dbc24b263b65f99df2677d5c84f11f51b21b9",
+                            "workingByteSha256":  "1638fb249624c8580df830663b975d28dcdf978d313c7d8ad2a310a108068d87"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-types.ts",
+                            "gitBlob":  "42fbb191344802c4ab81429e647601afdcbf7717",
+                            "workingByteSha256":  "554af5dab6772d86775fa992f8657baa7b60cda606a37a56207c92825c177b73"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-workspace.test.tsx",
+                            "gitBlob":  "243f1ab6e7ac9f33c05bb1f932d5f52205c499f3",
+                            "workingByteSha256":  "5c157e66912ac9cfad26f7e9c8865f3e19e6438742f5aab7e292643b8b1ea024"
+                        },
+                        {
+                            "path":  "apps/webapp/src/app/[locale]/(app)/today/today-workspace.tsx",
+                            "gitBlob":  "9d9730a15c9dc5cab863f9eea9740af803b45b35",
+                            "workingByteSha256":  "e6f1f0aaaeed0e3472141324969f72c52ecd7b8455bbac5b9d88c08ea25e5869"
+                        },
+                        {
+                            "path":  "apps/webapp/src/lib/manager-daily-briefing/__tests__/get-manager-daily-briefing.test.ts",
+                            "gitBlob":  "2aaa87cdaa2c14f9b027bae499a43685c4c91d94",
+                            "workingByteSha256":  "0b38e26d780490975a0a35ee1853b020f915d7944d538cccafe8fcc1e1c75c79"
+                        },
+                        {
+                            "path":  "apps/webapp/src/lib/manager-daily-briefing/get-manager-daily-briefing.ts",
+                            "gitBlob":  "25552cc666c41723da7912240e0259d34d15dc78",
+                            "workingByteSha256":  "1be1eb06f4347dc55a8906971cd66034cfa90f51ec162ca3139f7d48b4157655"
+                        },
+                        {
+                            "path":  "apps/webapp/src/lib/manager-daily-briefing/types.ts",
+                            "gitBlob":  "b0ecfce6e319d1084c148cf4f68fa7193c1467fb",
+                            "workingByteSha256":  "f33734a5d418ec94aed0828fc098613ba1568ecccafd9fe9d4b974642e9cf2b7"
+                        },
+                        {
+                            "path":  "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+                            "gitBlob":  "14aab5eaa24745bf86b5363a3b441916e30e810a",
+                            "workingByteSha256":  "5f1f41bba49eb49053ccc7bd793a13ab0b1498f8acb4512ae949cb9722b92f1f"
+                        },
+                        {
+                            "path":  "apps/webapp/src/lib/navigation/route-metadata.ts",
+                            "gitBlob":  "71eee0fcc686e36bec2fa05b164f2f077805d9ea",
+                            "workingByteSha256":  "20e067fec657430ed132bd7c954d26e7fbcbbeb53233d0bc93679d06fb64a490"
+                        }
+                    ],
+    "captures":  [
+                     {
+                         "path":  "after-desktop-collapsed-dark-18px.png",
+                         "bytes":  122031,
+                         "sha256":  "2d2ee83571f97316f5b0f848f7e1fcf928514144fb4d71d4f421c1ef12ebdfd6",
+                         "decoded":  {
+                                         "width":  1600,
+                                         "height":  1000,
+                                         "channels":  3,
+                                         "pixelBytes":  4800000
+                                     }
+                     },
+                     {
+                         "path":  "after-desktop-dark-18px.png",
+                         "bytes":  147419,
+                         "sha256":  "bb70142ef7a6ab6af8b12ebc97b2b2a33a097e4332ca950d9b40d0ceece5dbc1",
+                         "decoded":  {
+                                         "width":  1600,
+                                         "height":  1000,
+                                         "channels":  3,
+                                         "pixelBytes":  4800000
+                                     }
+                     },
+                     {
+                         "path":  "after-desktop-dark.png",
+                         "bytes":  139497,
+                         "sha256":  "78f6329e5d06f230313a52a9c6c1bcd60eab85a26d0df88bb3a66df6c2c3b59f",
+                         "decoded":  {
+                                         "width":  1600,
+                                         "height":  1000,
+                                         "channels":  3,
+                                         "pixelBytes":  4800000
+                                     }
+                     },
+                     {
+                         "path":  "after-desktop.png",
+                         "bytes":  141908,
+                         "sha256":  "b339d7093bbf07fade5b3d09d023776ab293809cc093b84df6ade88483247c36",
+                         "decoded":  {
+                                         "width":  1600,
+                                         "height":  1000,
+                                         "channels":  3,
+                                         "pixelBytes":  4800000
+                                     }
+                     },
+                     {
+                         "path":  "after-phone-dark-18px.png",
+                         "bytes":  48962,
+                         "sha256":  "9847c6371ae5406cc5835870b432ce3c944fef6dae02136c6c4ec0709c82ff74",
+                         "decoded":  {
+                                         "width":  390,
+                                         "height":  844,
+                                         "channels":  3,
+                                         "pixelBytes":  987480
+                                     }
+                     },
+                     {
+                         "path":  "after-phone.png",
+                         "bytes":  46502,
+                         "sha256":  "3a8643a9ac8e6f10a3442616a4c8dae9e7a063cc075626d832bf45e22a9d6e7c",
+                         "decoded":  {
+                                         "width":  390,
+                                         "height":  844,
+                                         "channels":  3,
+                                         "pixelBytes":  987480
+                                     }
+                     },
+                     {
+                         "path":  "after-wide.png",
+                         "bytes":  151379,
+                         "sha256":  "53bc4c737df34bb2ef01751bf5a0fe1446fcc8c01f680bd2b98dbd97b4f320a1",
+                         "decoded":  {
+                                         "width":  2400,
+                                         "height":  1200,
+                                         "channels":  3,
+                                         "pixelBytes":  8640000
+                                     }
+                     },
+                     {
+                         "path":  "approval-completed.png",
+                         "bytes":  141532,
+                         "sha256":  "58e530d6a7c29c4c596b203a5b7dd707fc19580730cb548c0f3512d537fc9be3",
+                         "decoded":  {
+                                         "width":  1600,
+                                         "height":  1000,
+                                         "channels":  3,
+                                         "pixelBytes":  4800000
+                                     }
+                     },
+                     {
+                         "path":  "approval-pending.png",
+                         "bytes":  149046,
+                         "sha256":  "0c687f4d3e9fe9df6da81e36a166ab0a39c07a634b372ea8bcac5c3cab454dcc",
+                         "decoded":  {
+                                         "width":  1600,
+                                         "height":  1000,
+                                         "channels":  3,
+                                         "pixelBytes":  4800000
+                                     }
+                     },
+                     {
+                         "path":  "before-desktop.png",
+                         "bytes":  148460,
+                         "sha256":  "823dcf411a00d5abb2499e3b34a973ca00d5c175d2b87931dd479ac2e4a9c0f0",
+                         "decoded":  {
+                                         "width":  1600,
+                                         "height":  1000,
+                                         "channels":  3,
+                                         "pixelBytes":  4800000
+                                     }
+                     },
+                     {
+                         "path":  "before-phone.png",
+                         "bytes":  44225,
+                         "sha256":  "91195b7dd5a6c27d4a6a32940270ee81f77c8bf994e2e627630df2375dffca7b",
+                         "decoded":  {
+                                         "width":  390,
+                                         "height":  844,
+                                         "channels":  3,
+                                         "pixelBytes":  987480
+                                     }
+                     },
+                     {
+                         "path":  "before-wide.png",
+                         "bytes":  153826,
+                         "sha256":  "af7b3da09e980cb9881a9a89be92e2cfc7367acc7e5337622b22632b333dc405",
+                         "decoded":  {
+                                         "width":  2400,
+                                         "height":  1200,
+                                         "channels":  3,
+                                         "pixelBytes":  8640000
+                                     }
+                     }
+                 ],
+    "native":  {
+                   "origin":  "http://localhost:64396",
+                   "fixture":  "own disposable Performance small",
+                   "sessionPersistence":  "restore not configured; no cookie/session state files",
+                   "policy":  "unique transient Chromium with --disable-notifications; fixture policy, no permission grant",
+                   "phone":  {
+                                 "blockingDialogs":  0,
+                                 "headings":  [
+                                                  "Manager Daily Briefing"
+                                              ],
+                                 "notificationPolicy":  "disabled by fixture launch",
+                                 "rootFont":  "18px",
+                                 "route":  "/en/today",
+                                 "savedText":  "large",
+                                 "scrollWidth":  390,
+                                 "theme":  "dark bprogress-busy",
+                                 "viewport":  [
+                                                  390,
+                                                  844
+                                              ]
+                             },
+                   "wide":  {
+                                "headings":  [
+                                                 "Manager Daily Briefing"
+                                             ],
+                                "overlayCount":  0,
+                                "rootFont":  "16px",
+                                "scrollWidth":  2400,
+                                "theme":  "light",
+                                "viewport":  [
+                                                 2400,
+                                                 1200
+                                             ]
+                            },
+                   "offline":  {
+                                   "feedback":  [
+                                                    "Could not refresh data. Please try again."
+                                                ],
+                                   "headings":  1,
+                                   "knownResults":  true,
+                                   "online":  false
+                               },
+                   "keyboard":  {
+                                    "focusTag":  "BUTTON",
+                                    "focusText":  "Toggle Sidebar",
+                                    "headingCount":  1,
+                                    "visibleDialogs":  0
+                                },
+                   "a11y":  {
+                                "engine":  "4.12.1",
+                                "scope":  "main, light wide default text",
+                                "counts":  {
+                                               "inapplicable":  71,
+                                               "incomplete":  0,
+                                               "passes":  17,
+                                               "violations":  0
+                                           }
+                            },
+                   "approval":  {
+                                    "id":  "47ca59a4-d019-4a19-8297-909e9b45a50b",
+                                    "requester":  "Person 3, small-restricted managed employee",
+                                    "created":  "normal absence request form; Fixture home office; 2026-11-17",
+                                    "before":  {
+                                                   "inboxHttp":  200,
+                                                   "status":  "pending"
+                                               },
+                                    "decision":  "native manager Today Approve button, existing POST endpoint",
+                                    "after":  {
+                                                  "inboxHttp":  200,
+                                                  "status":  "approved"
+                                              },
+                                    "queue":  "No approvals are waiting."
+                                }
+               },
+    "checks":  {
+                   "unit":  {
+                                "files":  10,
+                                "tests":  156
+                            },
+                   "postgres":  {
+                                    "files":  3,
+                                    "tests":  12
+                                },
+                   "typeProjects":  [
+                                        "tsconfig.typecheck.json",
+                                        "tsconfig.workflow-contracts.json",
+                                        "tsconfig.smoke.json"
+                                    ],
+                   "explicitBiome":  {
+                                         "files":  19,
+                                         "lineWidth":  100,
+                                         "lineEnding":  "crlf",
+                                         "exit":  0
+                                     },
+                   "ordinaryBiome":  {
+                                         "files":  19,
+                                         "formatErrors":  19,
+                                         "exit":  1
+                                     },
+                   "lint":  {
+                                "files":  19,
+                                "exit":  0
+                            },
+                   "doctor":  {
+                                  "scope":  "changed",
+                                  "base":  "16443982de929de4f885a6cfb6de5b377374cb3e",
+                                  "errors":  0,
+                                  "warnings":  2,
+                                  "score":  "disabled",
+                                  "suppressions":  "none",
+                                  "diagnostics":  [
+                                                      {
+                                                          "rule":  "react-hooks-js/set-state-in-effect",
+                                                          "review":  "Activity activation clears stale pending feedback; retained, unsuppressed",
+                                                          "file":  "today-approvals-panel.tsx",
+                                                          "line":  48
+                                                      },
+                                                      {
+                                                          "rule":  "react-doctor/no-high-complexity-react-function",
+                                                          "review":  "SectionCard keeps independent error/retained/empty/results states; retained, unsuppressed",
+                                                          "file":  "today-briefing.tsx",
+                                                          "line":  341
+                                                      }
+                                                  ]
+                              },
+                   "next":  {
+                                "version":  "16.4.6",
+                                "bundler":  "Turbopack",
+                                "compilationIssues":  0,
+                                "configErrors":  0,
+                                "sessionErrors":  0
+                            }
+               },
+    "sourceBoundaries":  {
+                             "finalNative":  "post-commit keyboard and main-region axe verification on c48870f6784bf070d4ee20b30da76b5039425c91",
+                             "finalTypes":  "all three rerun at source commit",
+                             "next":  "earlier proactive full graph probe; final route HMR, no production generation",
+                             "approval":  "actual incremental browser decision; unchanged final panel/API; not live revocation proof",
+                             "refreshedCaptures":  "incremental implementation before source commit; not claimed a fully frozen final-tree capture set",
+                             "baselineCaptures":  "metadata a5c7f741 before app edits"
+                         }
+}

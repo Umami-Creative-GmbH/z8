@@ -1,0 +1,47 @@
+{
+  "containersRemoved": [
+    "z8_perf_6a8481cda181_postgres",
+    "z8_perf_6a8481cda181_redis",
+    "z8_perf_6a8481cda181_storage"
+  ],
+  "browserClosed": true,
+  "containerCount": 3,
+  "label": "z8-performance-fixture-1450",
+  "restore": "not configured",
+  "browserSession": "today1746-native",
+  "next": {
+    "cacheMoved": false,
+    "port": 64396,
+    "stoppedPids": [
+      95268,
+      97272,
+      96504,
+      71368,
+      88932,
+      24152,
+      18140,
+      71308,
+      31616,
+      90188,
+      64128,
+      105808,
+      53672,
+      5996,
+      55620,
+      111052,
+      101768,
+      28220,
+      103432,
+      100656,
+      92708,
+      67068,
+      112176
+    ],
+    "ownedNextStopped": true,
+    "filteredProcessInventory": true,
+    "ownedNextIdentityVerified": true,
+    "portClosed": true
+  },
+  "dependencyCleanup": "none",
+  "privateManifests": "retained ignored"
+}

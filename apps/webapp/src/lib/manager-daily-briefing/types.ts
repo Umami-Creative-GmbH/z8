@@ -69,6 +69,8 @@ export interface BriefingSection<TItem extends BriefingActionItem = BriefingActi
 export interface ManagerDailyBriefing {
 	generatedAt: string;
 	date: string;
+	/** The standalone operational check failed; never infer all-clear from its empty fallback. */
+	needsActionError?: string;
 	summary: BriefingSummaryCounts;
 	needsAction: BriefingActionItem[];
 	sections: {

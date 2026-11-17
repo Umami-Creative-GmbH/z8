@@ -1,17 +1,20 @@
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
-import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
+import { PageHeader } from "@/components/ui/page-header";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee } from "../team/actions";
-import { TodayBriefing } from "./today-briefing";
+import { readTodayBriefing } from "./actions";
 import { TodayPageLoading } from "./today-loading";
+import { TodayWorkspace } from "./today-workspace";
 
 async function TodayPageContent() {
-	const currentEmployee = await getCurrentEmployee();
+	const [currentEmployee, t] = await Promise.all([getCurrentEmployee(), getTranslate()]);
 
 	if (!currentEmployee) {
 		return (
-			<div className="@container/main flex flex-1 items-center justify-center p-6">
+			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
+				<PageHeader title={t("today.briefing.title", "Manager Daily Briefing")} />
 				<NoEmployeeError feature="view today's briefing" />
 			</div>
 		);
@@ -23,21 +26,16 @@ async function TodayPageContent() {
 
 	if (!currentEmployee.organizationId) {
 		return (
-			<div className="@container/main flex flex-1 items-center justify-center p-6">
+			<div className="@container/main flex flex-1 flex-col gap-6 p-6">
+				<PageHeader title={t("today.briefing.title", "Manager Daily Briefing")} />
 				<NoEmployeeError feature="view today's briefing" />
 			</div>
 		);
 	}
 
-	const briefing = await getManagerDailyBriefing({
-		currentEmployee: {
-			id: currentEmployee.id,
-			role: currentEmployee.role,
-			organizationId: currentEmployee.organizationId,
-		},
-	});
-
-	return <TodayBriefing briefing={briefing} />;
+	const scope = { userId: currentEmployee.userId, organizationId: currentEmployee.organizationId };
+	const initial = await readTodayBriefing(scope);
+	return <TodayWorkspace scope={scope} initial={initial} />;
 }
 
 export default function TodayPage() {
