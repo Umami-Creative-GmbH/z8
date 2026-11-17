@@ -7,6 +7,7 @@ import { formatPresenceSince } from "@/lib/time-tracking/who-is-in/format";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import { getTranslate } from "@/tolgee/server";
 import { LocationPresenceList, type LocationPresenceRow } from "../location-presence-list";
+import { LocationPresenceView } from "../location-presence-view";
 import { getLocationPresence } from "../presence-data";
 import { AllLocationsLink } from "./all-locations-link";
 import { LocationPresenceLoading } from "./location-presence-loading";
@@ -36,34 +37,38 @@ async function LocationPresencePageContent({ params }: LocationPresencePageProps
 	}));
 
 	return (
-		<div className="@container/main mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
-			<PageHeader
-				scope={<AllLocationsLink />}
-				title={t("team.presence.locationTitle", "Who is in: {location}", {
-					location: result.location.name,
-				})}
-				description={
-					result.viewer.scope.kind === "all"
-						? t(
-								"team.presence.descriptionAll",
-								"Employees assigned to this location who are clocked in or on a break.",
-							)
-						: t(
-								"team.presence.descriptionManaged",
-								"Employees you manage who are assigned to this location and clocked in or on a break.",
-							)
-				}
-			/>
-			<section aria-label={t("team.presence.title", "Who is in")} className="min-w-0 space-y-3">
-				<LocationPresenceList rows={rows} />
-				<p className="max-w-3xl text-pretty text-sm text-muted-foreground">
-					{t(
-						"team.presence.assignmentContext",
-						"Location assignment is not evidence of device position. Times use the zone captured when work or the break began. Presence refreshes every minute.",
-					)}
-				</p>
-			</section>
-		</div>
+		<LocationPresenceView
+			view={{ userId: result.viewer.userId, organizationId: result.viewer.organizationId }}
+		>
+			<div className="@container/main mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
+				<PageHeader
+					scope={<AllLocationsLink />}
+					title={t("team.presence.locationTitle", "Who is in: {location}", {
+						location: result.location.name,
+					})}
+					description={
+						result.viewer.scope.kind === "all"
+							? t(
+									"team.presence.descriptionAll",
+									"Employees assigned to this location who are clocked in or on a break.",
+								)
+							: t(
+									"team.presence.descriptionManaged",
+									"Employees you manage who are assigned to this location and clocked in or on a break.",
+								)
+					}
+				/>
+				<section aria-label={t("team.presence.title", "Who is in")} className="min-w-0 space-y-3">
+					<LocationPresenceList rows={rows} />
+					<p className="max-w-3xl text-pretty text-sm text-muted-foreground">
+						{t(
+							"team.presence.assignmentContext",
+							"Location assignment is not evidence of device position. Times use the zone captured when work or the break began. Presence refreshes every minute.",
+						)}
+					</p>
+				</section>
+			</div>
+		</LocationPresenceView>
 	);
 }
 

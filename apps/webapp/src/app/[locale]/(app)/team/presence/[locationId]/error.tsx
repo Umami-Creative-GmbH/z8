@@ -3,12 +3,7 @@
 import { AppErrorState } from "@/components/errors/app-error-state";
 import { AllLocationsLink } from "./all-locations-link";
 
-export default function LocationPresenceError({
-	retry,
-}: {
-	error: Error & { digest?: string };
-	retry: () => void;
-}) {
+export default function LocationPresenceError({ retry }: { error: unknown; retry: () => void }) {
 	return (
 		<AppErrorState
 			variant="error"
