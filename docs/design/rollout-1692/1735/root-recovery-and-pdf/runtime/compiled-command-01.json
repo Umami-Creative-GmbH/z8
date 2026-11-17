@@ -1,0 +1,25 @@
+{
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "--maxWorkers",
+    "1",
+    "src/lib/reports/exporters/pdf-exporter.compiled.test.ts",
+    "src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+    "--reporter=default",
+    "--reporter=json",
+    "--outputFile=../../.tmp/1735-pdf-independent-checks/compiled-raw-result-01.json"
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "files": 2,
+  "timeoutInflated": false
+}

@@ -1,0 +1,28 @@
+{
+  "seam": "actual exportToPDF compiled with the existing Next React Compiler, real renderer and PDF parser; approved TestingDecisions export seam",
+  "baseline": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "reproduction": {
+    "command": "pnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit --maxWorkers 2 src/lib/reports/exporters/pdf-exporter.compiled.test.ts --reporter=verbose --reporter=json --outputFile=../../.tmp/1735-pdf-checks/compiled-red-01.json",
+    "result": "1 failed: null.props; renderer first emits View is not defined in compiler-hoisted callback"
+  },
+  "hypotheses": [
+    {
+      "rank": 1,
+      "prediction": "Only compiled repeated-row cases fail; compiler callback references out-of-scope lazy primitives",
+      "outcome": "confirmed on month, custom-field and home-office one-row cases; no-row compiled control succeeds"
+    },
+    {
+      "rank": 2,
+      "prediction": "Invalid document values/styles also fail without React Compiler",
+      "outcome": "falsified for identical four synthetic cases, all plain renderer variants succeed"
+    },
+    {
+      "rank": 3,
+      "prediction": "Renderer/import independently fails even plain or no repeated rows",
+      "outcome": "falsified by plain4/4 and compiled-no-row control"
+    }
+  ],
+  "fix": "Create the Document element directly inside exportToPDF, keeping unchanged lazy renderer import and closure-bound row callbacks; remove obsolete inline-component lint suppression.",
+  "sandboxAttempt": "Initial pnpm engine-store lock denied; unchanged focused command succeeded after approved escalation. Git branch lock similarly required shared metadata escalation.",
+  "earlierReadOnlyGh": "Two external read-only gh commands returned no output; functionscellg49:117 terminated without replay. No tracker writes were issued by those commands.1757claim used GitHub connector and explicit verified readback."
+}

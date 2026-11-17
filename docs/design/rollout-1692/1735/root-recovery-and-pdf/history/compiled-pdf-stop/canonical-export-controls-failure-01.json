@@ -1,0 +1,7 @@
+{
+  "code": "42601",
+  "exit": 1,
+  "attempt": "canonical-export-controls-01",
+  "kind": "harness",
+  "message": "Read-only SQL shorthand alias month was parsed as reserved keyword; no writes performed, no canonical comparison verdict produced"
+}

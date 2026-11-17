@@ -1,0 +1,1 @@
+{"exit":1,"beforeRPC":true,"diagnosis":"Windows pnpm.cmd removed JSON argument quotes. Plain key=value syntax is encoded in-process for later calls. No browser action occurred."}

@@ -1,0 +1,12 @@
+{
+  "physicalParents": [
+    "node_modules",
+    "node_modules/.pnpm",
+    "apps/webapp/node_modules"
+  ],
+  "rootInternalSymlinkLeaves": 5,
+  "appInternalSymlinkLeaves": 153,
+  "totalInternalSymlinkLeaves": 158,
+  "allInsideFrozenInstalledTopology": true,
+  "clarification": "preservation-01 counted app leaves alone (153); the authorized total is root five plus app 153 = 158. No dependency install, repair, resolver overlay, junction move or cache movement occurred."
+}

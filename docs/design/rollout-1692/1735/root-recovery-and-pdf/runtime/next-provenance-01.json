@@ -1,0 +1,78 @@
+{
+  "kind": "Deterministic public summaries independently checked against retained decoded MCP JSON",
+  "provenance": [
+    {
+      "publicPath": "next-probes-01-public.json",
+      "probe": "get_compilation_issues",
+      "decodedPrivatePath": "next-get_compilation_issues-01-private.json",
+      "decodedPrivateSha256": "6d44ebf7a432b2c61860e5cf9a978a74824f033d11ba342018da057c260a6ac3",
+      "summaryTextSha256": "9bf40c18a4b22428c00ae5ddb17ff9e721207f22ebe705fd7dffdfd150749e3b",
+      "observedHttpResponseBodySha256": "aac0f7a2744358459dad4238edbb68a877fd6b80dac57ecbcaa704f643865e26"
+    },
+    {
+      "publicPath": "next-probes-01-public.json",
+      "probe": "get_errors",
+      "decodedPrivatePath": "next-get_errors-01-private.json",
+      "decodedPrivateSha256": "73d27e33b8d3f002432d40b171404fe294a2ac916b194a70afa5100fd3aad7b0",
+      "summaryTextSha256": "db717c24177a06d47b48aacc84f7ea7d6630a603b3c3fe40e253b0f0fe3d1aac",
+      "observedHttpResponseBodySha256": "3fd21d2dd5a8080c6a6394afee2ce695c1f654931f6bb0c0439270607f683a74"
+    },
+    {
+      "publicPath": "next-probes-01-public.json",
+      "probe": "get_page_metadata",
+      "decodedPrivatePath": "next-get_page_metadata-01-private.json",
+      "decodedPrivateSha256": "45b6b3761a48aae8be84af60caf43d6e729ef81e0907a9e2fdde174e695f1341",
+      "summaryTextSha256": "2c0c90385a531aaa5ec2a5e1dd7869dab4e307e9d849e0f0181f4e898cb6ed18",
+      "observedHttpResponseBodySha256": "601e4ef8efc2487e11aa0b775cbe2cc92ac098e726d61c55e0fda7eb6f201922"
+    },
+    {
+      "publicPath": "next-probes-02-public.json",
+      "probe": "get_compilation_issues",
+      "decodedPrivatePath": "next-get_compilation_issues-02-private.json",
+      "decodedPrivateSha256": "6d44ebf7a432b2c61860e5cf9a978a74824f033d11ba342018da057c260a6ac3",
+      "summaryTextSha256": "9bf40c18a4b22428c00ae5ddb17ff9e721207f22ebe705fd7dffdfd150749e3b",
+      "observedHttpResponseBodySha256": "aac0f7a2744358459dad4238edbb68a877fd6b80dac57ecbcaa704f643865e26"
+    },
+    {
+      "publicPath": "next-probes-02-public.json",
+      "probe": "get_errors",
+      "decodedPrivatePath": "next-get_errors-02-private.json",
+      "decodedPrivateSha256": "73d27e33b8d3f002432d40b171404fe294a2ac916b194a70afa5100fd3aad7b0",
+      "summaryTextSha256": "db717c24177a06d47b48aacc84f7ea7d6630a603b3c3fe40e253b0f0fe3d1aac",
+      "observedHttpResponseBodySha256": "3fd21d2dd5a8080c6a6394afee2ce695c1f654931f6bb0c0439270607f683a74"
+    },
+    {
+      "publicPath": "next-probes-02-public.json",
+      "probe": "get_page_metadata",
+      "decodedPrivatePath": "next-get_page_metadata-02-private.json",
+      "decodedPrivateSha256": "45b6b3761a48aae8be84af60caf43d6e729ef81e0907a9e2fdde174e695f1341",
+      "summaryTextSha256": "2c0c90385a531aaa5ec2a5e1dd7869dab4e307e9d849e0f0181f4e898cb6ed18",
+      "observedHttpResponseBodySha256": "601e4ef8efc2487e11aa0b775cbe2cc92ac098e726d61c55e0fda7eb6f201922"
+    },
+    {
+      "publicPath": "next-probes-03-public.json",
+      "probe": "get_compilation_issues",
+      "decodedPrivatePath": "next-get_compilation_issues-03-private.json",
+      "decodedPrivateSha256": "6d44ebf7a432b2c61860e5cf9a978a74824f033d11ba342018da057c260a6ac3",
+      "summaryTextSha256": "9bf40c18a4b22428c00ae5ddb17ff9e721207f22ebe705fd7dffdfd150749e3b",
+      "observedHttpResponseBodySha256": "aac0f7a2744358459dad4238edbb68a877fd6b80dac57ecbcaa704f643865e26"
+    },
+    {
+      "publicPath": "next-probes-03-public.json",
+      "probe": "get_errors",
+      "decodedPrivatePath": "next-get_errors-03-private.json",
+      "decodedPrivateSha256": "73d27e33b8d3f002432d40b171404fe294a2ac916b194a70afa5100fd3aad7b0",
+      "summaryTextSha256": "db717c24177a06d47b48aacc84f7ea7d6630a603b3c3fe40e253b0f0fe3d1aac",
+      "observedHttpResponseBodySha256": "3fd21d2dd5a8080c6a6394afee2ce695c1f654931f6bb0c0439270607f683a74"
+    },
+    {
+      "publicPath": "next-probes-03-public.json",
+      "probe": "get_page_metadata",
+      "decodedPrivatePath": "next-get_page_metadata-03-private.json",
+      "decodedPrivateSha256": "45b6b3761a48aae8be84af60caf43d6e729ef81e0907a9e2fdde174e695f1341",
+      "summaryTextSha256": "2c0c90385a531aaa5ec2a5e1dd7869dab4e307e9d849e0f0181f4e898cb6ed18",
+      "observedHttpResponseBodySha256": "601e4ef8efc2487e11aa0b775cbe2cc92ac098e726d61c55e0fda7eb6f201922"
+    }
+  ],
+  "qualification": "The field named rawSha256 in next-probes is the observed original HTTP/SSE response-body hash. That original SSE framing was not separately saved; the durable private record retains status and decoded JSON. The separate decodedPrivateSha256 here pins the actual retained bytes. No auth/request headers or cookie snapshots retained."
+}

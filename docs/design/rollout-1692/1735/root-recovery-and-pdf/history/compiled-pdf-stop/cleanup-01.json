@@ -1,0 +1,15 @@
+{
+  "kind": "sanitized summary of narrow PID/path/creation/parent/listener and exact-label cleanup",
+  "ownedBrowserClosed": true,
+  "ownedControllerClosed": true,
+  "ownedNativeTransientSessionClosed": true,
+  "ownedNextTreeIdentityVerified": true,
+  "ownedNextTreeStopped": true,
+  "ownedProcessesRemaining": 0,
+  "ownedListenersRemaining": 0,
+  "exactOwnedServicesRemoved": 3,
+  "bridgeRemoved": true,
+  "authCookiesSessionStorageCopiedSavedRestoredOrMinted": false,
+  "privateManifestsRemainIgnored": true,
+  "sourceTreeClean": true
+}

@@ -1,0 +1,11 @@
+{
+  "kind": "deterministic redacted synthetic-fixture clone",
+  "rawSha256": "53e3a679d6a994414b60f594e0802d2323b45e094cf73472f9a13b86fd5a67e8",
+  "ok": true,
+  "data": {
+    "path": "/en/reports",
+    "focusedLabel": "Period",
+    "expanded": "false",
+    "dialogs": 0
+  }
+}

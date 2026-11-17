@@ -1,0 +1,53 @@
+{
+  "candidate": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "results": [
+    {
+      "optimize": false,
+      "name": "no repeated rows",
+      "success": true,
+      "bytes": 3400
+    },
+    {
+      "optimize": false,
+      "name": "one month row",
+      "success": true,
+      "bytes": 3673
+    },
+    {
+      "optimize": false,
+      "name": "one custom field",
+      "success": true,
+      "bytes": 3526
+    },
+    {
+      "optimize": false,
+      "name": "one home-office row",
+      "success": true,
+      "bytes": 3653
+    },
+    {
+      "optimize": true,
+      "name": "no repeated rows",
+      "success": true,
+      "bytes": 3400
+    },
+    {
+      "optimize": true,
+      "name": "one month row",
+      "success": true,
+      "bytes": 3673
+    },
+    {
+      "optimize": true,
+      "name": "one custom field",
+      "success": true,
+      "bytes": 3526
+    },
+    {
+      "optimize": true,
+      "name": "one home-office row",
+      "success": true,
+      "bytes": 3653
+    }
+  ]
+}

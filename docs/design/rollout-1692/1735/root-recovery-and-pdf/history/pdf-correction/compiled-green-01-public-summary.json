@@ -1,0 +1,55 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-pdf-checks/compiled-green-01.json",
+    "bytes": 2858,
+    "sha256": "2cfe51784481775fed5b7c172092e290e6ecd24b9a88ea4ce70657fad8c27386"
+  },
+  "reported": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/employee-report-custom-fields.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "employee report custom fields in exports writes a Custom Fields section to the CSV, in order, with dates as ISO dates",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report custom fields in exports adds the custom fields to the Excel summary sheet",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report custom fields in exports adds the custom fields to the PDF",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.compiled.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "exports employee report content as a real PDF after React Compiler optimization",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "renders report facts, table rows, unknown values and notes after React Compiler optimization",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

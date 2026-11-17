@@ -1,0 +1,6 @@
+{
+  "source": ".tmp/1735-independent-checks/public-recovery.test.tsx",
+  "target": "apps/webapp/src/test/independent1735-recovery/public-recovery.test.tsx",
+  "sourceSha256": "e017038ebc40c8938f4363402ff939a8e57ec460f50e3d02881b792617bbfd6f",
+  "targetSha256": "e017038ebc40c8938f4363402ff939a8e57ec460f50e3d02881b792617bbfd6f"
+}
