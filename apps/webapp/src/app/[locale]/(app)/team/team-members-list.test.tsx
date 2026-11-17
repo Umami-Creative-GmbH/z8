@@ -155,7 +155,10 @@ describe("TeamMembersList", () => {
 
 			const dialog = screen.getByRole("dialog");
 			expect(within(dialog).getByText("Paid with the October payroll")).toBeTruthy();
-			expect(useBalanceAdjustmentSectionMock).toHaveBeenCalledWith("employee-1");
+			expect(useBalanceAdjustmentSectionMock).toHaveBeenCalledWith(
+				"employee-1",
+				expect.any(String),
+			);
 			// Read-only: no cancel action.
 			expect(within(dialog).queryByRole("button", { name: "Cancel" })).toBeNull();
 		},
