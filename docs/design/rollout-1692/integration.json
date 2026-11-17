@@ -1341,11 +1341,15 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "branch": "feat/enterprise-api-key-settings",
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1773#issuecomment-6947382665"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1773#issuecomment-6947382665",
+      "implementationCommit": "06b93b7ea0e0705054d293023765a7839f75b2c3",
+      "implementationSourceCommit": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+      "evidence": "docs/design/rollout-1692/1773.md",
+      "handoffLimitation": "CommittedR096+assignedR148handoff;appsourceb7d/final06bappTreematchd258ab31 verified. Worker553unitlabels/16files+100PG/5,all3types/lint/explicit100CRLFpass,Doctor0errors/5qualifiedwarnings. OrdinaryLF24physicalCRLFdifferences nonpass. Curated39payloads/12JSON/diagnostic800x600unfilledsign-inPNG/14links/38manifestentries;0admittedR096journeys/matchedcaptures/nativeReact/connectedNext/phoneaxe. First200vs lateremptyTurnstile failures separatelyretained,nocause/bypassclaim. Allownedresourcesreleased. Canonicalcredential/auth/domain/deliveryownersfrozen;freshmerger/readinesspending."
     },
     {
       "id": "R097",
