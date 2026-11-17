@@ -43,7 +43,8 @@ export function PublishFab({
 					onClick={onPublish}
 					disabled={isPublishing}
 					className={cn(
-						"fixed bottom-6 right-6 z-30 h-14 rounded-full shadow-lg",
+						// A disabled floating action must still shield the records beneath it.
+						"fixed bottom-6 right-6 z-30 h-14 rounded-full shadow-lg disabled:pointer-events-auto",
 						"hover:shadow-xl transition-shadow",
 						hasWarnings
 							? "bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
