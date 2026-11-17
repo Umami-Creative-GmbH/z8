@@ -1,0 +1,15 @@
+{
+  "kind": "captured tool observation summary",
+  "version": "0.39.1",
+  "uniqueTransientSession": true,
+  "restore": false,
+  "restoreSave": "never",
+  "reactDevtoolsRequested": true,
+  "openOutcome": "CDP response channel closed",
+  "openExit": 1,
+  "closeOutcome": "Daemon version mismatch detected, restarting; Browser closed",
+  "closeExit": 0,
+  "nativeActualAdmittedReactTarget": false,
+  "allOwnedNativeProcessesAbsent": true,
+  "limits": "No native runtime or React introspection pass. Broader runtime/native/connected Next probes stopped on the independently reproduced PDF source blocker."
+}

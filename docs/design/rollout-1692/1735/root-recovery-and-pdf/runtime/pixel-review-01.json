@@ -1,0 +1,26 @@
+{
+  "reviewedAcceptedImages": 12,
+  "currentAndHistoricalMatchedStates": 5,
+  "historicalSource": "5715cc1f8dabd78a79a8c256b137c430ebfe98d5",
+  "historicalScope": "Exactly nine report route/consumer/hook files; current shell/domain/PDF fix. Partial consumer comparison only.",
+  "sameFreshFixtureRoleReportFont": true,
+  "viewports": [
+    1600,
+    390,
+    2400
+  ],
+  "wideDark": true,
+  "observations": [
+    "Current result identifies Person0 and fixed period immediately above summaries; historical composition lacks that result header.",
+    "Current desktop groups summary metrics and places export beside report tables; historical export spans the route above tables.",
+    "Phone current report flows within390px; tail contains all three export buttons after the52date rows and compliance metrics.",
+    "Desktop current tail exposes last home-office date/416h total and compliance metrics without horizontal clipping.",
+    "Current18px expanded and collapsed sidebar captures remain legible; collapsed capture includes transient report success toast over part of the export area.",
+    "Ordinary dev overlay/query debug docks remain at bottom right in both partial versions; no production overlay acceptance claimed.",
+    "Mixed-controller initial capture clipping was not present in settled single-controller matched states; no persistent source defect reproduced."
+  ],
+  "limits": [
+    "No contrast/exhaustive locale/truezoom/device/performance audit",
+    "Captured head and tail boundaries are bounded views; not every scroll position rendered for human review"
+  ]
+}

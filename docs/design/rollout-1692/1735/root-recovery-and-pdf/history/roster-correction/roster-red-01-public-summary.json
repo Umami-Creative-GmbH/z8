@@ -1,0 +1,43 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-roster-checks/roster-red-01.json",
+    "bytes": 44676,
+    "sha256": "cb7f4d47443f77d447177009e3bd7db2ba753c9ff8cfce497ce9af7f7f026351"
+  },
+  "reported": {
+    "total": 5,
+    "passed": 3,
+    "failed": 2,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "status": "failed",
+      "cases": [
+        {
+          "fullName": "recovers failed organization settings through local Retry before enabling report generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers a roster refusal through local Retry without generating a report",
+          "status": "failed"
+        },
+        {
+          "fullName": "recovers a roster rejection through local Retry without generating a report",
+          "status": "failed"
+        },
+        {
+          "fullName": "keeps failed settings recoverable and prevents duplicate transport while Retry is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains the selected period across a failed settings refresh without permitting generation until Retry succeeds",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

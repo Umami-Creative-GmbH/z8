@@ -1,0 +1,7 @@
+{
+  "initialCurrentCaptures": "layout-current-result-01.json",
+  "attempt": "matched-capture-01.mjs current-settled",
+  "outcome": "Period option wait timed out before any matched captures. Later actual viewport764x485 despite auxiliary1600 setting. Competing attached CDP controller/sidecar/native viewport state made these mixed-control attempts unsuitable for matched pixel acceptance.",
+  "resolution": "Close owned browser and use new single controller for all navigation/preferences/captures; no auth transfer. Earlier raw images retained and not promoted.",
+  "sourceChanged": false
+}

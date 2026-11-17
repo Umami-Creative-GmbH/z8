@@ -1,0 +1,25 @@
+{
+  "guideRead": true,
+  "version": "0.39.1",
+  "uniqueTransientSession": true,
+  "restore": false,
+  "restoreSave": "never",
+  "sameOwnedBrowserCdpAttach": true,
+  "authStateTransferred": false,
+  "open": {
+    "exit": 0,
+    "rawSha256": "15bae3b182675362ab22d7d1b62a1a35542e268b16f431f956e4c8cd982cc369",
+    "cdpClosed": false
+  },
+  "react": {
+    "exit": 0,
+    "rawSha256": "9135b86d3ca008acb40f85036d15c6dc933cb9175615a72a8737e86d29eccd1e",
+    "nonempty": true,
+    "actualAdmittedTarget": true,
+    "qualification": "Inspect raw structured result before claiming admitted React target."
+  },
+  "close": {
+    "exit": 0,
+    "rawSha256": "6628ecc856c14dc93fbc6348e3c6c73b448812252f669cb3b492ba6108404cc8"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "baseline": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "lastVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "branch": "fix/1735-compiled-pdf",
+  "verifiedCommit": null,
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.tsx",
+      "bytes": 13007,
+      "sha256": "ed2ae33e74e624799e9cbf7aa3ea7c7c1c3f963963c7b798efd0bde68f764478",
+      "lfSha256": "640fe23c9ee2e00644b284427a9afe349735a60fd77e0cfd9183ce03c018cf3e",
+      "canonicalGitBlob": "7265c661396dc555341a3ebd2998602375a5dbd0",
+      "rawGitBlob": "865286c308a9e8fe620cc66a12c0b3dbca1615a1"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.compiled.test.ts",
+      "bytes": 5908,
+      "sha256": "5628fb916c076da4b72daee1c46745f057e46fc5bb193397ef945e9e8934c7c9",
+      "lfSha256": "4f06a53b73e02018b9e8782209e4c26f5c07dfefa308b2b18a7e0aec82b7c7e6",
+      "canonicalGitBlob": "3239b0774f6c7f3c0d5e116902efb4e60c0a738d",
+      "rawGitBlob": "d0c075e2fcb213a2ba582ac024263e3e35631fb0"
+    }
+  ],
+  "behavior": "Replace the inline EmployeeReportPDF component with its Document element to keep compiler-hoisted row callbacks from losing the lazily imported PDF primitives/styles. Lazy import, report values/formatting/calculations, download controller and authorization unchanged.",
+  "diagnosis": "diagnosis-01.json",
+  "red": {
+    "file": "compiled-red-01.json",
+    "passed": 0,
+    "failed": 1,
+    "originalInput": "Initial smaller synthetic projection with one custom field, one month row and one home-office row. The permanent input was subsequently expanded; first raw test source was not separately frozen, and is not claimed byte-identical to final test source."
+  },
+  "differential": {
+    "before": "compiler-probe-results-01.json",
+    "after": "compiler-probe-results-02.json",
+    "beforePlainPassed": 4,
+    "beforeCompiledPassed": 1,
+    "beforeCompiledFailed": 3,
+    "afterPlainPassed": 4,
+    "afterCompiledPassed": 4,
+    "interpretation": "Minimal individual repeated-row variants fail only after compiler transformation; all succeed after direct-element correction. Probecases are not extra unit test counts."
+  },
+  "unit": {
+    "cases": 294,
+    "files": 52,
+    "passed": 294,
+    "failed": 0,
+    "skipped": 0,
+    "file": "validation-01/unit-final.json"
+  },
+  "priorIndependent": {
+    "directory": ".tmp/1735-roster-independent-checks",
+    "sealSha256": "cab47fa2707cabadb7b67bfe00e0f906a94a13d71e0edeb0a8ba2f6e1efe64e2",
+    "unchangedFiles": 105,
+    "public": {
+      "unique": 9,
+      "files": 1,
+      "nonadditive": true
+    },
+    "postgres": {
+      "cases": 14,
+      "files": 2,
+      "source": "241a777; canonical report generators unchanged by this correction"
+    },
+    "completedParsed": {
+      "csv": 1,
+      "xlsx": 1,
+      "pdf": 0
+    },
+    "status": "STOP PDF runtime; preserve all prior qualified evidence, no retroactive success."
+  },
+  "quality": {
+    "types": {
+      "typegen": true,
+      "projects": 3,
+      "exit": 0,
+      "file": "validation-01/typecheck.log"
+    },
+    "scopedFiles": 15,
+    "lintExit": 0,
+    "doctor": {
+      "files": 15,
+      "errors": 0,
+      "warnings": 1,
+      "exit": 0,
+      "warning": "Prior roster-readiness layout-effect advisory, unchanged"
+    },
+    "ownedTwoFileExplicit100CRLFExit": 0,
+    "broadExplicit100Errors": 5,
+    "broadOrdinaryFormattingErrors": 10,
+    "formatScope": "Production PDF retained its preexisting wider format; broad formatter qualifications remain unpassed, no mass rewrite."
+  },
+  "preservation": {
+    "verifiedAnchors": 58,
+    "immutableRosterSTOPFiles": 105,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "inheritedLicensesSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "noProviderDatabaseAuthorizationTimeOrCanonicalCalculationChange": true
+  },
+  "limitations": [
+    "Fresh actual compiled-UI completed PDF export and parsed parity still pending after this source correction.",
+    "Broader role/recovery/navigation/preferences/matched/native/Next acceptance stopped in prior verifier and remains pending.",
+    "New real renderer test validates supplied report projection, not authorization; canonical PG owns field filtering.",
+    "Earlier settings-phase overwritten intermediate raw-history limitation persists; all new outputs unique.",
+    "Full generation/catalog/providers/device/truezoom/exhaustive races/global roster guard remain unpassed."
+  ],
+  "toolAttempts": [
+    {
+      "kind": "Git branch creation",
+      "sandbox": "metadata lock denied",
+      "resolution": "same command succeeded with approved escalation"
+    },
+    {
+      "kind": "pnpm engine-store lock",
+      "sandbox": "denied",
+      "resolution": "unchanged focused command succeeded with approved escalation"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "cause": "Permanent public compiled tests emit UUID modules in fixed ignored app .tmp directories. Exactly two own modules were identified by precise Vitest start/end interval under exclusive checkout lease, then relocated to this run namespace. Earlier modules untouched.",
+  "start": 1794870057149,
+  "end": 1794870058571.8655,
+  "moved": [
+    {
+      "source": "apps/webapp/.tmp/compiled-employee-report-pdf/1c073330-ad6a-4181-a47c-1c5eb89171c3.mjs",
+      "destination": "compiled-generated-01-private/employee.mjs",
+      "bytes": 18122,
+      "sha256": "3af81ba015763b314f18609c05ae6edab51c47f7c87919434ee3706ff6b5df5b",
+      "birthtimeMs": 1794870057479.5356
+    },
+    {
+      "source": "apps/webapp/.tmp/compiled-report-pdf/e7de9fbd-3fde-40eb-b56c-ab40c5fe78f6.mjs",
+      "destination": "compiled-generated-01-private/shared.mjs",
+      "bytes": 7335,
+      "sha256": "928ee58d47341a9e26408694b729955a159e12bde354a79f8822ba47f1f1b4a0",
+      "birthtimeMs": 1794870058243.0693
+    }
+  ]
+}

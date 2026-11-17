@@ -1,0 +1,56 @@
+{
+  "fresh": {
+    "uniqueFullNames": [
+      "exports employee report content as a real PDF after React Compiler optimization",
+      "renders report facts, table rows, unknown values and notes after React Compiler optimization"
+    ],
+    "executedOccurrences": 2,
+    "passedOccurrences": 2,
+    "failedOccurrences": 0,
+    "skippedOccurrences": 0,
+    "physicalFiles": 2
+  },
+  "nonadditiveToRoot294Across52": true,
+  "priorPublic": {
+    "source": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+    "passed": 9,
+    "physicalFiles": 1,
+    "rawSha256": "d1429da60e515f15d6ebbd8b412b007f9e54d9af4720892fd0b4ae8176b23b21",
+    "notFreshInThisRun": true,
+    "caseNames": [
+      "independent settings 503 and pending rejection retain the selected period and block native submission until local recovery",
+      "independent roster refusal recovers actual dialog options and submits selected colleague only after explicit Generate",
+      "independent roster rejection recovers actual dialog options and submits selected colleague only after explicit Generate",
+      "independent repeated roster Retry coalesces held transport and remains recoverable after another refusal",
+      "independent Activity retires pending roster Retry success and preserves exact peer cache",
+      "independent Activity retires pending roster Retry refusal and preserves exact peer cache",
+      "independent Activity retires pending roster Retry rejection and preserves exact peer cache",
+      "independent old public refetch cannot dispatch after actor/org A-B-A or pending retained session retirement",
+      "independent Activity and batched actor/org retirement suppress held generation and late PDF download effects"
+    ]
+  },
+  "priorPostgres": {
+    "source": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+    "passed": 14,
+    "physicalFiles": 2,
+    "notFreshInThisRun": true,
+    "canonicalOwnersUnchanged": true,
+    "rawSha256": "ff58fedd405b8dec0edc09c1e6dc8dc952ffa783646bd4dec8d98a0706f43c96"
+  },
+  "rootCurrentStatic": {
+    "passed": 294,
+    "physicalFiles": 52,
+    "typeProjects": 3,
+    "lintFiles": 15,
+    "inheritedFromExactCorrectionCheckpoint": true,
+    "formatQualifications": {
+      "broadExplicit100": 5,
+      "broadOrdinary": 10
+    },
+    "doctor": {
+      "errors": 0,
+      "unchangedWarnings": 1
+    }
+  },
+  "runtimeScenarioCountsAreNotUnitOrPgCases": true
+}

@@ -1,0 +1,117 @@
+{
+  "shell": "PowerShell",
+  "pnpmEnvironment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "pnpmFlag": "--config.verify-deps-before-run=false",
+  "engineStoreLock": "First sandbox call refused normal engine lock; identical narrow command succeeded with approved escalation. No install/repair.",
+  "runs": [
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/setup-01.mjs",
+      "exit": 1,
+      "meaning": "preflight archive physical-count harness error; no test/runtime"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/setup-02.mjs",
+      "exit": 1,
+      "meaning": "preflight generated-license git-blob harness error; no test/runtime"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/setup-03.mjs",
+      "exit": 0,
+      "meaning": "focused actual compiler/renderer/parser two tests"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/prepare-fixture-01.mjs",
+      "exit": 0,
+      "meaning": "primary own canonical fixture"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/runtime-flow-01.mjs",
+      "exit": 1,
+      "meaning": "normal init redirect raced goto"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/runtime-flow-02.mjs",
+      "exit": 1,
+      "meaning": "single roster abort auto-recovered; local-alert wait unmet"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/runtime-flow-03.mjs",
+      "exit": 0,
+      "meaning": "actual generation/roster failure and Retry/keyboard"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/layout-current-01.mjs",
+      "exit": 0,
+      "meaning": "mixed controller captures qualified; refresh/navigation/font checks"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/matched-capture-01.mjs current-settled",
+      "exit": 1,
+      "meaning": "auxiliary viewport/period-option wait; no matched captures"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/capture-flow-02.mjs current-single",
+      "exit": 1,
+      "meaning": "postlogin navigation replaced execution context"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/capture-flow-03.mjs current-single",
+      "exit": 0,
+      "meaning": "five accepted settled captures"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/capture-flow-03.mjs historical-single",
+      "exit": 0,
+      "meaning": "five partial historical captures"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/overlay-01.mjs apply/restore",
+      "exit": 0,
+      "meaning": "nine guarded source files restored exact"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/roles-preferences-01.mjs",
+      "exit": 0,
+      "meaning": "four roles plus saved18/sidebar/refresh/navigation"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/canonical-export-controls-01.mjs",
+      "exit": 0,
+      "meaning": "actual completed three-format canonical parity"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/native-next-01.mjs",
+      "exit": 0,
+      "meaning": "early tree only; inner workspace not yet settled"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/native-next-final-02.mjs",
+      "exit": 0,
+      "meaning": "admitted tree; detailed inspect selected wrong router ancestor"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/prepare-fixture-02.mjs",
+      "exit": 0,
+      "meaning": "fresh own fixture for exact target correction"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/native-next-corrected-03.mjs",
+      "exit": 0,
+      "meaning": "exact target corrected; connected current Next clean"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/finalize-01.mjs",
+      "exit": 0,
+      "meaning": "preservation/parity/pixel decode/accounting"
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec node .tmp/1735-pdf-independent-checks/seal-01.mjs",
+      "exit": 0,
+      "meaning": "final frozen pins, raw-to-safe provenance and safe allowlist"
+    }
+  ],
+  "native": "Installed0.39.1 via pnpm-managed Node launcher; unique transient sessions, restore-save never, own CDP only",
+  "rawHistoryQualification": "Exact argv/source exists in own scripts and tool transcript. Focused test logs/JSON and browser/native/MCP observations are retained. Some shell preflight/harness stdout remained in the tool transcript with durable summaries rather than separate complete raw stdout files. Source and summary are not falsely labeled complete raw captures."
+}

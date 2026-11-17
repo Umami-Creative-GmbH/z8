@@ -1,0 +1,62 @@
+{
+  "candidate": "1d328a1b352fa6504d58b443367b6aabeda56fcb",
+  "historical": "5715cc1f8dabd78a79a8c256b137c430ebfe98d5",
+  "qualifiedScope": "Nine report route/consumer/hook files only; current unrelated shell/domain/PDF fix retained. Not full historical baseline.",
+  "nextStopped": true,
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/page.tsx",
+      "index": 0,
+      "currentSha256": "5637ce76f88ee36e10d7e9f8c408495fb18eb2aa331755b19e3e35672e54da67",
+      "historicalSha256": "5f624d88e48ad0b9990b87fca4afbcb1e2e833864aac8fb3f596b0572ce40073"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/date-range-picker.tsx",
+      "index": 1,
+      "currentSha256": "8617cbeb3bc2f01dbeac3b99dd0a972eed8722b2fd1ecc3ac94024de0d89aec8",
+      "historicalSha256": "a344338209c40c0bade3fb8b55314c36815ccf547278b2bab584c0ee528d7d7b"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/export-buttons.tsx",
+      "index": 2,
+      "currentSha256": "89dfa0642632c54e4f3da9f07f0b8c0a9f80563a2e9a0288054199d5e5b2fd1f",
+      "historicalSha256": "b427c73cf2220513bdaed97cc63564b54587ec44ddb3f439a4d1db4138b32770"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-employee-selector.tsx",
+      "index": 3,
+      "currentSha256": "3c8cc9c589923c47485520e3a3817c5ae279343486c2333ef64a41625c6357d9",
+      "historicalSha256": "85c6678b6f1da647aee242001f346304badb6cb3841930ba8b8cee4d370ed439"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-filters.tsx",
+      "index": 4,
+      "currentSha256": "9e6487f1dabffde0eb115c688ba604b3845e22e25bd8b0a61e698cf69131d0ad",
+      "historicalSha256": "2c300a1ec45c1a2eb03b620be646f98b5a81fe6b8d729700e3fb2c6ed9cdd0f3"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-preview-table.tsx",
+      "index": 5,
+      "currentSha256": "2bcc1e298f9eba1ccbd7c170e35587dcc45b86af307b345f156901eb89e93465",
+      "historicalSha256": "fa71a7a2f1f133383bfdc06e34c159a9581e946aeb41bfee9b03199e12d46314"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-summary-cards.tsx",
+      "index": 6,
+      "currentSha256": "38de40605b8947b102b9cd911b1a695ef82dd27f275827d51d9bcffcef4ee4bf",
+      "historicalSha256": "35774a51ee0728c062707d3996249d88f5d643623b877161bf722df74e7e8065"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/reports-container.tsx",
+      "index": 7,
+      "currentSha256": "a9d5c1794a903c90a9827f1514606bbcc83a199cfec2541b689d46d27a9faf5f",
+      "historicalSha256": "218fd82a13898ae90a57f7486c854a9b3f6896fd3992817cdc51024b773161ea"
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-report-employees.ts",
+      "index": 8,
+      "currentSha256": "34a7586c2fffa1e2b177e072f7f6dcfe7fd7c2dba031b7fe5f4fdb85a674c16c",
+      "historicalSha256": "fd062e1f28317f5aa8c4f7230364b7ea185039a6475619182873fed9218002b2"
+    }
+  ]
+}

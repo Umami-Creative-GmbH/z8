@@ -1,0 +1,12 @@
+{
+  "supersedesAmbiguousFields": [
+    "preservation-final-01.sourceConfigLedgerReadinessTrackerRemoteWrites",
+    "checks-final-01.sourceProductOrReadinessWrites"
+  ],
+  "meaning": "Zero permanent product/config/ledger/readiness/tracker/remote changes. The explicitly authorized nine-file historical consumer overlay performed temporary source writes, guarded with own Next stopped and byte-exact restore. No product fix was made.",
+  "temporarySourceFiles": 9,
+  "temporaryApplyAndRestore": true,
+  "byteExactCurrent": true,
+  "allOldArchivePinsPreserved": true,
+  "dependencyInstallRepairOrOverlay": false
+}
