@@ -1,0 +1,544 @@
+{
+  "sourceSha": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+  "baseSha": "a5259338e983fb2d165c0f463763b1740b585fad",
+  "project": "integration",
+  "maxWorkers": 1,
+  "physicalFiles": 5,
+  "assertionOccurrences": 100,
+  "uniqueFileAndFullNames": 100,
+  "failed": 0,
+  "duplicateFullNames": [],
+  "reportedDescribeSuitesNotCounted": 26,
+  "files": [
+    {
+      "file": "src/lib/organization-action/organization-action.integration.test.ts",
+      "assertions": 78,
+      "cases": [
+        {
+          "fullName": "organizationAction on PostgreSQL an owner is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 14.382599999999911
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 2.1568999999999505
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.3051000000000386
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.2929000000001452
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.833499999999958
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an employee record is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0738000000001193
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an employee record is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0811999999998534
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an employee record is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0906999999999698
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an employee record is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1174000000000888
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an employee record agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.0191999999999553
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.2080000000000837
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.095299999999952
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1436000000001059
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 2.2690999999999804
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.6223999999999705
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1950999999999112
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1523999999999432
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.2385000000001583
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.3240999999998166
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.416400000000067
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a scoped manager is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.2463000000000193
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a scoped manager is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0603000000000975
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a scoped manager is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.3075000000001182
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a scoped manager is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.5502000000001317
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a scoped manager agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.289199999999937
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an org member is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0722999999998137
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an org member is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.199200000000019
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an org member is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1931999999999334
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an org member is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.216899999999896
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an org member agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.359399999999823
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a pending admin membership is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.236199999999826
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a pending admin membership is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1905000000001564
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a pending admin membership is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1575000000000273
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a pending admin membership is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.2193999999999505
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a pending admin membership agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.123700000000099
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner who is a former employee is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.260300000000143
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner who is a former employee is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.2941000000000713
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner who is a former employee is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.386700000000019
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner who is a former employee is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.462099999999964
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner who is a former employee agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 2.8625999999999294
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin who is a former employee is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 2.141200000000026
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin who is a former employee is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0861999999999625
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin who is a former employee is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1675000000000182
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin who is a former employee is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.4290000000000873
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an admin who is a former employee agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.027599999999893
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a manager who is a former employee is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.2098000000000866
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a manager who is a former employee is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1177000000000135
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a manager who is a former employee is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1548999999999978
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a manager who is a former employee is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0448999999998705
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a manager who is a former employee agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 2.829699999999775
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin who is a former employee is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0597000000000207
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin who is a former employee is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.059099999999944
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin who is a former employee is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.067199999999957
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin who is a former employee is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0856999999998607
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a workforce admin who is a former employee agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 3.32549999999992
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a user of another organization is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0271000000000186
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a user of another organization is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0827999999999065
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a user of another organization is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.0235999999999876
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a user of another organization is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 1.1824999999998909
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL a user of another organization agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 2.717200000000048
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an active organization is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 0.23480000000017753
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an active organization is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 0.2977000000000771
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an active organization is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 0.18020000000001346
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an active organization is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 0.1348000000000411
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner without an active organization agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 0.22450000000003456
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner whose session the SSO/MFA gate refuses is served by an action requiring member only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 0.3186000000000604
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner whose session the SSO/MFA gate refuses is served by an action requiring scopedManager only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 0.16689999999994143
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner whose session the SSO/MFA gate refuses is served by an action requiring orgAdmin only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 0.13989999999989777
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner whose session the SSO/MFA gate refuses is served by an action requiring owner only when their settings access qualifies",
+          "status": "passed",
+          "durationMs": 0.14059999999994943
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL an owner whose session the SSO/MFA gate refuses agrees with the page guard on org admin settings access",
+          "status": "passed",
+          "durationMs": 0.16049999999995634
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL adding employees refuses to add a former employee with the former_employee refusal",
+          "status": "passed",
+          "durationMs": 3.679100000000062
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL adding employees refuses an employee of no organization the same way",
+          "status": "passed",
+          "durationMs": 2.072599999999966
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL adding employees adds employees on the current roster",
+          "status": "passed",
+          "durationMs": 2.0873999999998887
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL the managed scope is the scoped manager's employees and the teams they may manage",
+          "status": "passed",
+          "durationMs": 2.870200000000068
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL the managed scope is the whole organization for an org admin",
+          "status": "passed",
+          "durationMs": 1.1084999999998217
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL the managed scope is the whole organization for a workforce admin (ADR 0002)",
+          "status": "passed",
+          "durationMs": 1.1632999999999356
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL stepping up to owner refuses an admin once the input needs an owner",
+          "status": "passed",
+          "durationMs": 2.376199999999926
+        },
+        {
+          "fullName": "organizationAction on PostgreSQL stepping up to owner lets an owner through",
+          "status": "passed",
+          "durationMs": 1.0926999999999225
+        }
+      ]
+    },
+    {
+      "file": "src/lib/public-api/pipeline.integration.test.ts",
+      "assertions": 9,
+      "cases": [
+        {
+          "fullName": "the Public API pipeline on PostgreSQL returns the key organization's employees with exactly the agreed fields",
+          "status": "passed",
+          "durationMs": 258.4697
+        },
+        {
+          "fullName": "the Public API pipeline on PostgreSQL walks the cursor over every employee exactly once",
+          "status": "passed",
+          "durationMs": 351.9620000000001
+        },
+        {
+          "fullName": "the Public API pipeline on PostgreSQL refuses requests without a valid key, never accepting sessions",
+          "status": "passed",
+          "durationMs": 198.6948000000002
+        },
+        {
+          "fullName": "the Public API pipeline on PostgreSQL refuses a disabled key after identifying it, and logs the refusal",
+          "status": "passed",
+          "durationMs": 195.16599999999994
+        },
+        {
+          "fullName": "the Public API pipeline on PostgreSQL refuses a key without the endpoint's scope",
+          "status": "passed",
+          "durationMs": 159.71710000000007
+        },
+        {
+          "fullName": "the Public API pipeline on PostgreSQL requires billing access only while billing is enabled",
+          "status": "passed",
+          "durationMs": 186.71490000000017
+        },
+        {
+          "fullName": "the Public API pipeline on PostgreSQL enforces the per-organization ceiling with rate-limit headers on every response",
+          "status": "passed",
+          "durationMs": 182.07209999999986
+        },
+        {
+          "fullName": "the Public API pipeline on PostgreSQL enforces the key's own limit with the key's rate-limit headers",
+          "status": "passed",
+          "durationMs": 257.71270000000004
+        },
+        {
+          "fullName": "the Public API pipeline on PostgreSQL rejects invalid query parameters as validation_failed",
+          "status": "passed",
+          "durationMs": 182.72220000000016
+        }
+      ]
+    },
+    {
+      "file": "src/lib/public-api/request-log.integration.test.ts",
+      "assertions": 2,
+      "cases": [
+        {
+          "fullName": "the key request log on PostgreSQL lists one key's requests of its organization, newest first",
+          "status": "passed",
+          "durationMs": 33.502899999999954
+        },
+        {
+          "fullName": "the key request log on PostgreSQL deletes entries older than 90 days in every organization, in batches",
+          "status": "passed",
+          "durationMs": 77.54359999999997
+        }
+      ]
+    },
+    {
+      "file": "src/lib/public-api/keys/key-store.integration.test.ts",
+      "assertions": 6,
+      "cases": [
+        {
+          "fullName": "organization API keys on PostgreSQL lets every admin of the organization see, edit and revoke a key another admin created",
+          "status": "passed",
+          "durationMs": 95.17940000000004
+        },
+        {
+          "fullName": "organization API keys on PostgreSQL audits creating, editing and revoking a key with the acting admin",
+          "status": "passed",
+          "durationMs": 202.5041
+        },
+        {
+          "fullName": "organization API keys on PostgreSQL refuses the eleventh key of an organization, also when two admins create at once",
+          "status": "passed",
+          "durationMs": 211.16899999999998
+        },
+        {
+          "fullName": "organization API keys on PostgreSQL enforces the per-key limit the admin set, on create and after an edit",
+          "status": "passed",
+          "durationMs": 183.0104
+        },
+        {
+          "fullName": "organization API keys on PostgreSQL keeps a key working after its creator leaves, and marks the creator as departed",
+          "status": "passed",
+          "durationMs": 115.89660000000003
+        },
+        {
+          "fullName": "organization API keys on PostgreSQL migrates user-owned keys to the organization in their metadata",
+          "status": "passed",
+          "durationMs": 115.53870000000006
+        }
+      ]
+    },
+    {
+      "file": "src/app/[locale]/(app)/settings/webhooks/page.integration.test.ts",
+      "assertions": 5,
+      "cases": [
+        {
+          "fullName": "retains locale and repeated query values while forcing the canonical webhooks tab",
+          "status": "passed",
+          "durationMs": 34.105699999999956
+        },
+        {
+          "fullName": "keeps the real canonical admin arrival refusal for an ordinary member",
+          "status": "passed",
+          "durationMs": 8.789300000000026
+        },
+        {
+          "fullName": "lets an approved org admin without an employee retry the existing public read projections",
+          "status": "passed",
+          "durationMs": 14.996399999999994
+        },
+        {
+          "fullName": "refuses retired actor and organization expectations without returning another scope",
+          "status": "passed",
+          "durationMs": 8.571199999999976
+        },
+        {
+          "fullName": "retains canonical read refusal for an ordinary member despite matching display expectations",
+          "status": "passed",
+          "durationMs": 8.497299999999996
+        }
+      ]
+    }
+  ]
+}

@@ -2,9 +2,9 @@
 
 import { IconAlertTriangle, IconCheck, IconCopy, IconKey } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -24,17 +24,41 @@ interface ApiKeyShowDialogProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialogProps) {
+export function ApiKeyShowDialog(props: ApiKeyShowDialogProps) {
+	if (!props.apiKey || !props.open) return null;
+	return <ApiKeyReveal key={props.apiKey.id} {...props} apiKey={props.apiKey} />;
+}
+
+function ApiKeyReveal({
+	apiKey,
+	open,
+	onOpenChange,
+}: ApiKeyShowDialogProps & { apiKey: CreateApiKeyResponse }) {
 	const { t } = useTranslate();
 	const [copied, setCopied] = useState(false);
 	const [hasConfirmed, setHasConfirmed] = useState(false);
+	const [visible, setVisible] = useState(true);
+	const lifetime = useRef<object | null>(null);
+	useLayoutEffect(() => {
+		lifetime.current = {};
+		return () => {
+			lifetime.current = null;
+		};
+	}, []);
 
 	const handleCopy = async () => {
-		if (!apiKey?.key) return;
-		await navigator.clipboard.writeText(apiKey.key);
+		if (!lifetime.current) return;
+		const owner = lifetime.current;
+		try {
+			await navigator.clipboard.writeText(apiKey.key);
+		} catch {
+			if (lifetime.current === owner)
+				toast.error(t("settings.apiKeys.copyFailed", "Could not copy the key. Try again."));
+			return;
+		}
+		if (lifetime.current !== owner) return;
 		setCopied(true);
 		toast.success(t("settings.apiKeys.keyCopied", "API key copied to clipboard"));
-		setTimeout(() => setCopied(false), 3000);
 	};
 
 	const handleClose = () => {
@@ -90,7 +114,7 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 								id="api-key-display"
 								className="font-mono text-sm bg-muted p-4 rounded-md break-all pr-12 border"
 							>
-								{apiKey.key}
+								{visible ? apiKey.key : t("settings.apiKeys.keyHidden", "Key hidden")}
 							</div>
 							<Button
 								variant="ghost"
@@ -106,6 +130,13 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 								)}
 							</Button>
 						</div>
+						{
+							<Button variant="outline" onClick={() => setVisible((value) => !value)}>
+								{visible
+									? t("settings.apiKeys.hideKey", "Hide key")
+									: t("settings.apiKeys.revealKey", "Reveal key")}
+							</Button>
+						}
 					</div>
 
 					{/* Key Details */}
@@ -122,7 +153,12 @@ export function ApiKeyShowDialog({ apiKey, open, onOpenChange }: ApiKeyShowDialo
 							</span>
 							<span className="ml-2 font-medium">
 								{apiKey.expiresAt
-									? DateTime.fromISO(apiKey.expiresAt).toLocaleString(DateTime.DATE_SHORT)
+									? Temporal.Instant.from(apiKey.expiresAt).toLocaleString(undefined, {
+											timeZone: "UTC",
+											year: "numeric",
+											month: "short",
+											day: "numeric",
+										})
 									: t("settings.apiKeys.showNever", "Never")}
 							</span>
 						</div>

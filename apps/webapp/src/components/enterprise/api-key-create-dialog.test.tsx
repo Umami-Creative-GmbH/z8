@@ -47,24 +47,12 @@ vi.mock("@/components/ui/action-panel", () => ({
 				{children}
 			</section>
 		) : null,
-	ActionPanelBody: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	ActionPanelContent: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	ActionPanelDescription: ({ children }: { children: ReactNode }) => (
-		<p>{children}</p>
-	),
-	ActionPanelFooter: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	ActionPanelHeader: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
-	ActionPanelTitle: ({ children }: { children: ReactNode }) => (
-		<h2>{children}</h2>
-	),
+	ActionPanelBody: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanelContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanelDescription: ({ children }: { children: ReactNode }) => <p>{children}</p>,
+	ActionPanelFooter: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanelHeader: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	ActionPanelTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
 
 function Harness() {
@@ -107,19 +95,13 @@ function renderDialog() {
 }
 
 function checked(label: string) {
-	return (
-		screen
-			.getByRole("checkbox", { name: label })
-			.getAttribute("aria-checked") === "true"
-	);
+	return screen.getByRole("checkbox", { name: label }).getAttribute("aria-checked") === "true";
 }
 
 describe("ApiKeyCreateDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.translate.mockImplementation(
-			(_key: string, fallback: string) => fallback,
-		);
+		mocks.translate.mockImplementation((_key: string, fallback: string) => fallback);
 	});
 
 	it("renders the existing defaults and accessible name validation", async () => {
@@ -129,15 +111,10 @@ describe("ApiKeyCreateDialog", () => {
 			name: "Create Key",
 		}) as HTMLButtonElement;
 
-		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe(
-			"",
-		);
+		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("");
 		expect(checked("Read time entries")).toBe(true);
 		expect(checked("Enable rate limiting")).toBe(true);
-		expect(
-			(screen.getByLabelText("Max requests") as HTMLInputElement)
-				.value,
-		).toBe("100");
+		expect((screen.getByLabelText("Max requests") as HTMLInputElement).value).toBe("100");
 		expect(createButton.disabled).toBe(true);
 
 		await user.type(screen.getByLabelText("Name *"), "ab");
@@ -146,9 +123,7 @@ describe("ApiKeyCreateDialog", () => {
 		const nameError = screen.getByRole("alert");
 		expect(nameError.textContent).toBe("Name must be at least 3 characters");
 		expect(nameInput.getAttribute("aria-invalid")).toBe("true");
-		expect(nameInput.getAttribute("aria-describedby")?.split(" ")).toContain(
-			nameError.id,
-		);
+		expect(nameInput.getAttribute("aria-describedby")?.split(" ")).toContain(nameError.id);
 		expect(screen.getByText("Name *").getAttribute("data-error")).toBe("true");
 		expect(mocks.translate).toHaveBeenCalledWith(
 			"settings.apiKeys.form.nameMinLength",
@@ -168,13 +143,10 @@ describe("ApiKeyCreateDialog", () => {
 		const nameError = screen.getByRole("alert");
 		expect(nameError.textContent).toBe("Name must be at least 3 characters");
 		expect(nameInput.getAttribute("aria-invalid")).toBe("true");
-		expect(nameInput.getAttribute("aria-describedby")?.split(" ")).toContain(
-			nameError.id,
+		expect(nameInput.getAttribute("aria-describedby")?.split(" ")).toContain(nameError.id);
+		expect((screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement).disabled).toBe(
+			true,
 		);
-		expect(
-			(screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement)
-				.disabled,
-		).toBe(true);
 		expect(mocks.createApiKey).not.toHaveBeenCalled();
 	});
 
@@ -190,55 +162,45 @@ describe("ApiKeyCreateDialog", () => {
 			}),
 		).toBeTruthy();
 		await user.type(screen.getByLabelText("Name *"), "Payroll integration");
-		await user.click(
-			screen.getByRole("checkbox", { name: "Read time entries" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Read time entries" }));
 
 		const permissionError = screen.getByRole("alert");
 		expect(permissionError.textContent).toBe("Select at least one permission");
-		expect(permissionGroup.getAttribute("aria-describedby")).toBe(
-			permissionError.id,
+		expect(permissionGroup.getAttribute("aria-describedby")).toBe(permissionError.id);
+		expect((screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement).disabled).toBe(
+			true,
 		);
-		expect(
-			(screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement)
-				.disabled,
-		).toBe(true);
 
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
 		expect(screen.queryByText("Select at least one permission")).toBeNull();
-		expect(
-			(screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement)
-				.disabled,
-		).toBe(false);
+		expect((screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement).disabled).toBe(
+			false,
+		);
 	});
 
-	it.each([
-		"",
-		"10.5",
-		"9",
-		"10001",
-	])("rejects invalid rate limit %j before calling the action", async (rateLimitMax) => {
-		renderDialog();
-		const user = userEvent.setup();
-		await user.type(screen.getByLabelText("Name *"), "Payroll integration");
-		const rateLimitInput = screen.getByLabelText("Max requests");
-		await user.clear(rateLimitInput);
-		if (rateLimitMax) await user.type(rateLimitInput, rateLimitMax);
+	it.each(["", "10.5", "9", "10001"])(
+		"rejects invalid rate limit %j before calling the action",
+		async (rateLimitMax) => {
+			renderDialog();
+			const user = userEvent.setup();
+			await user.type(screen.getByLabelText("Name *"), "Payroll integration");
+			const rateLimitInput = screen.getByLabelText("Max requests");
+			await user.clear(rateLimitInput);
+			if (rateLimitMax) await user.type(rateLimitInput, rateLimitMax);
 
-		const createButton = screen.getByRole("button", {
-			name: "Create Key",
-		}) as HTMLButtonElement;
-		expect(createButton.disabled).toBe(true);
-		expect(screen.getByRole("alert").textContent).toBe(
-			"Enter a whole number from 10 to 10,000",
-		);
-		expect(mocks.translate).toHaveBeenCalledWith(
-			"settings.apiKeys.form.rateLimitMaxInvalid",
-			"Enter a whole number from 10 to 10,000",
-		);
-		await user.click(createButton);
-		expect(mocks.createApiKey).not.toHaveBeenCalled();
-	});
+			const createButton = screen.getByRole("button", {
+				name: "Create Key",
+			}) as HTMLButtonElement;
+			expect(createButton.disabled).toBe(true);
+			expect(screen.getByRole("alert").textContent).toBe("Enter a whole number from 10 to 10,000");
+			expect(mocks.translate).toHaveBeenCalledWith(
+				"settings.apiKeys.form.rateLimitMaxInvalid",
+				"Enter a whole number from 10 to 10,000",
+			);
+			await user.click(createButton);
+			expect(mocks.createApiKey).not.toHaveBeenCalled();
+		},
+	);
 
 	it("ignores an invalid hidden rate limit after rate limiting is disabled", async () => {
 		mocks.createApiKey.mockResolvedValue({
@@ -255,14 +217,11 @@ describe("ApiKeyCreateDialog", () => {
 		const user = userEvent.setup();
 		await user.type(screen.getByLabelText("Name *"), "Payroll integration");
 		await user.clear(screen.getByLabelText("Max requests"));
-		expect(
-			(screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement)
-				.disabled,
-		).toBe(true);
-
-		await user.click(
-			screen.getByRole("checkbox", { name: "Enable rate limiting" }),
+		expect((screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement).disabled).toBe(
+			true,
 		);
+
+		await user.click(screen.getByRole("checkbox", { name: "Enable rate limiting" }));
 		expect(screen.queryByLabelText("Max requests")).toBeNull();
 		const createButton = screen.getByRole("button", {
 			name: "Create Key",
@@ -293,13 +252,9 @@ describe("ApiKeyCreateDialog", () => {
 		const { invalidateQueries } = renderDialog();
 		const user = userEvent.setup();
 		await user.type(screen.getByLabelText("Name *"), "  Payroll integration  ");
-		await user.click(
-			screen.getByRole("checkbox", { name: "Read time entries" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Read time entries" }));
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
-		await user.click(
-			screen.getByRole("checkbox", { name: "Enable rate limiting" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Enable rate limiting" }));
 		await user.click(screen.getByRole("button", { name: "Create Key" }));
 
 		await waitFor(() => expect(mocks.createApiKey).toHaveBeenCalledOnce());
@@ -314,9 +269,7 @@ describe("ApiKeyCreateDialog", () => {
 		expect(invalidateQueries).toHaveBeenCalledWith({
 			queryKey: ["apiKeys", "org-1"],
 		});
-		expect(mocks.toastSuccess).toHaveBeenCalledWith(
-			"API key created successfully",
-		);
+		expect(mocks.toastSuccess).toHaveBeenCalledWith("API key created successfully");
 		expect(mocks.onKeyCreated).toHaveBeenCalledWith(createdKey);
 	});
 
@@ -324,26 +277,15 @@ describe("ApiKeyCreateDialog", () => {
 		renderDialog();
 		const user = userEvent.setup();
 		await user.type(screen.getByLabelText("Name *"), "Temporary key");
-		await user.click(
-			screen.getByRole("checkbox", { name: "Read time entries" }),
-		);
-		await user.click(
-			screen.getByRole("checkbox", { name: "Enable rate limiting" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Read time entries" }));
+		await user.click(screen.getByRole("checkbox", { name: "Enable rate limiting" }));
 		await user.click(screen.getByRole("button", { name: "Cancel" }));
-		await user.click(
-			screen.getByRole("button", { name: "Open create dialog" }),
-		);
+		await user.click(screen.getByRole("button", { name: "Open create dialog" }));
 
-		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe(
-			"",
-		);
+		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("");
 		expect(checked("Read time entries")).toBe(true);
 		expect(checked("Enable rate limiting")).toBe(true);
-		expect(
-			(screen.getByLabelText("Max requests") as HTMLInputElement)
-				.value,
-		).toBe("100");
+		expect((screen.getByLabelText("Max requests") as HTMLInputElement).value).toBe("100");
 	});
 
 	it("restores every default after successful creation and reopening", async () => {
@@ -362,24 +304,16 @@ describe("ApiKeyCreateDialog", () => {
 		await user.type(screen.getByLabelText("Name *"), "Temporary key");
 		await user.click(screen.getByRole("combobox", { name: "Expiration" }));
 		await user.click(await screen.findByRole("option", { name: "90 days" }));
-		await user.click(
-			screen.getByRole("checkbox", { name: "Read time entries" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Read time entries" }));
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
 		const rateLimitInput = screen.getByLabelText("Max requests");
 		await user.clear(rateLimitInput);
 		await user.type(rateLimitInput, "500");
 		await user.click(screen.getByRole("button", { name: "Create Key" }));
 
-		await user.click(
-			await screen.findByRole("button", { name: "Open create dialog" }),
-		);
-		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe(
-			"",
-		);
-		expect(
-			screen.getByRole("combobox", { name: "Expiration" }).textContent,
-		).toContain("30 days");
+		await user.click(await screen.findByRole("button", { name: "Open create dialog" }));
+		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("");
+		expect(screen.getByRole("combobox", { name: "Expiration" }).textContent).toContain("30 days");
 		expect(checked("Read time entries")).toBe(true);
 		for (const permission of [
 			"Read absences",
@@ -392,30 +326,22 @@ describe("ApiKeyCreateDialog", () => {
 			expect(checked(permission)).toBe(false);
 		}
 		expect(checked("Enable rate limiting")).toBe(true);
-		expect(
-			(screen.getByLabelText("Max requests") as HTMLInputElement)
-				.value,
-		).toBe("100");
+		expect((screen.getByLabelText("Max requests") as HTMLInputElement).value).toBe("100");
 	});
 
 	it("warns what the health and restricted custom field scopes expose (#822)", () => {
 		renderDialog();
 		const descriptionOf = (label: string) => {
-			const id = screen
-				.getByRole("checkbox", { name: label })
-				.getAttribute("aria-describedby");
+			const id = screen.getByRole("checkbox", { name: label }).getAttribute("aria-describedby");
 			return id ? document.getElementById(id)?.textContent : null;
 		};
-		expect(descriptionOf("Read restricted custom fields")).toMatch(
-			/only managers or admins see/,
-		);
+		expect(descriptionOf("Read restricted custom fields")).toMatch(/only managers or admins see/);
 		expect(descriptionOf("Read absence health detail")).toMatch(/sick/);
 		expect(descriptionOf("Read employees")).toBeNull();
 	});
 
 	it("disables submission while pending and shows resolved errors", async () => {
-		let resolveRequest: (value: { success: false; error: string }) => void =
-			() => undefined;
+		let resolveRequest: (value: { success: false; error: string }) => void = () => undefined;
 		mocks.createApiKey.mockReturnValue(
 			new Promise((resolve) => {
 				resolveRequest = resolve;
@@ -434,7 +360,7 @@ describe("ApiKeyCreateDialog", () => {
 		resolveRequest({ success: false, error: "Creation failed" });
 
 		await waitFor(() =>
-			expect(mocks.toastError).toHaveBeenCalledWith("Creation failed"),
+			expect(mocks.toastError).toHaveBeenCalledWith("Something went wrong. Try again."),
 		);
 		expect(createButton.disabled).toBe(false);
 		expect(mocks.onKeyCreated).not.toHaveBeenCalled();
@@ -468,12 +394,8 @@ describe("ApiKeyCreateDialog", () => {
 		expect(cancelButton.disabled).toBe(true);
 		await user.click(cancelButton);
 		await user.click(screen.getByRole("button", { name: "Dismiss panel" }));
-		expect(
-			screen.queryByRole("button", { name: "Open create dialog" }),
-		).toBeNull();
-		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe(
-			"Pending key",
-		);
+		expect(screen.queryByRole("button", { name: "Open create dialog" })).toBeNull();
+		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("Pending key");
 		expect(mocks.createApiKey).toHaveBeenCalledOnce();
 
 		resolveRequest({
@@ -486,11 +408,7 @@ describe("ApiKeyCreateDialog", () => {
 				expiresAt: null,
 			},
 		});
-		await user.click(
-			await screen.findByRole("button", { name: "Open create dialog" }),
-		);
-		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe(
-			"",
-		);
+		await user.click(await screen.findByRole("button", { name: "Open create dialog" }));
+		expect((screen.getByLabelText("Name *") as HTMLInputElement).value).toBe("");
 	});
 });

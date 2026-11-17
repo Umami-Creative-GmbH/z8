@@ -1,0 +1,56 @@
+{
+  "sourceSha": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+  "baseSha": "a5259338e983fb2d165c0f463763b1740b585fad",
+  "branch": "feat/enterprise-api-key-settings",
+  "worktree": "X:\\t3-code\\worktrees\\z8\\t3-45dd8020-0887033aaaac2586",
+  "ancestors": {
+    "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f": true,
+    "69c9ed3a86410848885f78f5a7bcdf5f468c4323": true,
+    "26d1d8fd016d6daa0c9fe71e0f671571dd45c211": true,
+    "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5": true,
+    "382b8f5be837dad724d3a54274d3050b0104881f": true,
+    "bfacad421ffe77f50729ea5895c546698ef28383": true
+  },
+  "protectedOwnerChanges": [],
+  "changedFiles": [
+    "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/error.tsx",
+    "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/loading-content.tsx",
+    "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/loading.tsx",
+    "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.tsx",
+    "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page.tsx",
+    "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/view-actions.ts",
+    "apps/webapp/src/app/[locale]/(app)/settings/webhooks/page.integration.test.ts",
+    "apps/webapp/src/app/[locale]/(app)/settings/webhooks/page.tsx",
+    "apps/webapp/src/components/enterprise/api-key-create-dialog.test.tsx",
+    "apps/webapp/src/components/enterprise/api-key-create-form-body.tsx",
+    "apps/webapp/src/components/enterprise/api-key-edit-dialog.test.tsx",
+    "apps/webapp/src/components/enterprise/api-key-edit-dialog.tsx",
+    "apps/webapp/src/components/enterprise/api-key-lifetime.test.tsx",
+    "apps/webapp/src/components/enterprise/api-key-page-client.test.tsx",
+    "apps/webapp/src/components/enterprise/api-key-page-client.tsx",
+    "apps/webapp/src/components/enterprise/api-key-show-dialog.test.tsx",
+    "apps/webapp/src/components/enterprise/api-key-show-dialog.tsx",
+    "apps/webapp/src/components/webhooks/webhook-endpoint-card.test.tsx",
+    "apps/webapp/src/components/webhooks/webhook-endpoint-card.tsx",
+    "apps/webapp/src/components/webhooks/webhook-lifetime.test.tsx",
+    "apps/webapp/src/components/webhooks/webhooks-page-client.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "docs/design/rollout-1692/1773.md"
+  ],
+  "latestSuppliedPublishedRoot": "242cbaca01a8647adf25ee69e434e66c06c0c7d8",
+  "publishedRootStatus": "PROVISIONAL presence/invitation; explicitly optional adoption, not merged here",
+  "latestVerifiedProduct": "69c9ed3a86410848885f78f5a7bcdf5f468c4323",
+  "issue": {
+    "number": 1773,
+    "state": "OPEN",
+    "assignees": [
+      "KaiSoellch"
+    ],
+    "startComment": 6947382665,
+    "duplicateClaimWritten": false
+  },
+  "readiness": null,
+  "childPushOrPrOrClosureOrMergeOrDeploy": false
+}
