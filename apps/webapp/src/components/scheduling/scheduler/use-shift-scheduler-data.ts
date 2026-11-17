@@ -78,7 +78,15 @@ export function useShiftSchedulerData({
 		queryKey: queryKeys.shiftTemplates.list(organizationId),
 		queryFn: async () => {
 			const result = await getShiftTemplates();
-			if (!result.success) throw new Error(result.error);
+			// Template settings may refuse an admitted planner. This supporting read
+			// is unavailable; its legacy "Unauthorized" text is not a session verdict.
+			if (!result.success)
+				throw new Error(
+					t(
+						"scheduling:scheduling.scheduler.templatesUnavailable",
+						"Shift templates could not be loaded.",
+					),
+				);
 			return result.data;
 		},
 		enabled: isManager,
