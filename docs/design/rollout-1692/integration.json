@@ -1838,8 +1838,12 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "branch": "feat/sign-in-refresh",
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1839#issuecomment-6949163760",
+      "handoffLimitation": "Prioritized because ordinary sign-in widget admission blocks wider runtime evidence. Unfilled disabled Login/emptytoken is an observation, not a proved product bug. UI/method/verification recovery work only; canonical BetterAuth/CAPTCHA/domain/session/provider authority unchanged. R096 resourceallocation released, fresh ownfixture only."
     },
     {
       "id": "R156",
@@ -1940,11 +1944,11 @@
       "verifiedCommit": null,
       "implementationCommit": "6dfe584445982cfe1760dea47741a770a088f1cc",
       "evidence": "docs/design/rollout-1692/1743.md",
-      "handoffLimitation": "Provisional. Actual provider employee/role arrival gap corrected; root116 cases/10files, all3types and8-file lint/Doctor0 pass. Two shared explicit and8 ordinary formatter findings remain. Original15PNG/8JSON source/capture/overlay timing qualifications retained. Fresh independent PG/current browser/native and wider acceptance pending; verifiedCommitnull.",
+      "handoffLimitation": "Provisional. Corrected actualprovider arrivals pass independent137unit/public labels/11files plusfresh9canonicalPG/2files, all3types/lint/Doctor0. Root116 compatibility overlaps exactly; no totals added. Two explicit shared/eight ordinary formatting findings and originalcapture/source/overlay qualifications remain. Currentbrowser/Next/native and wideracceptance pending; verifiedCommitnull.",
       "candidateCommit": "b6d9e0b92907148b71a2a3b65d6cd26d1ebfa950",
       "provisionalMerge": "b2fcf93969cc929351757428311220c9926910d2",
       "correctionCommit": "8155d789ce7cda7201886ec09fca4fab2a487247",
-      "integrationVerification": "Candidateb6d9 imported via2e4a0692, exact predicted tree00d8fead; root correction8155d789 mergedb2fcf939, exact tree1d74bd38. Canonical provider identity retires queued old location reads without frontend role admission. Actualprovider7 controls cover employee-only, role-only, combined/return arrivals, rawsession replacement, independentread/header recovery and approved ownerwithoutemployee;116 distinct file/fullname cases/10files pass. All63 verified anchors+baseline and prior445/127/72archives/172routes19aliases preserved. Typegen/all3types,8-file lint/Doctor0 and3-owned100CRLF pass;shared2explicit/8ordinary format remain. Publicarchive24files=15fullydecodedPNG+8JSON+report;7matchedpairs+unpairedbeforeempty,11links/27references pass. Capturede8fd322 pins4/4 CRLF;final3/4 plus documentedindentationonly. No fresh PG/browser/native/runtime/readiness advance. See1743/root-provisional-checks.json."
+      "integrationVerification": "Candidateb6d9 imported via2e4a0692, exact predicted tree00d8fead; root correction8155d789 mergedb2fcf939, exact tree1d74bd38. Canonical provider identity retires queued old location reads without frontend role admission. Actualprovider7 controls cover employee-only, role-only, combined/return arrivals, rawsession replacement, independentread/header recovery and approved ownerwithoutemployee;116 distinct file/fullname cases/10files pass. All63 verified anchors+baseline and prior445/127/72archives/172routes19aliases preserved. Typegen/all3types,8-file lint/Doctor0 and3-owned100CRLF pass;shared2explicit/8ordinary format remain. Publicarchive24files=15fullydecodedPNG+8JSON+report;7matchedpairs+unpairedbeforeempty,11links/27references pass. Capturede8fd322 pins4/4 CRLF;final3/4 plus documentedindentationonly. No fresh PG/browser/native/runtime/readiness advance. See1743/root-provisional-checks.json. Independentfrozen242recheck received:158unitoccurrences/137distinctfilefullnamecases/11files,21overlapoccurrences;root116compatibilityexactoverlap,21independentlabels deliberatelybehaviorallyoverlap. Freshcanonical9PG/2rerunsworker9notadditive. Typegen/all3TS/lint8/Doctor0;formatsunchanged. Safe18payloads/2704873bytes/12JSONsealvalidated;8sourcepinsexact,139configexact+10archivedreceiptJSONLFCRLFequivalent. Full18163byte/158linkpreservationretainedasreviewreceipt, notrootfreshtraversal. No currentbrowser/native/Nextserverorreadinessadvance. See1743/root-independent-recheck.json."
     },
     {
       "id": "R162",
