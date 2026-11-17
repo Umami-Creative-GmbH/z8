@@ -72,6 +72,7 @@ export function DrivingDetailsList({
 	const missingLabel = useMissingLabel();
 	const teamPickerId = useId();
 	const employeePickerId = useId();
+	const filtered = Boolean(filters.teamId || filters.employeeId);
 	const employeeChoices = filters.teamId
 		? employees.filter((person) => person.teamId === filters.teamId)
 		: employees;
@@ -93,65 +94,87 @@ export function DrivingDetailsList({
 		});
 
 	return (
-		<div className="flex flex-col gap-4" aria-busy={pending}>
-			<div className="flex flex-col gap-3 sm:flex-row">
-				<div className="flex flex-col gap-1.5 sm:w-56">
-					<label htmlFor={teamPickerId} className="text-sm font-medium">
-						{t("team.driving.filters.team", "Team")}
-					</label>
-					<Select
-						value={filters.teamId ?? ALL}
-						onValueChange={(value) =>
-							navigate({ teamId: value === ALL ? null : value, employeeId: null })
-						}
-					>
-						<SelectTrigger id={teamPickerId}>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value={ALL}>{t("team.driving.filters.allTeams", "All teams")}</SelectItem>
-							{teams.map((team) => (
-								<SelectItem key={team.id} value={team.id}>
-									{team.name}
+		<section className="min-w-0 space-y-4" aria-busy={pending}>
+			<div className="flex flex-wrap items-end justify-between gap-4 rounded-lg border bg-card p-4">
+				<div className="flex flex-wrap gap-3">
+					<div className="flex flex-col gap-1.5 sm:w-56">
+						<label htmlFor={teamPickerId} className="text-sm font-medium">
+							{t("team.driving.filters.team", "Team")}
+						</label>
+						<Select
+							disabled={pending}
+							value={filters.teamId ?? ALL}
+							onValueChange={(value) =>
+								navigate({ teamId: value === ALL ? null : value, employeeId: null })
+							}
+						>
+							<SelectTrigger id={teamPickerId}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value={ALL}>
+									{t("team.driving.filters.allTeams", "All teams")}
 								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<div className="flex flex-col gap-1.5 sm:w-64">
-					<label htmlFor={employeePickerId} className="text-sm font-medium">
-						{t("team.driving.filters.employee", "Employee")}
-					</label>
-					<Select
-						value={filters.employeeId ?? ALL}
-						onValueChange={(value) =>
-							navigate({ teamId: filters.teamId, employeeId: value === ALL ? null : value })
-						}
-					>
-						<SelectTrigger id={employeePickerId}>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value={ALL}>
-								{t("team.driving.filters.allEmployees", "All employees")}
-							</SelectItem>
-							{employeeChoices.map((person) => (
-								<SelectItem key={person.id} value={person.id}>
-									{person.name}
+								{teams.map((team) => (
+									<SelectItem key={team.id} value={team.id}>
+										{team.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="flex flex-col gap-1.5 sm:w-64">
+						<label htmlFor={employeePickerId} className="text-sm font-medium">
+							{t("team.driving.filters.employee", "Employee")}
+						</label>
+						<Select
+							disabled={pending}
+							value={filters.employeeId ?? ALL}
+							onValueChange={(value) =>
+								navigate({ teamId: filters.teamId, employeeId: value === ALL ? null : value })
+							}
+						>
+							<SelectTrigger id={employeePickerId}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value={ALL}>
+									{t("team.driving.filters.allEmployees", "All employees")}
 								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+								{employeeChoices.map((person) => (
+									<SelectItem key={person.id} value={person.id}>
+										{person.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				</div>
+				{filtered ? (
+					<Button
+						variant="outline"
+						disabled={pending}
+						onClick={() => navigate({ teamId: null, employeeId: null })}
+					>
+						{t("team.driving.clearFilters", "Clear filters")}
+					</Button>
+				) : null}
 			</div>
+			{pending ? (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t("team.driving.updating", "Updating driving details…")}
+				</p>
+			) : null}
 
 			{rows.length === 0 ? (
 				<div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
-					{t("team.driving.empty", "No work is missing driving details.")}
+					{filtered
+						? t("team.driving.noMatch", "No missing driving details match these filters.")
+						: t("team.driving.empty", "No work is missing driving details.")}
 				</div>
 			) : (
 				<>
-					<p className="text-sm text-muted-foreground">
+					<p role="status" className="text-sm font-medium tabular-nums">
 						{truncated
 							? t(
 									"team.driving.truncated",
@@ -165,7 +188,10 @@ export function DrivingDetailsList({
 								)}
 					</p>
 					<div className="overflow-x-auto rounded-lg border bg-card">
-						<Table mobileLayout="stacked">
+						<Table
+							mobileLayout="stacked"
+							aria-label={t("team.driving.title", "Driving details missing")}
+						>
 							<TableHeader>
 								<TableRow>
 									<TableHead>{t("team.driving.columns.employee", "Employee")}</TableHead>
@@ -186,12 +212,10 @@ export function DrivingDetailsList({
 											<div className="flex flex-col">
 												<span className="flex flex-wrap items-center gap-2">
 													{row.name}
-													{row.former ? (
-														<FormerEmployeeBadge since={row.formerSince} />
-													) : null}
+													{row.former ? <FormerEmployeeBadge since={row.formerSince} /> : null}
 												</span>
 												{row.teamName ? (
-													<span className="text-xs text-muted-foreground">{row.teamName}</span>
+													<span className="text-sm text-muted-foreground">{row.teamName}</span>
 												) : null}
 											</div>
 										</TableCell>
@@ -203,12 +227,12 @@ export function DrivingDetailsList({
 											{at(row.endedAt, row.endOffsetMinutes ?? row.startOffsetMinutes, "time")}
 										</TableCell>
 										<TableCell>
-											<Badge variant="outline" className="border-amber-500/50">
+											<Badge variant="secondary" className="whitespace-normal text-left">
 												{missingLabel(row.missing)}
 											</Badge>
 										</TableCell>
 										<TableCell className="text-right">
-											<Button asChild variant="ghost" size="sm">
+											<Button asChild variant="outline" size="sm">
 												<Link
 													href={`/calendar/${row.employeeId}?date=${row.workDay}`}
 													aria-label={t(
@@ -218,9 +242,7 @@ export function DrivingDetailsList({
 													)}
 												>
 													<IconCalendar className="size-4" aria-hidden="true" />
-													<span className="hidden sm:inline">
-														{t("team.driving.openCalendar", "Calendar")}
-													</span>
+													<span>{t("team.driving.openCalendar", "Calendar")}</span>
 												</Link>
 											</Button>
 										</TableCell>
@@ -231,6 +253,6 @@ export function DrivingDetailsList({
 					</div>
 				</>
 			)}
-		</div>
+		</section>
 	);
 }
