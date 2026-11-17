@@ -1,3 +1,4 @@
+import { unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,8 +13,7 @@ import { getAbsenceCategories } from "../../absences/queries";
 import { getCurrentEmployee } from "../actions";
 import { getManagerAbsenceCalendar, getManagerAbsenceEmployees } from "./actions";
 import { canUseManagerAbsencePage } from "./manager-absence-permissions";
-import { TeamAbsenceYearCalendar } from "./team-absence-year-calendar";
-import { TeamAbsencesTable } from "./team-absences-table";
+import { TeamAbsencesHeading, TeamAbsencesWorkspace } from "./team-absences-workspace";
 
 type TeamAbsencesPageProps = {
 	searchParams: Promise<{
@@ -24,12 +24,21 @@ type TeamAbsencesPageProps = {
 		teamId?: string;
 		sort?: string;
 		direction?: string;
-		/** The offboarding checklist's link (#1014): the absences this employee covers… */
+		/** The offboarding link: absences this employee covers as deputy. */
 		deputy?: string;
-		/** …that have not ended at this instant (the departure's cutoff, ISO). */
+		/** Only absences that have not ended at the departure cutoff (ISO). */
 		coverAt?: string;
 	}>;
 };
+
+async function recoverRead<T>(read: Promise<T>, failure: T): Promise<T> {
+	try {
+		return await read;
+	} catch (error) {
+		unstable_rethrow(error);
+		return failure;
+	}
+}
 
 /** The deputy filter of the offboarding link, or undefined when absent or malformed. */
 function parseDeputyCover(params: { deputy?: string; coverAt?: string }) {
@@ -64,7 +73,10 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 	if (!currentEmployee) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("team.absences.feature", "manage team absences")} />
+				<div>
+					<h1 className="mb-4 text-2xl font-semibold">{title}</h1>
+					<NoEmployeeError feature={t("team.absences.feature", "manage team absences")} />
+				</div>
 			</div>
 		);
 	}
@@ -76,47 +88,43 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 	const search = (params.search ?? "").trim();
 	const selectedYear = parsePositiveInteger(params.year);
 	const deputyCover = parseDeputyCover(params);
-	const [listResult, calendarResult, categories, sickNotesEnabled] = await Promise.all([
-		getManagerAbsenceEmployees({
-			search,
-			page: parsePositiveInteger(params.page),
-			pageSize: parsePositiveInteger(params.pageSize),
-			year: selectedYear,
-			teamId: params.teamId,
-			sort: params.sort,
-			direction: params.direction,
-		}),
-		getManagerAbsenceCalendar({
-			year: selectedYear,
-			teamId: params.teamId,
-			...(deputyCover ? { deputyCover } : {}),
-		}),
-		getAbsenceCategories(currentEmployee.organizationId),
+	const [listResult, calendarResult, categoriesResult, sickNotesResult] = await Promise.all([
+		recoverRead(
+			getManagerAbsenceEmployees({
+				search,
+				page: parsePositiveInteger(params.page),
+				pageSize: parsePositiveInteger(params.pageSize),
+				year: selectedYear,
+				teamId: params.teamId,
+				sort: params.sort,
+				direction: params.direction,
+			}),
+			{ success: false, error: "Unable to load absences" },
+		),
+		recoverRead(
+			getManagerAbsenceCalendar({
+				year: selectedYear,
+				teamId: params.teamId,
+				...(deputyCover ? { deputyCover } : {}),
+			}),
+			{ success: false, error: "Unable to load calendar" },
+		),
+		recoverRead(
+			getAbsenceCategories(currentEmployee.organizationId).then((data) => ({
+				success: true,
+				data,
+			})),
+			{ success: false, data: [] },
+		),
 		// Recorders may add the sick note while personnel files are on (#984).
-		isPersonnelFilesEnabled(db, currentEmployee.organizationId),
+		recoverRead(
+			isPersonnelFilesEnabled(db, currentEmployee.organizationId).then((data) => ({
+				success: true,
+				data,
+			})),
+			{ success: false, data: false },
+		),
 	]);
-
-	if (!listResult.success) {
-		return (
-			<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-				<div className="px-4 lg:px-6">
-					<h1 className="text-pretty text-2xl font-semibold">{title}</h1>
-					<p className="text-muted-foreground">{description}</p>
-				</div>
-				<div className="px-4 lg:px-6">
-					<div className="rounded-lg border bg-card p-6 text-center">
-						<h2 className="font-semibold">
-							{t("team.absences.error.title", "Unable to load absences")}
-						</h2>
-						<p className="mt-1 text-muted-foreground text-sm">
-							{listResult.error ??
-								t("team.absences.error.description", "Please try again in a moment.")}
-						</p>
-					</div>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
@@ -142,24 +150,20 @@ export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPage
 						</Link>
 					</p>
 				)}
-				{calendarResult.success ? (
-					<TeamAbsenceYearCalendar data={calendarResult.data} />
-				) : (
-					<div className="rounded-lg border bg-card p-6 text-center">
-						<h2 className="font-semibold">
-							{t("team.absences.calendar.error.title", "Unable to load calendar")}
-						</h2>
-						<p className="mt-1 text-muted-foreground text-sm">
-							{calendarResult.error ??
-								t("team.absences.calendar.error.description", "Please try again in a moment.")}
-						</p>
-					</div>
-				)}
-				<TeamAbsencesTable
-					data={listResult.data}
-					categories={categories}
+				<TeamAbsencesWorkspace
+					actor={{
+						userId: currentEmployee.userId,
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						role: currentEmployee.role,
+					}}
+					requestKey={JSON.stringify(params)}
+					listResult={listResult}
+					calendarResult={calendarResult}
+					categories={categoriesResult.data}
 					search={search}
-					sickNotesEnabled={sickNotesEnabled}
+					sickNotesEnabled={sickNotesResult.data}
+					recordingSetupUnavailable={!categoriesResult.success || !sickNotesResult.success}
 				/>
 			</div>
 		</div>
@@ -170,7 +174,7 @@ function TeamAbsencesPageLoading() {
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			<div className="space-y-2 px-4 lg:px-6">
-				<Skeleton className="h-8 w-44" />
+				<TeamAbsencesHeading />
 				<Skeleton className="h-5 w-full max-w-2xl" />
 			</div>
 			<div className="px-4 lg:px-6">

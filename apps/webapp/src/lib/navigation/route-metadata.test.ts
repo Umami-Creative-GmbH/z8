@@ -6,10 +6,16 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
-	it("adopts only the team directory heading, preserving descendant ownership", () => {
+	it("adopts the team absence heading, retaining team ownership and independent descendants", () => {
+		expect(appPageOwnsHeading("/en/team/absences")).toBe(true);
+		expect(appPageOwnsHeading("/de/team/absences/")).toBe(true);
+		expect(appPageOwnsHeading("/en/team/absences/detail")).toBe(false);
+		expect(appPageOwnsHeading("/en/team")).toBe(true);
+		expect(appPageOwnsHeading("/en/team/driving")).toBe(false);
+	});
+	it("adopts the team directory heading, preserving independently staged descendants", () => {
 		expect(appPageOwnsHeading("/de/team")).toBe(true);
 		for (const path of [
-			"/en/team/absences",
 			"/en/team/presence",
 			"/en/team/driving",
 			"/en/team/period-submissions",

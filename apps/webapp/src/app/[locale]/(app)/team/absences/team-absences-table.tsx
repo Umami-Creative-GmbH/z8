@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { type FormEvent, Suspense, useState, useTransition } from "react";
+import { type FormEvent, type ReactNode, Suspense, useState, useTransition } from "react";
 import { PreviouslyTakenVacationExplanation } from "@/components/absences/previously-taken-vacation-explanation";
 import {
 	OverdrawnVacationBadge,
@@ -59,6 +59,8 @@ type TeamAbsencesTableProps = {
 	search: string;
 	/** Personnel files are on: recording sick leave may add sick notes (#984). */
 	sickNotesEnabled?: boolean;
+	children?: ReactNode;
+	recordingAvailable?: boolean;
 };
 
 function TeamAbsencesTableContent({
@@ -66,11 +68,13 @@ function TeamAbsencesTableContent({
 	categories,
 	search,
 	sickNotesEnabled = false,
+	children,
+	recordingAvailable = true,
 }: TeamAbsencesTableProps) {
+	const { t } = useTranslate();
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
-	const [selectedEmployee, setSelectedEmployee] =
-		useState<ManagerAbsenceEmployeeRow | null>(null);
+	const [selectedEmployee, setSelectedEmployee] = useState<ManagerAbsenceEmployeeRow | null>(null);
 	const [isPending, startTransition] = useTransition();
 	const hasRows = data.rows.length > 0;
 	const firstItem = data.total === 0 ? 0 : (data.page - 1) * data.pageSize + 1;
@@ -113,26 +117,38 @@ function TeamAbsencesTableContent({
 	}
 
 	function handleSort(sort: ManagerAbsenceSortKey) {
-		const nextDirection =
-			data.sort === sort && data.direction === "asc" ? "desc" : "asc";
+		const nextDirection = data.sort === sort && data.direction === "asc" ? "desc" : "asc";
 
 		pushParams({ sort, direction: nextDirection, page: 1 });
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="min-w-0 space-y-6">
 			<TeamAbsencesFilters
 				data={data}
 				search={search}
 				years={years}
 				isPending={isPending}
 				onSearchSubmit={handleSearchSubmit}
-				onTeamChange={(teamId) =>
-					pushParams({ teamId: teamId === "all" ? null : teamId, page: 1 })
-				}
+				onTeamChange={(teamId) => pushParams({ teamId: teamId === "all" ? null : teamId, page: 1 })}
 				onYearChange={(year) => pushParams({ year, page: 1 })}
 			/>
 
+			<nav
+				aria-label={t("team.absences.sections", "Page sections")}
+				className="flex flex-wrap gap-4 text-sm"
+			>
+				<a className="underline underline-offset-4" href="#team-absence-year-calendar-title">
+					{t("team.absences.calendar.title", "Year calendar")}
+				</a>
+				<a className="underline underline-offset-4" href="#team-absence-allowances">
+					{t("team.absences.allowances", "Annual allowances")}
+				</a>
+			</nav>
+			{children}
+			<h2 id="team-absence-allowances" className="scroll-mt-20 text-lg font-semibold">
+				{t("team.absences.allowances", "Annual allowances")} · {data.year}
+			</h2>
 			{hasRows ? (
 				<TeamAbsencesRowsTable
 					rows={data.rows}
@@ -142,6 +158,7 @@ function TeamAbsencesTableContent({
 					isPending={isPending}
 					onSort={handleSort}
 					onRecordAbsence={setSelectedEmployee}
+					recordingAvailable={recordingAvailable}
 				/>
 			) : (
 				<TeamAbsencesEmptyState />
@@ -161,6 +178,7 @@ function TeamAbsencesTableContent({
 			/>
 
 			<RecordAbsenceDialog
+				key={selectedEmployee?.id ?? "closed"}
 				open={selectedEmployee !== null}
 				onOpenChange={(open) => {
 					if (!open) {
@@ -168,12 +186,13 @@ function TeamAbsencesTableContent({
 					}
 				}}
 				employee={
-					selectedEmployee
-						? { id: selectedEmployee.id, name: selectedEmployee.name }
-						: null
+					selectedEmployee ? { id: selectedEmployee.id, name: selectedEmployee.name } : null
 				}
 				categories={categories}
 				sickNotesEnabled={sickNotesEnabled}
+				actionAvailable={
+					recordingAvailable && data.rows.some((row) => row.id === selectedEmployee?.id)
+				}
 			/>
 		</div>
 	);
@@ -210,14 +229,8 @@ function TeamAbsencesFilters({
 						type="search"
 						name="search"
 						defaultValue={search}
-						placeholder={t(
-							"team.absences.filters.searchPlaceholder",
-							"Search employees…",
-						)}
-						aria-label={t(
-							"team.absences.filters.searchLabel",
-							"Search employees",
-						)}
+						placeholder={t("team.absences.filters.searchPlaceholder", "Search employees…")}
+						aria-label={t("team.absences.filters.searchLabel", "Search employees")}
 						autoComplete="off"
 						className="pl-9"
 						disabled={isPending}
@@ -228,24 +241,16 @@ function TeamAbsencesFilters({
 				</Button>
 			</form>
 
-			<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-				<Select
-					value={data.teamId ?? "all"}
-					onValueChange={onTeamChange}
-					disabled={isPending}
-				>
+			<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
+				<Select value={data.teamId ?? "all"} onValueChange={onTeamChange} disabled={isPending}>
 					<SelectTrigger
 						className="w-full sm:w-44"
 						aria-label={t("team.absences.filters.teamLabel", "Filter by team")}
 					>
-						<SelectValue
-							placeholder={t("team.absences.filters.teamPlaceholder", "Team")}
-						/>
+						<SelectValue placeholder={t("team.absences.filters.teamPlaceholder", "Team")} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="all">
-							{t("team.absences.filters.allTeams", "All teams")}
-						</SelectItem>
+						<SelectItem value="all">{t("team.absences.filters.allTeams", "All teams")}</SelectItem>
 						{data.teams.map((team) => (
 							<SelectItem key={team.id} value={team.id}>
 								{team.name}
@@ -254,18 +259,12 @@ function TeamAbsencesFilters({
 					</SelectContent>
 				</Select>
 
-				<Select
-					value={String(data.year)}
-					onValueChange={onYearChange}
-					disabled={isPending}
-				>
+				<Select value={String(data.year)} onValueChange={onYearChange} disabled={isPending}>
 					<SelectTrigger
 						className="w-full sm:w-36"
 						aria-label={t("team.absences.filters.yearLabel", "Filter by year")}
 					>
-						<SelectValue
-							placeholder={t("team.absences.filters.yearPlaceholder", "Year")}
-						/>
+						<SelectValue placeholder={t("team.absences.filters.yearPlaceholder", "Year")} />
 					</SelectTrigger>
 					<SelectContent>
 						{years.map((year) => (
@@ -310,17 +309,10 @@ function SortableAbsenceTableHead({
 				direction: directionLabel,
 			})
 		: t("team.absences.sort.by", "Sort by {label}", { label });
-	const SortIcon = !isActive
-		? IconArrowsSort
-		: direction === "asc"
-			? IconArrowUp
-			: IconArrowDown;
+	const SortIcon = !isActive ? IconArrowsSort : direction === "asc" ? IconArrowUp : IconArrowDown;
 
 	return (
-		<TableHead
-			className={className}
-			aria-sort={isActive ? ariaSort : undefined}
-		>
+		<TableHead className={className} aria-sort={isActive ? ariaSort : undefined}>
 			<Button
 				type="button"
 				variant="ghost"
@@ -345,6 +337,7 @@ function TeamAbsencesRowsTable({
 	isPending,
 	onSort,
 	onRecordAbsence,
+	recordingAvailable,
 }: {
 	rows: ManagerAbsenceEmployeeRow[];
 	/** The vacation year of the rows. */
@@ -354,12 +347,16 @@ function TeamAbsencesRowsTable({
 	isPending: boolean;
 	onSort: (sort: ManagerAbsenceSortKey) => void;
 	onRecordAbsence: (employee: ManagerAbsenceEmployeeRow) => void;
+	recordingAvailable: boolean;
 }) {
 	const { t } = useTranslate();
 
 	return (
 		<div className="rounded-lg border bg-card">
-			<div className="overflow-x-auto">
+			<section
+				className="overflow-x-auto"
+				aria-label={t("team.absences.allowances", "Annual allowances")}
+			>
 				<Table mobileLayout="stacked" className="min-w-[760px]">
 					<TableHeader>
 						<TableRow>
@@ -372,10 +369,7 @@ function TeamAbsencesRowsTable({
 								onSort={onSort}
 							/>
 							<SortableAbsenceTableHead
-								label={t(
-									"team.absences.table.teamOrPosition",
-									"Team or Position",
-								)}
+								label={t("team.absences.table.teamOrPosition", "Team or Position")}
 								sort="team"
 								activeSort={sort}
 								direction={direction}
@@ -435,7 +429,7 @@ function TeamAbsencesRowsTable({
 					<TableBody>
 						{rows.map((employee) => (
 							<TableRow key={employee.id}>
-								<TableCell>
+								<TableCell className="bg-card sm:sticky sm:left-0 sm:z-10 sm:max-w-60">
 									<div className="flex min-w-0 items-center gap-3">
 										<UserAvatar
 											image={employee.image}
@@ -445,9 +439,7 @@ function TeamAbsencesRowsTable({
 										/>
 										<div className="min-w-0">
 											<p className="truncate font-medium">{employee.name}</p>
-											<p className="truncate text-muted-foreground text-sm">
-												{employee.email}
-											</p>
+											<p className="truncate text-muted-foreground text-sm">{employee.email}</p>
 										</div>
 									</div>
 								</TableCell>
@@ -468,9 +460,7 @@ function TeamAbsencesRowsTable({
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{employee.usedVacationDays ?? "—"}
-									<PreviouslyTakenVacationExplanation
-										days={employee.previouslyTakenVacationDays}
-									/>
+									<PreviouslyTakenVacationExplanation days={employee.previouslyTakenVacationDays} />
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{employee.pendingVacationDays ?? "—"}
@@ -480,35 +470,33 @@ function TeamAbsencesRowsTable({
 									{employee.overdrawnVacationDays !== null &&
 										employee.overdrawnVacationDays > 0 && (
 											<div className="mt-1">
-												<OverdrawnVacationBadge
-													overdrawnDays={employee.overdrawnVacationDays}
-												/>
+												<OverdrawnVacationBadge overdrawnDays={employee.overdrawnVacationDays} />
 											</div>
 										)}
 								</TableCell>
-								<TableCell className="text-right tabular-nums">
-									{employee.sickDays}
-								</TableCell>
-								<TableCell className="text-right">
+								<TableCell className="text-right tabular-nums">{employee.sickDays}</TableCell>
+								<TableCell className="bg-card text-right sm:sticky sm:right-0 sm:z-10">
 									<Button
 										type="button"
 										variant="outline"
-										size="icon"
+										size="sm"
 										aria-label={t(
 											"team.absences.actions.recordForEmployee",
 											"Record absence for {name}",
 											{ name: employee.name },
 										)}
 										onClick={() => onRecordAbsence(employee)}
+										disabled={!recordingAvailable}
 									>
 										<IconCalendarPlus className="size-4" aria-hidden="true" />
+										{t("team.absences.recordDialog.submit", "Record absence")}
 									</Button>
 								</TableCell>
 							</TableRow>
 						))}
 					</TableBody>
 				</Table>
-			</div>
+			</section>
 		</div>
 	);
 }
@@ -521,9 +509,7 @@ function TeamAbsencesEmptyState() {
 			aria-label={t("team.absences.empty.label", "No employees found")}
 			className="rounded-lg border bg-card p-6 text-center"
 		>
-			<p className="font-medium">
-				{t("team.absences.empty.title", "No employees found")}
-			</p>
+			<p className="font-medium">{t("team.absences.empty.title", "No employees found")}</p>
 			<p className="mt-1 text-muted-foreground text-sm">
 				{t(
 					"team.absences.empty.description",
@@ -562,15 +548,11 @@ function TeamAbsencesPagination({
 	return (
 		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<p className="text-muted-foreground text-sm">
-				{t(
-					"team.absences.pagination.showing",
-					"Showing {firstItem} to {lastItem} of {total}",
-					{
-						firstItem,
-						lastItem,
-						total,
-					},
-				)}
+				{t("team.absences.pagination.showing", "Showing {firstItem} to {lastItem} of {total}", {
+					firstItem,
+					lastItem,
+					total,
+				})}
 			</p>
 			<div className="flex items-center gap-2">
 				<Button
@@ -579,10 +561,7 @@ function TeamAbsencesPagination({
 					size="sm"
 					onClick={onPrevious}
 					disabled={!canGoPrevious || isPending}
-					aria-label={t(
-						"team.absences.pagination.previousLabel",
-						"Previous page",
-					)}
+					aria-label={t("team.absences.pagination.previousLabel", "Previous page")}
 				>
 					{t("team.absences.pagination.previous", "Previous")}
 				</Button>

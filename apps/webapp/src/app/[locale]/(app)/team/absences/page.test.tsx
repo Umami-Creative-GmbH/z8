@@ -7,8 +7,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const getManagerAbsenceEmployees = vi.fn();
 const getManagerAbsenceCalendar = vi.fn();
 
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-1",
+		activeOrganizationId: "org-1",
+		employeeId: "employee-1",
+		role: "manager",
+	}),
+}));
+vi.mock("@/stores/organization-settings-store", () => ({ usePersonnelFilesEnabled: () => true }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 vi.mock("next/navigation", () => ({
 	redirect: vi.fn(),
+	unstable_rethrow: vi.fn(),
 }));
 
 vi.mock("next/server", () => ({
@@ -36,12 +50,14 @@ vi.mock("@/lib/personnel-file/access-store", () => ({
 vi.mock("../actions", () => ({
 	getCurrentEmployee: vi.fn(async () => ({
 		id: "employee-1",
+		userId: "user-1",
 		organizationId: "org-1",
 		role: "manager",
 	})),
 }));
 
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh: vi.fn() }),
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
@@ -53,7 +69,12 @@ vi.mock("./actions", () => ({
 }));
 
 vi.mock("./team-absences-table", () => ({
-	TeamAbsencesTable: () => <div data-testid="team-absences-table" />,
+	TeamAbsencesTable: ({ children }: { children?: React.ReactNode }) => (
+		<>
+			{children}
+			<div data-testid="team-absences-table" />
+		</>
+	),
 }));
 
 vi.mock("./team-absence-year-calendar", () => ({
@@ -146,7 +167,9 @@ describe("TeamAbsencesPage", () => {
 				at: "2026-09-30T22:00:00Z",
 			},
 		});
-		expect(screen.getByText("Showing only the absences this employee covers as deputy.")).toBeTruthy();
+		expect(
+			screen.getByText("Showing only the absences this employee covers as deputy."),
+		).toBeTruthy();
 		expect(screen.getByRole("link", { name: "Show all absences" }).getAttribute("href")).toBe(
 			"/team/absences?year=2026",
 		);
@@ -172,5 +195,19 @@ describe("TeamAbsencesPage", () => {
 
 		expect(getManagerAbsenceCalendar).toHaveBeenCalledWith({ year: 2026, teamId: undefined });
 		expect(calendar.compareDocumentPosition(table)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+	});
+
+	it("keeps the calendar usable when employee records fail and offers recovery", async () => {
+		getManagerAbsenceEmployees.mockResolvedValue({ success: false, error: "Records unavailable" });
+		render(await TeamAbsencesPageContent({ searchParams: Promise.resolve({ year: "2026" }) }));
+		expect(screen.getByTestId("team-absence-year-calendar")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+	});
+
+	it("keeps employee records usable when the calendar transport rejects", async () => {
+		getManagerAbsenceCalendar.mockRejectedValue(new Error("Transport failed"));
+		render(await TeamAbsencesPageContent({ searchParams: Promise.resolve({ year: "2026" }) }));
+		expect(screen.getByTestId("team-absences-table")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
 	});
 });
