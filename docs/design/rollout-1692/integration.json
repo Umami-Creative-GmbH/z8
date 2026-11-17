@@ -1363,14 +1363,17 @@
       "rootSnapshotEvidence": "docs/design/rollout-1692/1773/root-snapshot-and-refusal-checks.json",
       "rootHiddenArrivalCorrectionCommit": "acd6ceedd22c70bcbb43847432373dadae4265c5",
       "rootHiddenArrivalEvidence": "docs/design/rollout-1692/1773/root-hidden-arrival-checks.json",
-      "latestIntegrationCommit": "988659d25e441c440f88eadc7101a52296bd1305",
+      "latestIntegrationCommit": "de08f6169485e8f1dbb9f4ce2d08a3faa82f5168",
       "rootUnvisitedSnapshotCorrectionCommit": "f145c3cd6f2be2d934ad7b0fa0e795c006c50826",
       "rootPageArrivalEvidence": "docs/design/rollout-1692/1773/root-page-arrival-checks.json",
       "rootPageArrivalVerification": "Provisional:152permanent/11files plus26adaptedindependent =178/12, all3types,scopedlint/explicit andDoctor0/0 pass. Page-owner observation covers received/unvisited tabs; no wire-age claim. Authenticated/runtime acceptance pending.",
       "rootPageArrivalIndependentEvidence": "docs/design/rollout-1692/1773/root-page-arrival-independent-recheck.json",
       "rootPageArrivalIndependentVerification": "203distinct/12files=152permanent+51independent, noP1inside route-first-observation guarantee; 3sourcepins unchanged throughcurrentroot. Doctor0/0/lint/explicit pass; independentmainTS missingignoredlicense andordinary3findings qualified. Authenticated acceptance pending; readinessnull.",
       "rootAuthenticatedRuntimeEvidence": "docs/design/rollout-1692/1773/root-authenticated-runtime-intake.json",
-      "rootAuthenticatedRuntimeVerification": "Frozen56120 freshPG100/5 and36of37namedruntime assertions,77attempts; noR096P1. Org-admin key CRUD/reveal/privatecopy/pending/readRetry/preferences pass. German-with-savedEnglish redirect/query observation retained: language enforcement intentional, sharedlocalequeryloss pendingpublicrepro, aliaslocalcauseunestablished. Owner/manager/native/axe/broader limits unpassed. SAFE23hashes/14JSON/9PNGverified; preservationdigestinconsistencyqualified; readinessnull."
+      "rootAuthenticatedRuntimeVerification": "Frozen56120 freshPG100/5 and36of37namedruntime assertions,77attempts; noR096P1. Org-admin key CRUD/reveal/privatecopy/pending/readRetry/preferences pass. German-with-savedEnglish redirect/query observation retained: language enforcement intentional, sharedlocalequeryloss pendingpublicrepro, aliaslocalcauseunestablished. Owner/manager/native/axe/broader limits unpassed. SAFE23hashes/14JSON/9PNGverified; preservationdigestinconsistencyqualified; readinessnull.",
+      "rootSavedLocaleQueryCorrectionCommit": "a32e8bed036005fcd5a29ede1f452f3ceee067f1",
+      "rootSavedLocaleQueryEvidence": "docs/design/rollout-1692/1773/root-saved-locale-query-checks.json",
+      "rootSavedLocaleQueryVerification": "Provisional shared proxy/layout correction: normal actualmiddleware/layout red1fail then380distinct/30files pass incl8querycontrols,20layoutgates,47proxyand203Today. ActualURLsearch privatelyforwardedseparatefrompathname; clientspoofreplaced, intl/sessioncontextpreserved; savedlocale policyunchanged. Fulltypes/5lint/explicit/Doctor0pass; ordinary5formaterrors. No newPG/livealias; independentreviewpending/readinessnull."
     },
     {
       "id": "R097",
@@ -2049,7 +2052,9 @@
       "rootProducerProvenanceCorrectionCommit": "fa14ae6cc5948824110c2b33f18583b0a17df09e",
       "rootProducerProvenanceEvidence": "docs/design/rollout-1692/1746/root-producer-provenance-checks.json",
       "rootProducerIndependentEvidence": "docs/design/rollout-1692/1746/root-producer-independent-recheck.json",
-      "rootProducerIndependentVerification": "Bounded review at6aa25d71d:249unit/18files (includesroot203+26adaptedprior+20new) and8canonicalPG/2files pass; typegen/workflow/smoke/lint/explicit/Doctor0pass, mainTS ignoredlicense missing andordinary9format errors qualified. SAFE21hashes/230405bytes/12JSON match;9root source/Git pins and63anchors+baseline match. Fullpreservation/cleanup receipts inherited. Currentlive acceptance next; readinessnull."
+      "rootProducerIndependentVerification": "Bounded review at6aa25d71d:249unit/18files (includesroot203+26adaptedprior+20new) and8canonicalPG/2files pass; typegen/workflow/smoke/lint/explicit/Doctor0pass, mainTS ignoredlicense missing andordinary9format errors qualified. SAFE21hashes/230405bytes/12JSON match;9root source/Git pins and63anchors+baseline match. Fullpreservation/cleanup receipts inherited. Currentlive acceptance next; readinessnull.",
+      "rootCurrentRuntimeEvidence": "docs/design/rollout-1692/1746/root-current-runtime-intake.json",
+      "rootCurrentRuntimeVerification": "Frozen016807ebc/app26819398 bounded25namedpass,31payloads/9harnesserrors separately. ActualApprove+Rejectpersisted, capturedforeign/time_entry/work_perioddigestsunchanged. time_record/unrelatedsameorgabsencebefore-digestsabsent; native/axe/liveheldABA/crossorg/negativepopulation/broaderlimitsunpassed. SAFE63hashes/766455bytes/15JSON/6PNGreviewed. Preservation/cleanup receipts inherited; syntheticidentifierdiagnostics excludedfromSAFE. Lease released;readinessnull."
     },
     {
       "id": "R165",
