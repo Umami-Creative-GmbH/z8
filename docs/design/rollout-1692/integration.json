@@ -2085,7 +2085,12 @@
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1748#issuecomment-6909502620",
-      "implementationCommit": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8"
+      "implementationCommit": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+      "integrationCommit": "df0fafc4d827969d37482df69cfe2abb92fee599",
+      "correctionCommit": "4cab7a5b594db3bc7e4dfdf56026d25737a2b2f4",
+      "correctionIntegrationCommit": "a043fd9af51465e608bb6d00f5568e72f11d8300",
+      "evidence": "docs/design/rollout-1692/1748.md",
+      "integrationVerification": "Provisional merge matches independent predicted tree. Independent public review: 32 distinct cases,31 latest pass/1 P1; 200→404→503 revives withdrawn evidence. Root exact red2pass/1fail, exact green3/3, expanded8 public cases pass. Durable withdrawn cache outcome replaces old detail on401/403/404; only fresh success restores evidence. Current root508 distinct tests/42files pass,full3types and typegen,9filelint/Doctor0/0. Owned2 explicit100CRLF pass; ordinary2 and shared metadata2 formatting findings remain. No fresh PG/runtime/native/download acceptance. New independent corrected-source review pending; verifiedCommit null; original evidence and canonical owners preserved. See1748/root-withdrawal-correction.json."
     },
     {
       "id": "R167",
