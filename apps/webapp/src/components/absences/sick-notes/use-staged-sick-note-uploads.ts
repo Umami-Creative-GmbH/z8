@@ -62,7 +62,7 @@ interface StagingRun {
  * existing absence) and a failure stops the rest; what was processed stays.
  */
 export function useStagedSickNoteUploads(
-	options: { process?: (uploaded: UploadedSickNote) => Promise<void> } = {},
+	options: { process?: (uploaded: UploadedSickNote) => Promise<void>; lifetimeKey?: string } = {},
 ) {
 	const activeRun = useRef<StagingRun | null>(null);
 	const processRef = useRef(options.process);
@@ -88,7 +88,7 @@ export function useStagedSickNoteUploads(
 			}
 			run.reject(new StagedSickNoteUploadCancelledError());
 		};
-	}, []);
+	}, [options.lifetimeKey]);
 
 	function settle(): StagingRun | null {
 		const run = activeRun.current;
@@ -101,6 +101,7 @@ export function useStagedSickNoteUploads(
 		maxFileSize: PERSONNEL_DOCUMENT_MAX_BYTES,
 		allowedFileTypes: PERSONNEL_DOCUMENT_MIME_TYPES,
 		uploadMetadata: { purpose: "personnel-document" },
+		lifetimeKey: options.lifetimeKey,
 		process: async ({ tusFileKey, fileName }) => {
 			const run = activeRun.current;
 			const note = run?.uploading;

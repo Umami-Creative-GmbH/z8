@@ -55,11 +55,13 @@ const notes = [note];
 function UploadForm({
 	process,
 	files = notes,
+	lifetimeKey,
 }: {
 	process?: (uploaded: UploadedSickNote) => Promise<void>;
 	files?: readonly ResolvedStagedSickNote[];
+	lifetimeKey?: string;
 }) {
-	const uploads = useStagedSickNoteUploads({ process });
+	const uploads = useStagedSickNoteUploads({ process, lifetimeKey });
 	const [result, setResult] = useState("");
 	return (
 		<>
@@ -85,6 +87,26 @@ function UploadForm({
 beforeEach(() => {
 	transport.instances.length = 0;
 	vi.mocked(discardStagedSickNoteUploadsAction).mockClear();
+});
+
+it("retries the retained file when the form lifetime retires and returns without unmounting", async () => {
+	const tree = (lifetimeKey: string) => <UploadForm lifetimeKey={lifetimeKey} />;
+	const view = render(tree("available"));
+	const addedFiles = () =>
+		transport.instances.reduce((count, upload) => count + upload.addFile.mock.calls.length, 0);
+	fireEvent.click(screen.getByRole("button", { name: "Upload selected note" }));
+	await waitFor(() => expect(addedFiles()).toBe(1));
+	view.rerender(tree("unavailable"));
+	view.rerender(tree("available"));
+	fireEvent.click(screen.getByRole("button", { name: "Upload selected note" }));
+	await waitFor(() => expect(addedFiles()).toBe(2));
+	await act(async () => {
+		await transport.instances.at(-1)?.handlers.get("complete")?.({
+			successful: [{ uploadURL: "http://localhost/api/tus/after-availability", name: "note.pdf" }],
+		});
+	});
+	expect(screen.getByLabelText("Result").textContent).toBe("after-availability");
+	expect(screen.getByLabelText("Staging").textContent).toBe("Ready");
 });
 
 it.each([false, true])(
@@ -149,9 +171,14 @@ it("discards a completed unattached file even if retirement precedes its complet
 	]);
 });
 
-it.each(["success", "rejection"] as const)(
-	"ignores an old processing %s after Activity starts a replacement upload",
-	async (outcome) => {
+it.each([
+	["success", "Activity"],
+	["rejection", "Activity"],
+	["success", "lifetime"],
+	["rejection", "lifetime"],
+] as const)(
+	"ignores an old processing %s after %s starts a replacement upload",
+	async (outcome, retirement) => {
 		let finish!: () => void;
 		const process = vi.fn(async () => {});
 		process.mockImplementationOnce(
@@ -160,12 +187,15 @@ it.each(["success", "rejection"] as const)(
 					finish = () => (outcome === "success" ? resolve() : reject(new Error("Retired")));
 				}),
 		);
-		const tree = (mode: "visible" | "hidden") => (
-			<Activity mode={mode}>
-				<UploadForm process={process} />
+		const tree = (retired = false) => (
+			<Activity mode={retired && retirement === "Activity" ? "hidden" : "visible"}>
+				<UploadForm
+					process={process}
+					lifetimeKey={retired && retirement === "lifetime" ? "retired" : "current"}
+				/>
 			</Activity>
 		);
-		const view = render(tree("visible"));
+		const view = render(tree());
 		fireEvent.click(screen.getByRole("button", { name: "Upload selected note" }));
 		await waitFor(() => expect(transport.instances[0]?.addFile).toHaveBeenCalledOnce());
 		let oldCompletion: unknown;
@@ -175,10 +205,11 @@ it.each(["success", "rejection"] as const)(
 			});
 		});
 		await waitFor(() => expect(process).toHaveBeenCalledOnce());
-		view.rerender(tree("hidden"));
-		view.rerender(tree("visible"));
+		view.rerender(tree(true));
+		view.rerender(tree());
 		fireEvent.click(screen.getByRole("button", { name: "Upload selected note" }));
-		await waitFor(() => expect(transport.instances[1]?.addFile).toHaveBeenCalledOnce());
+		const replacement = transport.instances.at(-1);
+		await waitFor(() => expect(replacement?.addFile).toHaveBeenCalledOnce());
 		await act(async () => {
 			finish();
 			await oldCompletion;
@@ -186,7 +217,7 @@ it.each(["success", "rejection"] as const)(
 		expect(screen.getByLabelText("Staging").textContent).toBe("Uploading");
 		expect(screen.getByLabelText("Result").textContent).not.toBe("retired-note");
 		await act(async () => {
-			await transport.instances[1]?.handlers.get("complete")?.({
+			await replacement?.handlers.get("complete")?.({
 				successful: [{ uploadURL: "http://localhost/api/tus/current-note", name: "note.pdf" }],
 			});
 		});

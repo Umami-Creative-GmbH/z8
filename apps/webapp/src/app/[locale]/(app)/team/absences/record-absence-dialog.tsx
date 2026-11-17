@@ -213,7 +213,9 @@ function useRecordAbsenceDialogForm({
 		startDate: state.values.startDate,
 		endDate: state.values.endDate,
 	}));
-	const sickNotes = useStagedSickNotes(sickNoteDates);
+	const sickNotes = useStagedSickNotes(sickNoteDates, {
+		lifetimeKey: JSON.stringify([open, actionAvailable, employee?.id, sickNotesEnabled]),
+	});
 
 	function handleSubmit() {
 		const arrival = lifetime.current;
