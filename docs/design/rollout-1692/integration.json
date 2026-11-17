@@ -1315,7 +1315,9 @@
       "implementationCommit": "66bf3486891a7bfd306db01cb37e96bd897cc712",
       "implementationSourceCommit": "6524ae36a9bbe6ea528959284d479d2a8377068c",
       "evidence": "docs/design/rollout-1692/1771.md",
-      "handoffLimitation": "Committed worker handoff at11cd reports779 unit cases/64files and39 PostgreSQL cases/3files, all3types, route formatting/lint/Doctorzero. Acceptance incomplete: inherited pending-invitation Escape-dismissal gap needs root coordination; matched browser/native captures and real invitation/edit journeys unpassed. Canonical owners unchanged; fresh serial merger owns readiness."
+      "handoffLimitation": "Worker66bf handoff awaits fresh merger review. Root invitation-only correctionb57d9782 merged75d365a3: actual Escape/Close/queued actor-org-session/access/Activity retirement and late effects corrected;72 cases/5files, all3types,3-file explicit/lint pass. Doctor0errors/3reviewed warnings; unrelated employee-page test import error retained. Canonical invitation/kiosk/joining/authority owners unchanged. Full worker route, actual invitation/edit/browser/native acceptance remains unpassed; root-provisional checks are not a readiness claim.",
+      "invitationCorrectionCommit": "b57d978220dff54db6dcf83aa7a2dd7384ddf0e2",
+      "invitationCorrectionIntegration": "75d365a3bb0b95e51f44283ab789a1e0f7292e76"
     },
     {
       "id": "R093",
@@ -1903,7 +1905,7 @@
       "status": "awaiting-integration",
       "verifiedCommit": null,
       "implementationCommit": "bf0197401f2e07ff29b8fd5889b3f3f3f3677f62",
-      "handoffLimitation": "Provisional. Independent12 fresh provider probes and bounded live admin missing-record, roles, Retry/filters/preferences/Calendar navigation pass on D28; inherited188 units/5PG not rerun. Calendar save remains blocked by earlier automatic approval review; original scope and exact odometer100/110 (10km) proposal clarified for a new normal-review check. Native React, live authority and broader acceptance unpassed. Desktop/wide PNGs are main-region crops; overlays and two metadata/eight ordinary format findings retained.",
+      "handoffLimitation": "Provisional. Independent12 fresh provider probes and bounded live admin missing-record, roles, Retry/filters/preferences/Calendar navigation pass on D28; inherited188 units/5PG not rerun. Automatic review rejected the proposed consequential Calendar save and a new delegated check before it started; root requested explicit user approval for a fresh disposable-fixture100/110km own-vehicle attribution (10km trip), still pending. No correction ran. Native React, live authority and broader acceptance unpassed. Desktop/wide PNGs are main-region crops; overlays and metadata/ordinary format findings retained.",
       "integrationCommit": "bd6b804ccc6e7fa3c63fbf4c048200c3c303aab4",
       "candidateCommit": "6ab5cca4b1827580eeff064cc47d36d4589f26aa",
       "evidence": "docs/design/rollout-1692/1741.md",
@@ -1938,7 +1940,11 @@
       "verifiedCommit": null,
       "implementationCommit": "6dfe584445982cfe1760dea47741a770a088f1cc",
       "evidence": "docs/design/rollout-1692/1743.md",
-      "handoffLimitation": "Worker60unit+9PG, full3types, bounded Doctor and native light/dark accessibility. Matched evidence, roles/preferences/phoneEscape/keyboard reported; fresh merger must inspect exact source/evidence and remaining acceptance."
+      "handoffLimitation": "Provisional. Actual provider employee/role arrival gap corrected; root116 cases/10files, all3types and8-file lint/Doctor0 pass. Two shared explicit and8 ordinary formatter findings remain. Original15PNG/8JSON source/capture/overlay timing qualifications retained. Fresh independent PG/current browser/native and wider acceptance pending; verifiedCommitnull.",
+      "candidateCommit": "b6d9e0b92907148b71a2a3b65d6cd26d1ebfa950",
+      "provisionalMerge": "b2fcf93969cc929351757428311220c9926910d2",
+      "correctionCommit": "8155d789ce7cda7201886ec09fca4fab2a487247",
+      "integrationVerification": "Candidateb6d9 imported via2e4a0692, exact predicted tree00d8fead; root correction8155d789 mergedb2fcf939, exact tree1d74bd38. Canonical provider identity retires queued old location reads without frontend role admission. Actualprovider7 controls cover employee-only, role-only, combined/return arrivals, rawsession replacement, independentread/header recovery and approved ownerwithoutemployee;116 distinct file/fullname cases/10files pass. All63 verified anchors+baseline and prior445/127/72archives/172routes19aliases preserved. Typegen/all3types,8-file lint/Doctor0 and3-owned100CRLF pass;shared2explicit/8ordinary format remain. Publicarchive24files=15fullydecodedPNG+8JSON+report;7matchedpairs+unpairedbeforeempty,11links/27references pass. Capturede8fd322 pins4/4 CRLF;final3/4 plus documentedindentationonly. No fresh PG/browser/native/runtime/readiness advance. See1743/root-provisional-checks.json."
     },
     {
       "id": "R162",

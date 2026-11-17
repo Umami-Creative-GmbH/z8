@@ -1,0 +1,80 @@
+{
+  "base": "a5259338e983fb2d165c0f463763b1740b585fad",
+  "branch": "fix/1771-invitation-panel-lifetime",
+  "verifiedCommit": null,
+  "scope": "Invitation panel UI only; canonical invitation/kiosk actions, membership, joining and permission owners unchanged.",
+  "freshRed": {
+    "cases": 11,
+    "pass": 1,
+    "fail": 10,
+    "file": "lifetime-red02.json",
+    "controls": "Cancel already passed; Escape/Close, queued identity/Activity, late settlement cases failed."
+  },
+  "accepted": {
+    "cases": 72,
+    "pass": 72,
+    "physicalFiles": 5,
+    "byFile": [
+      {
+        "path": "apps/webapp/src/components/organization/invite-member-dialog.lifetime.test.tsx",
+        "cases": 14
+      },
+      {
+        "path": "apps/webapp/src/components/organization/invite-member-dialog.test.tsx",
+        "cases": 7
+      },
+      {
+        "path": "apps/webapp/src/components/organization/members-table.test.tsx",
+        "cases": 34
+      },
+      {
+        "path": "apps/webapp/src/components/ui/action-panel.test.tsx",
+        "cases": 8
+      },
+      {
+        "path": "apps/webapp/src/components/ui/sheet.test.tsx",
+        "cases": 9
+      }
+    ]
+  },
+  "types": "Next typegen + all three projects passed; last change names the unchanged DOM submission boundary.",
+  "lint": "Explicit webapp 100-column CRLF check and separate lint passed on 3 owned files.",
+  "doctor": {
+    "errorCount": 0,
+    "warningCount": 3,
+    "affectedFileCount": 1,
+    "totalDiagnosticCount": 3,
+    "score": null,
+    "scoreLabel": null,
+    "qualifications": [
+      "Inherited component length warning (component already over 300 lines).",
+      "Two mutation invalidation warnings are conservative: current successful settlement invalidates canonical invitation/employee keys in onSubmit; existing public success tests pass. Retired commands intentionally suppress these visible completion effects."
+    ]
+  },
+  "pins": [
+    {
+      "path": "apps/webapp/src/components/organization/invite-member-dialog.tsx",
+      "bytes": 18732,
+      "sha256": "4b31b4bb8aa8f39473d038048f8668577c84f4e4e168ae7ebc105ffa08c71c08"
+    },
+    {
+      "path": "apps/webapp/src/components/organization/invite-member-dialog.test.tsx",
+      "bytes": 8449,
+      "sha256": "22fe7c5faf2f7d8855111cb20a23a97f0c282b87f53ad5de64e5dbfa0460487c"
+    },
+    {
+      "path": "apps/webapp/src/components/organization/invite-member-dialog.lifetime.test.tsx",
+      "bytes": 9421,
+      "sha256": "a66a27162df8a18d6b640f4c8e2b9c4b9baf5584c0180a95ba39c26739d9b5c2"
+    }
+  ],
+  "limits": [
+    "No fresh PostgreSQL or browser/native acceptance; no canonical persistence or authority changes.",
+    "Broader unchanged employee-page test did not load: next-intl ESM resolution of next/navigation (0 cases executed there). Three other suites in that mixed run passed55/55; not additional coverage.",
+    "First red harness checked dialog presence during close animation and gave a false positive for pending dismissal; corrected red asserts public close callback. First harness and all failed logs retained.",
+    "Normal pnpm sandbox invocation failed engine-store lock; ordinary same-command escalation used. One PowerShell path-quoting command failed before tests and was corrected.",
+    "#1771 incoming worker implementation is not integrated by this correction; readiness remains null."
+  ],
+  "correctionCommit": "b57d978220dff54db6dcf83aa7a2dd7384ddf0e2",
+  "integrationCommit": "75d365a3bb0b95e51f44283ab789a1e0f7292e76"
+}
