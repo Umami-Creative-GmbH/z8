@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useOrganization } from "@/hooks/use-organization";
 import { authClient, useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
+import type { LegacyConversionView } from "@/lib/travel-expenses/legacy-draft-conversion-read";
 import type { LegacyReceiptRefusal } from "@/lib/travel-expenses/legacy-draft-conversion-store";
 import { Link, useRouter } from "@/navigation";
 
@@ -301,36 +302,65 @@ export function LegacyDraftConversionPanel({ claimId }: { claimId: string }) {
 	);
 }
 
-class LegacyConversionReadRefused extends Error {}
+type LegacyConversionReadResult =
+	| { kind: "available"; conversion: LegacyConversionView | null }
+	| { kind: "withdrawn" };
 
 function LegacyConversionRead({ claimId }: { claimId: string }) {
 	const { t } = useTranslate();
 	const lifetime = useLegacyClaimLifetime();
-	const { data, error, isError, isLoading, refetch, isFetching } = useQuery({
+	const {
+		data: result,
+		isError,
+		isLoading,
+		refetch,
+		isFetching,
+	} = useQuery({
 		queryKey: [...queryKeys.travelExpenses.detail(claimId), "legacy-conversion", lifetime.id],
 		enabled: lifetime.active,
 		retry: false,
-		queryFn: async () => {
+		queryFn: async (): Promise<LegacyConversionReadResult> => {
 			const result = await getLegacyTravelExpenseConversion({ claimId });
 			if (!lifetime.active) throw new Error("Conversion read retired");
 			if (!result.success) {
 				if (["Unauthorized", "Travel expense claim not found"].includes(result.error))
-					throw new LegacyConversionReadRefused();
+					return { kind: "withdrawn" };
 				throw new Error(result.error);
 			}
-			return result.data;
+			return { kind: "available", conversion: result.data };
 		},
 	});
-	if (error instanceof LegacyConversionReadRefused)
+	const data = result?.kind === "available" ? result.conversion : undefined;
+	const loadError = isError && (
+		<Alert variant="destructive">
+			<IconAlertTriangle aria-hidden="true" className="size-4" />
+			<AlertDescription className="flex flex-wrap items-center gap-2">
+				{t("travelExpenses.legacyDraft.loadFailed", "Unable to check this draft. Please retry.")}
+				<Button
+					type="button"
+					size="sm"
+					variant="outline"
+					disabled={isFetching}
+					onClick={() => void refetch()}
+				>
+					{t("common.retry", "Retry")}
+				</Button>
+			</AlertDescription>
+		</Alert>
+	);
+	if (result?.kind === "withdrawn")
 		return (
-			<Alert role="alert">
-				<AlertDescription>
-					{t(
-						"travelExpenses.legacyDraft.readRefused",
-						"Draft continuation is not available for the current reader.",
-					)}
-				</AlertDescription>
-			</Alert>
+			<div className="space-y-3">
+				<Alert role="alert">
+					<AlertDescription>
+						{t(
+							"travelExpenses.legacyDraft.readRefused",
+							"Draft continuation is not available for the current reader.",
+						)}
+					</AlertDescription>
+				</Alert>
+				{loadError}
+			</div>
 		);
 	if (isLoading || !lifetime.active)
 		return (
@@ -346,26 +376,7 @@ function LegacyConversionRead({ claimId }: { claimId: string }) {
 				</h2>
 			</CardHeader>
 			<CardContent className="space-y-3">
-				{isError && (
-					<Alert variant="destructive">
-						<IconAlertTriangle aria-hidden="true" className="size-4" />
-						<AlertDescription className="flex flex-wrap items-center gap-2">
-							{t(
-								"travelExpenses.legacyDraft.loadFailed",
-								"Unable to check this draft. Please retry.",
-							)}
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								disabled={isFetching}
-								onClick={() => void refetch()}
-							>
-								{t("common.retry", "Retry")}
-							</Button>
-						</AlertDescription>
-					</Alert>
-				)}
+				{loadError}
 				{data ? (
 					<>
 						<p className="text-sm text-muted-foreground">
