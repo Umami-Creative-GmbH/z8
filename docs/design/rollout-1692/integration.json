@@ -2041,7 +2041,9 @@
       "rootPartialResultVerification": "Provisional: narrowed-population/partial-read retention2pass1fail corrected by accepting fresh partial results without prior row restoration.183/12,all3types,scopedlint/explicit,Doctor0/0 pass; independent/PG/runtime pending.",
       "rootDecisionReservationCorrectionCommit": "a224b4c7f34e433e56b8d0844cdfc1372417b950",
       "rootDecisionReservationEvidence": "docs/design/rollout-1692/1746/root-decision-reservation-checks.json",
-      "rootDecisionReservationVerification": "Provisional: exactActivity opposingPOST9pass1fail corrected with QueryClient/actor/org reservation through real settlement.196distinct/13files including28public,full3types,5filelint/explicit andDoctor0/0 pass. Ordinary5formatter+4testwarnings retained; independent/PG/runtime pending."
+      "rootDecisionReservationVerification": "Provisional: exactActivity opposingPOST9pass1fail corrected with QueryClient/actor/org reservation through real settlement.196distinct/13files including28public,full3types,5filelint/explicit andDoctor0/0 pass. Ordinary5formatter+4testwarnings retained; independent/PG/runtime pending.",
+      "rootProducerProvenanceBlockerEvidence": "docs/design/rollout-1692/1746/root-producer-provenance-stop.json",
+      "rootProducerProvenanceStatus": "Confirmed synthetic page/read stampP1: independent25pass1fail/26, settlement controls pass; root fix queued after separateR096runtimelease. verifiedCommit null."
     },
     {
       "id": "R165",
