@@ -9,3 +9,11 @@ The original [implementation report](../../1839.md) and its entire sealed [evide
 No root Next/browser/native/provider resources were started. The canonical PostgreSQL runner removed its sole exact label-owned container; a separate exact-name query confirmed absence. Fresh independent correction/runtime acceptance and wider provider/native/build/catalog/device/zoom matrices remain pending.
 
 [Exact pins, commands, red/green counts, failed attempts, cleanup and limits](checks.json).
+
+## Organization OAuth navigation follow-up
+
+The additional public regression found that the method promise finalizer released an organization OAuth handoff immediately after browser navigation started. Correction `e8ba771e8ac43ab1a09740a6fa538a6f12ee7461`, integrated at `e5582c5682276ef941fb23ca80197e64acac4dd9`, keeps that handoff pending until departure and restores a usable sign-in arrival on Activity return. A thrown navigation keeps the credential draft and allows retry. Unsettled passkey, SSO and social client requests retain their existing settlement lock.
+
+The current selection passes **285 cases across 30 files**, including ten method cases and 29 surrounding provider/form/widget cases. All three type projects, scoped lint and explicit formatting pass; Doctor reports zero findings. The earlier 43 canonical PostgreSQL cases remain pinned to the preceding correction and were not rerun for this UI-only change. Ordinary formatting remains unpassed.
+
+[Exact source pins, red/green results, commands, preservation and remaining limits](navigation-follow-up.json). Fresh independent and authenticated runtime acceptance remain pending; readiness is null. The original sealed implementation report and evidence remain unchanged.
