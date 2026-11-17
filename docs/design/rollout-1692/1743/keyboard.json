@@ -1,0 +1,13 @@
+[
+  {
+    "name": "keyboard-Enter",
+    "expected": "http://localhost:59453/en/team/presence/17430000-0000-4000-8000-000000000001",
+    "actual": "http://localhost:59453/en/team/presence/17430000-0000-4000-8000-000000000001",
+    "passed": true
+  },
+  {
+    "name": "browser-back",
+    "path": "/en/team/presence",
+    "passed": true
+  }
+]
