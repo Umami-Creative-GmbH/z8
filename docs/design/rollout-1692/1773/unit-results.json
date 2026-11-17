@@ -1,0 +1,2875 @@
+{
+  "sourceSha": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+  "baseSha": "a5259338e983fb2d165c0f463763b1740b585fad",
+  "project": "unit",
+  "maxWorkers": 1,
+  "physicalFiles": 16,
+  "assertionOccurrences": 553,
+  "uniqueFileAndFullNames": 553,
+  "failed": 0,
+  "duplicateFullNames": [],
+  "reportedDescribeSuitesNotCounted": 28,
+  "files": [
+    {
+      "file": "src/tolgee/extracted-key-defaults.test.ts",
+      "assertions": 1,
+      "cases": [
+        {
+          "fullName": "extracted translation keys all have a default English value",
+          "status": "passed",
+          "durationMs": 1112.1870000000001
+        }
+      ]
+    },
+    {
+      "file": "src/components/enterprise/api-key-create-dialog.test.tsx",
+      "assertions": 14,
+      "cases": [
+        {
+          "fullName": "ApiKeyCreateDialog renders the existing defaults and accessible name validation",
+          "status": "passed",
+          "durationMs": 220.83720000000005
+        },
+        {
+          "fullName": "ApiKeyCreateDialog rejects a whitespace-only name with an associated error",
+          "status": "passed",
+          "durationMs": 93.30639999999994
+        },
+        {
+          "fullName": "ApiKeyCreateDialog requires a permission and supports selecting a different permission",
+          "status": "passed",
+          "durationMs": 467.5784000000001
+        },
+        {
+          "fullName": "ApiKeyCreateDialog rejects invalid rate limit \"\" before calling the action",
+          "status": "passed",
+          "durationMs": 214.20450000000005
+        },
+        {
+          "fullName": "ApiKeyCreateDialog rejects invalid rate limit \"10.5\" before calling the action",
+          "status": "passed",
+          "durationMs": 558.8592999999998
+        },
+        {
+          "fullName": "ApiKeyCreateDialog rejects invalid rate limit \"9\" before calling the action",
+          "status": "passed",
+          "durationMs": 510.65470000000005
+        },
+        {
+          "fullName": "ApiKeyCreateDialog rejects invalid rate limit \"10001\" before calling the action",
+          "status": "passed",
+          "durationMs": 525.3116
+        },
+        {
+          "fullName": "ApiKeyCreateDialog ignores an invalid hidden rate limit after rate limiting is disabled",
+          "status": "passed",
+          "durationMs": 295.5598
+        },
+        {
+          "fullName": "ApiKeyCreateDialog submits the exact API payload and reports success",
+          "status": "passed",
+          "durationMs": 615.7721999999999
+        },
+        {
+          "fullName": "ApiKeyCreateDialog restores defaults after canceling and reopening",
+          "status": "passed",
+          "durationMs": 451.3292000000001
+        },
+        {
+          "fullName": "ApiKeyCreateDialog restores every default after successful creation and reopening",
+          "status": "passed",
+          "durationMs": 625.1499999999996
+        },
+        {
+          "fullName": "ApiKeyCreateDialog warns what the health and restricted custom field scopes expose (#822)",
+          "status": "passed",
+          "durationMs": 15.124900000000707
+        },
+        {
+          "fullName": "ApiKeyCreateDialog disables submission while pending and shows resolved errors",
+          "status": "passed",
+          "durationMs": 287.47789999999986
+        },
+        {
+          "fullName": "ApiKeyCreateDialog ignores cancel and panel dismissal while creation is pending",
+          "status": "passed",
+          "durationMs": 506.3028999999997
+        }
+      ]
+    },
+    {
+      "file": "src/components/enterprise/api-key-edit-dialog.test.tsx",
+      "assertions": 23,
+      "cases": [
+        {
+          "fullName": "ApiKeyEditDialog uses the selected API key values as its initial values",
+          "status": "passed",
+          "durationMs": 91.45060000000001
+        },
+        {
+          "fullName": "ApiKeyEditDialog restores the selected API key values after closing and reopening",
+          "status": "passed",
+          "durationMs": 588.4147999999999
+        },
+        {
+          "fullName": "ApiKeyEditDialog restores selected key defaults when Cancel closes a retained key",
+          "status": "passed",
+          "durationMs": 680.4289999999999
+        },
+        {
+          "fullName": "ApiKeyEditDialog synchronizes every form value when the parent replaces the selected key",
+          "status": "passed",
+          "durationMs": 514.9029999999998
+        },
+        {
+          "fullName": "ApiKeyEditDialog requires a three-character name and at least one permission",
+          "status": "passed",
+          "durationMs": 308.2878999999998
+        },
+        {
+          "fullName": "ApiKeyEditDialog rejects a whitespace-only name",
+          "status": "passed",
+          "durationMs": 138.8987000000002
+        },
+        {
+          "fullName": "ApiKeyEditDialog does not submit invalid values received from the selected key",
+          "status": "passed",
+          "durationMs": 27.351000000000113
+        },
+        {
+          "fullName": "ApiKeyEditDialog associates permission validation with its checkbox group",
+          "status": "passed",
+          "durationMs": 94.54320000000007
+        },
+        {
+          "fullName": "ApiKeyEditDialog uses the translated scopes-required validation message",
+          "status": "passed",
+          "durationMs": 90.65350000000035
+        },
+        {
+          "fullName": "ApiKeyEditDialog uses translated and accessible name and rate validation errors",
+          "status": "passed",
+          "durationMs": 231.1824999999999
+        },
+        {
+          "fullName": "ApiKeyEditDialog rejects a empty rate limit",
+          "status": "passed",
+          "durationMs": 93.79919999999993
+        },
+        {
+          "fullName": "ApiKeyEditDialog rejects a fractional rate limit",
+          "status": "passed",
+          "durationMs": 230.16840000000002
+        },
+        {
+          "fullName": "ApiKeyEditDialog rejects a below the minimum rate limit",
+          "status": "passed",
+          "durationMs": 183.6224000000002
+        },
+        {
+          "fullName": "ApiKeyEditDialog rejects a above the maximum rate limit",
+          "status": "passed",
+          "durationMs": 217.1479000000004
+        },
+        {
+          "fullName": "ApiKeyEditDialog restores a valid rate value when disabling rate limiting",
+          "status": "passed",
+          "durationMs": 151.85540000000037
+        },
+        {
+          "fullName": "ApiKeyEditDialog submits the edited values and permission selection",
+          "status": "passed",
+          "durationMs": 661.8977000000004
+        },
+        {
+          "fullName": "ApiKeyEditDialog disables save and shows a loader while updating",
+          "status": "passed",
+          "durationMs": 69.24549999999999
+        },
+        {
+          "fullName": "ApiKeyEditDialog disables Cancel and hides the close control while updating",
+          "status": "passed",
+          "durationMs": 54.97680000000037
+        },
+        {
+          "fullName": "ApiKeyEditDialog ignores Escape while updating",
+          "status": "passed",
+          "durationMs": 92.13339999999971
+        },
+        {
+          "fullName": "ApiKeyEditDialog ignores outside interaction while updating",
+          "status": "passed",
+          "durationMs": 106.71560000000045
+        },
+        {
+          "fullName": "ApiKeyEditDialog does not let an old update completion close a newly selected key",
+          "status": "passed",
+          "durationMs": 77.03950000000077
+        },
+        {
+          "fullName": "ApiKeyEditDialog isolates an old completion when replacement commits before passive effects",
+          "status": "passed",
+          "durationMs": 61.560199999999895
+        },
+        {
+          "fullName": "ApiKeyEditDialog shows the update error and re-enables save",
+          "status": "passed",
+          "durationMs": 64.01569999999992
+        }
+      ]
+    },
+    {
+      "file": "src/components/enterprise/api-key-lifetime.test.tsx",
+      "assertions": 5,
+      "cases": [
+        {
+          "fullName": "owns queued activation before TanStack validation and ignores a duplicate submit and Cancel",
+          "status": "passed",
+          "durationMs": 403.40949999999987
+        },
+        {
+          "fullName": "retires a pending success after Activity hides and shows the same form",
+          "status": "passed",
+          "durationMs": 353.664
+        },
+        {
+          "fullName": "retires a pending refusal after Activity hides and shows the same form",
+          "status": "passed",
+          "durationMs": 367.41280000000006
+        },
+        {
+          "fullName": "retires a pending rejection after Activity hides and shows the same form",
+          "status": "passed",
+          "durationMs": 340.7075
+        },
+        {
+          "fullName": "owns edit activation before validation and keeps the panel through queued Cancel and duplicate submit",
+          "status": "passed",
+          "durationMs": 99.17839999999978
+        }
+      ]
+    },
+    {
+      "file": "src/components/enterprise/api-key-page-client.test.tsx",
+      "assertions": 9,
+      "cases": [
+        {
+          "fullName": "Public API discovery in API Keys does not present unknown first-load capacity as an empty available list",
+          "status": "passed",
+          "durationMs": 53.805900000000065
+        },
+        {
+          "fullName": "Public API discovery in API Keys removes the retained snapshot after an authoritative read refusal",
+          "status": "passed",
+          "durationMs": 32.902999999999906
+        },
+        {
+          "fullName": "Public API discovery in API Keys retains revoke confirmation while pending and after refusal, preventing duplicate commands",
+          "status": "passed",
+          "durationMs": 162.88949999999988
+        },
+        {
+          "fullName": "Public API discovery in API Keys retains its same-organization records after a failed refresh and recovers with Retry",
+          "status": "passed",
+          "durationMs": 71.96799999999985
+        },
+        {
+          "fullName": "Public API discovery in API Keys offers the public reference before the first key is created",
+          "status": "passed",
+          "durationMs": 141.65869999999995
+        },
+        {
+          "fullName": "Public API discovery in API Keys explains read access and key authority when the key list is empty",
+          "status": "passed",
+          "durationMs": 108.79559999999992
+        },
+        {
+          "fullName": "Public API discovery in API Keys explains read access and key authority when the key list is populated",
+          "status": "passed",
+          "durationMs": 233.4167
+        },
+        {
+          "fullName": "Public API discovery in API Keys offers a keyboard-accessible installation download with the empty key list",
+          "status": "passed",
+          "durationMs": 202.63290000000006
+        },
+        {
+          "fullName": "Public API discovery in API Keys offers a keyboard-accessible installation download with the populated key list",
+          "status": "passed",
+          "durationMs": 307.6036999999999
+        }
+      ]
+    },
+    {
+      "file": "src/components/enterprise/api-key-show-dialog.test.tsx",
+      "assertions": 2,
+      "cases": [
+        {
+          "fullName": "shows a new one-time key during the development StrictMode effect probe",
+          "status": "passed",
+          "durationMs": 62.28539999999998
+        },
+        {
+          "fullName": "does not carry the close acknowledgment from one key opening to the next",
+          "status": "passed",
+          "durationMs": 37.74559999999997
+        }
+      ]
+    },
+    {
+      "file": "src/components/webhooks/webhook-endpoint-card.test.tsx",
+      "assertions": 3,
+      "cases": [
+        {
+          "fullName": "keeps the actual delete confirmation pending and retains it after an owner refusal",
+          "status": "passed",
+          "durationMs": 231.697
+        },
+        {
+          "fullName": "coalesces toggle activation while pending and retains the canonical state after refusal",
+          "status": "passed",
+          "durationMs": 29.75499999999988
+        },
+        {
+          "fullName": "ignores a late rotation secret after Activity retires the endpoint command owner",
+          "status": "passed",
+          "durationMs": 79.64199999999983
+        }
+      ]
+    },
+    {
+      "file": "src/components/webhooks/webhook-form-dialog.test.tsx",
+      "assertions": 19,
+      "cases": [
+        {
+          "fullName": "WebhookFormDialog renders explicit create defaults",
+          "status": "passed",
+          "durationMs": 126.66219999999998
+        },
+        {
+          "fullName": "WebhookFormDialog loads edit defaults and submits the trimmed update payload",
+          "status": "passed",
+          "durationMs": 482.2856999999999
+        },
+        {
+          "fullName": "WebhookFormDialog resets create values after canceling and reopening",
+          "status": "passed",
+          "durationMs": 1324.1077
+        },
+        {
+          "fullName": "WebhookFormDialog resets edit values after canceling and reopening",
+          "status": "passed",
+          "durationMs": 488.15110000000004
+        },
+        {
+          "fullName": "WebhookFormDialog synchronizes values when the edited webhook changes",
+          "status": "passed",
+          "durationMs": 399.35040000000026
+        },
+        {
+          "fullName": "WebhookFormDialog names category checkboxes and exposes mixed selection",
+          "status": "passed",
+          "durationMs": 76.80500000000029
+        },
+        {
+          "fullName": "WebhookFormDialog re-expands every event category when the webhook changes",
+          "status": "passed",
+          "durationMs": 636.9610999999995
+        },
+        {
+          "fullName": "WebhookFormDialog preserves local state on parent rerender and resets on keyed replacement",
+          "status": "passed",
+          "durationMs": 457.7365
+        },
+        {
+          "fullName": "WebhookFormDialog wires required validation to accessible TanStack field errors",
+          "status": "passed",
+          "durationMs": 90.52610000000004
+        },
+        {
+          "fullName": "WebhookFormDialog submits the create payload, resets on reopen, and clears the one-time secret",
+          "status": "passed",
+          "durationMs": 1481.3806000000004
+        },
+        {
+          "fullName": "WebhookFormDialog disables submission while loading and recovers after a server error",
+          "status": "passed",
+          "durationMs": 1268.5659000000005
+        },
+        {
+          "fullName": "WebhookFormDialog shows a controlled create error and recovers when the action rejects",
+          "status": "passed",
+          "durationMs": 1295.5052999999998
+        },
+        {
+          "fullName": "WebhookFormDialog shows a controlled update error and recovers when the action rejects",
+          "status": "passed",
+          "durationMs": 46.94160000000011
+        },
+        {
+          "fullName": "WebhookFormDialog prevents duplicate submissions while the request is pending",
+          "status": "passed",
+          "durationMs": 1331.536
+        },
+        {
+          "fullName": "WebhookFormDialog does not close or restart an in-flight create request",
+          "status": "passed",
+          "durationMs": 1353.3863000000001
+        },
+        {
+          "fullName": "WebhookFormDialog does not close or restart an in-flight update request",
+          "status": "passed",
+          "durationMs": 158.01170000000093
+        },
+        {
+          "fullName": "WebhookFormDialog discards a pending create result after the webhook prop is replaced",
+          "status": "passed",
+          "durationMs": 1354.4210000000003
+        },
+        {
+          "fullName": "WebhookFormDialog discards a pending update result after the webhook prop is replaced",
+          "status": "passed",
+          "durationMs": 215.29569999999876
+        },
+        {
+          "fullName": "WebhookFormDialog rejects an old completion that resolves during replacement commit",
+          "status": "passed",
+          "durationMs": 142.72410000000127
+        }
+      ]
+    },
+    {
+      "file": "src/components/webhooks/webhook-lifetime.test.tsx",
+      "assertions": 1,
+      "cases": [
+        {
+          "fullName": "retires a revealed webhook signing secret after Activity hides and reactivates its owner",
+          "status": "passed",
+          "durationMs": 768.935
+        }
+      ]
+    },
+    {
+      "file": "src/lib/navigation/route-metadata.test.ts",
+      "assertions": 50,
+      "cases": [
+        {
+          "fullName": "opts only the driving queue into page-owned headings",
+          "status": "passed",
+          "durationMs": 0.9877000000000038
+        },
+        {
+          "fullName": "route metadata adopts the team absence heading, retaining team ownership and independent descendants",
+          "status": "passed",
+          "durationMs": 0.15449999999999875
+        },
+        {
+          "fullName": "route metadata adopts the team directory heading, preserving independently staged descendants",
+          "status": "passed",
+          "durationMs": 0.11710000000000775
+        },
+        {
+          "fullName": "route metadata adopts the due-for-deletion review without adopting deeper or invalid personnel routes",
+          "status": "passed",
+          "durationMs": 0.088799999999992
+        },
+        {
+          "fullName": "route metadata adopts the request queue without adopting its independent descendants",
+          "status": "passed",
+          "durationMs": 0.08619999999999095
+        },
+        {
+          "fullName": "route metadata adopts only the report share-link settings heading without other settings or descendants",
+          "status": "passed",
+          "durationMs": 0.08340000000001169
+        },
+        {
+          "fullName": "route metadata adopts only selected employee files, leaving other personnel workflows independently staged",
+          "status": "passed",
+          "durationMs": 0.05079999999999529
+        },
+        {
+          "fullName": "route metadata adopts the payslip batch start and detail headings",
+          "status": "passed",
+          "durationMs": 0.04070000000000107
+        },
+        {
+          "fullName": "route metadata adopts only the sick-leave overview heading, preserving independent personnel routes",
+          "status": "passed",
+          "durationMs": 0.05330000000000723
+        },
+        {
+          "fullName": "route metadata adopts only the scheduling page heading, preserving its descendants and settings",
+          "status": "passed",
+          "durationMs": 0.08039999999999736
+        },
+        {
+          "fullName": "route metadata adopts payroll, the work-balance directory and selected balance without deeper descendants",
+          "status": "passed",
+          "durationMs": 0.06829999999999359
+        },
+        {
+          "fullName": "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+          "status": "passed",
+          "durationMs": 0.06240000000001089
+        },
+        {
+          "fullName": "route metadata adopts only the personal requests page heading",
+          "status": "passed",
+          "durationMs": 0.04070000000000107
+        },
+        {
+          "fullName": "route metadata adopts the personal documents heading without officer descendants",
+          "status": "passed",
+          "durationMs": 0.03149999999999409
+        },
+        {
+          "fullName": "route metadata adopts the personnel file directory and sick-leave overview while preserving descendant boundaries",
+          "status": "passed",
+          "durationMs": 0.054500000000004434
+        },
+        {
+          "fullName": "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+          "status": "passed",
+          "durationMs": 0.05190000000000339
+        },
+        {
+          "fullName": "route metadata adopts the employee equipment record heading without adopting its collection",
+          "status": "passed",
+          "durationMs": 0.023200000000002774
+        },
+        {
+          "fullName": "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+          "status": "passed",
+          "durationMs": 0.035799999999994725
+        },
+        {
+          "fullName": "route metadata retains independent approvals page headings",
+          "status": "passed",
+          "durationMs": 0.026300000000006207
+        },
+        {
+          "fullName": "route metadata adopts only the deputy history record, preserving other approval headings",
+          "status": "passed",
+          "durationMs": 0.03109999999999502
+        },
+        {
+          "fullName": "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+          "status": "passed",
+          "durationMs": 0.026300000000006207
+        },
+        {
+          "fullName": "route metadata adopts only the complete review arrival route",
+          "status": "passed",
+          "durationMs": 0.027000000000001023
+        },
+        {
+          "fullName": "route metadata adopts the exact vacation route while retaining staged descendants",
+          "status": "passed",
+          "durationMs": 0.02200000000000557
+        },
+        {
+          "fullName": "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+          "status": "passed",
+          "durationMs": 0.030600000000006844
+        },
+        {
+          "fullName": "route metadata adopts refreshed analytics without adopting unconverted descendants",
+          "status": "passed",
+          "durationMs": 0.044799999999995066
+        },
+        {
+          "fullName": "route metadata adopts exact report titles and preserves descendant shell headings",
+          "status": "passed",
+          "durationMs": 0.033299999999997
+        },
+        {
+          "fullName": "route metadata resolves /en",
+          "status": "passed",
+          "durationMs": 0.07519999999999527
+        },
+        {
+          "fullName": "route metadata resolves /de/my-requests",
+          "status": "passed",
+          "durationMs": 0.03700000000000614
+        },
+        {
+          "fullName": "route metadata resolves /en/organization",
+          "status": "passed",
+          "durationMs": 0.03180000000000405
+        },
+        {
+          "fullName": "route metadata resolves /en/payroll",
+          "status": "passed",
+          "durationMs": 0.02210000000000889
+        },
+        {
+          "fullName": "route metadata resolves /en/scheduling",
+          "status": "passed",
+          "durationMs": 0.019199999999997885
+        },
+        {
+          "fullName": "route metadata resolves /en/approvals/inbox",
+          "status": "passed",
+          "durationMs": 0.019500000000007844
+        },
+        {
+          "fullName": "route metadata resolves /en/compliance",
+          "status": "passed",
+          "durationMs": 0.023200000000002774
+        },
+        {
+          "fullName": "route metadata resolves /en/works-council",
+          "status": "passed",
+          "durationMs": 0.025300000000001432
+        },
+        {
+          "fullName": "route metadata resolves /en/team/absences",
+          "status": "passed",
+          "durationMs": 0.019099999999994566
+        },
+        {
+          "fullName": "route metadata resolves /en/team/driving",
+          "status": "passed",
+          "durationMs": 0.02770000000001005
+        },
+        {
+          "fullName": "route metadata resolves /en/driving-licence",
+          "status": "passed",
+          "durationMs": 0.019300000000001205
+        },
+        {
+          "fullName": "route metadata resolves /en/driving-licence/checks/employee-1",
+          "status": "passed",
+          "durationMs": 0.024500000000003297
+        },
+        {
+          "fullName": "route metadata resolves /en/reports/projects",
+          "status": "passed",
+          "durationMs": 0.018000000000000682
+        },
+        {
+          "fullName": "route metadata resolves /en/reports/vehicles",
+          "status": "passed",
+          "durationMs": 0.016099999999994452
+        },
+        {
+          "fullName": "route metadata resolves /en/settings/employees/employee-1",
+          "status": "passed",
+          "durationMs": 0.02179999999999893
+        },
+        {
+          "fullName": "route metadata resolves /en/settings/locations/location-1",
+          "status": "passed",
+          "durationMs": 0.019300000000001205
+        },
+        {
+          "fullName": "route metadata resolves /en/equipment",
+          "status": "passed",
+          "durationMs": 0.022599999999997067
+        },
+        {
+          "fullName": "route metadata resolves /en/equipment/employees/employee-1",
+          "status": "passed",
+          "durationMs": 0.021500000000003183
+        },
+        {
+          "fullName": "route metadata resolves /en/equipment/assignments/assignment-1",
+          "status": "passed",
+          "durationMs": 0.020600000000001728
+        },
+        {
+          "fullName": "route metadata resolves /de/my-equipment",
+          "status": "passed",
+          "durationMs": 0.021199999999993224
+        },
+        {
+          "fullName": "route metadata resolves /en/settings/equipment",
+          "status": "passed",
+          "durationMs": 0.018799999999998818
+        },
+        {
+          "fullName": "route metadata matches route prefixes only at path-segment boundaries",
+          "status": "passed",
+          "durationMs": 0.04279999999999973
+        },
+        {
+          "fullName": "route metadata normalizes locale and trailing slash segments",
+          "status": "passed",
+          "durationMs": 0.023199999999988563
+        },
+        {
+          "fullName": "adopts only the exact payslip batch detail heading",
+          "status": "passed",
+          "durationMs": 0.04589999999998895
+        }
+      ]
+    },
+    {
+      "file": "src/components/webhooks/webhook-delivery-logs-dialog/index.test.tsx",
+      "assertions": 4,
+      "cases": [
+        {
+          "fullName": "WebhookDeliveryLogsDialog loads the selected pagination offset",
+          "status": "passed",
+          "durationMs": 129.4466
+        },
+        {
+          "fullName": "WebhookDeliveryLogsDialog ignores a stale response after the selected webhook changes",
+          "status": "passed",
+          "durationMs": 182.68380000000002
+        },
+        {
+          "fullName": "WebhookDeliveryLogsDialog shows a retryable error instead of an empty result",
+          "status": "passed",
+          "durationMs": 16.76890000000003
+        },
+        {
+          "fullName": "WebhookDeliveryLogsDialog resets pagination when switching away and back",
+          "status": "passed",
+          "durationMs": 109.19849999999997
+        }
+      ]
+    },
+    {
+      "file": "src/app/[locale]/(app)/settings/webhooks/actions.test.ts",
+      "assertions": 25,
+      "cases": [
+        {
+          "fullName": "webhook actions lets an owner run createWebhook",
+          "status": "passed",
+          "durationMs": 3.961999999999989
+        },
+        {
+          "fullName": "webhook actions lets an owner run updateWebhook",
+          "status": "passed",
+          "durationMs": 0.6933000000001357
+        },
+        {
+          "fullName": "webhook actions lets an owner run deleteWebhook",
+          "status": "passed",
+          "durationMs": 0.2667999999998756
+        },
+        {
+          "fullName": "webhook actions lets an owner run regenerateSecret",
+          "status": "passed",
+          "durationMs": 0.26340000000004693
+        },
+        {
+          "fullName": "webhook actions lets an owner run testWebhook",
+          "status": "passed",
+          "durationMs": 0.455600000000004
+        },
+        {
+          "fullName": "webhook actions lets an owner run getWebhookDeliveryLogs",
+          "status": "passed",
+          "durationMs": 0.40380000000004657
+        },
+        {
+          "fullName": "webhook actions refuses createWebhook to an org admin, since webhooks stay owner-only",
+          "status": "passed",
+          "durationMs": 1.15300000000002
+        },
+        {
+          "fullName": "webhook actions refuses updateWebhook to an org admin, since webhooks stay owner-only",
+          "status": "passed",
+          "durationMs": 0.31340000000000146
+        },
+        {
+          "fullName": "webhook actions refuses deleteWebhook to an org admin, since webhooks stay owner-only",
+          "status": "passed",
+          "durationMs": 0.2741000000000895
+        },
+        {
+          "fullName": "webhook actions refuses regenerateSecret to an org admin, since webhooks stay owner-only",
+          "status": "passed",
+          "durationMs": 0.27089999999998327
+        },
+        {
+          "fullName": "webhook actions refuses testWebhook to an org admin, since webhooks stay owner-only",
+          "status": "passed",
+          "durationMs": 0.2078999999998814
+        },
+        {
+          "fullName": "webhook actions refuses getWebhookDeliveryLogs to an org admin, since webhooks stay owner-only",
+          "status": "passed",
+          "durationMs": 0.18620000000009895
+        },
+        {
+          "fullName": "webhook actions refuses a former owner",
+          "status": "passed",
+          "durationMs": 0.19060000000013133
+        },
+        {
+          "fullName": "webhook actions refuses a pending membership",
+          "status": "passed",
+          "durationMs": 0.15809999999987667
+        },
+        {
+          "fullName": "webhook actions creates the webhook in the session's organization with trimmed fields",
+          "status": "passed",
+          "durationMs": 0.7494999999998981
+        },
+        {
+          "fullName": "webhook actions refuses to create a webhook with a private address",
+          "status": "passed",
+          "durationMs": 0.38570000000004256
+        },
+        {
+          "fullName": "webhook actions refuses to create a webhook with no events",
+          "status": "passed",
+          "durationMs": 0.27549999999996544
+        },
+        {
+          "fullName": "webhook actions refuses to create a webhook with an unknown event",
+          "status": "passed",
+          "durationMs": 0.25729999999998654
+        },
+        {
+          "fullName": "webhook actions updateWebhook treats another organization's webhook as not found",
+          "status": "passed",
+          "durationMs": 0.35779999999999745
+        },
+        {
+          "fullName": "webhook actions deleteWebhook treats another organization's webhook as not found",
+          "status": "passed",
+          "durationMs": 0.2637999999999465
+        },
+        {
+          "fullName": "webhook actions regenerateSecret treats another organization's webhook as not found",
+          "status": "passed",
+          "durationMs": 0.22800000000006548
+        },
+        {
+          "fullName": "webhook actions testWebhook treats another organization's webhook as not found",
+          "status": "passed",
+          "durationMs": 0.23049999999989268
+        },
+        {
+          "fullName": "webhook actions getWebhookDeliveryLogs treats another organization's webhook as not found",
+          "status": "passed",
+          "durationMs": 0.236299999999801
+        },
+        {
+          "fullName": "webhook actions queues the test delivery for the session's organization",
+          "status": "passed",
+          "durationMs": 0.3854999999998654
+        },
+        {
+          "fullName": "webhook actions pages delivery logs",
+          "status": "passed",
+          "durationMs": 0.2664999999999509
+        }
+      ]
+    },
+    {
+      "file": "src/app/[locale]/(app)/settings/__tests__/organization-action-coverage.test.ts",
+      "assertions": 382,
+      "cases": [
+        {
+          "fullName": "settings server actions go through organizationAction finds the settings server action modules",
+          "status": "passed",
+          "durationMs": 0.884900000000016
+        },
+        {
+          "fullName": "settings server actions go through organizationAction approval-escalation/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 115.96310000000017
+        },
+        {
+          "fullName": "settings server actions go through organizationAction approval-escalation/deputy-decisions-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.743000000000393
+        },
+        {
+          "fullName": "settings server actions go through organizationAction approval-policies/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.397399999999834
+        },
+        {
+          "fullName": "settings server actions go through organizationAction approval-policies/triage-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.290000000000418
+        },
+        {
+          "fullName": "settings server actions go through organizationAction audit-export/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 74.14740000000029
+        },
+        {
+          "fullName": "settings server actions go through organizationAction audit-log/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.815900000000056
+        },
+        {
+          "fullName": "settings server actions go through organizationAction avv/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 7.112299999999777
+        },
+        {
+          "fullName": "settings server actions go through organizationAction billable-time/accounting/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 27.738600000000133
+        },
+        {
+          "fullName": "settings server actions go through organizationAction billable-time/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.42659999999978
+        },
+        {
+          "fullName": "settings server actions go through organizationAction billable-time/bulk-billability-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 92.17370000000028
+        },
+        {
+          "fullName": "settings server actions go through organizationAction billable-time/cost-rates/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.688999999999851
+        },
+        {
+          "fullName": "settings server actions go through organizationAction billable-time/hand-off/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 17.73779999999988
+        },
+        {
+          "fullName": "settings server actions go through organizationAction billable-time/rates/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.7291000000000167
+        },
+        {
+          "fullName": "settings server actions go through organizationAction calendar/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.542699999999968
+        },
+        {
+          "fullName": "settings server actions go through organizationAction change-policies/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.217399999999998
+        },
+        {
+          "fullName": "settings server actions go through organizationAction clockodo-import/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.0776999999998225
+        },
+        {
+          "fullName": "settings server actions go through organizationAction closed-months/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 17.928699999999935
+        },
+        {
+          "fullName": "settings server actions go through organizationAction compliance/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.069300000000112
+        },
+        {
+          "fullName": "settings server actions go through organizationAction coverage-rules/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.088799999999992
+        },
+        {
+          "fullName": "settings server actions go through organizationAction custom-fields/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 8.54240000000027
+        },
+        {
+          "fullName": "settings server actions go through organizationAction custom-fields/value-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 7.338600000000042
+        },
+        {
+          "fullName": "settings server actions go through organizationAction customers/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 5.166299999999865
+        },
+        {
+          "fullName": "settings server actions go through organizationAction demo/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 126.0592999999999
+        },
+        {
+          "fullName": "settings server actions go through organizationAction email-templates/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.188499999999749
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 234.6855999999998
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employee-clock-status.actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.688999999999851
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employee-lifecycle.actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 0.6922000000004118
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employee-mutations.actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 0.6087999999999738
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employee-offboarding.actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 0.5969000000000051
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employee-queries.actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 0.6985999999997148
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employee-reactivation.actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.080400000000282
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employee-tracking-date-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 24.807800000000043
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employment-date-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 7.152599999999893
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employment-date-upload-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.31860000000006
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employment-history-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.7737999999999374
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/employment-history-client-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.0815000000002328
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/kiosk-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 122.00500000000011
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/opening-balance-upload-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 10.432999999999993
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/personal-data-export.actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 82.86079999999993
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/wage-history-merge-note-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.8840000000000146
+        },
+        {
+          "fullName": "settings server actions go through organizationAction employees/work-balance-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.9710999999997512
+        },
+        {
+          "fullName": "settings server actions go through organizationAction enterprise/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 8.895700000000033
+        },
+        {
+          "fullName": "settings server actions go through organizationAction enterprise/api-keys/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.373700000000099
+        },
+        {
+          "fullName": "settings server actions go through organizationAction enterprise/api-keys/view-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.659400000000005
+        },
+        {
+          "fullName": "settings server actions go through organizationAction enterprise/email/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.9717999999998028
+        },
+        {
+          "fullName": "settings server actions go through organizationAction enterprise/scim-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 5.160600000000159
+        },
+        {
+          "fullName": "settings server actions go through organizationAction export/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 12.032199999999648
+        },
+        {
+          "fullName": "settings server actions go through organizationAction holidays/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.155500000000302
+        },
+        {
+          "fullName": "settings server actions go through organizationAction holidays/preset-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 5.412699999999859
+        },
+        {
+          "fullName": "settings server actions go through organizationAction implementation-checklist/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 43.2170000000001
+        },
+        {
+          "fullName": "settings server actions go through organizationAction implementation-checklist/go-live-group-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.6923000000001593
+        },
+        {
+          "fullName": "settings server actions go through organizationAction implementation-checklist/go-live-rehearsal-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.3881999999998698
+        },
+        {
+          "fullName": "settings server actions go through organizationAction import/clockin-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.9009000000000924
+        },
+        {
+          "fullName": "settings server actions go through organizationAction import/csv-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 13.122599999999693
+        },
+        {
+          "fullName": "settings server actions go through organizationAction import/review-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.227200000000266
+        },
+        {
+          "fullName": "settings server actions go through organizationAction kiosks/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 8.138899999999921
+        },
+        {
+          "fullName": "settings server actions go through organizationAction locations/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.717200000000048
+        },
+        {
+          "fullName": "settings server actions go through organizationAction locations/assigned-location-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.6624000000001615
+        },
+        {
+          "fullName": "settings server actions go through organizationAction locations/assignment-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.783799999999701
+        },
+        {
+          "fullName": "settings server actions go through organizationAction my-data/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.4924999999998363
+        },
+        {
+          "fullName": "settings server actions go through organizationAction notification-channels/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.5666000000001077
+        },
+        {
+          "fullName": "settings server actions go through organizationAction notifications/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 407.5940999999998
+        },
+        {
+          "fullName": "settings server actions go through organizationAction organization/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.824299999999766
+        },
+        {
+          "fullName": "settings server actions go through organizationAction organization/auto-clock-out-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.8606999999997242
+        },
+        {
+          "fullName": "settings server actions go through organizationAction organization/clocking-reminder-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.410699999999906
+        },
+        {
+          "fullName": "settings server actions go through organizationAction organization/invite-code-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 7.737700000000132
+        },
+        {
+          "fullName": "settings server actions go through organizationAction organization/period-submission-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.767699999999877
+        },
+        {
+          "fullName": "settings server actions go through organizationAction organization/profile-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.0138999999999214
+        },
+        {
+          "fullName": "settings server actions go through organizationAction organization/tracking-date-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.5344999999997526
+        },
+        {
+          "fullName": "settings server actions go through organizationAction payroll-access/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.9434999999998581
+        },
+        {
+          "fullName": "settings server actions go through organizationAction payroll-export/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 94.94460000000026
+        },
+        {
+          "fullName": "settings server actions go through organizationAction payroll-export/expense-wage-type-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.7671999999997752
+        },
+        {
+          "fullName": "settings server actions go through organizationAction permissions/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.0615999999999985
+        },
+        {
+          "fullName": "settings server actions go through organizationAction personnel-files/officer-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.807800000000043
+        },
+        {
+          "fullName": "settings server actions go through organizationAction personnel-files/reminder-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.811200000000099
+        },
+        {
+          "fullName": "settings server actions go through organizationAction personnel-files/retention-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.583099999999831
+        },
+        {
+          "fullName": "settings server actions go through organizationAction position-capture/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.8940999999999804
+        },
+        {
+          "fullName": "settings server actions go through organizationAction position-stamps/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.6028000000001157
+        },
+        {
+          "fullName": "settings server actions go through organizationAction profile/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 8.940599999999904
+        },
+        {
+          "fullName": "settings server actions go through organizationAction projects/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.916300000000319
+        },
+        {
+          "fullName": "settings server actions go through organizationAction projects/from-template-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 8.635800000000017
+        },
+        {
+          "fullName": "settings server actions go through organizationAction projects/task-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.3800999999998567
+        },
+        {
+          "fullName": "settings server actions go through organizationAction projects/template-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.7042999999998756
+        },
+        {
+          "fullName": "settings server actions go through organizationAction roles/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.6956999999997606
+        },
+        {
+          "fullName": "settings server actions go through organizationAction scheduled-exports/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 13.7820999999999
+        },
+        {
+          "fullName": "settings server actions go through organizationAction security/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.5626999999999498
+        },
+        {
+          "fullName": "settings server actions go through organizationAction security/kiosk-fob-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.6145999999998821
+        },
+        {
+          "fullName": "settings server actions go through organizationAction security/kiosk-pin-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.46120000000019
+        },
+        {
+          "fullName": "settings server actions go through organizationAction skills/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.8204000000000633
+        },
+        {
+          "fullName": "settings server actions go through organizationAction statistics/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.922399999999925
+        },
+        {
+          "fullName": "settings server actions go through organizationAction surcharges/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.7128999999999905
+        },
+        {
+          "fullName": "settings server actions go through organizationAction teams/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.532900000000154
+        },
+        {
+          "fullName": "settings server actions go through organizationAction telegram/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.2354999999997744
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.3446999999996478
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/allowance-override-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.318100000000413
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/approver-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.8537000000001171
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/conversion-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 11.542599999999766
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/expense-officer-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.189100000000053
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/mileage-policy-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.8811000000000604
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/per-diem-policy-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.60570000000007
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/project-exception-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.569999999999709
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/receipt-exception-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.4355999999997948
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/reference-rate-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.6359999999999673
+        },
+        {
+          "fullName": "settings server actions go through organizationAction travel-expenses/reimbursement-channel-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.6766999999999825
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vacation/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 5.870499999999993
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vacation/assignment-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.3805999999999585
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vacation/historical-usage-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 5.736399999999776
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vacation/proration-notice-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 4.03269999999975
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vacation/reconciliation-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 7.35530000000017
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vacation/sick-note-setting-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.400000000000091
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vacation/working-week-notice-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.4830000000001746
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vehicle-use/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 1.9634000000000924
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vehicles/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 6.435399999999845
+        },
+        {
+          "fullName": "settings server actions go through organizationAction vehicles/photo-actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 2.8761999999996988
+        },
+        {
+          "fullName": "settings server actions go through organizationAction webhooks/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 45.94900000000007
+        },
+        {
+          "fullName": "settings server actions go through organizationAction wellness/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.8654999999998836
+        },
+        {
+          "fullName": "settings server actions go through organizationAction work-categories/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 3.3815999999997075
+        },
+        {
+          "fullName": "settings server actions go through organizationAction work-policies/actions.ts exports only organization actions",
+          "status": "passed",
+          "durationMs": 5.606999999999971
+        },
+        {
+          "fullName": "settings server actions go through organizationAction refuses an exported function that organizationAction did not produce",
+          "status": "passed",
+          "durationMs": 0.2446999999997388
+        },
+        {
+          "fullName": "settings server actions go through organizationAction gives every account exemption a reason and an existing module",
+          "status": "passed",
+          "durationMs": 6.881199999999808
+        },
+        {
+          "fullName": "settings action files keep no local access guards tells a guard-shaped function from other names",
+          "status": "passed",
+          "durationMs": 0.20140000000037617
+        },
+        {
+          "fullName": "settings action files keep no local access guards approval-escalation/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.18160000000034415
+        },
+        {
+          "fullName": "settings action files keep no local access guards approval-escalation/approval-management.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09030000000029759
+        },
+        {
+          "fullName": "settings action files keep no local access guards approval-escalation/deputy-decisions-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.06860000000006039
+        },
+        {
+          "fullName": "settings action files keep no local access guards approval-policies/action-helpers.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09639999999990323
+        },
+        {
+          "fullName": "settings action files keep no local access guards approval-policies/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.14789999999993597
+        },
+        {
+          "fullName": "settings action files keep no local access guards approval-policies/triage-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12239999999974316
+        },
+        {
+          "fullName": "settings action files keep no local access guards audit-export/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09709999999995489
+        },
+        {
+          "fullName": "settings action files keep no local access guards audit-log/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11660000000028958
+        },
+        {
+          "fullName": "settings action files keep no local access guards avv/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.16620000000011714
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/accounting/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13839999999981956
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.06930000000011205
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/billable-time-settings-pages.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09880000000021028
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/bulk-billability-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12199999999984357
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/cost-rates/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12349999999969441
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/hand-off/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.16360000000031505
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/module-guard.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12419999999974607
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/rate-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1253999999998996
+        },
+        {
+          "fullName": "settings action files keep no local access guards billable-time/rates/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12439999999969586
+        },
+        {
+          "fullName": "settings action files keep no local access guards calendar/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.16150000000016007
+        },
+        {
+          "fullName": "settings action files keep no local access guards change-policies/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.14420000000018263
+        },
+        {
+          "fullName": "settings action files keep no local access guards clockodo-import/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13790000000017244
+        },
+        {
+          "fullName": "settings action files keep no local access guards closed-months/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.28139999999984866
+        },
+        {
+          "fullName": "settings action files keep no local access guards compliance/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.15340000000014697
+        },
+        {
+          "fullName": "settings action files keep no local access guards coverage-rules/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1718999999998232
+        },
+        {
+          "fullName": "settings action files keep no local access guards coverage-rules/coverage-rule-scope.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12789999999995416
+        },
+        {
+          "fullName": "settings action files keep no local access guards custom-fields/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12249999999994543
+        },
+        {
+          "fullName": "settings action files keep no local access guards custom-fields/value-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1192999999998392
+        },
+        {
+          "fullName": "settings action files keep no local access guards customers/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12730000000010477
+        },
+        {
+          "fullName": "settings action files keep no local access guards demo/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12950000000000728
+        },
+        {
+          "fullName": "settings action files keep no local access guards demo/demo-data-enabled.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10590000000001965
+        },
+        {
+          "fullName": "settings action files keep no local access guards email-templates/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11409999999978027
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1182000000003427
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-action-types.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12109999999984211
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-action-utils.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13059999999995853
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-clock-status.actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12849999999980355
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-invitation-draft-condition-fake.test-utils.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.15079999999989013
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-invitation-draft-eligibility.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13779999999997017
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-lifecycle.actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.15079999999989013
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-mutations.actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.21610000000009677
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-offboarding.actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.15489999999999782
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-queries.actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.14400000000023283
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-reactivation.actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12279999999964275
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-scope.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11610000000018772
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-table-features.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12000000000034561
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employee-tracking-date-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12159999999994398
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employment-date-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1125000000001819
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employment-date-upload-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09030000000029759
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employment-history-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09169999999994616
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employment-history-client-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10150000000021464
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/employment-history-helpers.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10199999999986176
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/invitation-draft-personnel-number.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08920000000034634
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/kiosk-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09910000000036234
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/managed-employee.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08839999999963766
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/opening-balance-upload-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10280000000011569
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/personal-data-export.actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09349999999994907
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/selectable-employees.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.14730000000008658
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/wage-history-merge-note-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.129399999999805
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/work-balance-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.14540000000033615
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/work-balance-paths.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07859999999982392
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/[employeeId]/employee-section-shared.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07150000000001455
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/[employeeId]/page-utils.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08830000000034488
+        },
+        {
+          "fullName": "settings action files keep no local access guards employees/[employeeId]/use-employee-detail-form.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08500000000003638
+        },
+        {
+          "fullName": "settings action files keep no local access guards enterprise/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12660000000005311
+        },
+        {
+          "fullName": "settings action files keep no local access guards enterprise/api-keys/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.06770000000005894
+        },
+        {
+          "fullName": "settings action files keep no local access guards enterprise/api-keys/view-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.05230000000028667
+        },
+        {
+          "fullName": "settings action files keep no local access guards enterprise/email/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.0648999999998523
+        },
+        {
+          "fullName": "settings action files keep no local access guards enterprise/enterprise-work.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.04629999999997381
+        },
+        {
+          "fullName": "settings action files keep no local access guards enterprise/identity-setup-record.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.0524000000000342
+        },
+        {
+          "fullName": "settings action files keep no local access guards enterprise/scim-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08629999999993743
+        },
+        {
+          "fullName": "settings action files keep no local access guards export/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11209999999982756
+        },
+        {
+          "fullName": "settings action files keep no local access guards holidays/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11899999999968713
+        },
+        {
+          "fullName": "settings action files keep no local access guards holidays/holiday-database.test.mock.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.0787000000000262
+        },
+        {
+          "fullName": "settings action files keep no local access guards holidays/holiday-scope.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07459999999991851
+        },
+        {
+          "fullName": "settings action files keep no local access guards holidays/preset-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10469999999986612
+        },
+        {
+          "fullName": "settings action files keep no local access guards holidays/preset-scheduling.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11769999999978609
+        },
+        {
+          "fullName": "settings action files keep no local access guards implementation-checklist/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11799999999993815
+        },
+        {
+          "fullName": "settings action files keep no local access guards implementation-checklist/go-live-group-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11079999999992651
+        },
+        {
+          "fullName": "settings action files keep no local access guards implementation-checklist/go-live-message.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10190000000011423
+        },
+        {
+          "fullName": "settings action files keep no local access guards implementation-checklist/go-live-rehearsal-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.0905999999999949
+        },
+        {
+          "fullName": "settings action files keep no local access guards implementation-checklist/queries.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11120000000028085
+        },
+        {
+          "fullName": "settings action files keep no local access guards import/clockin-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09090000000014697
+        },
+        {
+          "fullName": "settings action files keep no local access guards import/csv-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08130000000028303
+        },
+        {
+          "fullName": "settings action files keep no local access guards import/review-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1451999999999316
+        },
+        {
+          "fullName": "settings action files keep no local access guards kiosks/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13599999999996726
+        },
+        {
+          "fullName": "settings action files keep no local access guards locations/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10869999999977153
+        },
+        {
+          "fullName": "settings action files keep no local access guards locations/assigned-location-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09309999999959473
+        },
+        {
+          "fullName": "settings action files keep no local access guards locations/assignment-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08939999999984138
+        },
+        {
+          "fullName": "settings action files keep no local access guards locations/location-scope.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07889999999997599
+        },
+        {
+          "fullName": "settings action files keep no local access guards my-data/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09050000000024738
+        },
+        {
+          "fullName": "settings action files keep no local access guards notification-channels/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08950000000004366
+        },
+        {
+          "fullName": "settings action files keep no local access guards notifications/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08629999999993743
+        },
+        {
+          "fullName": "settings action files keep no local access guards organization/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11619999999993524
+        },
+        {
+          "fullName": "settings action files keep no local access guards organization/auto-clock-out-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08429999999998472
+        },
+        {
+          "fullName": "settings action files keep no local access guards organization/clocking-reminder-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10299999999961074
+        },
+        {
+          "fullName": "settings action files keep no local access guards organization/invite-code-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10910000000012587
+        },
+        {
+          "fullName": "settings action files keep no local access guards organization/organization-features.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09839999999985594
+        },
+        {
+          "fullName": "settings action files keep no local access guards organization/period-submission-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08469999999988431
+        },
+        {
+          "fullName": "settings action files keep no local access guards organization/profile-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10259999999971114
+        },
+        {
+          "fullName": "settings action files keep no local access guards organization/tracking-date-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08109999999987849
+        },
+        {
+          "fullName": "settings action files keep no local access guards payroll-access/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08080000000018117
+        },
+        {
+          "fullName": "settings action files keep no local access guards payroll-export/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.15009999999983847
+        },
+        {
+          "fullName": "settings action files keep no local access guards payroll-export/expense-wage-type-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09899999999970532
+        },
+        {
+          "fullName": "settings action files keep no local access guards permissions/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13339999999971042
+        },
+        {
+          "fullName": "settings action files keep no local access guards permissions/page-utils.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09110000000009677
+        },
+        {
+          "fullName": "settings action files keep no local access guards personnel-files/officer-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10500000000001819
+        },
+        {
+          "fullName": "settings action files keep no local access guards personnel-files/reminder-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1226000000001477
+        },
+        {
+          "fullName": "settings action files keep no local access guards personnel-files/retention-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11629999999968277
+        },
+        {
+          "fullName": "settings action files keep no local access guards position-capture/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12039999999979045
+        },
+        {
+          "fullName": "settings action files keep no local access guards position-stamps/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12469999999984793
+        },
+        {
+          "fullName": "settings action files keep no local access guards profile/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1372999999998683
+        },
+        {
+          "fullName": "settings action files keep no local access guards projects/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.19680000000016662
+        },
+        {
+          "fullName": "settings action files keep no local access guards projects/from-template-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13799999999991996
+        },
+        {
+          "fullName": "settings action files keep no local access guards projects/project-billable-default-input.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09809999999970387
+        },
+        {
+          "fullName": "settings action files keep no local access guards projects/project-scope.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12520000000040454
+        },
+        {
+          "fullName": "settings action files keep no local access guards projects/project-settings-actor.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1196999999997388
+        },
+        {
+          "fullName": "settings action files keep no local access guards projects/project-template-access.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11419999999998254
+        },
+        {
+          "fullName": "settings action files keep no local access guards projects/task-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11850000000004002
+        },
+        {
+          "fullName": "settings action files keep no local access guards projects/template-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11189999999987776
+        },
+        {
+          "fullName": "settings action files keep no local access guards roles/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11620000000038999
+        },
+        {
+          "fullName": "settings action files keep no local access guards scheduled-exports/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.17639999999983047
+        },
+        {
+          "fullName": "settings action files keep no local access guards security/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12010000000009313
+        },
+        {
+          "fullName": "settings action files keep no local access guards security/kiosk-fob-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11220000000002983
+        },
+        {
+          "fullName": "settings action files keep no local access guards security/kiosk-pin-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10840000000007421
+        },
+        {
+          "fullName": "settings action files keep no local access guards skills/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12440000000015061
+        },
+        {
+          "fullName": "settings action files keep no local access guards statistics/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13599999999996726
+        },
+        {
+          "fullName": "settings action files keep no local access guards statistics/month-starts.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.11500000000023647
+        },
+        {
+          "fullName": "settings action files keep no local access guards surcharges/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.22160000000030777
+        },
+        {
+          "fullName": "settings action files keep no local access guards teams/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.18339999999989232
+        },
+        {
+          "fullName": "settings action files keep no local access guards teams/team-scope.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12159999999994398
+        },
+        {
+          "fullName": "settings action files keep no local access guards teams/team-settings-page-data.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13859999999976935
+        },
+        {
+          "fullName": "settings action files keep no local access guards teams/[teamId]/page-state.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1532999999999447
+        },
+        {
+          "fullName": "settings action files keep no local access guards teams/[teamId]/use-team-detail-page.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.15779999999995198
+        },
+        {
+          "fullName": "settings action files keep no local access guards telegram/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.16150000000016007
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.2199000000000524
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/allowance-override-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.19219999999995707
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/approver-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1615999999999076
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/conversion-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13009999999985666
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/expense-officer-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.13500000000021828
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/expense-settings-effects.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.21600000000034925
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/mileage-policy-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1087999999999738
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/per-diem-policy-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08609999999998763
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/project-exception-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08040000000028158
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/receipt-exception-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.0684000000001106
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/reference-rate-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07389999999986685
+        },
+        {
+          "fullName": "settings action files keep no local access guards travel-expenses/reimbursement-channel-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.06919999999990978
+        },
+        {
+          "fullName": "settings action files keep no local access guards vacation/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.1412000000000262
+        },
+        {
+          "fullName": "settings action files keep no local access guards vacation/assignment-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.10239999999976135
+        },
+        {
+          "fullName": "settings action files keep no local access guards vacation/historical-usage-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07839999999987413
+        },
+        {
+          "fullName": "settings action files keep no local access guards vacation/managed-employee.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07150000000001455
+        },
+        {
+          "fullName": "settings action files keep no local access guards vacation/proration-notice-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.08899999999994179
+        },
+        {
+          "fullName": "settings action files keep no local access guards vacation/reconciliation-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07619999999997162
+        },
+        {
+          "fullName": "settings action files keep no local access guards vacation/sick-note-setting-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.0830999999998312
+        },
+        {
+          "fullName": "settings action files keep no local access guards vacation/working-week-notice-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.057999999999992724
+        },
+        {
+          "fullName": "settings action files keep no local access guards vehicle-use/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.057400000000143336
+        },
+        {
+          "fullName": "settings action files keep no local access guards vehicles/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.06330000000025393
+        },
+        {
+          "fullName": "settings action files keep no local access guards vehicles/photo-actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.09459999999990032
+        },
+        {
+          "fullName": "settings action files keep no local access guards webhooks/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.15639999999984866
+        },
+        {
+          "fullName": "settings action files keep no local access guards wellness/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.07999999999992724
+        },
+        {
+          "fullName": "settings action files keep no local access guards work-categories/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12869999999975335
+        },
+        {
+          "fullName": "settings action files keep no local access guards work-policies/actions.ts defines no require*, ensure* or assert* function",
+          "status": "passed",
+          "durationMs": 0.12479999999959546
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules finds the settings action tests",
+          "status": "passed",
+          "durationMs": 0.048800000000028376
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules tells a mocked auth module from other mocks",
+          "status": "passed",
+          "durationMs": 0.15100000000029468
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules approval-escalation/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.17210000000022774
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules approval-escalation/deputy-decisions-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0793999999996231
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules approval-policies/actions.access.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05920000000014625
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules audit-export/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05609999999978754
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules audit-log/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.04640000000017608
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules billable-time/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.051899999999932334
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules billable-time/hand-off/hand-off-view.test.tsx mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.1635999999998603
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules calendar/actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.1511000000000422
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules change-policies/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.1313000000000102
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules clockodo-import/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.11540000000013606
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules closed-months/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.10379999999986467
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules compliance/actions.security.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.10150000000021464
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules coverage-rules/actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.2636999999999716
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules custom-fields/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.15410000000019863
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules customers/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.1408000000001266
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules demo/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.10290000000031796
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules email-templates/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.10179999999991196
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/columns.test.tsx mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.11639999999988504
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-clock-status.actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.16329999999970823
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-invitation-draft-actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.15799999999990177
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-invitation-draft-delete.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.13340000000016516
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-lifecycle.actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.16480000000001382
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-membership-queries.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.11720000000013897
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-mutations.actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.09619999999995343
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-offboarding.actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.11750000000029104
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-reactivation.actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.08849999999983993
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employee-tracking-date-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.08419999999978245
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employment-date-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.08709999999973661
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employment-date-upload-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0967000000000553
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/employment-history-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.09130000000004657
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/kiosk-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06920000000036453
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/opening-balance-upload-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.061599999999998545
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/personal-data-export.actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06359999999995125
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/wage-history-merge-note-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 2.0911000000000968
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules employees/work-balance-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.08539999999993597
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules enterprise/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07910000000038053
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules enterprise/api-keys/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06520000000000437
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules enterprise/api-keys/page-client.test.tsx mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06739999999990687
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules enterprise/email/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06229999999959546
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules enterprise/scim-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06629999999995562
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules export/actions.storage.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.061899999999695865
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules holidays/actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06480000000010477
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules holidays/preset-actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06719999999995707
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules implementation-checklist/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07379999999966458
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules implementation-checklist/go-live-group-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07909999999992579
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules implementation-checklist/go-live-rehearsal-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0601000000001477
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules import/clockin-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05930000000034852
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules import/review-actions.decisions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0787000000000262
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules import/review-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06799999999975626
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules kiosks/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.061599999999998545
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules locations/actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06569999999965148
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules locations/assignment-actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.062000000000352884
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules my-data/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05889999999999418
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules notification-channels/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.08300000000008367
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules notifications/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06109999999989668
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules organization/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07879999999977372
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules organization/auto-clock-out-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06140000000004875
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules organization/clocking-reminder-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05929999999989377
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules organization/invite-code-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06479999999965003
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules organization/period-submission-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0626999999999498
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules organization/profile-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07379999999966458
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules organization/tracking-date-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0601000000001477
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules payroll-access/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05999999999994543
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules payroll-export/actions.start-export.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.08579999999983556
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules payroll-export/actions.workday.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06439999999975043
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules payroll-export/expense-wage-type-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06179999999994834
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules permissions/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06529999999975189
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules permissions/page-sections.test.tsx mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0747999999998683
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules personnel-files/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07330000000001746
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules position-capture/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0646999999999025
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules position-stamps/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07130000000006476
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules profile/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06980000000021391
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules projects/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06710000000020955
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules projects/from-template-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05969999999979336
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules projects/task-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.057999999999992724
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules projects/template-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05719999999973879
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules roles/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05819999999994252
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules scheduled-exports/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07009999999991123
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules security/kiosk-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.058100000000194996
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules skills/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06349999999974898
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules statistics/actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05870000000004438
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules surcharges/actions.behavior.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06710000000020955
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules teams/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.09729999999990468
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules telegram/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07099999999991269
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules travel-expenses/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07079999999996289
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules travel-expenses/expense-settings-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0808999999999287
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules travel-expenses/reimbursement-channel-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06279999999969732
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules vacation/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.08149999999977808
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules vacation/historical-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06369999999969878
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules vacation/proration-notice-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0603000000000975
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules vacation/working-week-notice-actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.07360000000016953
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules vehicle-use/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.058699999999589636
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules vehicles/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05690000000004147
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules webhooks/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.057599999999638385
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules wellness/actions.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.05629999999973734
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules work-categories/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0650999999998021
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules work-policies/actions.scope.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.0725999999999658
+        },
+        {
+          "fullName": "settings action tests stub AuthService instead of mocking auth modules __tests__/casl-export-caller-suspension.test.ts mocks no auth module",
+          "status": "passed",
+          "durationMs": 0.06980000000021391
+        }
+      ]
+    },
+    {
+      "file": "src/app/[locale]/(app)/settings/enterprise/api-keys/actions.test.ts",
+      "assertions": 9,
+      "cases": [
+        {
+          "fullName": "API key actions listApiKeys refuses a scoped manager",
+          "status": "passed",
+          "durationMs": 3.760300000000143
+        },
+        {
+          "fullName": "API key actions getApiKeyDetail refuses a scoped manager",
+          "status": "passed",
+          "durationMs": 0.3894999999999982
+        },
+        {
+          "fullName": "API key actions createApiKey refuses a scoped manager",
+          "status": "passed",
+          "durationMs": 0.30700000000001637
+        },
+        {
+          "fullName": "API key actions updateApiKey refuses a scoped manager",
+          "status": "passed",
+          "durationMs": 0.2901000000001659
+        },
+        {
+          "fullName": "API key actions deleteApiKey refuses a scoped manager",
+          "status": "passed",
+          "durationMs": 0.2520999999999276
+        },
+        {
+          "fullName": "API key actions lists the keys of the session's organization",
+          "status": "passed",
+          "durationMs": 0.721599999999853
+        },
+        {
+          "fullName": "API key actions reports a key of another organization as not found",
+          "status": "passed",
+          "durationMs": 1.0799999999999272
+        },
+        {
+          "fullName": "API key actions revokes a key of the session's organization as the caller",
+          "status": "passed",
+          "durationMs": 0.9785999999999149
+        },
+        {
+          "fullName": "API key actions updates a key with the validated change only",
+          "status": "passed",
+          "durationMs": 0.6366999999997915
+        }
+      ]
+    },
+    {
+      "file": "src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+      "assertions": 1,
+      "cases": [
+        {
+          "fullName": "assembles one Developer Access heading with the real SiteHeader and preserves deep owners",
+          "status": "passed",
+          "durationMs": 87.63990000000013
+        }
+      ]
+    },
+    {
+      "file": "src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx",
+      "assertions": 5,
+      "cases": [
+        {
+          "fullName": "admits the canonical org admin without an employee and recovers the webhook source independently",
+          "status": "passed",
+          "durationMs": 151.1632999999997
+        },
+        {
+          "fullName": "recovers failed organization context with the actual local Retry after header refresh",
+          "status": "passed",
+          "durationMs": 119.83869999999979
+        },
+        {
+          "fullName": "removes old organization controls during actor and organization ABA",
+          "status": "passed",
+          "durationMs": 31.35550000000012
+        },
+        {
+          "fullName": "keeps drafts across a retained pending session and retires a revealed key at its actual page owner",
+          "status": "passed",
+          "durationMs": 455.2221999999997
+        },
+        {
+          "fullName": "retains the actual webhook form draft during a retained pending session",
+          "status": "passed",
+          "durationMs": 400.58460000000014
+        }
+      ]
+    }
+  ]
+}
