@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { HeaderRefreshButton } from "@/components/header-refresh-button";
 import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { ViewRefreshProvider } from "@/components/providers/view-refresh-provider";
 import { render } from "@/test/render-with-translations";
+import { createApiKey } from "./actions";
 import { DeveloperAccessClient, type DeveloperAccessProps } from "./page-client";
 import { readApiKeysForView, readWebhooksForView } from "./view-actions";
 
@@ -31,6 +32,11 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: transport.refresh, replace: vi.fn() }),
 }));
 vi.mock("./view-actions", () => ({ readApiKeysForView: vi.fn(), readWebhooksForView: vi.fn() }));
+vi.mock("./actions", () => ({
+	createApiKey: vi.fn(),
+	deleteApiKey: vi.fn(),
+	updateApiKey: vi.fn(),
+}));
 const props: DeveloperAccessProps = {
 	organizationId: "example-org",
 	currentUserId: "example-admin",
@@ -149,4 +155,37 @@ it("removes old organization controls during actor and organization ABA", async 
 	transport.org = "example-org";
 	await act(async () => view.rerender(tree()));
 	expect(await screen.findByRole("heading", { name: "No webhooks configured" })).toBeTruthy();
+});
+
+it("keeps drafts across a retained pending session and retires a revealed key at its actual page owner", async () => {
+	transport.tab = "keys";
+	vi.mocked(createApiKey).mockResolvedValue({
+		success: true,
+		data: {
+			id: "public-fixture-key",
+			name: "Payroll fixture",
+			prefix: "public-prefix",
+			key: "public-test-dummy-key",
+			expiresAt: null,
+		},
+	});
+	const { view, tree } = mount();
+	const user = userEvent.setup();
+	await user.click(screen.getAllByRole("button", { name: "Create Key" })[0]);
+	await user.type(await screen.findByRole("textbox", { name: /Name/ }), "Payroll fixture");
+	transport.pending = true;
+	await act(async () => view.rerender(tree()));
+	transport.pending = false;
+	await act(async () => view.rerender(tree()));
+	expect(await screen.findByRole("textbox", { name: /Name/ })).toHaveProperty(
+		"value",
+		"Payroll fixture",
+	);
+	fireEvent.submit(screen.getByRole("button", { name: "Create Key" }).closest("form")!);
+	expect(await screen.findByText("public-test-dummy-key")).toBeTruthy();
+	transport.pending = true;
+	await act(async () => view.rerender(tree()));
+	transport.pending = false;
+	await act(async () => view.rerender(tree()));
+	expect(screen.queryByText("public-test-dummy-key")).toBeNull();
 });

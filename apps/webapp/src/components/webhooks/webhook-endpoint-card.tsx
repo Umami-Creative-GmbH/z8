@@ -51,7 +51,7 @@ interface WebhookEndpointCardProps {
 	onDeleted: (webhookId: string) => void;
 }
 
-export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEndpointCardProps) {
+function useWebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEndpointCardProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [isRefreshing, startTransition] = useTransition();
@@ -83,26 +83,23 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 		pending.current = true;
 		setCommandPending(true);
 		setCommandError(null);
-		try {
-			await run(current);
-		} catch {
-			if (current())
-				setCommandError(
-					t(
-						"webhooks:webhooks.command-unknown",
-						"Could not confirm the command. Refresh this endpoint before trying again.",
-					),
-				);
-		} finally {
-			if (current()) {
-				pending.current = false;
-				setCommandPending(false);
-			}
-		}
+		return run(current)
+			.catch(() => {
+				if (current())
+					setCommandError(
+						t(
+							"webhooks:webhooks.command-unknown",
+							"Could not confirm the command. Refresh this endpoint before trying again.",
+						),
+					);
+			})
+			.finally(() => {
+				if (current()) {
+					pending.current = false;
+					setCommandPending(false);
+				}
+			});
 	}
-
-	// Mask URL for display
-	const maskedUrl = webhook.url.length > 50 ? `${webhook.url.slice(0, 50)}…` : webhook.url;
 
 	// Format last delivery time
 	const lastDeliveryTime = webhook.lastDeliveredAt
@@ -199,6 +196,55 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 			}
 		});
 
+	return {
+		t,
+		isPending,
+		pending,
+		commandError,
+		getStatusBadge,
+		handleToggleActive,
+		handleDelete,
+		handleTest,
+		handleRegenerateSecret,
+		isEditDialogOpen,
+		setIsEditDialogOpen,
+		isDeleteDialogOpen,
+		setIsDeleteDialogOpen,
+		isLogsDialogOpen,
+		setIsLogsDialogOpen,
+		isSecretDialogOpen,
+		setIsSecretDialogOpen,
+		newSecret,
+		setNewSecret,
+		lastDeliveryTime,
+	};
+}
+
+export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
+	const { webhook, onUpdated } = props;
+	const {
+		t,
+		isPending,
+		pending,
+		commandError,
+		getStatusBadge,
+		handleToggleActive,
+		handleDelete,
+		handleTest,
+		handleRegenerateSecret,
+		isEditDialogOpen,
+		setIsEditDialogOpen,
+		isDeleteDialogOpen,
+		setIsDeleteDialogOpen,
+		isLogsDialogOpen,
+		setIsLogsDialogOpen,
+		isSecretDialogOpen,
+		setIsSecretDialogOpen,
+		newSecret,
+		setNewSecret,
+		lastDeliveryTime,
+	} = useWebhookEndpointCard(props);
+
 	return (
 		<>
 			<Card>
@@ -208,7 +254,7 @@ export function WebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEn
 							<CardTitle className="break-words text-base font-medium">{webhook.name}</CardTitle>
 							{getStatusBadge()}
 						</div>
-						<CardDescription className="break-all font-mono text-xs">{maskedUrl}</CardDescription>
+						<CardDescription className="break-all font-mono text-xs">{webhook.url}</CardDescription>
 					</div>
 					<div className="flex items-center gap-2">
 						<Switch

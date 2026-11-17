@@ -181,7 +181,7 @@ function useApiKeyCreateController({
 	});
 
 	const handleOpenChange = (isOpen: boolean) => {
-		if (operation.current) return;
+		if (!lifetime.current || operation.current) return;
 		form.reset(DEFAULT_FORM_VALUES);
 		onOpenChange(isOpen);
 	};

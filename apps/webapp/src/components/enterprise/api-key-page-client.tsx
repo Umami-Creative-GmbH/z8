@@ -189,30 +189,32 @@ function useApiKeyPageViewModel({
 			pending.current = true;
 			setDeleting(true);
 			setDeleteError(null);
-			try {
-				const result = await deleteApiKey({ keyId });
-				if (lifetime.current !== owner) return;
-				if (!result.success) {
-					setDeleteError(actionErrorMessage(t, result));
-					return;
-				}
-				void queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
-				toast.success(t("settings.apiKeys.deleted", "API key deleted"));
-				setDeleteDialogKey(null);
-			} catch {
-				if (lifetime.current === owner)
-					setDeleteError(
-						t(
-							"settings.apiKeys.revokeUnknown",
-							"Could not confirm revocation. Refresh the list before trying again.",
-						),
-					);
-			} finally {
-				if (lifetime.current === owner) {
-					pending.current = false;
-					setDeleting(false);
-				}
-			}
+			return deleteApiKey({ keyId })
+				.then((result) => {
+					if (lifetime.current !== owner) return;
+					if (!result.success) {
+						setDeleteError(actionErrorMessage(t, result));
+						return;
+					}
+					void queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
+					toast.success(t("settings.apiKeys.deleted", "API key deleted"));
+					setDeleteDialogKey(null);
+				})
+				.catch(() => {
+					if (lifetime.current === owner)
+						setDeleteError(
+							t(
+								"settings.apiKeys.revokeUnknown",
+								"Could not confirm revocation. Refresh the list before trying again.",
+							),
+						);
+				})
+				.finally(() => {
+					if (lifetime.current === owner) {
+						pending.current = false;
+						setDeleting(false);
+					}
+				});
 		},
 	};
 	const changeDeleteDialog = (key: ApiKeyResponse | null) => {

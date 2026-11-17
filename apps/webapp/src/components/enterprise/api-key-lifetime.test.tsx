@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Activity, useState } from "react";
+import { toast } from "sonner";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
 	createApiKey,
@@ -65,33 +66,48 @@ it("owns queued activation before TanStack validation and ignores a duplicate su
 	expect(screen.getByRole("dialog", { name: "Create API Key" })).toBeTruthy();
 });
 
-it("retires a pending one-time result after Activity hides and shows the same form", async () => {
-	let finish!: (value: Awaited<ReturnType<typeof createApiKey>>) => void;
-	vi.mocked(createApiKey).mockImplementation(
-		() =>
-			new Promise((resolve) => {
-				finish = resolve;
-			}),
-	);
-	const { view, tree } = mount();
-	fireEvent.submit(await fill());
-	await waitFor(() => expect(createApiKey).toHaveBeenCalledTimes(1));
-	view.rerender(tree(false));
-	view.rerender(tree(true));
-	await act(async () =>
-		finish({
-			success: true,
-			data: {
-				id: "public-fixture-id",
-				name: "Payroll fixture",
-				key: "public-test-dummy",
-				prefix: "public-prefix",
-				expiresAt: null,
-			},
-		}),
-	);
-	expect(received).not.toHaveBeenCalled();
-});
+it.each(["success", "refusal", "rejection"] as const)(
+	"retires a pending %s after Activity hides and shows the same form",
+	async (outcome) => {
+		let finish!: (value: Awaited<ReturnType<typeof createApiKey>>) => void;
+		let reject!: (reason: Error) => void;
+		vi.mocked(createApiKey).mockImplementation(
+			() =>
+				new Promise((resolve, decline) => {
+					finish = resolve;
+					reject = decline;
+				}),
+		);
+		const { view, tree } = mount();
+		fireEvent.submit(await fill());
+		await waitFor(() => expect(createApiKey).toHaveBeenCalledTimes(1));
+		view.rerender(tree(false));
+		view.rerender(tree(true));
+		await act(async () => {
+			if (outcome === "rejection") {
+				reject(new Error("Public fixture rejection"));
+				return;
+			}
+			if (outcome === "refusal") {
+				finish({ success: false, error: "Public refusal", code: "AuthorizationError" });
+				return;
+			}
+			finish({
+				success: true,
+				data: {
+					id: "public-fixture-id",
+					name: "Payroll fixture",
+					key: "public-test-dummy",
+					prefix: "public-prefix",
+					expiresAt: null,
+				},
+			});
+		});
+		expect(received).not.toHaveBeenCalled();
+		expect(toast.success).not.toHaveBeenCalled();
+		expect(toast.error).not.toHaveBeenCalled();
+	},
+);
 
 it("owns edit activation before validation and keeps the panel through queued Cancel and duplicate submit", async () => {
 	vi.mocked(updateApiKey).mockImplementation(() => new Promise(() => {}));

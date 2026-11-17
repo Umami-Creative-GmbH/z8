@@ -241,6 +241,7 @@ function ApiKeyEditDialogForm({
 		},
 	});
 	const handleOpenChange = (nextOpen: boolean) => {
+		if (!lifetime.current) return;
 		if (!nextOpen && operation.current) return;
 		if (!nextOpen) form.reset(formDefaultValues);
 		onOpenChange(nextOpen);

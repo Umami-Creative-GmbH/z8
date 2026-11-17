@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Activity } from "react";
 import { afterEach, expect, it, vi } from "vitest";
-import { deleteWebhook } from "@/app/[locale]/(app)/settings/webhooks/actions";
+import {
+	deleteWebhook,
+	regenerateSecret,
+	updateWebhook,
+} from "@/app/[locale]/(app)/settings/webhooks/actions";
 import type { PublicWebhookEndpoint } from "@/lib/webhooks/types";
 import { render } from "@/test/render-with-translations";
 import { WebhookEndpointCard } from "./webhook-endpoint-card";
@@ -58,4 +63,51 @@ it("keeps the actual delete confirmation pending and retains it after an owner r
 	expect(screen.getByRole("alertdialog")).toBeTruthy();
 	await act(async () => finish({ success: false, error: "Refused", code: "AuthorizationError" }));
 	expect(screen.getByRole("alertdialog")).toBeTruthy();
+});
+
+it("coalesces toggle activation while pending and retains the canonical state after refusal", async () => {
+	let finish!: (value: Awaited<ReturnType<typeof updateWebhook>>) => void;
+	vi.mocked(updateWebhook).mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+	);
+	render(<WebhookEndpointCard webhook={endpoint} onUpdated={vi.fn()} onDeleted={vi.fn()} />);
+	const toggle = screen.getByRole("switch", { name: "Toggle webhook active" });
+	act(() => {
+		fireEvent.click(toggle);
+		fireEvent.click(toggle);
+	});
+	await waitFor(() => expect(updateWebhook).toHaveBeenCalledTimes(1));
+	expect(toggle).toHaveProperty("disabled", true);
+	await act(async () => finish({ success: false, error: "Refused", code: "AuthorizationError" }));
+	expect(screen.getByRole("alert").textContent).toContain(
+		"You do not have access to this setting.",
+	);
+	expect(toggle.getAttribute("aria-checked")).toBe("true");
+});
+
+it("ignores a late rotation secret after Activity retires the endpoint command owner", async () => {
+	let finish!: (value: Awaited<ReturnType<typeof regenerateSecret>>) => void;
+	vi.mocked(regenerateSecret).mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const tree = (visible: boolean) => (
+		<Activity mode={visible ? "visible" : "hidden"}>
+			<WebhookEndpointCard webhook={endpoint} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+		</Activity>
+	);
+	const view = render(tree(true));
+	const user = userEvent.setup();
+	await user.click(screen.getByRole("button", { name: "Actions" }));
+	await user.click(screen.getByRole("menuitem", { name: "Regenerate Secret" }));
+	await waitFor(() => expect(regenerateSecret).toHaveBeenCalledTimes(1));
+	await act(async () => view.rerender(tree(false)));
+	await act(async () => view.rerender(tree(true)));
+	await act(async () => finish({ success: true, data: { secret: "public-dummy-rotation-value" } }));
+	expect(screen.queryByRole("dialog", { name: "Webhook Secret" })).toBeNull();
 });

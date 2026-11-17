@@ -38,12 +38,8 @@ function ApiKeyReveal({
 	const [copied, setCopied] = useState(false);
 	const [hasConfirmed, setHasConfirmed] = useState(false);
 	const [visible, setVisible] = useState(true);
-	const [retired, setRetired] = useState(false);
-	const seen = useRef(false);
 	const lifetime = useRef<object | null>(null);
 	useLayoutEffect(() => {
-		if (seen.current) setRetired(true);
-		seen.current = true;
 		lifetime.current = {};
 		return () => {
 			lifetime.current = null;
@@ -51,7 +47,7 @@ function ApiKeyReveal({
 	}, []);
 
 	const handleCopy = async () => {
-		if (retired || !lifetime.current) return;
+		if (!lifetime.current) return;
 		const owner = lifetime.current;
 		try {
 			await navigator.clipboard.writeText(apiKey.key);
@@ -66,7 +62,7 @@ function ApiKeyReveal({
 	};
 
 	const handleClose = () => {
-		if (!retired && !copied && !hasConfirmed) {
+		if (!copied && !hasConfirmed) {
 			setHasConfirmed(true);
 			return; // First click shows warning
 		}
@@ -118,20 +114,12 @@ function ApiKeyReveal({
 								id="api-key-display"
 								className="font-mono text-sm bg-muted p-4 rounded-md break-all pr-12 border"
 							>
-								{retired
-									? t(
-											"settings.apiKeys.secretRetired",
-											"This one-time key is no longer available. Refresh the key list to review its status.",
-										)
-									: visible
-										? apiKey.key
-										: "????????????????"}
+								{visible ? apiKey.key : t("settings.apiKeys.keyHidden", "Key hidden")}
 							</div>
 							<Button
 								variant="ghost"
 								size="sm"
 								className="absolute right-2 top-2"
-								disabled={retired}
 								onClick={handleCopy}
 								aria-label={t("settings.apiKeys.copyKey", "Copy API key")}
 							>
@@ -142,13 +130,13 @@ function ApiKeyReveal({
 								)}
 							</Button>
 						</div>
-						{!retired ? (
+						{
 							<Button variant="outline" onClick={() => setVisible((value) => !value)}>
 								{visible
 									? t("settings.apiKeys.hideKey", "Hide key")
 									: t("settings.apiKeys.revealKey", "Reveal key")}
 							</Button>
-						) : null}
+						}
 					</div>
 
 					{/* Key Details */}
