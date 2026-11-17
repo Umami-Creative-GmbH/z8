@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -18,24 +18,83 @@ import { TodayBriefing } from "./today-briefing";
 import { TodayPageLoading } from "./today-loading";
 import type { TodayArrival, TodayScope } from "./today-types";
 
-export function TodayWorkspace({ scope, initial }: { scope: TodayScope; initial: TodayArrival }) {
-	const { data: session, isPending } = useSession();
-	const { organizationId } = useOrganization();
+export function TodayWorkspace({
+	scope,
+	initial,
+	initialEmployee,
+}: {
+	scope: TodayScope;
+	initial: TodayArrival;
+	initialEmployee: { id: string; role: string };
+}) {
+	const session = useSession();
+	const organization = useOrganization();
+	const identity = JSON.stringify([
+		scope.userId,
+		scope.organizationId,
+		session.data?.session.id,
+		organization.userId,
+		organization.activeOrganizationId,
+		organization.employeeId,
+		organization.role,
+	]);
+	const [initialIdentity] = useState(identity);
 	const [invalidated, setInvalidated] = useState(false);
-	const current =
-		!isPending &&
-		organizationId === scope.organizationId &&
-		session?.user.id === scope.userId &&
-		session.session.activeOrganizationId === scope.organizationId;
-	// Returning A → B → A must re-authorize A, not replay its original server snapshot.
-	if (!current && !invalidated) setInvalidated(true);
-	if (!current) return <TodayPageLoading />;
+	const status = todayViewStatus(scope, session, organization);
+	// Published display identity retires evidence; the fresh server read still owns access.
+	if (
+		!invalidated &&
+		(status !== "ready" ||
+			identity !== initialIdentity ||
+			organization.employeeId !== initialEmployee.id ||
+			organization.role !== initialEmployee.role)
+	)
+		setInvalidated(true);
+	if (status === "context-error") return <TodayContextError retry={organization.refetch} />;
+	if (status !== "ready") return <TodayPageLoading />;
 	return (
 		<ScopedTodayWorkspace
-			key={JSON.stringify([scope.userId, scope.organizationId])}
+			key={identity}
 			scope={scope}
 			initial={invalidated ? undefined : initial}
 		/>
+	);
+}
+
+function todayViewStatus(
+	scope: TodayScope,
+	session: ReturnType<typeof useSession>,
+	organization: ReturnType<typeof useOrganization>,
+) {
+	if (
+		session.isPending ||
+		session.data?.user.id !== scope.userId ||
+		session.data.session.activeOrganizationId !== scope.organizationId
+	)
+		return "loading";
+	if (organization.error) return "context-error";
+	if (
+		organization.isLoading ||
+		organization.userId !== scope.userId ||
+		organization.activeOrganizationId !== scope.organizationId
+	)
+		return "loading";
+	return "ready";
+}
+
+function TodayContextError({ retry }: { retry: () => Promise<void> }) {
+	const { t } = useTranslate();
+	const [pending, startRetry] = useTransition();
+	return (
+		<div className="space-y-4 p-4 md:p-6">
+			<PageHeader title={t("today.briefing.title", "Manager Daily Briefing")} />
+			<p role="alert">
+				{t("today.briefing.contextFailed", "Could not check your current access. Try again.")}
+			</p>
+			<Button type="button" variant="outline" disabled={pending} onClick={() => startRetry(retry)}>
+				{t("common.retry", "Retry")}
+			</Button>
+		</div>
 	);
 }
 
