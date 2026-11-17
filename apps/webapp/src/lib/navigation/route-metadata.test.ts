@@ -6,6 +6,19 @@ import {
 } from "./route-metadata";
 
 describe("route metadata", () => {
+	it("adopts only the team directory heading, preserving descendant ownership", () => {
+		expect(appPageOwnsHeading("/de/team")).toBe(true);
+		for (const path of [
+			"/en/team/absences",
+			"/en/team/presence",
+			"/en/team/driving",
+			"/en/team/period-submissions",
+			"/en/team/other",
+			"/en/teamwork",
+		]) {
+			expect(appPageOwnsHeading(path)).toBe(false);
+		}
+	});
 	it("adopts the due-for-deletion review without adopting deeper or invalid personnel routes", () => {
 		expect(appPageOwnsHeading("/de/personnel-files/due-for-deletion")).toBe(true);
 		expect(appPageOwnsHeading("/en/personnel-files/due-for-deletion/")).toBe(true);

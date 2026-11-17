@@ -1,0 +1,503 @@
+{
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+      "sha256": "42741603bb5a61612d34e215d84c1d4a8f41236616422a0062c96d6810212d03"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory.tsx",
+      "sha256": "efaeb3bba5e69c6f32209f2f1376e1e705bfc78caee039a718a2b44042280d31"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx",
+      "sha256": "8cf9b3eca625e1dbeb6f4e45113d5ed624b1bc84ce0bff6050e3f5d9409a02fb"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-directory-feedback.tsx",
+      "sha256": "7a3c00f266b4443fe7917311b75556e2c539083449f40837b40273c1a1e47fba"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+      "sha256": "c996750b7e88910817ea90beb26a6c468b194fa2c5773873e0b0f9cb40a27415"
+    }
+  ],
+  "checks": [
+    {
+      "name": "saved Large preference after reload",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          "Person 1",
+          "Person 3",
+          "Person 5",
+          "Person 7"
+        ],
+        "pageWidth": 1600,
+        "path": "/en/team",
+        "search": "",
+        "text": "Toggle Sidebar\n\nTeam\n\n02:39\nUTC+01:00\nLoading clock status\n4 members in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nPerson 1\nYou\n\nperf-small-1-6160ea8e831f@example.test\n\nFixture team 1\nNo balance\nCurrent\nmanager\nPerson 3\n\nperf-small-3-6160ea8e831f@example.test\n\nFixture team 1\nNo balance\nCurrent\nemployee\nPerson 5\n\nperf-small-5-6160ea8e831f@example.test\n\nFixture team 1\nNo balance\nCurrent\nemployee\nPerson 7\n\nperf-small-7-6160ea8e831f@example.test\n\nFixture team 1\nNo balance\nCurrent\nemployee",
+        "theme": "light bprogress-busy",
+        "viewport": [
+          1600,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "18px phone table all fields",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          "Person 1Youperf-small-1-6160ea8e831f@example.test",
+          "Person 3You are the primary managerperf-small-3-6160ea8e831f@example.testlast activity 31.12.",
+          "Person 5You are the primary managerperf-small-5-6160ea8e831f@example.testlast activity 31.12.",
+          "Person 7You are the primary managerperf-small-7-6160ea8e831f@example.testlast activity 31.12."
+        ],
+        "pageWidth": 390,
+        "path": "/en/team",
+        "search": "",
+        "text": "Toggle Sidebar\n\nTeam\n\nMore actions\n4 members in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nEmployee\nPosition\nTeam\nAll-time balance\nRole\nStatus\nPerson 1\nYou\nperf-small-1-6160ea8e831f@example.test\n—\nFixture team 1\nNo balance\nmanager\nCurrent\nPerson 3\nperf-small-3-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n—\nFixture team 1\nNo balance\nemployee\nCurrent\nPerson 5\nperf-small-5-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n—\nFixture team 1\nNo balance\nemployee\nCurrent\nPerson 7\nperf-small-7-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n—\nFixture team 1\nNo balance\nemployee\nCurrent",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          390,
+          844
+        ]
+      }
+    },
+    {
+      "name": "sidebar collapse retains search",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          "Person 3"
+        ],
+        "pageWidth": 1600,
+        "path": "/en/team",
+        "search": "Person 3",
+        "text": "Toggle Sidebar\n\nTeam\n\n02:39\nUTC+01:00\nClock In\nToggle theme\n4 members in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nPerson 3\n\nperf-small-3-6160ea8e831f@example.test\n\nlast activity 31.12.\n\nFixture team 1\nNo balance\nCurrent\nemployee",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          1600,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "existing authorized employee destination",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Employees",
+          "Your Team"
+        ],
+        "links": [
+          "Person 3"
+        ],
+        "pageWidth": 1600,
+        "path": "/en/settings/employees/d76616c1-45c3-4aba-b381-88b27e61b12c",
+        "search": "",
+        "text": "Toggle Sidebar\nEmployees\n02:39\nUTC+01:00\nClock In\nToggle theme\nAccount\nProfile Settings\nSecurity Settings\nNotification Settings\nWellness Settings\nPosition stamps\nMy data\nOrganization\nEmployees\nTeams\nLocations\nPolicies\nWork Policies\nAbsences\nTime Tracking\nWork Categories\nScheduling\nSkills & Qualifications\nIntegrations\nCalendar Sync\nData\nStatistics\nSettings\nEmployees\nEmployee Details",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          1600,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "shared history failed-read public repro",
+      "value": {
+        "retry": false,
+        "text": "Balance adjustmentsOvertime payouts and opening balances on this work balance. A mistaken one is cancelled, never deleted, so cancelled ones stay listed.The balance adjustments could not be loaded.Close"
+      }
+    },
+    {
+      "name": "large manager paging with native Enter",
+      "value": {
+        "first": {
+          "font": "18px",
+          "h1": [
+            "Your Team"
+          ],
+          "links": [
+            "Person 1Youperf-large-1-6160ea8e831f@example.test",
+            "Person 3You are the primary managerperf-large-3-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 5You are the primary managerperf-large-5-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 7You are the primary managerperf-large-7-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 9You are the primary managerperf-large-9-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 11You are the primary managerperf-large-11-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 13You are the primary managerperf-large-13-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 15You are the primary managerperf-large-15-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 17You are the primary managerperf-large-17-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 19You are the primary managerperf-large-19-6160ea8e831f@example.testlast activity 31.12."
+          ],
+          "path": "/en/team",
+          "text": "Toggle Sidebar\n\nTeam\n\n02:41\nUTC+01:00\nClock In\nToggle theme\n100 members in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nEmployee\tPosition\tTeam\t\nAll-time balance\n\tRole\tStatus\n\nPerson 1\nYou\nperf-large-1-6160ea8e831f@example.test\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nmanager\n\t\nCurrent\n\n\nPerson 3\nperf-large-3-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 5\nperf-large-5-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 7\nperf-large-7-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 9\nperf-large-9-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 11\nperf-large-11-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 13\nperf-large-13-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 15\nperf-large-15-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 17\nperf-large-17-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 19\nperf-large-19-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\nShowing 1 to 10 of 100\n\nPrevious\nNext"
+        },
+        "second": {
+          "font": "18px",
+          "h1": [
+            "Your Team"
+          ],
+          "links": [
+            "Person 21You are the primary managerperf-large-21-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 23You are the primary managerperf-large-23-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 25You are the primary managerperf-large-25-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 27You are the primary managerperf-large-27-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 29You are the primary managerperf-large-29-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 31You are the primary managerperf-large-31-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 33You are the primary managerperf-large-33-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 35You are the primary managerperf-large-35-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 37You are the primary managerperf-large-37-6160ea8e831f@example.testlast activity 31.12.",
+            "Person 39You are the primary managerperf-large-39-6160ea8e831f@example.testlast activity 31.12."
+          ],
+          "path": "/en/team",
+          "text": "Toggle Sidebar\n\nTeam\n\n02:41\nUTC+01:00\nClock In\nToggle theme\n100 members in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nEmployee\tPosition\tTeam\t\nAll-time balance\n\tRole\tStatus\n\nPerson 21\nperf-large-21-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 23\nperf-large-23-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 25\nperf-large-25-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 27\nperf-large-27-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 29\nperf-large-29-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 31\nperf-large-31-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 33\nperf-large-33-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 35\nperf-large-35-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 37\nperf-large-37-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\n\nPerson 39\nperf-large-39-6160ea8e831f@example.test\n\nlast activity 31.12.\n\n\t\n—\n\t\nFixture team 1\n\t\nNo balance\n\t\nemployee\n\t\nCurrent\n\nShowing 11 to 20 of 100\n\nPrevious\nNext"
+        }
+      }
+    },
+    {
+      "name": "admin retains original self plus managed relationship scope",
+      "value": {
+        "font": "18px",
+        "h1": [
+          "Your Team"
+        ],
+        "links": [
+          "Person 0"
+        ],
+        "path": "/en/team",
+        "text": "Toggle Sidebar\n\nTeam\n\n02:41\nUTC+01:00\nLoading clock status\n1 member in this scope\nYour Team\nYou and the employees you directly supervise in the active organization.\nShow former employees\nPerson 0\nYou\n\nperf-small-0-6160ea8e831f@example.test\n\nlast activity 31.12.\n\nFixture team 0\nNo balance\nCurrent\nadmin"
+      }
+    },
+    {
+      "name": "actual custom employee role redirect",
+      "value": {
+        "font": "16px",
+        "h1": [],
+        "links": [],
+        "path": "/en",
+        "text": ""
+      }
+    }
+  ],
+  "commands": [
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('input[aria-label=\"Search team members\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    [
+      "set",
+      "media",
+      "dark"
+    ],
+    [
+      "screenshot",
+      "docs/design/rollout-1692/1739/after-18px-phone-dark.png"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Table view"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('table[data-mobile-layout=\"stacked\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "docs/design/rollout-1692/1739/after-18px-phone-table.png"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Card view"
+    ],
+    [
+      "set",
+      "viewport",
+      "1600",
+      "1000"
+    ],
+    [
+      "find",
+      "role",
+      "textbox",
+      "fill",
+      "Person 3",
+      "--name",
+      "Search team members"
+    ],
+    [
+      "find",
+      "role",
+      "button",
+      "click",
+      "--name",
+      "Toggle Sidebar"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "button",
+      "click",
+      "--name",
+      "Toggle Sidebar"
+    ],
+    [
+      "find",
+      "role",
+      "textbox",
+      "fill",
+      "",
+      "--name",
+      "Search team members"
+    ],
+    [
+      "find",
+      "role",
+      "link",
+      "click",
+      "--name",
+      "Person 3",
+      "--exact"
+    ],
+    [
+      "wait",
+      "--fn",
+      "location.pathname.includes('/settings/employees/')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('input[aria-label=\"Search team members\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "network",
+      "route",
+      "**/en/team",
+      "--abort"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "wait",
+      "--text",
+      "The balance adjustments could not be loaded."
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "screenshot",
+      "docs/design/rollout-1692/1739/history-failed-read.png"
+    ],
+    [
+      "network",
+      "unroute",
+      "**/en/team"
+    ],
+    [
+      "press",
+      "Escape"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!document.querySelector('[role=\"dialog\"]')"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('input[aria-label=\"Search team members\"]')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "radio",
+      "click",
+      "--name",
+      "Table view"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('table')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "find",
+      "role",
+      "button",
+      "click",
+      "--name",
+      "Next",
+      "--exact"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "press",
+      "Enter"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('input[aria-label=\"Search team members\"]')"
+    ],
+    [
+      "snapshot",
+      "-i"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!location.pathname.endsWith('/team')"
+    ],
+    [
+      "eval",
+      "--stdin",
+      "<reviewed script>"
+    ],
+    [
+      "open",
+      "http://localhost:55845/en/team"
+    ],
+    [
+      "wait",
+      "--fn",
+      "!!document.querySelector('input[aria-label=\"Search team members\"]')"
+    ],
+    [
+      "snapshot",
+      "-i"
+    ]
+  ],
+  "continuation": "Pagination continued by native keyboard after developer issue badge obscured pointer target. Failed attempt retained separately.",
+  "finished": true
+}
