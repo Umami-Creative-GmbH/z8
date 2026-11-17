@@ -1,0 +1,42 @@
+[
+  {
+    "name": "dark",
+    "path": "/en/team/presence",
+    "fontSize": "16px",
+    "theme": "bprogress-busy dark",
+    "width": 1600,
+    "scrollWidth": 1600,
+    "dialogs": 0
+  },
+  {
+    "name": "large-reload",
+    "path": "/en/team/presence",
+    "fontSize": "18px",
+    "theme": "dark bprogress-busy",
+    "width": 1600,
+    "scrollWidth": 1600,
+    "dialogs": 0
+  },
+  {
+    "name": "collapsed",
+    "path": "/en/team/presence",
+    "fontSize": "18px",
+    "theme": "dark bprogress-busy",
+    "width": 1600,
+    "scrollWidth": 1600,
+    "dialogs": 0
+  },
+  {
+    "name": "phone-large",
+    "path": "/en/team/presence",
+    "fontSize": "18px",
+    "theme": "dark bprogress-busy",
+    "width": 390,
+    "scrollWidth": 390,
+    "dialogs": 0
+  },
+  {
+    "name": "first-Escape-focus",
+    "focus": "Toggle Sidebar"
+  }
+]
