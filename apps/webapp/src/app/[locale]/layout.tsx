@@ -100,6 +100,7 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 function RootRouteShell() {
 	return (
 		<LoadingRegion
+			data-testid="application-shell"
 			aria-busy="true"
 			as="main"
 			label={{

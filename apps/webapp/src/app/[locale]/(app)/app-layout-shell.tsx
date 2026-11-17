@@ -40,6 +40,7 @@ export function AuthenticatedAppShell() {
 				</SidebarFooter>
 			</Sidebar>
 			<SidebarInset
+				data-testid="application-shell"
 				aria-busy="true"
 				aria-label={t(
 					"common.loadingRegions.application",

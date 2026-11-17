@@ -15,6 +15,8 @@ import {
 } from "@/lib/organization-action/settings-access-level";
 import { EmployeesPageClient } from "./employees-page-client";
 
+export const instant = true;
+
 async function loadPeopleManagementData(input: {
 	organizationId: string;
 	currentUserId: string;

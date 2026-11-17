@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"incremental": false,
+		"types": ["node"]
+	},
+	"include": ["playwright.instant.config.ts", "e2e/instant-navigation/**/*.ts"],
+	"exclude": ["node_modules"]
+}

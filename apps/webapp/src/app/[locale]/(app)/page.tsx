@@ -13,6 +13,8 @@ import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
+export const instant = true;
+
 async function DashboardPageContent() {
 	// Fetch onboarding status and organizations in parallel to eliminate waterfall
 	// Dashboard auth and domain database lookups must execute per request.
@@ -45,7 +47,7 @@ async function DashboardPageContent() {
 	}
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-2">
+		<div data-testid="dashboard-content" className="@container/main flex flex-1 flex-col gap-2">
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<Suspense fallback={<SectionCardsSkeleton />}>
 					<ServerSectionCards />
@@ -58,6 +60,7 @@ async function DashboardPageContent() {
 function DashboardPageLoading() {
 	return (
 		<LoadingRegion
+			data-testid="dashboard-shell"
 			label={{
 				labelKey: "common.loadingRegions.dashboard",
 				labelDefault: "Loading dashboard",

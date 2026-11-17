@@ -2,9 +2,9 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
-import useSWR from "swr";
 import {
 	changeScheduledExportOwnerAction,
 	getScheduleOwnerCandidatesAction,
@@ -35,6 +35,7 @@ interface ChangeOwnerDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	organizationId: string;
+	currentUserId: string;
 	schedule: ScheduledExportSummary;
 	onSuccess: () => void;
 }
@@ -44,19 +45,22 @@ export function ChangeOwnerDialog({
 	open,
 	onOpenChange,
 	organizationId,
+	currentUserId,
 	schedule,
 	onSuccess,
 }: ChangeOwnerDialogProps) {
 	const { t } = useTranslate();
-	const { data: candidates, isLoading } = useSWR(
-		open ? ["scheduled-export-owner-candidates", organizationId] : null,
-		async () => {
+	const { data: candidates, isLoading } = useQuery({
+		queryKey: ["scheduled-export-owner-candidates", currentUserId, organizationId],
+		enabled: open,
+		queryFn: async () => {
 			const result = await getScheduleOwnerCandidatesAction();
 			if (result.success) return result.data;
 			throw new Error(actionErrorMessage(t, result));
 		},
-		{ revalidateOnFocus: false },
-	);
+		staleTime: 0,
+		refetchOnWindowFocus: false,
+	});
 
 	const form = useForm({
 		defaultValues: { ownerId: schedule.ownerEligible ? schedule.ownerId : "" },
