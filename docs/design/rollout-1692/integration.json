@@ -1362,7 +1362,11 @@
       "rootSnapshotCorrectionCommit": "c26808b5655e59a37753278aee607d3a0d6781d1",
       "rootSnapshotEvidence": "docs/design/rollout-1692/1773/root-snapshot-and-refusal-checks.json",
       "rootHiddenArrivalCorrectionCommit": "acd6ceedd22c70bcbb43847432373dadae4265c5",
-      "rootHiddenArrivalEvidence": "docs/design/rollout-1692/1773/root-hidden-arrival-checks.json"
+      "rootHiddenArrivalEvidence": "docs/design/rollout-1692/1773/root-hidden-arrival-checks.json",
+      "latestIntegrationCommit": "988659d25e441c440f88eadc7101a52296bd1305",
+      "rootUnvisitedSnapshotCorrectionCommit": "f145c3cd6f2be2d934ad7b0fa0e795c006c50826",
+      "rootPageArrivalEvidence": "docs/design/rollout-1692/1773/root-page-arrival-checks.json",
+      "rootPageArrivalVerification": "Provisional:152permanent/11files plus26adaptedindependent =178/12, all3types,scopedlint/explicit andDoctor0/0 pass. Page-owner observation covers received/unvisited tabs; no wire-age claim. Authenticated/runtime acceptance pending."
     },
     {
       "id": "R097",
@@ -2026,10 +2030,13 @@
       "evidence": "docs/design/rollout-1692/1746.md",
       "handoffLimitation": "Worker reports156unit/12PG,full3types,scopedlint/format,Next andmainaxe0,actual fixture decision persisted through publicInbox. TwoDoctorwarnings,incremental capture boundaries,live revocation andbuild/catalog/device/zoom limits await fresh merger review.",
       "integrationCommit": "14a39359b0e1418bdfbadff8d5b04954c4d9c011",
-      "latestIntegrationCommit": "04aab8d94deeab033b77c188017a12b125152345",
+      "latestIntegrationCommit": "1139d3887d42e73b56a407e76b8d8e247339af8d",
       "rootProviderArrivalCorrectionCommit": "39e5e92b0135c2135a16d9b020cb30c29501b79a",
       "rootProviderArrivalEvidence": "docs/design/rollout-1692/1746/root-provider-arrival-checks.json",
-      "rootIntegrationVerification": "Provisional: isolated merge tree/preservation matches; original actual-provider employee arrival3pass1fail corrected. Root179 distinct cases/11files, all3types/staticTypegen, owned4lint/explicitformat andDoctor0/0 pass. Ordinary4format findings remain; PG/runtime and fresh independent acceptance unpassed. verifiedCommit stays null."
+      "rootIntegrationVerification": "Provisional: isolated merge tree/preservation matches; original actual-provider employee arrival3pass1fail corrected. Root179 distinct cases/11files, all3types/staticTypegen, owned4lint/explicitformat andDoctor0/0 pass. Ordinary4format findings remain; PG/runtime and fresh independent acceptance unpassed. verifiedCommit stays null.",
+      "rootPartialResultCorrectionCommit": "caeffe008245793a7f6a8e51ef109bd0effffcdb",
+      "rootPartialResultEvidence": "docs/design/rollout-1692/1746/root-partial-result-checks.json",
+      "rootPartialResultVerification": "Provisional: narrowed-population/partial-read retention2pass1fail corrected by accepting fresh partial results without prior row restoration.183/12,all3types,scopedlint/explicit,Doctor0/0 pass; independent/PG/runtime pending."
     },
     {
       "id": "R165",
