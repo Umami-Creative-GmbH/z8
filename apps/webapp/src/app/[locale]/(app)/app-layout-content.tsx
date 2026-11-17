@@ -49,9 +49,7 @@ const billingCheckFailedAccess: BillingAccessResult = {
 };
 
 /** Billing runs on the shared runtime; it is imported only once billing is enabled. */
-async function checkBillingAccess(
-	organizationId: string,
-): Promise<BillingAccessResult> {
+async function checkBillingAccess(organizationId: string): Promise<BillingAccessResult> {
 	const { BillingEnforcementService, BillingServicesLive } = await import(
 		"@/lib/effect/services/billing"
 	);
@@ -100,8 +98,7 @@ async function requireAppSession(
 			`/mfa?organizationId=${encodeURIComponent(mfaChallenge.organizationId)}`,
 		);
 	if ("ssoRequired" in session && session.ssoRequired === true) {
-		const callbackUrl =
-			headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+		const callbackUrl = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 		const query = new URLSearchParams({ callbackUrl });
 		const organizationId = session.session?.activeOrganizationId;
 		if (organizationId) query.set("organizationId", organizationId);
@@ -110,10 +107,7 @@ async function requireAppSession(
 	return session;
 }
 
-export async function AuthenticatedAppContent({
-	children,
-	params,
-}: AuthenticatedAppContentProps) {
+export async function AuthenticatedAppContent({ children, params }: AuthenticatedAppContentProps) {
 	// Auth database instrumentation uses random trace IDs and must run per request.
 	await connection();
 	// Centralized auth check protects all routes in the (app) group.
@@ -130,27 +124,18 @@ export async function AuthenticatedAppContent({
 		getRenderUserPreferences(session.user.id),
 		getRenderOrganizationDisplayContext(),
 	]);
-	const {
-		locale: dbLocale,
-		weekStartDay,
-		timeFormat,
-		timezone,
-		helpImproveProduct,
-	} = preferences;
+	const { locale: dbLocale, weekStartDay, timeFormat, timezone, helpImproveProduct } = preferences;
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL - redirect
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 		const newPath = pathname.replace(`/${locale}`, `/${dbLocale}`);
-		redirect(newPath);
+		const search = headersList.get(DOMAIN_HEADERS.SEARCH) || "";
+		redirect(`${newPath}${search}`);
 	}
 
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
-	const {
-		billingAccess,
-		trialDaysRemaining,
-		canManageBilling,
-		showTrialBanner,
-	} = await loadAppBillingStatus(activeOrganizationId);
+	const { billingAccess, trialDaysRemaining, canManageBilling, showTrialBanner } =
+		await loadAppBillingStatus(activeOrganizationId);
 	const isBillingRecoveryPath =
 		pathname === `/${locale}/settings/billing` ||
 		pathname.startsWith(`/${locale}/settings/billing/`) ||
@@ -253,9 +238,7 @@ function AppTrialBanner({
 	);
 }
 
-async function loadAppBillingStatus(
-	activeOrganizationId: string | null | undefined,
-) {
+async function loadAppBillingStatus(activeOrganizationId: string | null | undefined) {
 	const billingEnabled = env.BILLING_ENABLED === "true";
 	const billingAccess =
 		activeOrganizationId && billingEnabled
@@ -279,16 +262,13 @@ async function loadAppBillingStatus(
 			: [null, null];
 
 	const trialDaysRemaining =
-		typeof billingAccess.daysRemaining === "number" &&
-		billingAccess.daysRemaining > 0
+		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
 			? billingAccess.daysRemaining
 			: null;
 	const membershipRole = membershipRecord?.role;
-	const canManageBilling =
-		membershipRole === "owner" || membershipRole === "admin";
+	const canManageBilling = membershipRole === "owner" || membershipRole === "admin";
 	const hasPreparedTrialSubscription =
-		subscriptionRow?.status === "trialing" &&
-		Boolean(subscriptionRow?.stripeSubscriptionId);
+		subscriptionRow?.status === "trialing" && Boolean(subscriptionRow?.stripeSubscriptionId);
 	const showTrialBanner =
 		billingAccess.state === "trialing" &&
 		trialDaysRemaining !== null &&
