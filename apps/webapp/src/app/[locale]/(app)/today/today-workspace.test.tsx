@@ -122,7 +122,7 @@ describe("Today scoped arrivals and recovery", () => {
 		await screen.findAllByText("Fresh payroll issue");
 		expect(screen.queryByRole("alert")).toBeNull();
 	});
-	it("retains section evidence and marks failed counts unavailable until local Retry succeeds", async () => {
+	it("does not mix prior section rows into a fresh partial result and Retry recovers", async () => {
 		const partial = ready("Other results");
 		if (partial.status !== "ready") throw Error("fixture");
 		partial.briefing.sections.payroll = {
@@ -142,7 +142,7 @@ describe("Today scoped arrivals and recovery", () => {
 		await act(async () => {
 			await harness.refresh?.();
 		});
-		expect(screen.getAllByText("Known payroll issue")).toHaveLength(2);
+		expect(screen.queryByText("Known payroll issue")).toBeNull();
 		expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
 		fireEvent.click(screen.getByRole("button", { name: "Retry Payroll" }));
 		await screen.findAllByText("Fresh payroll issue");
