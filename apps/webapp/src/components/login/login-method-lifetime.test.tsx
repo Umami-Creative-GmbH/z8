@@ -259,4 +259,67 @@ describe("current-domain sign-in journey", () => {
 			expect(screen.queryByRole("alert")).toBeNull();
 		},
 	);
+	it("keeps a browser OAuth handoff pending until departure and restores the sign-in arrival on return", async () => {
+		const assign = vi.fn();
+		vi.stubGlobal("location", { href: "https://team.example.test/en/sign-in", assign });
+		const context = {
+			...domain,
+			socialOAuthConfigured: { ...domain.socialOAuthConfigured, google: true },
+		};
+		const view = arrival(context);
+		await act(async () => {
+			view.queryClient.setQueryData(
+				["auth", "providers"],
+				[{ id: "google", name: "Google", icon: () => null }],
+			);
+		});
+		fireEvent.click(await screen.findByRole("button", { name: "Login with Google" }));
+		await act(async () => {});
+		expect(assign).toHaveBeenCalledTimes(1);
+		const pendingButton = screen.getByRole("button", { name: "Login with Google" });
+		expect(pendingButton).toHaveProperty("disabled", true);
+		fireEvent.click(pendingButton);
+		expect(assign).toHaveBeenCalledTimes(1);
+		expect(mocks.social).not.toHaveBeenCalled();
+		view.change(context, "hidden");
+		view.change(context);
+		const returnedButton = screen.getByRole("button", { name: "Login with Google" });
+		expect(returnedButton).toHaveProperty("disabled", false);
+		fireEvent.click(returnedButton);
+		await act(async () => {});
+		expect(assign).toHaveBeenCalledTimes(2);
+	});
+
+	it("retains the draft and releases a refused browser OAuth handoff for retry", async () => {
+		const assign = vi.fn().mockImplementationOnce(() => {
+			throw new Error("Synthetic navigation refusal");
+		});
+		vi.stubGlobal("location", { href: "https://team.example.test/en/sign-in", assign });
+		const context = {
+			...domain,
+			socialOAuthConfigured: { ...domain.socialOAuthConfigured, google: true },
+		};
+		const view = arrival(context);
+		credentials();
+		await act(async () => {
+			view.queryClient.setQueryData(
+				["auth", "providers"],
+				[{ id: "google", name: "Google", icon: () => null }],
+			);
+		});
+		fireEvent.click(await screen.findByRole("button", { name: "Login with Google" }));
+		await waitFor(() =>
+			expect(screen.getByRole("alert").textContent).toContain("Synthetic navigation refusal"),
+		);
+		expect(screen.getByLabelText("Email")).toHaveProperty("value", "person@example.test");
+		expect(screen.getByLabelText("Password")).toHaveProperty("value", "unit-only-password");
+		const retry = screen.getByRole("button", { name: "Login with Google" });
+		expect(retry).toHaveProperty("disabled", false);
+		fireEvent.click(retry);
+		await act(async () => {});
+		expect(assign).toHaveBeenCalledTimes(2);
+		expect(assign).toHaveBeenLastCalledWith("/api/auth/social-org/google?callbackURL=%2Finit");
+		expect(mocks.social).not.toHaveBeenCalled();
+		expect(retry).toHaveProperty("disabled", true);
+	});
 });
