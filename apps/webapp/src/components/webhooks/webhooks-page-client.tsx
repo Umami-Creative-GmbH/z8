@@ -48,11 +48,15 @@ export function WebhooksPageClient({
 	const refused = !!query.data && !query.data.success;
 	const failed = query.isError || refused;
 	const webhooks = query.data?.success ? query.data.data : [];
-	const setWebhooks = (update: (previous: PublicWebhookEndpoint[]) => PublicWebhookEndpoint[]) =>
-		client.setQueryData<ServerActionResult<PublicWebhookEndpoint[]>>(queryKey, (previous) => ({
-			success: true,
-			data: update(previous?.success ? previous.data : []),
-		}));
+	const setWebhooks = (update: (previous: PublicWebhookEndpoint[]) => PublicWebhookEndpoint[]) => {
+		let accepted = false;
+		client.setQueryData<ServerActionResult<PublicWebhookEndpoint[]>>(queryKey, (previous) => {
+			if (!previous?.success) return previous;
+			accepted = true;
+			return { success: true, data: update(previous.data) };
+		});
+		return accepted;
+	};
 	useEffect(() => {
 		if (!initialError)
 			client.setQueryData(["developerWebhooks", organizationId, currentUserId], {
@@ -65,12 +69,12 @@ export function WebhooksPageClient({
 
 	const handleWebhookCreated = (webhook: WebhookEndpoint) => {
 		const { secret: _secret, ...publicWebhook } = webhook;
-		setWebhooks((prev) => [publicWebhook, ...prev]);
+		return setWebhooks((prev) => [publicWebhook, ...prev]);
 	};
 
 	const handleWebhookUpdated = (webhook: WebhookEndpoint) => {
 		const { secret: _secret, ...publicWebhook } = webhook;
-		setWebhooks((prev) => prev.map((w) => (w.id === webhook.id ? publicWebhook : w)));
+		return setWebhooks((prev) => prev.map((w) => (w.id === webhook.id ? publicWebhook : w)));
 	};
 
 	const handleWebhookDeleted = (webhookId: string) => {
@@ -156,6 +160,7 @@ export function WebhooksPageClient({
 
 			<WebhookFormDialog
 				open={isCreateDialogOpen && !refused}
+				actionAvailable={!refused}
 				onOpenChange={setIsCreateDialogOpen}
 				onSuccess={handleWebhookCreated}
 			/>
