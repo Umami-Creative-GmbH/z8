@@ -1,0 +1,7 @@
+{
+  "command": "CI=true node node_modules/next/dist/bin/next build --experimental-build-mode=compile",
+  "code": 0,
+  "compileOnly": true,
+  "fullProductionGeneration": false,
+  "authRuntimeStarted": false
+}

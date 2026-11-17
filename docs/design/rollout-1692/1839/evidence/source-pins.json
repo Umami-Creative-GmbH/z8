@@ -1,0 +1,156 @@
+{
+  "base": "38da311d680f1ee2a2258b400585d16a33587483",
+  "implementation": "ce1a4d23d973ebf73a8ad1e0c1be873d784d6f7f",
+  "baseAppTree": "d0853a2009d558508195195d04b9c28795339e35",
+  "implementationAppTree": "cd092ce0a36a851eab847349320bb4576200e920",
+  "pins": [
+    {
+      "path": "apps/webapp/src/components/login/alternative-auth.tsx",
+      "beforeBlob": "63d500c1b2d8d730b3d918a4c1f7b0f82c2f67b6",
+      "afterBlob": "e043efa3d417c0a113f2f847a4db6a1ab5095d06",
+      "physicalSha256": "89193dda62a15b27c64832f4e15075093335ea22e33eaeb8e9902a5f9ecf99a5",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/credentials-fields.tsx",
+      "beforeBlob": "84510226b75191112ff2edcb33eaaa89798b773d",
+      "afterBlob": "78cceb5e3913e8be6d9963543ab3d073c5f6cbb5",
+      "physicalSha256": "e7ca681ecd517d7fa7b18cbc557e73584a7f9429ee5559570f13e2085e7f7885",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-actions.tsx",
+      "beforeBlob": "3e79e0ddf2e8539fa3cc3a746ee338cabf57c84b",
+      "afterBlob": "1b41e0c70b9ddff9da500dda3cf68a54edaa2809",
+      "physicalSha256": "bb64a6533052f45b8c09d714cb7796e5e4a2d310dd9f0d770164b5d1a0724bc3",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-client-arrival.test.tsx",
+      "beforeBlob": null,
+      "afterBlob": "fff16ceb555b4fee21c98ef21af81fcc290bb44a",
+      "physicalSha256": "998294cfb352cc0d5f320412ebba53fd0e975a6691c9e4f7c72582f2923c9fbd",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "beforeBlob": "280a50e3d0789d767073fd0e6c88e9710f65c6c6",
+      "afterBlob": "e785eed943648b88629cea01112040f6b7a8e72c",
+      "physicalSha256": "fa6ea395ddd005dd9908c2a9850e5020826d7b81e285050c5175cbdf06c0bbcf",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-form-content.tsx",
+      "beforeBlob": "bc062d2f905882f763d1805356797fe3aaebd578",
+      "afterBlob": "a6e97bf4ab50c60d5a88315461afa510e220895e",
+      "physicalSha256": "902304ed457b6c80065011fcc749b549edfa0f8fd96427a1e108f01a0d3349ef",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-state.test.ts",
+      "beforeBlob": "d9906eaf1a0764a085376980d3a75207d29b4ded",
+      "afterBlob": "5efc129c0986317f55b3c91557c016b3738bd8a9",
+      "physicalSha256": "cd4ec542a1cdb92e044f5ce9adc5fbb6554c2e680384683e5571819389583e78",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-state.ts",
+      "beforeBlob": "f64d19baa0dd8bf598e73e0d3db0a34961702a19",
+      "afterBlob": "db808614a64c2341f386cceeb58d1dfdb1dcc86c",
+      "physicalSha256": "85af75a8d63c6847ac6c01b3f4e17574c70354031b19532ec945d32dc65d23e0",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-ui.test.tsx",
+      "beforeBlob": "a56d66e610553266d0d3f11d6847fce779638d6c",
+      "afterBlob": "c87921d4403a33fc4b5018c7b616caaf338c4a07",
+      "physicalSha256": "9d0abb5a3d4505875ed7f37c222c80bba95b2ebf3bc6a3698fcd73fc7a3077cb",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/login-verification.tsx",
+      "beforeBlob": null,
+      "afterBlob": "25a096b547b90c0b7815588cc08e4adc28181679",
+      "physicalSha256": "4052ce659c9a21ce66406980bc1b468875920b5d1f5815a413cd269d31b518c6",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "beforeBlob": "afaf52c74dec23cb44afac01e9990cc7e95b4bf2",
+      "afterBlob": "51ea6172e984f1496b3a96ad3625b397d7579879",
+      "physicalSha256": "85298049b4e821bec6130912c0aaec6ce449b89d4c034d6baf78a3cb352e5db1",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/store-app-sign-in-form.tsx",
+      "beforeBlob": "8ac806553cc83d22ff21230a6512235154ce82cd",
+      "afterBlob": "a1a17e4031ae90f6620fb631546b507a51f77014",
+      "physicalSha256": "b4e8ef2a495234b0727eac8c0e1caa69516d6c4b3517a971521b84e45f5d5f9c",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/two-factor-form.tsx",
+      "beforeBlob": "36675606ee49be83b3dd1af784563b4c3e11535d",
+      "afterBlob": "8c087f2ba6ed69898287530e229ed4196eda92fa",
+      "physicalSha256": "259e574238c8ba98d4dbca562ba175150b9127afd92c0e33ef8b8b3ba9246e35",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/login/use-login-auth.ts",
+      "beforeBlob": "247a78dc05793b3fe5267bf03fd6384ec96ecf2f",
+      "afterBlob": "d7ed3e68cdd356f05490832525441fe6a1920b49",
+      "physicalSha256": "5a738b16becc1cdddd3dd3e714a20a6d5e0f03676b07c7e647c6c828a6887146",
+      "frozen": false
+    },
+    {
+      "path": "apps/webapp/src/components/auth-form-wrapper.tsx",
+      "beforeBlob": "6de868acb55afddcc93415ea9ea6804c5200f500",
+      "afterBlob": "6de868acb55afddcc93415ea9ea6804c5200f500",
+      "physicalSha256": "78be245be6ecc296b8012a41eb8a763c8d357250a6eabe0f90c9b5fedd735421",
+      "frozen": true
+    },
+    {
+      "path": "apps/webapp/src/components/turnstile-widget.tsx",
+      "beforeBlob": "b3ab4ccf4ee35d8ad35b62be94c79a071cd38464",
+      "afterBlob": "b3ab4ccf4ee35d8ad35b62be94c79a071cd38464",
+      "physicalSha256": "3d12b5eb68a5fd90f49eb632ff0e77eb2419f93dd99ef0141fc2b92dac02e115",
+      "frozen": true
+    },
+    {
+      "path": "apps/webapp/src/lib/auth/domain-auth-context.tsx",
+      "beforeBlob": "61d21abc4dc647d8aaed5db35e0b465dcb5f0645",
+      "afterBlob": "61d21abc4dc647d8aaed5db35e0b465dcb5f0645",
+      "physicalSha256": "40b997f4c3e687a8944c010ab75a93cede83a6f2d5cab857d607c3608321d24c",
+      "frozen": true
+    },
+    {
+      "path": "apps/webapp/src/lib/auth.ts",
+      "beforeBlob": "7ed152e20cb920bf2a3d2d94293372a09dbf6caa",
+      "afterBlob": "7ed152e20cb920bf2a3d2d94293372a09dbf6caa",
+      "physicalSha256": "6cb3d4e6f933a58626c0af9e72cf85ad259b47e85ae4c67556e03ad3274ff7f2",
+      "frozen": true
+    },
+    {
+      "path": "apps/webapp/src/lib/auth/auth-page-client.ts",
+      "beforeBlob": "32256623b62787709ab7a09fef5ef5bb7749270d",
+      "afterBlob": "32256623b62787709ab7a09fef5ef5bb7749270d",
+      "physicalSha256": "57d5966b5b4b91b86255acd6425119c54c258f1c9358fd3d7e30fad644aa7647",
+      "frozen": true
+    },
+    {
+      "path": "apps/webapp/src/lib/auth/callback-url.ts",
+      "beforeBlob": "866a493a06c3a69b7ecd76e85c51ea0a459628ec",
+      "afterBlob": "866a493a06c3a69b7ecd76e85c51ea0a459628ec",
+      "physicalSha256": "3ac263e22ecbe2d0d704b70d0f02b24507d9d2ed075b272d8d63f676a5ef6bc5",
+      "frozen": true
+    },
+    {
+      "path": "apps/webapp/src/lib/store-app/store-app-sign-in.ts",
+      "beforeBlob": "f57fd860668facc0dcca4bfdee9f7b60bd065204",
+      "afterBlob": "f57fd860668facc0dcca4bfdee9f7b60bd065204",
+      "physicalSha256": "fbfea83a08267060f15b35b9a229e05327f3369f3f7a30a61e5ce2f62b8e07df",
+      "frozen": true
+    }
+  ],
+  "captureSource": "Settled before/after reports bind exact physical UTF-8/CRLF source hashes to their committed snapshots. New baseline-absent source files are null. Build label retains original fixture deployment identity and is not source proof."
+}
