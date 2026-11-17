@@ -1,0 +1,40 @@
+{
+  "json": "All archived JSON parsed, including original Vitest reports",
+  "testSource": "esbuild TSX syntax transform only; exact source already executed in authorized own test bridge; no archived runtime driver executed",
+  "pngs": [
+    {
+      "file": "desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecodedBytes": 6400000,
+      "decode": "System.Drawing full LockBits buffer copied; all pixels decoded",
+      "visuallyInspected": true
+    },
+    {
+      "file": "phone-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "fullyDecodedBytes": 1316640,
+      "decode": "System.Drawing full LockBits buffer copied; all pixels decoded",
+      "visuallyInspected": true
+    },
+    {
+      "file": "phone-records-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "fullyDecodedBytes": 1316640,
+      "decode": "System.Drawing full LockBits buffer copied; all pixels decoded",
+      "visuallyInspected": true
+    },
+    {
+      "file": "wide-dark-large-collapsed.png",
+      "width": 2400,
+      "height": 1200,
+      "fullyDecodedBytes": 11520000,
+      "decode": "System.Drawing full LockBits buffer copied; all pixels decoded",
+      "visuallyInspected": true
+    }
+  ],
+  "privateFailuresExcluded": true,
+  "authProfilesControllersDebugEndpointsRawBodiesExcluded": true
+}

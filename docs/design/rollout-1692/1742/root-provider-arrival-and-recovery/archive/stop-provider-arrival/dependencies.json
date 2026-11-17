@@ -1,0 +1,849 @@
+{
+  "pnpmVersion": "12.16.1",
+  "guards": [
+    "pnpm_config_verify_deps_before_run=false",
+    "--config.verify-deps-before-run=false"
+  ],
+  "installFlags": [
+    "--frozen-lockfile",
+    "--offline",
+    "--ignore-scripts",
+    "--package-import-method=copy"
+  ],
+  "installPassed": true,
+  "initialEngineStorePermissionFailureRetriedSameCommandWithNormalEscalation": true,
+  "physicalDirectories": [
+    {
+      "path": "node_modules",
+      "physical": true,
+      "resolvedInsideOwnCheckout": true
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true,
+      "resolvedInsideOwnCheckout": true
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true,
+      "resolvedInsideOwnCheckout": true
+    }
+  ],
+  "topLevelRootAndAppInternalLinkCount": 158,
+  "allLinkTargetsOwnAndExisting": true,
+  "links": [
+    {
+      "path": "node_modules/@esbuild/win32-x64",
+      "resolved": "node_modules/.pnpm/@esbuild+win32-x64@0.28.2/node_modules/@esbuild/win32-x64",
+      "exists": true
+    },
+    {
+      "path": "node_modules/puppeteer-core",
+      "resolved": "node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core",
+      "exists": true
+    },
+    {
+      "path": "node_modules/react-doctor",
+      "resolved": "node_modules/.pnpm/react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683/node_modules/react-doctor",
+      "exists": true
+    },
+    {
+      "path": "node_modules/shadcn",
+      "resolved": "node_modules/.pnpm/shadcn@4.23.0_supports-color@8.1.1/node_modules/shadcn",
+      "exists": true
+    },
+    {
+      "path": "node_modules/turbo",
+      "resolved": "node_modules/.pnpm/turbo@2.11.11/node_modules/turbo",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@aws-sdk/client-s3",
+      "resolved": "node_modules/.pnpm/@aws-sdk+client-s3@3.1167.0/node_modules/@aws-sdk/client-s3",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@aws-sdk/s3-request-presigner",
+      "resolved": "node_modules/.pnpm/@aws-sdk+s3-request-presigner@3.1167.0/node_modules/@aws-sdk/s3-request-presigner",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@base-ui/react",
+      "resolved": "node_modules/.pnpm/@base-ui+react@1.9.0_@date-_367596df1f109cf5c4332405308b84ea/node_modules/@base-ui/react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/api-key",
+      "resolved": "node_modules/.pnpm/@better-auth+api-key@1.7.22_316ffdaceccd02488a5359740788c523/node_modules/@better-auth/api-key",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/core",
+      "resolved": "node_modules/.pnpm/@better-auth+core@1.7.22_@b_c85985d0786343e7bb36ef926812d766/node_modules/@better-auth/core",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/drizzle-adapter",
+      "resolved": "node_modules/.pnpm/@better-auth+drizzle-adapte_ec2a7c021f40b5740dcf3349778bd278/node_modules/@better-auth/drizzle-adapter",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/passkey",
+      "resolved": "node_modules/.pnpm/@better-auth+passkey@1.7.22_ccacbb775e4bae18c750242b40065d24/node_modules/@better-auth/passkey",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/scim",
+      "resolved": "node_modules/.pnpm/@better-auth+scim@1.7.22_@b_1f689c31e2038e9a2444e8e4119f9599/node_modules/@better-auth/scim",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@better-auth/sso",
+      "resolved": "node_modules/.pnpm/@better-auth+sso@1.7.22_@be_5edda52e927e6de7823325cbdcc12d3d/node_modules/@better-auth/sso",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@biomejs/biome",
+      "resolved": "node_modules/.pnpm/@biomejs+biome@2.6.7/node_modules/@biomejs/biome",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@bprogress/core",
+      "resolved": "node_modules/.pnpm/@bprogress+core@1.3.4/node_modules/@bprogress/core",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@capacitor/core",
+      "resolved": "node_modules/.pnpm/@capacitor+core@8.6.0/node_modules/@capacitor/core",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@casl/ability",
+      "resolved": "node_modules/.pnpm/@casl+ability@7.1.2/node_modules/@casl/ability",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dagrejs/dagre",
+      "resolved": "node_modules/.pnpm/@dagrejs+dagre@3.1.3/node_modules/@dagrejs/dagre",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@daypicker/react",
+      "resolved": "node_modules/.pnpm/@daypicker+react@10.0.2_@types+react@19.3.0_react@19.3.1/node_modules/@daypicker/react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dicebear/core",
+      "resolved": "node_modules/.pnpm/@dicebear+core@10.7.0/node_modules/@dicebear/core",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dicebear/styles",
+      "resolved": "node_modules/.pnpm/@dicebear+styles@10.6.0/node_modules/@dicebear/styles",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/core",
+      "resolved": "node_modules/.pnpm/@dnd-kit+core@6.3.1_react-d_168a6a798a0c4da81319d56a661242e7/node_modules/@dnd-kit/core",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/modifiers",
+      "resolved": "node_modules/.pnpm/@dnd-kit+modifiers@9.0.0_@d_863ec3ee87a5a16bd51748559e7c5ba5/node_modules/@dnd-kit/modifiers",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/sortable",
+      "resolved": "node_modules/.pnpm/@dnd-kit+sortable@10.0.0_@d_c41ff902779dbbfd62f36a1930b8a632/node_modules/@dnd-kit/sortable",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@dnd-kit/utilities",
+      "resolved": "node_modules/.pnpm/@dnd-kit+utilities@3.2.2_react@19.3.1/node_modules/@dnd-kit/utilities",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@faker-js/faker",
+      "resolved": "node_modules/.pnpm/@faker-js+faker@10.6.0/node_modules/@faker-js/faker",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@marsidev/react-turnstile",
+      "resolved": "node_modules/.pnpm/@marsidev+react-turnstile@1_0910f3d23e37e5a512b1458612a272ef/node_modules/@marsidev/react-turnstile",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@modelcontextprotocol/client",
+      "resolved": "node_modules/.pnpm/@modelcontextprotocol+client@2.4.0/node_modules/@modelcontextprotocol/client",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@modelcontextprotocol/server",
+      "resolved": "node_modules/.pnpm/@modelcontextprotocol+server@2.4.0/node_modules/@modelcontextprotocol/server",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/api",
+      "resolved": "node_modules/.pnpm/@opentelemetry+api@1.10.0/node_modules/@opentelemetry/api",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/auto-instrumentations-node",
+      "resolved": "node_modules/.pnpm/@opentelemetry+auto-instrum_4ec4e60a116ba2e2d1f0bd9ba26d1e0a/node_modules/@opentelemetry/auto-instrumentations-node",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/exporter-metrics-otlp-http",
+      "resolved": "node_modules/.pnpm/@opentelemetry+exporter-met_384553707af16af336f8d4cb1046ce6c/node_modules/@opentelemetry/exporter-metrics-otlp-http",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/exporter-trace-otlp-http",
+      "resolved": "node_modules/.pnpm/@opentelemetry+exporter-tra_2c35f6faac6c7ac0e135f87dab376cb3/node_modules/@opentelemetry/exporter-trace-otlp-http",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/resources",
+      "resolved": "node_modules/.pnpm/@opentelemetry+resources@3.1.1_@opentelemetry+api@1.10.0/node_modules/@opentelemetry/resources",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/sdk-node",
+      "resolved": "node_modules/.pnpm/@opentelemetry+sdk-node@0.3_2c14b7ba2e13ce9e74fc495794c6878f/node_modules/@opentelemetry/sdk-node",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/sdk-trace",
+      "resolved": "node_modules/.pnpm/@opentelemetry+sdk-trace@3.1.1_@opentelemetry+api@1.10.0/node_modules/@opentelemetry/sdk-trace",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@opentelemetry/semantic-conventions",
+      "resolved": "node_modules/.pnpm/@opentelemetry+semantic-conventions@1.45.0/node_modules/@opentelemetry/semantic-conventions",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@posthog/nextjs-config",
+      "resolved": "node_modules/.pnpm/@posthog+nextjs-config@1.12_189ec650117cac83318239e6561b7511/node_modules/@posthog/nextjs-config",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-email/editor",
+      "resolved": "node_modules/.pnpm/@react-email+editor@1.8.4_@_94260adcd3ff185ce0c8efb141e5714b/node_modules/@react-email/editor",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-email/ui",
+      "resolved": "node_modules/.pnpm/@react-email+ui@6.11.11_@ba_24ab72d1a5a7dedede3f11af410f06fe/node_modules/@react-email/ui",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@react-pdf/renderer",
+      "resolved": "node_modules/.pnpm/@react-pdf+renderer@4.9.0_react@19.3.1/node_modules/@react-pdf/renderer",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/calendar",
+      "resolved": "node_modules/.pnpm/@schedule-x+calendar@4.9.1__c6b1a4f95ff30a212fb7000f85d78d00/node_modules/@schedule-x/calendar",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/calendar-controls",
+      "resolved": "node_modules/.pnpm/@schedule-x+calendar-controls@4.9.1/node_modules/@schedule-x/calendar-controls",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/drag-and-drop",
+      "resolved": "node_modules/.pnpm/@schedule-x+drag-and-drop@3.7.3/node_modules/@schedule-x/drag-and-drop",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/event-modal",
+      "resolved": "node_modules/.pnpm/@schedule-x+event-modal@4.9_cecd30f1661a5365e3e6a5237d964d6c/node_modules/@schedule-x/event-modal",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/react",
+      "resolved": "node_modules/.pnpm/@schedule-x+react@4.1.0_@sc_d5f3e61d0d4043d6e286e65c6449c168/node_modules/@schedule-x/react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@schedule-x/theme-default",
+      "resolved": "node_modules/.pnpm/@schedule-x+theme-default@4.9.1/node_modules/@schedule-x/theme-default",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@slack/web-api",
+      "resolved": "node_modules/.pnpm/@slack+web-api@8.3.0/node_modules/@slack/web-api",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@t3-oss/env-nextjs",
+      "resolved": "node_modules/.pnpm/@t3-oss+env-nextjs@0.13.11_typescript@7.0.2_zod@4.6.7/node_modules/@t3-oss/env-nextjs",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tabler/icons-react",
+      "resolved": "node_modules/.pnpm/@tabler+icons-react@3.51.0_react@19.3.1/node_modules/@tabler/icons-react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tailwindcss/postcss",
+      "resolved": "node_modules/.pnpm/@tailwindcss+postcss@4.3.5/node_modules/@tailwindcss/postcss",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-form",
+      "resolved": "node_modules/.pnpm/@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c/node_modules/@tanstack/react-form",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-hotkeys",
+      "resolved": "node_modules/.pnpm/@tanstack+react-hotkeys@0.2_83ac8b07a735c133f3ec856db88facb6/node_modules/@tanstack/react-hotkeys",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query",
+      "resolved": "node_modules/.pnpm/@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416/node_modules/@tanstack/react-query",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query-devtools",
+      "resolved": "node_modules/.pnpm/@tanstack+react-query-devto_a335988fa10f5f21fcce71d55d2f8402/node_modules/@tanstack/react-query-devtools",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-store",
+      "resolved": "node_modules/.pnpm/@tanstack+react-store@0.11._6def17552e8b2a0b74c5841dd97fc82c/node_modules/@tanstack/react-store",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-table",
+      "resolved": "node_modules/.pnpm/@tanstack+react-table@9.3.1_da81904ea248d4185313a0793b432bf0/node_modules/@tanstack/react-table",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-virtual",
+      "resolved": "node_modules/.pnpm/@tanstack+react-virtual@3.1_9a1a86ed0f22c2cd916a6506b873df01/node_modules/@tanstack/react-virtual",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@testing-library/react",
+      "resolved": "node_modules/.pnpm/@testing-library+react@16.3_caf0c89dcd807677af52e2a43e70eff8/node_modules/@testing-library/react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@testing-library/user-event",
+      "resolved": "node_modules/.pnpm/@testing-library+user-event_98cc42e531c929ba4ce24d23c3da3ae6/node_modules/@testing-library/user-event",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/format-icu",
+      "resolved": "node_modules/.pnpm/@tolgee+format-icu@7.3.0/node_modules/@tolgee/format-icu",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/react",
+      "resolved": "node_modules/.pnpm/@tolgee+react@7.3.0_react@19.3.1/node_modules/@tolgee/react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tolgee/web",
+      "resolved": "node_modules/.pnpm/@tolgee+web@7.3.0/node_modules/@tolgee/web",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/file-store",
+      "resolved": "node_modules/.pnpm/@tus+file-store@2.1.2_@open_c4b7846b4974bd67d72c7b9bad4045d9/node_modules/@tus/file-store",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/s3-store",
+      "resolved": "node_modules/.pnpm/@tus+s3-store@2.1.0_supports-color@8.1.1/node_modules/@tus/s3-store",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@tus/server",
+      "resolved": "node_modules/.pnpm/@tus+server@2.4.7_@opentele_e08f3697d44fee673769a55c454535d5/node_modules/@tus/server",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/canvas-confetti",
+      "resolved": "node_modules/.pnpm/@types+canvas-confetti@1.9.0/node_modules/@types/canvas-confetti",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/luxon",
+      "resolved": "node_modules/.pnpm/@types+luxon@3.7.6/node_modules/@types/luxon",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/node",
+      "resolved": "node_modules/.pnpm/@types+node@26.6.6/node_modules/@types/node",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/nodemailer",
+      "resolved": "node_modules/.pnpm/@types+nodemailer@8.0.2/node_modules/@types/nodemailer",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/papaparse",
+      "resolved": "node_modules/.pnpm/@types+papaparse@5.5.2/node_modules/@types/papaparse",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/pg",
+      "resolved": "node_modules/.pnpm/@types+pg@8.23.1/node_modules/@types/pg",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/qrcode",
+      "resolved": "node_modules/.pnpm/@types+qrcode@1.5.6/node_modules/@types/qrcode",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/react",
+      "resolved": "node_modules/.pnpm/@types+react@19.3.0/node_modules/@types/react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/react-dom",
+      "resolved": "node_modules/.pnpm/@types+react-dom@19.3.0_@types+react@19.3.0/node_modules/@types/react-dom",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/sanitize-html",
+      "resolved": "node_modules/.pnpm/@types+sanitize-html@2.16.2/node_modules/@types/sanitize-html",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@types/web-push",
+      "resolved": "node_modules/.pnpm/@types+web-push@3.6.4/node_modules/@types/web-push",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/core",
+      "resolved": "node_modules/.pnpm/@uppy+core@6.3.1/node_modules/@uppy/core",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/locales",
+      "resolved": "node_modules/.pnpm/@uppy+locales@5.3.2/node_modules/@uppy/locales",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@uppy/tus",
+      "resolved": "node_modules/.pnpm/@uppy+tus@6.0.1_@uppy+core@6.3.1/node_modules/@uppy/tus",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@upstash/ratelimit",
+      "resolved": "node_modules/.pnpm/@upstash+ratelimit@2.2.0_@upstash+redis@1.39.0/node_modules/@upstash/ratelimit",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@vitest/coverage-v8",
+      "resolved": "node_modules/.pnpm/@vitest+coverage-v8@5.1.0_vitest@5.1.0/node_modules/@vitest/coverage-v8",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/@xyflow/react",
+      "resolved": "node_modules/.pnpm/@xyflow+react@12.12.1_@type_9e9a715b87204f86f49d86da5d319f2b/node_modules/@xyflow/react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/babel-plugin-react-compiler",
+      "resolved": "node_modules/.pnpm/babel-plugin-react-compiler@1.0.0/node_modules/babel-plugin-react-compiler",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/better-auth",
+      "resolved": "node_modules/.pnpm/better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0/node_modules/better-auth",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/botbuilder",
+      "resolved": "node_modules/.pnpm/botbuilder@4.23.3_debug@4.4_439ac00be1e5c0b570ec6497eb8cd905/node_modules/botbuilder",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/bullmq",
+      "resolved": "node_modules/.pnpm/bullmq@6.7.5_ioredis@6.0.0_supports-color@8.1.1__pg@8.23.1/node_modules/bullmq",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/canvas-confetti",
+      "resolved": "node_modules/.pnpm/canvas-confetti@1.9.4/node_modules/canvas-confetti",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/class-variance-authority",
+      "resolved": "node_modules/.pnpm/class-variance-authority@0.7.1/node_modules/class-variance-authority",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/clsx",
+      "resolved": "node_modules/.pnpm/clsx@2.1.1/node_modules/clsx",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/cmdk",
+      "resolved": "node_modules/.pnpm/cmdk@1.1.1_@types+react-dom_f7dee528d90d74e746bb181d01259bd0/node_modules/cmdk",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/country-flag-icons",
+      "resolved": "node_modules/.pnpm/country-flag-icons@1.6.20/node_modules/country-flag-icons",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/cron-parser",
+      "resolved": "node_modules/.pnpm/cron-parser@5.10.4/node_modules/cron-parser",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/date-holidays",
+      "resolved": "node_modules/.pnpm/date-holidays@3.39.1/node_modules/date-holidays",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/dotenv",
+      "resolved": "node_modules/.pnpm/dotenv@18.0.10/node_modules/dotenv",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/dotenv-cli",
+      "resolved": "node_modules/.pnpm/dotenv-cli@11.1.0/node_modules/dotenv-cli",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/drizzle-kit",
+      "resolved": "node_modules/.pnpm/drizzle-kit@0.31.11_patch_h_26ac68103728dfd9f7e46b97a24f83e5/node_modules/drizzle-kit",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/drizzle-orm",
+      "resolved": "node_modules/.pnpm/drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7/node_modules/drizzle-orm",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/effect",
+      "resolved": "node_modules/.pnpm/effect@4.1.4/node_modules/effect",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/embla-carousel-react",
+      "resolved": "node_modules/.pnpm/embla-carousel-react@8.6.0_react@19.3.1/node_modules/embla-carousel-react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/exceljs",
+      "resolved": "node_modules/.pnpm/exceljs@4.4.0/node_modules/exceljs",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/fast-xml-parser",
+      "resolved": "node_modules/.pnpm/fast-xml-parser@5.12.0/node_modules/fast-xml-parser",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/file-type",
+      "resolved": "node_modules/.pnpm/file-type@22.3.0_supports-color@8.1.1/node_modules/file-type",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/input-otp",
+      "resolved": "node_modules/.pnpm/input-otp@1.5.0_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/input-otp",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/ioredis",
+      "resolved": "node_modules/.pnpm/ioredis@6.0.0_supports-color@8.1.1/node_modules/ioredis",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/jsdom",
+      "resolved": "node_modules/.pnpm/jsdom@31.0.0_@napi-rs+canvas@1.1.0_@noble+hashes@2.4.0/node_modules/jsdom",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/jsqr",
+      "resolved": "node_modules/.pnpm/jsqr@1.4.0/node_modules/jsqr",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/jszip",
+      "resolved": "node_modules/.pnpm/jszip@3.10.2/node_modules/jszip",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/luxon",
+      "resolved": "node_modules/.pnpm/luxon@3.7.2/node_modules/luxon",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/nanoid",
+      "resolved": "node_modules/.pnpm/nanoid@6.0.2/node_modules/nanoid",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/next",
+      "resolved": "node_modules/.pnpm/next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915/node_modules/next",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/next-intl",
+      "resolved": "node_modules/.pnpm/next-intl@4.15.1_@swc+helpe_dfba13ec8809a1ae8ff931366da7e2bb/node_modules/next-intl",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/node-vault",
+      "resolved": "node_modules/.pnpm/node-vault@0.13.0_supports-color@8.1.1/node_modules/node-vault",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/nodemailer",
+      "resolved": "node_modules/.pnpm/nodemailer@10.5.0/node_modules/nodemailer",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/papaparse",
+      "resolved": "node_modules/.pnpm/papaparse@5.7.1/node_modules/papaparse",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pdfjs-dist",
+      "resolved": "node_modules/.pnpm/pdfjs-dist@6.5.438/node_modules/pdfjs-dist",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pg",
+      "resolved": "node_modules/.pnpm/pg@8.23.1/node_modules/pg",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pino",
+      "resolved": "node_modules/.pnpm/pino@10.4.0/node_modules/pino",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pino-opentelemetry-transport",
+      "resolved": "node_modules/.pnpm/pino-opentelemetry-transport@4.0.2_pino@10.4.0/node_modules/pino-opentelemetry-transport",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/pino-pretty",
+      "resolved": "node_modules/.pnpm/pino-pretty@13.2.0/node_modules/pino-pretty",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/portless",
+      "resolved": "node_modules/.pnpm/portless@0.17.0/node_modules/portless",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/postcss",
+      "resolved": "node_modules/.pnpm/postcss@8.5.32/node_modules/postcss",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/posthog-js",
+      "resolved": "node_modules/.pnpm/posthog-js@1.447.15_@types+react@19.3.0_react@19.3.1/node_modules/posthog-js",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/posthog-node",
+      "resolved": "node_modules/.pnpm/posthog-node@5.70.0_@opente_5315168d3d9b20ee8aaf40c54e839883/node_modules/posthog-node",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/preact",
+      "resolved": "node_modules/.pnpm/preact@11.2.0/node_modules/preact",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/qrcode",
+      "resolved": "node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/qrcode.react",
+      "resolved": "node_modules/.pnpm/qrcode.react@4.2.0_react@19.3.1/node_modules/qrcode.react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react",
+      "resolved": "node_modules/.pnpm/react@19.3.1/node_modules/react",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react-dom",
+      "resolved": "node_modules/.pnpm/react-dom@19.3.1_react@19.3.1/node_modules/react-dom",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react-email",
+      "resolved": "node_modules/.pnpm/react-email@6.11.11_react-d_022bde083a50cfbd0d056986100bb31d/node_modules/react-email",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/react-resizable-panels",
+      "resolved": "node_modules/.pnpm/react-resizable-panels@4.21_d608f9a8b79c049dde78fa5e1e59c5dd/node_modules/react-resizable-panels",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/recharts",
+      "resolved": "node_modules/.pnpm/recharts@3.10.1_@types+reac_df092349403d0944c49d93dc0ae17508/node_modules/recharts",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/resend",
+      "resolved": "node_modules/.pnpm/resend@6.38.0_@react-email+_30fb074d8eeb8b860fde70740d298991/node_modules/resend",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/sanitize-html",
+      "resolved": "node_modules/.pnpm/sanitize-html@2.18.2/node_modules/sanitize-html",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/server-only",
+      "resolved": "node_modules/.pnpm/server-only@0.0.1/node_modules/server-only",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/shadcn",
+      "resolved": "node_modules/.pnpm/shadcn@4.23.0_supports-color@8.1.1/node_modules/shadcn",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/sharp",
+      "resolved": "node_modules/.pnpm/sharp@0.35.5_@types+node@26.6.6/node_modules/sharp",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/sonner",
+      "resolved": "node_modules/.pnpm/sonner@2.0.8_@types+react@1_a4a83cacc98a5853740e8e3e24a10bd1/node_modules/sonner",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/streamdown",
+      "resolved": "node_modules/.pnpm/streamdown@2.7.1_react-dom@_7119a3d3786711231536898516211f39/node_modules/streamdown",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/stripe",
+      "resolved": "node_modules/.pnpm/stripe@23.1.0_@types+node@26.6.6/node_modules/stripe",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/suncalc",
+      "resolved": "node_modules/.pnpm/suncalc@2.1.4/node_modules/suncalc",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/superjson",
+      "resolved": "node_modules/.pnpm/superjson@2.2.6/node_modules/superjson",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/swr",
+      "resolved": "node_modules/.pnpm/swr@2.5.1_react@19.3.1/node_modules/swr",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/tailwind-merge",
+      "resolved": "node_modules/.pnpm/tailwind-merge@3.7.0/node_modules/tailwind-merge",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/tailwindcss",
+      "resolved": "node_modules/.pnpm/tailwindcss@4.3.5/node_modules/tailwindcss",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/temporal-polyfill",
+      "resolved": "node_modules/.pnpm/temporal-polyfill@1.0.8/node_modules/temporal-polyfill",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/timepicker-ui",
+      "resolved": "node_modules/.pnpm/timepicker-ui@4.7.0/node_modules/timepicker-ui",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/tsx",
+      "resolved": "node_modules/.pnpm/tsx@4.23.15/node_modules/tsx",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/tw-animate-css",
+      "resolved": "node_modules/.pnpm/tw-animate-css@1.4.0/node_modules/tw-animate-css",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/typescript",
+      "resolved": "node_modules/.pnpm/typescript@7.0.2/node_modules/typescript",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/ultracite",
+      "resolved": "node_modules/.pnpm/ultracite@8.2.0_@biomejs+bi_79a3fdcfcad7d460feb3ea58464806eb/node_modules/ultracite",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/undici",
+      "resolved": "node_modules/.pnpm/undici@8.12.4/node_modules/undici",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/vaul",
+      "resolved": "node_modules/.pnpm/vaul@1.1.2_@types+react-dom_e6daed60270af77db87af90114bb2908/node_modules/vaul",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/vitest",
+      "resolved": "node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/web-push",
+      "resolved": "node_modules/.pnpm/web-push@4.0.0_supports-color@8.1.1/node_modules/web-push",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/zod",
+      "resolved": "node_modules/.pnpm/zod@4.6.7/node_modules/zod",
+      "exists": true
+    },
+    {
+      "path": "apps/webapp/node_modules/zustand",
+      "resolved": "node_modules/.pnpm/zustand@5.1.0_@types+react@_5e5050d806f3bb046bcf240769239f0f/node_modules/zustand",
+      "exists": true
+    }
+  ],
+  "samplePhysicalFileLinks": [
+    {
+      "path": "apps/webapp/node_modules/react/package.json",
+      "numberOfHardLinks": 1,
+      "sha256": "9cc9c3de5441a2eea7f41f52f3f2a15a4fc51f90c0b72741f0d7638643a85e67"
+    },
+    {
+      "path": "apps/webapp/node_modules/vitest/package.json",
+      "numberOfHardLinks": 1,
+      "sha256": "cc2979885d9d149c8456128e7ae48038d815352cf1e6d1932eb631057a99f973"
+    },
+    {
+      "path": "apps/webapp/node_modules/@tanstack/react-query/package.json",
+      "numberOfHardLinks": 1,
+      "sha256": "2a2d66d46321b0a124a3ad5f8d6378ec08621bcc18f91ab3128b4fc884d51cbe"
+    }
+  ],
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "manifestLockConfigUnchanged": true,
+  "licenseCopied": false,
+  "licenseLimit": "Not needed because first-critical stop precedes typegen/types; no license artifact copied/generated or fabricated.",
+  "peerDependenciesOrConfigBorrowed": false,
+  "storeOrACLLockVersionWorkaround": false
+}

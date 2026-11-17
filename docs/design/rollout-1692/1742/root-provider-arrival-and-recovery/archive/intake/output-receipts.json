@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "outputs": [
+    {
+      "path": "C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-1742-ready-intake-chv2TA\\intake-note.md",
+      "bytes": 5993,
+      "sha256": "9cee0da0b783d4ac5c48c4c00fe2f440dd2587d668bdced868eb61f77da7b7ec"
+    },
+    {
+      "path": "C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-1742-ready-intake-chv2TA\\machine-audit.json",
+      "bytes": 37811,
+      "sha256": "42c6d8ce4fb0a3dd2e63a0d800049068ac566ce861798fa5aa5d64bb910ce113"
+    }
+  ],
+  "scope": "Only new TEMP output files; no repository/runtime mutation"
+}
