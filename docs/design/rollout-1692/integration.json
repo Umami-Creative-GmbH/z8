@@ -2047,7 +2047,9 @@
       "rootProducerProvenanceBlockerEvidence": "docs/design/rollout-1692/1746/root-producer-provenance-stop.json",
       "rootProducerProvenanceStatus": "Provisional producer-bound ready DTO replaces earlier-page stamp. Exact pinned5:4pass1fail; current203/14 including7newproducer andprior196 pass. Fulltypes/explicit9lint/format/Doctor0pass; ordinary9errors5warnings. Fresh independent/PG/runtime acceptance pending; readinessnull.",
       "rootProducerProvenanceCorrectionCommit": "fa14ae6cc5948824110c2b33f18583b0a17df09e",
-      "rootProducerProvenanceEvidence": "docs/design/rollout-1692/1746/root-producer-provenance-checks.json"
+      "rootProducerProvenanceEvidence": "docs/design/rollout-1692/1746/root-producer-provenance-checks.json",
+      "rootProducerIndependentEvidence": "docs/design/rollout-1692/1746/root-producer-independent-recheck.json",
+      "rootProducerIndependentVerification": "Bounded review at6aa25d71d:249unit/18files (includesroot203+26adaptedprior+20new) and8canonicalPG/2files pass; typegen/workflow/smoke/lint/explicit/Doctor0pass, mainTS ignoredlicense missing andordinary9format errors qualified. SAFE21hashes/230405bytes/12JSON match;9root source/Git pins and63anchors+baseline match. Fullpreservation/cleanup receipts inherited. Currentlive acceptance next; readinessnull."
     },
     {
       "id": "R165",
