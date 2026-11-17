@@ -1014,7 +1014,9 @@
       "integrationCommit": "11abc6c16bfb770ee6a9bff6053ee4cc9c501178",
       "correctionCommit": "55e1fee84317b4239efeb1f419c8b9cfce53512f",
       "correctionIntegrationCommit": "c41f1fcfb9b581b0f746b01ca68a079449f5a831",
-      "integrationVerification": "PROVISIONAL. Merger reproduced unknown coverage presented as healthy-empty with no Retry. Root public red/green adds explicit coverage read state/local recovery, planner-scoped key suffix, retained-data labeling and supporting Retry pending/coalescing. 47 files/298 unit cases pass; final message-only followup reruns same8cases nonadditively, all3type projects pass,6owned explicit100CRLF Biome pass. Doctor21files0errors/2inherited scheduler warnings;ordinary6formatting differences retained. Independent merge tree matches,all59verifiedticket anchors plus baseline and17277 prior paths preserved. No fresh PG/browser/roles/actions/matched visual acceptance yet. verifiedCommit remains null; normal development auth required. Original failed/partial harness outputs preserved privately."
+      "integrationVerification": "PROVISIONAL. Merger reproduced unknown coverage presented as healthy-empty with no Retry. Root public red/green adds explicit coverage read state/local recovery, planner-scoped key suffix, retained-data labeling and supporting Retry pending/coalescing. 47 files/298 unit cases pass; final message-only followup reruns same8cases nonadditively, all3type projects pass,6owned explicit100CRLF Biome pass. Doctor21files0errors/2inherited scheduler warnings;ordinary6formatting differences retained. Independent merge tree matches,all59verifiedticket anchors plus baseline and17277 prior paths preserved. No fresh PG/browser/roles/actions/matched visual acceptance yet. verifiedCommit remains null; normal development auth required. Original failed/partial harness outputs preserved privately. Fresh independent8public/1file+45canonicalPG/7files pass. Actual normal dev Chromium coverage/supporting Retry and1create/1edit scoped readback passed; recorded work unchanged. STOP: expanded Shift list occludes enabled Publish, actualpointeropens unrelated Person2 Edit Shift with0publish calls; collapse restores hit target, expansion repeats. Safe28-file STOP immutable seal a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9. Narrow candidate8491 movesFaboutside calendarisolate, z30belowdialogs; fresh30unit/5files,all3types,2explicitCRLFlint,Doctor2changedfiles0diagnostics pass. Integrated8a9cbcc7 matchesindependenttree and17281priorpaths+all59anchors preserved. Browser hit-target/publish/remainingroles/visual/native acceptance stillPENDING;verifiedCommitnull.",
+      "stackingCorrectionCommit": "8491e46aaac7e4e4b4b26d4dacd19d963580610a",
+      "stackingIntegrationCommit": "8a9cbcc7f1f78b0da6371d7e0a5b4e57215b484a"
     },
     {
       "id": "R066",
@@ -1132,10 +1134,12 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1760#issuecomment-6933030370"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1760#issuecomment-6933030370",
+      "implementationCommit": "c4e1da9b9d0b561c1b562c73f93acaeb0efa494b",
+      "handoffLimitation": "151 unique passing cases/14files,14PNGs,all3types/lint/explicitCRLF. Doctor0errors2warnings. Ordinaryformat,fullbuild/Tolgee/device/live-revocation/sidebarclipping/nestedpnpmguard qualifications retained;freshrootmergerpending."
     },
     {
       "id": "R077",
@@ -1144,10 +1148,12 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1761#issuecomment-6934385122"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1761#issuecomment-6934385122",
+      "implementationCommit": "a5a51091fb635ed9bf95b6f63f0df9692803bd78",
+      "handoffLimitation": "322unitparametercases/24files with321literal titles(one distinct parameter row pair shares title);45PG/4files;all3types/lint/ownedexplicitformat. Admitted billing/provider/matchedvisual acceptanceunpassed because authorizedfixturebillingdisabled. Actual frozen Owner/Admin manageOrgBilling policy retained; reportowner-onlywording requiresqualification. Freshrootmergerpending."
     },
     {
       "id": "R078",
@@ -1156,8 +1162,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1762#issuecomment-6934663232"
     },
     {
       "id": "R080",
@@ -1166,8 +1174,10 @@
       "blockedBy": [
         1695
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1763#issuecomment-6935361656"
     },
     {
       "id": "R082",
