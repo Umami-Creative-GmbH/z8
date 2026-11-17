@@ -2024,7 +2024,12 @@
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1746#issuecomment-6907474529",
       "implementationCommit": "1816c3e7e00bec6d7f7612be82e3ca320e5db3e5",
       "evidence": "docs/design/rollout-1692/1746.md",
-      "handoffLimitation": "Worker reports156unit/12PG,full3types,scopedlint/format,Next andmainaxe0,actual fixture decision persisted through publicInbox. TwoDoctorwarnings,incremental capture boundaries,live revocation andbuild/catalog/device/zoom limits await fresh merger review."
+      "handoffLimitation": "Worker reports156unit/12PG,full3types,scopedlint/format,Next andmainaxe0,actual fixture decision persisted through publicInbox. TwoDoctorwarnings,incremental capture boundaries,live revocation andbuild/catalog/device/zoom limits await fresh merger review.",
+      "integrationCommit": "14a39359b0e1418bdfbadff8d5b04954c4d9c011",
+      "latestIntegrationCommit": "04aab8d94deeab033b77c188017a12b125152345",
+      "rootProviderArrivalCorrectionCommit": "39e5e92b0135c2135a16d9b020cb30c29501b79a",
+      "rootProviderArrivalEvidence": "docs/design/rollout-1692/1746/root-provider-arrival-checks.json",
+      "rootIntegrationVerification": "Provisional: isolated merge tree/preservation matches; original actual-provider employee arrival3pass1fail corrected. Root179 distinct cases/11files, all3types/staticTypegen, owned4lint/explicitformat andDoctor0/0 pass. Ordinary4format findings remain; PG/runtime and fresh independent acceptance unpassed. verifiedCommit stays null."
     },
     {
       "id": "R165",
