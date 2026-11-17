@@ -3,18 +3,16 @@
 import { IconAlertTriangle, IconLoader2, IconSend } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { CoverageReadState } from "./use-coverage-heatmap";
 
 interface PublishFabProps {
 	draftCount: number;
 	onPublish: () => void;
 	isPublishing: boolean;
 	hasCoverageGaps?: boolean;
+	coverageState?: CoverageReadState;
 	hasComplianceWarnings?: boolean;
 	complianceFindingsCount?: number;
 }
@@ -24,11 +22,18 @@ export function PublishFab({
 	onPublish,
 	isPublishing,
 	hasCoverageGaps = false,
+	coverageState = "ready",
 	hasComplianceWarnings = false,
 	complianceFindingsCount = 0,
 }: PublishFabProps) {
 	const { t } = useTranslate();
-	const hasWarnings = hasCoverageGaps || hasComplianceWarnings;
+	const coverageMessages: Partial<Record<CoverageReadState, string>> = {
+		unavailable: t("scheduling.publish.coverageUnavailable", "Coverage is unavailable"),
+		loading: t("scheduling.publish.coverageLoading", "Coverage is loading"),
+		unloaded: t("scheduling.publish.coverageUnloaded", "Coverage has not been checked"),
+	};
+	const coverageMessage = coverageMessages[coverageState];
+	const hasWarnings = Boolean(coverageMessage) || hasCoverageGaps || hasComplianceWarnings;
 
 	return (
 		<Tooltip>
@@ -69,11 +74,20 @@ export function PublishFab({
 				{hasWarnings ? (
 					<div className="space-y-1">
 						<p className="font-medium text-amber-600 dark:text-amber-400">
-							{t(
-								"scheduling.publish.warningsDetectedBeforePublish",
-								"Warnings detected before publish",
-							)}
+							{coverageMessage ??
+								t(
+									"scheduling.publish.warningsDetectedBeforePublish",
+									"Warnings detected before publish",
+								)}
 						</p>
+						{coverageMessage && (
+							<p className="text-sm">
+								{t(
+									"scheduling.publish.coverageRulesCheckedOnPublish",
+									"Publishing will apply the current staffing rules.",
+								)}
+							</p>
+						)}
 						{hasCoverageGaps && (
 							<p className="text-sm">
 								{t(

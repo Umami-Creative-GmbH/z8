@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { cn } from "@/lib/utils";
+import { ScheduleReadFailure } from "./schedule-read-failure";
 import { useCoverageHeatmap } from "./use-coverage-heatmap";
 
 interface CoverageHeatmapOverlayProps {
 	organizationId: string;
+	employeeId: string;
 	dateRange: DateRange;
 	visible: boolean;
 	onToggle: () => void;
@@ -244,16 +246,44 @@ export function CoverageSummaryBar({
  */
 export function CoverageHeatmapOverlay({
 	organizationId,
+	employeeId,
 	dateRange,
 	visible,
 	onToggle,
 }: CoverageHeatmapOverlayProps) {
-	const { data, hasGaps, isLoading } = useCoverageHeatmap(organizationId, dateRange, visible);
+	const { t } = useTranslate();
+	const { data, hasGaps, isLoading, isFetching, hasLoadedData, error, retry } = useCoverageHeatmap(
+		organizationId,
+		dateRange,
+		visible,
+		employeeId,
+	);
 
 	return (
 		<>
 			{/* Toggle button in toolbar */}
 			<CoverageToggleButton visible={visible} onToggle={onToggle} hasGaps={hasGaps} />
+
+			{visible && error && (
+				<ScheduleReadFailure onRetry={() => void retry()} pending={isFetching}>
+					{t(
+						"scheduling:scheduling.coverage.readFailed",
+						"Coverage could not be loaded. Retry to check staffing.",
+					)}
+				</ScheduleReadFailure>
+			)}
+			{visible && isFetching && !error && (
+				<p role="status" className="text-sm text-muted-foreground">
+					{isLoading
+						? t("scheduling:scheduling.coverage.loading", "Loading coverage…")
+						: t("scheduling:scheduling.coverage.refreshing", "Refreshing coverage…")}
+				</p>
+			)}
+			{visible && error && hasLoadedData && (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t("scheduling:scheduling.coverage.lastLoaded", "Last loaded coverage")}
+				</p>
+			)}
 
 			{/* Summary bar when visible */}
 			{visible && !isLoading && <CoverageSummaryBar data={data} visible={visible} />}
