@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { Activity, type ComponentProps } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, fireEvent, render as renderUI, screen, waitFor } from "@testing-library/react";
+import { Activity, type ComponentProps, type ReactNode } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
+import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { PeriodSubmissionsClient } from "./period-submissions-client";
 
 const seam = vi.hoisted(() => ({
@@ -32,6 +34,25 @@ vi.mock("@/navigation", () => ({
 		</a>
 	),
 }));
+function render(ui: ReactNode) {
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const context = {
+		userId: "reader",
+		organizationId: "org-a",
+		employee: { employeeId: "employee-reader", organizationId: "org-a", role: "admin" as const },
+		organizationSettings: null,
+		updatedAt: Date.now(),
+	};
+	return renderUI(ui, {
+		wrapper: ({ children }: { children: ReactNode }) => (
+			<QueryClientProvider client={client}>
+				<OrganizationContextProvider initialContext={context}>
+					{children}
+				</OrganizationContextProvider>
+			</QueryClientProvider>
+		),
+	});
+}
 const access = { userId: "reader", organizationId: "org-a", scope: "all" as const };
 const period = { startDate: "2026-03-02", endDate: "2026-03-08", cadence: "weekly" as const };
 const result = {
