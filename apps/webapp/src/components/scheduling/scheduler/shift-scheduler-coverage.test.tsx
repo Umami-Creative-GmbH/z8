@@ -1,13 +1,16 @@
 /** @vitest-environment jsdom */
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TolgeeProvider } from "@tolgee/react";
 import { act as preactAct } from "preact/test-utils";
+import { type ReactNode, useEffect } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ApiError } from "@/lib/api-error";
+import { QueryProvider } from "@/lib/query/provider";
 import { createTestTolgee } from "@/test/render-with-translations";
 
 // Explicit action transport and authenticated caller-context boundary. No internal hook,
@@ -20,6 +23,12 @@ const transport = vi.hoisted(() => ({
 	publish: vi.fn(),
 	upsert: vi.fn(),
 	remove: vi.fn(),
+	replace: vi.fn(),
+}));
+vi.mock("@tanstack/react-query-devtools", () => ({ ReactQueryDevtools: () => null }));
+vi.mock("next/navigation", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/navigation")>()),
+	useRouter: () => ({ replace: transport.replace, refresh: vi.fn() }),
 }));
 vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({
 	getShifts: transport.shifts,
@@ -100,14 +109,31 @@ afterEach(async () => {
 	vi.unstubAllGlobals();
 });
 
-function mountPlanner() {
+function CaptureProviderClient() {
+	const client = useQueryClient();
+	useEffect(() => {
+		clients.push(client);
+	}, [client]);
+	return null;
+}
+
+function mountPlanner(globalErrors = false) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
 	clients.push(client);
+	const withClient = (children: ReactNode) =>
+		globalErrors ? (
+			<QueryProvider>
+				<CaptureProviderClient />
+				{children}
+			</QueryProvider>
+		) : (
+			<QueryClientProvider client={client}>{children}</QueryClientProvider>
+		);
 	const draw = (employeeId = "synthetic-planner-a") => (
 		<TolgeeProvider tolgee={createTestTolgee()}>
 			<ThemeProvider defaultTheme="light" enableSystem={false}>
 				<UserPreferencesProvider timezone="Europe/Berlin" weekStartDay="monday">
-					<QueryClientProvider client={client}>
+					{withClient(
 						<ShiftScheduler
 							organizationId="synthetic-org-a"
 							organizationTimezone="Europe/Berlin"
@@ -115,8 +141,8 @@ function mountPlanner() {
 							isManager
 							focusEmployeeId={null}
 							focusDate="2026-11-16"
-						/>
-					</QueryClientProvider>
+						/>,
+					)}
 				</UserPreferencesProvider>
 			</ThemeProvider>
 		</TolgeeProvider>
@@ -124,6 +150,34 @@ function mountPlanner() {
 	const view = render(draw());
 	return { client, view, draw };
 }
+
+it("keeps an admitted planner on the schedule when template settings refuse access", async () => {
+	transport.coverage.mockResolvedValue({ success: true, data: [] });
+	transport.templates.mockResolvedValue({ success: false, error: "Unauthorized" });
+	mountPlanner(true);
+	await screen.findByRole("button", { name: "Publish (1)" });
+	await waitFor(
+		() => {
+			expect(screen.getByRole("alert").textContent).toContain("Templates or compliance");
+		},
+		{ timeout: 10_000 },
+	);
+	expect(transport.replace).not.toHaveBeenCalled();
+	expect(screen.getByRole("button", { name: "Create Shift" })).toBeTruthy();
+	transport.templates.mockResolvedValue({ success: true, data: [] });
+	await userEvent.setup().click(screen.getByRole("button", { name: "Retry" }));
+	await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+	expect(transport.replace).not.toHaveBeenCalled();
+	expect(transport.publish).not.toHaveBeenCalled();
+}, 15_000);
+
+it("still redirects an expired template transport session to sign-in", async () => {
+	transport.coverage.mockResolvedValue({ success: true, data: [] });
+	transport.templates.mockRejectedValue(new ApiError("Session expired", 401));
+	mountPlanner(true);
+	await waitFor(() => expect(transport.replace).toHaveBeenCalledWith("/sign-in"));
+	expect(transport.publish).not.toHaveBeenCalled();
+});
 
 async function observe() {
 	const mounted = mountPlanner();
