@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { Link } from "@/navigation";
+import { useTodayDecisionReservation } from "./today-decision-reservations";
 
 type TodayApprovalsPanelProps = {
 	items: BriefingApprovalActionItem[];
@@ -36,40 +37,30 @@ export function TodayApprovalsPanel({
 }: TodayApprovalsPanelProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
-	const [actingApprovalId, setActingApprovalId] = useState<string | null>(null);
+	const { pendingApprovalId: actingApprovalId, reserve, release } = useTodayDecisionReservation();
 	const [isRefreshPending, startRefreshTransition] = useTransition();
 	const [decisionError, setDecisionError] = useState<string | null>(null);
 	const [decided, setDecided] = useState<Set<string>>(() => new Set());
 	const active = useRef(false);
 	const generation = useRef(0);
-	const pending = useRef(false);
 	useEffect(() => {
 		active.current = true;
-		setActingApprovalId(null);
 		return () => {
 			active.current = false;
 			generation.current++;
-			pending.current = false;
 		};
 	}, []);
 	const isBusy = actingApprovalId !== null || isRefreshPending;
 
 	function decideApproval(item: BriefingApprovalActionItem, decision: ApprovalDecision) {
-		if (
-			pending.current ||
-			isBusy ||
-			error ||
-			stale ||
-			!active.current ||
-			decided.has(item.approvalId)
-		) {
+		if (isBusy || error || stale || !active.current || decided.has(item.approvalId)) {
 			return;
 		}
 
-		pending.current = true;
+		const reservation = reserve(item.approvalId);
+		if (!reservation) return;
 		const request = generation.current;
 		setDecisionError(null);
-		setActingApprovalId(item.approvalId);
 
 		postApprovalDecision(item.approvalId, decision)
 			.then((result) => {
@@ -100,9 +91,8 @@ export function TodayApprovalsPanel({
 				toast.error(fallbackError(t, decision));
 			})
 			.finally(() => {
-				if (!active.current || request !== generation.current) return;
-				pending.current = false;
-				setActingApprovalId(null);
+				// Settlement releases the command even when its former view has retired.
+				release(reservation);
 			});
 	}
 

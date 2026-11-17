@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { Activity } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, fireEvent, render as renderView, screen, waitFor } from "@testing-library/react";
+import { Activity, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { briefingFixture } from "./today-test-fixture";
 import type { TodayArrival } from "./today-types";
@@ -51,6 +52,14 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 const scope = { userId: "user-a", organizationId: "org-a" };
+function render(ui: ReactNode) {
+	const client = new QueryClient();
+	return renderView(ui, {
+		wrapper: ({ children }) => (
+			<QueryClientProvider client={client}>{children}</QueryClientProvider>
+		),
+	});
+}
 function ready(title = "Known payroll issue"): TodayArrival {
 	const briefing = briefingFixture();
 	briefing.needsAction = [
