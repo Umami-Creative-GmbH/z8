@@ -53,7 +53,12 @@ function loginUiReducer(
 	state: LoginUiState,
 	action: Partial<LoginUiState> | "resume" | "retry",
 ): LoginUiState {
-	if (action === "resume") return { ...initialUi, verificationNonce: state.verificationNonce + 1 };
+	if (action === "resume")
+		return {
+			...initialUi,
+			pendingMethod: state.pendingMethod,
+			verificationNonce: state.verificationNonce + 1,
+		};
 	if (action === "retry") return { ...state, verificationNonce: state.verificationNonce + 1 };
 	return { ...state, ...action };
 }
@@ -83,7 +88,12 @@ export function useLoginAuth(
 	const setRequires2FA = (value: boolean) => updateUi({ requires2FA: value });
 	const setTurnstileToken = (value: string | null) => updateUi({ turnstileToken: value });
 	const setVerificationState = (value: VerificationState) => updateUi({ verificationState: value });
-	const lifetime = useRef({ active: false, epoch: 0, busy: false, token: null as string | null });
+	const lifetime = useRef({
+		active: false,
+		epoch: 0,
+		pendingEpoch: null as number | null,
+		token: null as string | null,
+	});
 	const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const authConfig = domain?.authConfig;
 	const turnstileConfig = domain?.turnstile ?? null;
@@ -100,7 +110,6 @@ export function useLoginAuth(
 	useEffect(() => {
 		const owner = lifetime.current;
 		owner.active = true;
-		owner.busy = false;
 		owner.epoch++;
 		owner.token = null;
 		updateUi("resume");
@@ -116,21 +125,27 @@ export function useLoginAuth(
 	const isCurrent = (epoch: number) => lifetime.current.active && lifetime.current.epoch === epoch;
 	const retire = () => {
 		lifetime.current.epoch++;
-		lifetime.current.busy = false;
 		if (redirectTimer.current) clearTimeout(redirectTimer.current);
-		setPendingMethod(null);
+		if (lifetime.current.pendingEpoch === null) setPendingMethod(null);
 		setError(null);
 	};
 	const begin = (method: Method) => {
-		if (!lifetime.current.active || lifetime.current.busy || form.state.isSubmitting) return null;
+		if (
+			!lifetime.current.active ||
+			lifetime.current.pendingEpoch !== null ||
+			form.state.isSubmitting
+		)
+			return null;
 		retire();
-		lifetime.current.busy = true;
+		lifetime.current.pendingEpoch = lifetime.current.epoch;
 		setPendingMethod(method);
 		return lifetime.current.epoch;
 	};
 	const finish = (epoch: number) => {
-		if (!isCurrent(epoch)) return;
-		lifetime.current.busy = false;
+		// Retiring UI effects cannot cancel an authenticator/auth request.
+		// Only its matching settlement releases the same-instance reservation.
+		if (lifetime.current.pendingEpoch !== epoch) return;
+		lifetime.current.pendingEpoch = null;
 		setPendingMethod(null);
 	};
 	const resetVerification = (state: VerificationState = "waiting") => {
@@ -284,7 +299,7 @@ export function useLoginAuth(
 		const element = event.currentTarget;
 		const epoch = begin(requires2FA ? "two-factor" : "email");
 		if (epoch === null) return;
-		await form.handleSubmit({ epoch });
+		await form.handleSubmit({ epoch }).finally(() => finish(epoch));
 		if (!form.state.isValid) {
 			finish(epoch);
 			// Focus after React commits the enabled controls, and only for this arrival.
@@ -315,38 +330,44 @@ export function useLoginAuth(
 				: method === "sso"
 					? t("auth.sso-login-error", "An error occurred during SSO sign-in")
 					: t("auth.social-login-error", "An error occurred during social sign-in");
-		try {
-			if (method !== "passkey" && method !== "sso" && domain?.socialOAuthConfigured?.[method]) {
-				window.location.assign(
-					`/api/auth/social-org/${method}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`,
+		const execute = async () => {
+			try {
+				if (method !== "passkey" && method !== "sso" && domain?.socialOAuthConfigured?.[method]) {
+					window.location.assign(
+						`/api/auth/social-org/${method}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`,
+					);
+					return;
+				}
+				const client = await loadAuthPageClient();
+				if (!isCurrent(epoch)) return;
+				const result =
+					method === "passkey"
+						? await client.signIn.passkey({ autoFill: false })
+						: method === "sso"
+							? await client.signIn.sso({
+									providerId: authConfig?.ssoProviderId,
+									callbackURL: postSignInRedirectUrl,
+								})
+							: await client.signIn.social({
+									provider: method,
+									callbackURL: postSignInRedirectUrl,
+								});
+				if (!isCurrent(epoch)) return;
+				if (result?.error) {
+					setError(getAuthErrorMessage(result.error, fallback));
+					finish(epoch);
+					return;
+				}
+				if (method === "passkey") await resolvePostSignInRedirect(epoch);
+			} catch (failure) {
+				if (!isCurrent(epoch)) return;
+				setError(
+					method === "passkey" ? fallback : failure instanceof Error ? failure.message : fallback,
 				);
-				return;
-			}
-			const client = await loadAuthPageClient();
-			if (!isCurrent(epoch)) return;
-			const result =
-				method === "passkey"
-					? await client.signIn.passkey({ autoFill: false })
-					: method === "sso"
-						? await client.signIn.sso({
-								providerId: authConfig?.ssoProviderId,
-								callbackURL: postSignInRedirectUrl,
-							})
-						: await client.signIn.social({ provider: method, callbackURL: postSignInRedirectUrl });
-			if (!isCurrent(epoch)) return;
-			if (result?.error) {
-				setError(getAuthErrorMessage(result.error, fallback));
 				finish(epoch);
-				return;
 			}
-			if (method === "passkey") await resolvePostSignInRedirect(epoch);
-		} catch (failure) {
-			if (!isCurrent(epoch)) return;
-			setError(
-				method === "passkey" ? fallback : failure instanceof Error ? failure.message : fallback,
-			);
-			finish(epoch);
-		}
+		};
+		return execute().finally(() => finish(epoch));
 	};
 	return {
 		form,
@@ -391,7 +412,7 @@ export function useLoginAuth(
 			setVerificationState("ready");
 		},
 		retryVerification: () => {
-			if (lifetime.current.busy) return;
+			if (lifetime.current.pendingEpoch !== null) return;
 			resetVerification();
 			updateUi("retry");
 		},

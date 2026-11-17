@@ -555,7 +555,7 @@ describe("current-domain sign-in journey", () => {
 		view.change(domain, "hidden");
 		view.change();
 		challenge();
-		expect(screen.getByRole("button", { name: "Login", exact: true })).toHaveProperty(
+		expect(screen.getByRole("button", { name: "Logging in...", exact: true })).toHaveProperty(
 			"disabled",
 			true,
 		);
