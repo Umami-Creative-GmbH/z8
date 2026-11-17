@@ -38,6 +38,10 @@ class ClaimReadFailure extends Error {
 	}
 }
 
+type ClaimReadResult =
+	| { kind: "available"; detail: TravelExpenseClaimDetailData }
+	| { kind: "withdrawn" };
+
 function TravelExpenseDecisionHistory({ data }: { data: TravelExpenseClaimDetailData }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -177,7 +181,13 @@ function ClaimDetailRead({
 }) {
 	const { t } = useTranslate();
 	const lifetime = useLegacyClaimLifetime();
-	const { data, error, isLoading, isFetching, isError, refetch } = useQuery({
+	const {
+		data: result,
+		isLoading,
+		isFetching,
+		isError,
+		refetch,
+	} = useQuery({
 		queryKey: [
 			...queryKeys.travelExpenses.detail(claimId),
 			organizationId,
@@ -186,16 +196,20 @@ function ClaimDetailRead({
 		],
 		enabled: lifetime.active,
 		retry: false,
-		queryFn: async ({ signal }): Promise<TravelExpenseClaimDetailData> => {
+		queryFn: async ({ signal }): Promise<ClaimReadResult> => {
 			const response = await fetch(`/api/travel-expenses/${encodeURIComponent(claimId)}`, {
 				signal,
 			});
-			if (!response.ok) throw new ClaimReadFailure(response.status);
 			if (!lifetime.active) throw new Error("Claim read retired");
-			return response.json();
+			// Replace cached evidence on refusal. A later transport failure must not
+			// restore the last successful detail from before that withdrawal.
+			if ([401, 403, 404].includes(response.status)) return { kind: "withdrawn" };
+			if (!response.ok) throw new ClaimReadFailure(response.status);
+			return { kind: "available", detail: await response.json() };
 		},
 	});
-	const refused = error instanceof ClaimReadFailure && [401, 403, 404].includes(error.status);
+	const refused = result?.kind === "withdrawn";
+	const data = result?.kind === "available" ? result.detail : undefined;
 	const claim = refused || !lifetime.active ? undefined : data?.claim;
 
 	return (
@@ -210,7 +224,7 @@ function ClaimDetailRead({
 					</AlertDescription>
 				</Alert>
 			)}
-			{isError && !refused && (
+			{isError && (
 				<TravelExpenseLoadError
 					message={t(
 						"travelExpenses.errors.loadDetailRetry",
