@@ -1,0 +1,182 @@
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:13: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:18: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:28: trailing whitespace.
++    ····· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:37: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:42: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:52: trailing whitespace.
++    ····· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:66: trailing whitespace.
++    ····· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:77: trailing whitespace.
++    ····· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:87: trailing whitespace.
++    ····· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:96: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:101: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:164: trailing whitespace.
++    53 66 │   
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:165: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:170: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:189: trailing whitespace.
++    ····· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:203: trailing whitespace.
++    ····· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:212: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:217: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:237: trailing whitespace.
++    ······· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:247: trailing whitespace.
++    ······· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:257: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:262: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:281: trailing whitespace.
++    ······· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:294: trailing whitespace.
++    ······· │ 
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:302: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:309: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-crlf.log:309: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:4: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:24: trailing whitespace.
++        2 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:28: trailing whitespace.
++        6 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:41: trailing whitespace.
++    19 19 │   
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:42: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:47: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:73: trailing whitespace.
++        2 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:76: trailing whitespace.
++        5 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:96: trailing whitespace.
++    25 25 │   
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:97: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:102: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:114: trailing whitespace.
++        3 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:123: trailing whitespace.
++    10 12 │   
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:124: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:129: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:154: trailing whitespace.
++        2 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:159: trailing whitespace.
++        7 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:181: trailing whitespace.
++    24 29 │   
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:182: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:187: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:207: trailing whitespace.
++        2 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:210: trailing whitespace.
++        5 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:224: trailing whitespace.
++    19 19 │   
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:225: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:230: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:322: trailing whitespace.
++       16 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:326: trailing whitespace.
++       20 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:335: trailing whitespace.
++       29 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:342: trailing whitespace.
++       36 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:355: trailing whitespace.
++       49 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:382: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:387: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:441: trailing whitespace.
++        2 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:448: trailing whitespace.
++        9 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:456: trailing whitespace.
++       17 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:458: trailing whitespace.
++       19 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:475: trailing whitespace.
++       36 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:494: trailing whitespace.
++       55 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:505: trailing whitespace.
++    53 66 │   
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:506: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:511: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:573: trailing whitespace.
++        2 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:578: trailing whitespace.
++        7 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:587: trailing whitespace.
++       16 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:593: trailing whitespace.
++       22 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:623: trailing whitespace.
++       52 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:651: trailing whitespace.
++    61 80 │   
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:652: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:657: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:760: trailing whitespace.
++          2 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:774: trailing whitespace.
++         16 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:777: trailing whitespace.
++         19 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:785: trailing whitespace.
++         27 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:794: trailing whitespace.
++         36 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:802: trailing whitespace.
++         44 │ + 
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:809: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:814: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:966: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:973: trailing whitespace.
++  
+docs/design/rollout-1692/1744/checks/biome-ordinary-final.log:973: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/final-units.log:12: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/green-record.log:12: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/green-selected.log:12: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/postgres-assignment.log:12: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/postgres.log:12: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/red-heading.log:36: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/red-record.log:262: new blank line at EOF.
+docs/design/rollout-1692/1744/checks/red-states.log:36: new blank line at EOF.

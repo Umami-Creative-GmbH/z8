@@ -1,0 +1,11 @@
+import {readFile} from 'node:fs/promises';
+import {spawn} from 'node:child_process';
+import {resolve,join} from 'node:path';
+const repo=process.cwd(), dir=resolve('.tmp/1744/fixture');
+const runtime=JSON.parse(await readFile(join(dir,'runtime-private.json'),'utf8'));
+if(runtime.env.POSTGRES_HOST!=='127.0.0.1'||!/^approval_workflow_repository_test_perf_[a-f0-9]{12}$/.test(runtime.env.POSTGRES_DB))throw Error('Unsafe fixture');
+const args=process.argv.slice(2), executable=process.env.npm_execpath;
+if(!executable)throw Error('pnpm only');
+const env={...process.env,...runtime.env,pnpm_config_verify_deps_before_run:'false',NODE_ENV:'development',TELEMETRY_ENABLED:'false',BILLING_ENABLED:'false',Z8_TEST_PROJECT:args.includes('vitest')?'integration':undefined};
+const child=spawn(executable,['--config.verify-deps-before-run=false',...args],{cwd:join(repo,'apps/webapp'),env,windowsHide:true,stdio:'inherit'});
+child.on('exit',code=>process.exit(code??1));
