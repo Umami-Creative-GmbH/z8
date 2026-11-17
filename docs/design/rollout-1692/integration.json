@@ -1307,11 +1307,15 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "branch": "feat/employee-administration-settings",
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1771#issuecomment-6946204218"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1771#issuecomment-6946204218",
+      "implementationCommit": "66bf3486891a7bfd306db01cb37e96bd897cc712",
+      "implementationSourceCommit": "6524ae36a9bbe6ea528959284d479d2a8377068c",
+      "evidence": "docs/design/rollout-1692/1771.md",
+      "handoffLimitation": "Committed worker handoff at11cd reports779 unit cases/64files and39 PostgreSQL cases/3files, all3types, route formatting/lint/Doctorzero. Acceptance incomplete: inherited pending-invitation Escape-dismissal gap needs root coordination; matched browser/native captures and real invitation/edit journeys unpassed. Canonical owners unchanged; fresh serial merger owns readiness."
     },
     {
       "id": "R093",
@@ -1335,8 +1339,11 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "branch": "feat/enterprise-api-key-settings",
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1773#issuecomment-6947382665"
     },
     {
       "id": "R097",
