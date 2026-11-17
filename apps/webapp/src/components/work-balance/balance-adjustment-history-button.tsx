@@ -2,7 +2,7 @@
 
 import { IconHistory, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import {
 	isRefusal,
 	useBalanceAdjustmentSection,
@@ -73,9 +73,10 @@ export function BalanceAdjustmentHistoryDialog({
 
 function HistoryBody({ employeeId }: { employeeId: string }) {
 	const { t } = useTranslate();
-	const section = useBalanceAdjustmentSection(employeeId);
+	const openingId = useId();
+	const section = useBalanceAdjustmentSection(employeeId, openingId);
 
-	if (section.isLoading) {
+	if (section.isLoading || section.isFetching) {
 		return (
 			<output
 				className="flex items-center justify-center p-6"

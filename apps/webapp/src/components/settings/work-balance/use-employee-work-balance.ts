@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CancelledError, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type CancelBalanceAdjustmentInput,
 	cancelBalanceAdjustmentAction,
@@ -55,13 +55,25 @@ async function unwrap<T>(action: Promise<BalanceAdjustmentActionResult<T>>): Pro
 
 /**
  * The employee's balance and balance adjustment history, as the employee, their
- * managers or an owner/admin may see it (#996). Shares its cache with the
- * Work balance section, so a record or cancel refreshes every view of it.
+ * managers or an owner/admin may see it (#996). The default read shares the
+ * Work balance section's cache. Dialogs supply their own opening identity so
+ * reopening reauthorizes; employee-prefix invalidation still refreshes all views.
  */
-export function useBalanceAdjustmentSection(employeeId: string) {
+export function useBalanceAdjustmentSection(employeeId: string, openingId?: string) {
 	return useQuery({
-		queryKey: [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employeeId],
-		queryFn: () => unwrap(getEmployeeWorkBalanceSectionAction({ employeeId })),
+		queryKey: [
+			...EMPLOYEE_WORK_BALANCE_QUERY_KEY,
+			employeeId,
+			...(openingId ? ["history-opening", openingId] : []),
+		],
+		queryFn: async ({ signal }) => {
+			const data = await unwrap(getEmployeeWorkBalanceSectionAction({ employeeId }));
+			if (signal.aborted) throw new CancelledError();
+			return data;
+		},
+		// Every dialog opening reauthorizes. Employee-prefix invalidation still
+		// refreshes its history after a balance write in any other view.
+		...(openingId ? { gcTime: 0, refetchOnMount: "always" as const } : {}),
 		// A refusal (not permitted, not found) does not change on retry.
 		retry: (failureCount, error) => !isRefusal(error) && failureCount < 3,
 	});
