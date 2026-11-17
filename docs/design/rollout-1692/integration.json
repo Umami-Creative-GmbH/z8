@@ -1315,9 +1315,12 @@
       "implementationCommit": "66bf3486891a7bfd306db01cb37e96bd897cc712",
       "implementationSourceCommit": "6524ae36a9bbe6ea528959284d479d2a8377068c",
       "evidence": "docs/design/rollout-1692/1771.md",
-      "handoffLimitation": "Worker66bf handoff awaits fresh merger review. Root invitation-only correctionb57d9782 merged75d365a3: actual Escape/Close/queued actor-org-session/access/Activity retirement and late effects corrected;72 cases/5files, all3types,3-file explicit/lint pass. Doctor0errors/3reviewed warnings; unrelated employee-page test import error retained. Canonical invitation/kiosk/joining/authority owners unchanged. Full worker route, actual invitation/edit/browser/native acceptance remains unpassed; root-provisional checks are not a readiness claim.",
+      "handoffLimitation": "Provisionalimport90aa9b9b of independentcandidate94c79662, exactappTree9581b7c6. Fresh825unit/70files+173canonicalPG/5,all3types/lint9/Doctor9zero; worker779/64+39/3includednotadded. Rootinvitationb57dpreserved21controls andactualprovider/form9+ownerEscape1pass. Ordinary9/sharedexplicit1formatfindingsandnoacceptedPNG/currentbrowser/native/invitation/edit/liveauthority acceptance remain;verifiedCommitnull.",
       "invitationCorrectionCommit": "b57d978220dff54db6dcf83aa7a2dd7384ddf0e2",
-      "invitationCorrectionIntegration": "75d365a3bb0b95e51f44283ab789a1e0f7292e76"
+      "invitationCorrectionIntegration": "75d365a3bb0b95e51f44283ab789a1e0f7292e76",
+      "candidateCommit": "94c7966201b00dd097b4d51b84b0e93f46368917",
+      "integrationCommit": "90aa9b9b7a005f907b4f809541834b926717a47f",
+      "integrationVerification": "Root38da pluscandidate94c79662 imported90aa9b9b exact independentlyprecomputed completepathmap/tree97947dbd/app9581b7c6 (candidateappidentical),22incomingpaths/18158unaffectedrootpaths/4latermetadatapaths preserved. All63anchors+baseline,3invitefixsources,presence8155/1740upload/1742provider/445+127+72proofs/172templates19aliases kept. Independent825unitidentities70files and173PG5freshpass,worker779/64+39/3publiccoverageflagsincludednotadded. Realprovider/QueryClient/ViewRefresh/SiteHeader/form/panel9controls+ownerEscape1pass; broadcompatinternalmocks/sourceassertionsqualified. Actualreader13/2selects.ts2+transport.tsx11;oldrootimportfailnotreproducedfreshphysicalinstall. Typegen/all3TS,lint/import9,Doctor9zero;8routeexplicit100CRLFpass/sharedmetadata1explicit+9ordinarynonpass. Safe26payloadsizes/hashes,12JSON andcandidatecommit/tree/18179mapentries independentlyintaken. Incoming13doc/evidence9JSON/10links/0acceptedPNG;metadata/invitationpinsintentionalrootdriftretained. No rootrerunforidenticalapp-tree,no currentruntime/invitation/email/edit/native orreadinessclaim. See1771/root-provisional-import.json."
     },
     {
       "id": "R093",
