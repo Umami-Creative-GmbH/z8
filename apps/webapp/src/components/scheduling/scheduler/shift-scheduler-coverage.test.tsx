@@ -444,3 +444,55 @@ it("disables supporting-data Retry while the retained template refresh is pendin
 	}
 	await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
 });
+
+it.each(["templates", "compliance"] as const)(
+	"keeps initial %s failure Retry visible and disabled through the complete supporting reread",
+	async (failedRead) => {
+		transport.coverage.mockResolvedValue({ success: true, data: [] });
+		transport[failedRead].mockResolvedValue({
+			success: false,
+			error: "Synthetic initial read refusal",
+		});
+		const { client } = await observe();
+		expect(screen.getByRole("alert").textContent).toContain("Templates or compliance");
+		const beforeTemplates = transport.templates.mock.calls.length;
+		const beforeCompliance = transport.compliance.mock.calls.length;
+		let finishTemplates: (value: unknown) => void = () => {};
+		let finishCompliance: (value: unknown) => void = () => {};
+		transport.templates.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finishTemplates = resolve;
+				}),
+		);
+		transport.compliance.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finishCompliance = resolve;
+				}),
+		);
+		await userEvent.setup().click(screen.getByRole("button", { name: "Retry" }));
+		try {
+			await waitFor(() => expect(transport.templates).toHaveBeenCalledTimes(beforeTemplates + 1));
+			await waitFor(() => expect(transport.compliance).toHaveBeenCalledTimes(beforeCompliance + 1));
+			expect(screen.getByRole("alert").textContent).toContain("Templates or compliance");
+			const retry = screen.getByRole("button", { name: "Retry" });
+			expect(retry.hasAttribute("disabled")).toBe(true);
+			await userEvent.setup().click(retry);
+			expect(transport.templates).toHaveBeenCalledTimes(beforeTemplates + 1);
+			expect(transport.compliance).toHaveBeenCalledTimes(beforeCompliance + 1);
+			await act(async () => finishTemplates({ success: true, data: [] }));
+			expect(screen.getByRole("button", { name: "Retry" }).hasAttribute("disabled")).toBe(true);
+		} finally {
+			await act(async () => {
+				finishTemplates({ success: true, data: [] });
+				finishCompliance({ success: true, data: { summary: { totalFindings: 0 } } });
+			});
+			await waitFor(() => expect(client.isFetching()).toBe(0));
+		}
+		await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+		expect(transport.publish).not.toHaveBeenCalled();
+		expect(transport.upsert).not.toHaveBeenCalled();
+		expect(transport.remove).not.toHaveBeenCalled();
+	},
+);

@@ -108,6 +108,7 @@ function PlannerShiftScheduler({
 		templatesFailed,
 		complianceFailed,
 		supportingDataFetching,
+		supportingDataRetryPending,
 		retrySupportingData,
 		complianceSummary,
 		draftCount,
@@ -294,7 +295,7 @@ function PlannerShiftScheduler({
 					)}
 				</ScheduleReadFailure>
 			)}
-			{(templatesFailed || complianceFailed) && (
+			{(templatesFailed || complianceFailed || supportingDataRetryPending) && (
 				<ScheduleReadFailure
 					onRetry={() => void retrySupportingData()}
 					pending={supportingDataFetching}
