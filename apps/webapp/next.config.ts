@@ -1,13 +1,11 @@
 import { execFileSync } from "node:child_process";
+import { availableParallelism } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { withPostHogConfig } from "@posthog/nextjs-config";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
-import {
-	REPORT_SHARE_REQUEST_PATH,
-	SETUP_REQUEST_PATH,
-} from "./src/lib/setup/telemetry";
+import { REPORT_SHARE_REQUEST_PATH, SETUP_REQUEST_PATH } from "./src/lib/setup/telemetry";
 
 // Initialize before Next.js starts build or server workers.
 process.env.TZ ||= "UTC";
@@ -15,6 +13,8 @@ process.env.TZ ||= "UTC";
 const withNextIntl = createNextIntlPlugin();
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(configDir, "../..");
+// Test artifacts are isolated from both the developer server and shipping builds.
+const isInstantNavigationTest = process.env.Z8_INSTANT_NAV_TEST === "1";
 
 function getBuildHash() {
 	const providedHash =
@@ -47,14 +47,11 @@ function getBuildHash() {
 
 const buildHash = getBuildHash();
 
-const POSTHOG_HOST =
-	process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
 const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID;
 const hasPostHogSourcemapConfig =
-	!!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN &&
-	!!POSTHOG_API_KEY &&
-	!!POSTHOG_PROJECT_ID;
+	!!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && !!POSTHOG_API_KEY && !!POSTHOG_PROJECT_ID;
 
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
@@ -82,24 +79,23 @@ const nextConfig: NextConfig = {
 	env: {
 		NEXT_PUBLIC_BUILD_HASH: buildHash,
 	},
-	// Note: standalone output is not compatible with cacheComponents in Next.js 16
-	// Using standard build with full node_modules for Docker deployment
-	// Enable cache components for static dashboard shells and improved performance
-	// Components using connection() will still be dynamic
+	// Dedicated navigation tests use next start; shipping images use the traced server.
+	output: isInstantNavigationTest ? undefined : "standalone",
+	outputFileTracingRoot: workspaceRoot,
+	...(isInstantNavigationTest ? { distDir: ".next-instant-nav" } : {}),
+	// Request-dependent content streams behind each route's loading boundaries.
 	cacheComponents: true,
 	partialPrefetching: true,
-	images: {
-		unoptimized: false,
-	},
 	experimental: {
+		...(isInstantNavigationTest ? { exposeTestingApiInProductionBuild: true } : {}),
+		// Each prerender worker loads the full server graph for 3,000+ localized pages.
+		// Bound concurrency on large hosts; respect smaller container CPU allocations.
+		cpus: Math.max(1, Math.min(4, availableParallelism() - 1)),
 		// Transfer large prerender result batches without JSON IPC string limits.
 		workerThreads: true,
 		agentUpgrade: "latest",
-		useTypeScriptCli: true,
-		// CI does not restore this cache between runners. Avoid retaining the
-		// compilation graph while persisting a cache that will not be reused.
+		// Build-mount persistence is opt-in until warm-build memory/time is qualified.
 		turbopackFileSystemCacheForBuild: false,
-		optimizePackageImports: ["@tabler/icons-react", "recharts"],
 	},
 	turbopack: {
 		root: workspaceRoot,

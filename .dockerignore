@@ -11,6 +11,10 @@ node_modules
 # Build outputs
 .next
 **/.next
+**/.next-instant-nav
+**/.auth
+**/playwright-report
+**/test-results
 .turbo
 **/.turbo
 dist

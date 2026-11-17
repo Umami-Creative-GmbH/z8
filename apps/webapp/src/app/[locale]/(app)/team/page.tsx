@@ -5,6 +5,8 @@ import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee, getManagedEmployees } from "./actions";
 import { TeamMembersList } from "./team-members-list";
 
+export const instant = true;
+
 type TeamPageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -52,7 +54,7 @@ export default async function TeamPage({ searchParams }: TeamPageProps) {
 	const employees = result.data;
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div data-testid="team-content" className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			{/* Page Header */}
 			<div className="flex items-center justify-between px-4 lg:px-6">
 				<div>

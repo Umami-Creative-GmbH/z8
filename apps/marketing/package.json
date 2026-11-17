@@ -9,7 +9,9 @@
     "lint": "oxlint -c ../../.oxlintrc.json src",
     "lint:fix": "oxlint -c ../../.oxlintrc.json --fix src",
     "format": "oxfmt -c ../../.oxfmtrc.json src",
-    "format:check": "oxfmt -c ../../.oxfmtrc.json --check src"
+    "format:check": "oxfmt -c ../../.oxfmtrc.json --check src",
+    "analyze:bundle": "next analyze --output",
+    "analyze:bundle:export": "next analyze export"
   },
   "dependencies": {
     "@tabler/icons-react": "^3.52.0",

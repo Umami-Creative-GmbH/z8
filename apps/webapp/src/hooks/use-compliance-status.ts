@@ -2,21 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	checkRestPeriod,
-	getComplianceStatus,
-	getMyExceptions,
-	getOvertimeStats,
-	getProactiveAlerts,
 	hasValidException,
 	requestComplianceException,
 } from "@/app/[locale]/(app)/settings/compliance/actions";
-import type {
-	ComplianceAlert,
-	ComplianceStatus,
-	OvertimeStats,
-	RestPeriodCheckResult,
-} from "@/db/schema";
-import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
+import { useOrganization } from "@/hooks/use-organization";
+import { ApiError } from "@/lib/fetch";
+import { fetchClockCompliance } from "@/lib/query/clock-compliance-client";
 import { queryKeys } from "@/lib/query/keys";
 
 export interface UseComplianceStatusOptions {
@@ -24,6 +15,8 @@ export interface UseComplianceStatusOptions {
 	 * Current session duration in minutes (for proactive alerts)
 	 */
 	currentSessionMinutes?: number;
+	/** Whether the clock is currently running; selects the visible advisory data. */
+	isClockedIn?: boolean;
 	/**
 	 * Employee ID for query keys
 	 */
@@ -58,92 +51,49 @@ async function checkException(exceptionType: string) {
  * Provides:
  * - Rest period check before clock-in
  * - Proactive alerts during active sessions
- * - Full compliance status
- * - Overtime statistics
  * - Exception request functionality
  */
 export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 	const {
 		currentSessionMinutes = 0,
-		employeeId = "current",
+		isClockedIn: requestedIsClockedIn,
+		employeeId,
 		enabled = true,
 		enablePolling = false,
 		pollingInterval = 60000,
 	} = options;
+	const isClockedIn = requestedIsClockedIn ?? currentSessionMinutes > 0;
 	const queryClient = useQueryClient();
-
-	// Query for rest period check (before clock-in)
-	const restPeriodQuery = useQuery({
-		queryKey: queryKeys.compliance.restPeriod(employeeId),
-		queryFn: async (): Promise<RestPeriodCheckResult> => {
-			const result = await checkRestPeriod();
-			if (!result.success) {
-				throw new Error(result.error ?? "Failed to check rest period");
-			}
-			return result.data;
+	const organization = useOrganization();
+	const userId = organization.userId;
+	const organizationId = organization.activeOrganizationId;
+	const currentEmployeeId = organization.employeeId;
+	const scope =
+		userId && organizationId && currentEmployeeId
+			? { userId, organizationId, employeeId: currentEmployeeId }
+			: null;
+	const mode = isClockedIn ? "active" : "idle";
+	const scopeKey = queryKeys.compliance.clockScope(userId, organizationId, currentEmployeeId);
+	const queryKey = queryKeys.compliance.clock(userId, organizationId, currentEmployeeId, mode);
+	const canLoad =
+		enabled &&
+		!organization.isLoading &&
+		!!scope &&
+		(!employeeId || employeeId === currentEmployeeId);
+	const snapshotQuery = useQuery({
+		queryKey,
+		queryFn: ({ signal }) => {
+			if (!scope) throw new ApiError("Employee context is unavailable", 401);
+			return fetchClockCompliance(scope, mode, currentSessionMinutes, signal);
 		},
-		enabled,
-		staleTime: 30 * 1000, // Fresh for 30 seconds
-	});
-
-	// Query for proactive alerts (during active session)
-	// Note: currentSessionMinutes is NOT in the query key to avoid creating new cache entries every minute.
-	// The refetchInterval handles periodic updates, and the value is passed to the server action.
-	const alertsQuery = useQuery({
-		queryKey: queryKeys.compliance.alerts(employeeId),
-		queryFn: async (): Promise<ComplianceAlert[]> => {
-			const result = await getProactiveAlerts({ currentSessionMinutes });
-			if (!result.success) {
-				throw new Error(result.error ?? "Failed to get compliance alerts");
-			}
-			return result.data;
-		},
-		enabled: enabled && currentSessionMinutes > 0,
-		staleTime: 30 * 1000,
-		refetchInterval: enablePolling ? pollingInterval : false,
-	});
-
-	// Query for full compliance status
-	const statusQuery = useQuery({
-		queryKey: queryKeys.compliance.status(employeeId),
-		queryFn: async (): Promise<ComplianceStatus> => {
-			const result = await getComplianceStatus({ currentSessionMinutes });
-			if (!result.success) {
-				throw new Error(result.error ?? "Failed to get compliance status");
-			}
-			return result.data;
-		},
-		enabled,
-		staleTime: 60 * 1000,
-		refetchInterval: enablePolling ? pollingInterval : false,
-	});
-
-	// Query for overtime statistics
-	const overtimeQuery = useQuery({
-		queryKey: queryKeys.compliance.overtime(employeeId),
-		queryFn: async (): Promise<OvertimeStats> => {
-			const result = await getOvertimeStats();
-			if (!result.success) {
-				throw new Error(result.error ?? "Failed to get overtime stats");
-			}
-			return result.data;
-		},
-		enabled,
-		staleTime: 5 * 60 * 1000, // Fresh for 5 minutes
-	});
-
-	// Query for employee's own exceptions
-	const myExceptionsQuery = useQuery({
-		queryKey: queryKeys.compliance.exceptions.my(employeeId, false),
-		queryFn: async (): Promise<ExceptionWithDetails[]> => {
-			const result = await getMyExceptions({ includeExpired: false });
-			if (!result.success) {
-				throw new Error(result.error ?? "Failed to get exceptions");
-			}
-			return result.data;
-		},
-		enabled,
-		staleTime: 60 * 1000,
+		enabled: canLoad,
+		// Returning to idle after clock-out must reread the new rest boundary,
+		// even when an idle snapshot was fetched only a few seconds ago.
+		staleTime: 0,
+		refetchOnMount: "always",
+		retry: false,
+		// Minutes are an input, not a cache dimension; polling reuses the active key.
+		refetchInterval: enablePolling && isClockedIn ? pollingInterval : false,
 	});
 
 	// Mutation for requesting an exception
@@ -160,28 +110,18 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 			return result.data;
 		},
 		onSuccess: () => {
-			// Invalidate relevant queries
-			queryClient.invalidateQueries({
-				queryKey: queryKeys.compliance.exceptions.my(employeeId, false),
-			});
+			return queryClient.invalidateQueries({ queryKey: scopeKey });
 		},
 	});
 
 	// Refresh all compliance data
-	const refreshAll = () => {
-		return Promise.all([
-			queryClient.invalidateQueries({ queryKey: queryKeys.compliance.restPeriod(employeeId) }),
-			queryClient.invalidateQueries({ queryKey: queryKeys.compliance.status(employeeId) }),
-			queryClient.invalidateQueries({ queryKey: queryKeys.compliance.overtime(employeeId) }),
-		]);
-	};
+	const refreshAll = () => queryClient.invalidateQueries({ queryKey: scopeKey });
 
 	// Derived state
-	const restPeriodCheck = restPeriodQuery.data;
-	const alerts = alertsQuery.data ?? [];
-	const status = statusQuery.data;
-	const overtime = overtimeQuery.data;
-	const myExceptions = myExceptionsQuery.data ?? [];
+	const snapshot = canLoad ? snapshotQuery.data : undefined;
+	const restPeriodCheck = snapshot?.restPeriod ?? undefined;
+	const alerts = snapshot?.alerts ?? [];
+	const myExceptions = snapshot?.myExceptions ?? [];
 
 	// Count alerts by severity
 	const criticalAlerts = alerts.filter(
@@ -207,25 +147,15 @@ export function useComplianceStatus(options: UseComplianceStatusOptions = {}) {
 		hasCriticalAlerts,
 		alertCount: alerts.length,
 
-		// Full status
-		status,
-		isCompliant: status?.isCompliant ?? true,
-
-		// Overtime stats
-		overtime,
-		dailyOvertimeMinutes: overtime?.daily.overtimeMinutes ?? 0,
-		weeklyOvertimeMinutes: overtime?.weekly.overtimeMinutes ?? 0,
-		monthlyOvertimeMinutes: overtime?.monthly.overtimeMinutes ?? 0,
-
 		// Exceptions
 		myExceptions,
 		pendingExceptions: myExceptions.filter((e) => e.status === "pending"),
 		approvedExceptions: myExceptions.filter((e) => e.status === "approved"),
 
 		// Loading states
-		isLoading: restPeriodQuery.isLoading || statusQuery.isLoading || overtimeQuery.isLoading,
-		isFetching: restPeriodQuery.isFetching || alertsQuery.isFetching || statusQuery.isFetching,
-		isError: restPeriodQuery.isError || statusQuery.isError,
+		isLoading: enabled && (organization.isLoading || snapshotQuery.isLoading),
+		isFetching: snapshotQuery.isFetching,
+		isError: snapshotQuery.isError || !!organization.error,
 
 		// Mutations
 		requestException: requestExceptionMutation.mutateAsync,

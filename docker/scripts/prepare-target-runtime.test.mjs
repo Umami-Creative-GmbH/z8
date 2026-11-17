@@ -121,7 +121,7 @@ test("Dockerfiles pin the workspace pnpm version", async () => {
 });
 
 test("non-root runtime Dockerfiles can run without root-owned pnpm or workspace paths", async () => {
-	const dockerfiles = ["Dockerfile.docs", "Dockerfile.webapp"];
+	const dockerfiles = ["Dockerfile.docs"];
 
 	for (const dockerfile of dockerfiles) {
 		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
@@ -133,6 +133,29 @@ test("non-root runtime Dockerfiles can run without root-owned pnpm or workspace 
 			`${dockerfile} must make the workspace root and pnpm home writable for its runtime user`,
 		);
 	}
+});
+
+test("standalone webapp image contains only traced server dependencies plus explicit assets", async () => {
+	const contents = await fs.readFile(new URL("../Dockerfile.webapp", import.meta.url), "utf8");
+	const runtime = contents.split(" AS webapp\n")[1] ?? contents.split(" AS webapp\r\n")[1];
+	assert.ok(runtime, "webapp runtime stage exists");
+	assert.match(runtime, /\.next\/standalone \.\//);
+	assert.match(runtime, /\.next\/static \.\/apps\/webapp\/\.next\/static/);
+	assert.match(runtime, /\/public \.\/apps\/webapp\/public/);
+	assert.match(runtime, /chown app:nodejs \/app/);
+	assert.match(runtime, /verify-standalone\.mjs \/app --native/);
+	assert.match(runtime, /CMD \["node", "server.js"\]/);
+	assert.doesNotMatch(runtime, /--from=prod-deps|apps\/webapp\/src|apps\/webapp\/drizzle|next\.config\.ts|pnpm-workspace\.yaml/);
+	assert.doesNotMatch(contents, /FROM base AS prod-deps/);
+	assert.match(contents, /id=pnpm-store,target=\/root\/\.local\/share\/pnpm\/store/);
+	assert.match(contents, /pnpm install --store-dir \/root\/\.local\/share\/pnpm\/store --frozen-lockfile/);
+});
+
+test("marketing uses the supported Node runtime without package resolution at startup", async () => {
+	const contents = await fs.readFile(new URL("../Dockerfile.marketing", import.meta.url), "utf8");
+	assert.match(contents, /FROM node:\$\{NODE_VERSION\}-alpine AS marketing-base/);
+	assert.doesNotMatch(contents, /oven\/bun|CMD \["bun"/);
+	assert.match(contents, /CMD \["node", "node_modules\/next\/dist\/bin\/next", "start", "-p", "3000"\]/);
 });
 
 test("Next.js runtime Dockerfiles start without pnpm dependency status checks", async () => {

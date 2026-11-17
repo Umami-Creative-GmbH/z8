@@ -1,20 +1,32 @@
 /* @vitest-environment jsdom */
 
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
-import { SWRConfig } from "swr";
+import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useJobStatus, useJobStatuses } from "./use-job-status";
 
+const scope = vi.hoisted(() => ({ userId: "user-one", organizationId: "org-one" }));
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: { user: { id: scope.userId }, session: { activeOrganizationId: scope.organizationId } },
+		isPending: false,
+	}),
+}));
+
 function wrapper({ children }: { children: React.ReactNode }) {
-	return (
-		<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{children}</SWRConfig>
+	const [client] = useState(
+		() => new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } }),
 	);
+	return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
 describe("useJobStatus", () => {
 	beforeEach(() => {
 		vi.restoreAllMocks();
+		scope.userId = "user-one";
+		scope.organizationId = "org-one";
 	});
 
 	afterEach(() => {
@@ -168,30 +180,64 @@ describe("useJobStatus", () => {
 		await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(2));
 	});
 
-	it.each([
-		"completed",
-		"failed",
-	] as const)("stops polling after BullMQ reports a %s state", async (state) => {
-		vi.useFakeTimers();
-		const fetchMock = vi
+	it("shares a request across single and batch observers of the same job", async () => {
+		const request = vi
 			.spyOn(globalThis, "fetch")
-			.mockResolvedValue(new Response(JSON.stringify({ state, progress: 100 }), { status: 200 }));
-
-		const { result } = renderHook(() => useJobStatus(`job-${state}`, { refreshInterval: 100 }), {
-			wrapper,
-		});
-
-		await act(async () => {
-			await vi.advanceTimersByTimeAsync(0);
-		});
-		expect(result.current.status?.state).toBe(state);
-		expect(fetchMock).toHaveBeenCalledTimes(1);
-
-		await act(async () => {
-			await vi.advanceTimersByTimeAsync(1_100);
-		});
-		expect(fetchMock).toHaveBeenCalledTimes(1);
+			.mockImplementation(async () => Response.json({ state: "active", progress: 25 }));
+		const { result } = renderHook(
+			() => ({
+				single: useJobStatus("shared-job", { refreshInterval: 0 }),
+				batch: useJobStatuses(["shared-job"], { refreshInterval: 0 }),
+			}),
+			{ wrapper },
+		);
+		await waitFor(() => expect(result.current.batch.statuses.get("shared-job")?.progress).toBe(25));
+		expect(result.current.single.status?.progress).toBe(25);
+		expect(request).toHaveBeenCalledTimes(1);
 	});
+
+	it("does not reuse a previous organization's job result after scope changes", async () => {
+		const request = vi
+			.spyOn(globalThis, "fetch")
+			.mockImplementation(async () =>
+				Response.json({ state: "active", progress: scope.organizationId === "org-one" ? 25 : 75 }),
+			);
+		const { result, rerender } = renderHook(
+			() => useJobStatus("same-job", { refreshInterval: 0 }),
+			{ wrapper },
+		);
+		await waitFor(() => expect(result.current.status?.progress).toBe(25));
+		scope.organizationId = "org-two";
+		rerender();
+		expect(result.current.status?.progress).not.toBe(25);
+		await waitFor(() => expect(result.current.status?.progress).toBe(75));
+		expect(request).toHaveBeenCalledTimes(2);
+	});
+
+	it.each(["completed", "failed"] as const)(
+		"stops polling after BullMQ reports a %s state",
+		async (state) => {
+			vi.useFakeTimers();
+			const fetchMock = vi
+				.spyOn(globalThis, "fetch")
+				.mockResolvedValue(new Response(JSON.stringify({ state, progress: 100 }), { status: 200 }));
+
+			const { result } = renderHook(() => useJobStatus(`job-${state}`, { refreshInterval: 100 }), {
+				wrapper,
+			});
+
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(0);
+			});
+			expect(result.current.status?.state).toBe(state);
+			expect(fetchMock).toHaveBeenCalledTimes(1);
+
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(1_100);
+			});
+			expect(fetchMock).toHaveBeenCalledTimes(1);
+		},
+	);
 
 	it("continues polling while BullMQ reports a non-terminal state", async () => {
 		vi.useFakeTimers();

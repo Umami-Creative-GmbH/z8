@@ -279,7 +279,7 @@ export async function TimeTrackingPageContent({
 		);
 	}
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div data-testid="time-tracking-content" className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			<Suspense fallback={null}>
 				<PeriodBlockerFocusRegion context={context} searchParams={searchParams} />
 			</Suspense>

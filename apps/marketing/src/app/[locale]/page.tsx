@@ -23,6 +23,9 @@ import { alternatePath, getLocalizedPath, isLocale } from "@/i18n/locales";
 
 const siteUrl = "https://z8-time.app";
 
+// Public landing content must stay prerenderable as features are added.
+export const ensureStatic = "navigation";
+
 type PageProps = {
 	params: Promise<{ locale: string }>;
 };

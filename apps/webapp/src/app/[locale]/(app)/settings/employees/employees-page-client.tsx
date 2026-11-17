@@ -93,7 +93,7 @@ export function EmployeesPageClient(props: {
 
 	if (!shouldShowPeopleTabs) {
 		return (
-			<div className="flex flex-1 flex-col gap-4 p-4">
+			<div data-testid="employees-content" className="flex flex-1 flex-col gap-4 p-4">
 				<EmployeeDirectoryTab
 					accessTier={props.accessTier}
 					organizationId={props.organizationId}
@@ -117,7 +117,7 @@ export function EmployeesPageClient(props: {
 	};
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div data-testid="employees-content" className="flex flex-1 flex-col gap-4 p-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">

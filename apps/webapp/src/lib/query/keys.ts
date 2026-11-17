@@ -767,6 +767,10 @@ export const queryKeys = {
 	// ArbZG Compliance
 	compliance: {
 		all: ["compliance"] as const,
+		clockScope: (userId: string | null, organizationId: string | null, employeeId: string | null) =>
+			["compliance", "clock", userId, organizationId, employeeId] as const,
+		clock: (userId: string | null, organizationId: string | null, employeeId: string | null, mode: "idle" | "active") =>
+			["compliance", "clock", userId, organizationId, employeeId, mode] as const,
 		// Schedule compliance warnings for scheduler publish flow
 		scheduleWarnings: (orgId: string, dateRange: { startDate: string; endDateExclusive: string }) =>
 			["compliance", "schedule-warnings", orgId, dateRange] as const,

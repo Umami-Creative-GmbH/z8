@@ -38,7 +38,11 @@
     "lint": "oxlint -c ../../.oxlintrc.json src",
     "lint:fix": "oxlint -c ../../.oxlintrc.json --fix src",
     "format": "oxfmt -c ../../.oxfmtrc.json src",
-    "format:check": "oxfmt -c ../../.oxfmtrc.json --check src"
+    "format:check": "oxfmt -c ../../.oxfmtrc.json --check src",
+    "analyze:bundle": "next analyze --output",
+    "analyze:bundle:export": "next analyze export",
+    "test:navigation": "playwright test --config playwright.instant.config.ts",
+    "typecheck:navigation": "tsc --project tsconfig.instant-navigation.json --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1169.0",
@@ -155,7 +159,6 @@
     "stripe": "^23.1.0",
     "suncalc": "^2.1.4",
     "superjson": "^2.2.6",
-    "swr": "^2.5.1",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.5",
     "temporal-polyfill": "1.0.8",
@@ -169,6 +172,8 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.4.0",
+    "@next/playwright": "16.4.6",
+    "@playwright/test": "1.65.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.10",

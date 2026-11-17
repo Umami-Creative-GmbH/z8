@@ -1,20 +1,9 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	act,
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
-import { SWRConfig } from "swr";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	SERVER_WIDGET_IDS,
-	type ServerWidgetId,
-} from "@/components/dashboard/dashboard-types";
+import { SERVER_WIDGET_IDS, type ServerWidgetId } from "@/components/dashboard/dashboard-types";
 import { DeferredDashboardWidget } from "@/components/dashboard/deferred-dashboard-widget";
 import { useDashboardWidget } from "@/components/dashboard/use-dashboard-widget";
 import { useWidgetOrder } from "@/components/dashboard/use-widget-order";
@@ -62,15 +51,12 @@ vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	updateEmployeeInvitationDraft: vi.fn(),
 	requestEmployeeWorkBalanceRecalculation: vi.fn(),
 }));
-vi.mock(
-	"@/app/[locale]/(app)/settings/employees/employment-history-client-actions",
-	() => ({
-		cancelEmployeeEmploymentHistoryAction: vi.fn(),
-		changeEmployeeWageAction: vi.fn(),
-		confirmEmployeeEmploymentHistoryAction: vi.fn(),
-		createEmployeeEmploymentHistoryAction: vi.fn(),
-	}),
-);
+vi.mock("@/app/[locale]/(app)/settings/employees/employment-history-client-actions", () => ({
+	cancelEmployeeEmploymentHistoryAction: vi.fn(),
+	changeEmployeeWageAction: vi.fn(),
+	confirmEmployeeEmploymentHistoryAction: vi.fn(),
+	createEmployeeEmploymentHistoryAction: vi.fn(),
+}));
 
 const scope = { userId: "user-a", organizationId: "org-a" };
 
@@ -94,9 +80,7 @@ function Layout({ stamp }: { stamp: number }) {
 		availableWidgetIds: [...SERVER_WIDGET_IDS],
 		updatedAt: stamp,
 	});
-	return (
-		<output aria-label="Widget order">{layout.widgetOrder.join(",")}</output>
-	);
+	return <output aria-label="Widget order">{layout.widgetOrder.join(",")}</output>;
 }
 
 function Employee({ stamp, name }: { stamp: number; name: string }) {
@@ -151,19 +135,15 @@ describe("migrated view refresh owners", () => {
 		const request = vi.fn((url: string) => {
 			const path = new URL(url, "http://localhost").pathname;
 			const dataset = path.split("/").at(-1);
-			const response = (data: unknown) =>
-				Response.json({ scope, updatedAt: now + 10, data });
+			const response = (data: unknown) => Response.json({ scope, updatedAt: now + 10, data });
 			if (path.startsWith("/api/settings/employees/read/")) {
-				if (dataset === "detail")
-					throw new Error("The employee detail belongs to the RSC render");
+				if (dataset === "detail") throw new Error("The employee detail belongs to the RSC render");
 				if (dataset === "schedule" && holdSchedule)
 					return new Promise<Response>((resolve) => {
 						releaseSchedule = () => resolve(response(null));
 					});
 				if (dataset === "employment-history" && failHistory)
-					return Promise.resolve(
-						Response.json({ error: "History unavailable" }, { status: 503 }),
-					);
+					return Promise.resolve(Response.json({ error: "History unavailable" }, { status: 503 }));
 				return Promise.resolve(response(dataset === "schedule" ? null : []));
 			}
 			if (dataset !== "hydration" && dataset !== "birthday-reminders")
@@ -183,20 +163,18 @@ describe("migrated view refresh owners", () => {
 		function Frame({ stamp, name }: { stamp: number; name: string }) {
 			return (
 				<QueryClientProvider client={client}>
-					<SWRConfig value={{ provider: () => new Map() }}>
-						<ViewRefreshProvider>
-							<HeaderRefreshButton />
-							<Layout stamp={stamp} />
-							{SERVER_WIDGET_IDS.filter(
-								(id) => id !== "hydration" && id !== "birthday-reminders",
-							).map((id) => (
-								<ServerWidget key={id} id={id} stamp={stamp} />
-							))}
-							<DeferredDashboardWidget id="hydration" />
-							<DeferredDashboardWidget id="birthday-reminders" />
-							<Employee stamp={stamp} name={name} />
-						</ViewRefreshProvider>
-					</SWRConfig>
+					<ViewRefreshProvider>
+						<HeaderRefreshButton />
+						<Layout stamp={stamp} />
+						{SERVER_WIDGET_IDS.filter(
+							(id) => id !== "hydration" && id !== "birthday-reminders",
+						).map((id) => (
+							<ServerWidget key={id} id={id} stamp={stamp} />
+						))}
+						<DeferredDashboardWidget id="hydration" />
+						<DeferredDashboardWidget id="birthday-reminders" />
+						<Employee stamp={stamp} name={name} />
+					</ViewRefreshProvider>
 				</QueryClientProvider>
 			);
 		}
@@ -224,25 +202,15 @@ describe("migrated view refresh owners", () => {
 		view.rerender(<Frame stamp={now + 1} name="Refreshed Pat" />);
 		await screen.findByText("Refreshed Pat");
 		expect(screen.getByLabelText("Widget order").textContent).toBe(order);
-		expect(
-			(screen.getByLabelText("Employee draft") as HTMLInputElement).value,
-		).toBe("Unsaved edit");
-		expect(
-			screen.getByRole("button", { name: "Load Upcoming Birthdays" }),
-		).toBeTruthy();
+		expect((screen.getByLabelText("Employee draft") as HTMLInputElement).value).toBe(
+			"Unsaved edit",
+		);
+		expect(screen.getByRole("button", { name: "Load Upcoming Birthdays" })).toBeTruthy();
 		expect(
 			request.mock.calls
-				.map(([url]) =>
-					new URL(url, "http://localhost").pathname.split("/").at(-1),
-				)
+				.map(([url]) => new URL(url, "http://localhost").pathname.split("/").at(-1))
 				.sort(),
-		).toEqual([
-			"employment-history",
-			"hydration",
-			"managers",
-			"schedule",
-			"work-policies",
-		]);
+		).toEqual(["employment-history", "hydration", "managers", "schedule", "work-policies"]);
 		await act(async () => releaseSchedule());
 		await waitFor(() => expect(refresh.hasAttribute("disabled")).toBe(false));
 		expect(route.error).toHaveBeenCalledTimes(1);
