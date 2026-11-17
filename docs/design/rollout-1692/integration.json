@@ -1014,9 +1014,11 @@
       "integrationCommit": "11abc6c16bfb770ee6a9bff6053ee4cc9c501178",
       "correctionCommit": "55e1fee84317b4239efeb1f419c8b9cfce53512f",
       "correctionIntegrationCommit": "c41f1fcfb9b581b0f746b01ca68a079449f5a831",
-      "integrationVerification": "PROVISIONAL. Merger reproduced unknown coverage presented as healthy-empty with no Retry. Root public red/green adds explicit coverage read state/local recovery, planner-scoped key suffix, retained-data labeling and supporting Retry pending/coalescing. 47 files/298 unit cases pass; final message-only followup reruns same8cases nonadditively, all3type projects pass,6owned explicit100CRLF Biome pass. Doctor21files0errors/2inherited scheduler warnings;ordinary6formatting differences retained. Independent merge tree matches,all59verifiedticket anchors plus baseline and17277 prior paths preserved. No fresh PG/browser/roles/actions/matched visual acceptance yet. verifiedCommit remains null; normal development auth required. Original failed/partial harness outputs preserved privately. Fresh independent8public/1file+45canonicalPG/7files pass. Actual normal dev Chromium coverage/supporting Retry and1create/1edit scoped readback passed; recorded work unchanged. STOP: expanded Shift list occludes enabled Publish, actualpointeropens unrelated Person2 Edit Shift with0publish calls; collapse restores hit target, expansion repeats. Safe28-file STOP immutable seal a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9. Narrow candidate8491 movesFaboutside calendarisolate, z30belowdialogs; fresh30unit/5files,all3types,2explicitCRLFlint,Doctor2changedfiles0diagnostics pass. Integrated8a9cbcc7 matchesindependenttree and17281priorpaths+all59anchors preserved. Browser hit-target/publish/remainingroles/visual/native acceptance stillPENDING;verifiedCommitnull.",
+      "integrationVerification": "PROVISIONAL. Merger reproduced unknown coverage presented as healthy-empty with no Retry. Root public red/green adds explicit coverage read state/local recovery, planner-scoped key suffix, retained-data labeling and supporting Retry pending/coalescing. 47 files/298 unit cases pass; final message-only followup reruns same8cases nonadditively, all3type projects pass,6owned explicit100CRLF Biome pass. Doctor21files0errors/2inherited scheduler warnings;ordinary6formatting differences retained. Independent merge tree matches,all59verifiedticket anchors plus baseline and17277 prior paths preserved. No fresh PG/browser/roles/actions/matched visual acceptance yet. verifiedCommit remains null; normal development auth required. Original failed/partial harness outputs preserved privately. Fresh independent8public/1file+45canonicalPG/7files pass. Actual normal dev Chromium coverage/supporting Retry and1create/1edit scoped readback passed; recorded work unchanged. STOP: expanded Shift list occludes enabled Publish, actualpointeropens unrelated Person2 Edit Shift with0publish calls; collapse restores hit target, expansion repeats. Safe28-file STOP immutable seal a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9. Narrow candidate8491 movesFaboutside calendarisolate, z30belowdialogs; fresh30unit/5files,all3types,2explicitCRLFlint,Doctor2changedfiles0diagnostics pass. Integrated8a9cbcc7 matchesindependenttree and17281priorpaths+all59anchors preserved. Browser hit-target/publish/remainingroles/visual/native acceptance stillPENDING;verifiedCommitnull. Fresh second browser check confirms layering atdesktop/phone/widedark anddialog layering, butactualpublishfailsSQLSTATE42809ANYrequiresarray;0publications. Immutable29fileSTOPseal54ebb36cfb1d79d5e2a27609973fbb68f37c073001cba683e43ad19b51664dae. RootactualShiftServicePGregressionreproduceserror, thenboundinArraypredicatefix569355869 passes. Fresh73units/13files+48PG/8files=121distinct/21files;afterimport-onlysortsame3PG+12unitsnonadditivelypass. All3typespass;2pathlint/import/newtestexplicit100CRLFpass;ordinary2/explicitlegacyservice1formatfindingretained. NoReactchange. Integrated17fde76bmatchesindependenttree;17282priorpaths+59anchors+baselinepreserved. Actualsuccessfulbrowserpublication/remainingschedulingacceptancepending;verifiedCommitnull.",
       "stackingCorrectionCommit": "8491e46aaac7e4e4b4b26d4dacd19d963580610a",
-      "stackingIntegrationCommit": "8a9cbcc7f1f78b0da6371d7e0a5b4e57215b484a"
+      "stackingIntegrationCommit": "8a9cbcc7f1f78b0da6371d7e0a5b4e57215b484a",
+      "publicationCorrectionCommit": "5693558691721321796c91ac941166c30d74c677",
+      "publicationIntegrationCommit": "17fde76bf77bb72606d101d39e28c30f527dcbf4"
     },
     {
       "id": "R066",
@@ -1162,10 +1164,12 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1762#issuecomment-6934663232"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1762#issuecomment-6934663232",
+      "implementationCommit": "4aa4659866cbb5c0ecd6a4c40b25c6449a907370",
+      "handoffLimitation": "Worker reports467unit/9files+4PG/1,all3types/native/Next,20PNGs/10pairs,49payloads/18pins. Readonlyprep verifies pins but static registration465vsreported467 remains unreconciled; first PG raw-log overwrite gap explicit. Shared metadata format profiles,4Doctorwarnings,provider/livegrant-race/fullgeneration/Tolgee/device/truezoom limits retained. Freshrootmergerpending."
     },
     {
       "id": "R080",
@@ -1186,8 +1190,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1764#issuecomment-6936129806"
     },
     {
       "id": "R083",
