@@ -357,19 +357,6 @@ function PlannerShiftScheduler({
 							</span>
 						</div>
 					)}
-
-					{/* Publish FAB for managers with draft shifts */}
-					{isManager && draftCount > 0 && (
-						<PublishFab
-							draftCount={draftCount}
-							onPublish={publish}
-							isPublishing={isPublishing}
-							hasCoverageGaps={coverageState === "ready" && hasCoverageGaps}
-							coverageState={coverageState}
-							hasComplianceWarnings={hasComplianceWarnings}
-							complianceFindingsCount={complianceFindingsCount}
-						/>
-					)}
 				</div>
 			</div>
 
@@ -381,6 +368,19 @@ function PlannerShiftScheduler({
 						setSelectedShift(shift);
 						setIsShiftDialogOpen(true);
 					}}
+				/>
+			)}
+
+			{/* Outside the isolated calendar so later records cannot cover this viewport action. */}
+			{isManager && draftCount > 0 && (
+				<PublishFab
+					draftCount={draftCount}
+					onPublish={publish}
+					isPublishing={isPublishing}
+					hasCoverageGaps={coverageState === "ready" && hasCoverageGaps}
+					coverageState={coverageState}
+					hasComplianceWarnings={hasComplianceWarnings}
+					complianceFindingsCount={complianceFindingsCount}
 				/>
 			)}
 
