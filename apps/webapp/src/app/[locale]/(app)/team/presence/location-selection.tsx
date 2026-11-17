@@ -3,6 +3,7 @@
 import { IconArrowRight, IconMapPin } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useOrganization } from "@/components/providers/organization-context-provider";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -13,6 +14,7 @@ import { type PresenceSelectionScope, readPresenceLocations } from "./selection-
 
 export function LocationSelection() {
 	const { data: session, isPending } = useSession();
+	const organization = useOrganization();
 	const userId = session?.user.id;
 	const organizationId = session?.session.activeOrganizationId;
 	return (
@@ -21,7 +23,17 @@ export function LocationSelection() {
 				<SelectionLoading />
 			) : userId && organizationId ? (
 				<SelectionArrival
-					key={JSON.stringify([userId, organizationId, session?.session.id])}
+					// Published display identity retires old reads; the fresh server action
+					// remains responsible for admitting employees and non-employee admins.
+					key={JSON.stringify([
+						userId,
+						organizationId,
+						session?.session.id,
+						organization.userId,
+						organization.activeOrganizationId,
+						organization.employeeId,
+						organization.role,
+					])}
 					userId={userId}
 					organizationId={organizationId}
 				/>

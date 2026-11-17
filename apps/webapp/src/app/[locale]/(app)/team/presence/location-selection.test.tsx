@@ -1,14 +1,17 @@
 /* @vitest-environment jsdom */
 
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { Activity } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, cleanup, fireEvent, render as renderUI, screen } from "@testing-library/react";
+import { Activity, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 
 const boundary = vi.hoisted(() => ({
 	userId: "reader-a",
 	organizationId: "org-a",
 	isPending: false,
 	sessionId: "session-a",
+	updatedAt: 0,
 	read: vi.fn(),
 	refresh: undefined as undefined | (() => unknown),
 }));
@@ -28,6 +31,7 @@ vi.mock("@tolgee/react", () => ({
 }));
 vi.mock("@/navigation", () => ({
 	Link: (props: React.ComponentProps<"a">) => <a {...props} />,
+	useRouter: () => ({ replace: vi.fn() }),
 }));
 vi.mock("./selection-actions", () => ({ readPresenceLocations: boundary.read }));
 vi.mock("@/components/providers/view-refresh-provider", () => ({
@@ -38,18 +42,49 @@ vi.mock("@/components/providers/view-refresh-provider", () => ({
 
 import { LocationSelection } from "./location-selection";
 
+let client: QueryClient;
+function Providers({ children }: { children: ReactNode }) {
+	return (
+		<QueryClientProvider client={client}>
+			<OrganizationContextProvider
+				initialContext={{
+					userId: boundary.userId,
+					organizationId: boundary.organizationId,
+					employee: {
+						employeeId: "current-employee",
+						organizationId: boundary.organizationId,
+						role: "admin",
+					},
+					organizationSettings: null,
+					updatedAt: boundary.updatedAt,
+				}}
+			>
+				{children}
+			</OrganizationContextProvider>
+		</QueryClientProvider>
+	);
+}
+function render(ui: ReactElement) {
+	return renderUI(ui, { wrapper: Providers });
+}
+
 function available(name = "Berlin office", organizationId = "org-a", userId = "reader-a") {
 	return { status: "ok", userId, organizationId, locations: [{ id: "berlin", name }] };
 }
 
 beforeEach(() => {
+	boundary.updatedAt = Date.now();
+	client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	boundary.userId = "reader-a";
 	boundary.organizationId = "org-a";
 	boundary.isPending = false;
 	boundary.sessionId = "session-a";
 	boundary.read.mockReset().mockResolvedValue(available());
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	client.clear();
+});
 
 it("rejects late data from a replaced session for the same actor and organization", async () => {
 	let finish!: (result: unknown) => void;
