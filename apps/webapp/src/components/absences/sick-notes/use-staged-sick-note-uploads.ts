@@ -32,15 +32,25 @@ export class StagedSickNoteUploadError extends Error {
 	}
 }
 
+/** The uploader was disposed; the retained draft can start a new staging run. */
+export class StagedSickNoteUploadCancelledError extends Error {
+	constructor() {
+		super("Upload cancelled");
+		this.name = "StagedSickNoteUploadCancelledError";
+	}
+}
+
 /** One `stage` call, from start until it settles. */
 interface StagingRun {
 	queue: ResolvedStagedSickNote[];
 	total: number;
 	/** The note whose file is uploading now. */
 	uploading: ResolvedStagedSickNote | null;
+	/** TUS has finished; its processing/completion callback has not settled. */
+	processing: UploadedSickNote | null;
 	uploaded: UploadedSickNote[];
 	resolve: (uploaded: UploadedSickNote[]) => void;
-	reject: (error: StagedSickNoteUploadError) => void;
+	reject: (error: StagedSickNoteUploadError | StagedSickNoteUploadCancelledError) => void;
 }
 
 /**
@@ -60,6 +70,25 @@ export function useStagedSickNoteUploads(
 		processRef.current = options.process;
 	});
 	const [count, setCount] = useState({ done: 0, total: 0 });
+	useLayoutEffect(() => {
+		let current = true;
+		queueMicrotask(() => {
+			if (current && !activeRun.current) setCount({ done: 0, total: 0 });
+		});
+		return () => {
+			current = false;
+			const run = activeRun.current;
+			activeRun.current = null;
+			if (!run) return;
+			const unattached = [...run.uploaded, ...(run.processing ? [run.processing] : [])];
+			if (!processRef.current && unattached.length > 0) {
+				void discardStagedSickNoteUploadsAction(
+					unattached.map((uploaded) => uploaded.tusFileKey),
+				).catch(() => undefined);
+			}
+			run.reject(new StagedSickNoteUploadCancelledError());
+		};
+	}, []);
 
 	function settle(): StagingRun | null {
 		const run = activeRun.current;
@@ -73,7 +102,8 @@ export function useStagedSickNoteUploads(
 		allowedFileTypes: PERSONNEL_DOCUMENT_MIME_TYPES,
 		uploadMetadata: { purpose: "personnel-document" },
 		process: async ({ tusFileKey, fileName }) => {
-			const note = activeRun.current?.uploading;
+			const run = activeRun.current;
+			const note = run?.uploading;
 			if (!note) throw new Error("Upload failed");
 			const uploaded: UploadedSickNote = {
 				tusFileKey,
@@ -81,12 +111,14 @@ export function useStagedSickNoteUploads(
 				title: note.title,
 				documentDate: note.documentDate,
 			};
+			run.processing = uploaded;
 			await processRef.current?.(uploaded);
 			return uploaded;
 		},
 		onSuccess: (uploaded) => {
 			const run = activeRun.current;
 			if (!run) return;
+			run.processing = null;
 			run.uploaded.push(uploaded);
 			setCount({ done: run.uploaded.length, total: run.total });
 			next();
@@ -116,7 +148,9 @@ export function useStagedSickNoteUploads(
 		}
 		run.uploading = following;
 		// The uploader clears itself right after reporting a finished file.
-		setTimeout(() => upload.addFile(following.file), 0);
+		setTimeout(() => {
+			if (activeRun.current === run) upload.addFile(following.file);
+		}, 0);
 	}
 
 	function stage(notes: readonly ResolvedStagedSickNote[]): Promise<UploadedSickNote[]> {
@@ -129,6 +163,7 @@ export function useStagedSickNoteUploads(
 				queue: [...notes],
 				total: notes.length,
 				uploading: null,
+				processing: null,
 				uploaded: [],
 				resolve,
 				reject,

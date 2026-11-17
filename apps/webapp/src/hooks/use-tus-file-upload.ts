@@ -75,6 +75,7 @@ export function useTusFileUpload<Result>({
 	const allowedFileTypesKey = allowedFileTypes.join(",");
 
 	useEffect(() => {
+		let active = true;
 		const uppy = new Uppy({
 			restrictions: {
 				maxFileSize,
@@ -88,8 +89,11 @@ export function useTusFileUpload<Result>({
 			chunkSize: 5 * 1024 * 1024,
 		});
 		uppyRef.current = uppy;
+		dispatchUploadState({ type: "reset" });
+		const current = () => active && uppyRef.current === uppy;
 
 		const handleUploadStart = () => {
+			if (!current()) return;
 			dispatchUploadState({ type: "start" });
 		};
 
@@ -97,6 +101,7 @@ export function useTusFileUpload<Result>({
 			_file: unknown,
 			progressState: { bytesUploaded: number; bytesTotal: number | null },
 		) => {
+			if (!current()) return;
 			if (progressState.bytesTotal && progressState.bytesTotal > 0) {
 				const uploadPercent = Math.round(
 					(progressState.bytesUploaded / progressState.bytesTotal) * 85,
@@ -109,8 +114,8 @@ export function useTusFileUpload<Result>({
 			successful?: Array<{ uploadURL?: string; name?: string }>;
 			failed?: unknown[];
 		}) => {
-			const { process: processUpload, onSuccess: succeeded, onError: failed } =
-				callbacks.current;
+			if (!current()) return;
+			const { process: processUpload, onSuccess: succeeded, onError: failed } = callbacks.current;
 			const uploadedFile = result.successful?.[0];
 			if (uploadedFile) {
 				const tusFileKey = getTusFileKeyFromUploadUrl(uploadedFile.uploadURL);
@@ -118,11 +123,11 @@ export function useTusFileUpload<Result>({
 					dispatchUploadState({ type: "processing" });
 					try {
 						const processed = await processUpload({ tusFileKey, fileName: uploadedFile.name });
+						if (!current()) return;
 						succeeded?.(processed);
 					} catch (error) {
-						failed?.(
-							error instanceof Error ? error : new Error("File processing failed"),
-						);
+						if (current())
+							failed?.(error instanceof Error ? error : new Error("File processing failed"));
 					}
 				} else {
 					failed?.(new Error("Upload failed: missing file key"));
@@ -131,14 +136,16 @@ export function useTusFileUpload<Result>({
 				failed?.(new Error("Upload failed"));
 			}
 
+			if (!current()) return;
 			dispatchUploadState({ type: "reset" });
 			uppy.cancelAll();
 		};
 
 		const handleError = (_file: unknown, error: { message?: string }) => {
+			if (!current()) return;
 			dispatchUploadState({ type: "reset" });
 			callbacks.current.onError?.(new Error(error?.message || "Upload failed"));
-			uppy.cancelAll();
+			if (current()) uppy.cancelAll();
 		};
 
 		uppy.on("upload", handleUploadStart);
@@ -147,6 +154,7 @@ export function useTusFileUpload<Result>({
 		uppy.on("upload-error", handleError);
 
 		return () => {
+			active = false;
 			uppy.off("upload", handleUploadStart);
 			uppy.off("upload-progress", handleFileProgress);
 			uppy.off("complete", handleComplete);
@@ -173,9 +181,7 @@ export function useTusFileUpload<Result>({
 					: {}),
 			});
 		} catch (error) {
-			callbacks.current.onError?.(
-				error instanceof Error ? error : new Error("Failed to add file"),
-			);
+			callbacks.current.onError?.(error instanceof Error ? error : new Error("Failed to add file"));
 		}
 	};
 
