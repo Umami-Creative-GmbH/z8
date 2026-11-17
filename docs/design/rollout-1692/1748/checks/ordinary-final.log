@@ -1,0 +1,767 @@
+src\app\[locale]\(app)\travel-expenses\[claimId]\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·Suspense·}·from·"react";␍
+     2    │ - import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";␍
+     3    │ - import·{·BackLink·}·from·"@/components/travel-expenses/back-link";␍
+     4    │ - import·{·TravelExpenseClaimDetail·}·from·"@/components/travel-expenses/travel-expense-claim-detail";␍
+     5    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     6    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     7    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     8    │ - import·{·getAuthContext·}·from·"@/lib/auth-helpers";␍
+     9    │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+    10    │ - ␍
+    11    │ - async·function·ClaimContent({·params·}:·{·params:·Promise<{·claimId:·string·}>·})·{␍
+    12    │ - → const·[t,·actor,·{·claimId·}]·=·await·Promise.all([getTranslate(),·getAuthContext(),·params]);␍
+    13    │ - → if·(!actor?.employee)␍
+    14    │ - → → return·<NoEmployeeError·feature={t("travelExpenses.feature",·"manage·travel·expenses")}·/>;␍
+    15    │ - → return·(␍
+    16    │ - → → <TravelExpenseClaimDetail␍
+    17    │ - → → → userId={actor.user.id}␍
+    18    │ - → → → claimId={claimId}␍
+    19    │ - → → → organizationId={actor.employee.organizationId}␍
+    20    │ - → → → employeeId={actor.employee.id}␍
+    21    │ - → → />␍
+    22    │ - → );␍
+    23    │ - }␍
+    24    │ - export·default·async·function·TravelExpenseClaimPage(props:·{␍
+    25    │ - → params:·Promise<{·claimId:·string·}>;␍
+    26    │ - })·{␍
+    27    │ - → const·t·=·await·getTranslate();␍
+    28    │ - → return·(␍
+    29    │ - → → <div·className="mx-auto·w-full·min-w-0·max-w-4xl·space-y-6·p-4·md:p-6">␍
+    30    │ - → → → <PageHeader␍
+    31    │ - → → → → scope={␍
+    32    │ - → → → → → <BackLink·href="/travel-expenses">␍
+    33    │ - → → → → → → {t("travelExpenses.report.backToTravelExpenses",·"Back·to·travel·expenses")}␍
+    34    │ - → → → → → </BackLink>␍
+    35    │ - → → → → }␍
+    36    │ - → → → → title={t("travelExpenses.detail.title",·"Travel·expense·claim")}␍
+    37    │ - → → → />␍
+    38    │ - → → → <Suspense␍
+    39    │ - → → → → fallback={␍
+    40    │ - → → → → → <LoadingRegion␍
+    41    │ - → → → → → → label={{␍
+    42    │ - → → → → → → → labelKey:·"common.loadingRegions.travelExpenses",␍
+    43    │ - → → → → → → → labelDefault:·"Loading·travel·expenses",␍
+    44    │ - → → → → → → }}␍
+    45    │ - → → → → → → role="status"␍
+    46    │ - → → → → → >␍
+    47    │ - → → → → → → <Skeleton·aria-hidden="true"·className="h-48·w-full"·/>␍
+    48    │ - → → → → → </LoadingRegion>␍
+    49    │ - → → → → }␍
+    50    │ - → → → >␍
+    51    │ - → → → → <ClaimContent·{...props}·/>␍
+    52    │ - → → → </Suspense>␍
+    53    │ - → → </div>␍
+    54    │ - → );␍
+    55    │ - }␍
+        1 │ + import·{·Suspense·}·from·"react";
+        2 │ + import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";
+        3 │ + import·{·BackLink·}·from·"@/components/travel-expenses/back-link";
+        4 │ + import·{·TravelExpenseClaimDetail·}·from·"@/components/travel-expenses/travel-expense-claim-detail";
+        5 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+        6 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        7 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+        8 │ + import·{·getAuthContext·}·from·"@/lib/auth-helpers";
+        9 │ + import·{·getTranslate·}·from·"@/tolgee/server";
+       10 │ + 
+       11 │ + async·function·ClaimContent({
+       12 │ + → params,
+       13 │ + }:·{
+       14 │ + → params:·Promise<{·claimId:·string·}>;
+       15 │ + })·{
+       16 │ + → const·[t,·actor,·{·claimId·}]·=·await·Promise.all([
+       17 │ + → → getTranslate(),
+       18 │ + → → getAuthContext(),
+       19 │ + → → params,
+       20 │ + → ]);
+       21 │ + → if·(!actor?.employee)
+       22 │ + → → return·(
+       23 │ + → → → <NoEmployeeError
+       24 │ + → → → → feature={t("travelExpenses.feature",·"manage·travel·expenses")}
+       25 │ + → → → />
+       26 │ + → → );
+       27 │ + → return·(
+       28 │ + → → <TravelExpenseClaimDetail
+       29 │ + → → → userId={actor.user.id}
+       30 │ + → → → claimId={claimId}
+       31 │ + → → → organizationId={actor.employee.organizationId}
+       32 │ + → → → employeeId={actor.employee.id}
+       33 │ + → → />
+       34 │ + → );
+       35 │ + }
+       36 │ + export·default·async·function·TravelExpenseClaimPage(props:·{
+       37 │ + → params:·Promise<{·claimId:·string·}>;
+       38 │ + })·{
+       39 │ + → const·t·=·await·getTranslate();
+       40 │ + → return·(
+       41 │ + → → <div·className="mx-auto·w-full·min-w-0·max-w-4xl·space-y-6·p-4·md:p-6">
+       42 │ + → → → <PageHeader
+       43 │ + → → → → scope={
+       44 │ + → → → → → <BackLink·href="/travel-expenses">
+       45 │ + → → → → → → {t(
+       46 │ + → → → → → → → "travelExpenses.report.backToTravelExpenses",
+       47 │ + → → → → → → → "Back·to·travel·expenses",
+       48 │ + → → → → → → )}
+       49 │ + → → → → → </BackLink>
+       50 │ + → → → → }
+       51 │ + → → → → title={t("travelExpenses.detail.title",·"Travel·expense·claim")}
+       52 │ + → → → />
+       53 │ + → → → <Suspense
+       54 │ + → → → → fallback={
+       55 │ + → → → → → <LoadingRegion
+       56 │ + → → → → → → label={{
+       57 │ + → → → → → → → labelKey:·"common.loadingRegions.travelExpenses",
+       58 │ + → → → → → → → labelDefault:·"Loading·travel·expenses",
+       59 │ + → → → → → → }}
+       60 │ + → → → → → → role="status"
+       61 │ + → → → → → >
+       62 │ + → → → → → → <Skeleton·aria-hidden="true"·className="h-48·w-full"·/>
+       63 │ + → → → → → </LoadingRegion>
+       64 │ + → → → → }
+       65 │ + → → → >
+       66 │ + → → → → <ClaimContent·{...props}·/>
+       67 │ + → → → </Suspense>
+       68 │ + → → </div>
+       69 │ + → );
+       70 │ + }
+    56 71 │   
+  
+
+src\components\site-header.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";␍
+      4     │ - import·type·{·ReactElement,·ReactNode·}·from·"react";␍
+      5     │ - import·{·describe,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·{·SiteHeader·}·from·"./site-header";␍
+      7     │ - import·{·PageHeader·}·from·"./ui/page-header";␍
+      8     │ - ␍
+      9     │ - let·pathname·=·"/";␍
+     10     │ - ␍
+     11     │ - it("lets·the·retained·legacy·claim·page·own·the·single·main·heading",·()·=>·{␍
+     12     │ - → pathname·=·"/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054";␍
+     13     │ - → const·view·=·render(␍
+     14     │ - → → <>␍
+     15     │ - → → → <SiteHeader·/>␍
+     16     │ - → → → <PageHeader·title="Travel·expense·claim"·/>␍
+     17     │ - → → </>,␍
+     18     │ - → );␍
+     19     │ - → expect(view.getAllByRole("heading",·{·level:·1·})).toHaveLength(1);␍
+     20     │ - → view.unmount();␍
+     21     │ - → pathname·=·"/";␍
+     22     │ - });␍
+     23     │ - ␍
+     24     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     25     │ - → useTranslate:·()·=>·({␍
+     26     │ - → → t:·(_key:·string,·fallback:·string)·=>·fallback,␍
+     27     │ - → }),␍
+     28     │ - }));␍
+     29     │ - ␍
+     30     │ - vi.mock("@/navigation",·()·=>·({␍
+     31     │ - → usePathname:·()·=>·pathname,␍
+     32     │ - }));␍
+     33     │ - ␍
+     34     │ - vi.mock("@/components/providers/user-preferences-provider",·()·=>·({␍
+     35     │ - → useTimeFormat:·()·=>·"24h",␍
+     36     │ - → useUserTimezone:·()·=>·"Europe/Berlin",␍
+     37     │ - }));␍
+     38     │ - ␍
+     39     │ - vi.mock("@/components/header-refresh-button",·()·=>·({␍
+     40     │ - → HeaderRefreshButton:·({·children·}:·{·children?:·ReactNode·})·=>·(␍
+     41     │ - → → <button·type="button">{children·??·"Refresh·data"}</button>␍
+     42     │ - → ),␍
+     43     │ - }));␍
+     44     │ - ␍
+     45     │ - vi.mock("@/components/header-timezone-control",·()·=>·({␍
+     46     │ - → HeaderTimezoneControl:·({·trigger·}:·{·trigger?:·ReactElement·})·=>␍
+     47     │ - → → trigger·??·<button·type="button">Timezone</button>,␍
+     48     │ - }));␍
+     49     │ - ␍
+     50     │ - vi.mock("@/components/notifications",·()·=>·({␍
+     51     │ - → NotificationBell:·()·=>·<button·type="button">Notifications</button>,␍
+     52     │ - }));␍
+     53     │ - ␍
+     54     │ - vi.mock("@/components/theme-toggle",·()·=>·({␍
+     55     │ - → ThemeToggle:·({·trigger·}:·{·trigger?:·ReactElement·})·=>␍
+     56     │ - → → trigger·??·<button·type="button">Toggle·theme</button>,␍
+     57     │ - }));␍
+     58     │ - ␍
+     59     │ - vi.mock("@/components/time-tracking/time-clock-popover",·()·=>·({␍
+     60     │ - → TimeClockPopover:·()·=>·<button·type="button">Clock·In</button>,␍
+     61     │ - }));␍
+     62     │ - ␍
+     63     │ - vi.mock("@/components/ui/sidebar",·()·=>·({␍
+     64     │ - → SidebarTrigger:·()·=>·<button·type="button">Toggle·sidebar</button>,␍
+     65     │ - }));␍
+     66     │ - ␍
+     67     │ - vi.mock("@/components/dashboard/dashboard-header-customize",·()·=>·({␍
+     68     │ - → DashboardHeaderCustomize:·({·trigger·}:·{·trigger?:·ReactElement·})·=>␍
+     69     │ - → → trigger·??·<button·type="button">Customize·dashboard</button>,␍
+     70     │ - }));␍
+     71     │ - ␍
+     72     │ - describe("SiteHeader",·()·=>·{␍
+     73     │ - → it("hands·the·personal·equipment·title·to·its·page·without·adopting·other·destinations",·()·=>·{␍
+     74     │ - → → pathname·=·"/en/my-equipment";␍
+     75     │ - → → const·page·=·render(␍
+     76     │ - → → → <>␍
+     77     │ - → → → → <SiteHeader·/>␍
+     78     │ - → → → → <PageHeader·title="My·equipment"·/>␍
+     79     │ - → → → </>,␍
+     80     │ - → → );␍
+     81     │ - → → expect(screen.getAllByRole("heading",·{·level:·1·}).map((n)·=>·n.textContent)).toEqual([␍
+     82     │ - → → → "My·equipment",␍
+     83     │ - → → ]);␍
+     84     │ - → → page.unmount();␍
+     85     │ - → → pathname·=·"/en/my-equipment/other";␍
+     86     │ - → → render(<SiteHeader·/>);␍
+     87     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"My·equipment"·})).toBeTruthy();␍
+     88     │ - → });␍
+     89     │ - → it("hands·the·suspended·recovery·title·to·the·page·without·opting·descendants·into·heading·ownership",·()·=>·{␍
+     90     │ - → → pathname·=·"/de/billing/suspended";␍
+     91     │ - → → const·page·=·render(␍
+     92     │ - → → → <>␍
+     93     │ - → → → → <SiteHeader·/>␍
+     94     │ - → → → → <PageHeader·title="Organization·suspended"·/>␍
+     95     │ - → → → </>,␍
+     96     │ - → → );␍
+     97     │ - → → expect(␍
+     98     │ - → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),␍
+     99     │ - → → ).toEqual(["Organization·suspended"]);␍
+    100     │ - → → page.unmount();␍
+    101     │ - → → pathname·=·"/en/billing/suspended/unconverted";␍
+    102     │ - → → render(<SiteHeader·/>);␍
+    103     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Billing·&·Subscription"·})).toBeTruthy();␍
+    104     │ - → });␍
+    105     │ - → it("hands·the·main·title·to·converted·pages·while·retaining·unknown·descendant·titles",·()·=>·{␍
+    106     │ - → → pathname·=·"/de/reports";␍
+    107     │ - → → const·page·=·render(␍
+    108     │ - → → → <>␍
+    109     │ - → → → → <SiteHeader·/>␍
+    110     │ - → → → → <PageHeader·title="Employee·Reports"·/>␍
+    111     │ - → → → </>,␍
+    112     │ - → → );␍
+    113     │ - → → expect(␍
+    114     │ - → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),␍
+    115     │ - → → ).toEqual(["Employee·Reports"]);␍
+    116     │ - → → page.unmount();␍
+    117     │ - → → pathname·=·"/de/calendar/employee-1";␍
+    118     │ - → → const·calendar·=·render(␍
+    119     │ - → → → <>␍
+    120     │ - → → → → <SiteHeader·/>␍
+    121     │ - → → → → <PageHeader·title="Calendar"·/>␍
+    122     │ - → → → </>,␍
+    123     │ - → → );␍
+    124     │ - → → expect(␍
+    125     │ - → → → screen.getAllByRole("heading",·{·level:·1·}).map((heading)·=>·heading.textContent),␍
+    126     │ - → → ).toEqual(["Calendar"]);␍
+    127     │ - → → calendar.unmount();␍
+    128     │ - → → pathname·=·"/en/calendar/employee-1/detail";␍
+    129     │ - → → render(<SiteHeader·/>);␍
+    130     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Calendar"·})).toBeTruthy();␍
+    131     │ - → });␍
+    132     │ - ␍
+    133     │ - → it("hands·the·exact·vehicle·report·its·heading·and·retains·descendant·shell·titles",·()·=>·{␍
+    134     │ - → → pathname·=·"/en/reports/vehicles";␍
+    135     │ - → → const·page·=·render(␍
+    136     │ - → → → <>␍
+    137     │ - → → → → <SiteHeader·/>␍
+    138     │ - → → → → <PageHeader·title="Distance·per·Vehicle"·/>␍
+    139     │ - → → → </>,␍
+    140     │ - → → );␍
+    141     │ - → → expect(screen.getAllByRole("heading",·{·level:·1·})).toHaveLength(1);␍
+    142     │ - → → page.unmount();␍
+    143     │ - → → pathname·=·"/en/reports/vehicles/detail";␍
+    144     │ - → → render(<SiteHeader·/>);␍
+    145     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Distance·per·Vehicle"·})).toBeTruthy();␍
+    146     │ - → });␍
+    147     │ - → it("shows·header·actions·in·the·requested·order·on·the·dashboard·route",·()·=>·{␍
+    148     │ - → → pathname·=·"/en";␍
+    149     │ - ␍
+    150     │ - → → render(<SiteHeader·/>);␍
+  345 more lines truncated
+  
+
+src\components\travel-expenses\legacy-draft-conversion.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconAlertTriangle,·IconArrowRight,·IconLoader2,·IconTransform·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useMutation,·useQuery,·useQueryClient·}·from·"@tanstack/react-query";␍
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      6     │ - import·{·type·ReactNode,·useEffect,·useId,·useRef,·useState·}·from·"react";␍
+      7     │ - import·{␍
+      8     │ - → type·ConvertLegacyDraftOutcome,␍
+      9     │ - → convertLegacyTravelExpenseDraftAction,␍
+     10     │ - → getLegacyTravelExpenseConversion,␍
+     11     │ - }·from·"@/app/[locale]/(app)/travel-expenses/legacy-draft-actions";␍
+     12     │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";␍
+     13     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     14     │ - import·{·Card,·CardContent,·CardHeader·}·from·"@/components/ui/card";␍
+     15     │ - import·{·useOrganization·}·from·"@/hooks/use-organization";␍
+     16     │ - import·{·authClient,·useSession·}·from·"@/lib/auth-client";␍
+     17     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+     18     │ - import·type·{·LegacyReceiptRefusal·}·from·"@/lib/travel-expenses/legacy-draft-conversion-store";␍
+     19     │ - import·{·Link,·useRouter·}·from·"@/navigation";␍
+     20     │ - ␍
+     21     │ - type·Translate·=·ReturnType<typeof·useTranslate>["t"];␍
+     22     │ - type·Refusal·=·Exclude<ConvertLegacyDraftOutcome,·{·kind:·"converted"·}>;␍
+     23     │ - ␍
+     24     │ - function·claimScopeMatches(␍
+     25     │ - → scope:·ReturnType<typeof·useOrganization>,␍
+     26     │ - → session:·ReturnType<typeof·useSession>,␍
+     27     │ - → expected?:·{·organizationId:·string;·employeeId:·string;·userId?:·string·},␍
+     28     │ - )·{␍
+     29     │ - → return·(␍
+     30     │ - → → !scope.isLoading·&&␍
+     31     │ - → → !scope.error·&&␍
+     32     │ - → → !session.isPending·&&␍
+     33     │ - → → Boolean(scope.userId·&&·scope.activeOrganizationId·&&·scope.employeeId)·&&␍
+     34     │ - → → session.data?.user.id·===·scope.userId·&&␍
+     35     │ - → → session.data?.session.activeOrganizationId·===·scope.activeOrganizationId·&&␍
+     36     │ - → → (!expected·||␍
+     37     │ - → → → (expected.organizationId·===·scope.activeOrganizationId·&&␍
+     38     │ - → → → → expected.employeeId·===·scope.employeeId·&&␍
+     39     │ - → → → → (!expected.userId·||·expected.userId·===·scope.userId)))␍
+     40     │ - → );␍
+     41     │ - }␍
+     42     │ - ␍
+     43     │ - /**·Presentation·lifetime·only.·Server·reads/actions·still·decide·access.·*/␍
+     44     │ - export·function·LegacyClaimArrival({␍
+     45     │ - → children,␍
+     46     │ - → expected,␍
+     47     │ - }:·{␍
+     48     │ - → children:·ReactNode;␍
+     49     │ - → expected?:·{·organizationId:·string;·employeeId:·string;·userId?:·string·};␍
+     50     │ - })·{␍
+     51     │ - → const·scope·=·useOrganization();␍
+     52     │ - → const·session·=·useSession();␍
+     53     │ - → const·{·t·}·=·useTranslate();␍
+     54     │ - → const·router·=·useRouter();␍
+     55     │ - → const·ready·=·claimScopeMatches(scope,·session,·expected);␍
+     56     │ - → if·(scope.error·||·(!ready·&&·!scope.isLoading·&&·!session.isPending))␍
+     57     │ - → → return·(␍
+     58     │ - → → → <Alert·role="alert">␍
+     59     │ - → → → → <AlertDescription·className="space-y-3">␍
+     60     │ - → → → → → <p>␍
+     61     │ - → → → → → → {t(␍
+     62     │ - → → → → → → → "travelExpenses.detail.scopeUnavailable",␍
+     63     │ - → → → → → → → "Refresh·this·claim·to·confirm·your·current·access.",␍
+     64     │ - → → → → → → )}␍
+     65     │ - → → → → → </p>␍
+     66     │ - → → → → → <Button␍
+     67     │ - → → → → → → type="button"␍
+     68     │ - → → → → → → variant="outline"␍
+     69     │ - → → → → → → onClick={()·=>·{␍
+     70     │ - → → → → → → → void·scope.refetch();␍
+     71     │ - → → → → → → → router.refresh();␍
+     72     │ - → → → → → → }}␍
+     73     │ - → → → → → >␍
+     74     │ - → → → → → → {t("common.retry",·"Retry")}␍
+     75     │ - → → → → → </Button>␍
+     76     │ - → → → → </AlertDescription>␍
+     77     │ - → → → </Alert>␍
+     78     │ - → → );␍
+     79     │ - → if·(!ready)␍
+     80     │ - → → return·(␍
+     81     │ - → → → <p·role="status"·className="text-sm·text-muted-foreground">␍
+     82     │ - → → → → {t(␍
+     83     │ - → → → → → "travelExpenses.detail.confirmingScope",␍
+     84     │ - → → → → → "Confirming·the·current·organization·and·employee…",␍
+     85     │ - → → → → )}␍
+     86     │ - → → → </p>␍
+     87     │ - → → );␍
+     88     │ - → return·(␍
+     89     │ - → → <div·key={JSON.stringify([scope.userId,·scope.activeOrganizationId,·scope.employeeId])}>␍
+     90     │ - → → → {children}␍
+     91     │ - → → </div>␍
+     92     │ - → );␍
+     93     │ - }␍
+     94     │ - ␍
+     95     │ - /**·Every·effect·setup·is·a·new·read·lifetime,·including·an·Activity·restore.·*/␍
+     96     │ - export·function·useLegacyClaimLifetime()·{␍
+     97     │ - → const·id·=·useId();␍
+     98     │ - → const·sequence·=·useRef(0);␍
+     99     │ - → const·[lifetime,·setLifetime]·=·useState({·id:·`${id}:0`,·active:·false·});␍
+    100     │ - → useEffect(()·=>·{␍
+    101     │ - → → const·arrival·=·{·id:·`${id}:${++sequence.current}`,·active:·true·};␍
+    102     │ - → → setLifetime(arrival);␍
+    103     │ - → → let·original·=·authClient.$store.atoms.session.get().data;␍
+    104     │ - → → const·unsubscribe·=·authClient.$store.atoms.session.subscribe((value)·=>·{␍
+    105     │ - → → → //·A·pending·proof·retires·callbacks·even·when·retained·session·data·is·present.␍
+    106     │ - → → → if·(value.isPending·||·!value.data)·arrival.active·=·false;␍
+    107     │ - → → → if·(␍
+    108     │ - → → → → original·&&␍
+    109     │ - → → → → value.data·&&␍
+    110     │ - → → → → (original.user.id·!==·value.data.user.id·||␍
+    111     │ - → → → → → original.session.activeOrganizationId·!==·value.data.session.activeOrganizationId)␍
+    112     │ - → → → )␍
+    113     │ - → → → → arrival.active·=·false;␍
+    114     │ - → → → if·(!original)·original·=·value.data;␍
+    115     │ - → → });␍
+    116     │ - → → return·()·=>·{␍
+    117     │ - → → → arrival.active·=·false;␍
+    118     │ - → → → unsubscribe();␍
+    119     │ - → → };␍
+    120     │ - → },·[id]);␍
+    121     │ - → return·lifetime;␍
+    122     │ - }␍
+    123     │ - ␍
+    124     │ - function·receiptReason(t:·Translate,·reason:·LegacyReceiptRefusal):·string·{␍
+    125     │ - → switch·(reason)·{␍
+    126     │ - → → case·"unreadable":␍
+    127     │ - → → → return·t(␍
+    128     │ - → → → → "travelExpenses.legacyDraft.receipt.unreadable",␍
+    129     │ - → → → → "the·stored·file·cannot·be·read·right·now",␍
+    130     │ - → → → );␍
+    131     │ - → → case·"identity_mismatch":␍
+    132     │ - → → → return·t(␍
+    133     │ - → → → → "travelExpenses.legacyDraft.receipt.mismatch",␍
+    134     │ - → → → → "the·stored·file·no·longer·matches·what·was·uploaded",␍
+    135     │ - → → → );␍
+    136     │ - → → case·"unsupported_type":␍
+    137     │ - → → → return·t(␍
+    138     │ - → → → → "travelExpenses.legacyDraft.receipt.unsupportedType",␍
+    139     │ - → → → → "the·stored·file·is·not·a·supported·receipt·type",␍
+    140     │ - → → → );␍
+    141     │ - → → case·"unsupported_storage":␍
+    142     │ - → → → return·t(␍
+    143     │ - → → → → "travelExpenses.legacyDraft.receipt.unsupportedStorage",␍
+    144     │ - → → → → "the·file·is·kept·in·an·unsupported·storage",␍
+    145     │ - → → → );␍
+    146     │ - → }␍
+    147     │ - }␍
+    148     │ - ␍
+    149     │ - function·refusalText(t:·Translate,·refusal:·Refusal):·string·{␍
+    150     │ - → switch·(refusal.kind)·{␍
+  676 more lines truncated
+  
+
+src\components\travel-expenses\travel-expense-claim-detail.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·onlineManager,·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      4     │ - import·{·act,·cleanup,·fireEvent,·render,·screen·}·from·"@testing-library/react";␍
+      5     │ - import·{·Activity·}·from·"react";␍
+      6     │ - import·{·afterEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      7     │ - ␍
+      8     │ - const·actor·=·vi.hoisted(()·=>·({␍
+      9     │ - → userId:·"user",␍
+     10     │ - → activeOrganizationId:·"org",␍
+     11     │ - → employeeId:·"owner",␍
+     12     │ - → isPending:·false,␍
+     13     │ - }));␍
+     14     │ - vi.mock("@/hooks/use-organization",·()·=>·({␍
+     15     │ - → useOrganization:·()·=>·({␍
+     16     │ - → → ...actor,␍
+     17     │ - → → isLoading:·false,␍
+     18     │ - → → error:·null,␍
+     19     │ - → → refetch:·vi.fn(),␍
+     20     │ - → }),␍
+     21     │ - }));␍
+     22     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     23     │ - → useSession:·()·=>·({␍
+     24     │ - → → isPending:·actor.isPending,␍
+     25     │ - → → data:·{␍
+     26     │ - → → → user:·{·id:·actor.userId·},␍
+     27     │ - → → → session:·{·activeOrganizationId:·actor.activeOrganizationId·},␍
+     28     │ - → → },␍
+     29     │ - → }),␍
+     30     │ - → authClient:·{␍
+     31     │ - → → $store:·{␍
+     32     │ - → → → atoms:·{␍
+     33     │ - → → → → session:·{␍
+     34     │ - → → → → → get:·()·=>·({␍
+     35     │ - → → → → → → data:·{␍
+     36     │ - → → → → → → → user:·{·id:·actor.userId·},␍
+     37     │ - → → → → → → → session:·{·activeOrganizationId:·actor.activeOrganizationId·},␍
+     38     │ - → → → → → → },␍
+     39     │ - → → → → → }),␍
+     40     │ - → → → → → subscribe:·()·=>·()·=>·{},␍
+     41     │ - → → → → },␍
+     42     │ - → → → },␍
+     43     │ - → → },␍
+     44     │ - → },␍
+     45     │ - }));␍
+     46     │ - ␍
+     47     │ - const·catalog·=·vi.hoisted(()·=>·({·messages:·{}·as·Record<string,·string>·}));␍
+     48     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     49     │ - → useTranslate:·()·=>·({␍
+     50     │ - → → t:·(key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>␍
+     51     │ - → → → (catalog.messages[key]·??·fallback).replace(/\{(\w+)\}/g,·(match,·name:·string)·=>␍
+     52     │ - → → → → params·&&·name·in·params·?·String(params[name])·:·match,␍
+     53     │ - → → → ),␍
+     54     │ - → }),␍
+     55     │ - }));␍
+     56     │ - vi.mock("next-intl",·()·=>·({·useLocale:·()·=>·"de-DE"·}));␍
+     57     │ - //·The·settlement·of·an·approved·claim·(#612)·has·its·own·tests.␍
+     58     │ - vi.mock("./finance/settlement-panel",·()·=>·({·SettlementPanel:·()·=>·null·}));␍
+     59     │ - const·legacyDraft·=·vi.hoisted(()·=>·({␍
+     60     │ - → push:·vi.fn(),␍
+     61     │ - → convert:·vi.fn(),␍
+     62     │ - → conversion:·vi.fn(async·()·=>·({·success:·true,·data:·null·as·unknown·})),␍
+     63     │ - }));␍
+     64     │ - vi.mock("@/navigation",·()·=>·({␍
+     65     │ - → Link:·({·href,·children,·...props·}:·{·href:·string;·children:·React.ReactNode·})·=>·(␍
+     66     │ - → → <a·href={href}·{...props}>␍
+     67     │ - → → → {children}␍
+     68     │ - → → </a>␍
+     69     │ - → ),␍
+     70     │ - → useRouter:·()·=>·({·push:·legacyDraft.push·}),␍
+     71     │ - }));␍
+     72     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions",·()·=>·({␍
+     73     │ - → convertLegacyTravelExpenseDraftAction:·legacyDraft.convert,␍
+     74     │ - → getLegacyTravelExpenseConversion:·legacyDraft.conversion,␍
+     75     │ - }));␍
+     76     │ - ␍
+     77     │ - import·{·TravelExpenseClaimDetail·}·from·"./travel-expense-claim-detail";␍
+     78     │ - ␍
+     79     │ - afterEach(()·=>·{␍
+     80     │ - → cleanup();␍
+     81     │ - → vi.unstubAllGlobals();␍
+     82     │ - → catalog.messages·=·{};␍
+     83     │ - → actor.userId·=·"user";␍
+     84     │ - → actor.activeOrganizationId·=·"org";␍
+     85     │ - → actor.employeeId·=·"owner";␍
+     86     │ - → actor.isPending·=·false;␍
+     87     │ - });␍
+     88     │ - const·storedDetail·=·{␍
+     89     │ - → claim:·{␍
+     90     │ - → → id:·"old-claim",␍
+     91     │ - → → type:·"receipt",␍
+     92     │ - → → status:·"approved",␍
+     93     │ - → → tripStartDate:·null,␍
+     94     │ - → → tripEndDate:·null,␍
+     95     │ - → → tripDateTimeZone:·null,␍
+     96     │ - → → originalAmount:·"120.50",␍
+     97     │ - → → originalCurrency:·"EUR",␍
+     98     │ - → → calculatedAmount:·"120.50",␍
+     99     │ - → → calculatedCurrency:·"EUR",␍
+    100     │ - → → destinationCity:·"Hamburg",␍
+    101     │ - → → destinationCountry:·"DE",␍
+    102     │ - → → notes:·"Original·context",␍
+    103     │ - → → submittedAt:·"2026-03-29T10:00:00Z",␍
+    104     │ - → → createdAt:·"2026-03-28T10:00:00Z",␍
+    105     │ - → },␍
+    106     │ - → attachments:·[{·id:·"receipt",·fileName:·"hotel.pdf",·checksumSha256:·null·}],␍
+    107     │ - → decisions:·[␍
+    108     │ - → → {␍
+    109     │ - → → → id:·"decision",␍
+    110     │ - → → → action:·"approved",␍
+    111     │ - → → → comment:·"Original·approval·note",␍
+    112     │ - → → → reason:·"Original·decision·reason",␍
+    113     │ - → → → createdAt:·"2026-04-01T10:00:00Z",␍
+    114     │ - → → → actorName:·"Morgan·Manager",␍
+    115     │ - → → },␍
+    116     │ - → ],␍
+    117     │ - };␍
+    118     │ - function·mount()·{␍
+    119     │ - → const·client·=·new·QueryClient({␍
+    120     │ - → → defaultOptions:·{·queries:·{·retry:·false·}·},␍
+    121     │ - → });␍
+    122     │ - → render(␍
+    123     │ - → → <QueryClientProvider·client={client}>␍
+    124     │ - → → → <TravelExpenseClaimDetail·claimId="old-claim"·organizationId="org"·employeeId="owner"·/>␍
+    125     │ - → → </QueryClientProvider>,␍
+    126     │ - → );␍
+    127     │ - → return·client;␍
+    128     │ - }␍
+    129     │ - describe("stored·travel·claim·detail",·()·=>·{␍
+    130     │ - → it.each(["claim",·"organization",·"employee",·"account"])(␍
+    131     │ - → → "does·not·revive·earlier·evidence·after·a·late·%s·arrival·and·return",␍
+    132     │ - → → async·(changed)·=>·{␍
+    133     │ - → → → let·finish!:·(value:·Response)·=>·void;␍
+    134     │ - → → → vi.stubGlobal(␍
+    135     │ - → → → → "fetch",␍
+    136     │ - → → → → vi␍
+    137     │ - → → → → → .fn()␍
+    138     │ - → → → → → .mockResolvedValueOnce(Response.json(storedDetail))␍
+    139     │ - → → → → → .mockImplementationOnce(␍
+    140     │ - → → → → → → ()·=>␍
+    141     │ - → → → → → → → new·Promise<Response>((resolve)·=>·{␍
+    142     │ - → → → → → → → → finish·=·resolve;␍
+    143     │ - → → → → → → → }),␍
+    144     │ - → → → → → )␍
+    145     │ - → → → → → .mockResolvedValueOnce(␍
+    146     │ - → → → → → → Response.json({␍
+    147     │ - → → → → → → → ...storedDetail,␍
+    148     │ - → → → → → → → claim:·{·...storedDetail.claim,·notes:·"Current·evidence"·},␍
+    149     │ - → → → → → → }),␍
+    150     │ - → → → → → ),␍
+  1110 more lines truncated
+  
+
+src\components\travel-expenses\travel-expense-claim-detail.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - import·{·useQuery·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      4     │ - import·{·useLocale·}·from·"next-intl";␍
+      5     │ - import·{·Temporal·}·from·"temporal-polyfill";␍
+      6     │ - import·{·Alert,·AlertDescription·}·from·"@/components/ui/alert";␍
+      7     │ - import·{·Card,·CardContent,·CardDescription,·CardHeader·}·from·"@/components/ui/card";␍
+      8     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+      9     │ - import·{·Timeline,·TimelineItem·}·from·"@/components/ui/timeline";␍
+     10     │ - import·{·parseInstant·}·from·"@/lib/datetime/temporal-core";␍
+     11     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+     12     │ - import·type·{·TravelExpenseClaimDetailData·}·from·"@/lib/travel-expenses/claim-detail-types";␍
+     13     │ - import·{·formatRecordedInstant·}·from·"@/lib/travel-expenses/format";␍
+     14     │ - import·{·SettlementPanel·}·from·"./finance/settlement-panel";␍
+     15     │ - import·{·legacyClaimStatusLabel,·legacyClaimTypeLabel·}·from·"./legacy-claim-labels";␍
+     16     │ - import·{␍
+     17     │ - → LegacyClaimArrival,␍
+     18     │ - → LegacyDraftConversionPanel,␍
+     19     │ - → useLegacyClaimLifetime,␍
+     20     │ - }·from·"./legacy-draft-conversion";␍
+     21     │ - import·{·TravelExpenseDateRange·}·from·"./travel-expense-date-range";␍
+     22     │ - import·{·TravelExpenseLoadError·}·from·"./travel-expense-load-error";␍
+     23     │ - ␍
+     24     │ - function·formatAmount(locale:·string,·amount:·string,·currency:·string)·{␍
+     25     │ - → try·{␍
+     26     │ - → → return·new·Intl.NumberFormat(locale,·{␍
+     27     │ - → → → style:·"currency",␍
+     28     │ - → → → currency,␍
+     29     │ - → → }).format(Number(amount));␍
+     30     │ - → }·catch·{␍
+     31     │ - → → return·`${amount}·${currency}`;␍
+     32     │ - → }␍
+     33     │ - }␍
+     34     │ - ␍
+     35     │ - class·ClaimReadFailure·extends·Error·{␍
+     36     │ - → constructor(readonly·status:·number)·{␍
+     37     │ - → → super("Claim·detail·unavailable");␍
+     38     │ - → }␍
+     39     │ - }␍
+     40     │ - ␍
+     41     │ - function·TravelExpenseDecisionHistory({·data·}:·{·data:·TravelExpenseClaimDetailData·})·{␍
+     42     │ - → const·{·t·}·=·useTranslate();␍
+     43     │ - → const·locale·=·useLocale();␍
+     44     │ - → const·{·claim·}·=·data;␍
+     45     │ - → const·history·=·[...(data?.decisions·??·[]),·...(data?.intermediateDecisions·??·[])].sort(␍
+     46     │ - → → (left,·right)·=>␍
+     47     │ - → → → Temporal.Instant.compare(parseInstant(left.createdAt),·parseInstant(right.createdAt)),␍
+     48     │ - → );␍
+     49     │ - → const·eventTime·=·(at:·string)·=>·formatRecordedInstant(locale,·at);␍
+     50     │ - → //·The·latest·step·is·current,·unless·the·claim·still·waits·for·a·decision.␍
+     51     │ - → const·pending·=·claim.status·===·"submitted";␍
+     52     │ - → const·decisionRecorded·=·Boolean(claim.decidedAt)·&&·(data.decisions·??·[]).length·===·0;␍
+     53     │ - → const·lastStep:·"created"·|·"submitted"·|·"recorded"·|·"decision"·=·decisionRecorded␍
+     54     │ - → → ?·"recorded"␍
+     55     │ - → → :·history.length·>·0␍
+     56     │ - → → → ?·"decision"␍
+     57     │ - → → → :·claim.submittedAt␍
+     58     │ - → → → → ?·"submitted"␍
+     59     │ - → → → → :·"created";␍
+     60     │ - → const·stateOf·=·(step:·typeof·lastStep)·=>·(step·===·lastStep·&&·!pending·?·"current"·:·"done");␍
+     61     │ - → return·(␍
+     62     │ - → → <Card·className="min-w-0·shadow-none">␍
+     63     │ - → → → <CardHeader>␍
+     64     │ - → → → → <h2·className="font-semibold·leading-none">␍
+     65     │ - → → → → → {t("travelExpenses.detail.history",·"Decision·history")}␍
+     66     │ - → → → → </h2>␍
+     67     │ - → → → → <CardDescription>␍
+     68     │ - → → → → → {t(␍
+     69     │ - → → → → → → "travelExpenses.detail.historyDescription",␍
+     70     │ - → → → → → → "Every·step·of·this·claim,·oldest·first.·Times·are·shown·in·UTC.",␍
+     71     │ - → → → → → )}␍
+     72     │ - → → → → </CardDescription>␍
+     73     │ - → → → </CardHeader>␍
+     74     │ - → → → <CardContent>␍
+     75     │ - → → → → <Timeline>␍
+     76     │ - → → → → → <TimelineItem␍
+     77     │ - → → → → → → state={stateOf("created")}␍
+     78     │ - → → → → → → title={t("travelExpenses.detail.created",·"Created")}␍
+     79     │ - → → → → → → time={eventTime(claim.createdAt)}␍
+     80     │ - → → → → → → dateTime={claim.createdAt}␍
+     81     │ - → → → → → />␍
+     82     │ - → → → → → {claim.submittedAt·&&·(␍
+     83     │ - → → → → → → <TimelineItem␍
+     84     │ - → → → → → → → state={stateOf("submitted")}␍
+     85     │ - → → → → → → → title={t("travelExpenses.detail.submitted",·"Submitted")}␍
+     86     │ - → → → → → → → time={eventTime(claim.submittedAt)}␍
+     87     │ - → → → → → → → dateTime={claim.submittedAt}␍
+     88     │ - → → → → → → />␍
+     89     │ - → → → → → )}␍
+     90     │ - → → → → → {history.map((decision,·index)·=>·(␍
+     91     │ - → → → → → → <TimelineItem␍
+     92     │ - → → → → → → → key={decision.id}␍
+     93     │ - → → → → → → → state={index·===·history.length·-·1·?·stateOf("decision")·:·"done"}␍
+     94     │ - → → → → → → → title={␍
+     95     │ - → → → → → → → → decision.action·===·"approval_recorded"␍
+     96     │ - → → → → → → → → → ?·t(␍
+     97     │ - → → → → → → → → → → → "travelExpenses.detail.intermediateApproval",␍
+     98     │ - → → → → → → → → → → → "Approval·recorded·—·awaiting·further·approval",␍
+     99     │ - → → → → → → → → → → )␍
+    100     │ - → → → → → → → → → :·legacyClaimStatusLabel(t,·decision.action)␍
+    101     │ - → → → → → → → }␍
+    102     │ - → → → → → → → time={eventTime(decision.createdAt)}␍
+    103     │ - → → → → → → → dateTime={decision.createdAt}␍
+    104     │ - → → → → → → >␍
+    105     │ - → → → → → → → {(decision.actorName·||·decision.reason·||·decision.comment)·&&·(␍
+    106     │ - → → → → → → → → <div·className="space-y-1">␍
+    107     │ - → → → → → → → → → {decision.actorName·&&·(␍
+    108     │ - → → → → → → → → → → <p>␍
+    109     │ - → → → → → → → → → → → {t("travelExpenses.report.history.detail.by",·"By·{name}",·{␍
+    110     │ - → → → → → → → → → → → → name:·decision.actorName,␍
+    111     │ - → → → → → → → → → → → })}␍
+    112     │ - → → → → → → → → → → </p>␍
+    113     │ - → → → → → → → → → )}␍
+    114     │ - → → → → → → → → → {decision.reason·&&·(␍
+    115     │ - → → → → → → → → → → <p·className="whitespace-pre-wrap·text-foreground">{decision.reason}</p>␍
+    116     │ - → → → → → → → → → )}␍
+    117     │ - → → → → → → → → → {decision.comment·&&·(␍
+    118     │ - → → → → → → → → → → <p·className="whitespace-pre-wrap·text-foreground">{decision.comment}</p>␍
+    119     │ - → → → → → → → → → )}␍
+    120     │ - → → → → → → → → </div>␍
+    121     │ - → → → → → → → )}␍
+    122     │ - → → → → → → </TimelineItem>␍
+    123     │ - → → → → → ))}␍
+    124     │ - → → → → → {claim.decidedAt·&&·decisionRecorded·&&·(␍
+    125     │ - → → → → → → <TimelineItem␍
+    126     │ - → → → → → → → state={stateOf("recorded")}␍
+    127     │ - → → → → → → → title={t("travelExpenses.detail.decisionRecorded",·"Decision·recorded")}␍
+    128     │ - → → → → → → → time={eventTime(claim.decidedAt)}␍
+    129     │ - → → → → → → → dateTime={claim.decidedAt}␍
+    130     │ - → → → → → → />␍
+    131     │ - → → → → → )}␍
+    132     │ - → → → → → {pending·&&·(␍
+    133     │ - → → → → → → <TimelineItem␍
+    134     │ - → → → → → → → state="current"␍
+    135     │ - → → → → → → → title={t("travelExpenses.report.history.inReview",·"In·review")}␍
+    136     │ - → → → → → → >␍
+    137     │ - → → → → → → → {t("travelExpenses.report.awaitingReview",·"Waiting·for·review.")}␍
+    138     │ - → → → → → → </TimelineItem>␍
+    139     │ - → → → → → )}␍
+    140     │ - → → → → </Timeline>␍
+    141     │ - → → → </CardContent>␍
+    142     │ - → → </Card>␍
+    143     │ - → );␍
+    144     │ - }␍
+    145     │ - ␍
+    146     │ - export·function·TravelExpenseClaimDetail({␍
+    147     │ - → userId,␍
+    148     │ - → claimId,␍
+    149     │ - → organizationId,␍
+    150     │ - → employeeId,␍
+  720 more lines truncated
+  
+
+Checked 5 files in 10ms. No fixes applied.
+Found 5 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

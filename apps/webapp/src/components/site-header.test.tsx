@@ -8,6 +8,19 @@ import { PageHeader } from "./ui/page-header";
 
 let pathname = "/";
 
+it("lets the retained legacy claim page own the single main heading", () => {
+	pathname = "/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054";
+	const view = render(
+		<>
+			<SiteHeader />
+			<PageHeader title="Travel expense claim" />
+		</>,
+	);
+	expect(view.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+	view.unmount();
+	pathname = "/";
+});
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string) => fallback,

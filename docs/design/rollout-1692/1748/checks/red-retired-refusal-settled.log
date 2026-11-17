@@ -1,0 +1,94 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-2a184f7c-c55e0704d64f87a8/apps/webapp
+
+stderr | src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx > does not show a retired conversion refusal in a later displayed account
+An update to ContinueLegacyDraft inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx > does not show a retired conversion refusal in a later displayed account
+An update to ContinueLegacyDraft inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ❯ |unit| src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx (3 tests | 1 failed) 341ms
+   × does not show a retired conversion refusal in a later displayed account 142ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx > does not show a retired conversion refusal in a later displayed account
+AssertionError: expected <div data-slot="alert" …(2)>…(2)</div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  class="relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"
+  data-slot="alert"
+  role="alert"
+>
+  <svg
+    aria-hidden="true"
+    class="tabler-icon tabler-icon-alert-triangle size-4"
+    fill="none"
+    height="24"
+    stroke="currentColor"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M12 9v4"
+    />
+    <path
+      d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0"
+    />
+    <path
+      d="M12 16h.01"
+    />
+  </svg>
+  <div
+    class="text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed"
+    data-slot="alert-description"
+  >
+    Nothing was changed because a receipt could not be carried over safely: {receipts}. Please retry later or ask your administrator to restore the file.
+  </div>
+</div>
+
+ ❯ src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx:61:38
+     59|  await act(async()=>complete({success:true,data:{kind:"receipt_unavail…
+     60|  await vi.waitFor(()=>expect(screen.getByRole("button",{name:"Continue…
+     61|  expect(screen.queryByRole("alert")).toBeNull();
+       |                                      ^
+     62|  client.clear();
+     63| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  08:51:58
+   Duration  1.36s (environment 31%, tests 30%, import 29%, transform 7%, setup 3%)
+

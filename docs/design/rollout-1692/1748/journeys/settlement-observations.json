@@ -1,0 +1,17 @@
+[
+  {
+    "adminRecordedViaFrozenPublicForm": {
+      "amount": "120.50",
+      "currency": "EUR",
+      "occurredOn": "2026-11-16",
+      "reference": "R166 fixture transfer",
+      "submitDisappeared": true
+    }
+  },
+  {
+    "ownerReadback": {
+      "summary": "Reimbursement\nReimbursed\n\nReimbursed\n\nApproved employee-paid amount\n€120.50\nReimbursed\n€120.50\nRecorded payments\nPaid €120.50\nNov 16, 2026\nR166 fixture transfer",
+      "writeFormOffered": false
+    }
+  }
+]
