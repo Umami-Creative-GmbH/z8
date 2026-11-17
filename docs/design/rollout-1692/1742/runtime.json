@@ -1,0 +1,70 @@
+{
+  "policy": "notifications-denied-for-fixture-origin",
+  "checks": [
+    {
+      "name": "actual scoped manager admitted",
+      "value": true
+    },
+    {
+      "name": "small-employee refused management route",
+      "value": true
+    },
+    {
+      "name": "small-restricted refused management route",
+      "value": true
+    },
+    {
+      "name": "actual failed transport retains all eight rows",
+      "value": true
+    },
+    {
+      "name": "local Retry recovers actual read",
+      "value": true
+    },
+    {
+      "name": "pending real read retains records and disables duplicate refresh",
+      "value": true
+    },
+    {
+      "name": "period picker returns keyboard focus",
+      "value": true
+    },
+    {
+      "name": "sidebar collapses through existing shortcut",
+      "value": true
+    },
+    {
+      "name": "mobile drawer first Escape dismisses and returns focus",
+      "value": true
+    },
+    {
+      "name": "saved dark theme and18px survive reload",
+      "value": true
+    },
+    {
+      "name": "phone enlarged text has no document overflow",
+      "value": true
+    },
+    {
+      "name": "phone records retain all labels and eight calendar links",
+      "value": true
+    }
+  ],
+  "errors": [],
+  "roles": [
+    {
+      "name": "small-manager",
+      "path": "/en/team/period-submissions",
+      "rows": 3,
+      "scope": true
+    },
+    {
+      "name": "small-employee",
+      "path": "/en"
+    },
+    {
+      "name": "small-restricted",
+      "path": "/en"
+    }
+  ]
+}
