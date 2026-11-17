@@ -5,19 +5,26 @@ import {
 	resolveAppRouteMetadata,
 } from "./route-metadata";
 
+it("opts only the driving queue into page-owned headings", () => {
+	expect(appPageOwnsHeading("/en/team/driving")).toBe(true);
+	expect(appPageOwnsHeading("/de/team/driving/")).toBe(true);
+	expect(appPageOwnsHeading("/en/team/driving/detail")).toBe(false);
+	expect(appPageOwnsHeading("/en/team/driving-other")).toBe(false);
+});
+
 describe("route metadata", () => {
 	it("adopts the team absence heading, retaining team ownership and independent descendants", () => {
 		expect(appPageOwnsHeading("/en/team/absences")).toBe(true);
 		expect(appPageOwnsHeading("/de/team/absences/")).toBe(true);
 		expect(appPageOwnsHeading("/en/team/absences/detail")).toBe(false);
 		expect(appPageOwnsHeading("/en/team")).toBe(true);
-		expect(appPageOwnsHeading("/en/team/driving")).toBe(false);
+		expect(appPageOwnsHeading("/en/team/driving/detail")).toBe(false);
 	});
 	it("adopts the team directory heading, preserving independently staged descendants", () => {
 		expect(appPageOwnsHeading("/de/team")).toBe(true);
 		for (const path of [
 			"/en/team/presence",
-			"/en/team/driving",
+			"/en/team/driving/detail",
 			"/en/team/period-submissions",
 			"/en/team/other",
 			"/en/teamwork",
