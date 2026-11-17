@@ -253,6 +253,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		path === "/reports" ||
 		path === "/reports/projects" ||
 		path === "/settings/report-share-links" ||
+		path === "/settings/employees" ||
 		path === "/reports/vehicles" ||
 		path === "/billing/suspended"
 	);
