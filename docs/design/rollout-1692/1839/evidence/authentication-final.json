@@ -1,0 +1,16 @@
+{
+  "credentialAttempt": true,
+  "retry": false,
+  "requestedDestination": "/time-tracking",
+  "widgetReady": true,
+  "nativeRequiredFocus": true,
+  "signInStatus": 200,
+  "destinationPath": "/en/time-tracking",
+  "readback": {
+    "status": 200,
+    "userPresent": true,
+    "sessionPresent": true,
+    "organizationMatches": true
+  },
+  "signedOutFormAbsent": true
+}
