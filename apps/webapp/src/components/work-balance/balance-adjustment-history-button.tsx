@@ -87,14 +87,28 @@ function HistoryBody({ employeeId }: { employeeId: string }) {
 	}
 	if (section.isError || !section.data) {
 		return (
-			<p role="alert" className="text-destructive text-sm">
-				{isRefusal(section.error) && section.error.code === "not_permitted"
-					? t(
-							"workBalance.adjustments.notPermitted",
-							"You can see the balance adjustments of yourself and of employees you manage.",
-						)
-					: t("workBalance.adjustments.loadFailed", "The balance adjustments could not be loaded.")}
-			</p>
+			<div className="space-y-3">
+				<p role="alert" className="text-destructive text-sm">
+					{isRefusal(section.error) && section.error.code === "not_permitted"
+						? t(
+								"workBalance.adjustments.notPermitted",
+								"You can see the balance adjustments of yourself and of employees you manage.",
+							)
+						: t(
+								"workBalance.adjustments.loadFailed",
+								"The balance adjustments could not be loaded.",
+							)}
+				</p>
+				{!isRefusal(section.error) && (
+					<Button
+						variant="outline"
+						disabled={section.isFetching}
+						onClick={() => void section.refetch({ cancelRefetch: false })}
+					>
+						{section.isFetching ? t("common.retrying", "Retrying…") : t("common.retry", "Retry")}
+					</Button>
+				)}
+			</div>
 		);
 	}
 	return <BalanceAdjustmentHistory adjustments={section.data.adjustments} />;

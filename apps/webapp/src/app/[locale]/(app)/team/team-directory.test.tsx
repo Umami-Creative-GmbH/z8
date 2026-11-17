@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Activity, type ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TeamDirectory } from "./team-directory";
@@ -16,6 +16,7 @@ const seams = vi.hoisted(() => ({
 		employeeId: "manager-a",
 		role: "manager",
 		isLoading: false,
+		refetch: async () => {},
 	},
 	session: {
 		isPending: false,
@@ -76,6 +77,7 @@ describe("team directory arrivals", () => {
 			employeeId: "manager-a",
 			role: "manager",
 			isLoading: false,
+			refetch: async () => {},
 		};
 		seams.current.mockResolvedValue({
 			id: "manager-a",
@@ -117,7 +119,7 @@ describe("team directory arrivals", () => {
 		expect(screen.getByRole("alert").textContent).toBe("Unable to load your team members.");
 		expect(screen.queryByText("Private failure detail")).toBeNull();
 		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-		expect(seams.refresh).toHaveBeenCalledOnce();
+		await waitFor(() => expect(seams.refresh).toHaveBeenCalledOnce());
 		expect(seams.managed).toHaveBeenCalledWith({ includeFormer: true });
 	});
 	it("redirects employee-role arrivals without loading managed records", async () => {
@@ -222,7 +224,7 @@ describe("team directory arrivals", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 		const pending = screen.getByRole("button", { name: "Retrying…" });
 		fireEvent.click(pending);
-		expect(seams.refresh).toHaveBeenCalledOnce();
+		await waitFor(() => expect(seams.refresh).toHaveBeenCalledOnce());
 		await act(async () => resolveRefresh?.());
 		expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
 	});

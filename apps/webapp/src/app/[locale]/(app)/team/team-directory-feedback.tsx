@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
+import { useOrganization } from "@/components/providers/organization-context-provider";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
@@ -25,13 +26,19 @@ export function TeamDirectoryLoading() {
 
 export function TeamDirectoryRetry() {
 	const { t } = useTranslate();
+	const organization = useOrganization();
 	const router = useRouter();
 	const [pending, startTransition] = useTransition();
 	return (
 		<Button
 			variant="outline"
 			disabled={pending}
-			onClick={() => startTransition(() => router.refresh())}
+			onClick={() =>
+				startTransition(async () => {
+					await organization.refetch();
+					await router.refresh();
+				})
+			}
 		>
 			{pending ? t("team.directory.retrying", "Retrying…") : t("team.directory.retry", "Retry")}
 		</Button>
