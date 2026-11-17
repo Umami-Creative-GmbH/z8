@@ -1,0 +1,54 @@
+{
+  "head": "ce1a4d23d973ebf73a8ad1e0c1be873d784d6f7f",
+  "commands": [
+    {
+      "name": "typegen",
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec next typegen",
+      "verifyEnv": "false",
+      "exit": 0
+    },
+    {
+      "name": "types-main",
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.typecheck.json --noEmit --incremental false",
+      "verifyEnv": "false",
+      "exit": 0
+    },
+    {
+      "name": "types-workflow",
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false",
+      "verifyEnv": "false",
+      "exit": 0
+    },
+    {
+      "name": "types-smoke",
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.smoke.json --noEmit --incremental false",
+      "verifyEnv": "false",
+      "exit": 0
+    },
+    {
+      "name": "lint-import",
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check src/components/login --formatter-enabled=false",
+      "verifyEnv": "false",
+      "exit": 0
+    },
+    {
+      "name": "format-explicit",
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome format src/components/login --line-width=100 --line-ending=crlf",
+      "verifyEnv": "false",
+      "exit": 0
+    },
+    {
+      "name": "format-ordinary",
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome format src/components/login",
+      "verifyEnv": "false",
+      "exit": 1
+    },
+    {
+      "name": "doctor",
+      "command": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 38da311d680f1ee2a2258b400585d16a33587483 --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1839/doctor-final.json",
+      "verifyEnv": "false",
+      "exit": 0
+    }
+  ],
+  "headAfter": "ce1a4d23d973ebf73a8ad1e0c1be873d784d6f7f"
+}

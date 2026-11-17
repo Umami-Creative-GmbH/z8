@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "tools": [
+    "get_project_metadata",
+    "get_errors",
+    "get_page_metadata",
+    "get_logs",
+    "get_server_action_by_id",
+    "get_routes",
+    "get_request_insights",
+    "get_compilation_issues",
+    "compile_route"
+  ],
+  "compilationHttpStatus": 200,
+  "compilationToolError": false,
+  "compilationSummary": [
+    {
+      "keys": [
+        "issues"
+      ],
+      "arrayCounts": {
+        "issues": 0
+      }
+    }
+  ]
+}

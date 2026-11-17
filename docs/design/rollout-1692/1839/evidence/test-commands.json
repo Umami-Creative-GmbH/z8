@@ -1,0 +1,18 @@
+{
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false",
+    "pnpm": "12.16.1",
+    "maxWorkers": 1
+  },
+  "unit": {
+    "exit": 0,
+    "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/login src/lib/auth/callback-url.test.ts src/lib/auth/app-redirect.test.ts src/lib/auth/load-auth-page-client.test.ts src/lib/auth/store-app-session.test.ts src/lib/turnstile src/lib/store-app src/lib/enterprise-identity/sso-enforcement-plugin.test.ts src/lib/enterprise-identity/sso-reauthentication.test.ts src/lib/enterprise-identity/session-sso.test.ts src/lib/enterprise-identity/session-sso-store.test.ts src/lib/auth-domain-config.test.ts src/lib/hooks/use-enabled-providers.test.tsx src/components/auth-form-wrapper.test.tsx 'src/app/[locale]/(auth)/layout-turnstile.test.tsx' src/app/api/auth/verify-turnstile/route.test.ts src/tolgee/extracted-key-defaults.test.ts --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1839/unit-complete.json"
+  },
+  "integration": {
+    "exit": 0,
+    "environment": "NODE_ENV=test, canonical disposable URL/sentinel privately supplied",
+    "command": "bash ./scripts/run-postgres-integration-suites.sh \"$APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL\" src/lib/auth/app-auth-code.integration.test.ts src/lib/store-app/sign-in-origin.integration.test.ts src/lib/auth/sso-organization-provisioning.integration.test.ts src/lib/organization-mfa/authentication.integration.test.ts --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1839/pg-final.json",
+    "nestedPnpm": "Exported Bash function calls the same pinned executable with --config.verify-deps-before-run=false and pnpm_config_verify_deps_before_run=false. Canonical runner/verifier/factory/suites unchanged.",
+    "database": "Fresh empty disposable sibling in the same exact owned PostgreSQL container; canonical migration verifier and suite fixtures only, no manual auth-state seeds."
+  }
+}

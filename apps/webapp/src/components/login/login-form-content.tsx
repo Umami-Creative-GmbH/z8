@@ -1,102 +1,123 @@
 "use client";
 
-import { IconFingerprint } from "@tabler/icons-react";
+import { IconFingerprint, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
 import { AuthFormWrapper } from "../auth-form-wrapper";
-import { type TurnstileRef, TurnstileWidget } from "../turnstile-widget";
-import { LoginActions } from "./login-actions";
+import type { TurnstileRef } from "../turnstile-widget";
 import { LoginAlternativeAuth } from "./alternative-auth";
 import { LoginCredentialsFields } from "./credentials-fields";
-import { useLoginAuth } from "./use-login-auth";
+import { LoginActions } from "./login-actions";
+import { LoginVerification } from "./login-verification";
+import { useLoginArrival, useLoginAuth } from "./use-login-auth";
 
-// Only shown after a sign-in asks for a 2FA code, so input-otp stays out of the first load.
 const TwoFactorForm = dynamic(() => import("./two-factor-form").then((mod) => mod.TwoFactorForm), {
 	ssr: false,
 });
 
-export function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
+export function LoginFormContent(props: React.ComponentProps<"div">) {
+	const arrival = useLoginArrival();
+	return <LoginFormArrival key={arrival.scope} arrival={arrival} {...props} />;
+}
+
+function LoginFormArrival({
+	arrival,
+	className,
+	...props
+}: React.ComponentProps<"div"> & { arrival: ReturnType<typeof useLoginArrival> }) {
 	const { t } = useTranslate();
 	const turnstileRef = useRef<TurnstileRef>(null);
-	const auth = useLoginAuth(turnstileRef);
-
+	const auth = useLoginAuth(turnstileRef, arrival);
 	return (
 		<AuthFormWrapper
 			className={className}
-			formProps={{ onSubmit: auth.handleSubmit }}
-			title={t("auth.login-to-account", "Login to your account")}
+			formProps={{ onSubmit: auth.handleSubmit, "aria-busy": auth.isLoading }}
+			title={
+				auth.requires2FA
+					? t("auth.signIn.secondFactor", "Verify your sign-in")
+					: t("auth.login-to-account", "Login to your account")
+			}
 			branding={auth.branding}
 			{...props}
 		>
 			{auth.error ? (
-				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">{auth.error}</div>
+				<div
+					className="break-words rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm"
+					role="alert"
+				>
+					{auth.error}
+				</div>
 			) : null}
 			{auth.showSSO && !auth.requires2FA ? (
-				<Button type="button" className="w-full" onClick={auth.handleSSOLogin} disabled={auth.isLoading}>
-					<IconFingerprint className="mr-2 size-4" />
-					{t("auth.login-with-sso", "Sign in with SSO")}
+				<Button
+					type="button"
+					className="h-auto min-h-11 w-full whitespace-normal"
+					onClick={auth.handleSSOLogin}
+					disabled={auth.isLoading}
+				>
+					{auth.pendingMethod === "sso" ? (
+						<IconLoader2
+							aria-hidden="true"
+							className="size-4 animate-spin motion-reduce:animate-none"
+						/>
+					) : (
+						<IconFingerprint aria-hidden="true" className="size-4" />
+					)}
+					{auth.pendingMethod === "sso"
+						? t("auth.signIn.ssoPending", "Connecting to SSO…")
+						: t("auth.login-with-sso", "Sign in with SSO")}
 				</Button>
 			) : null}
 			{auth.showSSO && auth.showEmailPassword && !auth.requires2FA ? (
-				<div className="relative">
-					<div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-					<div className="relative flex justify-center text-xs uppercase">
-						<span className="bg-card px-2 text-muted-foreground">{t("auth.or", "or")}</span>
-					</div>
-				</div>
+				<p className="border-t pt-5 text-center text-sm text-muted-foreground">
+					{t("auth.signIn.credentials", "Sign in with email")}
+				</p>
 			) : null}
 			{auth.showEmailPassword ? (
 				<LoginCredentialsFields
-					email={auth.email}
-					password={auth.password}
-					fieldErrors={auth.fieldErrors}
-					requires2FA={auth.requires2FA}
-					onEmailBlur={auth.handleEmailBlur}
-					onEmailChange={auth.handleEmailChange}
-					onPasswordBlur={auth.handlePasswordBlur}
-					onPasswordChange={auth.handlePasswordChange}
+					form={auth.form}
+					disabled={auth.requires2FA || auth.isLoading}
+					onChange={auth.handleFieldChange}
 				/>
 			) : null}
 			{auth.requires2FA ? (
-				<TwoFactorForm
-					otpValue={auth.otpValue}
-					trustDevice={auth.trustDevice}
-					isLoading={auth.isLoading}
-					onOtpChange={auth.setOtpValue}
-					onTrustDeviceChange={auth.setTrustDevice}
-					onVerify={auth.handleVerify2FA}
-				/>
+				<auth.form.Field name="otpValue">
+					{(field) => (
+						<TwoFactorForm
+							otpValue={field.state.value}
+							fieldError={field.state.meta.errors
+								.filter((error) => typeof error === "string")
+								.join(" ")}
+							trustDevice={auth.trustDevice}
+							isLoading={auth.isLoading}
+							onOtpChange={auth.setOtpValue}
+							onTrustDeviceChange={auth.setTrustDevice}
+						/>
+					)}
+				</auth.form.Field>
+			) : null}
+			{auth.showEmailPassword && !auth.requires2FA ? (
+				<LoginVerification key={auth.verificationNonce} auth={auth} widgetRef={turnstileRef} />
 			) : null}
 			<LoginActions
 				requires2FA={auth.requires2FA}
 				showEmailPassword={auth.showEmailPassword}
 				isLoading={auth.isLoading}
-				turnstile={{
-					config: auth.turnstileConfig,
-					token: auth.turnstileToken,
-				}}
+				emailPending={auth.pendingMethod === "email"}
+				turnstile={{ config: auth.turnstileConfig, token: auth.turnstileToken }}
 				forgotPasswordHref="/forgot-password"
 				signUpHref={withCallbackUrl("/sign-up", auth.callbackUrl)}
 			>
-				{auth.turnstileConfig?.enabled && auth.turnstileConfig.siteKey ? (
-					<TurnstileWidget
-						ref={turnstileRef}
-						siteKey={auth.turnstileConfig.siteKey}
-						onVerify={auth.handleTurnstileVerify}
-						onError={auth.handleTurnstileError}
-						onExpire={auth.handleTurnstileExpire}
-						onTimeout={auth.handleTurnstileTimeout}
-						className="!absolute !overflow-hidden !size-0"
-					/>
-				) : null}
 				<LoginAlternativeAuth
 					requires2FA={auth.requires2FA}
 					showPasskey={auth.showPasskey}
 					filteredProviders={auth.filteredProviders}
 					providersLoading={auth.providersLoading}
+					providersError={auth.providersError}
+					pendingMethod={auth.pendingMethod}
 					isLoading={auth.isLoading}
 					onPasskeyLogin={auth.handlePasskeyLogin}
 					onSocialLogin={auth.handleSocialLogin}
