@@ -44,9 +44,9 @@ interface WithSickNotes {
  * with a toast: a file could not be uploaded (nothing is sent), or the server
  * call itself failed (the uploads are deleted again).
  */
-export function useStagedSickNotes(dates: AbsenceDates) {
+export function useStagedSickNotes(dates: AbsenceDates, options: { lifetimeKey?: string } = {}) {
 	const { t } = useTranslate();
-	const uploads = useStagedSickNoteUploads();
+	const uploads = useStagedSickNoteUploads(options);
 	const defaults = useSickNoteDefaults(dates);
 
 	async function submit<Result extends WithSickNotes>(input: {

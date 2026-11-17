@@ -13,6 +13,8 @@ export interface UseTusFileUploadOptions<Result> {
 	allowedFileTypes: readonly string[];
 	/** Extra TUS upload metadata, e.g. `{ purpose: "personnel-document" }` (#865). */
 	uploadMetadata?: Readonly<Record<string, string>>;
+	/** Retire this uploader when its surrounding form lifetime changes. */
+	lifetimeKey?: string;
 	onSuccess?: (result: Result) => void;
 	onError?: (error: Error) => void;
 }
@@ -63,6 +65,7 @@ export function useTusFileUpload<Result>({
 	maxFileSize,
 	allowedFileTypes,
 	uploadMetadata,
+	lifetimeKey,
 	onSuccess,
 	onError,
 }: UseTusFileUploadOptions<Result>): UseTusFileUploadReturn {
@@ -162,7 +165,7 @@ export function useTusFileUpload<Result>({
 			uppy.destroy();
 			if (uppyRef.current === uppy) uppyRef.current = null;
 		};
-	}, [maxFileSize, allowedFileTypesKey]);
+	}, [maxFileSize, allowedFileTypesKey, lifetimeKey]);
 
 	const addFile = (file: File) => {
 		const uppy = uppyRef.current;
