@@ -1896,7 +1896,7 @@
       "status": "awaiting-integration",
       "verifiedCommit": null,
       "implementationCommit": "bf0197401f2e07ff29b8fd5889b3f3f3f3677f62",
-      "handoffLimitation": "Provisional code/public/static+canonicalstore checks:188distinctunit/19files+5freshcanonicalPG/1=193/20 pass;typegen/all3types,9lint/Doctorzero. Explicitmetadata2/ordinary8formatfailures inherited/qualified. Freshliveapp/browser/native/currentcaptures/Calendarwrites/authorityraces due;workerprovenance/sidebar/installPostHogfailednetworkattempt andwiderlimits retained.",
+      "handoffLimitation": "Provisional. Independent12 fresh provider probes and bounded live admin missing-record, roles, Retry/filters/preferences/Calendar navigation pass on D28; inherited188 units/5PG not rerun. Calendar save remains blocked by earlier automatic approval review; original scope and exact odometer100/110 (10km) proposal clarified for a new normal-review check. Native React, live authority and broader acceptance unpassed. Desktop/wide PNGs are main-region crops; overlays and two metadata/eight ordinary format findings retained.",
       "integrationCommit": "bd6b804ccc6e7fa3c63fbf4c048200c3c303aab4",
       "candidateCommit": "6ab5cca4b1827580eeff064cc47d36d4589f26aa",
       "evidence": "docs/design/rollout-1692/1741.md",
@@ -1909,13 +1909,16 @@
       "blockedBy": [
         1694
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "69c9ed3a86410848885f78f5a7bcdf5f468c4323",
       "implementationCommit": "cfa34ce7ed2ea0d2df23929f4656b7fefdcd8e29",
       "evidence": "docs/design/rollout-1692/1742.md",
-      "handoffLimitation": "Provisional root integration and provider employee/role arrival correction: 546 unit/public cases/44 files plus fresh35 canonicalPG/6, all3types/typegen, lint12, owned3 explicitCRLF and complete Doctor12 zero. Two shared metadata formatter findings remain. Fresh independent corrected-source/live acceptance pending; inherited presentation capture and wider build/catalog/device/race limits remain.",
+      "handoffLimitation": "Bounded handoff verified. Live owner-without-employee, exhaustive authority/ABA/Activity/revocation and all five live outcomes remain unpassed; public/canonical owner coverage retained. Historical comparison/phone overlay/controlled fixture-clock and two metadata-format qualifications remain. Full generation/catalog/providers/devices/true zoom, broad roster and whole-branch review remain open.",
       "provisionalMerge": "1578b6c8d52c23839ec405e7dc0a370d30877169",
-      "correctionCommit": "989968d6aab7b7e6be7f87a94e60673e1de55424"
+      "correctionCommit": "989968d6aab7b7e6be7f87a94e60673e1de55424",
+      "proofCommit": "69c9ed3a86410848885f78f5a7bcdf5f468c4323",
+      "proofArchive": "docs/design/rollout-1692/1742/root-provider-arrival-and-recovery",
+      "integrationVerification": "Root provisional import1c8cff67 and provider arrival correction989968d6a merged1578b6c8, exact predicted trees and preserved unrelated paths/61 anchors. FINAL BOUNDED HANDOFF at 69c9ed3a86410848885f78f5a7bcdf5f468c4323: all20 historical source/config pins match correction989968d6a, frozen reviewD28 and publication root11cd; optional current-source mode checks18 and excludes only2 shared metadata blobs. Root546 unit occurrences/44files have537 unique file/fullname labels plus9 intentional duplicate-name parameterized occurrences; canonical PG35/6, migration recovery and exact cleanup pass. Independent33 cases/3files ran43 executions including10 reruns;22 permanent cases overlap root,11 are new. No unit/live/axe count inflation or fresh independent PG/type claim. Admin/all8rows, manager/managed3rows, restricted denial, actual read failure/retained rows, coalesced Retry/header Refresh, period/picker/destination navigation, responsive preferences and exact native target pass at frozenD28. Phone main axe30passes/0violations/0incomplete; connected Next arrays empty. Controlled canonical cadence fixture clock2026-10-01 is explicit; no live settings-save proof. Live owner-without-employee and all5 live outcomes remain unpassed, with public/provider and canonical PG coverage. Public72-file archive contains60 exact approved payloads (6,792,696bytes); reportappend and separate Git-blob audit commit after root and independent73path audits:48raw-exact/25CRLFtoLFonly; original22,325byte raw and22,217byte Gitprefix unchanged. Both readonlyverifier modes,49JSON,4fullPNGdecodes,5TS/TSX syntax receipts,1newverifier syntax and65links pass;4archivedPython drivers remain inert/unexecuted. Source/dependencies/priorproofs unchanged; historicalfailures/nulls/whitespace preserved. Newderived/report whitespace passes. Wider limits retained; issuesOPEN/PRdraft."
     },
     {
       "id": "R161",
