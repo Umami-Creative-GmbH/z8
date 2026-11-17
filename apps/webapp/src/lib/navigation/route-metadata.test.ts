@@ -12,9 +12,10 @@ it("opts only the driving queue into page-owned headings", () => {
 	expect(appPageOwnsHeading("/en/team/driving-other")).toBe(false);
 });
 
-it("adopts only the presence selection heading, preserving detail ownership", () => {
+it("adopts presence selection and selected-location headings, preserving deeper exclusions", () => {
 	expect(appPageOwnsHeading("/de/team/presence")).toBe(true);
-	expect(appPageOwnsHeading("/en/team/presence/berlin")).toBe(false);
+	expect(appPageOwnsHeading("/en/team/presence/berlin")).toBe(true);
+	expect(appPageOwnsHeading("/en/team/presence/berlin/history")).toBe(false);
 	expect(appPageOwnsHeading("/en/team")).toBe(true);
 });
 

@@ -4,7 +4,15 @@ import { IconClockPause, IconUserCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "@/navigation";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Link, useRouter } from "@/navigation";
 
 /** How often the manager view reloads its server data. */
 const PRESENCE_REFRESH_MS = 60_000;
@@ -29,33 +37,40 @@ export function LocationPresenceList({ rows }: { rows: LocationPresenceRow[] }) 
 
 	if (rows.length === 0) {
 		return (
-			<div className="rounded-lg border bg-card p-6 text-center text-muted-foreground text-sm">
+			<div className="rounded-lg border bg-card px-6 py-12 text-center text-muted-foreground text-sm">
 				{t("team.presence.empty", "Nobody you can see is clocked in at this location right now.")}
 			</div>
 		);
 	}
 
 	return (
-		<div className="overflow-hidden rounded-lg border bg-card">
-			<table className="w-full text-sm">
-				<thead className="bg-muted/50 text-left text-muted-foreground">
-					<tr>
-						<th scope="col" className="px-4 py-2 font-medium">
+		<div className="min-w-0 rounded-lg border bg-card">
+			<Table mobileLayout="stacked" aria-label={t("team.presence.title", "Who is in")}>
+				<TableHeader className="bg-muted/40">
+					<TableRow>
+						<TableHead scope="col" className="px-4 text-muted-foreground">
 							{t("team.presence.columns.name", "Name")}
-						</th>
-						<th scope="col" className="px-4 py-2 font-medium">
+						</TableHead>
+						<TableHead scope="col" className="px-4 text-muted-foreground">
 							{t("team.presence.columns.state", "State")}
-						</th>
-						<th scope="col" className="px-4 py-2 font-medium">
+						</TableHead>
+						<TableHead scope="col" className="px-4 text-muted-foreground">
 							{t("team.presence.columns.since", "Since")}
-						</th>
-					</tr>
-				</thead>
-				<tbody>
+						</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
 					{rows.map((row) => (
-						<tr key={row.employeeId} className="border-t">
-							<td className="px-4 py-3 font-medium">{row.name}</td>
-							<td className="px-4 py-3">
+						<TableRow key={row.employeeId}>
+							<TableCell className="whitespace-normal break-words px-4 py-3 font-medium">
+								<Link
+									href={`/settings/employees/${row.employeeId}`}
+									className="inline-flex min-h-9 items-center rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+								>
+									{row.name}
+								</Link>
+							</TableCell>
+							<TableCell className="px-4 py-3 max-sm:col-span-full">
 								{row.state === "on_break" ? (
 									<Badge
 										variant="outline"
@@ -73,12 +88,14 @@ export function LocationPresenceList({ rows }: { rows: LocationPresenceRow[] }) 
 										{t("presence.clockedIn", "Clocked in")}
 									</Badge>
 								)}
-							</td>
-							<td className="px-4 py-3 tabular-nums">{row.sinceText}</td>
-						</tr>
+							</TableCell>
+							<TableCell className="whitespace-normal px-4 py-3 tabular-nums">
+								{row.sinceText}
+							</TableCell>
+						</TableRow>
 					))}
-				</tbody>
-			</table>
+				</TableBody>
+			</Table>
 		</div>
 	);
 }

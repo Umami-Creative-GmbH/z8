@@ -1,0 +1,14 @@
+{
+  "cacheMoved": false,
+  "port": 58616,
+  "ownedNextIdentityVerified": true,
+  "filteredProcessInventory": true,
+  "portClosed": true,
+  "stoppedPids": [
+    83888,
+    34636,
+    105784,
+    93420
+  ],
+  "ownedNextStopped": true
+}

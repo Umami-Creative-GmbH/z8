@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "Actual employee link opens the existing employee settings destination",
+    "Browser Back restores selected presence location",
+    "Phone navigation drawer opens and first Escape preserves the selected location"
+  ],
+  "employeeHref": "/en/settings/employees/9a7b03f1-9a10-48df-ad22-acfa62e85814",
+  "status": "failed",
+  "failure": {
+    "message": "Node is either not clickable or not an Element",
+    "stack": "Error: Node is either not clickable or not an Element\n    at CdpElementHandle.clickablePoint (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:693:23)\n    at async CdpElementHandle.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:119:20)\n    at async CdpElementHandle.click (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:723:30)\n    at async CdpElementHandle.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:130:24)\n    at async CdpFrame.click (file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:754:17)\n    at async file:///X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/.tmp/1744/navigation.mjs:13:226"
+  }
+}
