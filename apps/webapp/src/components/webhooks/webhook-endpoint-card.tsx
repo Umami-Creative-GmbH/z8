@@ -341,6 +341,7 @@ export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
 				open={isEditDialogOpen}
 				onOpenChange={setIsEditDialogOpen}
 				onSuccess={onUpdated}
+				canComplete={props.canComplete}
 			/>
 
 			<WebhookDeliveryLogsDialog

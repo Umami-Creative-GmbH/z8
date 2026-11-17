@@ -11,6 +11,8 @@ export interface WebhookFormDialogProps {
 	webhook?: PublicWebhookEndpoint;
 	open: boolean;
 	actionAvailable?: boolean;
+	/** The live query may retire completion before its observer commits. */
+	canComplete?: () => boolean;
 	onOpenChange: (open: boolean) => void;
 	/** A refused local snapshot can reject completion by returning false. */
 	onSuccess: ((webhook: WebhookEndpoint) => void) | ((webhook: WebhookEndpoint) => boolean);
@@ -34,6 +36,7 @@ export function useWebhookFormController({
 	webhook,
 	webhookIdentity,
 	actionAvailable = true,
+	canComplete,
 	onOpenChange,
 	onSuccess,
 }: WebhookFormDialogProps & { webhookIdentity: string }) {
@@ -57,6 +60,7 @@ export function useWebhookFormController({
 	function isCurrent(operation: WebhookFormOperation | null) {
 		return (
 			!!operation &&
+			(canComplete?.() ?? true) &&
 			!operation.retired &&
 			activeOperationRef.current === operation &&
 			operation.webhookIdentity === webhookIdentity

@@ -3,7 +3,8 @@
 import { IconPlus, IconWebhook } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDeveloperServerSnapshot } from "@/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot";
 import { readWebhooksForView } from "@/app/[locale]/(app)/settings/enterprise/api-keys/view-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -30,9 +31,14 @@ export function WebhooksPageClient({
 	const { t } = useTranslate();
 	const client = useQueryClient();
 	const queryKey = ["developerWebhooks", organizationId, currentUserId];
+	const initialData = useDeveloperServerSnapshot({
+		queryKey: ["developerWebhooks", organizationId, currentUserId],
+		snapshot: initialWebhooks,
+		initialError,
+	});
 	const query = useQuery<ServerActionResult<PublicWebhookEndpoint[]>>({
 		queryKey,
-		initialData: initialError ? undefined : { success: true, data: initialWebhooks },
+		initialData,
 		retry: false,
 		queryFn: async () => {
 			const result = await readWebhooksForView({ organizationId, userId: currentUserId });
@@ -59,13 +65,6 @@ export function WebhooksPageClient({
 		});
 		return accepted;
 	};
-	useEffect(() => {
-		if (!initialError)
-			client.setQueryData(["developerWebhooks", organizationId, currentUserId], {
-				success: true,
-				data: initialWebhooks,
-			});
-	}, [client, initialWebhooks, initialError, organizationId, currentUserId]);
 
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
@@ -163,6 +162,7 @@ export function WebhooksPageClient({
 
 			<WebhookFormDialog
 				open={isCreateDialogOpen && !refused}
+				canComplete={canComplete}
 				actionAvailable={!refused}
 				onOpenChange={setIsCreateDialogOpen}
 				onSuccess={handleWebhookCreated}

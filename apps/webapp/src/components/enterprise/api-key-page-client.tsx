@@ -12,10 +12,11 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { deleteApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
+import { useDeveloperServerSnapshot } from "@/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot";
 import { readApiKeysForView } from "@/app/[locale]/(app)/settings/enterprise/api-keys/view-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -132,6 +133,11 @@ function useApiKeyPageViewModel({
 	const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
 	// Query for API keys
+	const initialData = useDeveloperServerSnapshot({
+		queryKey: ["apiKeys", organizationId, currentUserId],
+		snapshot: initialApiKeys,
+		initialError,
+	});
 	const {
 		data: apiKeysResult,
 		isLoading,
@@ -150,7 +156,7 @@ function useApiKeyPageViewModel({
 				throw new Error("API keys unavailable");
 			return result;
 		},
-		initialData: initialError ? undefined : { success: true as const, data: initialApiKeys },
+		initialData,
 		retry: false,
 	});
 
@@ -173,13 +179,6 @@ function useApiKeyPageViewModel({
 			lifetime.current = null;
 		};
 	}, [refused]);
-	useEffect(() => {
-		if (!initialError)
-			queryClient.setQueryData(["apiKeys", organizationId, currentUserId], {
-				success: true,
-				data: initialApiKeys,
-			});
-	}, [queryClient, organizationId, currentUserId, initialApiKeys, initialError]);
 	const deleteMutation = {
 		isPending: isDeleting,
 		error: deleteError,
