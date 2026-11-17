@@ -1,0 +1,42 @@
+{
+  "prefix": "Every pnpm command: process-local pnpm_config_verify_deps_before_run=false plus --config.verify-deps-before-run=false; normal access escalation; no install/version change.",
+  "commands": [
+    "pnpm --config.verify-deps-before-run=false --version",
+    "pnpm --config.verify-deps-before-run=false exec node .tmp/1839-1744-current-runtime-20261117b/runner.mjs snapshot before",
+    "pnpm --config.verify-deps-before-run=false exec node .tmp/1839-1744-current-runtime-20261117b/runner.mjs start",
+    "Child: existing node apps/webapp/node_modules/next/dist/bin/next dev --turbopack --port 61318; cwd apps/webapp; prepared private env read directly; NODE_ENV=development for this child only.",
+    "pnpm --config.verify-deps-before-run=false exec node .tmp/1839-1744-current-runtime-20261117b/browser-driver.mjs",
+    "Browser actions: normal UI input using fixture actor fields read privately; no direct auth POST, cookie injection, interception, state saving or exports. Safe literal action provenance is in this task tool transcript; private inputs/argv remain local.",
+    "pnpm --config.verify-deps-before-run=false exec tsx --tsconfig apps/webapp/tsconfig.json --conditions=react-server .tmp/1839-1744-current-runtime-20261117b/canonical-read.ts [failed: root tsx unavailable]",
+    "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsx --tsconfig tsconfig.json --conditions=react-server ../../.tmp/1839-1744-current-runtime-20261117b/canonical-read.ts [failed Windows import; then twice exit0 with own-harness correction and Since assertion]",
+    "MCP POST /_next/mcp: tools/list; tools/call get_project_metadata, get_compilation_issues, get_errors, get_page_metadata. No raw RSC or action body captured.",
+    "PowerShell own stop-next.ps1: exact PID/creation/parent/executable/command-line/listener guards; audited own tree only; no unrelated process operations.",
+    "Browser CLOSE; exact residual browser-driver provenance check and stop; own ephemeral profile path check and removal.",
+    "Name+label checks for exact3 transferred services; pnpm --config.verify-deps-before-run=false exec node .tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs cleanup .tmp/1839-1744-runtime-root-prepared-v2/fixture-private",
+    "Exact-name Docker absence checks; listeners absent on 61313,61315,61316,61318.",
+    "pnpm --config.verify-deps-before-run=false exec node .tmp/1839-1744-current-runtime-20261117b/runner.mjs snapshot after",
+    "pnpm --config.verify-deps-before-run=false exec node -p process.version"
+  ],
+  "harnessPins": [
+    {
+      "path": "runner.mjs",
+      "sha256": "5b50b816b736b16edeb5b0b25433c93c9dd1eae8f64e361114f5527a5c75106d"
+    },
+    {
+      "path": "browser-driver.mjs",
+      "sha256": "c3d45837abc091d69c4d37559db902ed57e418729c9899bbd55af4df2b98f418"
+    },
+    {
+      "path": "canonical-read.ts",
+      "sha256": "5c8a3980ef8a1969eb336b828f234ce25e1f79f922f6d54cd0bbd46f75b6b3bd"
+    },
+    {
+      "path": "stop-next.ps1",
+      "sha256": "39fe10e725120597f20b7ffb110aedc92df27899aecad1060cb23bd27c81e481"
+    },
+    {
+      "path": "finalize.mjs",
+      "sha256": "84fe078fc4f11145d457b2b51f224cc1cd0ebf54d948d3c733983639b9a6df5e"
+    }
+  ]
+}

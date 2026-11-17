@@ -1,0 +1,17 @@
+{
+  "get_compilation_issues": {
+    "connected": true,
+    "issueCount": 0
+  },
+  "get_errors": {
+    "connected": true,
+    "configurationErrors": 0,
+    "sessionErrorGroups": 0
+  },
+  "get_page_metadata": {
+    "connected": true,
+    "sessions": 1,
+    "selectedRoute": true
+  },
+  "pageErrorCount": 0
+}

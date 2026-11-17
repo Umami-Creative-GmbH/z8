@@ -1,0 +1,9 @@
+{
+  "newLocationCreated": true,
+  "ownEmployeeAssigned": true,
+  "publicOfficeClockIn": true,
+  "liveWorkPeriods": 1,
+  "historicalWorkPeriods": 261,
+  "noSqlWrites": true,
+  "noCalendarChanges": true
+}

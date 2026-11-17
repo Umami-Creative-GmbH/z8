@@ -1,0 +1,8 @@
+{
+  "remainingOwnedPids": [],
+  "nextPortClosed": true,
+  "initialImmediateAbsenceCheck": "one process still terminating; subsequent bounded check",
+  "nextPort": 61318,
+  "provenanceVerified": true,
+  "pidCount": 37
+}

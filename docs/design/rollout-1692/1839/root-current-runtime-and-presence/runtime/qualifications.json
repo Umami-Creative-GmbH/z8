@@ -1,0 +1,49 @@
+{
+  "next": {
+    "actualVersion": "16.4.6 (Turbopack)",
+    "connectedFinalCompilationIssues": 0,
+    "connectedFinalConfigurationErrors": 0,
+    "connectedFinalSessionErrorGroups": 0,
+    "connectedFinalBrowserSessions": 1,
+    "pageErrorsObserved": 0,
+    "visibleDevtoolsIssueBadge": 1,
+    "visibleBadgeClassification": "A return/Retry screenshot visibly includes 1 Issue. Its panel was not inspected before teardown; final MCP empty error/compilation arrays do not classify it or establish zero request-insight/development issues.",
+    "privateLogObservations": [
+      "Storage NotFound/404 diagnostic",
+      "Equipment-access AuthorizationError on employee-detail navigation"
+    ],
+    "confirmedP1": 0
+  },
+  "privacy": {
+    "syntheticEmailAppearedInOneAuthenticatedDomToolResult": true,
+    "passwordsOutput": false,
+    "sessionTokensOutput": false,
+    "authHeadersOutput": false,
+    "sessionStateExported": false,
+    "safeArtifactsContainFixtureCredentials": false,
+    "qualification": "An authenticated DOM diagnostic inadvertently included the generated synthetic email username. No password/token/header/session-state output followed. That raw result was not saved or allowlisted; later diagnostics used booleans/redaction and main-only synthetic captures."
+  },
+  "environment": {
+    "pnpm": "12.16.1",
+    "node": "26.9.0",
+    "normalAccessEscalation": true,
+    "installations": 0,
+    "repairs": 0,
+    "copies": 0,
+    "productionStarts": 0,
+    "nextDevTrees": 1,
+    "preparedFixtureReused": true,
+    "guardedDriverPrepareInvocations": 0
+  },
+  "attempts": [
+    "Shared preview about:blank was rejected as unsupported protocol; omitted-URL incognito tab opened, then was closed. No credentials reached preview.",
+    "First sandbox node-repl Chromium launch timed out before browser ownership was returned. Exact parent-child check found zero Chromium children afterward. Normal escalated isolated Chromium succeeded.",
+    "Initial sandbox CIM provenance read was denied; identical owned-process read succeeded through normal escalation.",
+    "Intentional wrong-password command was rejected before execution; no retry or workaround.",
+    "First session diagnostic called browser Fetch Response.status as a method; corrected the new harness to the status property. No additional sign-in attempt.",
+    "First location detail check ran before navigation settled and observed false. Exact URL/heading settled check then passed; not treated as a product finding.",
+    "Canonical reader first failed because tsx was not root-linked, then because Windows absolute import lacked file URL. App-local existing tsx and a file-URL fix in the new ignored harness succeeded.",
+    "Two Next cleanup guards stopped before any kill: a new own Windows console host needed auditing. Exact descendant audit captured all 37 processes, then rechecked identity before stopping.",
+    "Immediate Next absence check saw one terminating PID; subsequent bounded check confirmed all 37 absent. Residual own browser driver was provenance-checked stopped after Chromium exit; its shell returned exit1, not an application assertion failure."
+  ]
+}

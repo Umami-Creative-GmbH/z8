@@ -1,0 +1,34 @@
+{
+  "path": "/en/team/presence",
+  "expectedPath": true,
+  "session": {
+    "status": 200,
+    "hasSession": true,
+    "hasUser": true,
+    "emailMatches": true,
+    "organizationMatches": true,
+    "userMatchesCanonicalEmployee": true
+  },
+  "authResponses": [
+    {
+      "path": "/api/auth/providers",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/sign-in/email",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/get-session",
+      "status": 200
+    }
+  ]
+}
