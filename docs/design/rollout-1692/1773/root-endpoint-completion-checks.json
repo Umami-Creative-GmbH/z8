@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "issue": 1773,
+  "verifiedCommit": null,
+  "readiness": null,
+  "reviewedCandidate": "8bcfc811a248284d65f134a53e5c2f5ce57f0560",
+  "correctionCommit": "f9117bb7f89b3ada1da1ada14fd430c455eb9da5",
+  "integrationCommit": "744758355d846d8eea721ae58875010cc4d18732",
+  "tree": "58570963968f4dfc6269e3aeaa1b47931f62e43c",
+  "appTree": "12383e449e4ca08208be716746b46b7019f84ca2",
+  "finding": {
+    "independent": "Edit adapter discarded parent false completion result; authoritative refused cache remained intact but one late success toast and refresh occurred. No signing value or live authorization bypass was established.",
+    "independentFresh": {
+      "cases": 13,
+      "files": 2,
+      "passed": 12,
+      "failed": 1
+    },
+    "rootRed": {
+      "cases": 3,
+      "passed": 2,
+      "failed": 1,
+      "reproSHA256": "e7b4af4993823d0bb493e9537ce72a1d491d89330615c94c5a8f925e1cc9e4e6"
+    },
+    "classification": "Root completion-contract propagation gap through inherited card callback; no equivalent historical refused-cache contract was established."
+  },
+  "additionalRed": {
+    "commandCacheInterval": {
+      "cases": 11,
+      "passed": 7,
+      "failed": 4,
+      "failedVariants": [
+        "toggle",
+        "delete",
+        "test",
+        "rotate"
+      ]
+    },
+    "activityLocks": {
+      "cases": 15,
+      "passed": 11,
+      "failed": 4,
+      "failedVariants": [
+        "toggle",
+        "delete",
+        "test",
+        "rotate"
+      ]
+    },
+    "additive": false,
+    "note": "Each later slice contains earlier passing cases. These executions are not summed as coverage. Each command refusal variant showed a late success notification; no actual server write or real signing value was used."
+  },
+  "behavior": [
+    "Edit passes the local completion acceptance callback directly to the form controller; accepted completion owns close, while false suppresses all success effects.",
+    "Endpoint commands synchronously read whether the existing public query snapshot still accepts completion, covering the cache-to-observer interval. This is client result ownership, not a permission grant.",
+    "The per-instance unresolved command lock remains across Activity effect reconnect and is released by actual promise settlement. Retired feedback/secret/refresh effects remain suppressed. No cross-instance idempotency or server cancellation is claimed."
+  ],
+  "fresh": {
+    "cases": 119,
+    "physicalFiles": 10,
+    "passed": 119,
+    "failed": 0,
+    "publicCases": 25,
+    "newPublicCases": 15,
+    "otherCases": 94,
+    "previous104Included": true,
+    "rerunsAdded": false,
+    "typegen": "passed",
+    "typescriptProjects": 3,
+    "lintImport": {
+      "files": 3,
+      "result": "passed"
+    },
+    "explicit100CRLF": {
+      "files": 3,
+      "result": "passed"
+    },
+    "ordinary": {
+      "result": "unpassed",
+      "diagnosticCounts": [
+        {
+          "kind": "errors",
+          "count": 3
+        },
+        {
+          "kind": "warnings",
+          "count": 3
+        }
+      ]
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "4cdc2f9bb33ba308dc13ca4ee9d489681f6f5d67",
+      "files": 3,
+      "errors": 0,
+      "warnings": 1,
+      "score": null,
+      "reviewedWarning": "Inherited synchronous signing-value privacy wipe at Activity effect setup; no suppression."
+    }
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/webhooks/webhook-endpoint-card.tsx",
+      "gitBlob": "747483aef089db51a8ec3d94ac8bb2937c94d96d",
+      "sha256": "0777c0c1f12a8ba86e98caeb6ffa269c03499a7bd5bfb55081075cf84f92aacd"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhooks-page-client.tsx",
+      "gitBlob": "ae12db47da354d09688318b7d1fbf45845b8c921",
+      "sha256": "938fb52072709dfedb1741cc51c9cc936a792dcb3213e29b955c334358b4a783"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhooks-edit-refusal.test.tsx",
+      "gitBlob": "b73bcebd0407cbce998ba60eea7f6b3ffb29b4bb",
+      "sha256": "9daf968e15ec9b7950f1da30d44a35adb0d09f0ce881a2caa3eac19f201e1943"
+    }
+  ],
+  "preservation": {
+    "before": "4cdc2f9bb33ba308dc13ca4ee9d489681f6f5d67",
+    "normalMergeExactTree": true,
+    "priorEntriesUnchanged": 18208,
+    "unexpectedChanges": 0,
+    "prior1773RootProofUnchanged": true,
+    "sourceScope": [
+      "apps/webapp/src/components/webhooks/webhook-endpoint-card.tsx",
+      "apps/webapp/src/components/webhooks/webhooks-page-client.tsx",
+      "apps/webapp/src/components/webhooks/webhooks-edit-refusal.test.tsx"
+    ],
+    "canonicalAuthCredentialValidationSigningSSRFDeliveryAndDatabaseOwnersChanged": false
+  },
+  "limits": [
+    "Fresh independent follow-up review pending; verifiedCommit remains null.",
+    "No fresh PostgreSQL/browser/Next/native/provider/clipboard/delivery actions. Worker553unit/100PG and prior captures stay inherited and unadded.",
+    "The first root104-case receipt remains historical; this119-case current selection contains those104 plus15 new public cases.",
+    "No live authorization bypass, command cancellation, server persistence or server/cross-instance idempotency claim.",
+    "Full generation, catalogs, providers, native React, physical devices/true zoom and exhaustive authority/race variants remain unpassed."
+  ],
+  "commands": {
+    "unit": "pnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit --maxWorkers 1 src/components/webhooks/webhooks-refusal.test.tsx src/components/webhooks/webhooks-edit-refusal.test.tsx src/components/webhooks/webhook-form-dialog.test.tsx src/components/webhooks/webhook-lifetime.test.tsx src/components/webhooks/webhook-endpoint-card.test.tsx src/components/enterprise/api-key-lifetime.test.tsx src/components/enterprise/api-key-page-client.test.tsx 'src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx' 'src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx' src/lib/navigation/route-metadata.test.ts",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 4cdc2f9bb33ba308dc13ca4ee9d489681f6f5d67 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json",
+    "environment": "pnpm_config_verify_deps_before_run=false on every call; installed pnpm12.16.1; REACT_DOCTOR_PARALLEL=1 for Doctor."
+  },
+  "resources": "Root foreground checks completed. No root runtime, fixture, browser, native or provider resources were started."
+}

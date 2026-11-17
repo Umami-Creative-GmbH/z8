@@ -1352,11 +1352,13 @@
       "implementationCommit": "06b93b7ea0e0705054d293023765a7839f75b2c3",
       "implementationSourceCommit": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
       "evidence": "docs/design/rollout-1692/1773.md",
-      "handoffLimitation": "Provisional root import and correction: actual-provider late-create/refused-read race red2pass/1fail then root104/9 pass including10provider cases; types/lint/explicit4fileCRLF andDoctor0/0 pass. Ordinary4errors/9warnings retained. Refusal cannot be overwritten by command cache updates; retired completions cannot reveal signing value; nonsecret draft and unsettled duplicate lock survive recovery/Activity. Canonical owners unchanged. Worker553/16unit+100/5PG inherited, not added; artifact delta39=24app+15docs,38manifestentries excludingitself,12JSON/14links/one800x600unfilledsign-inPNG verified. No fresh rootPG/browser/Next/native. Independent correction review and authenticated acceptance pending; verifiedCommit remainsnull.",
-      "integrationCommit": "9bee6b1035b50c7d01b932292d4e91606f4c65ee",
+      "handoffLimitation": "Provisional root import and correction: actual-provider late-create/refused-read race red2pass/1fail then root104/9 pass including10provider cases; types/lint/explicit4fileCRLF andDoctor0/0 pass. Ordinary4errors/9warnings retained. Refusal cannot be overwritten by command cache updates; retired completions cannot reveal signing value; nonsecret draft and unsettled duplicate lock survive recovery/Activity. Canonical owners unchanged. Worker553/16unit+100/5PG inherited, not added; artifact delta39=24app+15docs,38manifestentries excludingitself,12JSON/14links/one800x600unfilledsign-inPNG verified. No fresh rootPG/browser/Next/native. Independent correction review and authenticated acceptance pending; verifiedCommit remainsnull. Fresh independent review then found edit adapter dropping false (13cases12pass1fail); root propagated acceptance and fenced endpoint command completions at current cache snapshot. Added command-boundary and Activity-lock reds/greens; final119/10 pass includes prior104+15new public. Types/lint/explicit3pass;Doctor0errors/1reviewed inherited privacy-wipe advisory; ordinary remainsunpassed. No freshPG/runtime; new independent follow-up pending.",
+      "integrationCommit": "744758355d846d8eea721ae58875010cc4d18732",
       "provisionalReviewCommit": "566971bb4f252ed7ed9a96c7533de1ac0d12f8ac",
       "rootCorrectionCommit": "8f8b38b211b3087de20b6b04c80275c4a50b0db1",
-      "rootEvidence": "docs/design/rollout-1692/1773/root-webhook-refusal-checks.json"
+      "rootEvidence": "docs/design/rollout-1692/1773/root-webhook-refusal-checks.json",
+      "rootEndpointCorrectionCommit": "f9117bb7f89b3ada1da1ada14fd430c455eb9da5",
+      "rootEndpointEvidence": "docs/design/rollout-1692/1773/root-endpoint-completion-checks.json"
     },
     {
       "id": "R097",
@@ -1977,7 +1979,9 @@
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1744#issuecomment-6907472854",
       "implementationCommit": "9e686dd62df119b8534600ff39c58506c9d5f08a",
       "evidence": "docs/design/rollout-1692/1744.md",
-      "handoffLimitation": "Worker reports82unit/12PostgreSQL,full3types,explicitlint/format,Doctor100 and actual normal browser/native preference/Retry/ended-work refresh. Current role/live authority races, source provenance, alternate format/raw whitespace and all broader limits await fresh merger review."
+      "handoffLimitation": "Worker reports82unit/12PostgreSQL,full3types,explicitlint/format,Doctor100 and actual normal browser/native preference/Retry/ended-work refresh. Current role/live authority races, source provenance, alternate format/raw whitespace and all broader limits await fresh merger review.",
+      "provisionalReviewCommit": "69be975bf648ca566eeb0c9700c2f34833e53256",
+      "mergerFinding": "STOP: actual provider organizationA→B leaves retained A roster text and incoming employee links visible. Five executed unique cases,4pass/1fail. Stale text inherited, actionable link incoming; no live authorization-bypass claim. Heading/state/installedNextRetry/freshprops/premerge controls pass. No root import/fix, broader checks/runtime unrun, verifiedCommit null."
     },
     {
       "id": "R163",
