@@ -1985,7 +1985,10 @@
       "evidence": "docs/design/rollout-1692/1744.md",
       "handoffLimitation": "Worker reports82unit/12PostgreSQL,full3types,explicitlint/format,Doctor100 and actual normal browser/native preference/Retry/ended-work refresh. Current role/live authority races, source provenance, alternate format/raw whitespace and all broader limits await fresh merger review.",
       "provisionalReviewCommit": "69be975bf648ca566eeb0c9700c2f34833e53256",
-      "mergerFinding": "STOP: actual provider organizationA→B leaves retained A roster text and incoming employee links visible. Five executed unique cases,4pass/1fail. Stale text inherited, actionable link incoming; no live authorization-bypass claim. Heading/state/installedNextRetry/freshprops/premerge controls pass. No root import/fix, broader checks/runtime unrun, verifiedCommit null."
+      "mergerFinding": "STOP: actual provider organizationA→B leaves retained A roster text and incoming employee links visible. Five executed unique cases,4pass/1fail. Stale text inherited, actionable link incoming; no live authorization-bypass claim. Heading/state/installedNextRetry/freshprops/premerge controls pass. No root import/fix, broader checks/runtime unrun, verifiedCommit null. Root reproduced3pass/1fail, applied full-server-view provenance/QueryClient-scoped retirement across provider remounts. Final125unit/13+15canonicalPG/3=140distinct/16files pass,14publicincluded. Types/14lint/Doctor0/0 andowned5explicitpass;shared2explicit/14ordinaryfmt findingsunpassed. No freshruntime; originalreport+149archive byte-exact,64PNG/32JSON/20embedded audited. Fresh independent follow-up/current runtime pending; verifiedCommitnull.",
+      "integrationCommit": "1e6366eeaad1225b87a51f8f0887eadc1dcb01bb",
+      "rootCorrectionCommit": "9e836c6b1626d19c5ed39345642aee5de625b7b0",
+      "rootEvidence": "docs/design/rollout-1692/1744-root-view-provenance.json"
     },
     {
       "id": "R163",

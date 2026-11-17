@@ -1,0 +1,13 @@
+# Root selected-location presentation correction
+
+R162/#1744 remains provisional. The independent review passed four of five executed cases and found retained organizationA roster text/links after published organizationB. Stale text was inherited; the incoming actionable link extended it. Root reproduced three current controls passing and that one failure.
+
+The route now carries canonical server-view user/org provenance into a client boundary around the full scoped heading and roster. Published identity changes retire old presentation. QueryClient-scoped weak markers survive provider remounts and prevent old views reviving on account/org returns. Fresh server props retain admission ownership, including nonemployee administrators; Retry requests a new server read. Existing list refresh, timezone formatting, canonical readers and permissions are unchanged.
+
+Correction `9e836c6b1626d19c5ed39345642aee5de625b7b0` is integrated at `1e6366eeaad1225b87a51f8f0887eadc1dcb01bb`; app tree `d2eee66fa6f19572251acac574c647cfec39b3b0`. Fresh **125 unit cases/13files and15canonical PostgreSQL cases/three files pass** (140distinct cases/16files), including14 public arrival/state/Retry cases. Types,14filelint and14fileDoctor0/0pass. Five owned files pass explicit100CRLF; two shared metadata explicit findings and14ordinary formatter findings remain unpassed.
+
+The original [worker report](1744.md) and149-file archive remain byte-exact. Independent intake fully decoded64PNGs and parsed32JSON plus20embedded payloads. The report’s31JSON count excludes verification.json. Accepted before-matched21checks/8captures and after-cold46/16 remain separate;40otherPNGs are intermediate/warm/native evidence. Archived drivers were not executed.
+
+No current-source browser/Next/native run occurred. The sole canonicalPGcontainer was label-verified removed and independently absent. Fresh independent correction/runtime acceptance and broader live authority/build/catalog/provider/device/zoom obligations remain open. No live authorization bypass is inferred from synthetic presentation evidence.
+
+[Exact source pins, expected-tree recipe, commands, failed attempts and limits](1744-root-view-provenance.json).
