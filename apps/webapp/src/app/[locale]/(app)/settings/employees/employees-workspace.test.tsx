@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import type { ComponentProps } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { appPageOwnsHeading } from "@/lib/navigation/route-metadata";
 import { queryKeys } from "@/lib/query/keys";
+import { render } from "@/test/render-with-translations";
 import { EmployeesPageClient } from "./employees-page-client";
 
 const boundary = vi.hoisted(() => ({
@@ -35,10 +36,6 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: boundary.refresh, replace: vi.fn() }),
 	usePathname: () => "/en/settings/employees",
 	Link: (props: ComponentProps<"a">) => <a {...props} />,
-}));
-vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
-	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 vi.mock("@/app/[locale]/(app)/settings/employees/employee-clock-status.actions", () => ({
 	getEmployeeClockStatuses: async () => ({ success: true, data: {} }),
