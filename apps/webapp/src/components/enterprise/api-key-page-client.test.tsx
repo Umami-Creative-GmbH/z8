@@ -71,6 +71,23 @@ function renderApiKeys(keys: ApiKeyResponse[]) {
 }
 
 describe("Public API discovery in API Keys", () => {
+	it("does not present unknown first-load capacity as an empty available list", () => {
+		vi.mocked(listApiKeys).mockImplementation(() => new Promise(() => {}));
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		render(
+			<QueryClientProvider client={client}>
+				<ApiKeyPageClient
+					organizationId="example-org"
+					currentUserId="example-admin"
+					initialApiKeys={[]}
+					initialError
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByRole("button", { name: "Create Key" })).toHaveProperty("disabled", true);
+		expect(screen.getByText("0 of 10 keys used")).toHaveProperty("hidden", true);
+		expect(screen.queryByText("No API Keys")).toBeNull();
+	});
 	it("removes the retained snapshot after an authoritative read refusal", async () => {
 		vi.mocked(listApiKeys).mockResolvedValue({
 			success: false,

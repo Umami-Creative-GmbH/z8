@@ -137,7 +137,7 @@ it("owns edit activation before validation and keeps the panel through queued Ca
 	);
 	const form = screen.getByRole("button", { name: "Save" }).closest("form")!;
 	act(() => {
-		fireEvent.submit(form);
+		expect(fireEvent.submit(form)).toBe(false);
 		fireEvent.submit(form);
 		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 	});

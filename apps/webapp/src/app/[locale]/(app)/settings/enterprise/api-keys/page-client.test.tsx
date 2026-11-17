@@ -189,3 +189,20 @@ it("keeps drafts across a retained pending session and retires a revealed key at
 	await act(async () => view.rerender(tree()));
 	expect(screen.queryByText("public-test-dummy-key")).toBeNull();
 });
+
+it("retains the actual webhook form draft during a retained pending session", async () => {
+	vi.mocked(readWebhooksForView).mockResolvedValue({ success: true, data: [] });
+	const { view, tree } = mount();
+	await screen.findByRole("heading", { name: "No webhooks configured" });
+	const user = userEvent.setup();
+	await user.click(screen.getAllByRole("button", { name: "Add Webhook" })[0]);
+	await user.type(await screen.findByRole("textbox", { name: "Name" }), "Webhook draft");
+	transport.pending = true;
+	await act(async () => view.rerender(tree()));
+	transport.pending = false;
+	await act(async () => view.rerender(tree()));
+	expect(await screen.findByRole("textbox", { name: "Name" })).toHaveProperty(
+		"value",
+		"Webhook draft",
+	);
+});

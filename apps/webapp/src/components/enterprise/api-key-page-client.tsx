@@ -158,7 +158,7 @@ function useApiKeyPageViewModel({
 	const isError = queryError || refused;
 	const apiKeys = apiKeysResult?.success ? apiKeysResult.data : [];
 	const keyCount = apiKeys.length;
-	const canCreateMore = keyCount < MAX_API_KEYS_PER_ORG;
+	const canCreateMore = Boolean(apiKeysResult?.success) && keyCount < MAX_API_KEYS_PER_ORG;
 
 	const lifetime = useRef<object | null>(null);
 	const pending = useRef(false);
@@ -530,7 +530,7 @@ function ApiKeyDialogs({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 }
 
 function ApiKeyPageView({ viewModel }: { viewModel: ReturnType<typeof useApiKeyPageViewModel> }) {
-	const { canCreateMore, keyCount, setCreateDialogOpen, isError, t } = viewModel;
+	const { canCreateMore, keyCount, setCreateDialogOpen, isError, isLoading, t } = viewModel;
 
 	return (
 		<div className="min-w-0">
@@ -544,7 +544,7 @@ function ApiKeyPageView({ viewModel }: { viewModel: ReturnType<typeof useApiKeyP
 								"Create and manage API keys for programmatic access to your organization data.",
 							)}
 						</p>
-						<p className="mt-1 text-sm text-muted-foreground" hidden={isError}>
+						<p className="mt-1 text-sm text-muted-foreground" hidden={isError || isLoading}>
 							{t("settings.apiKeys.usage", "{count} of {max} keys used", {
 								count: keyCount,
 								max: MAX_API_KEYS_PER_ORG,
