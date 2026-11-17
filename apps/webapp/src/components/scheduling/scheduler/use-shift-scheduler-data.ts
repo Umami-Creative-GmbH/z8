@@ -72,6 +72,7 @@ export function useShiftSchedulerData({
 	const {
 		data: templatesResult,
 		isError: templatesFailed,
+		isFetching: templatesFetching,
 		refetch: retryTemplates,
 	} = useQuery({
 		queryKey: queryKeys.shiftTemplates.list(organizationId),
@@ -86,6 +87,7 @@ export function useShiftSchedulerData({
 	const {
 		data: complianceSummaryResult,
 		isError: complianceFailed,
+		isFetching: complianceFetching,
 		refetch: retryCompliance,
 	} = useQuery({
 		queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
@@ -170,7 +172,12 @@ export function useShiftSchedulerData({
 		retryShifts,
 		templatesFailed,
 		complianceFailed,
-		retrySupportingData: () => Promise.all([retryTemplates(), retryCompliance()]),
+		supportingDataFetching: templatesFetching || complianceFetching,
+		retrySupportingData: () =>
+			Promise.all([
+				retryTemplates({ cancelRefetch: false }),
+				retryCompliance({ cancelRefetch: false }),
+			]),
 		complianceSummary,
 		draftCount,
 		complianceFindingsCount,

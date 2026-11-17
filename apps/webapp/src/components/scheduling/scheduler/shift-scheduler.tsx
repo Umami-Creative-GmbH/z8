@@ -107,6 +107,7 @@ function PlannerShiftScheduler({
 		retryShifts,
 		templatesFailed,
 		complianceFailed,
+		supportingDataFetching,
 		retrySupportingData,
 		complianceSummary,
 		draftCount,
@@ -131,10 +132,11 @@ function PlannerShiftScheduler({
 	} = useShiftPublishFlow({ organizationId, dateRange });
 
 	// Fetch coverage heatmap data
-	const { hasGaps: hasCoverageGaps } = useCoverageHeatmap(
+	const { hasGaps: hasCoverageGaps, readState: coverageState } = useCoverageHeatmap(
 		organizationId,
 		dateRange,
 		isManager && showCoverageOverlay,
+		employeeId,
 	);
 
 	// Schedule-X keeps the callbacks of its first render, so they read the latest shifts here.
@@ -293,7 +295,10 @@ function PlannerShiftScheduler({
 				</ScheduleReadFailure>
 			)}
 			{(templatesFailed || complianceFailed) && (
-				<ScheduleReadFailure onRetry={() => void retrySupportingData()} pending={false}>
+				<ScheduleReadFailure
+					onRetry={() => void retrySupportingData()}
+					pending={supportingDataFetching}
+				>
 					{t(
 						"scheduling:scheduling.scheduler.supportFailed",
 						"Templates or compliance information could not be refreshed. Check again before publishing.",
@@ -307,6 +312,7 @@ function PlannerShiftScheduler({
 				<div className="flex flex-wrap items-center gap-4">
 					<CoverageHeatmapOverlay
 						organizationId={organizationId}
+						employeeId={employeeId}
 						dateRange={dateRange}
 						visible={showCoverageOverlay}
 						onToggle={() => setShowCoverageOverlay((v) => !v)}
@@ -358,7 +364,8 @@ function PlannerShiftScheduler({
 							draftCount={draftCount}
 							onPublish={publish}
 							isPublishing={isPublishing}
-							hasCoverageGaps={hasCoverageGaps}
+							hasCoverageGaps={coverageState === "ready" && hasCoverageGaps}
+							coverageState={coverageState}
 							hasComplianceWarnings={hasComplianceWarnings}
 							complianceFindingsCount={complianceFindingsCount}
 						/>

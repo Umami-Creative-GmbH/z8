@@ -10,13 +10,16 @@ function formatDateKey(date: Date): string {
 	return date.toISOString().split("T")[0];
 }
 
+export type CoverageReadState = "ready" | "loading" | "unavailable" | "unloaded";
+
 export function useCoverageHeatmap(
 	organizationId: string,
 	dateRange: DateRange,
 	enabled: boolean,
+	employeeId: string,
 ) {
-	const { data, isLoading, error } = useQuery({
-		queryKey: queryKeys.coverage.heatmap(organizationId, dateRange),
+	const { data, isLoading, isFetching, error, refetch } = useQuery({
+		queryKey: [...queryKeys.coverage.heatmap(organizationId, dateRange), employeeId],
 		queryFn: async () => {
 			const result = await getTargetHeatmapData({
 				startDate: dateRange.startDate,
@@ -41,14 +44,24 @@ export function useCoverageHeatmap(
 		return map;
 	})();
 
-	const hasGaps =
-		data?.some((dataPoint) => dataPoint.status === "under") ?? false;
+	const hasGaps = data?.some((dataPoint) => dataPoint.status === "under") ?? false;
+	const readState: CoverageReadState = error
+		? "unavailable"
+		: data !== undefined
+			? "ready"
+			: isLoading
+				? "loading"
+				: "unloaded";
 
 	return {
 		data: data || [],
 		dataByDate,
 		hasGaps,
 		isLoading,
+		isFetching,
+		hasLoadedData: data !== undefined,
 		error,
+		readState,
+		retry: () => refetch({ cancelRefetch: false }),
 	};
 }
