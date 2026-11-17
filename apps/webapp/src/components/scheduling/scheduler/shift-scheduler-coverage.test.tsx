@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TolgeeProvider } from "@tolgee/react";
 import { act as preactAct } from "preact/test-utils";
@@ -174,6 +174,41 @@ it("keeps an admitted planner on the schedule when template settings refuse acce
 it("still redirects an expired template transport session to sign-in", async () => {
 	transport.coverage.mockResolvedValue({ success: true, data: [] });
 	transport.templates.mockRejectedValue(new ApiError("Session expired", 401));
+	mountPlanner(true);
+	await waitFor(() => expect(transport.replace).toHaveBeenCalledWith("/sign-in"));
+	expect(transport.publish).not.toHaveBeenCalled();
+});
+
+it("keeps combined coverage and template permission refusals local to the planner", async () => {
+	transport.coverage.mockResolvedValue({
+		success: false,
+		code: "AuthorizationError",
+		error: "Unauthorized",
+	});
+	transport.templates.mockResolvedValue({ success: false, error: "Unauthorized" });
+	mountPlanner(true);
+	await screen.findByRole("button", { name: "Publish (1)" });
+	await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2), { timeout: 10_000 });
+	expect(transport.replace).not.toHaveBeenCalled();
+	expect(screen.getByRole("button", { name: "Create Shift" })).toBeTruthy();
+	const coverageAlert = screen
+		.getAllByRole("alert")
+		.find((alert) => alert.textContent?.includes("Coverage could not be loaded"));
+	if (!coverageAlert) throw Error("Expected local coverage failure");
+	transport.coverage.mockResolvedValue({ success: true, data: [] });
+	await userEvent.setup().click(within(coverageAlert).getByRole("button", { name: "Retry" }));
+	await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
+	expect(screen.getByRole("alert").textContent).toContain("Templates or compliance");
+	expect(transport.replace).not.toHaveBeenCalled();
+	expect(transport.publish).not.toHaveBeenCalled();
+}, 15_000);
+
+it("still redirects a coverage authentication refusal to sign-in", async () => {
+	transport.coverage.mockResolvedValue({
+		success: false,
+		code: "AuthenticationError",
+		error: "Unauthorized",
+	});
 	mountPlanner(true);
 	await waitFor(() => expect(transport.replace).toHaveBeenCalledWith("/sign-in"));
 	expect(transport.publish).not.toHaveBeenCalled();

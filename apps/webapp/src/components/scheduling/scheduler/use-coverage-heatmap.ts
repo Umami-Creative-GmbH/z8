@@ -1,9 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
 import { getTargetHeatmapData } from "@/app/[locale]/(app)/settings/coverage-rules/actions";
+import { ApiError } from "@/lib/api-error";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 
 function formatDateKey(date: Date): string {
@@ -18,6 +21,7 @@ export function useCoverageHeatmap(
 	enabled: boolean,
 	employeeId: string,
 ) {
+	const { t } = useTranslate();
 	const { data, isLoading, isFetching, error, refetch } = useQuery({
 		queryKey: [...queryKeys.coverage.heatmap(organizationId, dateRange), employeeId],
 		queryFn: async () => {
@@ -25,7 +29,13 @@ export function useCoverageHeatmap(
 				startDate: dateRange.startDate,
 				endDateExclusive: dateRange.endDateExclusive,
 			});
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) {
+				const message = actionErrorMessage(t, result);
+				// A scoped coverage refusal is not an expired scheduling session.
+				if (result.code === "AuthorizationError") throw new ApiError(message, 403);
+				if (result.code === "AuthenticationError") throw new ApiError(message, 401);
+				throw new Error(message);
+			}
 			return result.data;
 		},
 		enabled,
