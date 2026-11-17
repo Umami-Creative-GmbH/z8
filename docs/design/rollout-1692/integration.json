@@ -1291,11 +1291,14 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "branch": "feat/driving-licence-settings-refresh",
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1770#issuecomment-6942143826"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1770#issuecomment-6942143826",
+      "implementationCommit": "a13d72b1e94afcdb3e73f9e7a8245a1b1a9f7463",
+      "evidence": "docs/design/rollout-1692/1770.md",
+      "handoffLimitation": "Committed worker handoff reports191 unit/public and177 canonical PostgreSQL cases, all3types, compile and24 matched screenshots. Canonical owners unchanged; PostHog install lifecycle/full generation and three reviewed Doctor warnings remain qualified. Fresh serial merger owns acceptance."
     },
     {
       "id": "R092",
@@ -1905,7 +1908,9 @@
       "verifiedCommit": null,
       "implementationCommit": "cfa34ce7ed2ea0d2df23929f4656b7fefdcd8e29",
       "evidence": "docs/design/rollout-1692/1742.md",
-      "handoffLimitation": "Worker126unit/13+35PG/6=161cases, full3types, Doctor100 and13PNG. Final all-to-managed scope narrowing fence has public/type coverage; live/native/captures precede final nonvisual fence. Historical four-consumer comparison and live revocation/global/build/catalog/device limitations remain; fresh merger owns readiness."
+      "handoffLimitation": "Provisional root integration and provider employee/role arrival correction: 546 unit/public cases/44 files plus fresh35 canonicalPG/6, all3types/typegen, lint12, owned3 explicitCRLF and complete Doctor12 zero. Two shared metadata formatter findings remain. Fresh independent corrected-source/live acceptance pending; inherited presentation capture and wider build/catalog/device/race limits remain.",
+      "provisionalMerge": "1578b6c8d52c23839ec405e7dc0a370d30877169",
+      "correctionCommit": "989968d6aab7b7e6be7f87a94e60673e1de55424"
     },
     {
       "id": "R161",
