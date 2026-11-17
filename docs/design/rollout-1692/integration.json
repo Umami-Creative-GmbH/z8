@@ -1888,7 +1888,11 @@
       "status": "awaiting-integration",
       "verifiedCommit": null,
       "implementationCommit": "bf0197401f2e07ff29b8fd5889b3f3f3f3677f62",
-      "handoffLimitation": "Worker reports57tests,Doctor100/100 and native accessibility; main types blocked by generated licenses.json and React introspection remains unpassed. Fresh integration review must complete the typecheck safely and preserve all runtime/build/catalog limits."
+      "handoffLimitation": "Provisional code/public/static+canonicalstore checks:188distinctunit/19files+5freshcanonicalPG/1=193/20 pass;typegen/all3types,9lint/Doctorzero. Explicitmetadata2/ordinary8formatfailures inherited/qualified. Freshliveapp/browser/native/currentcaptures/Calendarwrites/authorityraces due;workerprovenance/sidebar/installPostHogfailednetworkattempt andwiderlimits retained.",
+      "integrationCommit": "bd6b804ccc6e7fa3c63fbf4c048200c3c303aab4",
+      "candidateCommit": "6ab5cca4b1827580eeff064cc47d36d4589f26aa",
+      "evidence": "docs/design/rollout-1692/1741.md",
+      "integrationVerification": "Candidate6ab5cca4 importedatbd6b804ccc6e7fa3c63fbf4c048200c3c303aab4 exactindependenttree3d196d8e/appTreeb4a9eebf;32incomingpaths,only2additiveheadingmetadata/testresolutions. Fullrootmapoutside32+30exactincomingnonoverlap+61verifiedticketanchors/baseline/1740lifetime/proofs preserved.188distinctcases/19physicalfiles:62selected+19realproviderpublic+6adapter+92compat+9lifetime,0duplicates/nocriticalrepro. Typegen/all3TS genuine125license/exactmanifestslock;9lint/Doctor0. Explicit100CRLF2metadatafailalsoatbase;ordinary8failqualified.23artifactsexact/16PNGdecoded/6JSON/18pins/14links;36SAFEhandoffrootrehash/index20d671bf. Freshcanonicalmigrationverifier+5driving-storePG/1pass0skip,disjoint193/20. ExactlabelPGcontainerremoved/absenceconfirmed. No liveapp/Next/browser/native/Calendarwrites/currentmatchedacceptance,verifiedCommitnull. InitialisolatedinstallPostHognetworkattemptfailed;finalofflineignore-scriptsphysicalcopypassed/rootpeerdepsuntouched. Oldcapture/sidebar/native/roles/provider/build/catalog/device/zoomlimits retained."
     },
     {
       "id": "R160",
