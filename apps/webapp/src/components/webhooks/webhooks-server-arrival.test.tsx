@@ -489,3 +489,55 @@ it("preserves a newer transport error and Retry when an older hidden source is e
 		}),
 	).toBeTruthy();
 });
+
+it.each(["webhooks", "keys"] as const)(
+	"an unvisited %s panel cannot seed a snapshot received before refusal",
+	async (namespace) => {
+		seam.tab = namespace;
+		const client = makeClient();
+		const original = [{ ...endpoint }];
+		const stale = [{ ...endpoint, name: "Unvisited old endpoint" }];
+		const firstKeys: ApiKeyResponse[] = [];
+		const staleKeys: ApiKeyResponse[] = [];
+		const active = render(
+			<Workspace client={client} snapshot={original} keySnapshot={firstKeys} />,
+		);
+		if (namespace === "webhooks") await screen.findByText(endpoint.name);
+		else await screen.findAllByRole("button", { name: "Create Key", exact: true });
+		seam.tab = namespace === "webhooks" ? "keys" : "webhooks";
+		const parked = render(
+			<section data-testid="unvisited-parked">
+				<Workspace client={client} snapshot={stale} keySnapshot={staleKeys} visible={false} />
+			</section>,
+		);
+		seam.tab = namespace;
+		await refuse(client, "AuthorizationError");
+		active.unmount();
+		parked.rerender(
+			<section data-testid="unvisited-parked">
+				<Workspace client={client} snapshot={stale} keySnapshot={staleKeys} />
+			</section>,
+		);
+		await waitFor(() =>
+			expect(client.getQueryData(key())).toMatchObject(failure("AuthorizationError")),
+		);
+		if (namespace === "webhooks") expect(screen.queryByText("Unvisited old endpoint")).toBeNull();
+		const button = screen.getByRole("button", {
+			name: namespace === "keys" ? "Create Key" : "Add Webhook",
+			exact: true,
+		});
+		expect(button).toHaveProperty("disabled", true);
+		expect(seam.success).not.toHaveBeenCalled();
+		expect(seam.error).not.toHaveBeenCalled();
+		expect(seam.refresh).not.toHaveBeenCalled();
+	},
+);
+
+it("observing the page snapshots does not create or read an unvisited panel query", async () => {
+	seam.tab = "keys";
+	const client = makeClient();
+	render(<Workspace client={client} snapshot={[{ ...endpoint }]} />);
+	await screen.findAllByRole("button", { name: "Create Key", exact: true });
+	expect(client.getQueryState(["developerWebhooks", seam.org, seam.user])).toBeUndefined();
+	expect(readWebhooksForView).not.toHaveBeenCalled();
+});

@@ -76,6 +76,24 @@ function consumeArrival(owner: ClientArrivals, arrival: Arrival) {
 	owner.consumed.add(arrival);
 	return true;
 }
+
+/** Observe both route props even while their tab panels have never rendered. */
+export function useDeveloperSnapshotArrivals({
+	organizationId,
+	userId,
+	apiKeys,
+	webhooks,
+}: {
+	organizationId: string;
+	userId: string;
+	apiKeys: readonly unknown[];
+	webhooks: readonly unknown[];
+}) {
+	const owner = clientArrivals(useQueryClient());
+	sourceArrival(owner, apiKeys, JSON.stringify(["apiKeys", organizationId, userId]));
+	sourceArrival(owner, webhooks, JSON.stringify(["developerWebhooks", organizationId, userId]));
+}
+
 /** Observe source identity before effects; only an unsuperseded arrival may seed its query. */
 export function useDeveloperServerSnapshot<T>({
 	queryKey: [prefix, organizationId, userId],
