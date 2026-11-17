@@ -1,0 +1,138 @@
+{
+  "sourceSha": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+  "shell": "PowerShell",
+  "pnpmGuard": {
+    "environment": "pnpm_config_verify_deps_before_run=false",
+    "eachCliPrefix": [
+      "pnpm",
+      "--config.verify-deps-before-run=false"
+    ]
+  },
+  "unit": {
+    "cwd": "apps/webapp",
+    "args": [
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "--maxWorkers",
+      "1",
+      "src/tolgee/extracted-key-defaults.test.ts",
+      "src/components/enterprise/api-key-create-dialog.test.tsx",
+      "src/components/enterprise/api-key-edit-dialog.test.tsx",
+      "src/components/enterprise/api-key-lifetime.test.tsx",
+      "src/components/enterprise/api-key-page-client.test.tsx",
+      "src/components/enterprise/api-key-show-dialog.test.tsx",
+      "src/components/webhooks/webhook-endpoint-card.test.tsx",
+      "src/components/webhooks/webhook-form-dialog.test.tsx",
+      "src/components/webhooks/webhook-lifetime.test.tsx",
+      "src/lib/navigation/route-metadata.test.ts",
+      "src/components/webhooks/webhook-delivery-logs-dialog/index.test.tsx",
+      "src/app/[locale]/(app)/settings/webhooks/actions.test.ts",
+      "src/app/[locale]/(app)/settings/__tests__/organization-action-coverage.test.ts",
+      "src/app/[locale]/(app)/settings/enterprise/api-keys/actions.test.ts",
+      "src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+      "src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx",
+      "--reporter=json",
+      "--outputFile=../../.tmp/1773/units-b7d89c7.json"
+    ],
+    "literalSelectionAlsoIncludedDirectory": "src/app/[locale]/(app)/settings/enterprise/api-keys"
+  },
+  "postgres": {
+    "actualEntry": [
+      "node",
+      ".tmp/1773/run-pg-b7d89c7.mjs"
+    ],
+    "childCwd": "apps/webapp",
+    "childArgs": [
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "integration",
+      "--maxWorkers",
+      "1",
+      "src/lib/organization-action/organization-action.integration.test.ts",
+      "src/lib/public-api/pipeline.integration.test.ts",
+      "src/lib/public-api/request-log.integration.test.ts",
+      "src/lib/public-api/keys/key-store.integration.test.ts",
+      "src/app/[locale]/(app)/settings/webhooks/page.integration.test.ts",
+      "--reporter=json",
+      "--outputFile=../../.tmp/1773/pg-b7d89c7.json"
+    ],
+    "migrationPrerequisite": "Unchanged scripts/verify-approval-migration-recovery.ts passed during owned canonical fixture prepare. Same integration project, setup/gate and disposable PostgreSQL16; no new pool/gate/schema push. Windows private orchestration used these canonical steps; the bash test:integration entry itself was not executed."
+  },
+  "typecheck": [
+    "--filter",
+    "webapp",
+    "typecheck"
+  ],
+  "typecheckExpandsTo": [
+    "next typegen",
+    "tsc --project tsconfig.typecheck.json --noEmit --incremental false",
+    "tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false",
+    "tsc --project tsconfig.smoke.json --noEmit --incremental false"
+  ],
+  "lintImport": [
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "biome",
+    "check",
+    "--config-path=./biome.jsonc",
+    "--formatter-enabled=false",
+    "<24 changed TS/TSX files>"
+  ],
+  "explicitFormat": [
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "biome",
+    "format",
+    "--config-path=./biome.jsonc",
+    "--line-width=100",
+    "--line-ending=crlf",
+    "<24 changed TS/TSX files>"
+  ],
+  "ordinaryFormat": [
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "biome",
+    "format",
+    "--config-path=./biome.jsonc",
+    "<24 changed TS/TSX files>"
+  ],
+  "doctor": [
+    "exec",
+    "react-doctor",
+    "apps/webapp",
+    "--scope",
+    "changed",
+    "--base",
+    "a5259338e983fb2d165c0f463763b1740b585fad",
+    "--no-parallel",
+    "--no-supply-chain",
+    "--no-score",
+    "--max-duration",
+    "60",
+    "--verbose",
+    "--json",
+    "--json-out",
+    ".tmp/1773/doctor-b7d89c7.json"
+  ],
+  "doctorEnvironment": "REACT_DOCTOR_PARALLEL=1",
+  "frozenSourceHashes": {
+    "scripts/performance/fixture.mjs": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+    "apps/webapp/scripts/performance-fixture.ts": "00ac1750f21ecd66f2485642a3db2377179f88d43390ee64b438514b0148588d",
+    "apps/webapp/scripts/verify-approval-migration-recovery.ts": "b1c4c138502a42ffe5566d376776332807adaff18d0b7a21819eec4f42578e23",
+    "apps/webapp/scripts/run-postgres-integration-suites.sh": "5dcdd919b20f4a228f7febfdc1db50cefe4215390c7c831dbc484e1e7d700e22"
+  },
+  "privateFixtureRunnerChanges": [
+    "absolute canonical imports and owned root path",
+    "exact CLI verify-deps-before-run guard",
+    "nested pnpm_config_verify_deps_before_run=false"
+  ],
+  "authenticationHelperInvoked": false
+}

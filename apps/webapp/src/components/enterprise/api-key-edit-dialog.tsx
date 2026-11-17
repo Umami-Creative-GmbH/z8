@@ -2,10 +2,11 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { updateApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import {
 	ActionPanel,
@@ -21,13 +22,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	API_KEY_SCOPES,
 	type ApiKeyResponse,
@@ -67,11 +64,6 @@ type ApiKeyEditFormValues = {
 	rateLimitTimeWindow: string;
 };
 
-type ApiKeyEditMutationVariables = {
-	keyId: string;
-	value: ApiKeyEditFormValues;
-};
-
 type ValidationMessages = {
 	nameMin: string;
 	nameMax: string;
@@ -82,26 +74,12 @@ type ValidationMessages = {
 	rateLimitMax: string;
 };
 
-function getValidationMessages(
-	t: ReturnType<typeof useTranslate>["t"],
-): ValidationMessages {
+function getValidationMessages(t: ReturnType<typeof useTranslate>["t"]): ValidationMessages {
 	return {
-		nameMin: t(
-			"settings.apiKeys.form.nameMin",
-			"Name must be at least 3 characters",
-		),
-		nameMax: t(
-			"settings.apiKeys.form.nameMax",
-			"Name must be at most 100 characters",
-		),
-		scopesRequired: t(
-			"settings.apiKeys.form.scopesRequired",
-			"Select at least one permission",
-		),
-		rateLimitRequired: t(
-			"settings.apiKeys.form.rateLimitRequired",
-			"Rate limit is required",
-		),
+		nameMin: t("settings.apiKeys.form.nameMin", "Name must be at least 3 characters"),
+		nameMax: t("settings.apiKeys.form.nameMax", "Name must be at most 100 characters"),
+		scopesRequired: t("settings.apiKeys.form.scopesRequired", "Select at least one permission"),
+		rateLimitRequired: t("settings.apiKeys.form.rateLimitRequired", "Rate limit is required"),
 		rateLimitWholeNumber: t(
 			"settings.apiKeys.form.rateLimitWholeNumber",
 			"Rate limit must be a whole number",
@@ -137,10 +115,7 @@ function validateRateLimit(value: string, messages: ValidationMessages) {
 	return undefined;
 }
 
-function validateForm(
-	value: ApiKeyEditFormValues,
-	messages: ValidationMessages,
-) {
+function validateForm(value: ApiKeyEditFormValues, messages: ValidationMessages) {
 	return validateName(value.name, messages) === undefined &&
 		validateScopes(value.scopes, messages) === undefined &&
 		validateRateLimit(value.rateLimitMax, messages) === undefined
@@ -150,17 +125,12 @@ function validateForm(
 
 function getValidDefaultRateLimit(value: string) {
 	const rateLimit = Number(value);
-	return value.length > 0 &&
-		Number.isInteger(rateLimit) &&
-		rateLimit >= 10 &&
-		rateLimit <= 10000
+	return value.length > 0 && Number.isInteger(rateLimit) && rateLimit >= 10 && rateLimit <= 10000
 		? value
 		: "100";
 }
 
-function getApiKeyEditDefaultValues(
-	apiKey: ApiKeyResponse,
-): ApiKeyEditFormValues {
+function getApiKeyEditDefaultValues(apiKey: ApiKeyResponse): ApiKeyEditFormValues {
 	return {
 		name: apiKey.name,
 		enabled: apiKey.enabled,
@@ -178,9 +148,12 @@ function ApiKeyIdentifier({ apiKey }: { apiKey: ApiKeyResponse }) {
 			<code className="font-mono text-sm">{apiKey.prefix || "z8_org_***"}</code>
 			<span className="text-muted-foreground text-sm">
 				{t("settings.apiKeys.editCreated", "Created {date}", {
-					date: DateTime.fromISO(apiKey.createdAt).toLocaleString(
-						DateTime.DATE_SHORT,
-					),
+					date: Temporal.Instant.from(apiKey.createdAt).toLocaleString(undefined, {
+						timeZone: "UTC",
+						year: "numeric",
+						month: "short",
+						day: "numeric",
+					}),
 				})}
 			</span>
 		</div>
@@ -190,7 +163,13 @@ function ApiKeyIdentifier({ apiKey }: { apiKey: ApiKeyResponse }) {
 export function ApiKeyEditDialog({ apiKey, ...props }: ApiKeyEditDialogProps) {
 	if (!apiKey) return null;
 
-	return <ApiKeyEditDialogForm key={apiKey.id} {...props} apiKey={apiKey} />;
+	return (
+		<ApiKeyEditDialogForm
+			key={JSON.stringify([apiKey.id, apiKey.organizationId, apiKey.updatedAt, apiKey.scopes])}
+			{...props}
+			apiKey={apiKey}
+		/>
+	);
 }
 
 function ApiKeyEditDialogForm({
@@ -205,46 +184,70 @@ function ApiKeyEditDialogForm({
 	const queryClient = useQueryClient();
 	const formDefaultValues = getApiKeyEditDefaultValues(apiKey);
 	const validationMessages = getValidationMessages(t);
-	const updateMutation = useMutation({
-		mutationFn: async ({ keyId, value }: ApiKeyEditMutationVariables) => {
-			const result = await updateApiKey({
-				keyId,
-				name: value.name.trim(),
-				enabled: value.enabled,
-				scopes: value.scopes,
-				rateLimitEnabled: value.rateLimitEnabled,
-				rateLimitMax: Number(value.rateLimitMax),
-				rateLimitTimeWindow: Number(value.rateLimitTimeWindow),
-			});
-			if (!result.success)
-				throw new Error(result.error || "Failed to update API key");
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
-			toast.success(t("settings.apiKeys.updated", "API key updated"));
-		},
-		onError: (error) => toast.error(error.message),
-	});
+	const lifetime = useRef<object | null>(null);
+	const operation = useRef<object | null>(null);
+	const [pending, setPending] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	useLayoutEffect(() => {
+		lifetime.current = open ? {} : null;
+		setPending(false);
+		return () => {
+			lifetime.current = null;
+			operation.current = null;
+		};
+	}, [open]);
+	const updateMutation = { isPending: pending };
+
 	const form = useForm({
 		defaultValues: formDefaultValues,
+		onSubmitMeta: null as { lifetime: object; command: object } | null,
 		validators: {
 			onMount: ({ value }) => validateForm(value, validationMessages),
 			onChange: ({ value }) => validateForm(value, validationMessages),
 			onSubmit: ({ value }) => validateForm(value, validationMessages),
 		},
-		onSubmit: ({ value }) =>
-			updateMutation.mutate(
-				{ keyId: apiKey.id, value },
-				{ onSuccess: () => onOpenChange(false) },
-			),
+		onSubmit: async ({ value, meta }) => {
+			const current = () =>
+				!!meta && meta.lifetime === lifetime.current && meta.command === operation.current;
+			if (!current()) return;
+			try {
+				const keyId = apiKey.id;
+				const result = await updateApiKey({
+					keyId,
+					name: value.name.trim(),
+					enabled: value.enabled,
+					scopes: value.scopes,
+					rateLimitEnabled: value.rateLimitEnabled,
+					rateLimitMax: Number(value.rateLimitMax),
+					rateLimitTimeWindow: Number(value.rateLimitTimeWindow),
+				});
+				if (!current()) return;
+				if (!result.success) {
+					setError(actionErrorMessage(t, result));
+					return;
+				}
+				void queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
+				toast.success(t("settings.apiKeys.updated", "API key updated"));
+				onOpenChange(false);
+			} catch {
+				if (current())
+					setError(
+						t(
+							"settings.apiKeys.updateUnknown",
+							"Could not confirm the update. Refresh this key before trying again.",
+						),
+					);
+			}
+		},
 	});
 	const handleOpenChange = (nextOpen: boolean) => {
-		if (!nextOpen && updateMutation.isPending) return;
+		if (!lifetime.current) return;
+		if (!nextOpen && operation.current) return;
 		if (!nextOpen) form.reset(formDefaultValues);
 		onOpenChange(nextOpen);
 	};
 	const preventPendingDismiss = (event: Event) => {
-		if (updateMutation.isPending) event.preventDefault();
+		if (operation.current) event.preventDefault();
 	};
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
@@ -256,17 +259,24 @@ function ApiKeyEditDialogForm({
 			>
 				<form
 					className="flex min-h-0 flex-1 flex-col"
-					action={() => {
-						void form.handleSubmit();
-					}}
 					onSubmit={(event) => {
+						event.preventDefault();
 						event.stopPropagation();
+						if (operation.current || !lifetime.current) return;
+						const command = {};
+						operation.current = command;
+						setPending(true);
+						setError(null);
+						void form.handleSubmit({ lifetime: lifetime.current, command }).finally(() => {
+							if (operation.current === command) {
+								operation.current = null;
+								setPending(false);
+							}
+						});
 					}}
 				>
 					<ActionPanelHeader>
-						<ActionPanelTitle>
-							{t("settings.apiKeys.editTitle", "Edit API Key")}
-						</ActionPanelTitle>
+						<ActionPanelTitle>{t("settings.apiKeys.editTitle", "Edit API Key")}</ActionPanelTitle>
 						<ActionPanelDescription>
 							{t(
 								"settings.apiKeys.editDescription",
@@ -276,11 +286,15 @@ function ApiKeyEditDialogForm({
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-4">
 						<ApiKeyIdentifier apiKey={apiKey} />
+						{error ? (
+							<p role="alert" className="text-sm text-destructive">
+								{error}
+							</p>
+						) : null}
 						<form.Field
 							name="name"
 							validators={{
-								onChange: ({ value }) =>
-									validateName(value, validationMessages),
+								onChange: ({ value }) => validateName(value, validationMessages),
 							}}
 						>
 							{(field) => (
@@ -293,9 +307,7 @@ function ApiKeyEditDialogForm({
 											name="apiKeyName"
 											autoComplete="off"
 											value={field.state.value}
-											onChange={(event) =>
-												field.handleChange(event.target.value)
-											}
+											onChange={(event) => field.handleChange(event.target.value)}
 											onBlur={field.handleBlur}
 											maxLength={100}
 										/>
@@ -308,9 +320,7 @@ function ApiKeyEditDialogForm({
 							{(field) => (
 								<div className="flex items-center justify-between">
 									<div className="space-y-0.5">
-										<Label>
-											{t("settings.apiKeys.form.enabled", "Key Enabled")}
-										</Label>
+										<Label>{t("settings.apiKeys.form.enabled", "Key Enabled")}</Label>
 										<p className="text-xs text-muted-foreground">
 											{t(
 												"settings.apiKeys.form.enabledHelp",
@@ -322,10 +332,7 @@ function ApiKeyEditDialogForm({
 										id="edit-enabled"
 										checked={field.state.value}
 										onCheckedChange={field.handleChange}
-										aria-label={t(
-											"settings.apiKeys.form.enabled",
-											"Key Enabled",
-										)}
+										aria-label={t("settings.apiKeys.form.enabled", "Key Enabled")}
 									/>
 								</div>
 							)}
@@ -333,17 +340,14 @@ function ApiKeyEditDialogForm({
 						<form.Field
 							name="scopes"
 							validators={{
-								onChange: ({ value }) =>
-									validateScopes(value, validationMessages),
+								onChange: ({ value }) => validateScopes(value, validationMessages),
 							}}
 						>
 							{(field) => (
 								<TFormItem>
 									<fieldset
 										aria-invalid={fieldHasError(field)}
-										aria-describedby={
-											fieldHasError(field) ? "edit-scopes-error" : undefined
-										}
+										aria-describedby={fieldHasError(field) ? "edit-scopes-error" : undefined}
 									>
 										<legend
 											className={
@@ -355,7 +359,7 @@ function ApiKeyEditDialogForm({
 											{t("settings.apiKeys.form.scopes", "Permissions")}
 											<span className="ml-1 text-destructive">*</span>
 										</legend>
-										<div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-muted/30">
+										<div className="grid grid-cols-1 gap-2 p-3 border rounded-md bg-muted/30 sm:grid-cols-2">
 											{API_KEY_SCOPES.map((scope) => (
 												<ApiKeyScopeOption
 													key={scope}
@@ -367,8 +371,7 @@ function ApiKeyEditDialogForm({
 														field.handleChange(
 															field.state.value.includes(scope)
 																? field.state.value.filter(
-																		(selectedScope) =>
-																			selectedScope !== scope,
+																		(selectedScope) => selectedScope !== scope,
 																	)
 																: [...field.state.value, scope],
 														)
@@ -377,11 +380,7 @@ function ApiKeyEditDialogForm({
 											))}
 										</div>
 									</fieldset>
-									<TFormMessage
-										id="edit-scopes-error"
-										field={field}
-										className="text-xs"
-									/>
+									<TFormMessage id="edit-scopes-error" field={field} className="text-xs" />
 								</TFormItem>
 							)}
 						</form.Field>
@@ -398,45 +397,31 @@ function ApiKeyEditDialogForm({
 												if (!enabled) {
 													form.setFieldValue(
 														"rateLimitMax",
-														getValidDefaultRateLimit(
-															formDefaultValues.rateLimitMax,
-														),
+														getValidDefaultRateLimit(formDefaultValues.rateLimitMax),
 													);
 												}
 											}}
 										/>
-										<Label
-											htmlFor="edit-rateLimitEnabled"
-											className="font-normal cursor-pointer"
-										>
-											{t(
-												"settings.apiKeys.form.rateLimit",
-												"Enable rate limiting",
-											)}
+										<Label htmlFor="edit-rateLimitEnabled" className="font-normal cursor-pointer">
+											{t("settings.apiKeys.form.rateLimit", "Enable rate limiting")}
 										</Label>
 									</div>
 								)}
 							</form.Field>
-							<form.Subscribe<boolean>
-								selector={(state) => state.values.rateLimitEnabled}
-							>
+							<form.Subscribe<boolean> selector={(state) => state.values.rateLimitEnabled}>
 								{(rateLimitEnabled: boolean) =>
 									rateLimitEnabled ? (
 										<div className="ml-6 flex flex-wrap items-start gap-4">
 											<form.Field
 												name="rateLimitMax"
 												validators={{
-													onChange: ({ value }) =>
-														validateRateLimit(value, validationMessages),
+													onChange: ({ value }) => validateRateLimit(value, validationMessages),
 												}}
 											>
 												{(field) => (
 													<TFormItem>
 														<TFormLabel hasError={fieldHasError(field)}>
-															{t(
-																"settings.apiKeys.form.rateLimitMaxRequests",
-																"Max requests",
-															)}
+															{t("settings.apiKeys.form.rateLimitMaxRequests", "Max requests")}
 														</TFormLabel>
 														<TFormControl hasError={fieldHasError(field)}>
 															<Input
@@ -444,9 +429,7 @@ function ApiKeyEditDialogForm({
 																type="number"
 																step={1}
 																value={field.state.value}
-																onChange={(event) =>
-																	field.handleChange(event.target.value)
-																}
+																onChange={(event) => field.handleChange(event.target.value)}
 																onBlur={field.handleBlur}
 																min={10}
 																max={10000}
@@ -487,9 +470,7 @@ function ApiKeyEditDialogForm({
 						>
 							{([isValid, isPending]: [boolean, boolean]) => (
 								<Button type="submit" disabled={!isValid || isPending}>
-									{isPending && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" />
-									)}
+									{isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 									{t("common.save", "Save")}
 								</Button>
 							)}

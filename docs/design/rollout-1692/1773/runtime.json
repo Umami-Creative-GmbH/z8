@@ -1,0 +1,108 @@
+{
+  "beforeSourceSha": "a5259338e983fb2d165c0f463763b1740b585fad",
+  "afterSourceSha": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+  "capture": {
+    "file": "blocked-sign-in.png",
+    "purpose": "Unfilled public sign-in diagnostic only; not R096 before/after evidence",
+    "authenticated": false,
+    "viewport": {
+      "width": 800,
+      "height": 600
+    },
+    "png": {
+      "fullyDecoded": true,
+      "width": 800,
+      "height": 600,
+      "channels": 3,
+      "decodedBytes": 1440000
+    },
+    "fullPage": false,
+    "crop": null,
+    "sha256": "9e33ef5e954820a61be00930e65fcb46b284ad763005a1914c483fa442829134"
+  },
+  "normalFormAttempts": [
+    {
+      "attempt": 1,
+      "sourceSha": "a5259338e983fb2d165c0f463763b1740b585fad",
+      "signInHttpStatus": 200,
+      "reachedDeveloperAccess": true,
+      "failure": "Private harness named-button locator before key creation; browser closed; no key/persisted-readback/capture proof."
+    },
+    {
+      "attempt": 2,
+      "sourceSha": "a5259338e983fb2d165c0f463763b1740b585fad",
+      "failure": "Normal sign-in timed out; no second sign-in POST observed; browser closed."
+    },
+    {
+      "attempt": 3,
+      "sourceSha": "a5259338e983fb2d165c0f463763b1740b585fad",
+      "failure": "Normal sign-in timed out with empty dummy Turnstile response; browser closed."
+    }
+  ],
+  "unfilledPublicDiagnostic": {
+    "path": "/en/sign-in",
+    "title": "z8 - time app",
+    "heading": [
+      "Login to your account"
+    ],
+    "buttons": [
+      {
+        "text": "Toggle theme",
+        "disabled": false
+      },
+      {
+        "text": "Font size",
+        "disabled": false
+      },
+      {
+        "text": "English",
+        "disabled": false
+      },
+      {
+        "text": "Login",
+        "disabled": true
+      },
+      {
+        "text": "Login with Passkey",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "disabled": false
+      }
+    ],
+    "emailInputCount": 1,
+    "passwordInputCount": 1,
+    "turnstileFrame": false,
+    "turnstileResponsePresent": true,
+    "turnstileResponseNonempty": false
+  },
+  "requestInterceptionInstalled": false,
+  "networkMetadataListenerInstalled": false,
+  "furtherCredentialAttemptsAfterDiagnostic": 0,
+  "preview": {
+    "open": "successful incognito owned tab",
+    "snapshot": "PreviewAutomationTimeoutError after 15000ms",
+    "closed": true
+  },
+  "native": {
+    "launcher": "agent-browser.ps1",
+    "status": "PowerShell UnauthorizedAccess; system script execution policy",
+    "executionPolicyChanged": false,
+    "launcherWorkaroundAttempted": false,
+    "nativeReactAcceptance": "unpassed"
+  },
+  "unpassed": [
+    "matched R096 desktop1600/phone390/wide-dark before-after captures",
+    "actual key create/persisted list/readback/reveal-copy-hide/revoke/toggle/refusal/retry journeys",
+    "actual owner webhook create/edit/test/rotate/delete and delivery/worker adoption",
+    "actual no-employee/former/custom-role runtime variants",
+    "saved18 reload, expanded/collapsed/mobile first Escape/focus, keyboard/long labels",
+    "phone axe, exact native React target, connected Next route/errors",
+    "true browser zoom/devices/all locales/providers/full production generation"
+  ],
+  "reason": "Configured dummy Turnstile did not produce a widget response; public Login remained disabled. No auth state copy/mint/restore, SQL authority change, provider/config/security workaround or outbound delivery used.",
+  "captureHarnessSha256": "36479999fa02ae3142ad05aa446fa4f8ef195796f40b64cbe96b2b0b41d503e1",
+  "privateJourneyHarnessSha256": "a613093cb9b9fd5a70cca0b740842884b4b5ed6fb0946ef426df91330c12520e",
+  "generatedCatalogSync": "unpassed: configured Tolgee credentials unavailable; static defaults regression passed"
+}
