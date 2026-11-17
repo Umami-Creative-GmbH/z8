@@ -1,0 +1,157 @@
+{
+  "phase": "after-matched",
+  "policy": "notifications-denied-for-fixture-origin",
+  "captures": [
+    {
+      "file": "after-matched-desktop.png",
+      "measurement": {
+        "permission": "denied",
+        "viewport": [
+          1600,
+          1000
+        ],
+        "documentWidth": 1600,
+        "font": "16px",
+        "theme": "light bprogress-busy",
+        "headings": [
+          {
+            "text": "Team absences",
+            "rect": "{\"x\":280,\"y\":89,\"width\":1296,\"height\":32,\"top\":89,\"right\":1576,\"bottom\":121,\"left\":280}"
+          }
+        ],
+        "dialogs": [],
+        "records": "Employee\n\t\nTeam or Position\n\t\nAllowance\n\t\nUsed\n\t\nPending\n\t\nLeft\n\t\nSick\n\tActions\n\n\nPerson 3\n\nperf-small-3-548c49f01628@example.test\n\n\t\nFixture team 1\n\t\n—\n\nMissing vacation policy\n\n\t\n—\n\t\n—\n\t\n—\n\t\n0\n\t\nRecord absence\n\n\n\nPerson 5\n\nperf-small-5-548c49f01628@example.test\n\n\t\nFixture team 1\n\t\n—\n\nMissing vacation policy\n\n\t\n—\n\t\n—\n\t\n—\n\t\n0\n\t\nRecord absence\n\n\n\nPerson 7\n\nperf-small-7-548c49f01628@example.test\n\n\t\nFixture team 1\n\t\n—\n\nMissing vacation policy\n\n\t\n—\n\t\n—\n\t\n—\n\t\n0\n\t\nRecord absence"
+      }
+    },
+    {
+      "file": "after-matched-wide.png",
+      "measurement": {
+        "permission": "denied",
+        "viewport": [
+          2200,
+          1100
+        ],
+        "documentWidth": 2200,
+        "font": "16px",
+        "theme": "light bprogress-busy",
+        "headings": [
+          {
+            "text": "Team absences",
+            "rect": "{\"x\":280,\"y\":89,\"width\":1896,\"height\":32,\"top\":89,\"right\":2176,\"bottom\":121,\"left\":280}"
+          }
+        ],
+        "dialogs": [],
+        "records": "Employee\n\t\nTeam or Position\n\t\nAllowance\n\t\nUsed\n\t\nPending\n\t\nLeft\n\t\nSick\n\tActions\n\n\nPerson 3\n\nperf-small-3-548c49f01628@example.test\n\n\t\nFixture team 1\n\t\n—\n\nMissing vacation policy\n\n\t\n—\n\t\n—\n\t\n—\n\t\n0\n\t\nRecord absence\n\n\n\nPerson 5\n\nperf-small-5-548c49f01628@example.test\n\n\t\nFixture team 1\n\t\n—\n\nMissing vacation policy\n\n\t\n—\n\t\n—\n\t\n—\n\t\n0\n\t\nRecord absence\n\n\n\nPerson 7\n\nperf-small-7-548c49f01628@example.test\n\n\t\nFixture team 1\n\t\n—\n\nMissing vacation policy\n\n\t\n—\n\t\n—\n\t\n—\n\t\n0\n\t\nRecord absence"
+      }
+    },
+    {
+      "file": "after-matched-phone.png",
+      "measurement": {
+        "permission": "denied",
+        "viewport": [
+          390,
+          844
+        ],
+        "documentWidth": 390,
+        "font": "16px",
+        "theme": "light bprogress-busy",
+        "headings": [
+          {
+            "text": "Team absences",
+            "rect": "{\"x\":16,\"y\":81,\"width\":358,\"height\":32,\"top\":81,\"right\":374,\"bottom\":113,\"left\":16}"
+          }
+        ],
+        "dialogs": [],
+        "records": "Employee\nTeam or Position\nAllowance\nUsed\nPending\nLeft\nSick\nActions\n\nPerson 3\n\nperf-small-3-548c49f01628@example.test\n\nFixture team 1\n—\n\nMissing vacation policy\n\n—\n—\n—\n0\nRecord absence\n\nPerson 5\n\nperf-small-5-548c49f01628@example.test\n\nFixture team 1\n—\n\nMissing vacation policy\n\n—\n—\n—\n0\nRecord absence\n\nPerson 7\n\nperf-small-7-548c49f01628@example.test\n\nFixture team 1\n—\n\nMissing vacation policy\n\n—\n—\n—\n0\nRecord absence"
+      }
+    }
+  ],
+  "stage": "theme",
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.test.ts",
+      "sha256": "bea11e80f5604d769e1fd86695b13272400551fcbace25a38879da07a8ca6e2b"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.ts",
+      "sha256": "04b52193850947d8c45102149a9181c0ea25ce33e70980db2b9f41b2827648b7"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-action-helpers.ts",
+      "sha256": "86595d0ab83ff66c1f7be8da333c88b08a35094fee77c106207cc72c1a76a988"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-calendar-helpers.ts",
+      "sha256": "08268752023708cb8b519c14ab867f568a73d3f3018f78a02b8cd11e121df320"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-metrics.ts",
+      "sha256": "ae37f0839bf93e6e920ae646690f15db93528d6f05472cb6150d727aa717f3a6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-permissions.ts",
+      "sha256": "ef6a1f4abee060ec5caf7682517f4210d26a8b3abe2c684066f0323b92edab27"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-types.ts",
+      "sha256": "c388bd2862ebf15c8c0a07852bf85daadcb31a7889d7afe058cdf85b1acd3c18"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.test.tsx",
+      "sha256": "3f25c2496b79083561c2fb0e14d67f67f4091f63bff3a5ad0db4d01e409ad492"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx",
+      "sha256": "16e2eeeed81175ead340e74630cafcd58bacda55b8f2c6bcbb8e0720f080764f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.sick-notes.test.tsx",
+      "sha256": "0e9caa720c0b87129307e784e212eced0ac29a46a91a35427e459dc12685a4e6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "sha256": "558c0aee1503c85acd5e4a50e2c611e47e7d332d08973bef55e7f08313ca21f6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-form-utils.ts",
+      "sha256": "35f6a403c8a92ea47e94e1a9e85a3b3ab63626ff22b0b7cedd52d2908dcff2c1"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.test.tsx",
+      "sha256": "3de1a0e84c3a3403e95bbb47fe1ad62412bf216a442115261ef2002f43e6eacf"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.tsx",
+      "sha256": "809aecc7b327e9bcbd238a6e9992a50ed0733b136fabe1fe03efc44b2d399431"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.test.tsx",
+      "sha256": "2c8e5f7ed11941bc48614ec220edb221d0104cd630fda86e0e380c951cd570ff"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+      "sha256": "93177e9a8f41c92a0507c98a18fb1b4688e629ba864aed56abf0234733b4b39d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.test.tsx",
+      "sha256": "b504c9a61ba1151bdecbfd779c79d776f6b737d75ef8e16206517d0e66cbfd61"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.tsx",
+      "sha256": "63bb81ae5fb704bf30c67e617a163f43e02945e397ff5dc9795e4d5cfc3be98c"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "sha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+      "sha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "b3e7187c520cecf125b3015c7e6fd91239696408bb5eaaf093d21cc9110ac78c"
+    }
+  ],
+  "status": "captured"
+}

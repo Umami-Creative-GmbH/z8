@@ -1,0 +1,31 @@
+{
+  "base": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+  "entries": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx",
+      "afterSha256": "16e2eeeed81175ead340e74630cafcd58bacda55b8f2c6bcbb8e0720f080764f",
+      "beforeSha256": "b05c16856ac28e4775e1be2089d85d6bfdbd6219ec0e46daecd5f61f064e1654"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "afterSha256": "558c0aee1503c85acd5e4a50e2c611e47e7d332d08973bef55e7f08313ca21f6",
+      "beforeSha256": "039d5fd9733e24da0029db1b797b76785657a9f67b185479fb2aa7f9ec21efc3"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.tsx",
+      "afterSha256": "809aecc7b327e9bcbd238a6e9992a50ed0733b136fabe1fe03efc44b2d399431",
+      "beforeSha256": "3438c76cf1c5d0e4e11f5facf5552c9a4686dae40d217be17813f425168c5b3d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+      "afterSha256": "411778f8a222bb6889a370be584c5ddff0244a56241c57a43269d8bf70ebc579",
+      "beforeSha256": "c19c2f513dae4ea6e9fc99076f0d4dd6a4548cb99c18e196d9256afb774daca3"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "afterSha256": "b3e7187c520cecf125b3015c7e6fd91239696408bb5eaaf093d21cc9110ac78c",
+      "beforeSha256": "997675c17ff346f359a6590d0b289c43db3552262ed04d5c7d90deb414968d5d"
+    }
+  ],
+  "restoredByteExactly": true
+}

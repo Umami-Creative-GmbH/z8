@@ -3,10 +3,15 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { HistoricalVacationReconciliationPanel } from "@/components/absences/historical-vacation-reconciliation-panel";
-import type { ReconciliationProof } from "@/lib/absences/vacation-reconciliation-types";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { discardStagedSickNoteUploadsAction } from "@/app/[locale]/(app)/absences/sick-note-actions";
+import {
+	DeputyPicker,
+	deputyRefusalText,
+	deputyRequiredText,
+} from "@/components/absences/deputy-picker";
+import { HistoricalVacationReconciliationPanel } from "@/components/absences/historical-vacation-reconciliation-panel";
 import {
 	failedSickNoteNames,
 	StagedSickNotesSection,
@@ -21,11 +26,6 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
-import {
-	DeputyPicker,
-	deputyRefusalText,
-	deputyRequiredText,
-} from "@/components/absences/deputy-picker";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -36,21 +36,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	TFormControl,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
 import type { AbsenceDurationKind, SickDetail } from "@/lib/absences/types";
+import type { ReconciliationProof } from "@/lib/absences/vacation-reconciliation-types";
 import { useRouter } from "@/navigation";
-import {
-	recordAbsenceForEmployee,
-	recordAbsenceWithSickNotes,
-} from "./actions";
+import { recordAbsenceForEmployee, recordAbsenceWithSickNotes } from "./actions";
 import {
 	buildRecordAbsenceForEmployeeInput,
 	getDefaultRecordAbsenceFormValues,
@@ -75,34 +68,40 @@ type RecordAbsenceDialogProps = {
 	categories: AbsenceCategoryOption[];
 	/** Personnel files are on: the recorder may add the sick note (#984). */
 	sickNotesEnabled?: boolean;
+	actionAvailable?: boolean;
 };
 
-type RecordAbsenceFormValues = ReturnType<
-	typeof getDefaultRecordAbsenceFormValues
->;
+type RecordAbsenceFormValues = ReturnType<typeof getDefaultRecordAbsenceFormValues>;
 
 function useRecordAbsenceDialogForm({
 	employee,
 	onOpenChange,
 	categories,
 	sickNotesEnabled,
+	open,
+	actionAvailable,
 }: Pick<
 	RecordAbsenceDialogProps,
-	"employee" | "onOpenChange" | "categories" | "sickNotesEnabled"
+	"employee" | "onOpenChange" | "categories" | "sickNotesEnabled" | "open" | "actionAvailable"
 >) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [dateRangeError, setDateRangeError] = useState<string | null>(null);
+	const [isRecording, setIsRecording] = useState(false);
 	const formDefaultValues = getDefaultRecordAbsenceFormValues();
 	const reconciliation = useRef<{
 		signature: string;
 		proof: ReconciliationProof;
 	} | null>(null);
+	const lifetime = useRef<object | null>(null);
+	const pending = useRef<object | null>(null);
 	const requiredMessage = (label: string) =>
 		t("team.absences.recordDialog.required", "{label} is required", { label });
 	const form = useForm({
 		defaultValues: formDefaultValues,
 		onSubmit: async ({ value }) => {
+			const arrival = lifetime.current;
+			if (!arrival || pending.current) return;
 			const rangeError = validateRecordAbsenceFormDateRange(value);
 			if (rangeError) {
 				setDateRangeError(rangeError);
@@ -122,35 +121,45 @@ function useRecordAbsenceDialogForm({
 			}
 
 			// Sick notes are uploaded first and attached once the absence exists (#984).
-			const selectedCategory = categories.find(
-				(category) => category.id === value.categoryId,
-			);
+			const selectedCategory = categories.find((category) => category.id === value.categoryId);
 			const input = buildRecordAbsenceForEmployeeInput(employee.id, value);
-			if (
-				reconciliation.current?.signature ===
-				JSON.stringify({ kind: "manual", absence: input })
-			)
+			if (reconciliation.current?.signature === JSON.stringify({ kind: "manual", absence: input }))
 				input.historicalReconciliation = reconciliation.current.proof;
-			const failureMessage = t(
-				"team.absences.recordDialog.failure",
-				"Failed to record absence",
-			);
+			const failureMessage = t("team.absences.recordDialog.failure", "Failed to record absence");
+			pending.current = arrival;
+			setIsRecording(true);
+			const current = () => lifetime.current === arrival && pending.current === arrival;
 			const result = await sickNotes.submit({
-				files:
-					sickNotesEnabled && selectedCategory?.type === "sick"
-						? value.sickNotes
-						: [],
-				send: (uploaded) =>
-					uploaded
-						? recordAbsenceWithSickNotes(input, uploaded)
-						: recordAbsenceForEmployee(input),
+				files: sickNotesEnabled && selectedCategory?.type === "sick" ? value.sickNotes : [],
+				send: async (uploaded) => {
+					if (!current()) {
+						if (uploaded?.length)
+							await discardStagedSickNoteUploadsAction(
+								uploaded.map((note) => note.tusFileKey),
+							).catch(() => undefined);
+						return { success: false, error: failureMessage };
+					}
+					try {
+						return await (uploaded
+							? recordAbsenceWithSickNotes(input, uploaded)
+							: recordAbsenceForEmployee(input));
+					} catch (error) {
+						if (current()) throw error;
+						if (uploaded?.length)
+							await discardStagedSickNoteUploadsAction(
+								uploaded.map((note) => note.tusFileKey),
+							).catch(() => undefined);
+						return { success: false, error: failureMessage };
+					}
+				},
 				failureMessage,
 			});
+			if (!current()) return;
+			pending.current = null;
+			setIsRecording(false);
 			if (!result) return;
 			if (result.success) {
-				toast.success(
-					t("team.absences.recordDialog.success", "Absence recorded"),
-				);
+				toast.success(t("team.absences.recordDialog.success", "Absence recorded"));
 				const failedFiles = failedSickNoteNames(result);
 				if (failedFiles) {
 					toast.warning(
@@ -181,6 +190,22 @@ function useRecordAbsenceDialogForm({
 			toast.error(result.error ?? failureMessage);
 		},
 	});
+	useLayoutEffect(() => {
+		let cancelled = false;
+		const arrival = open && actionAvailable ? { employeeId: employee?.id, sickNotesEnabled } : null;
+		lifetime.current = arrival;
+		pending.current = null;
+		queueMicrotask(() => {
+			if (!cancelled && lifetime.current === arrival) setIsRecording(false);
+		});
+		// Activity can preserve the draft while disposing the old async operation.
+		form.reset(form.state.values, { keepDefaultValues: true });
+		return () => {
+			cancelled = true;
+			lifetime.current = null;
+			pending.current = null;
+		};
+	}, [open, actionAvailable, employee?.id, sickNotesEnabled, form]);
 
 	const sickNoteDates = useStore(form.store, (state) => ({
 		startDate: state.values.startDate,
@@ -189,6 +214,7 @@ function useRecordAbsenceDialogForm({
 	const sickNotes = useStagedSickNotes(sickNoteDates);
 
 	function handleOpenChange(nextOpen: boolean) {
+		if (pending.current) return;
 		if (!nextOpen) {
 			form.reset(formDefaultValues);
 			setDateRangeError(null);
@@ -197,6 +223,7 @@ function useRecordAbsenceDialogForm({
 	}
 
 	return {
+		isRecording,
 		reconciliation,
 		dateRangeError,
 		form,
@@ -207,9 +234,7 @@ function useRecordAbsenceDialogForm({
 	};
 }
 
-type RecordAbsenceFormApi = ReturnType<
-	typeof useRecordAbsenceDialogForm
->["form"];
+type RecordAbsenceFormApi = ReturnType<typeof useRecordAbsenceDialogForm>["form"];
 
 export function RecordAbsenceDialog({
 	open,
@@ -217,9 +242,11 @@ export function RecordAbsenceDialog({
 	employee,
 	categories,
 	sickNotesEnabled = false,
+	actionAvailable = true,
 }: RecordAbsenceDialogProps) {
 	const { t } = useTranslate();
 	const {
+		isRecording,
 		reconciliation,
 		dateRangeError,
 		form,
@@ -232,28 +259,26 @@ export function RecordAbsenceDialog({
 		onOpenChange,
 		categories,
 		sickNotesEnabled,
+		open,
+		actionAvailable,
 	});
+	const isSubmitting = isRecording;
 
 	const title = employee
-		? t(
-				"team.absences.recordDialog.titleForEmployee",
-				"Record absence for {name}",
-				{
-					name: employee.name,
-				},
-			)
+		? t("team.absences.recordDialog.titleForEmployee", "Record absence for {name}", {
+				name: employee.name,
+			})
 		: t("team.absences.recordDialog.title", "Record absence");
-	const durationOptions: Array<{ value: AbsenceDurationKind; label: string }> =
-		[
-			{
-				value: "full_day",
-				label: t("absences.form.duration.fullDay", "Full day"),
-			},
-			{
-				value: "partial_day",
-				label: t("absences.form.duration.partialDay", "Partial day"),
-			},
-		];
+	const durationOptions: Array<{ value: AbsenceDurationKind; label: string }> = [
+		{
+			value: "full_day",
+			label: t("absences.form.duration.fullDay", "Full day"),
+		},
+		{
+			value: "partial_day",
+			label: t("absences.form.duration.partialDay", "Partial day"),
+		},
+	];
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
@@ -277,244 +302,206 @@ export function RecordAbsenceDialog({
 					</ActionPanelHeader>
 
 					<ActionPanelBody className="space-y-5">
-						<form.Field
-							name="categoryId"
-							validators={{
-								onChange: ({ value }) =>
-									value
-										? undefined
-										: requiredMessage(
-												t("team.absences.recordDialog.category", "Category"),
-											),
-							}}
-						>
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)} required>
-										{t("team.absences.recordDialog.category", "Category")}
-									</TFormLabel>
-									<Select
-										name="categoryId"
-										value={field.state.value}
-										onValueChange={(value) => {
-											field.handleChange(value);
-											const nextCategory = categories.find(
-												(category) => category.id === value,
-											);
-											if (nextCategory?.type !== "sick") {
-												form.setFieldValue("sickDetail", "");
-												form.setFieldValue("sickNotes", []);
-											}
-										}}
-										disabled={categories.length === 0}
-									>
-										<TFormControl hasError={fieldHasError(field)}>
-											<SelectTrigger
-												className="w-full"
-												onBlur={field.handleBlur}
-											>
-												<SelectValue
-													placeholder={t(
-														"team.absences.recordDialog.categoryPlaceholder",
-														"Select an absence category…",
-													)}
-												/>
-											</SelectTrigger>
-										</TFormControl>
-										<SelectContent>
-											{categories.length === 0 ? (
-												<SelectItem value="__no-categories" disabled>
-													{t(
-														"team.absences.recordDialog.noCategories",
-														"No categories available",
-													)}
-												</SelectItem>
-											) : (
-												categories.map((category) => (
-													<SelectItem key={category.id} value={category.id}>
-														{category.name}
+						<fieldset className="contents" disabled={isSubmitting || !actionAvailable}>
+							<form.Field
+								name="categoryId"
+								validators={{
+									onChange: ({ value }) =>
+										value
+											? undefined
+											: requiredMessage(t("team.absences.recordDialog.category", "Category")),
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)} required>
+											{t("team.absences.recordDialog.category", "Category")}
+										</TFormLabel>
+										<Select
+											name="categoryId"
+											value={field.state.value}
+											onValueChange={(value) => {
+												field.handleChange(value);
+												const nextCategory = categories.find((category) => category.id === value);
+												if (nextCategory?.type !== "sick") {
+													form.setFieldValue("sickDetail", "");
+													form.setFieldValue("sickNotes", []);
+												}
+											}}
+											disabled={categories.length === 0}
+										>
+											<TFormControl hasError={fieldHasError(field)}>
+												<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+													<SelectValue
+														placeholder={t(
+															"team.absences.recordDialog.categoryPlaceholder",
+															"Select an absence category…",
+														)}
+													/>
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												{categories.length === 0 ? (
+													<SelectItem value="__no-categories" disabled>
+														{t(
+															"team.absences.recordDialog.noCategories",
+															"No categories available",
+														)}
 													</SelectItem>
-												))
-											)}
-										</SelectContent>
-									</Select>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
+												) : (
+													categories.map((category) => (
+														<SelectItem key={category.id} value={category.id}>
+															{category.name}
+														</SelectItem>
+													))
+												)}
+											</SelectContent>
+										</Select>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
 
-						<form.Subscribe<RecordAbsenceFormValues["categoryId"]>
-							selector={(state) => state.values.categoryId}
-						>
-							{(categoryId: RecordAbsenceFormValues["categoryId"]) => {
-								const selectedCategory = categories.find(
-									(category) => category.id === categoryId,
-								);
-								if (selectedCategory?.type !== "sick") return null;
-
-								return (
-									<form.Field
-										name="sickDetail"
-										validators={{
-											onChange: ({ value }) =>
-												value
-													? undefined
-													: requiredMessage(
-															t(
-																"team.absences.recordDialog.sickDetail",
-																"Sick detail",
-															),
-														),
-										}}
-									>
-										{(field) => (
-											<TFormItem>
-												<TFormLabel hasError={fieldHasError(field)} required>
-													{t(
-														"team.absences.recordDialog.sickDetail",
-														"Sick detail",
-													)}
-												</TFormLabel>
-												<Select
-													name="sickDetail"
-													value={field.state.value}
-													onValueChange={(value) =>
-														field.handleChange(value as SickDetail)
-													}
-												>
-													<TFormControl hasError={fieldHasError(field)}>
-														<SelectTrigger
-															className="w-full"
-															onBlur={field.handleBlur}
-														>
-															<SelectValue
-																placeholder={t(
-																	"team.absences.recordDialog.sickDetailPlaceholder",
-																	"Select sick detail…",
-																)}
-															/>
-														</SelectTrigger>
-													</TFormControl>
-													<SelectContent>
-														{sickDetailOptions.map((option) => (
-															<SelectItem
-																key={option.value}
-																value={option.value}
-															>
-																{t(option.labelKey, option.label)}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<TFormMessage field={field} />
-											</TFormItem>
-										)}
-									</form.Field>
-								);
-							}}
-						</form.Subscribe>
-
-						<RecordAbsenceDateFields
-							form={form}
-							requiredMessage={requiredMessage}
-						/>
-
-						<RecordAbsenceDurationFields
-							form={form}
-							options={durationOptions}
-						/>
-
-						{sickNotesEnabled ? (
 							<form.Subscribe<RecordAbsenceFormValues["categoryId"]>
 								selector={(state) => state.values.categoryId}
 							>
-								{(categoryId: RecordAbsenceFormValues["categoryId"]) =>
-									categories.find((category) => category.id === categoryId)
-										?.type === "sick" ? (
-										<RecordAbsenceSickNotes
-											dates={sickNoteDates}
-											form={form}
-											sickNotes={sickNotes}
-										/>
-									) : null
-								}
-							</form.Subscribe>
-						) : null}
+								{(categoryId: RecordAbsenceFormValues["categoryId"]) => {
+									const selectedCategory = categories.find(
+										(category) => category.id === categoryId,
+									);
+									if (selectedCategory?.type !== "sick") return null;
 
-						<RecordAbsenceDeputyField
-							categories={categories}
-							employee={employee}
-							form={form}
-						/>
-
-						<form.Field name="notes">
-							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)}>
-										{t("team.absences.recordDialog.notes", "Notes")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<Textarea
-											name="notes"
-											autoComplete="off"
-											value={field.state.value}
-											onChange={(event) =>
-												field.handleChange(event.target.value)
-											}
-											onBlur={field.handleBlur}
-											placeholder={t(
-												"team.absences.recordDialog.notesPlaceholder",
-												"Add internal context for this record…",
+									return (
+										<form.Field
+											name="sickDetail"
+											validators={{
+												onChange: ({ value }) =>
+													value
+														? undefined
+														: requiredMessage(
+																t("team.absences.recordDialog.sickDetail", "Sick detail"),
+															),
+											}}
+										>
+											{(field) => (
+												<TFormItem>
+													<TFormLabel hasError={fieldHasError(field)} required>
+														{t("team.absences.recordDialog.sickDetail", "Sick detail")}
+													</TFormLabel>
+													<Select
+														name="sickDetail"
+														value={field.state.value}
+														onValueChange={(value) => field.handleChange(value as SickDetail)}
+													>
+														<TFormControl hasError={fieldHasError(field)}>
+															<SelectTrigger className="w-full" onBlur={field.handleBlur}>
+																<SelectValue
+																	placeholder={t(
+																		"team.absences.recordDialog.sickDetailPlaceholder",
+																		"Select sick detail…",
+																	)}
+																/>
+															</SelectTrigger>
+														</TFormControl>
+														<SelectContent>
+															{sickDetailOptions.map((option) => (
+																<SelectItem key={option.value} value={option.value}>
+																	{t(option.labelKey, option.label)}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+													<TFormMessage field={field} />
+												</TFormItem>
 											)}
-											rows={3}
-										/>
-									</TFormControl>
-									<TFormMessage field={field} />
-								</TFormItem>
-							)}
-						</form.Field>
+										</form.Field>
+									);
+								}}
+							</form.Subscribe>
 
-						{dateRangeError ? (
-							<p
-								role="alert"
-								aria-live="polite"
-								className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
-							>
-								{dateRangeError}
-							</p>
-						) : null}
-						<form.Subscribe selector={(state) => state.values}>
-							{(values) => {
-								if (
-									!employee ||
-									!categories.find(
-										(category) => category.id === values.categoryId,
-									)?.countsAgainstVacation ||
-									!values.startDate ||
-									!values.endDate
-								)
-									return null;
-								const source = {
-									kind: "manual" as const,
-									absence: buildRecordAbsenceForEmployeeInput(
-										employee.id,
-										values,
-									),
-								};
-								const signature = JSON.stringify(source);
-								return (
-									<HistoricalVacationReconciliationPanel
-										key={signature}
-										source={source}
-										onReviewed={(proof) => {
-											reconciliation.current = proof
-												? { signature, proof }
-												: null;
-										}}
-									/>
-								);
-							}}
-						</form.Subscribe>
+							<RecordAbsenceDateFields form={form} requiredMessage={requiredMessage} />
+
+							<RecordAbsenceDurationFields form={form} options={durationOptions} />
+
+							{sickNotesEnabled ? (
+								<form.Subscribe<RecordAbsenceFormValues["categoryId"]>
+									selector={(state) => state.values.categoryId}
+								>
+									{(categoryId: RecordAbsenceFormValues["categoryId"]) =>
+										categories.find((category) => category.id === categoryId)?.type === "sick" ? (
+											<RecordAbsenceSickNotes
+												dates={sickNoteDates}
+												form={form}
+												sickNotes={sickNotes}
+											/>
+										) : null
+									}
+								</form.Subscribe>
+							) : null}
+
+							<RecordAbsenceDeputyField categories={categories} employee={employee} form={form} />
+
+							<form.Field name="notes">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("team.absences.recordDialog.notes", "Notes")}
+										</TFormLabel>
+										<TFormControl hasError={fieldHasError(field)}>
+											<Textarea
+												name="notes"
+												autoComplete="off"
+												value={field.state.value}
+												onChange={(event) => field.handleChange(event.target.value)}
+												onBlur={field.handleBlur}
+												placeholder={t(
+													"team.absences.recordDialog.notesPlaceholder",
+													"Add internal context for this record…",
+												)}
+												rows={3}
+											/>
+										</TFormControl>
+										<TFormMessage field={field} />
+									</TFormItem>
+								)}
+							</form.Field>
+
+							{dateRangeError ? (
+								<p
+									role="alert"
+									aria-live="polite"
+									className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-destructive text-sm"
+								>
+									{dateRangeError}
+								</p>
+							) : null}
+							<form.Subscribe selector={(state) => state.values}>
+								{(values) => {
+									if (
+										!employee ||
+										!categories.find((category) => category.id === values.categoryId)
+											?.countsAgainstVacation ||
+										!values.startDate ||
+										!values.endDate
+									)
+										return null;
+									const source = {
+										kind: "manual" as const,
+										absence: buildRecordAbsenceForEmployeeInput(employee.id, values),
+									};
+									const signature = JSON.stringify(source);
+									return (
+										<HistoricalVacationReconciliationPanel
+											key={signature}
+											source={source}
+											onReviewed={(proof) => {
+												reconciliation.current = proof ? { signature, proof } : null;
+											}}
+										/>
+									);
+								}}
+							</form.Subscribe>
+						</fieldset>
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
@@ -522,26 +509,20 @@ export function RecordAbsenceDialog({
 							type="button"
 							variant="outline"
 							onClick={() => handleOpenChange(false)}
+							disabled={isSubmitting}
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
-							{(isSubmitting: boolean) => (
-								<Button type="submit" disabled={isSubmitting || !employee}>
-									{isSubmitting ? (
-										<>
-											<IconLoader2
-												className="size-4 animate-spin"
-												aria-hidden="true"
-											/>
-											{t("team.absences.recordDialog.recording", "Recording…")}
-										</>
-									) : (
-										t("team.absences.recordDialog.submit", "Record absence")
-									)}
-								</Button>
+						<Button type="submit" disabled={isSubmitting || !employee || !actionAvailable}>
+							{isSubmitting ? (
+								<>
+									<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+									{t("team.absences.recordDialog.recording", "Recording…")}
+								</>
+							) : (
+								t("team.absences.recordDialog.submit", "Record absence")
 							)}
-						</form.Subscribe>
+						</Button>
 					</ActionPanelFooter>
 				</form>
 			</ActionPanelContent>
@@ -570,10 +551,7 @@ function RecordAbsenceSickNotes({
 					{(field) => (
 						<StagedSickNotesSection
 							id="record-absence-sick-notes"
-							title={t(
-								"team.absences.recordDialog.sickNotes.title",
-								"Sick note (optional)",
-							)}
+							title={t("team.absences.recordDialog.sickNotes.title", "Sick note (optional)")}
 							description={t(
 								"team.absences.recordDialog.sickNotes.description",
 								"Add photos or PDFs of the sick note you were handed: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in the employee's personnel file, and the employee sees it. Afterwards, only those who manage the employee's sick notes can open it.",
@@ -606,9 +584,7 @@ function RecordAbsenceDateFields({
 					onChange: ({ value }) =>
 						value
 							? undefined
-							: requiredMessage(
-									t("team.absences.recordDialog.startDate", "Start date"),
-								),
+							: requiredMessage(t("team.absences.recordDialog.startDate", "Start date")),
 				}}
 			>
 				{(field) => (
@@ -622,10 +598,7 @@ function RecordAbsenceDateFields({
 								value={field.state.value}
 								onChange={(value) => field.handleChange(value)}
 								onBlur={field.handleBlur}
-								placeholder={t(
-									"team.absences.recordDialog.pickStartDate",
-									"Pick start date…",
-								)}
+								placeholder={t("team.absences.recordDialog.pickStartDate", "Pick start date…")}
 								required
 							/>
 						</TFormControl>
@@ -646,10 +619,7 @@ function RecordAbsenceDateFields({
 								value={field.state.value}
 								onChange={(value) => field.handleChange(value)}
 								onBlur={field.handleBlur}
-								placeholder={t(
-									"team.absences.recordDialog.pickEndDate",
-									"Pick end date…",
-								)}
+								placeholder={t("team.absences.recordDialog.pickEndDate", "Pick end date…")}
 							/>
 						</TFormControl>
 						<TFormMessage field={field} />
@@ -657,10 +627,7 @@ function RecordAbsenceDateFields({
 				)}
 			</form.Field>
 			<p className="-mt-2 text-muted-foreground text-xs sm:col-start-2">
-				{t(
-					"team.absences.recordDialog.endDateHelper",
-					"Leave empty for a same-day absence.",
-				)}
+				{t("team.absences.recordDialog.endDateHelper", "Leave empty for a same-day absence.")}
 			</p>
 		</div>
 	);
@@ -691,10 +658,8 @@ function RecordAbsenceDeputyField({
 			validators={{
 				onSubmit: ({ value, fieldApi }) =>
 					!value &&
-					categories.find(
-						(category) =>
-							category.id === fieldApi.form.getFieldValue("categoryId"),
-					)?.deputyRequired
+					categories.find((category) => category.id === fieldApi.form.getFieldValue("categoryId"))
+						?.deputyRequired
 						? deputyRequiredText(t)
 						: undefined,
 			}}
@@ -735,15 +700,11 @@ function RecordAbsenceDurationFields({
 			<form.Field name="durationKind">
 				{(field) => (
 					<TFormItem>
-						<TFormLabel>
-							{t("absences.form.duration", "Absence duration")}
-						</TFormLabel>
+						<TFormLabel>{t("absences.form.duration", "Absence duration")}</TFormLabel>
 						<Select
 							name="durationKind"
 							value={field.state.value}
-							onValueChange={(value) =>
-								field.handleChange(value as AbsenceDurationKind)
-							}
+							onValueChange={(value) => field.handleChange(value as AbsenceDurationKind)}
 						>
 							<TFormControl>
 								<SelectTrigger className="w-full" onBlur={field.handleBlur}>
@@ -780,9 +741,7 @@ function RecordAbsenceDurationFields({
 												name="startTime"
 												type="time"
 												value={field.state.value}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
+												onChange={(event) => field.handleChange(event.target.value)}
 												onBlur={field.handleBlur}
 												required
 											/>
@@ -803,9 +762,7 @@ function RecordAbsenceDurationFields({
 												name="endTime"
 												type="time"
 												value={field.state.value}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
+												onChange={(event) => field.handleChange(event.target.value)}
 												onBlur={field.handleBlur}
 												required
 											/>

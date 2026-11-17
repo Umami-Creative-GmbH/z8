@@ -1,0 +1,278 @@
+{
+  "browserPolicy": "notifications-denied-for-fixture-origin",
+  "notification": {
+    "permission": "denied",
+    "url": "http://localhost:51523/en/team/absences?year=2026"
+  },
+  "controls": [
+    {
+      "label": "Switch Organization: Performance small",
+      "slot": "dropdown-menu-trigger",
+      "text": "Performance small\nMember"
+    },
+    {
+      "label": "Search",
+      "slot": "sidebar-menu-button",
+      "text": "Search\nCtrl+K"
+    },
+    {
+      "label": "Account: Person 1",
+      "slot": "dropdown-menu-trigger",
+      "text": "Person 1\nperf-small-1-548c49f01628@example.test"
+    },
+    {
+      "label": null,
+      "slot": "sidebar-trigger",
+      "text": "Toggle Sidebar"
+    },
+    {
+      "label": "Current timezone Europe/Berlin, 04:30, UTC+01:00",
+      "slot": "popover-trigger",
+      "text": "04:30\nUTC+01:00"
+    },
+    {
+      "label": "Clock In",
+      "slot": "popover-trigger",
+      "text": "Clock In"
+    },
+    {
+      "label": "Refresh data",
+      "slot": "tooltip-trigger",
+      "text": ""
+    },
+    {
+      "label": null,
+      "slot": "dropdown-menu-trigger",
+      "text": "Toggle theme"
+    },
+    {
+      "label": "Notifications",
+      "slot": "popover-trigger",
+      "text": ""
+    },
+    {
+      "label": null,
+      "slot": "button",
+      "text": "Search"
+    },
+    {
+      "label": "Filter by team",
+      "slot": "select-trigger",
+      "text": "All teams"
+    },
+    {
+      "label": "Filter by year",
+      "slot": "select-trigger",
+      "text": "2026"
+    },
+    {
+      "label": "Previous page",
+      "slot": "button",
+      "text": "Previous"
+    },
+    {
+      "label": "Next page",
+      "slot": "button",
+      "text": "Next"
+    },
+    {
+      "label": "Open Tanstack query devtools",
+      "text": ""
+    }
+  ],
+  "checks": [],
+  "snapshot": {
+    "snapshot": "- button \"Toggle Sidebar\" [expanded=true, ref=e13887]\n- button \"Current timezone Europe/Berlin, 04:30, UTC+01:00\" [expanded=false, ref=e13888]\n- button \"Clock In\" [expanded=false, ref=e13889]\n- button \"Refresh data\" [ref=e13902]\n- button \"Toggle theme\" [expanded=false, ref=e13903]\n- button \"Notifications\" [expanded=false, ref=e13904]"
+  },
+  "next": {
+    "listing": {
+      "result": {
+        "tools": [
+          {
+            "name": "get_project_metadata",
+            "description": "Returns the the metadata of this Next.js project, including project path, dev server URL, etc.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "name": "get_errors",
+            "description": "Get the current error state from the Next.js dev server, including Next.js global errors (e.g., next.config validation), browser runtime errors, and build errors with source-mapped stack traces",
+            "inputSchema": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "name": "get_page_metadata",
+            "description": "Get runtime metadata about what contributes to the current page render from active browser sessions.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "name": "get_logs",
+            "description": "Get the path to the Next.js development log file. Returns the file path so the agent can read the logs directly.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          {
+            "name": "get_server_action_by_id",
+            "description": "Locates a Server Action by its ID in the server-reference-manifest.json. Returns the filename and export name for the action.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "actionId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "actionId"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "name": "get_routes",
+            "description": "Get all routes that will become entry points in the Next.js application by scanning the filesystem. Returns routes grouped by router type (appRouter, pagesRouter). Dynamic segments appear as [param] or [...slug] patterns. API routes are included in their respective routers (e.g., /api/* routes from pages/ are in pagesRouter). Optional parameter: routerType (\"app\" | \"pages\") - filter by specific router type, omit to get all routes.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "routerType": {
+                  "type": "string",
+                  "enum": [
+                    "app",
+                    "pages"
+                  ]
+                }
+              },
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "name": "get_request_insights",
+            "description": "Get recent App Router request insights captured by the local Next.js span recorder. Useful for debugging slow renders, server fetches, cache behavior, and request timelines without an external OTEL collector. Requires experimental.requestInsights.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "requestId": {
+                  "type": "string"
+                },
+                "htmlRequestId": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "name": "get_compilation_issues",
+            "description": "Build the module graph for all routes and return all compilation issues (resolve errors, missing modules, transform errors, etc.). Does not require a browser session. Covers all routes proactively.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          },
+          {
+            "name": "compile_route",
+            "description": "Compile a specific route (page or API route) without making an HTTP request. Triggers the same on-demand compilation the dev server uses when a route is first visited. Useful for warming up the module graph, measuring compile time, or pre-compiling routes for memory benchmarking. Returns { routeSpecifier, issues } on success where routeSpecifier is the resolved route and issues contains any compilation warnings or errors. Returns an error if no matching route exists.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "routeSpecifier": {
+                  "type": "string",
+                  "description": "A route specifier as returned by the get_routes tool (e.g. \"/\", \"/blog/[slug]\", \"/api/users/[id]\"). Mutually exclusive with `path`; provide exactly one."
+                },
+                "path": {
+                  "type": "string",
+                  "description": "A URL path on this site (e.g. \"/blog/hello-world\", \"/docs/a/b/c\"). Query strings are allowed and ignored. Do not include scheme/host/port. The path is resolved to its matching route specifier using the dev router's live route table. Mutually exclusive with `routeSpecifier`; provide exactly one."
+                }
+              },
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1
+    },
+    "observations": [
+      {
+        "name": "get_project_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-d602d7c5-7898bbc01d3ff562\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:51523\"}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/sign-in\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(auth)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(auth)/sign-in/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]},{\"url\":\"/en/team/absences?year=2026\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/team/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/team/absences/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[{\"severity\":\"error\",\"filePath\":\"[project]/apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx\",\"title\":\"**Module not found**: Can't resolve `'@/data/licenses.json'`\",\"description\":\"Import map: aliased to relative './src/data/licenses.json' inside of [project]/apps/webapp\\n\",\"detail\":\"It was not possible to find the requested file.\\nParsed request as written in source code: module '@' with subpath '/data/licenses.json'\\nPath where resolving has started: [project]/apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx\\nType of request: EcmaScript Modules (part) request\\n\",\"source\":{\"filePath\":\"[project]/apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx\",\"range\":{\"start\":{\"line\":7,\"column\":1},\"end\":{\"line\":7,\"column\":45}}},\"codeFrame\":\"   5 | import { LocalizedLoadingLabel } from \\\"@/components/shells/localized-loading-label\\\";\\n   6 | import { Skeleton } from \\\"@/components/ui/skeleton\\\";\\n>  7 | import licenses from \\\"@/data/licenses.json\\\";\\n     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n   8 | import { ALL_LANGUAGES } from \\\"@/tolgee/shared\\\";\\n   9 | import type { LicenseReport } from \\\"@/types/license\\\";\\n  10 |\"}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  }
+}
