@@ -1368,7 +1368,9 @@
       "rootPageArrivalEvidence": "docs/design/rollout-1692/1773/root-page-arrival-checks.json",
       "rootPageArrivalVerification": "Provisional:152permanent/11files plus26adaptedindependent =178/12, all3types,scopedlint/explicit andDoctor0/0 pass. Page-owner observation covers received/unvisited tabs; no wire-age claim. Authenticated/runtime acceptance pending.",
       "rootPageArrivalIndependentEvidence": "docs/design/rollout-1692/1773/root-page-arrival-independent-recheck.json",
-      "rootPageArrivalIndependentVerification": "203distinct/12files=152permanent+51independent, noP1inside route-first-observation guarantee; 3sourcepins unchanged throughcurrentroot. Doctor0/0/lint/explicit pass; independentmainTS missingignoredlicense andordinary3findings qualified. Authenticated acceptance pending; readinessnull."
+      "rootPageArrivalIndependentVerification": "203distinct/12files=152permanent+51independent, noP1inside route-first-observation guarantee; 3sourcepins unchanged throughcurrentroot. Doctor0/0/lint/explicit pass; independentmainTS missingignoredlicense andordinary3findings qualified. Authenticated acceptance pending; readinessnull.",
+      "rootAuthenticatedRuntimeEvidence": "docs/design/rollout-1692/1773/root-authenticated-runtime-intake.json",
+      "rootAuthenticatedRuntimeVerification": "Frozen56120 freshPG100/5 and36of37namedruntime assertions,77attempts; noR096P1. Org-admin key CRUD/reveal/privatecopy/pending/readRetry/preferences pass. German-with-savedEnglish redirect/query observation retained: language enforcement intentional, sharedlocalequeryloss pendingpublicrepro, aliaslocalcauseunestablished. Owner/manager/native/axe/broader limits unpassed. SAFE23hashes/14JSON/9PNGverified; preservationdigestinconsistencyqualified; readinessnull."
     },
     {
       "id": "R097",
@@ -2032,7 +2034,7 @@
       "evidence": "docs/design/rollout-1692/1746.md",
       "handoffLimitation": "Worker reports156unit/12PG,full3types,scopedlint/format,Next andmainaxe0,actual fixture decision persisted through publicInbox. TwoDoctorwarnings,incremental capture boundaries,live revocation andbuild/catalog/device/zoom limits await fresh merger review.",
       "integrationCommit": "14a39359b0e1418bdfbadff8d5b04954c4d9c011",
-      "latestIntegrationCommit": "4cc47063828e9677b9c2fe24d15f4f5117d5ce99",
+      "latestIntegrationCommit": "25d6a6d00db5fbec0c270278ab788ff24428ccca",
       "rootProviderArrivalCorrectionCommit": "39e5e92b0135c2135a16d9b020cb30c29501b79a",
       "rootProviderArrivalEvidence": "docs/design/rollout-1692/1746/root-provider-arrival-checks.json",
       "rootIntegrationVerification": "Provisional: isolated merge tree/preservation matches; original actual-provider employee arrival3pass1fail corrected. Root179 distinct cases/11files, all3types/staticTypegen, owned4lint/explicitformat andDoctor0/0 pass. Ordinary4format findings remain; PG/runtime and fresh independent acceptance unpassed. verifiedCommit stays null.",
@@ -2043,7 +2045,9 @@
       "rootDecisionReservationEvidence": "docs/design/rollout-1692/1746/root-decision-reservation-checks.json",
       "rootDecisionReservationVerification": "Provisional: exactActivity opposingPOST9pass1fail corrected with QueryClient/actor/org reservation through real settlement.196distinct/13files including28public,full3types,5filelint/explicit andDoctor0/0 pass. Ordinary5formatter+4testwarnings retained; independent/PG/runtime pending.",
       "rootProducerProvenanceBlockerEvidence": "docs/design/rollout-1692/1746/root-producer-provenance-stop.json",
-      "rootProducerProvenanceStatus": "Confirmed synthetic page/read stampP1: independent25pass1fail/26, settlement controls pass; root fix queued after separateR096runtimelease. verifiedCommit null."
+      "rootProducerProvenanceStatus": "Provisional producer-bound ready DTO replaces earlier-page stamp. Exact pinned5:4pass1fail; current203/14 including7newproducer andprior196 pass. Fulltypes/explicit9lint/format/Doctor0pass; ordinary9errors5warnings. Fresh independent/PG/runtime acceptance pending; readinessnull.",
+      "rootProducerProvenanceCorrectionCommit": "fa14ae6cc5948824110c2b33f18583b0a17df09e",
+      "rootProducerProvenanceEvidence": "docs/design/rollout-1692/1746/root-producer-provenance-checks.json"
     },
     {
       "id": "R165",
