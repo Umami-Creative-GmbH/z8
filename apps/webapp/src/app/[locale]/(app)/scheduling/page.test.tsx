@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
@@ -33,10 +34,19 @@ vi.mock("@/components/ui/skeleton", () => ({ Skeleton: "Skeleton" }));
 vi.mock("@/tolgee/server", () => ({
 	getTranslate: vi.fn(async () => (_key: string, fallback: string) => fallback),
 }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
 
 const { default: SchedulingPage } = await import("./page");
 
 describe("SchedulingPageContent organization scope", () => {
+	it("keeps one safe page heading while authorization and data load", () => {
+		const suspenseShell = SchedulingPage();
+		const html = renderToStaticMarkup(suspenseShell.props.fallback);
+		expect(html.match(/<h1[ >]/g)).toHaveLength(1);
+		expect(html).toContain("Loading shift schedule");
+	});
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.activeOrganizationIdForTimezone = undefined;
@@ -58,22 +68,20 @@ describe("SchedulingPageContent organization scope", () => {
 			organizationId: "org-a",
 			role: "manager",
 		});
-		mockState.organizationFindFirst.mockImplementation(
-			async ({ where }: { where: unknown }) => {
-				if (typeof where === "function") {
-					where(
-						{ id: "organization.id" },
-						{
-							eq: (_column: unknown, value: string) => {
-								mockState.activeOrganizationIdForTimezone = value;
-								return true;
-							},
+		mockState.organizationFindFirst.mockImplementation(async ({ where }: { where: unknown }) => {
+			if (typeof where === "function") {
+				where(
+					{ id: "organization.id" },
+					{
+						eq: (_column: unknown, value: string) => {
+							mockState.activeOrganizationIdForTimezone = value;
+							return true;
 						},
-					);
-				}
-				return { timezone: "America/New_York" };
-			},
-		);
+					},
+				);
+			}
+			return { timezone: "America/New_York" };
+		});
 	});
 
 	it("uses the active approved employee instead of the first user employee", async () => {
@@ -113,9 +121,7 @@ describe("SchedulingPageContent organization scope", () => {
 		});
 		const suspenseShell = SchedulingPage({ searchParams });
 		const SchedulingPageContent = suspenseShell.props.children.type;
-		const page = await SchedulingPageContent(
-			suspenseShell.props.children.props,
-		);
+		const page = await SchedulingPageContent(suspenseShell.props.children.props);
 		const scheduler = page.props.children.props.children[1];
 
 		expect(scheduler.props).toMatchObject({
@@ -132,9 +138,7 @@ describe("SchedulingPageContent organization scope", () => {
 		});
 		const suspenseShell = SchedulingPage({ searchParams });
 		const SchedulingPageContent = suspenseShell.props.children.type;
-		const page = await SchedulingPageContent(
-			suspenseShell.props.children.props,
-		);
+		const page = await SchedulingPageContent(suspenseShell.props.children.props);
 		const scheduler = page.props.children.props.children[1];
 
 		expect(scheduler.props).toMatchObject({

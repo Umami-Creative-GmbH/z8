@@ -45,6 +45,11 @@ describe("route metadata", () => {
 			false,
 		);
 	});
+	it("adopts only the scheduling page heading, preserving its descendants and settings", () => {
+		expect(appPageOwnsHeading("/de/scheduling")).toBe(true);
+		expect(appPageOwnsHeading("/en/scheduling/detail")).toBe(false);
+		expect(appPageOwnsHeading("/en/settings/shifts")).toBe(false);
+	});
 	it("adopts payroll, the work-balance directory and selected balance without deeper descendants", () => {
 		expect(appPageOwnsHeading("/de/payroll")).toBe(true);
 		expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);

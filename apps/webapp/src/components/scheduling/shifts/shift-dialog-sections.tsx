@@ -93,14 +93,18 @@ function getFieldErrorMessage(error: unknown) {
 	return null;
 }
 
-function FieldErrorText({ errors }: { errors: readonly unknown[] }) {
+function FieldErrorText({ errors, id }: { errors: readonly unknown[]; id?: string }) {
 	const message = errors[0] ? getFieldErrorMessage(errors[0]) : null;
 
 	if (!message) {
 		return null;
 	}
 
-	return <p className="text-sm font-medium text-destructive">{message}</p>;
+	return (
+		<p id={id} role="alert" className="text-sm font-medium text-destructive">
+			{message}
+		</p>
+	);
 }
 
 type SkillValidation = ShiftDialogSectionsProps["skillValidation"];
@@ -203,6 +207,10 @@ function ShiftDateField({ form, isManager }: { form: ShiftDialogFormApi; isManag
 					</Label>
 					<DatePicker
 						id="shift-dialog-date"
+						aria-invalid={field.state.meta.errors.length > 0 || undefined}
+						aria-describedby={
+							field.state.meta.errors.length > 0 ? "shift-dialog-date-error" : undefined
+						}
 						required
 						value={field.state.value}
 						onChange={field.handleChange}
@@ -210,7 +218,7 @@ function ShiftDateField({ form, isManager }: { form: ShiftDialogFormApi; isManag
 						disabled={!isManager}
 						placeholder={t("scheduling:scheduling.shiftDialog.pickDate", "Pick a date")}
 					/>
-					<FieldErrorText errors={field.state.meta.errors} />
+					<FieldErrorText id="shift-dialog-date-error" errors={field.state.meta.errors} />
 				</div>
 			)}
 		</form.Field>
@@ -230,12 +238,14 @@ function ShiftTemplateField({
 		<form.Field name="templateId">
 			{(field) => (
 				<div className="gap-y-2">
-					<Label>{t("scheduling:scheduling.shiftDialog.template", "Template (Optional)")}</Label>
+					<Label htmlFor="shift-dialog-template">
+						{t("scheduling:scheduling.shiftDialog.template", "Template (Optional)")}
+					</Label>
 					<Select
 						onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
 						value={field.state.value || "none"}
 					>
-						<SelectTrigger>
+						<SelectTrigger id="shift-dialog-template">
 							<SelectValue
 								placeholder={t(
 									"scheduling:scheduling.shiftDialog.selectTemplate",
@@ -283,14 +293,22 @@ function ShiftTimeFields({ form, isManager }: { form: ShiftDialogFormApi; isMana
 			>
 				{(field) => (
 					<div className="gap-y-2">
-						<Label>{t("scheduling:scheduling.shiftDialog.startTime", "Start Time")}</Label>
+						<Label htmlFor="shift-dialog-start">
+							{t("scheduling:scheduling.shiftDialog.startTime", "Start Time")}
+						</Label>
 						<TimeInput
+							id="shift-dialog-start"
+							name={field.name}
+							aria-invalid={field.state.meta.errors.length > 0 || undefined}
+							aria-describedby={
+								field.state.meta.errors.length > 0 ? "shift-dialog-start-error" : undefined
+							}
 							value={field.state.value}
 							onChange={(event) => field.handleChange(event.target.value)}
 							onBlur={field.handleBlur}
 							disabled={!isManager}
 						/>
-						<FieldErrorText errors={field.state.meta.errors} />
+						<FieldErrorText id="shift-dialog-start-error" errors={field.state.meta.errors} />
 					</div>
 				)}
 			</form.Field>
@@ -303,14 +321,22 @@ function ShiftTimeFields({ form, isManager }: { form: ShiftDialogFormApi; isMana
 			>
 				{(field) => (
 					<div className="gap-y-2">
-						<Label>{t("scheduling:scheduling.shiftDialog.endTime", "End Time")}</Label>
+						<Label htmlFor="shift-dialog-end">
+							{t("scheduling:scheduling.shiftDialog.endTime", "End Time")}
+						</Label>
 						<TimeInput
+							id="shift-dialog-end"
+							name={field.name}
+							aria-invalid={field.state.meta.errors.length > 0 || undefined}
+							aria-describedby={
+								field.state.meta.errors.length > 0 ? "shift-dialog-end-error" : undefined
+							}
 							value={field.state.value}
 							onChange={(event) => field.handleChange(event.target.value)}
 							onBlur={field.handleBlur}
 							disabled={!isManager}
 						/>
-						<FieldErrorText errors={field.state.meta.errors} />
+						<FieldErrorText id="shift-dialog-end-error" errors={field.state.meta.errors} />
 					</div>
 				)}
 			</form.Field>
@@ -331,7 +357,7 @@ function ShiftSubareaField({
 		<form.Field name="subareaId">
 			{(field) => (
 				<div className="gap-y-2">
-					<Label>
+					<Label htmlFor="shift-dialog-subarea">
 						<span className="flex items-center gap-2">
 							<IconMapPin className="size-4" aria-hidden="true" />
 							{t("scheduling:scheduling.shiftDialog.subarea", "Subarea")}
@@ -339,7 +365,7 @@ function ShiftSubareaField({
 						</span>
 					</Label>
 					<Select onValueChange={field.handleChange} value={field.state.value}>
-						<SelectTrigger>
+						<SelectTrigger id="shift-dialog-subarea">
 							<SelectValue
 								placeholder={t(
 									"scheduling:scheduling.shiftDialog.selectSubarea",
@@ -385,7 +411,7 @@ function ShiftEmployeeField({
 		<form.Field name="employeeId">
 			{(field) => (
 				<div className="gap-y-2">
-					<Label>
+					<Label htmlFor="shift-dialog-assignee">
 						<span className="flex items-center gap-2">
 							<IconUsers className="size-4" aria-hidden="true" />
 							{t("scheduling:scheduling.shiftDialog.assignTo", "Assign To")}
@@ -395,7 +421,7 @@ function ShiftEmployeeField({
 						onValueChange={(value) => field.handleChange(value === "open" ? null : value)}
 						value={field.state.value || "open"}
 					>
-						<SelectTrigger>
+						<SelectTrigger id="shift-dialog-assignee">
 							<SelectValue
 								placeholder={t(
 									"scheduling:scheduling.shiftDialog.selectEmployee",
@@ -493,8 +519,12 @@ function ShiftNotesField({ form }: { form: ShiftDialogFormApi }) {
 		<form.Field name="notes">
 			{(field) => (
 				<div className="gap-y-2">
-					<Label>{t("scheduling:scheduling.shiftDialog.notes", "Notes (Optional)")}</Label>
+					<Label htmlFor="shift-dialog-notes">
+						{t("scheduling:scheduling.shiftDialog.notes", "Notes (Optional)")}
+					</Label>
 					<Textarea
+						id="shift-dialog-notes"
+						name={field.name}
 						placeholder={t(
 							"scheduling:scheduling.shiftDialog.notesPlaceholder",
 							"Any special instructions or notes...",

@@ -1,0 +1,22 @@
+{
+  "started": "2026-11-16T01:37:20.663Z",
+  "finished": "2026-11-16T01:37:47.860Z",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-a83e6a27-7bf4f7950a71b256\\apps\\webapp",
+  "env": "generated disposable local runtime; CI=true pnpm_config_verify_deps_before_run=false",
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "react-doctor",
+    "--scope",
+    "changed",
+    "--base",
+    "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+    "--verbose",
+    "--no-supply-chain",
+    "--output-dir",
+    "../../.tmp/1738/doctor-corrected"
+  ],
+  "exit": 0,
+  "source": "2c1f1a6bdf6fe4c4f4b4c874e70e9f78ded428f644ac99615931ed47ccb621fb"
+}

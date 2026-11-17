@@ -16,6 +16,7 @@ import { filterShiftsForEmployee, shiftToEvent } from "./shift-scheduler-utils";
 
 interface UseShiftSchedulerDataOptions {
 	organizationId: string;
+	employeeId: string;
 	organizationTimezone: string;
 	dateRange: DateRange;
 	isManager: boolean;
@@ -34,6 +35,7 @@ export interface ShiftSchedulerUpdateInput {
 
 export function useShiftSchedulerData({
 	organizationId,
+	employeeId,
 	organizationTimezone,
 	dateRange,
 	isManager,
@@ -46,8 +48,16 @@ export function useShiftSchedulerData({
 		data: shiftsResult,
 		isLoading: shiftsLoading,
 		isError: shiftsFailed,
+		isFetching: shiftsFetching,
+		refetch: retryShifts,
 	} = useQuery({
-		queryKey: queryKeys.shifts.list(organizationId, dateRange),
+		// A planner's drafts must never hydrate an employee's published-only view.
+		queryKey: [
+			...queryKeys.shifts.list(organizationId, dateRange),
+			"scheduling-viewer",
+			employeeId,
+			isManager,
+		],
 		queryFn: async () => {
 			const result = await getShifts({
 				startDate: dateRange.startDate,
@@ -59,7 +69,11 @@ export function useShiftSchedulerData({
 		},
 	});
 
-	const { data: templatesResult } = useQuery({
+	const {
+		data: templatesResult,
+		isError: templatesFailed,
+		refetch: retryTemplates,
+	} = useQuery({
 		queryKey: queryKeys.shiftTemplates.list(organizationId),
 		queryFn: async () => {
 			const result = await getShiftTemplates();
@@ -69,7 +83,11 @@ export function useShiftSchedulerData({
 		enabled: isManager,
 	});
 
-	const { data: complianceSummaryResult } = useQuery({
+	const {
+		data: complianceSummaryResult,
+		isError: complianceFailed,
+		refetch: retryCompliance,
+	} = useQuery({
 		queryKey: queryKeys.compliance.scheduleWarnings(organizationId, dateRange),
 		queryFn: async () => {
 			const result = await getScheduleComplianceSummary(dateRange);
@@ -147,6 +165,12 @@ export function useShiftSchedulerData({
 		events,
 		shiftsLoading,
 		shiftsFailed,
+		shiftsFetching,
+		hasLoadedShifts: shiftsResult !== undefined,
+		retryShifts,
+		templatesFailed,
+		complianceFailed,
+		retrySupportingData: () => Promise.all([retryTemplates(), retryCompliance()]),
 		complianceSummary,
 		draftCount,
 		complianceFindingsCount,
