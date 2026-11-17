@@ -1849,12 +1849,15 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "branch": "feat/sign-in-refresh",
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1839#issuecomment-6949163760",
-      "handoffLimitation": "Prioritized because ordinary sign-in widget admission blocks wider runtime evidence. Unfilled disabled Login/emptytoken is an observation, not a proved product bug. UI/method/verification recovery work only; canonical BetterAuth/CAPTCHA/domain/session/provider authority unchanged. R096 resourceallocation released, fresh ownfixture only."
+      "handoffLimitation": "Committed isolated R155 handoff e6f46f05; tested sourcece1a4d23 has identical appTreecd092ce0. Fourteen exclusive login source/test paths plus38docs/evidence; no root overlap from38da. Worker275unit/29files+43canonicalPG/4files=318passed occurrences across33files; all3types/lint/explicit100CRLF/Doctor0/0/compile-only pass, ordinary15format findings and native/provider/device/full-generation limits retained. Eighteen unfilled before/after screenshots; actual normal synthetic small-admin sign-in200 and intended/time-tracking/session/org readback passed. Settled historical baseline also completed real widget, so earlier empty-token cause remains unproved. Auth/widget/security/domain/session/native transport owners frozen. All owned runtime resources released. Fresh merger/current-source acceptance and readiness pending; verifiedCommit null.",
+      "implementationCommit": "e6f46f0517e8a42603c1e6a9c6a57c77aeb49d4d",
+      "implementationSourceCommit": "ce1a4d23d973ebf73a8ad1e0c1be873d784d6f7f",
+      "evidence": "docs/design/rollout-1692/1839.md"
     },
     {
       "id": "R156",
