@@ -1366,7 +1366,9 @@
       "latestIntegrationCommit": "988659d25e441c440f88eadc7101a52296bd1305",
       "rootUnvisitedSnapshotCorrectionCommit": "f145c3cd6f2be2d934ad7b0fa0e795c006c50826",
       "rootPageArrivalEvidence": "docs/design/rollout-1692/1773/root-page-arrival-checks.json",
-      "rootPageArrivalVerification": "Provisional:152permanent/11files plus26adaptedindependent =178/12, all3types,scopedlint/explicit andDoctor0/0 pass. Page-owner observation covers received/unvisited tabs; no wire-age claim. Authenticated/runtime acceptance pending."
+      "rootPageArrivalVerification": "Provisional:152permanent/11files plus26adaptedindependent =178/12, all3types,scopedlint/explicit andDoctor0/0 pass. Page-owner observation covers received/unvisited tabs; no wire-age claim. Authenticated/runtime acceptance pending.",
+      "rootPageArrivalIndependentEvidence": "docs/design/rollout-1692/1773/root-page-arrival-independent-recheck.json",
+      "rootPageArrivalIndependentVerification": "203distinct/12files=152permanent+51independent, noP1inside route-first-observation guarantee; 3sourcepins unchanged throughcurrentroot. Doctor0/0/lint/explicit pass; independentmainTS missingignoredlicense andordinary3findings qualified. Authenticated acceptance pending; readinessnull."
     },
     {
       "id": "R097",
