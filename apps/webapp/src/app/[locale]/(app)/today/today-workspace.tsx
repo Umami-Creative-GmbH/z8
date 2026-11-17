@@ -9,6 +9,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { useSession } from "@/lib/auth-client";
 import { readTodayBriefing } from "./actions";
 import { TodayBriefing } from "./today-briefing";
+import { TodayDecisionReservations } from "./today-decision-reservations";
 import { TodayPageLoading } from "./today-loading";
 import type { TodayArrival, TodayScope } from "./today-types";
 
@@ -47,11 +48,13 @@ export function TodayWorkspace({
 	if (status === "context-error") return <TodayContextError retry={organization.refetch} />;
 	if (status !== "ready") return <TodayPageLoading />;
 	return (
-		<ScopedTodayWorkspace
-			key={identity}
-			scope={scope}
-			initial={invalidated ? undefined : initial}
-		/>
+		<TodayDecisionReservations scope={scope}>
+			<ScopedTodayWorkspace
+				key={identity}
+				scope={scope}
+				initial={invalidated ? undefined : initial}
+			/>
+		</TodayDecisionReservations>
 	);
 }
 
