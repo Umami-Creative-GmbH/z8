@@ -1,0 +1,42 @@
+{
+  "origin": "http://localhost:59371",
+  "names": [
+    "get_project_metadata",
+    "get_errors",
+    "get_page_metadata",
+    "get_logs",
+    "get_server_action_by_id",
+    "get_routes",
+    "get_request_insights",
+    "get_compilation_issues",
+    "compile_route"
+  ],
+  "sourceHead": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9",
+  "qualification": "Development process on modified working tree. Browser reached sign-in only; exact employee route not visited. Native React and connected employee-route errors acceptance unpassed.",
+  "tools": {
+    "get_project_metadata": {
+      "isError": false,
+      "available": true
+    },
+    "get_routes": {
+      "isError": false,
+      "available": true
+    },
+    "get_compilation_issues": {
+      "isError": false,
+      "available": true
+    },
+    "get_errors": {
+      "isError": false,
+      "available": true
+    },
+    "get_page_metadata": {
+      "isError": false,
+      "available": true
+    }
+  },
+  "compilationIssues": [],
+  "exactEmployeeRouteVisited": false,
+  "runtimeErrors": "unpassed: No browser sessions connected",
+  "pageMetadata": "unpassed: No browser sessions connected"
+}
