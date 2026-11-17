@@ -34,6 +34,7 @@ import {
 	ShowFormerEmployeesSwitch,
 } from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
+import { badgeVariants } from "@/components/ui/badge-variants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -112,18 +113,21 @@ function TimeBalanceBadge({
 		<BalanceAdjustmentHistoryDialog
 			employeeId={employee.id}
 			trigger={
-				<Badge
-					asChild
-					variant={balance ? getBalanceVariant(balance.balanceMinutes) : "outline"}
+				<button
+					type="button"
+					aria-label={accessibleLabel}
+					title={historyLabel}
+					data-slot="badge"
 					className={cn(
+						badgeVariants({
+							variant: balance ? getBalanceVariant(balance.balanceMinutes) : "outline",
+						}),
 						"relative z-10 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring",
 						balance && "text-xs font-normal",
 					)}
 				>
-					<button type="button" aria-label={accessibleLabel} title={historyLabel}>
-						{label}
-					</button>
-				</Badge>
+					{label}
+				</button>
 			}
 		/>
 	);
