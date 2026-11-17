@@ -72,6 +72,7 @@ type RecordAbsenceDialogProps = {
 };
 
 type RecordAbsenceFormValues = ReturnType<typeof getDefaultRecordAbsenceFormValues>;
+const defaultSubmitMeta: { arrival: object | null } = { arrival: null };
 
 function useRecordAbsenceDialogForm({
 	employee,
@@ -99,9 +100,10 @@ function useRecordAbsenceDialogForm({
 		t("team.absences.recordDialog.required", "{label} is required", { label });
 	const form = useForm({
 		defaultValues: formDefaultValues,
-		onSubmit: async ({ value }) => {
-			const arrival = lifetime.current;
-			if (!arrival || pending.current) return;
+		onSubmitMeta: defaultSubmitMeta,
+		onSubmit: async ({ value, meta }) => {
+			const arrival = meta.arrival;
+			if (!arrival || lifetime.current !== arrival || pending.current) return;
 			const rangeError = validateRecordAbsenceFormDateRange(value);
 			if (rangeError) {
 				setDateRangeError(rangeError);
@@ -213,6 +215,12 @@ function useRecordAbsenceDialogForm({
 	}));
 	const sickNotes = useStagedSickNotes(sickNoteDates);
 
+	function handleSubmit() {
+		const arrival = lifetime.current;
+		if (!arrival || pending.current) return;
+		return form.handleSubmit({ arrival });
+	}
+
 	function handleOpenChange(nextOpen: boolean) {
 		if (pending.current) return;
 		if (!nextOpen) {
@@ -227,6 +235,7 @@ function useRecordAbsenceDialogForm({
 		reconciliation,
 		dateRangeError,
 		form,
+		handleSubmit,
 		handleOpenChange,
 		requiredMessage,
 		sickNoteDates,
@@ -250,6 +259,7 @@ export function RecordAbsenceDialog({
 		reconciliation,
 		dateRangeError,
 		form,
+		handleSubmit,
 		handleOpenChange,
 		requiredMessage,
 		sickNoteDates,
@@ -285,7 +295,7 @@ export function RecordAbsenceDialog({
 				<form
 					className="flex min-h-0 flex-1 flex-col"
 					action={() => {
-						void form.handleSubmit();
+						void handleSubmit();
 					}}
 					onSubmit={(event) => {
 						event.stopPropagation();
