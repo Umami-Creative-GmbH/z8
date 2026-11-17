@@ -129,7 +129,11 @@ async function snapshot(
 		timezone: "Europe/Berlin",
 		sources,
 	});
-	return { status: "ready", briefing };
+	return {
+		status: "ready",
+		briefing,
+		view: { ...scope, employeeId: "review-manager", role: "manager" },
+	};
 }
 function Controls() {
 	const org = useOrganization();
@@ -158,11 +162,7 @@ function mount(initial: TodayArrival) {
 			<OrganizationContextProvider initialContext={identity}>
 				<ViewRefreshProvider>
 					<Controls />
-					<TodayWorkspace
-						scope={scope}
-						initialEmployee={{ id: "review-manager", role: "manager" }}
-						initial={initial}
-					/>
+					<TodayWorkspace scope={scope} initial={initial} />
 				</ViewRefreshProvider>
 			</OrganizationContextProvider>
 		</QueryClientProvider>,

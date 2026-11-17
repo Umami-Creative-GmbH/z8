@@ -15,8 +15,14 @@ export async function readTodayBriefing(expected: TodayScope): Promise<TodayArri
 			(employee.role !== "manager" && employee.role !== "admin")
 		)
 			return { status: "unavailable" };
+		const view = {
+			userId: employee.userId,
+			organizationId: employee.organizationId,
+			employeeId: employee.id,
+			role: employee.role,
+		};
 		const briefing = await getManagerDailyBriefing({ currentEmployee: employee });
-		return { status: "ready", briefing };
+		return { status: "ready", briefing, view };
 	} catch {
 		return { status: "error" };
 	}

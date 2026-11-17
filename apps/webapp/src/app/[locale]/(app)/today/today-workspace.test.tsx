@@ -26,6 +26,7 @@ vi.mock("@/hooks/use-organization", () => ({
 		employeeId: "employee-a",
 		role: "manager",
 		isLoading: false,
+		refetch: async () => {},
 		error: null,
 	}),
 }));
@@ -73,7 +74,11 @@ function ready(title = "Known payroll issue"): TodayArrival {
 		},
 	];
 	briefing.sections.payroll.items = briefing.needsAction;
-	return { status: "ready", briefing };
+	return {
+		status: "ready",
+		briefing,
+		view: { ...scope, employeeId: "employee-a", role: "manager" },
+	};
 }
 function deferred<T>() {
 	let resolve!: (value: T) => void;
@@ -95,33 +100,15 @@ describe("Today scoped arrivals and recovery", () => {
 	});
 	it("hides the old briefing when shell organization context changes before session resolution", () => {
 		const initial = ready();
-		const view = render(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={initial}
-			/>,
-		);
+		const view = render(<TodayWorkspace scope={scope} initial={initial} />);
 		harness.organizationId = "org-b";
-		view.rerender(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={initial}
-			/>,
-		);
+		view.rerender(<TodayWorkspace scope={scope} initial={initial} />);
 		expect(screen.queryAllByText("Known payroll issue")).toHaveLength(0);
 		expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
 	});
 	it("retains readable results after rejected refresh and recovers through Retry", async () => {
 		harness.read.mockRejectedValueOnce(new Error("offline"));
-		render(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={ready()}
-			/>,
-		);
+		render(<TodayWorkspace scope={scope} initial={ready()} />);
 		await act(async () => {
 			await harness.refresh?.();
 		});
@@ -141,13 +128,7 @@ describe("Today scoped arrivals and recovery", () => {
 		};
 		partial.briefing.needsAction = [];
 		harness.read.mockResolvedValueOnce(partial);
-		render(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={ready()}
-			/>,
-		);
+		render(<TodayWorkspace scope={scope} initial={ready()} />);
 		await act(async () => {
 			await harness.refresh?.();
 		});
@@ -160,43 +141,19 @@ describe("Today scoped arrivals and recovery", () => {
 		const late = deferred<TodayArrival>();
 		harness.read.mockReturnValueOnce(late.promise);
 		const initial = ready();
-		const view = render(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={initial}
-			/>,
-		);
+		const view = render(<TodayWorkspace scope={scope} initial={initial} />);
 		act(() => {
 			void harness.refresh?.();
 		});
 		harness.session.isPending = true;
-		view.rerender(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={initial}
-			/>,
-		);
+		view.rerender(<TodayWorkspace scope={scope} initial={initial} />);
 		expect(screen.queryByText("Known payroll issue")).toBeNull();
 		expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Manager Daily Briefing");
 		harness.session.isPending = false;
 		harness.session.data.session.activeOrganizationId = "org-b";
-		view.rerender(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={initial}
-			/>,
-		);
+		view.rerender(<TodayWorkspace scope={scope} initial={initial} />);
 		harness.session.data.session.activeOrganizationId = "org-a";
-		view.rerender(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={initial}
-			/>,
-		);
+		view.rerender(<TodayWorkspace scope={scope} initial={initial} />);
 		await screen.findAllByText("Fresh payroll issue");
 		await act(async () => {
 			late.resolve(ready("Late old evidence"));
@@ -205,13 +162,7 @@ describe("Today scoped arrivals and recovery", () => {
 	});
 	it("clears retained records on refused read and keeps a safe title", async () => {
 		harness.read.mockResolvedValue({ status: "unavailable" });
-		render(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={ready()}
-			/>,
-		);
+		render(<TodayWorkspace scope={scope} initial={ready()} />);
 		await act(async () => {
 			await harness.refresh?.();
 		});
@@ -225,11 +176,7 @@ describe("Today scoped arrivals and recovery", () => {
 		const initial = ready();
 		const view = render(
 			<Activity mode="visible">
-				<TodayWorkspace
-					initialEmployee={{ id: "employee-a", role: "manager" }}
-					scope={scope}
-					initial={initial}
-				/>
+				<TodayWorkspace scope={scope} initial={initial} />
 			</Activity>,
 		);
 		act(() => {
@@ -237,20 +184,12 @@ describe("Today scoped arrivals and recovery", () => {
 		});
 		view.rerender(
 			<Activity mode="hidden">
-				<TodayWorkspace
-					initialEmployee={{ id: "employee-a", role: "manager" }}
-					scope={scope}
-					initial={initial}
-				/>
+				<TodayWorkspace scope={scope} initial={initial} />
 			</Activity>,
 		);
 		view.rerender(
 			<Activity mode="visible">
-				<TodayWorkspace
-					initialEmployee={{ id: "employee-a", role: "manager" }}
-					scope={scope}
-					initial={initial}
-				/>
+				<TodayWorkspace scope={scope} initial={initial} />
 			</Activity>,
 		);
 		await screen.findAllByText("Fresh payroll issue");
@@ -260,13 +199,7 @@ describe("Today scoped arrivals and recovery", () => {
 	it("admits one refresh while a read is pending", async () => {
 		const late = deferred<TodayArrival>();
 		harness.read.mockReturnValueOnce(late.promise);
-		render(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={ready()}
-			/>,
-		);
+		render(<TodayWorkspace scope={scope} initial={ready()} />);
 		act(() => {
 			void harness.refresh?.();
 			void harness.refresh?.();
@@ -278,22 +211,12 @@ describe("Today scoped arrivals and recovery", () => {
 	it("retains results when the shell's RSC refresh supplies new props during the registered read", async () => {
 		const late = deferred<TodayArrival>();
 		harness.read.mockReturnValue(late.promise);
-		const view = render(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={scope}
-				initial={ready()}
-			/>,
-		);
+		const view = render(<TodayWorkspace scope={scope} initial={ready()} />);
 		act(() => {
 			void harness.refresh?.();
 		});
 		view.rerender(
-			<TodayWorkspace
-				initialEmployee={{ id: "employee-a", role: "manager" }}
-				scope={{ ...scope }}
-				initial={ready("Server refresh snapshot")}
-			/>,
+			<TodayWorkspace scope={{ ...scope }} initial={ready("Server refresh snapshot")} />,
 		);
 		expect(screen.getAllByText("Known payroll issue")).toHaveLength(2);
 		await act(async () => late.resolve(ready("Current registered snapshot")));
