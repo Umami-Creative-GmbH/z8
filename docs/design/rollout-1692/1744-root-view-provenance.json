@@ -181,7 +181,7 @@
     "unit": "pnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit 'src/app/[locale]/(app)/team/presence' src/lib/navigation/route-metadata.test.ts src/lib/time-tracking/who-is-in/shape.test.ts src/lib/time-tracking/who-is-in/format.test.ts src/tolgee/extracted-key-defaults.test.ts src/components/ui/table.test.tsx src/components/font-size-preference.test.tsx src/components/site-header.test.tsx --maxWorkers=1 --reporter=json",
     "postgres": "pnpm --config.verify-deps-before-run=false --filter webapp test:integration src/lib/time-tracking/who-is-in/who-is-in.integration.test.ts src/lib/time-tracking/assigned-locations/assigned-locations.integration.test.ts 'src/app/[locale]/(app)/team/presence/selection-actions.integration.test.ts' --maxWorkers=1 --reporter=json",
     "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
-    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 0012af1f02b78429b89c33637a2093d832cf5ec8 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration90 --verbose --json",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 0012af1f02b78429b89c33637a2093d832cf5ec8 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json",
     "environment": "pnpm_config_verify_deps_before_run=false everycall; pinned12.16.1/maxWorkers1. NODE_ENV=test and own guarded BASH_ENV for canonicalPG."
   },
   "cleanup": {
