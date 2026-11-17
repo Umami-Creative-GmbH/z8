@@ -1241,11 +1241,13 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "branch": "feat/1767-custom-field-settings",
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1767#issuecomment-6937896534"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1767#issuecomment-6937896534",
+      "implementationCommit": "0290b87e1974ff233a9c249989e1509e390a8b9a",
+      "handoffLimitation": "Worker reports105unit+31distinctPG, all3types, Doctor100, native/connectedNext and18captures. Ordinary formatting/liveproject-customer variants/catalog/staticgeneration and wider acceptance remain; fresh serial merger required."
     },
     {
       "id": "R087",
@@ -1254,8 +1256,11 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "branch": "feat/customer-settings-refresh",
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1768#issuecomment-6939458321"
     },
     {
       "id": "R088",
@@ -1826,7 +1831,12 @@
       "status": "awaiting-integration",
       "verifiedCommit": null,
       "implementationCommit": "1ea5804a0d7f6125406b2eecec121fa1949ded90",
-      "handoffLimitation": "Worker reports shared history read failure lacks Retry; preserve and confirm at fresh merger. Original runtime/build/catalog/multi-org/device limits remain."
+      "handoffLimitation": "Fresh independent review required after root context/history/native-trigger corrections. Shared employee-only history cache identity and live relationship/arrival/revocation remain unproven; original build/catalog/provider/device limits retained.",
+      "integrationCommit": "31625ce088b22f27fbff338b09867d4a7883d35d",
+      "correctionCommit": "fecaa3ceb5a9b20e9d34b0107411da69349a98a8",
+      "correctionIntegrationCommit": "b2679fd0134de97a323d9b4e3e4488635e379a2d",
+      "evidence": "docs/design/rollout-1692/1739.md",
+      "integrationVerification": "Provisional merge tree independently matched; all59 verified ticket anchors plus baseline and17,399 unaffected prior paths retained. Public real-provider Retry red corrected by awaiting canonical context refetch then RSC refresh; shared history unexpected-read Retry and direct native badge trigger corrected without provider/auth/action/cache-key changes. Fresh114unit/13files+6canonicalPG/1file=120distinct/14files pass, all3types, explicitCRLF/lint6 and Doctor6files0/0 pass. Ordinary formatting6 differences remain. Worker Next session archive has3nativeButton notices, now public regression green; historical runtime not relabeled. Current independent review/runtime/history/cache-arrival/permission-narrowing and wider acceptance remain due; verifiedCommit null."
     },
     {
       "id": "R158",
