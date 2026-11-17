@@ -1,18 +1,18 @@
 "use client";
 
-import { IconKey } from "@tabler/icons-react";
+import { IconKey, IconLoader2 } from "@tabler/icons-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SocialProvider, SocialProviderId } from "@/lib/social-providers";
-
-const SOCIAL_SKELETON_KEYS = ["social-1", "social-2", "social-3", "social-4", "social-5", "social-6"];
 
 export type LoginAlternativeAuthProps = {
 	requires2FA: boolean;
 	showPasskey: boolean;
 	filteredProviders: SocialProvider[];
 	providersLoading: boolean;
+	providersError?: Error | null;
+	pendingMethod?: string | null;
 	isLoading: boolean;
 	onPasskeyLogin: () => void;
 	onSocialLogin: (provider: SocialProviderId) => void;
@@ -23,67 +23,98 @@ export function LoginAlternativeAuth({
 	showPasskey,
 	filteredProviders,
 	providersLoading,
+	providersError,
+	pendingMethod,
 	isLoading,
 	onPasskeyLogin,
 	onSocialLogin,
 }: LoginAlternativeAuthProps) {
 	const { t } = useTranslate();
-
-	if (requires2FA || (!showPasskey && filteredProviders.length === 0)) {
+	if (
+		requires2FA ||
+		(!showPasskey && filteredProviders.length === 0 && !providersLoading && !providersError)
+	)
 		return null;
-	}
-
-	const skeletonCount = Math.max(filteredProviders.length, 4);
-
 	return (
-		<>
-			<div className="text-center text-sm">
-				<span className="relative z-10 px-2 text-muted-foreground">
-					{t("auth.or-continue-with", "Or continue with")}
-				</span>
+		<section
+			className="grid min-w-0 gap-3 border-t pt-5"
+			aria-label={t("auth.or-continue-with", "Or continue with")}
+		>
+			<p className="text-center text-sm text-muted-foreground">
+				{t("auth.or-continue-with", "Or continue with")}
+			</p>
+			{showPasskey ? (
+				<Button
+					type="button"
+					variant="outline"
+					className="h-auto min-h-11 w-full whitespace-normal"
+					onClick={onPasskeyLogin}
+					disabled={isLoading}
+				>
+					{pendingMethod === "passkey" ? (
+						<IconLoader2
+							aria-hidden="true"
+							className="size-4 animate-spin motion-reduce:animate-none"
+						/>
+					) : (
+						<IconKey aria-hidden="true" className="size-4" />
+					)}
+					{t("auth.login-with.passkey", "Login with Passkey")}
+				</Button>
+			) : null}
+			{providersLoading ? (
+				<p role="status" className="text-center text-sm text-muted-foreground">
+					{t("auth.signIn.methodsLoading", "Loading sign-in methods…")}
+				</p>
+			) : null}
+			{providersError ? (
+				<div className="grid gap-2 text-center">
+					<p role="alert" className="text-sm text-destructive">
+						{t("auth.signIn.methodsUnavailable", "Other sign-in methods could not be loaded.")}
+					</p>
+					<RetrySignInMethods disabled={isLoading || providersLoading} />
+				</div>
+			) : null}
+			<div className="grid min-w-0 gap-2 sm:grid-cols-2">
+				{filteredProviders.map((provider) => (
+					<Button
+						key={provider.id}
+						type="button"
+						variant="outline"
+						className="h-auto min-h-11 w-full whitespace-normal"
+						onClick={() => onSocialLogin(provider.id)}
+						disabled={isLoading || providersLoading}
+					>
+						{pendingMethod === provider.id ? (
+							<IconLoader2
+								aria-hidden="true"
+								className="size-4 animate-spin motion-reduce:animate-none"
+							/>
+						) : (
+							<provider.icon aria-hidden="true" className="size-4" />
+						)}
+						{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
+					</Button>
+				))}
 			</div>
-			<div className="flex flex-wrap justify-center gap-2 *:w-1/4">
-				{showPasskey && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button type="button" variant="outline" onClick={onPasskeyLogin} disabled={isLoading}>
-								<IconKey className="size-4" />
-								<span className="sr-only">{t("auth.login-with.passkey", "Login with Passkey")}</span>
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<span className="text-sm">{t("auth.login-with.passkey", "Login with Passkey")}</span>
-						</TooltipContent>
-					</Tooltip>
-				)}
+		</section>
+	);
+}
 
-				{providersLoading
-					? SOCIAL_SKELETON_KEYS.slice(0, skeletonCount).map((key) => (
-							<div key={key} className="h-10 animate-pulse rounded-md bg-muted" />
-						))
-					: filteredProviders.map((provider) => (
-							<Tooltip key={provider.id}>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => onSocialLogin(provider.id)}
-										disabled={isLoading}
-									>
-										<provider.icon className="size-4" />
-										<span className="sr-only">
-											{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
-										</span>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									<span className="text-sm">
-										{t(`auth.login-with.${provider.id}`, `Login with ${provider.name}`)}
-									</span>
-								</TooltipContent>
-							</Tooltip>
-						))}
-			</div>
-		</>
+function RetrySignInMethods({ disabled }: { disabled: boolean }) {
+	const { t } = useTranslate();
+	const queryClient = useQueryClient();
+	return (
+		<Button
+			type="button"
+			variant="outline"
+			className="whitespace-normal"
+			disabled={disabled}
+			onClick={() => {
+				void queryClient.invalidateQueries({ queryKey: ["auth", "providers"] });
+			}}
+		>
+			{t("auth.signIn.retryMethods", "Retry sign-in methods")}
+		</Button>
 	);
 }

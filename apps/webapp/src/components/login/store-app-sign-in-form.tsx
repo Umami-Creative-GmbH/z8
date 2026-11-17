@@ -2,15 +2,18 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { getPostSignInRedirectUrl, sanitizeCallbackUrl } from "@/lib/auth/callback-url";
+import { useDomainAuth } from "@/lib/auth/domain-auth-context";
+import type { OrganizationBranding } from "@/lib/domain";
 import { loadNativeAuthSession } from "@/lib/store-app/native-auth-session";
 import { getStoreAppPlatform } from "@/lib/store-app/shell";
 import { type StoreAppSignInResult, signInFromStoreApp } from "@/lib/store-app/store-app-sign-in";
@@ -54,42 +57,85 @@ function emailError(errors: unknown[]): string | undefined {
  * sign-in runs in the phone's system browser.
  */
 export function StoreAppSignInForm() {
+	const domain = useDomainAuth();
+	const search = useSearchParams();
+	return (
+		<StoreAppSignInArrival
+			key={JSON.stringify([domain, search.get("callbackUrl")])}
+			branding={domain?.branding}
+		/>
+	);
+}
+
+function StoreAppSignInArrival({ branding }: { branding?: OrganizationBranding | null }) {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
 	const [error, setError] = useState<string | null>(null);
+	const lifetime = useRef({ active: false, epoch: 0, busy: false });
+	useEffect(() => {
+		const owner = lifetime.current;
+		owner.active = true;
+		owner.busy = false;
+		owner.epoch++;
+		return () => {
+			owner.active = false;
+			owner.epoch++;
+		};
+	}, []);
 	const form = useForm({
+		onSubmitMeta: { epoch: 0 },
 		defaultValues: { email: "" },
-		onSubmit: async ({ value }) => {
+		onSubmit: async ({ value, meta: { epoch } }) => {
+			const current = () => lifetime.current.active && lifetime.current.epoch === epoch;
+			if (!current()) return;
 			setError(null);
-			const platform = getStoreAppPlatform();
-			if (!platform) {
-				setError(failureMessage("browser", t));
-				return;
+			try {
+				const platform = getStoreAppPlatform();
+				if (!platform) {
+					setError(failureMessage("browser", t));
+					return;
+				}
+				const openAuthSession = await loadNativeAuthSession(platform);
+				if (!current()) return;
+				const result = await signInFromStoreApp(value.email.trim(), {
+					fetch: (input, init) => fetch(input, init),
+					openAuthSession,
+				});
+				if (!current()) return;
+				if (result.status === "signed-in") {
+					const callbackUrl = sanitizeCallbackUrl(
+						searchParams.get("callbackUrl"),
+						"/init",
+						window.location.href,
+					);
+					window.location.assign(getPostSignInRedirectUrl(callbackUrl));
+					return;
+				}
+				if (result.status === "failed") setError(failureMessage(result.reason, t));
+			} catch {
+				if (current()) setError(failureMessage("browser", t));
 			}
-			const result = await signInFromStoreApp(value.email.trim(), {
-				fetch: (input, init) => fetch(input, init),
-				openAuthSession: await loadNativeAuthSession(platform),
-			});
-			if (result.status === "signed-in") {
-				const callbackUrl = sanitizeCallbackUrl(
-					searchParams.get("callbackUrl"),
-					"/init",
-					window.location.href,
-				);
-				// A full load renders with the new session cookie.
-				window.location.assign(getPostSignInRedirectUrl(callbackUrl));
-				return;
-			}
-			if (result.status === "failed") setError(failureMessage(result.reason, t));
 		},
 	});
 
+	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
+
 	return (
 		<AuthFormWrapper
+			branding={branding}
 			formProps={{
-				onSubmit: (event) => {
+				onSubmit: async (event) => {
 					event.preventDefault();
-					void form.handleSubmit();
+					if (!lifetime.current.active || lifetime.current.busy) return;
+					const element = event.currentTarget;
+					lifetime.current.busy = true;
+					const epoch = ++lifetime.current.epoch;
+					await form.handleSubmit({ epoch });
+					if (lifetime.current.active && lifetime.current.epoch === epoch) {
+						lifetime.current.busy = false;
+						if (!form.state.isValid)
+							element.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+					}
 				},
 			}}
 			title={t("auth.storeApp.title", "Sign in to Z8")}
@@ -121,12 +167,15 @@ export function StoreAppSignInForm() {
 							<TFormLabel hasError={Boolean(fieldError)}>{t("auth.email", "Email")}</TFormLabel>
 							<TFormControl hasError={Boolean(fieldError)}>
 								<Input
+									disabled={isSubmitting}
 									autoCapitalize="none"
 									autoComplete="email"
 									inputMode="email"
 									name={field.name}
 									onBlur={field.handleBlur}
 									onChange={(event) => {
+										lifetime.current.epoch++;
+										lifetime.current.busy = false;
 										field.handleChange(event.target.value);
 										setError(null);
 									}}
@@ -147,7 +196,10 @@ export function StoreAppSignInForm() {
 					<Button className="w-full" disabled={isSubmitting} type="submit">
 						{isSubmitting ? (
 							<>
-								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+								<IconLoader2
+									aria-hidden="true"
+									className="mr-2 size-4 animate-spin motion-reduce:animate-none"
+								/>
 								{t("auth.storeApp.waiting", "Waiting for sign-in…")}
 							</>
 						) : (
