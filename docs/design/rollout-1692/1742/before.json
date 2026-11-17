@@ -1,0 +1,151 @@
+{
+  "source": "cf0203c822ac2837de2c02bc4da816dc741a63e9 (four-consumer overlay)",
+  "fixture": "small-admin, selected 2026-11-02, canonical weekly cadence",
+  "policy": "notifications-denied-for-fixture-origin",
+  "checks": [
+    {
+      "width": 1600,
+      "documentWidth": 1600,
+      "headings": [
+        "Period Submissions",
+        "Period submissions"
+      ],
+      "rows": 8,
+      "dialogs": 0,
+      "notificationPermission": "denied",
+      "theme": "light bprogress-busy",
+      "rootFont": "16px",
+      "calendarLinks": [
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        }
+      ],
+      "text": "Toggle Sidebar\nPeriod Submissions\n05:21\nUTC+01:00\nClock In\nToggle theme\nPeriod submissions\n\nWho has submitted the selected period. Approve or reject submissions in the approval inbox. Open the approval inbox\n\nSubmission period\nNov 2 – 8, 2026\nAwaiting submission: 8\n\n8 employees have not submitted this period yet.\n\nEmployee\tPeriod\tStatus\t\nCalendar\n\n\nFixture Person 0\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 1\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 2\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 3\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 4\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 5\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 6\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 7\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar"
+    },
+    {
+      "width": 2400,
+      "documentWidth": 2400,
+      "headings": [
+        "Period Submissions",
+        "Period submissions"
+      ],
+      "rows": 8,
+      "dialogs": 0,
+      "notificationPermission": "denied",
+      "theme": "bprogress-busy dark",
+      "rootFont": "16px",
+      "calendarLinks": [
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        }
+      ],
+      "text": "Toggle Sidebar\nPeriod Submissions\n05:21\nUTC+01:00\nClock In\nToggle theme\nPeriod submissions\n\nWho has submitted the selected period. Approve or reject submissions in the approval inbox. Open the approval inbox\n\nSubmission period\nNov 2 – 8, 2026\nAwaiting submission: 8\n\n8 employees have not submitted this period yet.\n\nEmployee\tPeriod\tStatus\t\nCalendar\n\n\nFixture Person 0\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 1\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 2\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 3\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 4\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 5\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 6\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar\n\n\nFixture Person 7\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\nCalendar"
+    },
+    {
+      "width": 390,
+      "documentWidth": 390,
+      "headings": [
+        "Period Submissions",
+        "Period submissions"
+      ],
+      "rows": 8,
+      "dialogs": 0,
+      "notificationPermission": "denied",
+      "theme": "bprogress-busy light",
+      "rootFont": "16px",
+      "calendarLinks": [
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        },
+        {
+          "text": "Calendar",
+          "visible": true
+        }
+      ],
+      "text": "Toggle Sidebar\nPeriod Submissions\nMore actions\nPeriod submissions\n\nWho has submitted the selected period. Approve or reject submissions in the approval inbox. Open the approval inbox\n\nSubmission period\nNov 2 – 8, 2026\nAwaiting submission: 8\n\n8 employees have not submitted this period yet.\n\nEmployee\tPeriod\tStatus\t\nCalendar\n\n\nFixture Person 0\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\n\n\nFixture Person 1\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\n\n\nFixture Person 2\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\n\n\nFixture Person 3\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\n\n\nFixture Person 4\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\n\n\nFixture Person 5\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\n\n\nFixture Person 6\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t\n\n\nFixture Person 7\nNot submitted\n\tNov 2 – 8, 2026\tAwaiting submission\t"
+    }
+  ]
+}

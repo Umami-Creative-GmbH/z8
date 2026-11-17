@@ -25,7 +25,7 @@ describe("route metadata", () => {
 		for (const path of [
 			"/en/team/presence",
 			"/en/team/driving/detail",
-			"/en/team/period-submissions",
+			"/en/team/period-submissions/detail",
 			"/en/team/other",
 			"/en/teamwork",
 		]) {
