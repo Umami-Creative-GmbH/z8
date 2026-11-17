@@ -126,7 +126,7 @@ function StoreAppSignInArrival({ branding }: { branding?: OrganizationBranding |
 			formProps={{
 				onSubmit: async (event) => {
 					event.preventDefault();
-					if (!lifetime.current.active || lifetime.current.busy) return;
+					if (!lifetime.current.active || lifetime.current.busy || form.state.isSubmitting) return;
 					const element = event.currentTarget;
 					lifetime.current.busy = true;
 					const epoch = ++lifetime.current.epoch;

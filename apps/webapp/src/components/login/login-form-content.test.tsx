@@ -544,4 +544,32 @@ describe("current-domain sign-in journey", () => {
 		await act(async () => deferred.resolve({ error: null }));
 		expect(mocks.push).not.toHaveBeenCalled();
 	});
+	it("keeps an already dispatched form reserved through Activity resume until it settles", async () => {
+		const deferred = Promise.withResolvers();
+		mocks.email.mockReturnValueOnce(deferred.promise);
+		const view = arrival();
+		credentials();
+		challenge();
+		submit();
+		await waitFor(() => expect(mocks.email).toHaveBeenCalledOnce());
+		view.change(domain, "hidden");
+		view.change();
+		challenge();
+		expect(screen.getByRole("button", { name: "Login", exact: true })).toHaveProperty(
+			"disabled",
+			true,
+		);
+		const form = view.container.querySelector("form");
+		if (!form) throw new Error("Missing form");
+		fireEvent.submit(form);
+		expect(mocks.email).toHaveBeenCalledOnce();
+		await act(async () => deferred.resolve({ error: null }));
+		expect(mocks.push).not.toHaveBeenCalled();
+		expect(screen.getByRole("button", { name: "Login", exact: true })).toHaveProperty(
+			"disabled",
+			false,
+		);
+		submit();
+		await waitFor(() => expect(mocks.email).toHaveBeenCalledTimes(2));
+	});
 });

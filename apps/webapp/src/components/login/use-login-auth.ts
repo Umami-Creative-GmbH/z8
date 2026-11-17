@@ -122,7 +122,7 @@ export function useLoginAuth(
 		setError(null);
 	};
 	const begin = (method: Method) => {
-		if (!lifetime.current.active || lifetime.current.busy) return null;
+		if (!lifetime.current.active || lifetime.current.busy || form.state.isSubmitting) return null;
 		retire();
 		lifetime.current.busy = true;
 		setPendingMethod(method);
@@ -278,6 +278,7 @@ export function useLoginAuth(
 			requires2FA ? handleVerify2FA(value, meta.epoch) : submitEmail(value, meta.epoch),
 	});
 	const values = useStore(form.store, (state) => state.values);
+	const formSubmitting = useStore(form.store, (state) => state.isSubmitting);
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		const element = event.currentTarget;
@@ -352,7 +353,7 @@ export function useLoginAuth(
 		...values,
 		error,
 		pendingMethod,
-		isLoading: pendingMethod !== null,
+		isLoading: pendingMethod !== null || formSubmitting,
 		requires2FA,
 		branding: domain?.branding,
 		callbackUrl,
