@@ -1,0 +1,16 @@
+{
+  "normalFormLogins": 5,
+  "recordedProcessesAbsent": true,
+  "listenersAbsent": true,
+  "contexts": 5,
+  "exactRecordedProcessCount": 64,
+  "ownedResources": 0,
+  "previewAttemptClosed": true,
+  "ownNodeWrappersAbsent": true,
+  "privateManifestsAndCachesRetained": true,
+  "nativeSessionsStarted": 0,
+  "browserLaunches": 4,
+  "portsChecked": 9,
+  "label": "z8-isolated-comparison-v2-1738-31887db0",
+  "ownedContainersAbsent": 3
+}

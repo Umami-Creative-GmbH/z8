@@ -1,0 +1,12 @@
+{
+  "online": true,
+  "rawResponses": false,
+  "failed": {
+    "dialog": true,
+    "notes": "Isolated retry retained draft",
+    "start": "09:00",
+    "end": "17:00",
+    "error": true,
+    "online": true
+  }
+}

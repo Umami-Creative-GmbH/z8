@@ -1,0 +1,22 @@
+[
+  {
+    "from": ".tmp/1738-1739-joint-independent-checks/directory-public.test.tsx",
+    "to": "apps/webapp/src/test/.tmp/1738-1739-joint-independent-checks/directory-public.test.tsx",
+    "sha256": "1df0c9e3202f8799a522d2b80592e376bd494bcf0f71c6cc85fc6aa87baa313c"
+  },
+  {
+    "from": ".tmp/1738-1739-joint-independent-checks/history-public.test.tsx",
+    "to": "apps/webapp/src/test/.tmp/1738-1739-joint-independent-checks/history-public.test.tsx",
+    "sha256": "5a224b8951dd79a53ad0711f85e710670e8bb62b9fe9af73d57d4e781c8fbfc6"
+  },
+  {
+    "from": ".tmp/1738-1739-joint-independent-checks/supporting-public.test.tsx",
+    "to": "apps/webapp/src/test/.tmp/1738-1739-joint-independent-checks/supporting-public.test.tsx",
+    "sha256": "7dc8988c224ffa64ec678247fe9fb6aeb8f0175232d1c2023641727bd4b47122"
+  },
+  {
+    "from": ".tmp/1738-1739-joint-independent-checks/direct-history-public.test.tsx",
+    "to": "apps/webapp/src/test/.tmp/1738-1739-joint-independent-checks/direct-history-public.test.tsx",
+    "sha256": "9d418029f6d7512fda65baccdfddb15a45f277cbcb9457917c3465eb868821eb"
+  }
+]

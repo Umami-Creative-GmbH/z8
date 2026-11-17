@@ -1,0 +1,310 @@
+{
+  "path": "docs/design/rollout-1692/1739/next.json",
+  "sha256": "50497b8d84d94bb2428be4b514f8e071dabede557a056efc6408e5881464f946",
+  "compilationIssues": 0,
+  "configErrors": 0,
+  "sessionEntries": 1,
+  "runtimeErrors": [
+    {
+      "type": "console",
+      "errorName": "Error",
+      "message": "Base UI: A component that acts as a button expected a non-<button> because the `nativeButton` prop is false. Rendering a <button> keeps native behavior while Base UI applies non-native attributes and handlers, which can add unintended extra attributes (such as `role` or `aria-disabled`). Use a non-<button> in the `render` prop, or set `nativeButton` to `true`.\n    at TeamDirectory (about://React/Prerender/file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/server/chunks/ssr/%255Broot-of-the-server%255D__0nf5gg_9zka-i._.js?id=%255Bproject%255D/apps/webapp/src/app/%255Blocale%255D/(app)/team/team-directory.tsx+%255Bapp-rsc%255D+(ecmascript)?293:66:374)\n    at TeamPage (about://React/Prerender/file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/server/chunks/ssr/%255Broot-of-the-server%255D__0nf5gg_9zka-i._.js?id=%255Bproject%255D/apps/webapp/src/app/%255Blocale%255D/(app)/team/page.tsx+%255Bapp-rsc%255D+(ecmascript)?57:28:381)",
+      "stack": [
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\team-directory.tsx",
+          "methodName": "TeamDirectory",
+          "line": 33,
+          "column": 3
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\page.tsx",
+          "methodName": "TeamPage",
+          "line": 12,
+          "column": 4
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\team-directory.tsx",
+          "methodName": "TeamDirectory",
+          "line": 33,
+          "column": 3
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\page.tsx",
+          "methodName": "TeamPage",
+          "line": 12,
+          "column": 4
+        }
+      ]
+    },
+    {
+      "type": "console",
+      "errorName": "Error",
+      "message": "Base UI: A component that acts as a button expected a non-<button> because the `nativeButton` prop is false. Rendering a <button> keeps native behavior while Base UI applies non-native attributes and handlers, which can add unintended extra attributes (such as `role` or `aria-disabled`). Use a non-<button> in the `render` prop, or set `nativeButton` to `true`.\n    at DialogTrigger (http://localhost:62302/_next/static/chunks/apps_webapp_src_components_ui_1o7nqngncozof._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:2940:327)\n    at BalanceAdjustmentHistoryDialog (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:4305:327)\n    at TimeBalanceBadge (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:757:327)\n    at t10 (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:1872:333)\n    at flexRender (http://localhost:62302/_next/static/chunks/node_modules__pnpm_0q__7tk1lbl8e._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:326:333)\n    at _TeamMembersTableAnonymousAnonymous (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:2227:309)\n    at Array.map (<anonymous>)\n    at _TeamMembersTableAnonymous2 (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:2218:43)\n    at Array.map (<anonymous>)\n    at TeamMembersTable (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:2066:40)\n    at TeamMembersList (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:1032:333)\n    at TeamDirectory (about://React/Prerender/file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/server/chunks/ssr/%255Broot-of-the-server%255D__0nf5gg_9zka-i._.js?id=%255Bproject%255D/apps/webapp/src/app/%255Blocale%255D/(app)/team/team-directory.tsx+%255Bapp-rsc%255D+(ecmascript)?293:66:374)\n    at TeamPage (about://React/Prerender/file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/server/chunks/ssr/%255Broot-of-the-server%255D__0nf5gg_9zka-i._.js?id=%255Bproject%255D/apps/webapp/src/app/%255Blocale%255D/(app)/team/page.tsx+%255Bapp-rsc%255D+(ecmascript)?57:28:381)",
+      "stack": [
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_components_ui_1o7nqngncozof._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "DialogTrigger",
+          "line": 2940,
+          "column": 327
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "BalanceAdjustmentHistoryDialog",
+          "line": 4305,
+          "column": 327
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "TimeBalanceBadge",
+          "line": 757,
+          "column": 327
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "t10",
+          "line": 1872,
+          "column": 333
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/node_modules__pnpm_0q__7tk1lbl8e._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "flexRender",
+          "line": 326,
+          "column": 333
+        },
+        {
+          "file": "<anonymous>",
+          "methodName": "Array.map",
+          "line": null,
+          "column": null
+        },
+        {
+          "file": "<anonymous>",
+          "methodName": "Array.map",
+          "line": null,
+          "column": null
+        },
+        {
+          "file": "<anonymous>",
+          "methodName": "Array.map",
+          "line": null,
+          "column": null
+        },
+        {
+          "file": "<anonymous>",
+          "methodName": "Array.map",
+          "line": null,
+          "column": null
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "TeamMembersTable",
+          "line": 2066,
+          "column": 40
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\team-directory.tsx",
+          "methodName": "TeamDirectory",
+          "line": 33,
+          "column": 3
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\page.tsx",
+          "methodName": "TeamPage",
+          "line": 12,
+          "column": 4
+        },
+        {
+          "file": "about://React/Prerender/file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/server/chunks/ssr/%255Broot-of-the-server%255D__0nf5gg_9zka-i._.js?id=%255Bproject%255D/apps/webapp/src/app/%255Blocale%255D/(app)/team/page.tsx+%255Bapp-rsc%255D+(ecmascript)?57",
+          "methodName": "TeamPage",
+          "line": 28,
+          "column": 381
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_02x2l4ctd96l3._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "createConsoleError",
+          "line": 692,
+          "column": 49
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_02x2l4ctd96l3._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "handleConsoleError",
+          "line": 1248,
+          "column": 54
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_02x2l4ctd96l3._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "console.error",
+          "line": 1030,
+          "column": 57
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/node_modules__pnpm_1rtqz57ltd1z3._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "logOnce",
+          "line": 43,
+          "column": 29
+        },
+        {
+          "file": "<anonymous>",
+          "methodName": "Array.map",
+          "line": null,
+          "column": null
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "Object.react_stack_bottom_frame",
+          "line": 15063,
+          "column": 22
+        },
+        {
+          "file": "<anonymous>",
+          "methodName": "Array.map",
+          "line": null,
+          "column": null
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "commitHookEffectListMount",
+          "line": 7113,
+          "column": 167
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "commitHookPassiveMountEffects",
+          "line": 7148,
+          "column": 60
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\team-directory.tsx",
+          "methodName": "TeamDirectory",
+          "line": 33,
+          "column": 3
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\page.tsx",
+          "methodName": "TeamPage",
+          "line": 12,
+          "column": 4
+        }
+      ]
+    },
+    {
+      "type": "console",
+      "errorName": "Error",
+      "message": "Base UI: A component that acts as a button expected a non-<button> because the `nativeButton` prop is false. Rendering a <button> keeps native behavior while Base UI applies non-native attributes and handlers, which can add unintended extra attributes (such as `role` or `aria-disabled`). Use a non-<button> in the `render` prop, or set `nativeButton` to `true`.\n    at DialogTrigger (http://localhost:62302/_next/static/chunks/apps_webapp_src_components_ui_1o7nqngncozof._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:2940:327)\n    at BalanceAdjustmentHistoryDialog (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:4305:327)\n    at TimeBalanceBadge (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:757:327)\n    at TeamMemberCards[employees.map()] (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:1545:362)\n    at Array.map (<anonymous>)\n    at TeamMemberCards (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:1623:24)\n    at TeamMembersList (http://localhost:62302/_next/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961:1021:387)\n    at TeamDirectory (about://React/Prerender/file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/server/chunks/ssr/%255Broot-of-the-server%255D__0nf5gg_9zka-i._.js?id=%255Bproject%255D/apps/webapp/src/app/%255Blocale%255D/(app)/team/team-directory.tsx+%255Bapp-rsc%255D+(ecmascript)?293:66:374)\n    at TeamPage (about://React/Prerender/file:///X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/server/chunks/ssr/%255Broot-of-the-server%255D__0nf5gg_9zka-i._.js?id=%255Bproject%255D/apps/webapp/src/app/%255Blocale%255D/(app)/team/page.tsx+%255Bapp-rsc%255D+(ecmascript)?57:28:381)",
+      "stack": [
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_components_ui_1o7nqngncozof._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "DialogTrigger",
+          "line": 2940,
+          "column": 327
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "BalanceAdjustmentHistoryDialog",
+          "line": 4305,
+          "column": 327
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "TimeBalanceBadge",
+          "line": 757,
+          "column": 327
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "TeamMemberCards[employees.map()]",
+          "line": 1545,
+          "column": 362
+        },
+        {
+          "file": "<anonymous>",
+          "methodName": "Array.map",
+          "line": null,
+          "column": null
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "TeamMemberCards",
+          "line": 1623,
+          "column": 24
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/apps_webapp_src_0j7ihms3mqflu._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "TeamMembersList",
+          "line": 1021,
+          "column": 387
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\team-directory.tsx",
+          "methodName": "TeamDirectory",
+          "line": 33,
+          "column": 3
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\page.tsx",
+          "methodName": "TeamPage",
+          "line": 12,
+          "column": 4
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_02x2l4ctd96l3._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "createConsoleError",
+          "line": 692,
+          "column": 49
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_02x2l4ctd96l3._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "handleConsoleError",
+          "line": 1248,
+          "column": 54
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_02x2l4ctd96l3._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "console.error",
+          "line": 1030,
+          "column": 57
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/node_modules__pnpm_1rtqz57ltd1z3._.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "logOnce",
+          "line": 43,
+          "column": 29
+        },
+        {
+          "file": "<anonymous>",
+          "methodName": "Array.map",
+          "line": null,
+          "column": null
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "Object.react_stack_bottom_frame",
+          "line": 15063,
+          "column": 22
+        },
+        {
+          "file": "file://X:/t3-code/worktrees/z8/t3-65663d62-4b7f54e41e3ad2a0/apps/webapp/.next/dev/static/chunks/0po-_next_dist_compiled_react-dom_cjs_react-dom-client_development_05hi_sj-qslzq.js?dpl=58ea18603a936d102f0625e3303f4c05689a9961",
+          "methodName": "runWithFiberInDEV",
+          "line": 777,
+          "column": 74
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\team-directory.tsx",
+          "methodName": "TeamDirectory",
+          "line": 33,
+          "column": 3
+        },
+        {
+          "file": "src\\app\\[locale]\\(app)\\team\\page.tsx",
+          "methodName": "TeamPage",
+          "line": 12,
+          "column": 4
+        }
+      ]
+    }
+  ],
+  "reportPath": "docs/design/rollout-1692/1739.md",
+  "reportLine": 70,
+  "reportClaim": "empty compilation issues and empty config/session errors",
+  "qualification": "Historical worker archive contains runtime errors; empty compilation/config results do not establish empty runtime diagnostics. Fresh browser diagnostics NOT RUN due to critical STOP."
+}

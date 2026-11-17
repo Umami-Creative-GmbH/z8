@@ -1,0 +1,64 @@
+{
+  "head": "31625ce088b22f27fbff338b09867d4a7883d35d",
+  "tree": "0c56dd5ee4a7dbc3c1cb21331337bf00e59d468b",
+  "parents": [
+    "0948378b7803926ed61eb5bdeab915c45bcad5ca",
+    "1ea5804a0d7f6125406b2eecec121fa1949ded90"
+  ],
+  "predictionMatches": true,
+  "parentTrackedPaths": 17286,
+  "protectedParentPaths": 17281,
+  "incomingDeltaPaths": 123,
+  "productDeltaPaths": 9,
+  "expectedMetadataUnion": [
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "unexpectedChanges": [],
+  "rawSourceChanges": [
+    "apps/webapp/src/app/[locale]/(app)/team/page.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-members-list.test.tsx",
+    "apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "configsUnchanged": 126,
+  "licenseUnchanged": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "count": 125,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf"
+  },
+  "dependencyParentsUnchanged": [
+    {
+      "path": "node_modules",
+      "physical": true,
+      "real": "node_modules"
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true,
+      "real": "apps/webapp/node_modules"
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true,
+      "real": "node_modules/.pnpm"
+    }
+  ],
+  "dependencyLinksUnchanged": 158,
+  "verifiedAnchorsPreserved": 59,
+  "baselinePreserved": "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+  "inventory": {
+    "templatesPresent": 172,
+    "aliasesUnchanged": 19
+  },
+  "protectedTrackedEvidence": "ALL tracked root paths outside exact incoming delta byte-identical by Git tree; includes reports/personnel/clock/onboarding/#1733/#1734/#1735 PDF and all #1738 corrections and tracked archives. Ignored peer archives were never opened, run, modified or cleaned; no whole-private-archive hash audit claimed.",
+  "bridgeRemovedByIdentityAndHash": {
+    "from": ".tmp/merge1739-audit/context-retry.test.tsx",
+    "to": "apps/webapp/src/test/.tmp/merge1739-audit/context-retry.test.tsx",
+    "sha256": "76ca4aa5157bdd8e8b4182dc1eca3f6ca3858fb108f5c9d1452a50ff3783dce0",
+    "owned": true,
+    "productSourceOverlay": false
+  },
+  "trackedClean": true
+}

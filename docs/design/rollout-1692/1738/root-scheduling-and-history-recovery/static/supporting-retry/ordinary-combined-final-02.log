@@ -1,0 +1,1268 @@
+src\app\[locale]\(app)\team\team-directory-context.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·userEvent·from·"@testing-library/user-event";␍
+      5     │ - import·{·NextIntlClientProvider·}·from·"next-intl";␍
+      6     │ - import·{·Activity,·type·ComponentProps·}·from·"react";␍
+      7     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      8     │ - import·{·TeamDirectory·}·from·"@/app/[locale]/(app)/team/team-directory";␍
+      9     │ - import·{·OrganizationContextProvider·}·from·"@/components/providers/organization-context-provider";␍
+     10     │ - import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+     11     │ - ␍
+     12     │ - const·boundary·=·vi.hoisted(()·=>·({␍
+     13     │ - → fetch:·vi.fn(),␍
+     14     │ - → current:·vi.fn(),␍
+     15     │ - → managed:·vi.fn(),␍
+     16     │ - → presence:·vi.fn(),␍
+     17     │ - → refresh:·vi.fn(),␍
+     18     │ - → replace:·vi.fn(),␍
+     19     │ - → section:·vi.fn(),␍
+     20     │ - → session:·{␍
+     21     │ - → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     22     │ - → → isPending:·false,␍
+     23     │ - → },␍
+     24     │ - }));␍
+     25     │ - vi.mock("@/lib/auth-client",·async·()·=>·{␍
+     26     │ - → const·{·useSyncExternalStore·}·=·await·import("react");␍
+     27     │ - → return·{␍
+     28     │ - → → useSession:·()·=>·{␍
+     29     │ - → → → useSyncExternalStore(␍
+     30     │ - → → → → ()·=>·()·=>·{},␍
+     31     │ - → → → → ()·=>·JSON.stringify(boundary.session),␍
+     32     │ - → → → );␍
+     33     │ - → → → return·boundary.session;␍
+     34     │ - → → },␍
+     35     │ - → → authClient:·{·$store:·{·atoms:·{·session:·{·subscribe:·()·=>·()·=>·{}·}·}·}·},␍
+     36     │ - → };␍
+     37     │ - });␍
+     38     │ - vi.mock("@/app/[locale]/(app)/team/actions",·()·=>·({␍
+     39     │ - → getCurrentEmployee:·boundary.current,␍
+     40     │ - → getManagedEmployees:·boundary.managed,␍
+     41     │ - }));␍
+     42     │ - vi.mock("@/app/[locale]/(app)/settings/employees/employee-clock-status.actions",·()·=>·({␍
+     43     │ - → getEmployeeClockStatuses:·boundary.presence,␍
+     44     │ - }));␍
+     45     │ - vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions",·()·=>·({␍
+     46     │ - → getEmployeeWorkBalanceSectionAction:·boundary.section,␍
+     47     │ - → cancelBalanceAdjustmentAction:·vi.fn(),␍
+     48     │ - → recordOvertimePayoutAction:·vi.fn(),␍
+     49     │ - → setOpeningBalanceAction:·vi.fn(),␍
+     50     │ - }));␍
+     51     │ - vi.mock("@/app/[locale]/(app)/time-tracking/actions",·()·=>·({␍
+     52     │ - → addBreakToActiveSession:·vi.fn(),␍
+     53     │ - → resumeBreakInProgress:·vi.fn(),␍
+     54     │ - → startBreakInProgress:·vi.fn(),␍
+     55     │ - → updateTimeEntryNotes:·vi.fn(),␍
+     56     │ - }));␍
+     57     │ - vi.mock("@/navigation",·()·=>·({␍
+     58     │ - → useRouter:·()·=>·({·refresh:·boundary.refresh,·replace:·boundary.replace·}),␍
+     59     │ - → Link:·(props:·ComponentProps<"a">)·=>·<a·{...props}·/>,␍
+     60     │ - }));␍
+     61     │ - vi.mock("@/tolgee/server",·()·=>·({␍
+     62     │ - → getTranslate:·async·()·=>·(_key:·string,·fallback:·string)·=>·fallback,␍
+     63     │ - }));␍
+     64     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     65     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     66     │ - }));␍
+     67     │ - vi.mock("@/lib/navigation/locale-redirect",·()·=>·({·redirectWithLocale:·vi.fn()·}));␍
+     68     │ - ␍
+     69     │ - function·response()·{␍
+     70     │ - → return·new·Response(␍
+     71     │ - → → JSON.stringify({␍
+     72     │ - → → → user:·{·id:·"actor-a"·},␍
+     73     │ - → → → session:·{·activeOrganizationId:·"org-a"·},␍
+     74     │ - → → → employee:·{·employeeId:·"manager-a",·organizationId:·"org-a",·role:·"manager"·},␍
+     75     │ - → → → organizationSettings:·null,␍
+     76     │ - → → }),␍
+     77     │ - → );␍
+     78     │ - }␍
+     79     │ - const·clients:·QueryClient[]·=·[];␍
+     80     │ - beforeEach(()·=>·{␍
+     81     │ - → vi.clearAllMocks();␍
+     82     │ - → boundary.session·=·{␍
+     83     │ - → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     84     │ - → → isPending:·false,␍
+     85     │ - → };␍
+     86     │ - → boundary.fetch.mockReset().mockImplementation(async·()·=>·response());␍
+     87     │ - → vi.stubGlobal("fetch",·boundary.fetch);␍
+     88     │ - → boundary.current.mockResolvedValue({␍
+     89     │ - → → id:·"manager-a",␍
+     90     │ - → → userId:·"actor-a",␍
+     91     │ - → → organizationId:·"org-a",␍
+     92     │ - → → role:·"manager",␍
+     93     │ - → });␍
+     94     │ - → boundary.managed.mockImplementation(async·()·=>·({␍
+     95     │ - → → success:·true,␍
+     96     │ - → → data:·[␍
+     97     │ - → → → {␍
+     98     │ - → → → → id:·"report-a",␍
+     99     │ - → → → → role:·"employee",␍
+    100     │ - → → → → isFormer:·false,␍
+    101     │ - → → → → user:·{␍
+    102     │ - → → → → → id:·"person-a",␍
+    103     │ - → → → → → name:·"Admitted·Synthetic·Employee",␍
+    104     │ - → → → → → email:·"synthetic@example.test",␍
+    105     │ - → → → → → image:·null,␍
+    106     │ - → → → → },␍
+    107     │ - → → → → timeBalance:·null,␍
+    108     │ - → → → → team:·null,␍
+    109     │ - → → → },␍
+    110     │ - → → ],␍
+    111     │ - → }));␍
+    112     │ - → boundary.presence.mockResolvedValue({·success:·true,·data:·{}·});␍
+    113     │ - });␍
+    114     │ - afterEach(()·=>·{␍
+    115     │ - → cleanup();␍
+    116     │ - → for·(const·client·of·clients)·client.clear();␍
+    117     │ - → clients.length·=·0;␍
+    118     │ - → vi.unstubAllGlobals();␍
+    119     │ - → vi.restoreAllMocks();␍
+    120     │ - });␍
+    121     │ - async·function·mount()·{␍
+    122     │ - → const·client·=·new·QueryClient({␍
+    123     │ - → → defaultOptions:·{␍
+    124     │ - → → → queries:·{·retry:·false,·staleTime:·60_000,·refetchOnWindowFocus:·false,·retryDelay:·0·},␍
+    125     │ - → → },␍
+    126     │ - → });␍
+    127     │ - → clients.push(client);␍
+    128     │ - → const·tree·=·async·()·=>·(␍
+    129     │ - → → <QueryClientProvider·client={client}>␍
+    130     │ - → → → <NextIntlClientProvider·locale="en"·messages={{}}·timeZone="Europe/Berlin">␍
+    131     │ - → → → → <UserPreferencesProvider·timezone="Europe/Berlin">␍
+    132     │ - → → → → → <OrganizationContextProvider·initialContext={null}>␍
+    133     │ - → → → → → → {await·TeamDirectory({·searchParams:·Promise.resolve({})·})}␍
+    134     │ - → → → → → </OrganizationContextProvider>␍
+    135     │ - → → → → </UserPreferencesProvider>␍
+    136     │ - → → → </NextIntlClientProvider>␍
+    137     │ - → → </QueryClientProvider>␍
+    138     │ - → );␍
+    139     │ - → const·view·=·render(await·tree());␍
+    140     │ - → //·Model·a·successful·RSC·refresh·while·preserving·the·actual·shared·provider·and·QueryClient.␍
+    141     │ - → boundary.refresh.mockImplementation(async·()·=>·view.rerender(await·tree()));␍
+    142     │ - → return·{·client,·view,·tree·};␍
+    143     │ - }␍
+    144     │ - it("healthy·real·provider·admits·the·public·team·directory·and·its·employee·link",·async·()·=>·{␍
+    145     │ - → const·errors·=·vi.spyOn(console,·"error");␍
+    146     │ - → await·mount();␍
+    147     │ - → expect(await·screen.findByRole("link",·{·name:·"Admitted·Synthetic·Employee"·})).toBeTruthy();␍
+    148     │ - → expect(boundary.fetch).toHaveBeenCalledTimes(1);␍
+    149     │ - → expect(boundary.fetch.mock.calls[0][0]).toBe("/api/auth/context");␍
+    150     │ - → expect(␍
+  562 more lines truncated
+  
+
+src\app\[locale]\(app)\team\team-members-list.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";␍
+      4     │ - import·type·{·ReactNode·}·from·"react";␍
+      5     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·type·{·ManagedEmployee·}·from·"./team-members-data";␍
+      7     │ - import·{·TeamMembersList·}·from·"./team-members-list";␍
+      8     │ - ␍
+      9     │ - const·{·getActivityMock,·replaceMock,·useBalanceAdjustmentSectionMock·}·=·vi.hoisted(()·=>·({␍
+     10     │ - → getActivityMock:·vi.fn(),␍
+     11     │ - → replaceMock:·vi.fn(),␍
+     12     │ - → useBalanceAdjustmentSectionMock:·vi.fn(),␍
+     13     │ - }));␍
+     14     │ - ␍
+     15     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     16     │ - → useTolgee:·()·=>·({·getLanguage:·()·=>·"en-GB"·}),␍
+     17     │ - → useTranslate:·()·=>·({␍
+     18     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·string·|·number>)·=>␍
+     19     │ - → → → Object.entries(params·??·{}).reduce(␍
+     20     │ - → → → → (label,·[key,·value])·=>·label.replace(`{${key}}`,·String(value)),␍
+     21     │ - → → → → fallback,␍
+     22     │ - → → → ),␍
+     23     │ - → }),␍
+     24     │ - }));␍
+     25     │ - vi.mock("@/components/employee-activity-text",·()·=>·({␍
+     26     │ - → EmployeeActivityText:·({␍
+     27     │ - → → lastActivityAt,␍
+     28     │ - → → lastActivityUtcOffsetMinutes,␍
+     29     │ - → }:·{␍
+     30     │ - → → lastActivityAt:·string·|·null;␍
+     31     │ - → → lastActivityUtcOffsetMinutes:·number·|·null;␍
+     32     │ - → })·=>␍
+     33     │ - → → lastActivityAt·===·null·||·lastActivityUtcOffsetMinutes·===·null·?·null·:·(␍
+     34     │ - → → → <span>␍
+     35     │ - → → → → activity:{lastActivityAt}:{lastActivityUtcOffsetMinutes}␍
+     36     │ - → → → </span>␍
+     37     │ - → → ),␍
+     38     │ - }));␍
+     39     │ - vi.mock("@/lib/query",·()·=>·({␍
+     40     │ - → useEmployeeClockStatuses:·()·=>·({␍
+     41     │ - → → getStatus:·()·=>·"unknown",␍
+     42     │ - → → getActivity:·getActivityMock,␍
+     43     │ - → → getBreak:·()·=>·null,␍
+     44     │ - → }),␍
+     45     │ - }));␍
+     46     │ - vi.mock("@/components/settings/work-balance/use-employee-work-balance",·()·=>·({␍
+     47     │ - → useBalanceAdjustmentSection:·useBalanceAdjustmentSectionMock,␍
+     48     │ - → isRefusal:·()·=>·false,␍
+     49     │ - }));␍
+     50     │ - vi.mock("@/hooks/use-display-context",·()·=>·({␍
+     51     │ - → useDisplayContext:·()·=>·({·locale:·"en-GB",·timezone:·"UTC",·timeFormat:·"24h"·}),␍
+     52     │ - }));␍
+     53     │ - vi.mock("@/navigation",·()·=>·({␍
+     54     │ - → useRouter:·()·=>·({·replace:·replaceMock·}),␍
+     55     │ - → Link:·({·href,·children,·...props·}:·{·href:·string;·children:·ReactNode·})·=>·(␍
+     56     │ - → → <a·href={href}·{...props}>␍
+     57     │ - → → → {children}␍
+     58     │ - → → </a>␍
+     59     │ - → ),␍
+     60     │ - }));␍
+     61     │ - ␍
+     62     │ - const·employee·=·(overrides:·Partial<ManagedEmployee>):·ManagedEmployee·=>·({␍
+     63     │ - → id:·"employee-1",␍
+     64     │ - → userId:·"user-1",␍
+     65     │ - → firstName:·"Ada",␍
+     66     │ - → lastName:·"Lovelace",␍
+     67     │ - → pronouns:·null,␍
+     68     │ - → position:·"Manager",␍
+     69     │ - → role:·"manager",␍
+     70     │ - → isActive:·true,␍
+     71     │ - → isFormer:·false,␍
+     72     │ - → isPrimaryManager:·false,␍
+     73     │ - → isCurrentUser:·false,␍
+     74     │ - → timeBalance:·null,␍
+     75     │ - → user:·{␍
+     76     │ - → → id:·"user-1",␍
+     77     │ - → → firstName:·"Ada",␍
+     78     │ - → → lastName:·"Lovelace",␍
+     79     │ - → → name:·"Ada·Lovelace",␍
+     80     │ - → → email:·"ada@example.com",␍
+     81     │ - → → image:·null,␍
+     82     │ - → },␍
+     83     │ - → team:·null,␍
+     84     │ - → ...overrides,␍
+     85     │ - });␍
+     86     │ - ␍
+     87     │ - const·timeBalance·=·(employeeId:·string,·actualMinutes:·number,·requiredMinutes:·number)·=>·({␍
+     88     │ - → employeeId,␍
+     89     │ - → organizationId:·"org-1",␍
+     90     │ - → actualMinutes,␍
+     91     │ - → requiredMinutes,␍
+     92     │ - → balanceMinutes:·actualMinutes·-·requiredMinutes,␍
+     93     │ - → computedFromDate:·"2026-01-01",␍
+     94     │ - → computedThroughDate:·"2026-05-17",␍
+     95     │ - → computedAt:·new·Date("2026-05-18T00:00:00.000Z"),␍
+     96     │ - });␍
+     97     │ - ␍
+     98     │ - describe("TeamMembersList",·()·=>·{␍
+     99     │ - → beforeEach(()·=>·{␍
+    100     │ - → → getActivityMock.mockReset().mockReturnValue(null);␍
+    101     │ - → → replaceMock.mockReset();␍
+    102     │ - → → useBalanceAdjustmentSectionMock.mockReset().mockReturnValue({␍
+    103     │ - → → → isLoading:·false,␍
+    104     │ - → → → isError:·false,␍
+    105     │ - → → → error:·null,␍
+    106     │ - → → → data:·{␍
+    107     │ - → → → → canManage:·false,␍
+    108     │ - → → → → adjustments:·[␍
+    109     │ - → → → → → {␍
+    110     │ - → → → → → → id:·"adjustment-1",␍
+    111     │ - → → → → → → kind:·"overtime_payout",␍
+    112     │ - → → → → → → day:·"2026-10-08",␍
+    113     │ - → → → → → → minutes:·-300,␍
+    114     │ - → → → → → → reason:·"Paid·with·the·October·payroll",␍
+    115     │ - → → → → → → recordedAt:·"2026-10-09T08:00:00.000Z",␍
+    116     │ - → → → → → → recordedBy:·{·userId:·"user-admin",·name:·"Owner"·},␍
+    117     │ - → → → → → → cancellation:·null,␍
+    118     │ - → → → → → },␍
+    119     │ - → → → → ],␍
+    120     │ - → → → },␍
+    121     │ - → → });␍
+    122     │ - → });␍
+    123     │ - ␍
+    124     │ - → it("keeps·scope·controls·available·when·the·managed·scope·is·empty",·()·=>·{␍
+    125     │ - → → render(<TeamMembersList·employees={[]}·showFormer·/>);␍
+    126     │ - → → expect(screen.getByRole("textbox",·{·name:·"Search·team·members"·})).toBeTruthy();␍
+    127     │ - → → fireEvent.click(screen.getByRole("switch",·{·name:·"Show·former·employees"·}));␍
+    128     │ - → → expect(replaceMock).toHaveBeenCalledWith("/team",·{·scroll:·false·});␍
+    129     │ - → → expect(screen.getByRole("link",·{·name:·"Go·to·Employee·Settings"·}).getAttribute("href")).toBe(␍
+    130     │ - → → → "/settings/employees",␍
+    131     │ - → → );␍
+    132     │ - → → expect(screen.getByText("No·team·members·yet")).toBeTruthy();␍
+    133     │ - → → expect(screen.queryByText("No·results·found")).toBeNull();␍
+    134     │ - → });␍
+    135     │ - ␍
+    136     │ - → it.each([␍
+    137     │ - → → ["card",·false],␍
+    138     │ - → → ["table",·true],␍
+    139     │ - → ])(␍
+    140     │ - → → "opens·the·employee's·balance·adjustment·history·from·the·balance·badge·in·%s·view",␍
+    141     │ - → → (_view,·tableView)·=>·{␍
+    142     │ - → → → render(␍
+    143     │ - → → → → <TeamMembersList␍
+    144     │ - → → → → → employees={[employee({·timeBalance:·timeBalance("employee-1",·600,·480)·})]}␍
+    145     │ - → → → → />,␍
+    146     │ - → → → );␍
+    147     │ - → → → if·(tableView)·fireEvent.click(screen.getByRole("radio",·{·name:·"Table·view"·}));␍
+    148     │ - ␍
+    149     │ - → → → const·badge·=·screen.getByRole("button",·{·name:·"All-time·balance:·+2:00h"·});␍
+    150     │ - → → → //·Its·own·control,·not·part·of·the·link·to·the·employee·page.␍
+  694 more lines truncated
+  
+
+src\components\scheduling\scheduler\shift-scheduler-coverage.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /**·@vitest-environment·jsdom·*/␍
+      2     │ - import·{·QueryClient,·QueryClientProvider,·useQueryClient·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+      4     │ - import·userEvent·from·"@testing-library/user-event";␍
+      5     │ - import·{·TolgeeProvider·}·from·"@tolgee/react";␍
+      6     │ - import·{·act·as·preactAct·}·from·"preact/test-utils";␍
+      7     │ - import·{·type·ReactNode,·useEffect·}·from·"react";␍
+      8     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      9     │ - import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+     10     │ - import·{·ShiftScheduler·}·from·"@/components/scheduling/scheduler/shift-scheduler";␍
+     11     │ - import·{·ThemeProvider·}·from·"@/components/theme-provider";␍
+     12     │ - import·{·ApiError·}·from·"@/lib/api-error";␍
+     13     │ - import·{·QueryProvider·}·from·"@/lib/query/provider";␍
+     14     │ - import·{·createTestTolgee·}·from·"@/test/render-with-translations";␍
+     15     │ - ␍
+     16     │ - //·Explicit·action·transport·and·authenticated·caller-context·boundary.·No·internal·hook,␍
+     17     │ - //·query·state,·component·or·scheduler/calendar·implementation·is·replaced·or·preloaded.␍
+     18     │ - const·transport·=·vi.hoisted(()·=>·({␍
+     19     │ - → coverage:·vi.fn(),␍
+     20     │ - → shifts:·vi.fn(),␍
+     21     │ - → templates:·vi.fn(),␍
+     22     │ - → compliance:·vi.fn(),␍
+     23     │ - → publish:·vi.fn(),␍
+     24     │ - → upsert:·vi.fn(),␍
+     25     │ - → remove:·vi.fn(),␍
+     26     │ - → replace:·vi.fn(),␍
+     27     │ - }));␍
+     28     │ - vi.mock("@tanstack/react-query-devtools",·()·=>·({·ReactQueryDevtools:·()·=>·null·}));␍
+     29     │ - vi.mock("next/navigation",·async·(importOriginal)·=>·({␍
+     30     │ - → ...(await·importOriginal<typeof·import("next/navigation")>()),␍
+     31     │ - → useRouter:·()·=>·({·replace:·transport.replace,·refresh:·vi.fn()·}),␍
+     32     │ - }));␍
+     33     │ - vi.mock("@/app/[locale]/(app)/scheduling/actions",·()·=>·({␍
+     34     │ - → getShifts:·transport.shifts,␍
+     35     │ - → getShiftTemplates:·transport.templates,␍
+     36     │ - → getScheduleComplianceSummary:·transport.compliance,␍
+     37     │ - → getPendingShiftRequests:·async·()·=>·({·success:·true,·data:·[]·}),␍
+     38     │ - → getLocationsWithSubareas:·async·()·=>·({·success:·true,·data:·[]·}),␍
+     39     │ - → suggestStaffingForShift:·async·()·=>·({·success:·true,·data:·[]·}),␍
+     40     │ - → publishShifts:·transport.publish,␍
+     41     │ - → upsertShift:·transport.upsert,␍
+     42     │ - → deleteShift:·transport.remove,␍
+     43     │ - → approveShiftRequest:·vi.fn(),␍
+     44     │ - → rejectShiftRequest:·vi.fn(),␍
+     45     │ - }));␍
+     46     │ - vi.mock("@/app/[locale]/(app)/settings/coverage-rules/actions",·()·=>·({␍
+     47     │ - → getTargetHeatmapData:·transport.coverage,␍
+     48     │ - }));␍
+     49     │ - vi.mock("@/app/[locale]/(app)/settings/employees/actions",·()·=>·({␍
+     50     │ - → listEmployeesForSelect:·async·()·=>·({·success:·true,·data:·{·employees:·[]·}·}),␍
+     51     │ - }));␍
+     52     │ - vi.mock("@/app/[locale]/(app)/settings/skills/actions",·()·=>·({␍
+     53     │ - → validateEmployeeForShift:·vi.fn(),␍
+     54     │ - }));␍
+     55     │ - ␍
+     56     │ - const·clients:·QueryClient[]·=·[];␍
+     57     │ - const·draft·=·{␍
+     58     │ - → id:·"synthetic-shift-a",␍
+     59     │ - → organizationId:·"synthetic-org-a",␍
+     60     │ - → employeeId:·null,␍
+     61     │ - → status:·"draft",␍
+     62     │ - → date:·new·Date("2026-11-15T23:00:00Z"),␍
+     63     │ - → startTime:·"09:00",␍
+     64     │ - → endTime:·"17:00",␍
+     65     │ - → templateId:·null,␍
+     66     │ - → subareaId:·"synthetic-reception",␍
+     67     │ - → recurrenceId:·null,␍
+     68     │ - → publishedAt:·null,␍
+     69     │ - → publishedBy:·null,␍
+     70     │ - → notes:·null,␍
+     71     │ - → color:·null,␍
+     72     │ - → createdAt:·new·Date("2026-11-01T00:00:00Z"),␍
+     73     │ - → updatedAt:·new·Date("2026-11-01T00:00:00Z"),␍
+     74     │ - → createdBy:·"synthetic-planner",␍
+     75     │ - → subarea:·{␍
+     76     │ - → → id:·"synthetic-reception",␍
+     77     │ - → → name:·"Reception",␍
+     78     │ - → → location:·{·id:·"synthetic-office",·name:·"Office"·},␍
+     79     │ - → },␍
+     80     │ - };␍
+     81     │ - ␍
+     82     │ - beforeEach(()·=>·{␍
+     83     │ - → vi.clearAllMocks();␍
+     84     │ - → vi.stubGlobal("matchMedia",·()·=>·({␍
+     85     │ - → → matches:·false,␍
+     86     │ - → → addEventListener()·{},␍
+     87     │ - → → removeEventListener()·{},␍
+     88     │ - → }));␍
+     89     │ - → vi.stubGlobal(␍
+     90     │ - → → "ResizeObserver",␍
+     91     │ - → → class·{␍
+     92     │ - → → → observe()·{}␍
+     93     │ - → → → unobserve()·{}␍
+     94     │ - → → → disconnect()·{}␍
+     95     │ - → → },␍
+     96     │ - → );␍
+     97     │ - → transport.shifts.mockResolvedValue({·success:·true,·data:·[draft]·});␍
+     98     │ - → transport.templates.mockResolvedValue({·success:·true,·data:·[]·});␍
+     99     │ - → transport.compliance.mockResolvedValue({␍
+    100     │ - → → success:·true,␍
+    101     │ - → → data:·{·summary:·{·totalFindings:·0·}·},␍
+    102     │ - → });␍
+    103     │ - });␍
+    104     │ - ␍
+    105     │ - afterEach(async·()·=>·{␍
+    106     │ - → preactAct(()·=>·cleanup());␍
+    107     │ - → for·(const·client·of·clients.splice(0))·client.clear();␍
+    108     │ - → await·new·Promise((resolve)·=>·setTimeout(resolve,·50));␍
+    109     │ - → vi.unstubAllGlobals();␍
+    110     │ - });␍
+    111     │ - ␍
+    112     │ - function·CaptureProviderClient()·{␍
+    113     │ - → const·client·=·useQueryClient();␍
+    114     │ - → useEffect(()·=>·{␍
+    115     │ - → → clients.push(client);␍
+    116     │ - → },·[client]);␍
+    117     │ - → return·null;␍
+    118     │ - }␍
+    119     │ - ␍
+    120     │ - function·mountPlanner(globalErrors·=·false)·{␍
+    121     │ - → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false,·gcTime:·0·}·}·});␍
+    122     │ - → clients.push(client);␍
+    123     │ - → const·withClient·=·(children:·ReactNode)·=>␍
+    124     │ - → → globalErrors·?·(␍
+    125     │ - → → → <QueryProvider>␍
+    126     │ - → → → → <CaptureProviderClient·/>␍
+    127     │ - → → → → {children}␍
+    128     │ - → → → </QueryProvider>␍
+    129     │ - → → )·:·(␍
+    130     │ - → → → <QueryClientProvider·client={client}>{children}</QueryClientProvider>␍
+    131     │ - → → );␍
+    132     │ - → const·draw·=·(employeeId·=·"synthetic-planner-a")·=>·(␍
+    133     │ - → → <TolgeeProvider·tolgee={createTestTolgee()}>␍
+    134     │ - → → → <ThemeProvider·defaultTheme="light"·enableSystem={false}>␍
+    135     │ - → → → → <UserPreferencesProvider·timezone="Europe/Berlin"·weekStartDay="monday">␍
+    136     │ - → → → → → {withClient(␍
+    137     │ - → → → → → → <ShiftScheduler␍
+    138     │ - → → → → → → → organizationId="synthetic-org-a"␍
+    139     │ - → → → → → → → organizationTimezone="Europe/Berlin"␍
+    140     │ - → → → → → → → employeeId={employeeId}␍
+    141     │ - → → → → → → → isManager␍
+    142     │ - → → → → → → → focusEmployeeId={null}␍
+    143     │ - → → → → → → → focusDate="2026-11-16"␍
+    144     │ - → → → → → → />,␍
+    145     │ - → → → → → )}␍
+    146     │ - → → → → </UserPreferencesProvider>␍
+    147     │ - → → → </ThemeProvider>␍
+    148     │ - → → </TolgeeProvider>␍
+    149     │ - → );␍
+    150     │ - → const·view·=·render(draw());␍
+  936 more lines truncated
+  
+
+src\components\scheduling\scheduler\shift-scheduler.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - //·Temporal·polyfill·must·be·imported·before·Schedule-X␍
+      4     │ - import·"temporal-polyfill/global";␍
+      5     │ - ␍
+      6     │ - import·{·createViewDay,·createViewMonthGrid,·createViewWeek·}·from·"@schedule-x/calendar";␍
+      7     │ - import·{·ScheduleXCalendar,·useCalendarApp·}·from·"@schedule-x/react";␍
+      8     │ - import·"@schedule-x/theme-default/dist/index.css";␍
+      9     │ - import·{·IconPlus·}·from·"@tabler/icons-react";␍
+     10     │ - import·{·useTolgee,·useTranslate·}·from·"@tolgee/react";␍
+     11     │ - import·{·useEffect,·useRef,·useState·}·from·"react";␍
+     12     │ - import·type·{␍
+     13     │ - → DateRange,␍
+     14     │ - → ShiftTemplate,␍
+     15     │ - → ShiftWithRelations,␍
+     16     │ - }·from·"@/app/[locale]/(app)/scheduling/types";␍
+     17     │ - import·{·useWeekStartDay·}·from·"@/components/providers/user-preferences-provider";␍
+     18     │ - import·{·useTheme·}·from·"@/components/theme-provider";␍
+     19     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     20     │ - import·{·buildAuthUserDisplayName·}·from·"@/lib/auth/derived-user-name";␍
+     21     │ - import·{·toScheduleXLocale·}·from·"@/lib/calendar/schedule-x-locale";␍
+     22     │ - import·{·type·PlainDate,·parsePlainDate,·type·ZonedDateTime·}·from·"@/lib/datetime/temporal-core";␍
+     23     │ - import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";␍
+     24     │ - import·{·ShiftRequestsReview·}·from·"../shift-requests/shift-requests-panel";␍
+     25     │ - import·{·ShiftDialog·}·from·"../shifts/shift-dialog";␍
+     26     │ - import·{·CoverageHeatmapOverlay·}·from·"./coverage-heatmap-overlay";␍
+     27     │ - import·{·EmployeeShiftSchedule·}·from·"./employee-shift-schedule";␍
+     28     │ - import·{·PublishComplianceDialog·}·from·"./publish-compliance-dialog";␍
+     29     │ - import·{·PublishFab·}·from·"./publish-fab";␍
+     30     │ - import·{·ScheduleComplianceBanner·}·from·"./schedule-compliance-banner";␍
+     31     │ - import·{·ScheduleReadFailure·}·from·"./schedule-read-failure";␍
+     32     │ - import·{·ScheduleShiftList·}·from·"./schedule-shift-list";␍
+     33     │ - import·{·createScheduleXDragAndDropPlugin·}·from·"./schedule-x-drag-and-drop";␍
+     34     │ - import·{␍
+     35     │ - → calendarRangeToDateRange,␍
+     36     │ - → eventToShiftTimes,␍
+     37     │ - → filterShiftsForEmployee,␍
+     38     │ - → initialSchedulerView,␍
+     39     │ - → scheduleXFirstDayOfWeek,␍
+     40     │ - }·from·"./shift-scheduler-utils";␍
+     41     │ - import·{·TemplateSidebar·}·from·"./template-sidebar";␍
+     42     │ - import·{·useCoverageHeatmap·}·from·"./use-coverage-heatmap";␍
+     43     │ - import·{·useShiftPublishFlow·}·from·"./use-shift-publish-flow";␍
+     44     │ - import·{·useShiftSchedulerData·}·from·"./use-shift-scheduler-data";␍
+     45     │ - ␍
+     46     │ - interface·ShiftSchedulerProps·{␍
+     47     │ - → organizationId:·string;␍
+     48     │ - → organizationTimezone:·string;␍
+     49     │ - → employeeId:·string;␍
+     50     │ - → isManager:·boolean;␍
+     51     │ - → /**·Opens·the·schedule·filtered·to·this·employee·(managers·only).·*/␍
+     52     │ - → focusEmployeeId:·string·|·null;␍
+     53     │ - → /**·Opens·the·schedule·on·the·week·of·this·calendar·date·(YYYY-MM-DD).·*/␍
+     54     │ - → focusDate:·string·|·null;␍
+     55     │ - }␍
+     56     │ - ␍
+     57     │ - export·function·ShiftScheduler(props:·ShiftSchedulerProps)·{␍
+     58     │ - → if·(!props.isManager)·{␍
+     59     │ - → → return·(␍
+     60     │ - → → → <EmployeeShiftSchedule␍
+     61     │ - → → → → key={`${props.organizationId}:${props.employeeId}:employee`}␍
+     62     │ - → → → → organizationId={props.organizationId}␍
+     63     │ - → → → → employeeId={props.employeeId}␍
+     64     │ - → → → → organizationTimezone={props.organizationTimezone}␍
+     65     │ - → → → → focusDate={props.focusDate}␍
+     66     │ - → → → />␍
+     67     │ - → → );␍
+     68     │ - → }␍
+     69     │ - → return·(␍
+     70     │ - → → <PlannerShiftScheduler·key={`${props.organizationId}:${props.employeeId}:planner`}·{...props}·/>␍
+     71     │ - → );␍
+     72     │ - }␍
+     73     │ - ␍
+     74     │ - function·PlannerShiftScheduler({␍
+     75     │ - → organizationId,␍
+     76     │ - → organizationTimezone,␍
+     77     │ - → employeeId,␍
+     78     │ - → isManager,␍
+     79     │ - → focusEmployeeId,␍
+     80     │ - → focusDate,␍
+     81     │ - }:·ShiftSchedulerProps)·{␍
+     82     │ - → const·{·t·}·=·useTranslate();␍
+     83     │ - → const·locale·=·useTolgee(["language"]).getLanguage()·||·"en";␍
+     84     │ - → const·{·resolvedTheme·}·=·useTheme();␍
+     85     │ - → const·weekStartDay·=·useWeekStartDay();␍
+     86     │ - → const·[initialView]·=·useState(()·=>␍
+     87     │ - → → initialSchedulerView(focusDate,·organizationTimezone,·weekStartDay),␍
+     88     │ - → );␍
+     89     │ - → const·[dateRange,·setDateRange]·=·useState<DateRange>(initialView.dateRange);␍
+     90     │ - → const·[showAllEmployees,·setShowAllEmployees]·=·useState(false);␍
+     91     │ - → const·employeeFilter·=·showAllEmployees·?·null·:·focusEmployeeId;␍
+     92     │ - → const·[selectedShift,·setSelectedShift]·=·useState<ShiftWithRelations·|·null>(null);␍
+     93     │ - → const·[isShiftDialogOpen,·setIsShiftDialogOpen]·=·useState(false);␍
+     94     │ - → const·[newShiftDate,·setNewShiftDate]·=·useState<string·|·null>(null);␍
+     95     │ - → const·[newTemplateId,·setNewTemplateId]·=·useState<string·|·null>(null);␍
+     96     │ - → const·[showCoverageOverlay,·setShowCoverageOverlay]·=·useState(true);␍
+     97     │ - → const·isDark·=·resolvedTheme·===·"dark";␍
+     98     │ - ␍
+     99     │ - → const·{␍
+    100     │ - → → shifts,␍
+    101     │ - → → templates,␍
+    102     │ - → → events,␍
+    103     │ - → → shiftsLoading,␍
+    104     │ - → → shiftsFailed,␍
+    105     │ - → → hasLoadedShifts,␍
+    106     │ - → → shiftsFetching,␍
+    107     │ - → → retryShifts,␍
+    108     │ - → → templatesFailed,␍
+    109     │ - → → complianceFailed,␍
+    110     │ - → → supportingDataFetching,␍
+    111     │ - → → supportingDataRetryPending,␍
+    112     │ - → → retrySupportingData,␍
+    113     │ - → → complianceSummary,␍
+    114     │ - → → draftCount,␍
+    115     │ - → → complianceFindingsCount,␍
+    116     │ - → → hasComplianceWarnings,␍
+    117     │ - → → updateShift,␍
+    118     │ - → }·=·useShiftSchedulerData({␍
+    119     │ - → → organizationId,␍
+    120     │ - → → employeeId,␍
+    121     │ - → → organizationTimezone,␍
+    122     │ - → → dateRange,␍
+    123     │ - → → isManager,␍
+    124     │ - → → employeeFilter,␍
+    125     │ - → });␍
+    126     │ - → const·{␍
+    127     │ - → → pendingAcknowledgment,␍
+    128     │ - → → isComplianceDialogOpen,␍
+    129     │ - → → setIsComplianceDialogOpen,␍
+    130     │ - → → publish,␍
+    131     │ - → → confirmPublish,␍
+    132     │ - → → isPublishing,␍
+    133     │ - → }·=·useShiftPublishFlow({·organizationId,·dateRange·});␍
+    134     │ - ␍
+    135     │ - → //·Fetch·coverage·heatmap·data␍
+    136     │ - → const·{·hasGaps:·hasCoverageGaps,·readState:·coverageState·}·=·useCoverageHeatmap(␍
+    137     │ - → → organizationId,␍
+    138     │ - → → dateRange,␍
+    139     │ - → → isManager·&&·showCoverageOverlay,␍
+    140     │ - → → employeeId,␍
+    141     │ - → );␍
+    142     │ - ␍
+    143     │ - → //·Schedule-X·keeps·the·callbacks·of·its·first·render,·so·they·read·the·latest·shifts·here.␍
+    144     │ - → const·shiftsRef·=·useRef(shifts);␍
+    145     │ - → const·updateShiftRef·=·useRef(updateShift);␍
+    146     │ - → const·resetEventsRef·=·useRef(()·=>·{});␍
+    147     │ - → useEffect(()·=>·{␍
+    148     │ - → → shiftsRef.current·=·shifts;␍
+    149     │ - → → updateShiftRef.current·=·updateShift;␍
+    150     │ - → },·[shifts,·updateShift]);␍
+  775 more lines truncated
+  
+
+src\components\scheduling\scheduler\use-shift-scheduler-data.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useMutation,·useQuery,·useQueryClient·}·from·"@tanstack/react-query";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useTransition·}·from·"react";␍
+      6     │ - import·{·toast·}·from·"sonner";␍
+      7     │ - import·{␍
+      8     │ - → getScheduleComplianceSummary,␍
+      9     │ - → getShifts,␍
+     10     │ - → getShiftTemplates,␍
+     11     │ - → upsertShift,␍
+     12     │ - }·from·"@/app/[locale]/(app)/scheduling/actions";␍
+     13     │ - import·type·{·DateRange·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+     14     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+     15     │ - import·{·SKILL_OVERRIDE_REASON_REQUIRED·}·from·"@/lib/scheduling/skill-override-refusal";␍
+     16     │ - import·{·filterShiftsForEmployee,·shiftToEvent·}·from·"./shift-scheduler-utils";␍
+     17     │ - ␍
+     18     │ - interface·UseShiftSchedulerDataOptions·{␍
+     19     │ - → organizationId:·string;␍
+     20     │ - → employeeId:·string;␍
+     21     │ - → organizationTimezone:·string;␍
+     22     │ - → dateRange:·DateRange;␍
+     23     │ - → isManager:·boolean;␍
+     24     │ - → /**·Shows·only·this·employee's·shifts·on·the·calendar;·counts·still·cover·all.·*/␍
+     25     │ - → employeeFilter?:·string·|·null;␍
+     26     │ - }␍
+     27     │ - ␍
+     28     │ - export·interface·ShiftSchedulerUpdateInput·{␍
+     29     │ - → id:·string;␍
+     30     │ - → employeeId?:·string·|·null;␍
+     31     │ - → subareaId:·string;␍
+     32     │ - → date:·string;␍
+     33     │ - → startTime:·string;␍
+     34     │ - → endTime:·string;␍
+     35     │ - }␍
+     36     │ - ␍
+     37     │ - export·function·useShiftSchedulerData({␍
+     38     │ - → organizationId,␍
+     39     │ - → employeeId,␍
+     40     │ - → organizationTimezone,␍
+     41     │ - → dateRange,␍
+     42     │ - → isManager,␍
+     43     │ - → employeeFilter·=·null,␍
+     44     │ - }:·UseShiftSchedulerDataOptions)·{␍
+     45     │ - → const·{·t·}·=·useTranslate();␍
+     46     │ - → const·queryClient·=·useQueryClient();␍
+     47     │ - ␍
+     48     │ - → const·{␍
+     49     │ - → → data:·shiftsResult,␍
+     50     │ - → → isLoading:·shiftsLoading,␍
+     51     │ - → → isError:·shiftsFailed,␍
+     52     │ - → → isFetching:·shiftsFetching,␍
+     53     │ - → → refetch:·retryShifts,␍
+     54     │ - → }·=·useQuery({␍
+     55     │ - → → //·A·planner's·drafts·must·never·hydrate·an·employee's·published-only·view.␍
+     56     │ - → → queryKey:·[␍
+     57     │ - → → → ...queryKeys.shifts.list(organizationId,·dateRange),␍
+     58     │ - → → → "scheduling-viewer",␍
+     59     │ - → → → employeeId,␍
+     60     │ - → → → isManager,␍
+     61     │ - → → ],␍
+     62     │ - → → queryFn:·async·()·=>·{␍
+     63     │ - → → → const·result·=·await·getShifts({␍
+     64     │ - → → → → startDate:·dateRange.startDate,␍
+     65     │ - → → → → endDateExclusive:·dateRange.endDateExclusive,␍
+     66     │ - → → → → includeOpenShifts:·true,␍
+     67     │ - → → → });␍
+     68     │ - → → → if·(!result.success)·throw·new·Error(result.error);␍
+     69     │ - → → → return·result.data;␍
+     70     │ - → → },␍
+     71     │ - → });␍
+     72     │ - ␍
+     73     │ - → const·{␍
+     74     │ - → → data:·templatesResult,␍
+     75     │ - → → isError:·templatesFailed,␍
+     76     │ - → → isFetching:·templatesFetching,␍
+     77     │ - → → refetch:·retryTemplates,␍
+     78     │ - → }·=·useQuery({␍
+     79     │ - → → queryKey:·queryKeys.shiftTemplates.list(organizationId),␍
+     80     │ - → → queryFn:·async·()·=>·{␍
+     81     │ - → → → const·result·=·await·getShiftTemplates();␍
+     82     │ - → → → //·Template·settings·may·refuse·an·admitted·planner.·This·supporting·read␍
+     83     │ - → → → //·is·unavailable;·its·legacy·"Unauthorized"·text·is·not·a·session·verdict.␍
+     84     │ - → → → if·(!result.success)␍
+     85     │ - → → → → throw·new·Error(␍
+     86     │ - → → → → → t(␍
+     87     │ - → → → → → → "scheduling:scheduling.scheduler.templatesUnavailable",␍
+     88     │ - → → → → → → "Shift·templates·could·not·be·loaded.",␍
+     89     │ - → → → → → ),␍
+     90     │ - → → → → );␍
+     91     │ - → → → return·result.data;␍
+     92     │ - → → },␍
+     93     │ - → → enabled:·isManager,␍
+     94     │ - → });␍
+     95     │ - ␍
+     96     │ - → const·{␍
+     97     │ - → → data:·complianceSummaryResult,␍
+     98     │ - → → isError:·complianceFailed,␍
+     99     │ - → → isFetching:·complianceFetching,␍
+    100     │ - → → refetch:·retryCompliance,␍
+    101     │ - → }·=·useQuery({␍
+    102     │ - → → queryKey:·queryKeys.compliance.scheduleWarnings(organizationId,·dateRange),␍
+    103     │ - → → queryFn:·async·()·=>·{␍
+    104     │ - → → → const·result·=·await·getScheduleComplianceSummary(dateRange);␍
+    105     │ - → → → if·(!result.success)·throw·new·Error(result.error);␍
+    106     │ - → → → return·result.data;␍
+    107     │ - → → },␍
+    108     │ - → → enabled:·isManager,␍
+    109     │ - → });␍
+    110     │ - ␍
+    111     │ - → //·An·initial·failed·query·loses·its·error·status·while·refetching.·Retain␍
+    112     │ - → //·the·local·Retry·task·until·both·supporting·reads·have·settled.␍
+    113     │ - → const·[supportingDataRetryPending,·startSupportingRetry]·=·useTransition();␍
+    114     │ - → const·retrySupportingData·=·()·=>␍
+    115     │ - → → startSupportingRetry(async·()·=>·{␍
+    116     │ - → → → await·Promise.all([␍
+    117     │ - → → → → retryTemplates({·cancelRefetch:·false·}),␍
+    118     │ - → → → → retryCompliance({·cancelRefetch:·false·}),␍
+    119     │ - → → → ]);␍
+    120     │ - → → });␍
+    121     │ - ␍
+    122     │ - → const·updateShiftMutation·=·useMutation({␍
+    123     │ - → → mutationFn:·async·(data:·ShiftSchedulerUpdateInput)·=>·{␍
+    124     │ - → → → const·result·=·await·upsertShift({␍
+    125     │ - → → → → id:·data.id,␍
+    126     │ - → → → → employeeId:·data.employeeId,␍
+    127     │ - → → → → subareaId:·data.subareaId,␍
+    128     │ - → → → → date:·data.date,␍
+    129     │ - → → → → startTime:·data.startTime,␍
+    130     │ - → → → → endTime:·data.endTime,␍
+    131     │ - → → → });␍
+    132     │ - → → → if·(!result.success)·{␍
+    133     │ - → → → → //·Moving·the·shift·needs·a·skill·override·reason,·which·only·the·shift·dialog·asks·for·(#893).␍
+    134     │ - → → → → if·(result.refusal·===·SKILL_OVERRIDE_REASON_REQUIRED)·{␍
+    135     │ - → → → → → throw·new·Error(␍
+    136     │ - → → → → → → t(␍
+    137     │ - → → → → → → → "scheduling.scheduler.shiftUpdate.skillOverrideReasonRequired",␍
+    138     │ - → → → → → → → "The·employee·lacks·a·required·skill·on·this·day.·Open·the·shift·to·give·a·reason.",␍
+    139     │ - → → → → → → ),␍
+    140     │ - → → → → → );␍
+    141     │ - → → → → }␍
+    142     │ - → → → → throw·new·Error(result.error);␍
+    143     │ - → → → }␍
+    144     │ - → → → return·result.data;␍
+    145     │ - → → },␍
+    146     │ - → → onSuccess:·(result)·=>·{␍
+    147     │ - → → → if·(result.metadata.hasOverlap)·{␍
+    148     │ - → → → → toast.warning(␍
+    149     │ - → → → → → t("scheduling.scheduler.shiftUpdate.overlapWarning",·"Shift·saved·with·overlap·warning"),␍
+    150     │ - → → → → → {␍
+  271 more lines truncated
+  
+
+src\components\settings\work-balance\use-employee-work-balance.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·CancelledError,·useMutation,·useQuery,·useQueryClient·}·from·"@tanstack/react-query";␍
+      4     │ - import·{␍
+      5     │ - → type·CancelBalanceAdjustmentInput,␍
+      6     │ - → cancelBalanceAdjustmentAction,␍
+      7     │ - → getEmployeeWorkBalanceSectionAction,␍
+      8     │ - → type·RecordOvertimePayoutInput,␍
+      9     │ - → recordOvertimePayoutAction,␍
+     10     │ - → type·SetOpeningBalanceInput,␍
+     11     │ - → setOpeningBalanceAction,␍
+     12     │ - }·from·"@/app/[locale]/(app)/settings/employees/work-balance-actions";␍
+     13     │ - import·{␍
+     14     │ - → type·BalanceAdjustmentActionResult,␍
+     15     │ - → type·BalanceAdjustmentErrorCode,␍
+     16     │ - → type·BalanceAdjustmentRefusalDetails,␍
+     17     │ - → balanceAdjustmentFailureOf,␍
+     18     │ - → type·ConflictingPayout,␍
+     19     │ - }·from·"@/lib/work-balance/adjustments/types";␍
+     20     │ - ␍
+     21     │ - export·const·EMPLOYEE_WORK_BALANCE_QUERY_KEY·=·["employeeWorkBalanceSection"]·as·const;␍
+     22     │ - ␍
+     23     │ - export·class·BalanceAdjustmentActionError·extends·Error·{␍
+     24     │ - → /**·With·`conflicting_payouts`·(#997):·the·payouts·that·keep·the·opening·balance·out.·*/␍
+     25     │ - → readonly·conflictingPayouts:·ConflictingPayout[];␍
+     26     │ - → /**·With·`month_closed`·(#762):·the·closed·month·(`YYYY-MM`)·the·day·lies·in.·*/␍
+     27     │ - → readonly·closedMonth:·string·|·null;␍
+     28     │ - ␍
+     29     │ - → constructor(␍
+     30     │ - → → readonly·code:·BalanceAdjustmentErrorCode·|·null,␍
+     31     │ - → → details:·BalanceAdjustmentRefusalDetails·=·{},␍
+     32     │ - → )·{␍
+     33     │ - → → super(code·??·"failed");␍
+     34     │ - → → this.conflictingPayouts·=·details.conflictingPayouts·??·[];␍
+     35     │ - → → this.closedMonth·=·details.closedMonth·??·null;␍
+     36     │ - → }␍
+     37     │ - }␍
+     38     │ - ␍
+     39     │ - /**·A·refusal·the·user·cannot·change·by·retrying,·as·opposed·to·an·unexpected·failure.·*/␍
+     40     │ - export·function·isRefusal(error:·unknown):·error·is·BalanceAdjustmentActionError·{␍
+     41     │ - → return·(␍
+     42     │ - → → error·instanceof·BalanceAdjustmentActionError·&&·error.code·!==·null·&&·error.code·!==·"failed"␍
+     43     │ - → );␍
+     44     │ - }␍
+     45     │ - ␍
+     46     │ - async·function·unwrap<T>(action:·Promise<BalanceAdjustmentActionResult<T>>):·Promise<T>·{␍
+     47     │ - → const·result·=·await·action.catch(()·=>·null);␍
+     48     │ - → if·(!result)·throw·new·BalanceAdjustmentActionError(null);␍
+     49     │ - → if·(!result.success)·{␍
+     50     │ - → → const·failure·=·balanceAdjustmentFailureOf(result);␍
+     51     │ - → → throw·new·BalanceAdjustmentActionError(failure.code,·failure.details);␍
+     52     │ - → }␍
+     53     │ - → return·result.data;␍
+     54     │ - }␍
+     55     │ - ␍
+     56     │ - /**␍
+     57     │ - ·*·The·employee's·balance·and·balance·adjustment·history,·as·the·employee,·their␍
+     58     │ - ·*·managers·or·an·owner/admin·may·see·it·(#996).·The·default·read·shares·the␍
+     59     │ - ·*·Work·balance·section's·cache.·Dialogs·supply·their·own·opening·identity·so␍
+     60     │ - ·*·reopening·reauthorizes;·employee-prefix·invalidation·still·refreshes·all·views.␍
+     61     │ - ·*/␍
+     62     │ - export·function·useBalanceAdjustmentSection(employeeId:·string,·openingId?:·string)·{␍
+     63     │ - → return·useQuery({␍
+     64     │ - → → queryKey:·[␍
+     65     │ - → → → ...EMPLOYEE_WORK_BALANCE_QUERY_KEY,␍
+     66     │ - → → → employeeId,␍
+     67     │ - → → → ...(openingId·?·["history-opening",·openingId]·:·[]),␍
+     68     │ - → → ],␍
+     69     │ - → → queryFn:·async·({·signal·})·=>·{␍
+     70     │ - → → → const·data·=·await·unwrap(getEmployeeWorkBalanceSectionAction({·employeeId·}));␍
+     71     │ - → → → if·(signal.aborted)·throw·new·CancelledError();␍
+     72     │ - → → → return·data;␍
+     73     │ - → → },␍
+     74     │ - → → //·Every·dialog·opening·reauthorizes.·Employee-prefix·invalidation·still␍
+     75     │ - → → //·refreshes·its·history·after·a·balance·write·in·any·other·view.␍
+     76     │ - → → ...(openingId·?·{·gcTime:·0,·refetchOnMount:·"always"·as·const·}·:·{}),␍
+     77     │ - → → //·A·refusal·(not·permitted,·not·found)·does·not·change·on·retry.␍
+     78     │ - → → retry:·(failureCount,·error)·=>·!isRefusal(error)·&&·failureCount·<·3,␍
+     79     │ - → });␍
+     80     │ - }␍
+     81     │ - ␍
+     82     │ - /**·The·employee's·Work·balance·section·data·and·its·writes·(#993,·#997).·*/␍
+     83     │ - export·function·useEmployeeWorkBalance(employeeId:·string)·{␍
+     84     │ - → const·queryClient·=·useQueryClient();␍
+     85     │ - → const·queryKey·=·[...EMPLOYEE_WORK_BALANCE_QUERY_KEY,·employeeId];␍
+     86     │ - → const·section·=·useBalanceAdjustmentSection(employeeId);␍
+     87     │ - → const·onSettled·=·()·=>·queryClient.invalidateQueries({·queryKey·});␍
+     88     │ - ␍
+     89     │ - → const·recordPayout·=·useMutation({␍
+     90     │ - → → mutationFn:·(input:·Omit<RecordOvertimePayoutInput,·"employeeId">)·=>␍
+     91     │ - → → → unwrap(recordOvertimePayoutAction({·...input,·employeeId·})),␍
+     92     │ - → → onSettled,␍
+     93     │ - → });␍
+     94     │ - → const·setOpeningBalance·=·useMutation({␍
+     95     │ - → → mutationFn:·(input:·Omit<SetOpeningBalanceInput,·"employeeId">)·=>␍
+     96     │ - → → → unwrap(setOpeningBalanceAction({·...input,·employeeId·})),␍
+     97     │ - → → onSettled,␍
+     98     │ - → });␍
+     99     │ - → const·cancelAdjustment·=·useMutation({␍
+    100     │ - → → mutationFn:·(input:·Omit<CancelBalanceAdjustmentInput,·"employeeId">)·=>␍
+    101     │ - → → → unwrap(cancelBalanceAdjustmentAction({·...input,·employeeId·})),␍
+    102     │ - → → onSettled,␍
+    103     │ - → });␍
+    104     │ - ␍
+    105     │ - → return·{·section,·recordPayout,·setOpeningBalance,·cancelAdjustment·};␍
+    106     │ - }␍
+    107     │ - ␍
+    108     │ - /**␍
+    109     │ - ·*·Records·an·overtime·payout·from·outside·the·Work·balance·section,·such·as␍
+    110     │ - ·*·the·final·payout·in·the·offboarding·review·(#1002).·The·section·refreshes␍
+    111     │ - ·*·too;·`onSettled`·refreshes·the·caller's·own·view.␍
+    112     │ - ·*/␍
+    113     │ - export·function·useRecordOvertimePayout(employeeId:·string,·onSettled?:·()·=>·Promise<unknown>)·{␍
+    114     │ - → const·queryClient·=·useQueryClient();␍
+    115     │ - → return·useMutation({␍
+    116     │ - → → mutationFn:·(input:·Omit<RecordOvertimePayoutInput,·"employeeId">)·=>␍
+    117     │ - → → → unwrap(recordOvertimePayoutAction({·...input,·employeeId·})),␍
+    118     │ - → → onSettled:·()·=>␍
+    119     │ - → → → Promise.all([␍
+    120     │ - → → → → queryClient.invalidateQueries({␍
+    121     │ - → → → → → queryKey:·[...EMPLOYEE_WORK_BALANCE_QUERY_KEY,·employeeId],␍
+    122     │ - → → → → }),␍
+    123     │ - → → → → onSettled?.(),␍
+    124     │ - → → → ]),␍
+    125     │ - → });␍
+    126     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{
+          4 │ + → CancelledError,
+          5 │ + → useMutation,
+          6 │ + → useQuery,
+          7 │ + → useQueryClient,
+          8 │ + }·from·"@tanstack/react-query";
+          9 │ + import·{
+         10 │ + → type·CancelBalanceAdjustmentInput,
+         11 │ + → cancelBalanceAdjustmentAction,
+         12 │ + → getEmployeeWorkBalanceSectionAction,
+         13 │ + → type·RecordOvertimePayoutInput,
+         14 │ + → recordOvertimePayoutAction,
+         15 │ + → type·SetOpeningBalanceInput,
+         16 │ + → setOpeningBalanceAction,
+         17 │ + }·from·"@/app/[locale]/(app)/settings/employees/work-balance-actions";
+         18 │ + import·{
+         19 │ + → type·BalanceAdjustmentActionResult,
+         20 │ + → type·BalanceAdjustmentErrorCode,
+         21 │ + → type·BalanceAdjustmentRefusalDetails,
+         22 │ + → balanceAdjustmentFailureOf,
+         23 │ + → type·ConflictingPayout,
+         24 │ + }·from·"@/lib/work-balance/adjustments/types";
+  124 more lines truncated
+  
+
+src\components\work-balance\balance-adjustment-history-button.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·userEvent·from·"@testing-library/user-event";␍
+      5     │ - import·{·TolgeeProvider·}·from·"@tolgee/react";␍
+      6     │ - import·{·NextIntlClientProvider·}·from·"next-intl";␍
+      7     │ - import·{·Activity,·type·ReactNode·}·from·"react";␍
+      8     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      9     │ - import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+     10     │ - import·{·useEmployeeWorkBalance·}·from·"@/components/settings/work-balance/use-employee-work-balance";␍
+     11     │ - import·{·createTestTolgee·}·from·"@/test/render-with-translations";␍
+     12     │ - import·{·BalanceAdjustmentHistoryButton·}·from·"./balance-adjustment-history-button";␍
+     13     │ - ␍
+     14     │ - const·transport·=·vi.hoisted(()·=>·({·read:·vi.fn(),·record:·vi.fn()·}));␍
+     15     │ - vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions",·()·=>·({␍
+     16     │ - → getEmployeeWorkBalanceSectionAction:·transport.read,␍
+     17     │ - → cancelBalanceAdjustmentAction:·vi.fn(),␍
+     18     │ - → recordOvertimePayoutAction:·transport.record,␍
+     19     │ - → setOpeningBalanceAction:·vi.fn(),␍
+     20     │ - }));␍
+     21     │ - ␍
+     22     │ - const·clients:·QueryClient[]·=·[];␍
+     23     │ - const·emptySection·=·{␍
+     24     │ - → success:·true,␍
+     25     │ - → data:·{␍
+     26     │ - → → balance:·null,␍
+     27     │ - → → adjustments:·[],␍
+     28     │ - → → today:·"2026-11-17",␍
+     29     │ - → → timezone:·"Europe/Berlin",␍
+     30     │ - → → canManage:·false,␍
+     31     │ - → },␍
+     32     │ - };␍
+     33     │ - ␍
+     34     │ - beforeEach(()·=>·{␍
+     35     │ - → transport.read.mockReset();␍
+     36     │ - → transport.record.mockReset();␍
+     37     │ - });␍
+     38     │ - afterEach(()·=>·{␍
+     39     │ - → cleanup();␍
+     40     │ - → for·(const·client·of·clients.splice(0))·client.clear();␍
+     41     │ - });␍
+     42     │ - ␍
+     43     │ - function·mountHistory(extra?:·ReactNode)·{␍
+     44     │ - → const·client·=·new·QueryClient({␍
+     45     │ - → → defaultOptions:·{␍
+     46     │ - → → → queries:·{·gcTime:·0,·staleTime:·60_000,·refetchOnWindowFocus:·false,·retryDelay:·0·},␍
+     47     │ - → → },␍
+     48     │ - → });␍
+     49     │ - → clients.push(client);␍
+     50     │ - → const·tolgee·=·createTestTolgee();␍
+     51     │ - → const·tree·=·(mode:·"visible"·|·"hidden"·=·"visible")·=>·(␍
+     52     │ - → → <NextIntlClientProvider·locale="en"·messages={{}}·timeZone="Europe/Berlin">␍
+     53     │ - → → → <TolgeeProvider·tolgee={tolgee}>␍
+     54     │ - → → → → <UserPreferencesProvider·timezone="Europe/Berlin">␍
+     55     │ - → → → → → <QueryClientProvider·client={client}>␍
+     56     │ - → → → → → → {extra}␍
+     57     │ - → → → → → → <Activity·mode={mode}>␍
+     58     │ - → → → → → → → <BalanceAdjustmentHistoryButton·employeeId="employee-a"·/>␍
+     59     │ - → → → → → → </Activity>␍
+     60     │ - → → → → → </QueryClientProvider>␍
+     61     │ - → → → → </UserPreferencesProvider>␍
+     62     │ - → → → </TolgeeProvider>␍
+     63     │ - → → </NextIntlClientProvider>␍
+     64     │ - → );␍
+     65     │ - → const·view·=·render(tree());␍
+     66     │ - → return·{·client,·view,·tree·};␍
+     67     │ - }␍
+     68     │ - async·function·openHistory()·{␍
+     69     │ - → const·mounted·=·mountHistory();␍
+     70     │ - → await·userEvent.setup().click(screen.getByRole("button",·{·name:·"Balance·adjustments"·}));␍
+     71     │ - → return·mounted;␍
+     72     │ - }␍
+     73     │ - function·records(reason:·string)·{␍
+     74     │ - → return·{␍
+     75     │ - → → ...emptySection,␍
+     76     │ - → → data:·{␍
+     77     │ - → → → ...emptySection.data,␍
+     78     │ - → → → adjustments:·[␍
+     79     │ - → → → → {␍
+     80     │ - → → → → → id:·reason,␍
+     81     │ - → → → → → kind:·"opening_balance",␍
+     82     │ - → → → → → day:·"2026-11-01",␍
+     83     │ - → → → → → minutes:·120,␍
+     84     │ - → → → → → reason,␍
+     85     │ - → → → → → recordedAt:·"2026-11-01T08:00:00Z",␍
+     86     │ - → → → → → recordedBy:·{·userId:·"actor-a",·name:·"Synthetic·Administrator"·},␍
+     87     │ - → → → → → cancellation:·null,␍
+     88     │ - → → → → },␍
+     89     │ - → → → ],␍
+     90     │ - → → },␍
+     91     │ - → };␍
+     92     │ - }␍
+     93     │ - ␍
+     94     │ - it("retries·a·failed·history·read·in·the·same·open·dialog·and·shows·the·recovered·records",·async·()·=>·{␍
+     95     │ - → transport.read.mockRejectedValue(new·Error("Synthetic·transport·failure"));␍
+     96     │ - → await·openHistory();␍
+     97     │ - → expect(await·screen.findByRole("alert")).toBeTruthy();␍
+     98     │ - → expect(screen.queryByText("No·balance·adjustments·yet.")).toBeNull();␍
+     99     │ - → const·retry·=·screen.getByRole("button",·{·name:·"Retry"·});␍
+    100     │ - → const·previousCalls·=·transport.read.mock.calls.length;␍
+    101     │ - → let·finish:·(value:·unknown)·=>·void·=·()·=>·{};␍
+    102     │ - → transport.read.mockImplementation(()·=>·new·Promise((resolve)·=>·(finish·=·resolve)));␍
+    103     │ - → await·userEvent.setup().click(retry);␍
+    104     │ - → try·{␍
+    105     │ - → → await·waitFor(()·=>·expect(transport.read).toHaveBeenCalledTimes(previousCalls·+·1));␍
+    106     │ - → → expect(screen.getByLabelText("Loading·balance·adjustments")).toBeTruthy();␍
+    107     │ - → → expect(screen.getByRole("dialog")).toBeTruthy();␍
+    108     │ - → }·finally·{␍
+    109     │ - → → await·act(async·()·=>␍
+    110     │ - → → → finish({␍
+    111     │ - → → → → ...emptySection,␍
+    112     │ - → → → → data:·{␍
+    113     │ - → → → → → ...emptySection.data,␍
+    114     │ - → → → → → adjustments:·[␍
+    115     │ - → → → → → → {␍
+    116     │ - → → → → → → → id:·"adjustment-a",␍
+    117     │ - → → → → → → → kind:·"opening_balance",␍
+    118     │ - → → → → → → → day:·"2026-11-01",␍
+    119     │ - → → → → → → → minutes:·120,␍
+    120     │ - → → → → → → → reason:·"Carried·balance·correction",␍
+    121     │ - → → → → → → → recordedAt:·"2026-11-01T08:00:00Z",␍
+    122     │ - → → → → → → → recordedBy:·{·userId:·"actor-a",·name:·"Synthetic·Administrator"·},␍
+    123     │ - → → → → → → → cancellation:·null,␍
+    124     │ - → → → → → → },␍
+    125     │ - → → → → → ],␍
+    126     │ - → → → → },␍
+    127     │ - → → → }),␍
+    128     │ - → → );␍
+    129     │ - → }␍
+    130     │ - → expect(await·screen.findByText("Carried·balance·correction")).toBeTruthy();␍
+    131     │ - → expect(screen.queryByRole("alert")).toBeNull();␍
+    132     │ - → expect(screen.getByRole("dialog")).toBeTruthy();␍
+    133     │ - });␍
+    134     │ - ␍
+    135     │ - it("distinguishes·an·empty·successful·history·and·returns·focus·on·Escape",·async·()·=>·{␍
+    136     │ - → transport.read.mockResolvedValue(emptySection);␍
+    137     │ - → await·openHistory();␍
+    138     │ - → expect(await·screen.findByText("No·balance·adjustments·yet.")).toBeTruthy();␍
+    139     │ - → expect(screen.queryByRole("alert")).toBeNull();␍
+    140     │ - → expect(screen.queryByRole("button",·{·name:·"Retry"·})).toBeNull();␍
+    141     │ - → await·userEvent.setup().keyboard("{Escape}");␍
+    142     │ - → await·waitFor(()·=>·expect(screen.queryByRole("dialog")).toBeNull());␍
+    143     │ - → expect(document.activeElement).toBe(screen.getByRole("button",·{·name:·"Balance·adjustments"·}));␍
+    144     │ - });␍
+    145     │ - ␍
+    146     │ - it("retains·the·canonical·access·refusal·without·offering·an·ineffective·read·Retry",·async·()·=>·{␍
+    147     │ - → transport.read.mockResolvedValue({␍
+    148     │ - → → success:·false,␍
+    149     │ - → → code:·"AuthorizationError",␍
+    150     │ - → → error:·"Private·refusal·detail",␍
+  445 more lines truncated
+  
+
+src\components\work-balance\balance-adjustment-history-button.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconHistory,·IconLoader2·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·type·ReactNode,·useId,·useState·}·from·"react";␍
+      6     │ - import·{␍
+      7     │ - → isRefusal,␍
+      8     │ - → useBalanceAdjustmentSection,␍
+      9     │ - }·from·"@/components/settings/work-balance/use-employee-work-balance";␍
+     10     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     11     │ - import·{␍
+     12     │ - → Dialog,␍
+     13     │ - → DialogContent,␍
+     14     │ - → DialogDescription,␍
+     15     │ - → DialogHeader,␍
+     16     │ - → DialogTitle,␍
+     17     │ - → DialogTrigger,␍
+     18     │ - }·from·"@/components/ui/dialog";␍
+     19     │ - import·{·BalanceAdjustmentHistory·}·from·"./balance-adjustment-history";␍
+     20     │ - ␍
+     21     │ - /**␍
+     22     │ - ·*·Opens·the·history·of·an·employee's·balance·adjustments·from·a·work·balance␍
+     23     │ - ·*·card·(#996):·the·employee's·own,·or·one·they·manage.·Loads·it·only·when␍
+     24     │ - ·*·opened;·the·server·decides·who·may·see·it.␍
+     25     │ - ·*/␍
+     26     │ - export·function·BalanceAdjustmentHistoryButton({·employeeId·}:·{·employeeId:·string·})·{␍
+     27     │ - → const·{·t·}·=·useTranslate();␍
+     28     │ - → return·(␍
+     29     │ - → → <BalanceAdjustmentHistoryDialog␍
+     30     │ - → → → employeeId={employeeId}␍
+     31     │ - → → → trigger={␍
+     32     │ - → → → → <Button·type="button"·variant="link"·size="sm"·className="h-auto·self-start·px-0">␍
+     33     │ - → → → → → <IconHistory·className="size-4"·aria-hidden="true"·/>␍
+     34     │ - → → → → → {t("workBalance.adjustments.open",·"Balance·adjustments")}␍
+     35     │ - → → → → </Button>␍
+     36     │ - → → → }␍
+     37     │ - → → />␍
+     38     │ - → );␍
+     39     │ - }␍
+     40     │ - ␍
+     41     │ - /**␍
+     42     │ - ·*·The·read-only·history·dialog·behind·any·trigger,·such·as·the·/team·list's␍
+     43     │ - ·*·balance·badge·(#996).·`trigger`·must·be·a·single·focusable·element.␍
+     44     │ - ·*/␍
+     45     │ - export·function·BalanceAdjustmentHistoryDialog({␍
+     46     │ - → employeeId,␍
+     47     │ - → trigger,␍
+     48     │ - }:·{␍
+     49     │ - → employeeId:·string;␍
+     50     │ - → trigger:·ReactNode;␍
+     51     │ - })·{␍
+     52     │ - → const·{·t·}·=·useTranslate();␍
+     53     │ - → const·[open,·setOpen]·=·useState(false);␍
+     54     │ - ␍
+     55     │ - → return·(␍
+     56     │ - → → <Dialog·open={open}·onOpenChange={setOpen}>␍
+     57     │ - → → → <DialogTrigger·asChild>{trigger}</DialogTrigger>␍
+     58     │ - → → → <DialogContent·className="max-h-[85vh]·overflow-y-auto·sm:max-w-xl">␍
+     59     │ - → → → → <DialogHeader>␍
+     60     │ - → → → → → <DialogTitle>{t("workBalance.adjustments.title",·"Balance·adjustments")}</DialogTitle>␍
+     61     │ - → → → → → <DialogDescription>␍
+     62     │ - → → → → → → {t(␍
+     63     │ - → → → → → → → "workBalance.adjustments.description",␍
+     64     │ - → → → → → → → "Overtime·payouts·and·opening·balances·on·this·work·balance.·A·mistaken·one·is·cancelled,·never·deleted,·so·cancelled·ones·stay·listed.",␍
+     65     │ - → → → → → → )}␍
+     66     │ - → → → → → </DialogDescription>␍
+     67     │ - → → → → </DialogHeader>␍
+     68     │ - → → → → {open·?·<HistoryBody·employeeId={employeeId}·/>·:·null}␍
+     69     │ - → → → </DialogContent>␍
+     70     │ - → → </Dialog>␍
+     71     │ - → );␍
+     72     │ - }␍
+     73     │ - ␍
+     74     │ - function·HistoryBody({·employeeId·}:·{·employeeId:·string·})·{␍
+     75     │ - → const·{·t·}·=·useTranslate();␍
+     76     │ - → const·openingId·=·useId();␍
+     77     │ - → const·section·=·useBalanceAdjustmentSection(employeeId,·openingId);␍
+     78     │ - ␍
+     79     │ - → if·(section.isLoading·||·section.isFetching)·{␍
+     80     │ - → → return·(␍
+     81     │ - → → → <output␍
+     82     │ - → → → → className="flex·items-center·justify-center·p-6"␍
+     83     │ - → → → → aria-label={t("workBalance.adjustments.loading",·"Loading·balance·adjustments")}␍
+     84     │ - → → → >␍
+     85     │ - → → → → <IconLoader2·className="size-6·animate-spin·text-muted-foreground"·aria-hidden="true"·/>␍
+     86     │ - → → → </output>␍
+     87     │ - → → );␍
+     88     │ - → }␍
+     89     │ - → if·(section.isError·||·!section.data)·{␍
+     90     │ - → → return·(␍
+     91     │ - → → → <div·className="space-y-3">␍
+     92     │ - → → → → <p·role="alert"·className="text-destructive·text-sm">␍
+     93     │ - → → → → → {isRefusal(section.error)·&&·section.error.code·===·"not_permitted"␍
+     94     │ - → → → → → → ?·t(␍
+     95     │ - → → → → → → → → "workBalance.adjustments.notPermitted",␍
+     96     │ - → → → → → → → → "You·can·see·the·balance·adjustments·of·yourself·and·of·employees·you·manage.",␍
+     97     │ - → → → → → → → )␍
+     98     │ - → → → → → → :·t(␍
+     99     │ - → → → → → → → → "workBalance.adjustments.loadFailed",␍
+    100     │ - → → → → → → → → "The·balance·adjustments·could·not·be·loaded.",␍
+    101     │ - → → → → → → → )}␍
+    102     │ - → → → → </p>␍
+    103     │ - → → → → {!isRefusal(section.error)·&&·(␍
+    104     │ - → → → → → <Button␍
+    105     │ - → → → → → → variant="outline"␍
+    106     │ - → → → → → → disabled={section.isFetching}␍
+    107     │ - → → → → → → onClick={()·=>·void·section.refetch({·cancelRefetch:·false·})}␍
+    108     │ - → → → → → >␍
+    109     │ - → → → → → → {section.isFetching·?·t("common.retrying",·"Retrying…")·:·t("common.retry",·"Retry")}␍
+    110     │ - → → → → → </Button>␍
+    111     │ - → → → → )}␍
+    112     │ - → → → </div>␍
+    113     │ - → → );␍
+    114     │ - → }␍
+    115     │ - → return·<BalanceAdjustmentHistory·adjustments={section.data.adjustments}·/>;␍
+    116     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{·IconHistory,·IconLoader2·}·from·"@tabler/icons-react";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·type·ReactNode,·useId,·useState·}·from·"react";
+          6 │ + import·{
+          7 │ + → isRefusal,
+          8 │ + → useBalanceAdjustmentSection,
+          9 │ + }·from·"@/components/settings/work-balance/use-employee-work-balance";
+         10 │ + import·{·Button·}·from·"@/components/ui/button";
+         11 │ + import·{
+         12 │ + → Dialog,
+         13 │ + → DialogContent,
+         14 │ + → DialogDescription,
+         15 │ + → DialogHeader,
+         16 │ + → DialogTitle,
+         17 │ + → DialogTrigger,
+         18 │ + }·from·"@/components/ui/dialog";
+         19 │ + import·{·BalanceAdjustmentHistory·}·from·"./balance-adjustment-history";
+         20 │ + 
+         21 │ + /**
+         22 │ + ·*·Opens·the·history·of·an·employee's·balance·adjustments·from·a·work·balance
+         23 │ + ·*·card·(#996):·the·employee's·own,·or·one·they·manage.·Loads·it·only·when
+         24 │ + ·*·opened;·the·server·decides·who·may·see·it.
+         25 │ + ·*/
+         26 │ + export·function·BalanceAdjustmentHistoryButton({
+         27 │ + → employeeId,
+         28 │ + }:·{
+         29 │ + → employeeId:·string;
+         30 │ + })·{
+         31 │ + → const·{·t·}·=·useTranslate();
+         32 │ + → return·(
+         33 │ + → → <BalanceAdjustmentHistoryDialog
+         34 │ + → → → employeeId={employeeId}
+  102 more lines truncated
+  
+
+Checked 8 files in 11ms. No fixes applied.
+Found 8 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

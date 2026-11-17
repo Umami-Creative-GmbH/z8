@@ -1,0 +1,123 @@
+{
+  "schema": "1738 manager independent STOP explicit safe allowlist v1",
+  "head": "a85fec346084fa576b77d34f7f654928d2d957b3",
+  "count": 23,
+  "sealSha256": "bb2d4f9c27d0c4502b2280c4df0e70b7ed3fcfb47a58b76865b6acbbc1f03e17",
+  "files": [
+    {
+      "path": "STOP.md",
+      "bytes": 5493,
+      "sha256": "fd9dcb1fd4d33fe6135f79b7942479b37b28825db62a8d72e03cb5dbdce94ec9"
+    },
+    {
+      "path": "acceptance-limits-01.json",
+      "bytes": 1342,
+      "sha256": "02cb315cb05de5870d8c300f93827d3264e33637441a958b12d2d61ad2304a17"
+    },
+    {
+      "path": "blocker-source-pins-01.json",
+      "bytes": 2486,
+      "sha256": "54874a3b3155c6bf5374e0a18453ff23925f1b4ff90d63f1dc4414bfab9a191a"
+    },
+    {
+      "path": "bridge-provenance-01.json",
+      "bytes": 217,
+      "sha256": "134c68e01abc51c881c63cf6ecad2fb45e82f3ef3bb3e74d5d17bc65c0420d5b"
+    },
+    {
+      "path": "browser-close-01.json",
+      "bytes": 245,
+      "sha256": "12d436f3c19032220f8a8810fa72ce848bed5bdbf3162f6b7d837732ce83007d"
+    },
+    {
+      "path": "browser-tree-cleanup-01.json",
+      "bytes": 132,
+      "sha256": "311721ef6a20235e8cfadbbc6844b681da94b0c3d28dcfed42a86eb0701c6853"
+    },
+    {
+      "path": "cleanup-final-01.json",
+      "bytes": 557,
+      "sha256": "1598eff7e68d6ea7c3c4eb0fabeffe6cad19af7281d63fff12d2d9d7e7d20946"
+    },
+    {
+      "path": "cleanup-processes-01.json",
+      "bytes": 309,
+      "sha256": "26154186064c4638b2afa5517c039380fa701c18599d374829da35c0658dd20a"
+    },
+    {
+      "path": "commands-01.txt",
+      "bytes": 2992,
+      "sha256": "d09166449a96b05e9398e62c93b150719c18590b384f0172c4c9ef0793e1e700"
+    },
+    {
+      "path": "counts-01.json",
+      "bytes": 1212,
+      "sha256": "1be5b7ed41552e0eba80a60de99d5d024e90b18268ad7f30c9ac096cd25789f0"
+    },
+    {
+      "path": "findings-01.json",
+      "bytes": 2127,
+      "sha256": "bfdb4f37cf341929ed7ef7388b602d7395122044903ffbe46c898c29e74096b9"
+    },
+    {
+      "path": "harness-source-pins-01.json",
+      "bytes": 2620,
+      "sha256": "4402675fb8a40dd9e096dd02f5a585eae6be9c05c7ef8e78379de510573d613b"
+    },
+    {
+      "path": "helper-provenance-01.json",
+      "bytes": 4556,
+      "sha256": "e739efb7eaec141b93cc56caf4d823cdcfcbd6a1c5ef3585d37e6094141675f8"
+    },
+    {
+      "path": "inherited-checks-01.json",
+      "bytes": 930,
+      "sha256": "ef6141fe010883832ecbc5042e7d8738b6a6179e3f83291a321be75bf1fde41f"
+    },
+    {
+      "path": "manager-login-safe-01.json",
+      "bytes": 631,
+      "sha256": "ea6aeae6b1e394d148d289f9bbaf7417e70c10524a605a2b806c4c79d04151ec"
+    },
+    {
+      "path": "manager-priority-01.json",
+      "bytes": 4591,
+      "sha256": "9dbc52732cdbb0e99c69fd1e2b58496c85614e1af7590948efaae7e0712db453"
+    },
+    {
+      "path": "manager-priority-02.json",
+      "bytes": 4767,
+      "sha256": "e29dea72e9226186f415d0fae28b8665ffd472d307006538342629e0ee94e448"
+    },
+    {
+      "path": "pins-initial-01.json",
+      "bytes": 8682,
+      "sha256": "bd1c5614869f65f11225fa051911be20d189edc723bfa7998e41b45c454d8275"
+    },
+    {
+      "path": "raw-to-safe-provenance-01.json",
+      "bytes": 2455,
+      "sha256": "ce520ff7926b547157f40bb68a8e65cbeb83c59e0fd90387bb6f2813fc6728a2"
+    },
+    {
+      "path": "readback-verdict-01.json",
+      "bytes": 308,
+      "sha256": "dbf3d152f63e0168ce966488c7de0a4764e46d05e3f7d9d45083e536bd45d14a"
+    },
+    {
+      "path": "scheduling-readback-01.json",
+      "bytes": 5364,
+      "sha256": "b976c8c0cb4babe9563d5ca814daad9c8c61fa0449c9fd48f4dc3582b0d1b4e3"
+    },
+    {
+      "path": "scheduling-seed-01.json",
+      "bytes": 5360,
+      "sha256": "cf799320a3da9913338750c786349c6a5c179ed2258579fa069270138d91c014"
+    },
+    {
+      "path": "source-preservation-final-01.json",
+      "bytes": 2003,
+      "sha256": "b644c4d525df9cf0f37ffa6d602d8f69d2702edb15482ef08e1602752a895ccc"
+    }
+  ]
+}

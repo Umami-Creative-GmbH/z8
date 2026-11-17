@@ -1,0 +1,81 @@
+{
+  "sourceOnly": true,
+  "files": [
+    {
+      "path": "browser-controller-01.private.mjs",
+      "bytes": 9095,
+      "sha256": "0793380af5791d2372c2f3652a1edace19874a76fee55c5daf29e6e139a8f24b"
+    },
+    {
+      "path": "cleanup-processes-01.ps1",
+      "bytes": 4461,
+      "sha256": "507d27db77e1eee0ee295ab41de2936d8efaf5074f2a4891253e9ec1d8cf1099"
+    },
+    {
+      "path": "dev-01-private.mjs",
+      "bytes": 3695,
+      "sha256": "61541b03fbb088c66ee57bfbc35a372ec6c90d02c0434081e7188eb0d3e9c1cb"
+    },
+    {
+      "path": "fixture-helper-01.mjs",
+      "bytes": 28298,
+      "sha256": "ef5d968a8c756c15f791bc31573902c1a69a54ecec84947eaef6251204b76218"
+    },
+    {
+      "path": "manager-priority-01.mjs",
+      "bytes": 3161,
+      "sha256": "2fd0355449caab3cbf253ba85b7dcb02914f41c3193df76c0429abb95e3a7473"
+    },
+    {
+      "path": "manager-priority-02.mjs",
+      "bytes": 3161,
+      "sha256": "6f68625fe8369b9cf31f944d5f12e4b66c0da3e747a1c39bd530b682a4188e63"
+    },
+    {
+      "path": "prepare-01.mjs",
+      "bytes": 5290,
+      "sha256": "e1239930e214ad512133a32076a523d2bcf9bd044a41e54bc9990650390fbe1a"
+    },
+    {
+      "path": "preservation-final-01.mjs",
+      "bytes": 2888,
+      "sha256": "9dcbba937ecf753b175d8db273de0408412744927de0714497dd2eb576fc40a3"
+    },
+    {
+      "path": "rpc-03.mjs",
+      "bytes": 1041,
+      "sha256": "f16e3fab0a840852b9d7e3cae624bc009db98dbaf5c57c66abf93594c20068dd"
+    },
+    {
+      "path": "run-fixture-tool-03.mjs",
+      "bytes": 2232,
+      "sha256": "6e59bf5f273d3d1c653e1254762ed7a7cbcc47295231087b1e8e3766a49cca0b"
+    },
+    {
+      "path": "scheduling-fixture-bridge-03.ts",
+      "bytes": 4558,
+      "sha256": "b488be70a227f1e893c60b1a8e37b99b808fb8898dd06200c8a7d4aed0cf0b93"
+    },
+    {
+      "path": "seal-01.mjs",
+      "bytes": 4211,
+      "sha256": "b18477dc1b43dee64ab57ed9b926846fc352bc4e4606187888c62c246ea2b60a"
+    },
+    {
+      "path": "start-browser-01.mjs",
+      "bytes": 828,
+      "sha256": "33696026fb335ff32d9f911c84fcfc0fce5844087940281a9090ae50d4d8dba1"
+    },
+    {
+      "path": "summarize-01.mjs",
+      "bytes": 8459,
+      "sha256": "04eb8dd765485e90d6d758b3d21ae9322162985af6a9bb264d09799e61d12602"
+    },
+    {
+      "path": "verify-cleanup-01.ps1",
+      "bytes": 2429,
+      "sha256": "2b9d72097bd3eb34d6bc3ca82a7c5d300d4526b601d7f203a9658e3e64935160"
+    }
+  ],
+  "policy": "Inspected previous source copies; only own namespace/label/bridge adapted. No previous generated inputs/auth/browser state reused. Canonical initial bootstrap then initial domain-only seed/readback; no product source changes."
+}

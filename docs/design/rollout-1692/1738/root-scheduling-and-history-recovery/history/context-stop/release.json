@@ -1,0 +1,25 @@
+{
+  "recorded": "2026-11-17T05:07:55.313Z",
+  "head": "31625ce088b22f27fbff338b09867d4a7883d35d",
+  "tree": "0c56dd5ee4a7dbc3c1cb21331337bf00e59d468b",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "provisional": true,
+  "pushed": false,
+  "release": "RELEASE ALL checkout/index/integration-Git/package/runtime/process ownership",
+  "owned": {
+    "temporaryBridges": 0,
+    "backgroundProcesses": 0,
+    "servers": 0,
+    "listeners": 0,
+    "browsers": 0,
+    "nativeSessions": 0,
+    "containers": 0,
+    "fixtures": 0,
+    "authStates": 0,
+    "peerResourcesTouched": 0
+  },
+  "zeroOwned": true,
+  "processEvidence": "Only synchronous git/node/pnpm unit commands launched. All exec calls returned terminal exit codes; no ongoing sessions, detached helpers, services, fixture or browser created. No peer resource enumeration or cleanup performed.",
+  "retainedArtifacts": "Only ignored audit namespace; private predicted index is inert evidence. Product/index clean at provisional merge head."
+}

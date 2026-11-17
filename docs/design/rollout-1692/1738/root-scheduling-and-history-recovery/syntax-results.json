@@ -1,0 +1,115 @@
+{
+  "scope": "Only allowlisted archived scripts and the new native verifier; archived code never executed",
+  "checks": [
+    {
+      "path": "schedule/coverage-stop/attempt03-04-harness.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "schedule/coverage-stop/premerge-shift-scheduler.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "schedule/coverage-stop/public-probe.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "schedule/layering-stop/pending-create-01.mjs",
+      "kind": "Node syntax only",
+      "status": "PASS",
+      "exit": 0
+    },
+    {
+      "path": "schedule/layering-stop/public-assembly-06.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "schedule/layering-stop/runtime-recovery-03.mjs",
+      "kind": "Node syntax only",
+      "status": "PASS",
+      "exit": 0
+    },
+    {
+      "path": "schedule/layering-stop/stop-publish-occlusion-01.mjs",
+      "kind": "Node syntax only",
+      "status": "PASS",
+      "exit": 0
+    },
+    {
+      "path": "history/context-stop/context-retry.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "history/cache-stop/directory-public.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "history/cache-stop/history-public.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "joint/current/direct-history-public.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "joint/current/directory-public.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "joint/current/history-public.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "joint/current/supporting-public.test.tsx",
+      "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "path": "static/supporting-retry/combined-units-final-02.ps1",
+      "kind": "PowerShell AST syntax only",
+      "status": "PASS",
+      "exit": 0,
+      "diagnostics": {
+        "kind": "PowerShell AST syntax only; no script execution",
+        "path": "static/supporting-retry/combined-units-final-02.ps1",
+        "status": "PASS",
+        "errors": []
+      },
+      "qualification": "Prior private -File parser launcher was refused by execution policy; inline native ParseFile succeeded without executing the archived script or changing execution policy."
+    },
+    {
+      "path": "verify-evidence.mjs",
+      "kind": "new verifier Node syntax only",
+      "status": "PASS",
+      "exit": 0
+    }
+  ],
+  "shell": {
+    "supplied": 0,
+    "status": "not applicable; no shell scripts in exact intake"
+  },
+  "nativeTypeScriptParser": "installed 5.9.3; installed 7.0.2 exports version only and was not used as an AST parser",
+  "historicalInvalid": [],
+  "passed": 16
+}

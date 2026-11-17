@@ -1,0 +1,1245 @@
+{
+  "schema": 1,
+  "status": "PASS for bounded native publication validation; readiness remains root-owned",
+  "sourceCommit": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+  "verifiedCommit1738": null,
+  "verifiedCommit1739": null,
+  "publicationFileCount": 445,
+  "copyCount": 432,
+  "allCopiedBytesExact": true,
+  "originalSafeInputsUnchanged": 432,
+  "allWorkingSourceConfigPinsUnchanged": 23,
+  "counts": {
+    "payloads": 376,
+    "originalIndexes": 12,
+    "selectedStaticIntake": 41,
+    "derivedSafeSeals": 2,
+    "approvedJointScalarSeal": 1
+  },
+  "json": {
+    "payloadJson": 325,
+    "allParsed": true,
+    "nonJsonWithJsonExtension": [],
+    "historicalTextOutputs": [
+      {
+        "path": "schedule/publication-sql-stop/commands-01.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "schedule/range-pointer-stop/commands-01.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "schedule/manager-stop/commands-01.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "schedule/manager-repeat-stop/commands-01.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "schedule/manager-pass/commands-01.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "schedule/isolated-final/commands-01.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "schedule/isolated-final/failed-attempts.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/context-stop/context-retry.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/context-stop/predicted-resolved-tree.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/context-stop/incoming-delta.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/pnpm-version.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/public-01-sandbox-lock-failure.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/public-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/public-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/public-03.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/public-04.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/public-cache-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/public-cache-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "history/cache-stop/cache-repro-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "joint/current/fixture-cleanup-safe.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "joint/current/fixture-prepare-safe.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "joint/current/pnpm-version-sandbox.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "joint/current/pnpm-version.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "joint/current/public-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-context/types-final-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-context/doctor-final-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-context/explicit-final-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-context/lint-final-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-context/ordinary-final-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-opening/types-final-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-opening/doctor-final-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-opening/explicit-final-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-opening/lint-final-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/history-opening/ordinary-final-01.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/supporting-retry/types-final-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/supporting-retry/doctor-combined-final-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/supporting-retry/explicit-combined-final-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/supporting-retry/lint-combined-final-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "static/supporting-retry/ordinary-combined-final-02.log",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      },
+      {
+        "path": "intake-audit/intake-note.txt",
+        "kind": "historical text / command stdout; not asserted to be JSON"
+      }
+    ],
+    "qualification": "All .json inputs parse as actual JSON; .log/.txt remain original historical text/stdout, not wrapped or relabeled as JSON."
+  },
+  "png": {
+    "count": 36,
+    "allPixelsInflatedAndUnfiltered": true,
+    "allChunkCrcChecked": true,
+    "files": [
+      {
+        "path": "schedule/layering-stop/stop-publish-hit-wrong-edit-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 33,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "7f5602d395274f8ed4434f3e2488a1432e8d9216fba4009b80569fba6d6d55f8",
+        "filters": [
+          0,
+          49,
+          501,
+          7,
+          543
+        ],
+        "rawSha256": "b474fcc7e102ad46317269d5ed00626da2868ce2590761739804b122da6ab031"
+      },
+      {
+        "path": "schedule/layering-stop/stop-publish-list-collapsed-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 25,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "4453497e1f38a06365ca45e2aaa7985df022ca079e5aaadc334d04567acf6128",
+        "filters": [
+          0,
+          43,
+          751,
+          1,
+          305
+        ],
+        "rawSha256": "39a9cc98b52e380261a5a866610b9bf6c43ad491b9652aff3c1a7711da4ce78c"
+      },
+      {
+        "path": "schedule/layering-stop/stop-publish-list-expanded-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 25,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "b299e036ac55659d9feae6a8f75b7fe2ae02871777a485e623e54cce9e028be9",
+        "filters": [
+          0,
+          52,
+          763,
+          2,
+          283
+        ],
+        "rawSha256": "c105b76a16fa9c3938b5e0cee4f0ede10da87ee43ad751602150896617dbcfe4"
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-publish-expanded-1600-03.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 25,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "50a772d02b945843d4998eb25214555be3e6248a58d540f287ea6431ea2ae1da",
+        "filters": [
+          0,
+          51,
+          772,
+          2,
+          275
+        ],
+        "rawSha256": "55a41620bb7084c78b52381d58f648136d8104e7e51bcbd1696e3d72fa00faee"
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-publish-collapsed-1600-03.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 25,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "c642eda8ccca9cb2a5e1479f000b834ad61fc282a0cb8c521c0fb23a843ddc70",
+        "filters": [
+          0,
+          43,
+          740,
+          2,
+          315
+        ],
+        "rawSha256": "64172d8efab058b1ce29ed0877a6407496cd64477886cc791c0353a0999ce30f"
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-publish-expanded-390-03.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 14,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "6d5f0c970d57f0444635037a81affdb51232a401481d51227a2b778972a294e7",
+        "filters": [
+          0,
+          68,
+          603,
+          2,
+          171
+        ],
+        "rawSha256": "2edf409fc2d939b888408393c0eccd06c2792a1d32fcf0236482f0eaefda0cd1"
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-publish-expanded-2400-03.png",
+        "width": 2400,
+        "height": 1400,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 26,
+        "crc": "all chunks checked",
+        "pixelBytes": 10080000,
+        "pixelSha256": "e24df5cbff76e303060b75f0e09416136f3db46687f48425cc044fab2984f089",
+        "filters": [
+          0,
+          39,
+          1076,
+          17,
+          268
+        ],
+        "rawSha256": "73623f46ab47d39850fbf9d9a3d73fd37e2e258170fedd70a8a7013136d40abd"
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-dialog-above-publish-1600-03.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 34,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "574e88dccb3b4a5939e891c0f35f67a121642181a31142a6a7a163ad02285c47",
+        "filters": [
+          0,
+          41,
+          493,
+          5,
+          561
+        ],
+        "rawSha256": "57c55d34d7f7063ddc4b153ebb40e1ae7f7b314d2fe06a7d1325ceb747ea885f"
+      },
+      {
+        "path": "schedule/range-pointer-stop/publish-before-1600-02.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 27,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "fde91c751d290e8b00e69351a45f8acefbd3f1a51b49c865e5c6b93f87b801b3",
+        "filters": [
+          0,
+          71,
+          733,
+          4,
+          292
+        ],
+        "rawSha256": "2866e8d5ef53d3e312aa86eb2b740b19ffd6c52abf55e4a86dd651502e084ff4"
+      },
+      {
+        "path": "schedule/range-pointer-stop/publish-success-1600-02.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 34,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "9e420cbdb75a9d952384b6caa18ddf57478b42ca8cff9d0d86c337e3d4839e73",
+        "filters": [
+          0,
+          56,
+          467,
+          7,
+          570
+        ],
+        "rawSha256": "61721b253d3ffbd6a36ae7d53f1b5e88ccc5f5334e338951232f589ef91169e6"
+      },
+      {
+        "path": "schedule/range-pointer-stop/employee-published-details-390-01.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 9,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "ce35ee730c2527f9df1ec2cf88c6eee5aaf9b106a046dc59ef1e85c19fcb6f84",
+        "filters": [
+          0,
+          14,
+          679,
+          10,
+          141
+        ],
+        "rawSha256": "e4634b6d78403c77feb7cffa4fe2d255a4df24c8e4b0cf0d207dc24fd9d3fce1"
+      },
+      {
+        "path": "schedule/manager-stop/employee-published-details-390-01.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 9,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "ce35ee730c2527f9df1ec2cf88c6eee5aaf9b106a046dc59ef1e85c19fcb6f84",
+        "filters": [
+          0,
+          14,
+          679,
+          10,
+          141
+        ],
+        "rawSha256": "e4634b6d78403c77feb7cffa4fe2d255a4df24c8e4b0cf0d207dc24fd9d3fce1"
+      },
+      {
+        "path": "schedule/manager-stop/priority-before-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 26,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "ff83f835a8ef8c871e802c09811e2e7c0eb5d0fbabf96809b5fafbede8682feb",
+        "filters": [
+          0,
+          32,
+          749,
+          1,
+          318
+        ],
+        "rawSha256": "67243888657365220636b3e333944a4e1584826857926a76878b3b2b8c212f89"
+      },
+      {
+        "path": "schedule/manager-stop/priority-pending-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 26,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "9e79baedacd362e1e72ef83054172f6098a563937cba4618bf5b54eab4c0ad63",
+        "filters": [
+          0,
+          33,
+          742,
+          1,
+          324
+        ],
+        "rawSha256": "3f0f0d7b933b8c6734cbe9197c7ad19aa64e0c5c7428ea1e6bb0f88feda22c58"
+      },
+      {
+        "path": "schedule/manager-stop/priority-success-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 26,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "be30e73355d25d9b294f12103d22fe40abfa66accbccc93ff442c91449ca4a4d",
+        "filters": [
+          0,
+          36,
+          754,
+          2,
+          308
+        ],
+        "rawSha256": "973f7ee12a540314532585a6880c03dcf215dfb537039ebac1b77455463d9b90"
+      },
+      {
+        "path": "schedule/manager-pass/manager-current-1600-light-18-reviewed.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 34,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "d03cf88c1a2a49b80024fb16857b928d4e02cc19ade55b8f37b0caca0e51cca1",
+        "filters": [
+          0,
+          46,
+          652,
+          0,
+          402
+        ],
+        "rawSha256": "871c9c2b734ef3795372c15cf798b4fc0ff968e9b1a082aa3094e3a720f625fe"
+      },
+      {
+        "path": "schedule/manager-pass/manager-current-2400-dark-18.png",
+        "width": 2400,
+        "height": 1300,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 34,
+        "crc": "all chunks checked",
+        "pixelBytes": 9360000,
+        "pixelSha256": "2620dc3f8d03ae1388a50b631fa7c20ad3f458a1d9048e1cb18f440c49c70f0a",
+        "filters": [
+          0,
+          61,
+          857,
+          18,
+          364
+        ],
+        "rawSha256": "ee4f45dd803fdc112840cdb12385fc291b5c05e1a747b374b8e49ab5bf045c8b"
+      },
+      {
+        "path": "schedule/manager-pass/manager-current-390-dark-18.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 14,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "2eb40022430e41c46e88c387299be24175b6e72a1ec8ab02b9b5047a0afc2532",
+        "filters": [
+          0,
+          53,
+          539,
+          37,
+          215
+        ],
+        "rawSha256": "da787bb05d023305637011138e2d01a727d92697d418276e1d27ac2564da12c9"
+      },
+      {
+        "path": "schedule/manager-pass/matched-current-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 28,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "d453b88b181012e9747a5f95cf2208ddb8a0a8b50762d557ab1bd8d3571b8a68",
+        "filters": [
+          0,
+          50,
+          675,
+          2,
+          373
+        ],
+        "rawSha256": "b231cc63341341e1f5fd995c1f409374c007dfdd61c47142bf5bd369dc46c00c"
+      },
+      {
+        "path": "schedule/manager-pass/matched-current-2400-dark.png",
+        "width": 2400,
+        "height": 1300,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 29,
+        "crc": "all chunks checked",
+        "pixelBytes": 9360000,
+        "pixelSha256": "bdb1fac7f8806ea515debe9a118f2ee82d1242c469ddfcf8f58d8a99a23a4f7e",
+        "filters": [
+          0,
+          49,
+          880,
+          20,
+          351
+        ],
+        "rawSha256": "c6361a18ac78e7be99c5b8a0b93a838f557e058ee725277712ef10c371c54d8e"
+      },
+      {
+        "path": "schedule/manager-pass/matched-current-390-light.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 14,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "96df7f4689335501cb1451e41ea950197c860c57cb554215bbd1b64825821f5c",
+        "filters": [
+          0,
+          44,
+          546,
+          1,
+          253
+        ],
+        "rawSha256": "a20bc60a8ea09ef2be8847da713730b93fc92b7f036c47bdd81be1fca8b2f4c2"
+      },
+      {
+        "path": "schedule/isolated-final/current-v4-detail-day-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 29,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "4e9c5842e40dce6f36adc1f05a31e384a6ded5db9e2c8ff74b47c10476af756d",
+        "filters": [
+          0,
+          43,
+          558,
+          2,
+          497
+        ],
+        "rawSha256": "63135c0878b004a7d4a047c153cd252c3ae62e2fb7b460f26ec71ff4cd545b99"
+      },
+      {
+        "path": "schedule/isolated-final/current-v5-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 31,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "66864357c81349827317e331b00441abe415defc76609e3023e567b060c69ceb",
+        "filters": [
+          0,
+          59,
+          678,
+          1,
+          362
+        ],
+        "rawSha256": "00c377146a4043bd7fa774dfe674757c05fdbe9bdd573723e8c1950a6039a21b"
+      },
+      {
+        "path": "schedule/isolated-final/current-v5-2400-dark.png",
+        "width": 2400,
+        "height": 1400,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 32,
+        "crc": "all chunks checked",
+        "pixelBytes": 10080000,
+        "pixelSha256": "45cfccf01d77ad6620e87fca69cbf5aeb8e0a8fd0c8019d70c6393c979dd6d6d",
+        "filters": [
+          0,
+          57,
+          958,
+          25,
+          360
+        ],
+        "rawSha256": "7521ec5d7aeebba27cb9fed11892cc5d19bd9492e89f715682eb426efc6fb739"
+      },
+      {
+        "path": "schedule/isolated-final/current-v5-390-light.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 16,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "2601c4bb9ebcee6f06e069142c07f1a922dab6cab2e7b45ef39f57653801c52a",
+        "filters": [
+          0,
+          68,
+          546,
+          5,
+          225
+        ],
+        "rawSha256": "49df704a07a895e5d57358f26f4c5bc92e3018d3c4f957db5efde190ce8c34df"
+      },
+      {
+        "path": "schedule/isolated-final/historical-390-light.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 16,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "8750f299797600ad9126b101ebae9b1fabe190829bff539aad654b984127de65",
+        "filters": [
+          0,
+          73,
+          561,
+          5,
+          205
+        ],
+        "rawSha256": "09eb5e5bce1c01c5cb0fd0869618c1d40541aeb24555a97fefd86790a7dd45bf"
+      },
+      {
+        "path": "schedule/isolated-final/historical-v2-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 31,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "7c064bd0c1c303ff2b1d344a159d67f5257c149c40289309e89e7522adb0bb16",
+        "filters": [
+          0,
+          54,
+          694,
+          0,
+          352
+        ],
+        "rawSha256": "0eb26b27b61f7ddbd5ffb08449211cbb2ec0acfae4e0513d1a8efeb7df8a34da"
+      },
+      {
+        "path": "schedule/isolated-final/historical-v2-2400-dark.png",
+        "width": 2400,
+        "height": 1400,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 35,
+        "crc": "all chunks checked",
+        "pixelBytes": 10080000,
+        "pixelSha256": "06a55dbbd14bcbee9c95c90b35af0542699430da420ea5451bc21d97224acf4b",
+        "filters": [
+          0,
+          51,
+          945,
+          12,
+          392
+        ],
+        "rawSha256": "a0cb6071d88eb4e00b53e690edf151599ff2e1ccfe17c8fc637c8b99b3d59bad"
+      },
+      {
+        "path": "schedule/isolated-final/historical-v2-detail-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 32,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "25c84be0d8fd930d89f0cf8160ef9595c1c5be51ff97484139213d1917ffb45a",
+        "filters": [
+          0,
+          42,
+          520,
+          9,
+          529
+        ],
+        "rawSha256": "2a37409b24ec28aac14ef9832a887712f7fd411a176a38a0a0f824c72609f2fe"
+      },
+      {
+        "path": "joint/current/team-desktop-dark.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 34,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "7ec56724d9427d50c5f643ff4a6026e95dbe44201dba7ec9c99af8b3202f7e3d",
+        "filters": [
+          0,
+          74,
+          646,
+          29,
+          351
+        ],
+        "rawSha256": "8b863efba0748585a22377268a8314bc0958e88b15bcd50afdf7505d2cc861a5"
+      },
+      {
+        "path": "joint/current/team-desktop-light.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 34,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "48e381595887682a1d5ad6b87ecdf5a8066f4e34dbcff5f50d546ebbc436f628",
+        "filters": [
+          0,
+          81,
+          619,
+          4,
+          396
+        ],
+        "rawSha256": "7ab6874ff24c73ae02a07b5f5c05bc26772efc48f89cb35afdb682030714de3b"
+      },
+      {
+        "path": "joint/current/team-nonempty-history.png",
+        "width": 1600,
+        "height": 1100,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 27,
+        "crc": "all chunks checked",
+        "pixelBytes": 5280000,
+        "pixelSha256": "0ece83f90213b736a27d4df62b8443063ad1ac591e58513111b760ad803e92ac",
+        "filters": [
+          0,
+          40,
+          562,
+          14,
+          484
+        ],
+        "rawSha256": "6689c0f3acf9d8798de0f7e730cea1c2b35d15ea9bb2df59b016d21e78e1be86"
+      },
+      {
+        "path": "joint/current/team-phone-dark.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 14,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "54b98d2f5fc66a42b7381a035c0b162d2f25a37b40168c254b359b086a6c12ad",
+        "filters": [
+          0,
+          45,
+          478,
+          36,
+          285
+        ],
+        "rawSha256": "9ac992e0ef5179fa7a52e684462531349007b1cf8ad99ef3c06abf75bd0ec750"
+      },
+      {
+        "path": "joint/current/team-phone-light.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 14,
+        "crc": "all chunks checked",
+        "pixelBytes": 987480,
+        "pixelSha256": "d27b17df0248e6b36abe411d94b140f4a52967fa37e428da8c8e9f40ae1f30ef",
+        "filters": [
+          0,
+          59,
+          495,
+          3,
+          287
+        ],
+        "rawSha256": "80dcf236d9728d4991154969d01560b6830e9a94d7a26303cd846d48942e8761"
+      },
+      {
+        "path": "joint/current/team-wide-dark.png",
+        "width": 2400,
+        "height": 1400,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 36,
+        "crc": "all chunks checked",
+        "pixelBytes": 10080000,
+        "pixelSha256": "82744a2cf37b5478924f1213a84fc6488da1161d2d5fb33e2847e05c19678cd7",
+        "filters": [
+          0,
+          74,
+          949,
+          29,
+          348
+        ],
+        "rawSha256": "c6e3635c5eeaf5d36dafac2b3c2e3858f5923ebba338ebe1cdc4d65e66e5b19d"
+      },
+      {
+        "path": "joint/current/team-wide-light.png",
+        "width": 2400,
+        "height": 1400,
+        "depth": 8,
+        "color": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "channels": 3,
+        "chunkCount": 36,
+        "crc": "all chunks checked",
+        "pixelBytes": 10080000,
+        "pixelSha256": "0767d44292308c37553106407a97f49aebadd723e37edb6b852814d805a9f89e",
+        "filters": [
+          0,
+          79,
+          919,
+          4,
+          398
+        ],
+        "rawSha256": "861a80da59e3b8a800aa86f61dc987a3e627cef6da6d17a4da965530d3e0fb3d"
+      }
+    ]
+  },
+  "syntax": {
+    "scope": "Only allowlisted archived scripts and the new native verifier; archived code never executed",
+    "checks": [
+      {
+        "path": "schedule/coverage-stop/attempt03-04-harness.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "schedule/coverage-stop/premerge-shift-scheduler.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "schedule/coverage-stop/public-probe.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "schedule/layering-stop/pending-create-01.mjs",
+        "kind": "Node syntax only",
+        "status": "PASS",
+        "exit": 0
+      },
+      {
+        "path": "schedule/layering-stop/public-assembly-06.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "schedule/layering-stop/runtime-recovery-03.mjs",
+        "kind": "Node syntax only",
+        "status": "PASS",
+        "exit": 0
+      },
+      {
+        "path": "schedule/layering-stop/stop-publish-occlusion-01.mjs",
+        "kind": "Node syntax only",
+        "status": "PASS",
+        "exit": 0
+      },
+      {
+        "path": "history/context-stop/context-retry.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "history/cache-stop/directory-public.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "history/cache-stop/history-public.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "joint/current/direct-history-public.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "joint/current/directory-public.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "joint/current/history-public.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "joint/current/supporting-public.test.tsx",
+        "kind": "TypeScript 5.9.3 AST syntax only; no typecheck/transforms/import execution",
+        "status": "PASS",
+        "errors": []
+      },
+      {
+        "path": "static/supporting-retry/combined-units-final-02.ps1",
+        "kind": "PowerShell AST syntax only",
+        "status": "PASS",
+        "exit": 0,
+        "diagnostics": {
+          "kind": "PowerShell AST syntax only; no script execution",
+          "path": "static/supporting-retry/combined-units-final-02.ps1",
+          "status": "PASS",
+          "errors": []
+        },
+        "qualification": "Prior private -File parser launcher was refused by execution policy; inline native ParseFile succeeded without executing the archived script or changing execution policy."
+      },
+      {
+        "path": "verify-evidence.mjs",
+        "kind": "new verifier Node syntax only",
+        "status": "PASS",
+        "exit": 0
+      }
+    ],
+    "shell": {
+      "supplied": 0,
+      "status": "not applicable; no shell scripts in exact intake"
+    },
+    "nativeTypeScriptParser": "installed 5.9.3; installed 7.0.2 exports version only and was not used as an AST parser",
+    "historicalInvalid": [],
+    "passed": 16
+  },
+  "links": {
+    "readme": 44,
+    "reportAppends": 28,
+    "allNewLinksResolve": true,
+    "historicalExcludedReferences": "Reference only; never followed to repair links."
+  },
+  "secretScan": {
+    "scope": "only publication archive; patterns do not prove global absence",
+    "textFiles": 407,
+    "flags": [],
+    "valuesPrinted": false,
+    "qualification": "No pattern flags on selected/new archive UTF8 text; no claim about excluded tool output, private inputs, image OCR or global state."
+  },
+  "verification": {
+    "default": {
+      "exit": 0,
+      "stdoutBytes": 34734,
+      "stdoutSha256": "2593cf135b2fced6700d98121df963892583ddbc3c46b7f7e0348f791a797413"
+    },
+    "currentSource": {
+      "exit": 0,
+      "stdoutBytes": 34739,
+      "stdoutSha256": "59c82211d2fab5e386dbcb8723e701c11c29bb578b3494e3f5939b4d4334ead3",
+      "historicalGitPins": 23,
+      "currentSourcePins": 19
+    },
+    "repeatRounds": [
+      "01",
+      "02",
+      "03",
+      "04"
+    ],
+    "byteIdenticalStdoutEachMode": true,
+    "archiveUnchangedDuringEachPair": true,
+    "followup": "Final proofreading changes only new archive prose and appended section bytes. Prefixes remain exact; independent final repeats are recorded privately and bind the final publication snapshot. No readiness attestation."
+  },
+  "seal": {
+    "bytes": 953,
+    "sha256": "3febf60a12f9bbbf05ffaa63a0204bc54325b22cb90cf54eed1ed36d4cd7263e",
+    "normalization": "valid-utf8-no-nul",
+    "lf": {
+      "bytes": 953,
+      "sha256": "3febf60a12f9bbbf05ffaa63a0204bc54325b22cb90cf54eed1ed36d4cd7263e"
+    },
+    "crlf": {
+      "bytes": 978,
+      "sha256": "066b7dd7b91581a7304daf2dc92bcfc231a0f0da469fdc7369999006b91fa106"
+    }
+  },
+  "fileIndex": {
+    "bytes": 205600,
+    "sha256": "8b4b4e271ddc54f1f13ca82dca19919ca33535bf1c30b46906b13f08797a32dd",
+    "normalization": "valid-utf8-no-nul",
+    "lf": {
+      "bytes": 205600,
+      "sha256": "8b4b4e271ddc54f1f13ca82dca19919ca33535bf1c30b46906b13f08797a32dd"
+    },
+    "crlf": {
+      "bytes": 211495,
+      "sha256": "e16f93c42dec0c802793429b73eed99033655ba2eb881c5cb4a7ca8c0cb62c16"
+    }
+  },
+  "sealExclusions": [
+    "publication-file-index.json",
+    "publication-seal.json",
+    "verification-results.json"
+  ],
+  "failedAttempts": {
+    "failedAttemptsPreserved": true,
+    "attempts": [
+      {
+        "attempt": 1,
+        "command": "node -e (PowerShell single-quoted JavaScript inspection string)",
+        "exit": 1,
+        "kind": "inspection quoting",
+        "result": "PowerShell stripped JavaScript quotes; Node SyntaxError: Unexpected token dot. No archive writes; replaced by file-based inspector.",
+        "rawPreserved": "initial-validation-failures.json"
+      },
+      {
+        "attempt": 2,
+        "command": "node .tmp/1738-1739-publication-20261117/syntax-publication.mjs",
+        "exit": 1,
+        "kind": "validator handling error",
+        "result": "PowerShell -File native parser launcher was blocked by existing execution policy. Empty stdout was incorrectly parsed as JSON; Unexpected end of JSON input. Archived script was never executed.",
+        "rawPreserved": "initial-validation-failures.json"
+      },
+      {
+        "attempt": 3,
+        "command": "node .tmp/1738-1739-publication-20261117/seal-publication.mjs",
+        "exit": 0,
+        "kind": "preliminary seal before complete syntax receipt",
+        "result": "Preliminary file index/seal preserved privately; not claimed as complete publication verification."
+      },
+      {
+        "attempt": 4,
+        "command": "node .tmp/1738-1739-publication-20261117/syntax-publication.mjs",
+        "exit": 0,
+        "kind": "intermediate syntax classification corrected",
+        "result": "All JS/TSX passed; the blocked PowerShell launcher was wrongly labeled historical-invalid by the intermediate collector. Exact stderr/commands and intermediate receipt retained privately. Inline ParseFile later passed; no execution-policy bypass or archived-script execution."
+      }
+    ],
+    "originalRawFailures": "All copied historical failures remain byte-exact. No original archive input was amended."
+  },
+  "nativeCommandsOnly": true,
+  "archivedScriptsExecuted": false,
+  "pnpmInvocations": 0,
+  "networkPackagesAppTestsRuntimeActions": 0,
+  "rootNext": "Independent actual staged Git-blob audit, then root commits/ledger/readiness decisions. All issues OPEN, PR draft."
+}

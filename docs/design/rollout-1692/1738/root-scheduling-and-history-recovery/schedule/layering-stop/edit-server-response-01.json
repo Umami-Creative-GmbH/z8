@@ -1,0 +1,12 @@
+{
+  "status": 200,
+  "rawSha256": "268389e117906062c24117fe8d66a723bf09edfbfc9fc42562bfcbdc4c54c22a",
+  "errors": [],
+  "success": [
+    "true"
+  ],
+  "dialogStillOpen": true,
+  "toasts": [
+    "Shift updated"
+  ]
+}

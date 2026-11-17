@@ -1,0 +1,25 @@
+Working directory: X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d
+Every pnpm command set pnpm_config_verify_deps_before_run=false and used --config.verify-deps-before-run=false. Canonical GitBash BASH=C:/Users/KaiHentschel/scoop/apps/git/current/usr/bin/bash.exe was set during canonical prepare. No install/repair/upgrade was run. Ordinary pnpm store-lock access and narrow owned-PID cleanup were auto-review approved.
+
+git status --porcelain=v1
+git rev-parse HEAD
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/prepare-01.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/fixture-helper-01.mjs prepare .tmp/1738-manager-independent-checks/fixture-01-private
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/run-fixture-tool-03.mjs seed 01
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/dev-01-private.mjs dev . .tmp/1738-manager-independent-checks/fixture-01-private
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/start-browser-01.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/rpc-03.mjs login eyJhY3RvciI6InNtYWxsLW1hbmFnZXIifQ== login-manager-01
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/rpc-03.mjs state e30= manager-login-settled-01
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/manager-priority-01.mjs
+C:/Users/KaiHentschel/AppData/Local/pnpm/bin/agent-browser.cmd skills get core
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/manager-priority-02.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/run-fixture-tool-03.mjs readback 01
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/summarize-01.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/rpc-03.mjs close e30= browser-close-01
+& '.tmp/1738-manager-independent-checks/cleanup-processes-01.ps1'
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/fixture-helper-01.mjs cleanup .tmp/1738-manager-independent-checks/fixture-01-private
+& '.tmp/1738-manager-independent-checks/verify-cleanup-01.ps1'
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/preservation-final-01.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-manager-independent-checks/seal-01.mjs
+
+Additional literal read-only Git ancestry/blob/hash operations and scoped source reads are retained in preparation/preservation/harness source. Narrow CIM identity/browser-tree commands selected only own manifest PIDs and their descendants; their exact executable/creation/parent/command identities remain private, with public cleanup outcomes. No broad process enumeration, peer cleanup or Git mutation was performed.

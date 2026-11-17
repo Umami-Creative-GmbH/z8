@@ -1,0 +1,95 @@
+{
+  "sources": [
+    {
+      "path": "prepare-01.mjs",
+      "bytes": 5260,
+      "sha256": "b4e11bdfe2e5a7fffc0782e3a8d4753628a12a88901575d6317dfd91738914ed"
+    },
+    {
+      "path": "fixture-helper-01.mjs",
+      "bytes": 28302,
+      "sha256": "2392b069835bd2870ef690e889bfeb142761e6f9279b07be617f95b980feda78"
+    },
+    {
+      "path": "fixture-helper-02.mjs",
+      "bytes": 28302,
+      "sha256": "2392b069835bd2870ef690e889bfeb142761e6f9279b07be617f95b980feda78"
+    },
+    {
+      "path": "dev-01-private.mjs",
+      "bytes": 3699,
+      "sha256": "0c595035f3b6214da5e26e2056d1805606e59f4d54683d8ec212e6225a9ea65b"
+    },
+    {
+      "path": "browser-controller-01.private.mjs",
+      "bytes": 9099,
+      "sha256": "51cf432e4692ce1e56f56177ed65520d69e7b25a86d4ac1a43a2446915bc7dde"
+    },
+    {
+      "path": "start-browser-01.mjs",
+      "bytes": 832,
+      "sha256": "a6893263883426cb8ea3a5b5be4cbbf8e38c80acc7c37a92c42297bdb6e5fa39"
+    },
+    {
+      "path": "rpc-03.mjs",
+      "bytes": 1045,
+      "sha256": "f2a4e213a48a4035aba6685830818a608b619fc61f43e17e353c5841e3b313e3"
+    },
+    {
+      "path": "prepare-runtime-01.mjs",
+      "bytes": 2288,
+      "sha256": "13591600d4e1a39182ec465710d551149d6c5b3ca1958b947e401b89169857fd"
+    },
+    {
+      "path": "scheduling-fixture-bridge-03.ts",
+      "bytes": 4562,
+      "sha256": "00b568d70a11143b09e7dafbf11eca597b7fad23787a92daa997064082bdc687"
+    },
+    {
+      "path": "run-fixture-tool-03.mjs",
+      "bytes": 2244,
+      "sha256": "a141d15ebfa1c11e2b453e3418971eedf0d67d7adc9e628cd65f9afb4d9f2ae0"
+    },
+    {
+      "path": "publish-01.mjs",
+      "bytes": 5174,
+      "sha256": "2cfcd4c7696ebcbf7e2997e05508a00693e5d89863562903c235b0ecbfc89c07"
+    },
+    {
+      "path": "publish-02.mjs",
+      "bytes": 5235,
+      "sha256": "c341745db763b9bc0918332629a9fcf3fc8149c9c31788eba047671b472eb6a6"
+    },
+    {
+      "path": "verify-readback-01.mjs",
+      "bytes": 2252,
+      "sha256": "584c91370ebe06022dc11c751aca391732569263d45a0946f4e07feddfde4625"
+    },
+    {
+      "path": "employee-visibility-01.mjs",
+      "bytes": 2978,
+      "sha256": "933aff6076ee815724c7eeff10d59bfd0ca58e0eb1566515ee899dd9958fc13f"
+    },
+    {
+      "path": "cleanup-processes-01.ps1",
+      "bytes": 4469,
+      "sha256": "de09f9a1199b6cec1fc8b5b4eb041bcd90998710a72cad27a4fbfcae1f7e29d7"
+    },
+    {
+      "path": "verify-cleanup-01.ps1",
+      "bytes": 2441,
+      "sha256": "665892a0c99fd38d97a5eda7b23067cd7713f95616a8ea1058080d1ac7bd51d1"
+    },
+    {
+      "path": "preservation-final-01.mjs",
+      "bytes": 2822,
+      "sha256": "940706988dbba5d2a39ec54905070ae6020eff619c034443a62b0c4cd922a265"
+    },
+    {
+      "path": "seal-01.mjs",
+      "bytes": 19986,
+      "sha256": "7a09df2c3527f5aa30389e1590cb5ba6671d8ae2fd27cfa1b3497c11565bd873"
+    }
+  ],
+  "extraFixtureCopyByteEqual": true
+}

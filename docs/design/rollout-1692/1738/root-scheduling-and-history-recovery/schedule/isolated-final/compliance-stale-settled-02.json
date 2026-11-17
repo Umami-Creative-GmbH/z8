@@ -1,0 +1,7 @@
+{
+  "priorTimeoutRetained": true,
+  "policyRestoredHours": 6,
+  "seedMatches": true,
+  "ackDialogStillVisible": true,
+  "draftsStill": 2
+}

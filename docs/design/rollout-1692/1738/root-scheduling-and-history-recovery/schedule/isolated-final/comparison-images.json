@@ -1,0 +1,81 @@
+{
+  "current": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "historical": "83a3b30f648e74416d628c96509dcee4c765cdba",
+  "sameOwnFixture": true,
+  "actor": "normal synthetic small-admin",
+  "timeZone": "Europe/Berlin",
+  "font": "16px",
+  "date": "2026-11-16",
+  "desktopSidebar": "expanded",
+  "exactWeekLayoutPairs": 2,
+  "sameDayPublishedRecordPanelComparison": 1,
+  "phoneResponsiveComparison": 1,
+  "phoneExactRange": false,
+  "panelLimits": "same record/day/fields; contextual scroll and focus differ",
+  "images": [
+    {
+      "name": "historical-v2-1600-light.png",
+      "width": 1600,
+      "height": 1100,
+      "sha256": "0eb26b27b61f7ddbd5ffb08449211cbb2ec0acfae4e0513d1a8efeb7df8a34da",
+      "decodedBy": "view_image",
+      "visuallyReviewed": true
+    },
+    {
+      "name": "current-v5-1600-light.png",
+      "width": 1600,
+      "height": 1100,
+      "sha256": "00c377146a4043bd7fa774dfe674757c05fdbe9bdd573723e8c1950a6039a21b",
+      "decodedBy": "view_image",
+      "visuallyReviewed": true
+    },
+    {
+      "name": "historical-v2-2400-dark.png",
+      "width": 2400,
+      "height": 1400,
+      "sha256": "a0cb6071d88eb4e00b53e690edf151599ff2e1ccfe17c8fc637c8b99b3d59bad",
+      "decodedBy": "view_image",
+      "visuallyReviewed": true
+    },
+    {
+      "name": "current-v5-2400-dark.png",
+      "width": 2400,
+      "height": 1400,
+      "sha256": "7521ec5d7aeebba27cb9fed11892cc5d19bd9492e89f715682eb426efc6fb739",
+      "decodedBy": "view_image",
+      "visuallyReviewed": true
+    },
+    {
+      "name": "historical-390-light.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "09eb5e5bce1c01c5cb0fd0869618c1d40541aeb24555a97fefd86790a7dd45bf",
+      "decodedBy": "view_image",
+      "visuallyReviewed": true
+    },
+    {
+      "name": "current-v5-390-light.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "49df704a07a895e5d57358f26f4c5bc92e3018d3c4f957db5efde190ce8c34df",
+      "decodedBy": "view_image",
+      "visuallyReviewed": true
+    },
+    {
+      "name": "historical-v2-detail-1600-light.png",
+      "width": 1600,
+      "height": 1100,
+      "sha256": "2a37409b24ec28aac14ef9832a887712f7fd411a176a38a0a0f824c72609f2fe",
+      "decodedBy": "view_image",
+      "visuallyReviewed": true
+    },
+    {
+      "name": "current-v4-detail-day-1600-light.png",
+      "width": 1600,
+      "height": 1100,
+      "sha256": "63135c0878b004a7d4a047c153cd252c3ae62e2fb7b460f26ec71ff4cd545b99",
+      "decodedBy": "view_image",
+      "visuallyReviewed": true
+    }
+  ]
+}

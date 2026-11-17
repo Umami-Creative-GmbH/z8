@@ -1,0 +1,258 @@
+{
+  "rawSha256": "6c46418c3528ec707bbe2867f30ee168549d484e4f4356c4267497c3e64cd321",
+  "sanitizer": "controller fixture actor redaction plus all UUID record values",
+  "ok": true,
+  "data": {
+    "url": "http://localhost:53432/en/scheduling?date=2026-11-17",
+    "text": "Skip to content\nPerformance small\nAdmin\nSearch\nCtrl+K\nWORKPLACE\nDashboard\nTime Tracking\nCalendar\nAbsences\nTravel Expenses\nFinance\nMy Requests\nReports\nOrg Explorer\nTEAM & ORGANIZATION\nTeam\nTeam Absences\nWho Is In\nApprovals\nCompliance\nSettings\nGet Help\nFeedback\nPerson 0\n[synthetic fixture]\nToggle Sidebar\n\nScheduling\n\n03:47\nUTC+01:00\nClock In\nToggle theme\nPerformance small · Europe/Berlin\nShift Schedule\nPlan and publish shifts. Planned shifts do not record working time.\n\nNov 16, 2026 – Nov 22, 2026 (Europe/Berlin)\n\nCreate Shift\nCoverage\nShift requests\nShift Templates\n\nChoose a template, then set the shift date and assignment.\n\nIndependent morning\n9:00 AM - 5:00 PM\n(8h)\nToday\nPrevious period\nNext period\nNovember 2026\nView\nWeek\nDate\nMON\n16\nTUE\n17\nWED\n18\nTHU\n19\nFRI\n20\nSAT\n21\nSUN\n22\nOpen Shift  10:00 PM\n1 AM\n2 AM\n3 AM\n4 AM\n5 AM\n6 AM\n7 AM\n8 AM\n9 AM\n10 AM\n11 AM\n12 PM\n1 PM\n2 PM\n3 PM\n4 PM\n5 PM\n6 PM\n7 PM\n8 PM\n9 PM\n10 PM\n11 PM\nFixture Person 2\n9:00 AM – 5:00 PM\nOpen Shift\n9:00 AM – 5:00 PM\nFixture Person 2\n9:00 AM – 5:00 PM\nShift list (6)\nFixture Person 2\nIndependent scheduling office · Independent reception\nMon, Nov 23 · 09:00 – 17:00\nDraft\nFixture Person 2\nIndependent scheduling office · Independent reception\nThu, Nov 19 · 09:00 – 17:00\nPublished\nOpen Shift\nIndependent scheduling office · Independent reception\nWed, Nov 18 · 09:00 – 17:00\nPublished\nOpen Shift\nIndependent scheduling office · Independent reception\nTue, Nov 17 · 22:00 – 06:00 (ends next day)\nPublished\nFixture Person 2\nIndependent scheduling office · Independent reception\nMon, Nov 16 · 09:00 – 17:00\nPublished\nFixture Person 2\nIndependent scheduling office · Independent reception\nSun, Nov 15 · 09:00 – 17:00\nDraft\nPublish (2)\nPublished 2 shift(s)\nEdit Shift\n\nUpdate the shift details below\n\nDate\nNov 15, 2026\nTemplate (Optional)\nIndependent morning (09:00 - 17:00)\n\nSelecting a template will auto-fill the times\n\nStart Time\nEnd Time\nSubarea\n*\nIndependent scheduling office – Independent reception\n\nWhere this shift will take place\n\nAssign To\nFixture Person 2\n\nLeave as \"Open Shift\" to allow employees to claim it\n\nNotes (Optional)\nStatus:\nDraft\nDelete\nCancel\nUpdate Shift\nClose",
+    "notifications": "denied",
+    "fields": [
+      {
+        "id": "splxhab3h5",
+        "name": "date",
+        "type": "text",
+        "placeholder": "",
+        "value": "11/17/2026"
+      },
+      {
+        "id": "base-ui-_r_n_-hidden-input",
+        "name": "",
+        "type": "text",
+        "placeholder": "",
+        "value": "[synthetic record]"
+      },
+      {
+        "id": "shift-dialog-start",
+        "name": "startTime",
+        "type": "text",
+        "placeholder": "",
+        "value": "09:00"
+      },
+      {
+        "id": "",
+        "name": "",
+        "type": "text",
+        "placeholder": "",
+        "value": "09:00"
+      },
+      {
+        "id": "shift-dialog-end",
+        "name": "endTime",
+        "type": "text",
+        "placeholder": "",
+        "value": "17:00"
+      },
+      {
+        "id": "",
+        "name": "",
+        "type": "text",
+        "placeholder": "",
+        "value": "17:00"
+      },
+      {
+        "id": "base-ui-_r_s_-hidden-input",
+        "name": "",
+        "type": "text",
+        "placeholder": "",
+        "value": "[synthetic record]"
+      },
+      {
+        "id": "base-ui-_r_v_-hidden-input",
+        "name": "",
+        "type": "text",
+        "placeholder": "",
+        "value": "[synthetic fixture]"
+      },
+      {
+        "id": "shift-dialog-notes",
+        "name": "notes",
+        "type": "textarea",
+        "placeholder": "Any special instructions or notes...",
+        "value": "Independent before-range draft"
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Performance smallAdmin",
+        "aria": "Switch Organization: Performance small",
+        "disabled": false
+      },
+      {
+        "text": "SearchCtrl+K",
+        "aria": "Search",
+        "disabled": false
+      },
+      {
+        "text": "Person 0[synthetic fixture]",
+        "aria": "Account: Person 0",
+        "disabled": false
+      },
+      {
+        "text": "Toggle Sidebar",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "03:47UTC+01:00",
+        "aria": "Current timezone Europe/Berlin, 03:47, UTC+01:00",
+        "disabled": false
+      },
+      {
+        "text": "Clock In",
+        "aria": "Clock In",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh data",
+        "disabled": false
+      },
+      {
+        "text": "Toggle theme",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Notifications",
+        "disabled": false
+      },
+      {
+        "text": "Create Shift",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Coverage",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Shift requests",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Independent morning9:00 AM - 5:00 PM(8h)",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Today",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Previous period",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Next period",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Week",
+        "aria": "Select View",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Choose Date",
+        "disabled": false
+      },
+      {
+        "text": "Fixture Person 2Independent scheduling office · Independent receptionMon, Nov 23 · 09:00 – 17:00Draft",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Fixture Person 2Independent scheduling office · Independent receptionThu, Nov 19 · 09:00 – 17:00Published",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Open ShiftIndependent scheduling office · Independent receptionWed, Nov 18 · 09:00 – 17:00Published",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Open ShiftIndependent scheduling office · Independent receptionTue, Nov 17 · 22:00 – 06:00 (ends next day)Published",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Fixture Person 2Independent scheduling office · Independent receptionMon, Nov 16 · 09:00 – 17:00Published",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Fixture Person 2Independent scheduling office · Independent receptionSun, Nov 15 · 09:00 – 17:00Draft",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Publish (2)",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Open Tanstack query devtools",
+        "disabled": false
+      },
+      {
+        "text": "Nov 15, 2026",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Independent morning (09:00 - 17:00)",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Open time picker",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Open time picker",
+        "disabled": false
+      },
+      {
+        "text": "Independent scheduling office – Independent reception",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Fixture Person 2",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Delete",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Cancel",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Update Shift",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Close",
+        "aria": null,
+        "disabled": false
+      }
+    ],
+    "errors": []
+  }
+}

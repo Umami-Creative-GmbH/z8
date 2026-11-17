@@ -1,0 +1,67 @@
+{
+  "head": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "branch": "test/isolated-recheck",
+  "tree": "a729615f394e8108d53041d368cbf5dedb846039",
+  "applicationTree": "4937e4cd57c75182b8697741dd6a8f845cbb5bbb",
+  "trackedClean": true,
+  "trackedBytePins": 17286,
+  "trackedPinSeal": "c8b2d75ae5afb636cc732fbe66700e13c28d3262955553a56f831c15d0db84a6",
+  "archives": [
+    {
+      "namespace": "merge1738-audit",
+      "payloads": 26,
+      "seal": "026a64195a5f9ef69815c3836847834eb30a10a21cffa617e3965fc9a0063874",
+      "indexRecipe": "inherited recorded per-archive recipe; each payload independently hash-checked"
+    },
+    {
+      "namespace": "1738-independent-checks",
+      "payloads": 28,
+      "seal": "a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9",
+      "indexRecipe": "inherited recorded per-archive recipe; each payload independently hash-checked"
+    },
+    {
+      "namespace": "1738-publish-independent-checks",
+      "payloads": 29,
+      "seal": "54ebb36cfb1d79d5e2a27609973fbb68f37c073001cba683e43ad19b51664dae",
+      "indexRecipe": "inherited recorded per-archive recipe; each payload independently hash-checked"
+    },
+    {
+      "namespace": "1738-publication-independent-checks",
+      "payloads": 30,
+      "seal": "e4ed0ede248c77399706e504078d3d9299a99c66f8bcaa53d6ad5118daaab2d1",
+      "indexRecipe": "inherited recorded per-archive recipe; each payload independently hash-checked"
+    },
+    {
+      "namespace": "1738-range-hit-independent-checks",
+      "payloads": 29,
+      "seal": "84d6047e7b9193dc249b169fa290e8d582305a16bb5ed8dbaf1f9358557472f1",
+      "indexRecipe": "inherited recorded per-archive recipe; each payload independently hash-checked"
+    },
+    {
+      "namespace": "1738-manager-independent-checks",
+      "payloads": 23,
+      "seal": "bb2d4f9c27d0c4502b2280c4df0e70b7ed3fcfb47a58b76865b6acbbc1f03e17",
+      "indexRecipe": "inherited recorded per-archive recipe; each payload independently hash-checked"
+    },
+    {
+      "namespace": "1738-coverage-manager-independent-checks",
+      "payloads": 50,
+      "seal": "163d7072806a75e33a59fa9d2b7a3b8e12d235bbab8e1d47cfae63753589c637",
+      "indexRecipe": "sha256(JSON.stringify(files))"
+    }
+  ],
+  "ownPhysicalDependencyRoots": true,
+  "dependencyLeaves": 158,
+  "dependencyLinkDigest": "ed9202ecb253c6f70eca1bd939d4cac36c9301e7a276328233a23ceb0e0b32fa",
+  "packageImportMethod": "copy",
+  "sampleNextFileLinks": 1,
+  "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+  "licenseCount": 125,
+  "bridgeRemoved": true,
+  "sourceFixes": 0,
+  "commits": 0,
+  "trackerWrites": 0,
+  "publications": 0,
+  "verifiedCommit": null,
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6"
+}

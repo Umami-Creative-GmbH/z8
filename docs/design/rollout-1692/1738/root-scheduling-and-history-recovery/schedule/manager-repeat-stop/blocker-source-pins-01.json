@@ -1,0 +1,68 @@
+{
+  "files": [
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "bytes": 5873,
+      "sha256": "c7ace85c139889e38b6eeccb694e78c04980b0384d0c5e96996392582fbbf26a"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+      "bytes": 1912,
+      "sha256": "f6b7fcfb92366cb56eb52f41c970caa7c20b12a76feb4ef1275261b9930eb5ea"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/coverage-rules/coverage-rule-scope.ts",
+      "bytes": 3143,
+      "sha256": "d3a436b575e5bc0c9e0b58870819762096b3184444986e15dda9ed9b70a7ff20"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/coverage-rules/actions.ts",
+      "bytes": 8015,
+      "sha256": "6fbcbcfc8c4746d7eeab14df68f1df77d33c500719435fdfa135ceb76438d242"
+    },
+    {
+      "path": "apps/webapp/src/lib/effect/result.ts",
+      "bytes": 3835,
+      "sha256": "1cbc3b914e926a95b2c2799706001223cf29f6ee9a763ecfdcce35efb367f969"
+    },
+    {
+      "path": "apps/webapp/src/lib/query/provider.tsx",
+      "bytes": 3073,
+      "sha256": "c3f18cd100050998a9d82fa8a7cd61abe5f8b60265f9e505d76abef2c795894b"
+    },
+    {
+      "path": "apps/webapp/src/lib/api-error.ts",
+      "bytes": 1500,
+      "sha256": "954fbe214d1b8fe9a16d538a8cdbdfbc3ee7879b8ea6d1d45d067d4f0cd3f288"
+    },
+    {
+      "path": "apps/webapp/src/lib/settings-scheduling-access.ts",
+      "bytes": 7946,
+      "sha256": "f625aabeeac4bc241e9074a4407a138f978e75bea6437f2569dc8c71318457c4"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.ts",
+      "bytes": 4345,
+      "sha256": "044571329b0d3aa4079d3c7565afd17a9a9730567faa0a9193d012a8d3fe6b00"
+    },
+    {
+      "path": "scripts/performance/fixture.mjs",
+      "bytes": 27950,
+      "sha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077"
+    },
+    {
+      "path": "apps/webapp/scripts/performance-fixture.ts",
+      "bytes": 15716,
+      "sha256": "00ac1750f21ecd66f2485642a3db2377179f88d43390ee64b438514b0148588d"
+    },
+    {
+      "path": "apps/webapp/src/lib/turnstile/development-keys.ts",
+      "bytes": 761,
+      "sha256": "63ac9e3fe2a1c7baeb388d71009242f2193cada7b894c4bee4986b4e840d5fea"
+    }
+  ],
+  "applicationTree": "22e5878ab8f5d205f7d7f625f0e80c8247cba52b",
+  "correctionApplicationTree": "22e5878ab8f5d205f7d7f625f0e80c8247cba52b",
+  "sourceUnmodified": true,
+  "staticHypothesisOnly": true
+}

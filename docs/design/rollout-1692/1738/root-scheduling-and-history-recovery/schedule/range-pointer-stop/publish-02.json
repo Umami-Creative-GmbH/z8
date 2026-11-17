@@ -1,0 +1,176 @@
+{
+  "candidate": "7e5cb41a2c3557399e2f3b0093890b822c8877f4",
+  "normalDevelopmentLogin": true,
+  "authStateSavedCopiedRestored": false,
+  "rawResponsesCaptured": false,
+  "networkLatencyMs": 1200,
+  "before": {
+    "listExpanded": true,
+    "publishDisabled": false,
+    "hit": true,
+    "rect": {
+      "x": 1440.5,
+      "y": 1020,
+      "width": 135.5,
+      "height": 56
+    },
+    "notifications": "denied",
+    "header": "Shift Schedule",
+    "viewport": [
+      1600,
+      1100
+    ]
+  },
+  "beforeImage": {
+    "h1": [
+      {
+        "text": "Shift Schedule",
+        "box": {
+          "x": 280,
+          "y": -589,
+          "width": 1296,
+          "height": 36,
+          "right": 1576,
+          "bottom": -553
+        }
+      }
+    ],
+    "main": {
+      "x": 256,
+      "y": 0,
+      "width": 1344,
+      "height": 1100,
+      "right": 1600,
+      "bottom": 1100
+    },
+    "sidebar": {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1100,
+      "right": 256,
+      "bottom": 1100
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "documentWidth": 1600,
+    "fontSize": "16px",
+    "dark": false
+  },
+  "pending": [
+    {
+      "text": "Open ShiftIndependent scheduling office · Independent receptionWed, Nov 18 · 09:00 – 17:00Published",
+      "disabled": false
+    },
+    {
+      "text": "Fixture Person 2Independent scheduling office · Independent receptionMon, Nov 16 · 09:00 – 17:00Published",
+      "disabled": false
+    },
+    {
+      "text": "Publishing…",
+      "disabled": true
+    }
+  ],
+  "pendingImage": {
+    "h1": [
+      {
+        "text": "Shift Schedule",
+        "box": {
+          "x": 280,
+          "y": -589,
+          "width": 1296,
+          "height": 36,
+          "right": 1576,
+          "bottom": -553
+        }
+      }
+    ],
+    "main": {
+      "x": 256,
+      "y": 0,
+      "width": 1344,
+      "height": 1100,
+      "right": 1600,
+      "bottom": 1100
+    },
+    "sidebar": {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1100,
+      "right": 256,
+      "bottom": 1100
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "documentWidth": 1600,
+    "fontSize": "16px",
+    "dark": false
+  },
+  "after": {
+    "trusted": [
+      true
+    ],
+    "success": true,
+    "failure": false,
+    "dialog": "Edit Shift",
+    "publishButtons": [
+      {
+        "text": "Publish (4)",
+        "disabled": false
+      }
+    ],
+    "list": "Shift list (6)\nFixture Person 2\nIndependent scheduling office · Independent reception\nMon, Nov 23 · 09:00 – 17:00\nDraft\nFixture Person 2\nIndependent scheduling office · Independent reception\nThu, Nov 19 · 09:00 – 17:00\nDraft\nOpen Shift\nIndependent scheduling office · Independent reception\nWed, Nov 18 · 09:00 – 17:00\nPublished\nOpen Shift\nIndependent scheduling office · Independent reception\nTue, Nov 17 · 22:00 – 06:00 (ends next day)\nDraft\nFixture Person 2\nIndependent scheduling office · Independent reception\nMon, Nov 16 · 09:00 – 17:00\nPublished\nFixture Person 2\nIndependent scheduling office · Independent reception\nSun, Nov 15 · 09:00 – 17:00\nDraft"
+  },
+  "publishRequests": 1,
+  "afterImage": {
+    "h1": [
+      {
+        "text": "Shift Schedule",
+        "box": {
+          "x": 280,
+          "y": -589,
+          "width": 1296,
+          "height": 36,
+          "right": 1576,
+          "bottom": -553
+        }
+      }
+    ],
+    "main": {
+      "x": 256,
+      "y": 0,
+      "width": 1344,
+      "height": 1100,
+      "right": 1600,
+      "bottom": 1100
+    },
+    "sidebar": {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 1100,
+      "right": 256,
+      "bottom": 1100
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1100
+    },
+    "documentWidth": 1600,
+    "fontSize": "16px",
+    "dark": false
+  },
+  "verdict": "FAILED",
+  "error": {
+    "name": "AssertionError",
+    "message": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Edit Shift'\n- null\n"
+  },
+  "visibleToasts": [
+    "Published 2 shift(s)"
+  ]
+}

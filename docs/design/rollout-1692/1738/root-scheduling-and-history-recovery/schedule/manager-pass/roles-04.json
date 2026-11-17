@@ -1,0 +1,212 @@
+{
+  "normalWidgetFormLogins": true,
+  "grantsChanged": false,
+  "authSavedCopiedRestored": false,
+  "roles": [
+    {
+      "actor": "small-employee",
+      "loginWrapperNavigationRace": true,
+      "state": {
+        "path": "/en/scheduling",
+        "h1": [
+          "My Schedule"
+        ],
+        "text": "Toggle Sidebar\n\nScheduling\n\nMore actions\nPerformance small · Europe/Berlin\nMy Schedule\nYour published shifts, week by week\nToday\nNov 16 – Nov 22, 2026\nMon, Nov 16\n09:00 – 17:00\nIndependent scheduling office · Independent reception\nTue, Nov 17\nToday\n\nNo shifts\n\nWed, Nov 18\n\nNo shifts\n\nThu, Nov 19\n\nNo shifts\n\nFri, Nov 20\n\nNo shifts\n\nSat, Nov 21\n\nNo shifts\n\nSun, Nov 22\n\nNo shifts",
+        "buttons": [
+          {
+            "text": "Toggle Sidebar",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Clock In",
+            "aria": "Clock In",
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Notifications",
+            "disabled": false
+          },
+          {
+            "text": "More actions",
+            "aria": "More actions",
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Previous week",
+            "disabled": false
+          },
+          {
+            "text": "Today",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Next week",
+            "disabled": false
+          },
+          {
+            "text": "09:00 – 17:00Independent scheduling office · Independent reception",
+            "aria": null,
+            "disabled": false
+          }
+        ],
+        "alerts": [],
+        "notifications": "denied"
+      }
+    },
+    {
+      "actor": "small-restricted",
+      "loginWrapperNavigationRace": true,
+      "state": {
+        "path": "/en/scheduling",
+        "h1": [
+          "My Schedule"
+        ],
+        "text": "Toggle Sidebar\n\nScheduling\n\nMore actions\nPerformance small · Europe/Berlin\nMy Schedule\nYour published shifts, week by week\nToday\nNov 16 – Nov 22, 2026\nMon, Nov 16\n\nNo shifts\n\nTue, Nov 17\nToday\n\nNo shifts\n\nWed, Nov 18\n\nNo shifts\n\nThu, Nov 19\n\nNo shifts\n\nFri, Nov 20\n\nNo shifts\n\nSat, Nov 21\n\nNo shifts\n\nSun, Nov 22\n\nNo shifts",
+        "buttons": [
+          {
+            "text": "Toggle Sidebar",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Clock In",
+            "aria": "Clock In",
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Notifications",
+            "disabled": false
+          },
+          {
+            "text": "More actions",
+            "aria": "More actions",
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Previous week",
+            "disabled": false
+          },
+          {
+            "text": "Today",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Next week",
+            "disabled": false
+          }
+        ],
+        "alerts": [],
+        "notifications": "denied"
+      }
+    },
+    {
+      "actor": "small-admin",
+      "loginWrapperNavigationRace": true,
+      "state": {
+        "path": "/en/scheduling",
+        "h1": [
+          "Shift Schedule"
+        ],
+        "text": "Toggle Sidebar\n\nScheduling\n\n05:32\nUTC+01:00\nClock In\nToggle theme\nPerformance small · Europe/Berlin\nShift Schedule\nPlan and publish shifts. Planned shifts do not record working time.\n\nNov 16, 2026 – Nov 22, 2026 (Europe/Berlin)\n\nCreate Shift\nCoverage\nShift requests\nShowing one employee's shifts\nShow all shifts\nShift Templates\n\nChoose a template, then set the shift date and assignment.\n\nIndependent morning\n9:00 AM - 5:00 PM\n(8h)\nToday\nPrevious period\nNext period\nNovember 2026\nView\nWeek\nDate\nMON\n16\nTUE\n17\nWED\n18\nTHU\n19\nFRI\n20\nSAT\n21\nSUN\n22\n1 AM\n2 AM\n3 AM\n4 AM\n5 AM\n6 AM\n7 AM\n8 AM\n9 AM\n10 AM\n11 AM\n12 PM\n1 PM\n2 PM\n3 PM\n4 PM\n5 PM\n6 PM\n7 PM\n8 PM\n9 PM\n10 PM\n11 PM\nShift list (0)\nPublish (2)",
+        "buttons": [
+          {
+            "text": "Toggle Sidebar",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "05:32UTC+01:00",
+            "aria": "Current timezone Europe/Berlin, 05:32, UTC+01:00",
+            "disabled": false
+          },
+          {
+            "text": "Clock In",
+            "aria": "Clock In",
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Refresh data",
+            "disabled": false
+          },
+          {
+            "text": "Toggle theme",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Notifications",
+            "disabled": false
+          },
+          {
+            "text": "Create Shift",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Coverage",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Shift requests",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Show all shifts",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Independent morning9:00 AM - 5:00 PM(8h)",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Today",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Previous period",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Next period",
+            "aria": null,
+            "disabled": false
+          },
+          {
+            "text": "Week",
+            "aria": "Select View",
+            "disabled": false
+          },
+          {
+            "text": "",
+            "aria": "Choose Date",
+            "disabled": false
+          },
+          {
+            "text": "Publish (2)",
+            "aria": null,
+            "disabled": false
+          }
+        ],
+        "alerts": [],
+        "notifications": "denied"
+      }
+    }
+  ]
+}

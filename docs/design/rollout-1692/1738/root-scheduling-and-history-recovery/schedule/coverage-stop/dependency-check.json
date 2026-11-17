@@ -1,0 +1,13 @@
+{
+  "parents": [
+    "node_modules",
+    "apps/webapp/node_modules",
+    "node_modules/.pnpm"
+  ],
+  "physical": true,
+  "internalLeafLinks": 1598,
+  "externalLinks": 0,
+  "react": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react\\index.js",
+  "vitest": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest\\index.cjs",
+  "licenses": 125
+}

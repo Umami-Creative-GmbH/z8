@@ -1,0 +1,10 @@
+{
+  "normalWidgetFormLogins": true,
+  "grantsChanged": false,
+  "authSavedCopiedRestored": false,
+  "roles": [],
+  "failure": {
+    "name": "AssertionError",
+    "message": "The expression evaluated to a falsy value:\n\n  assert(p)\n"
+  }
+}

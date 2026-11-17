@@ -1,0 +1,53 @@
+{
+  "head": "3f22ce77ccc5219338237b9522f19b9405539355",
+  "tree": "b35ba7b62748522febc8c0bc39cb4b4e422ca324",
+  "applicationTree": "51911eadc52202719f67d97def3df8c323ac6690",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "trackedBytePinsUnchanged": 17286,
+  "verifiedAnchors": 59,
+  "baselineAncestor": true,
+  "dependencyParentsPhysical": true,
+  "dependencyLeafCount": 158,
+  "dependencyInventorySha256": "051acf4f47910176a18bcf5fe0fc2e452beb068c74a0da938470e426b5e9141b",
+  "lock": {
+    "path": "pnpm-lock.yaml",
+    "bytes": 771361,
+    "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  "license": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "bytes": 28382,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf"
+  },
+  "pdfProofCount": 202,
+  "protected1733and1734Unchanged": true,
+  "archives": [
+    {
+      "namespace": "merge1738-audit",
+      "files": 26,
+      "seal": "026a64195a5f9ef69815c3836847834eb30a10a21cffa617e3965fc9a0063874",
+      "allPayloadHashesVerified": true
+    },
+    {
+      "namespace": "1738-independent-checks",
+      "files": 28,
+      "seal": "a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9",
+      "allPayloadHashesVerified": true
+    },
+    {
+      "namespace": "1738-publish-independent-checks",
+      "files": 29,
+      "seal": "54ebb36cfb1d79d5e2a27609973fbb68f37c073001cba683e43ad19b51664dae",
+      "allPayloadHashesVerified": true
+    },
+    {
+      "namespace": "1738-publication-independent-checks",
+      "files": 30,
+      "seal": "e4ed0ede248c77399706e504078d3d9299a99c66f8bcaa53d6ad5118daaab2d1",
+      "allPayloadHashesVerified": true
+    }
+  ],
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+  "verifiedCommit": null
+}

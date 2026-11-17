@@ -1,0 +1,26 @@
+{
+  "preservation": [
+    {
+      "scope": "small",
+      "shifts": 6,
+      "allOriginalRowsByteForValueUnchanged": true,
+      "recordedWorkCounts": {
+        "time_entries": 4176,
+        "work_periods": 2088
+      },
+      "fullTimeEntryAndWorkPeriodDigestsUnchanged": true
+    },
+    {
+      "scope": "large",
+      "shifts": 6,
+      "allOriginalRowsByteForValueUnchanged": true,
+      "recordedWorkCounts": {
+        "time_entries": 104400,
+        "work_periods": 52200
+      },
+      "fullTimeEntryAndWorkPeriodDigestsUnchanged": true
+    }
+  ],
+  "managerCreatedEditedThenDeletedOnlyOwnNewDraft": true,
+  "foreignOriginalBoundaryPublishedRowsUnchanged": true
+}

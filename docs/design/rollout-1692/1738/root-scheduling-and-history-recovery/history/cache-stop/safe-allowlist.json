@@ -1,0 +1,195 @@
+{
+  "status": "STOP_CRITICAL_ACCEPTANCE_BLOCKER_RELEASE_ALL",
+  "root": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks",
+  "publicationPerformed": false,
+  "scope": "Only explicit safe synthetic/public evidence. Original archives immutable. No fresh runtime or image accepted.",
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\HANDOFF.md",
+      "bytes": 7387,
+      "sha256": "c73e6508756cb2442a7cf4527b2b817bce8312c36d20163b33e7880718fea149"
+    },
+    {
+      "path": "pins.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\pins.json",
+      "bytes": 1855,
+      "sha256": "c3a4aa398e170f25fc1d86939cf46fa260fe353b381d88d811f0e424d10989c6"
+    },
+    {
+      "path": "source-review.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\source-review.json",
+      "bytes": 4740,
+      "sha256": "b330e22aa311d9411211c6769fe7674dcf0ad9ed04b58482b571f2029f496f8d"
+    },
+    {
+      "path": "finding.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\finding.json",
+      "bytes": 3255,
+      "sha256": "bd6e3eb578f06cf5b7aa93a98a6854f317812f9af78ed95491477e05f8085f81"
+    },
+    {
+      "path": "cache-observation.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\cache-observation.json",
+      "bytes": 250,
+      "sha256": "8446d21744ea57b95182c8151bfd3d8a27683fba9a85975805b458f7b1c9812f"
+    },
+    {
+      "path": "cache-observation-first.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\cache-observation-first.json",
+      "bytes": 250,
+      "sha256": "8446d21744ea57b95182c8151bfd3d8a27683fba9a85975805b458f7b1c9812f"
+    },
+    {
+      "path": "results-summary.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\results-summary.json",
+      "bytes": 29635,
+      "sha256": "06dbf6cfd39e6e1c1940fc0ea5a213de1408745f1f7b80184a460a0a905b4496"
+    },
+    {
+      "path": "preservation.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\preservation.json",
+      "bytes": 658,
+      "sha256": "076b89910007b5c4f5eeff49ea4a2eee0734427fc6306f1f9f42e431f673e2af"
+    },
+    {
+      "path": "release.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\release.json",
+      "bytes": 1225,
+      "sha256": "6140e5dab5d81d07c39f987541004eb22b71f381449a1ea7973cf752c6775c43"
+    },
+    {
+      "path": "bridge-cleanup.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\bridge-cleanup.json",
+      "bytes": 670,
+      "sha256": "33665b6c6347fe018478e0ab6f978809823aed196f5dad5d9669fbef558ca684"
+    },
+    {
+      "path": "bridges.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\bridges.json",
+      "bytes": 541,
+      "sha256": "a48d8921f17d035a1c9b64141900ec1980e62806796e82a8c21f735ad6c2ec4c"
+    },
+    {
+      "path": "directory-public.test.tsx",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\directory-public.test.tsx",
+      "bytes": 12991,
+      "sha256": "ed2d7d842caceb47bf19601255f4a1a82c7b818d9bf068965df7f3606ebe58e5"
+    },
+    {
+      "path": "history-public.test.tsx",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\history-public.test.tsx",
+      "bytes": 4233,
+      "sha256": "9d418029f6d7512fda65baccdfddb15a45f277cbcb9457917c3465eb868821eb"
+    },
+    {
+      "path": "commands-and-attempts.md",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\commands-and-attempts.md",
+      "bytes": 5566,
+      "sha256": "b30d9856a4bb55654c5045d1b823de66dcba3da873687e695debcb415ee81e46"
+    },
+    {
+      "path": "pnpm-version.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\pnpm-version.log",
+      "bytes": 9,
+      "sha256": "ca9c5b9470562281b82da9e480aa47b79105e4fba3fa05ef2b99d4a9b738324d"
+    },
+    {
+      "path": "public-01-sandbox-lock-failure.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-01-sandbox-lock-failure.log",
+      "bytes": 1240,
+      "sha256": "f654678e05aa1114b46b560778bd744883bee40a1e3b14d70e3b0d3e362b1f5b"
+    },
+    {
+      "path": "public-01.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-01.json",
+      "bytes": 12997,
+      "sha256": "2939ad98dcd36c64536051611832d0935c83d4dc3d65601adf03a545b457bec0"
+    },
+    {
+      "path": "public-01.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-01.log",
+      "bytes": 668,
+      "sha256": "0e18035e317d6aca5cf1164f52cd7d98f0b07ccd652e90d136e80b0c7ee9f88f"
+    },
+    {
+      "path": "public-02.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-02.json",
+      "bytes": 18970,
+      "sha256": "1f12864b97d6197d47cd6e481f1bc4040b321c24573b96408a5eee0a420053d8"
+    },
+    {
+      "path": "public-02.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-02.log",
+      "bytes": 668,
+      "sha256": "53792a8e91b0071ea43cfc67c889a6b52edd38230f270ec65c979a8b67409782"
+    },
+    {
+      "path": "public-03.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-03.json",
+      "bytes": 18651,
+      "sha256": "91fbedc7196aac38685eda92ad39802a869aa731ab038c0b1af18f56e7290362"
+    },
+    {
+      "path": "public-03.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-03.log",
+      "bytes": 668,
+      "sha256": "f4be3d0f11e089103038167233dfc4aa256caf760c1e2b51bac1c0bc60eab971"
+    },
+    {
+      "path": "public-04.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-04.json",
+      "bytes": 8621,
+      "sha256": "04452444403b7d5bb448c89b9c859bd417e00a27849f8070a4a41128917b58aa"
+    },
+    {
+      "path": "public-04.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-04.log",
+      "bytes": 510,
+      "sha256": "f204f8763eac08cc97239cdc4e48896b031f706adaff3abd7a1d1efc65eca133"
+    },
+    {
+      "path": "public-cache-01.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-cache-01.json",
+      "bytes": 22823,
+      "sha256": "b1a58ba08334b354e16a65f8b042f93908c4759fcaf63e3a6399db1d2e589884"
+    },
+    {
+      "path": "public-cache-01.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-cache-01.log",
+      "bytes": 674,
+      "sha256": "ce0b9a4ddfc44945010653e42dcac5307f9ee8faa7258f9bb749fb662fffe456"
+    },
+    {
+      "path": "public-cache-02.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-cache-02.json",
+      "bytes": 9412,
+      "sha256": "cc9a4b2b2143c423f08f2bafe8d6ae56732b27c0b09b02bf148859e354bdaead"
+    },
+    {
+      "path": "public-cache-02.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\public-cache-02.log",
+      "bytes": 674,
+      "sha256": "30877a650d66551d3a5ec66e56e32dd009d75473c19eb9248ec9641327a7a42b"
+    },
+    {
+      "path": "cache-repro-01.json",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\cache-repro-01.json",
+      "bytes": 3807,
+      "sha256": "2fff4a69e1db132a42651f5adff2d0e5508e848948d3d66814d5046385c337af"
+    },
+    {
+      "path": "cache-repro-01.log",
+      "absolutePath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1739-independent-correction-checks\\cache-repro-01.log",
+      "bytes": 673,
+      "sha256": "5556db71c85bc7d7385b29d0fc80fd33fc61584d17fa9e8ae851db20842b20a5"
+    }
+  ],
+  "excluded": [
+    "baseline.private.json: raw tracked/config/dependency inventory, local audit only",
+    "audit.mjs,prepare-tests.mjs,cleanup-bridges.mjs,summarize.mjs,seal.mjs: implementation scripts, local only",
+    "directory-extra.txt: intermediate preparation input; final executable test source is allowlisted",
+    "public-01.ps1: initial PowerShell launch source; literal command and execution failure documented separately",
+    "No private fixture/auth manifests, auth state, private response bodies/logs or images were created."
+  ]
+}

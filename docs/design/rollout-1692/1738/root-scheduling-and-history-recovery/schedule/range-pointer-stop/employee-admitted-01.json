@@ -1,0 +1,97 @@
+{
+  "rawSha256": "2a7938738cb00fad4e4521f276085eb8685077781e5cfef7ca5499b5299f8299",
+  "sanitizer": "controller fixture actor redaction plus all UUID record values",
+  "ok": true,
+  "data": {
+    "url": "http://localhost:53432/en/scheduling?date=2026-11-17&employeeId=[synthetic fixture]",
+    "text": "Skip to content\nPerformance small\nMember\nSearch\nCtrl+K\nWORKPLACE\nDashboard\nTime Tracking\nCalendar\nAbsences\nTravel Expenses\nMy Requests\nReports\nOrg Explorer\nSettings\nGet Help\nFeedback\nPerson 2\n[synthetic fixture]\nToggle Sidebar\n\nScheduling\n\n03:48\nUTC+01:00\nLoading clock status\nToggle theme\nPerformance small · Europe/Berlin\nMy Schedule\nYour published shifts, week by week\nToday\nPrevious period\nNext period\nNovember 2026\nView\nWeek\nDate\nMON\n16\nTUE\n17\nWED\n18\nTHU\n19\nFRI\n20\nSAT\n21\nSUN\n22\n1 AM\n2 AM\n3 AM\n4 AM\n5 AM\n6 AM\n7 AM\n8 AM\n9 AM\n10 AM\n11 AM\n12 PM\n1 PM\n2 PM\n3 PM\n4 PM\n5 PM\n6 PM\n7 PM\n8 PM\n9 PM\n10 PM\n11 PM\nIndependent scheduling office · Independent reception\n9:00 AM – 5:00 PM\nIndependent scheduling office · Independent reception\n9:00 AM – 5:00 PM",
+    "notifications": "denied",
+    "fields": [
+      {
+        "id": "s5lx3wi0cf",
+        "name": "date",
+        "type": "text",
+        "placeholder": "",
+        "value": "11/17/2026"
+      }
+    ],
+    "buttons": [
+      {
+        "text": "Performance smallMember",
+        "aria": "Switch Organization: Performance small",
+        "disabled": false
+      },
+      {
+        "text": "SearchCtrl+K",
+        "aria": "Search",
+        "disabled": false
+      },
+      {
+        "text": "Person 2[synthetic fixture]",
+        "aria": "Account: Person 2",
+        "disabled": false
+      },
+      {
+        "text": "Toggle Sidebar",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "03:48UTC+01:00",
+        "aria": "Current timezone Europe/Berlin, 03:48, UTC+01:00",
+        "disabled": false
+      },
+      {
+        "text": "Loading clock status",
+        "aria": "Loading clock status",
+        "disabled": true
+      },
+      {
+        "text": "",
+        "aria": "Refresh data",
+        "disabled": false
+      },
+      {
+        "text": "Toggle theme",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Notifications",
+        "disabled": false
+      },
+      {
+        "text": "Today",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Previous period",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Next period",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Week",
+        "aria": "Select View",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Choose Date",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Open Tanstack query devtools",
+        "disabled": false
+      }
+    ],
+    "errors": []
+  }
+}

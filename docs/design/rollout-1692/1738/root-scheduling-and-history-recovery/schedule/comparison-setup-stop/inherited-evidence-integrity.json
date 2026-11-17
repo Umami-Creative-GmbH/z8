@@ -1,0 +1,12 @@
+{
+  "payloads": 50,
+  "sealSha256": "163d7072806a75e33a59fa9d2b7a3b8e12d235bbab8e1d47cfae63753589c637",
+  "allPayloadHashesMatch": true,
+  "source": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1738-coverage-manager-independent-checks\\public-allowlist.json",
+  "handoff": {
+    "path": "HANDOFF.md",
+    "bytes": 5328,
+    "sha256": "7d09aae60bc4c236f4133ea4bb13fb69758f51e322d8aae2bd42c9e6d33d2f8d"
+  },
+  "classification": "Inherited immutable evidence; integrity check does not repeat its runtime acceptance."
+}

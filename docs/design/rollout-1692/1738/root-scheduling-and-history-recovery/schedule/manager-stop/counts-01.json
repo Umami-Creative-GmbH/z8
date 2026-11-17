@@ -1,0 +1,40 @@
+{
+  "fresh": {
+    "unitCases": 0,
+    "postgresTestCases": 0,
+    "canonicalFixturePrepares": 1,
+    "initialDomainSeedCalls": 1,
+    "initialDomainShiftRows": 12,
+    "transientChromiumBrowsers": 1,
+    "freshContexts": 4,
+    "normalFormWidgetLogins": 4,
+    "actualPublishRequests": 1,
+    "actualPublishedRows": 2,
+    "priorityTrustedPointerdowns": 2,
+    "savedCreateEditDelete": 0,
+    "canonicalScopedReadbackCalls": 2,
+    "acceptedOperationalImages": 4
+  },
+  "inherited": {
+    "unitCases": 297,
+    "unitFiles": 46,
+    "postgresCases": 6,
+    "postgresFiles": 2,
+    "currentDistinctCases": 303,
+    "currentDistinctFiles": 48,
+    "older45PgNonadditive": true
+  },
+  "attempts": {
+    "priority": 4,
+    "priorityFirstTwoNoPageNoActions": true,
+    "priorityThirdOrderOnlyNoAction": true,
+    "priorityFourthOnlyPublication": true,
+    "employeeRetry": 2,
+    "firstAssertedRetainedDisabledRetryButActualLoadingTransition": true,
+    "loginWrapperNavigationFailures": 4,
+    "admittedNormalLogins": 4,
+    "managerRoleFlowInitRaceTimeout": true,
+    "managerSettledRouteReproduction": true
+  },
+  "countsAreNotAddedToInheritedCases": true
+}

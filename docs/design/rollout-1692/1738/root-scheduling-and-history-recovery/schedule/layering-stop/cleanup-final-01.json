@@ -1,0 +1,62 @@
+{
+  "exactAllocatedListeners": [
+    {
+      "port": 59983,
+      "absent": true
+    },
+    {
+      "port": 53630,
+      "absent": true
+    },
+    {
+      "port": 63255,
+      "absent": true
+    },
+    {
+      "port": 59977,
+      "absent": true
+    },
+    {
+      "port": 59979,
+      "absent": true
+    },
+    {
+      "port": 59980,
+      "absent": true
+    }
+  ],
+  "ownedResources": 0,
+  "browserClosedWithoutStateSave": true,
+  "sourceRestored": true,
+  "cleanupScope": "only own saved identity chains and exact manifest-listed label-verified services; no peer cleanup or global absence claim",
+  "bridgesAbsent": [
+    "apps/webapp/src/test/1738-independent-bridge.test.tsx",
+    "apps/webapp/scripts/1738-independent-fixture-bridge.ts"
+  ],
+  "ownedNamespaceNodeProcessesRemaining": 0,
+  "ownedProcessesRemaining": 0,
+  "fixtureLabel": "z8-independent-scheduling-1738-20261117",
+  "ownedServicesRemaining": 0,
+  "recordedProcessIdentitiesChecked": 20,
+  "nativeSessionAllocated": false,
+  "fixtureServices": [
+    {
+      "name": "z8_perf_5df3868ea83a_postgres",
+      "absent": true
+    },
+    {
+      "name": "z8_perf_5df3868ea83a_redis",
+      "absent": true
+    },
+    {
+      "name": "z8_perf_5df3868ea83a_storage",
+      "absent": true
+    }
+  ],
+  "finished": "2026-11-17T01:39:53.2822305Z",
+  "canonicalPgContainer": {
+    "name": "z8_approval_workflow_repository_test_1794878179635246100_7473",
+    "absent": true,
+    "portAbsenceClaimed": false
+  }
+}

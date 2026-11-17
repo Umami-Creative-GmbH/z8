@@ -1,0 +1,19 @@
+{
+  "route": "/en/team",
+  "failedContextRequests": 1,
+  "settledInitialHeaderRsc": true,
+  "pending": {
+    "held": 1,
+    "reads": 1,
+    "rscBeforeContextCompletion": 0,
+    "oldMembersHidden": true,
+    "nativePending": [
+      {
+        "text": "Retrying…",
+        "disabled": true
+      }
+    ]
+  },
+  "recoveredMembers": 4,
+  "localRetryRscAfterRead": 1
+}

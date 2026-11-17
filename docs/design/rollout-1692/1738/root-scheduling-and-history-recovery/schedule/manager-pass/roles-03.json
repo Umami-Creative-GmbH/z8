@@ -1,0 +1,10 @@
+{
+  "normalWidgetFormLogins": true,
+  "grantsChanged": false,
+  "authSavedCopiedRestored": false,
+  "roles": [],
+  "failure": {
+    "name": "TypeError",
+    "message": "Cannot read properties of undefined (reading 'replace')"
+  }
+}

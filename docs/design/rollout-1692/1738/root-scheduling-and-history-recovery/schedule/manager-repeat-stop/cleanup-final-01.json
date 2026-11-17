@@ -1,0 +1,23 @@
+{
+  "containers": [
+    {
+      "name": "z8_perf_818268b55131_postgres",
+      "absent": true
+    },
+    {
+      "name": "z8_perf_818268b55131_redis",
+      "absent": true
+    },
+    {
+      "name": "z8_perf_818268b55131_storage",
+      "absent": true
+    }
+  ],
+  "privateIgnoredHistoryPreserved": true,
+  "allocatedListenersAbsent": true,
+  "dependencyDirectoriesPreserved": true,
+  "ownedResourcesRemaining": 0,
+  "ownNextBrowserControllerAndLaunchersAbsent": true,
+  "temporaryBridgeAbsent": true,
+  "allocatedListenerCount": 5
+}

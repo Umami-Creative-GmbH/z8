@@ -1,0 +1,64 @@
+{
+  "branch": "test/isolated-recheck",
+  "head": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "tree": "a729615f394e8108d53041d368cbf5dedb846039",
+  "appTree": "4937e4cd57c75182b8697741dd6a8f845cbb5bbb",
+  "tracked": 17286,
+  "trackedDigest": "c8b2d75ae5afb636cc732fbe66700e13c28d3262955553a56f831c15d0db84a6",
+  "packages": [
+    {
+      "path": "package.json",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    }
+  ],
+  "license": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "inherited": true,
+    "count": 125
+  },
+  "inheritedSafe50": {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1738-coverage-manager-independent-checks",
+    "seal": "163d7072806a75e33a59fa9d2b7a3b8e12d235bbab8e1d47cfae63753589c637",
+    "count": 50
+  },
+  "helpers": [
+    {
+      "name": "fixture-helper-01.mjs",
+      "sourceSha256": "e639e96bec4340b678a67afecc275963a8ff30cbb5402149a4f0e5a8e8b93330",
+      "adaptedSha256": "91ca67ce7f14d18c55fab95c2b241f22dfbe23c1f55aff436918e5fb66b066f0"
+    },
+    {
+      "name": "dev-01-private.mjs",
+      "sourceSha256": "62586d1630fd7b58db93bc55b59ff5c99cff79468214ac1a6d74f26dbb58ecf2",
+      "adaptedSha256": "312860564e4093fa1cef2c4fd084074b2c8a5c4ba9f804a12d8fae897576d18f"
+    },
+    {
+      "name": "scheduling-fixture-bridge-03.ts",
+      "sourceSha256": "b21c282fc529094cdc7c69f86186bbf2cdb59e1cca0ee2ca6ed97e7d24f1d7d0",
+      "adaptedSha256": "8fc8661dc1e0916f7d4f7a334776df7788bc7c70d3b3a97d9c41638baa3ad02e"
+    },
+    {
+      "name": "run-fixture-tool-03.mjs",
+      "sourceSha256": "f94dfd5c35f0bce2c587192e09632cbd0176c24063e54e7cd692b417621a3e2d",
+      "adaptedSha256": "e6990a05482704f7732b947c492947105c9e1ff1960544d84abb8fd3e9cb9b74"
+    }
+  ],
+  "bridge": {
+    "path": "apps/webapp/scripts/1738-isolated-comparison-v2-fixture-bridge.ts",
+    "sha256": "8fc8661dc1e0916f7d4f7a334776df7788bc7c70d3b3a97d9c41638baa3ad02e"
+  },
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+  "verifiedCommit": null
+}

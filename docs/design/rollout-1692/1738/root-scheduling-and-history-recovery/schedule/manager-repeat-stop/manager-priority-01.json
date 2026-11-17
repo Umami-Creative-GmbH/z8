@@ -1,0 +1,222 @@
+{
+  "candidate": "a85fec346084fa576b77d34f7f654928d2d957b3",
+  "actor": "canonical small-manager",
+  "conditions": "fresh normal development widget/form login; no extra grants; no interference or writes; bounded normal retry settlement",
+  "events": [
+    {
+      "navigation": "/en/scheduling"
+    },
+    {
+      "navigation": "/en/scheduling"
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "event": "request"
+    },
+    {
+      "name": "getTargetHeatmapData",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getPendingShiftRequests",
+      "event": "request"
+    },
+    {
+      "name": "getPendingShiftRequests",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getShifts",
+      "event": "request"
+    },
+    {
+      "name": "getShifts",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getShiftTemplates",
+      "event": "request"
+    },
+    {
+      "name": "getShiftTemplates",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getScheduleComplianceSummary",
+      "event": "request"
+    },
+    {
+      "name": "getScheduleComplianceSummary",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getOwnPositionCaptureAction",
+      "event": "request"
+    },
+    {
+      "name": "getOwnPositionCaptureAction",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "name": "getClockVehicleUseStatus",
+      "event": "request"
+    },
+    {
+      "name": "getClockVehicleUseStatus",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    },
+    {
+      "navigation": "/en/"
+    },
+    {
+      "name": "getEmployeeClockStatuses",
+      "event": "request"
+    },
+    {
+      "name": "getEmployeeClockStatuses",
+      "status": 200,
+      "event": "response",
+      "redirect": null
+    }
+  ],
+  "pendingActionCount": 3,
+  "state": {
+    "url": "http://localhost:51410/en/",
+    "path": "/en/",
+    "visibleH1": [
+      "Good day, Person."
+    ],
+    "alerts": [],
+    "summary": [
+      "More widgets · Work location, birthdays and hydration"
+    ],
+    "buttons": [
+      {
+        "text": "Performance smallMember",
+        "aria": "Switch Organization: Performance small",
+        "disabled": false
+      },
+      {
+        "text": "SearchCtrl+K",
+        "aria": "Search",
+        "disabled": false
+      },
+      {
+        "text": "Person 1[synthetic fixture]",
+        "aria": "Account: Person 1",
+        "disabled": false
+      },
+      {
+        "text": "Toggle Sidebar",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Customize dashboard",
+        "disabled": false
+      },
+      {
+        "text": "04:52UTC+01:00",
+        "aria": "Current timezone Europe/Berlin, 04:52, UTC+01:00",
+        "disabled": false
+      },
+      {
+        "text": "Clock In",
+        "aria": "Clock In",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh data",
+        "disabled": false
+      },
+      {
+        "text": "Toggle theme",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Notifications",
+        "disabled": false
+      },
+      {
+        "text": "Customize dashboard",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Refresh",
+        "disabled": false
+      },
+      {
+        "text": "Load Upcoming Birthdays",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Open Tanstack query devtools",
+        "disabled": false
+      }
+    ],
+    "notifications": "denied"
+  },
+  "rawResponsesCaptured": false
+}

@@ -1,0 +1,52 @@
+{
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "allPnpmInvocations": {
+    "environment": "pnpm_config_verify_deps_before_run=false",
+    "leadingFlag": "--config.verify-deps-before-run=false",
+    "noInstalls": true
+  },
+  "public": [
+    "pnpm --config.verify-deps-before-run=false exec vitest run --project unit src/test/1738-independent-bridge.test.tsx --reporter=json --outputFile=<own unique raw report>",
+    "Initial outside-app config attempts02/03/04: exact retained vitest-independent-*.config.ts and private logs"
+  ],
+  "postgres": {
+    "command": "Git bash own postgres-owner-01.sh <seven literal canonical paths> --reporter=json --outputFile=<own namespace raw report>",
+    "selection": [
+      "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+      "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+      "src/lib/effect/services/coverage.service.integration.test.ts",
+      "src/lib/effect/services/open-shifts.service.integration.test.ts",
+      "src/lib/effect/services/shift-roster-guard.integration.test.ts",
+      "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts"
+    ],
+    "nested": [
+      "pnpm --config.verify-deps-before-run=false exec tsx scripts/verify-approval-migration-recovery.ts",
+      "pnpm --config.verify-deps-before-run=false exec vitest run --project integration <same literals>"
+    ]
+  },
+  "fixture": [
+    "pnpm --config.verify-deps-before-run=false node .tmp/1738-independent-checks/fixture-helper-01.mjs prepare .tmp/1738-independent-checks/fixture-01-private",
+    "Canonical prepare nested migration verifier + performance-fixture.ts with exact flag/env; no authenticate/start commands permitted",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1738-independent-checks/run-fixture-tool-02.mjs seed",
+    "node .tmp/1738-independent-checks/dev-01-private.mjs dev . .tmp/1738-independent-checks/fixture-01-private",
+    "node .tmp/1738-independent-checks/start-browser-01.mjs; bootstrap only via private stdin",
+    "RPC node scripts named in raw-to-safe provenance; private manifests/values never command arguments",
+    "node .tmp/1738-independent-checks/runtime-recovery-01/02/03.mjs",
+    "node .tmp/1738-independent-checks/pending-create-01.mjs",
+    "node .tmp/1738-independent-checks/edit-publish-01.mjs",
+    "node .tmp/1738-independent-checks/inspect-edit-response-01.mjs",
+    "node .tmp/1738-independent-checks/inspect-hit-and-publish-01.mjs",
+    "node .tmp/1738-independent-checks/stop-publish-occlusion-01.mjs"
+  ],
+  "cleanup": [
+    "capture-owned-processes-01.ps1: private identity capture",
+    "rpc-02.mjs close: close context/browser/controller without state save",
+    "stop-owned-next-01.ps1: exact identity guards, own tree only",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1738-independent-checks/run-fixture-tool-02.mjs readback",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1738-independent-checks/fixture-helper-01.mjs cleanup .tmp/1738-independent-checks/fixture-01-private",
+    "verify-cleanup-01.ps1: exact own recorded identities/listeners/service names/bridge absence"
+  ],
+  "tracker": "gh issue view1738 readback only: OPEN/KaiSoellch; no duplicate claim or tracker write",
+  "noPushPRMergeDeploymentPublication": true
+}

@@ -1,0 +1,50 @@
+{
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "visible": {
+    "path": "/en/scheduling",
+    "h1": [
+      "Shift Schedule"
+    ],
+    "summary": "Shift list (4)",
+    "notifications": "denied"
+  },
+  "compilationIssues": [],
+  "configErrors": [],
+  "sessionWarnings": [
+    {
+      "url": "/en/scheduling?date=2026-11-16",
+      "buildError": null,
+      "runtimeErrors": [
+        {
+          "type": "console",
+          "errorName": "Error",
+          "kind": "React hydration attribute mismatch",
+          "messageFirstLine": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:"
+        },
+        {
+          "type": "console",
+          "errorName": "Error",
+          "kind": "React hydration attribute mismatch",
+          "messageFirstLine": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:"
+        }
+      ]
+    }
+  ],
+  "rawToSafe": [
+    {
+      "name": "tools/list"
+    },
+    {
+      "name": "get_compilation_issues",
+      "sha256": "cf6c7a0fcdcd8efb1616b9521c82e00305ca235898eb554a5825ebaf862660e8"
+    },
+    {
+      "name": "get_errors",
+      "sha256": "488a7eb99b61e8f5ead4aacd649cbf6374271b86393732e92a41217760c3dffe"
+    },
+    {
+      "name": "get_page_metadata",
+      "sha256": "1cefbbb0f85bc7dc6bf7315359c9cae0c5187fc17d833cffb5d511cd9c097ba7"
+    }
+  ]
+}

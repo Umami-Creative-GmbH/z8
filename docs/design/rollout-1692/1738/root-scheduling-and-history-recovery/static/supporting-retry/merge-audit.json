@@ -1,0 +1,17 @@
+{
+  "commit": "512ac6f7b39bcf028c3c3a555ddfb140589b0796",
+  "parents": [
+    "03f1a8d0df8fcb2d8c73901fa6efe8e114310765",
+    "01771c655e179797b852adf217b684794e3266f7"
+  ],
+  "tree": "d7e8ac62d0dcabb51d679eaa4d8eff763b1b514f",
+  "independentTreeMatch": true,
+  "unchangedPriorPaths": 17402,
+  "anchors": 60,
+  "paths": [
+    "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+    "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+    "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+    "docs/design/rollout-1692/1738.md"
+  ]
+}

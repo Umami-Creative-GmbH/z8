@@ -1,0 +1,253 @@
+{
+  "candidate": "9afe127e43f686675da1ed025b87eaf8dfd9ca63",
+  "pnpmEnvironment": {
+    "pnpm_config_verify_deps_before_run": "false",
+    "NODE_ENV": "test"
+  },
+  "unit": [
+    {
+      "attempt": 1,
+      "cwd": "apps/webapp",
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "../../.tmp/1738-independent-checks/vitest-independent-01.config.ts",
+        "--project",
+        "independent-public",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1738-independent-checks/public-attempt-01.raw.json"
+      ],
+      "exit": 1,
+      "resultExists": false
+    },
+    {
+      "attempt": 2,
+      "cwd": "apps/webapp",
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "../../.tmp/1738-independent-checks/vitest-independent-02.config.ts",
+        "--project",
+        "independent-public",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1738-independent-checks/public-attempt-02.raw.json"
+      ],
+      "exit": 1,
+      "resultExists": true
+    },
+    {
+      "attempt": 3,
+      "cwd": "apps/webapp",
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "../../.tmp/1738-independent-checks/vitest-independent-03.config.ts",
+        "--project",
+        "independent-public",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1738-independent-checks/public-attempt-03.raw.json"
+      ],
+      "exit": 1,
+      "resultExists": true
+    },
+    {
+      "attempt": 4,
+      "cwd": "apps/webapp",
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "vitest",
+        "run",
+        "--config",
+        "../../.tmp/1738-independent-checks/vitest-independent-04.config.ts",
+        "--project",
+        "independent-public",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1738-independent-checks/public-attempt-04.raw.json"
+      ],
+      "exit": 1,
+      "resultExists": true
+    },
+    {
+      "attempt": 5,
+      "cwd": "apps/webapp",
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/1738-independent-bridge.test.tsx",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1738-independent-checks/public-attempt-05.raw.json"
+      ],
+      "exit": 1,
+      "resultExists": true
+    },
+    {
+      "attempt": 6,
+      "cwd": "apps/webapp",
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/1738-independent-bridge.test.tsx",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1738-independent-checks/public-attempt-06.raw.json"
+      ],
+      "exit": 1,
+      "resultExists": true
+    },
+    {
+      "attempt": 7,
+      "cwd": "apps/webapp",
+      "command": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/1738-independent-bridge.test.tsx",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1738-independent-checks/public-attempt-07.raw.json"
+      ],
+      "exit": 0,
+      "resultExists": true
+    }
+  ],
+  "postgres": {
+    "attempt01": {
+      "binary": "C:/Program Files/Git/bin/bash.exe",
+      "executed": false,
+      "cause": "not installed there"
+    },
+    "attempt02": {
+      "cwd": "checkout root",
+      "binary": "C:/Users/KaiHentschel/scoop/apps/git/current/bin/bash.exe",
+      "args": [
+        ".tmp/1738-independent-checks/postgres-owner-01.sh",
+        "src/lib/effect/services/open-shifts.service.integration.test.ts",
+        "src/lib/effect/services/shift-roster-guard.integration.test.ts",
+        "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+        "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+        "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+        "src/lib/effect/services/coverage.service.integration.test.ts",
+        "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+        "--reporter=json",
+        "--outputFile=../../.tmp/1738-independent-checks/postgres-attempt-02.raw.json"
+      ],
+      "exit": 0
+    }
+  },
+  "runtimeScripts": [
+    {
+      "source": "fixture-helper-01.mjs",
+      "command": "pnpm --config.verify-deps-before-run=false node <source> prepare <own fixture directory>",
+      "exit": 0
+    },
+    {
+      "source": "run-fixture-tool-01.mjs",
+      "command": "pnpm --config.verify-deps-before-run=false node <source> seed",
+      "exit": 1,
+      "cause": "top-level-await CJS transform; zero seed code ran"
+    },
+    {
+      "source": "run-fixture-tool-02.mjs",
+      "command": "pnpm --config.verify-deps-before-run=false node <source> seed/readback",
+      "exit": 0
+    },
+    {
+      "source": "dev-01-private.mjs",
+      "command": "node <source> dev . <own fixture directory>",
+      "mode": "development",
+      "normalTurnstile": true,
+      "closedAtStop": true
+    },
+    {
+      "source": "start-browser-01.mjs",
+      "command": "node <source>",
+      "privateStdin": true,
+      "closedAtStop": true
+    },
+    {
+      "source": "runtime-recovery-01.mjs",
+      "exit": 1,
+      "cause": "undefined evaluation sanitizer"
+    },
+    {
+      "source": "runtime-recovery-02.mjs",
+      "exit": 1,
+      "cause": "prior alert selected before refresh"
+    },
+    {
+      "source": "runtime-recovery-03.mjs",
+      "exit": 0,
+      "qualification": "tooltip selected wrong item; see qualified public receipt"
+    },
+    {
+      "source": "pending-create-01.mjs",
+      "exit": 0
+    },
+    {
+      "source": "edit-publish-01.mjs",
+      "exit": 1,
+      "cause": "first actual edit submit click sent no action; no cause assigned"
+    },
+    {
+      "source": "inspect-edit-response-01.mjs",
+      "exit": 0,
+      "actualEditAccepted": true
+    },
+    {
+      "source": "inspect-hit-and-publish-01.mjs",
+      "exit": 0,
+      "actualPointerOpenedWrongRecord": true,
+      "publishCalls": 0
+    },
+    {
+      "source": "stop-publish-occlusion-01.mjs",
+      "exit": 0,
+      "confirmedBlocker": true
+    },
+    {
+      "source": "capture-owned-processes-01.ps1",
+      "exit": 0
+    },
+    {
+      "source": "stop-owned-next-01.ps1",
+      "exit": 0
+    },
+    {
+      "source": "verify-cleanup-01.ps1",
+      "exit": 0
+    }
+  ],
+  "otherFailures": [
+    "initial preparation maxBuffer and ignored-license Git lookup",
+    "one Powershell transformer parse error",
+    "build-evidence01 syntax error before output; build-evidence02 passed",
+    "native skills get react returned1; no native session allocated"
+  ],
+  "allSourceAndRawAttemptsRetainedPrivately": true
+}

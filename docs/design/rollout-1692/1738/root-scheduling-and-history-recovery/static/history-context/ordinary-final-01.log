@@ -1,0 +1,901 @@
+src\app\[locale]\(app)\team\team-directory-context.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·type·{·ComponentProps·}·from·"react";␍
+      5     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·{·TeamDirectory·}·from·"@/app/[locale]/(app)/team/team-directory";␍
+      7     │ - import·{·OrganizationContextProvider·}·from·"@/components/providers/organization-context-provider";␍
+      8     │ - ␍
+      9     │ - const·boundary·=·vi.hoisted(()·=>·({␍
+     10     │ - → fetch:·vi.fn(),␍
+     11     │ - → current:·vi.fn(),␍
+     12     │ - → managed:·vi.fn(),␍
+     13     │ - → presence:·vi.fn(),␍
+     14     │ - → refresh:·vi.fn(),␍
+     15     │ - → replace:·vi.fn(),␍
+     16     │ - → section:·vi.fn(),␍
+     17     │ - → session:·{␍
+     18     │ - → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     19     │ - → → isPending:·false,␍
+     20     │ - → },␍
+     21     │ - }));␍
+     22     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     23     │ - → useSession:·()·=>·boundary.session,␍
+     24     │ - → authClient:·{·$store:·{·atoms:·{·session:·{·subscribe:·()·=>·()·=>·{}·}·}·}·},␍
+     25     │ - }));␍
+     26     │ - vi.mock("@/app/[locale]/(app)/team/actions",·()·=>·({␍
+     27     │ - → getCurrentEmployee:·boundary.current,␍
+     28     │ - → getManagedEmployees:·boundary.managed,␍
+     29     │ - }));␍
+     30     │ - vi.mock("@/app/[locale]/(app)/settings/employees/employee-clock-status.actions",·()·=>·({␍
+     31     │ - → getEmployeeClockStatuses:·boundary.presence,␍
+     32     │ - }));␍
+     33     │ - vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions",·()·=>·({␍
+     34     │ - → getEmployeeWorkBalanceSectionAction:·boundary.section,␍
+     35     │ - → cancelBalanceAdjustmentAction:·vi.fn(),␍
+     36     │ - → recordOvertimePayoutAction:·vi.fn(),␍
+     37     │ - → setOpeningBalanceAction:·vi.fn(),␍
+     38     │ - }));␍
+     39     │ - vi.mock("@/app/[locale]/(app)/time-tracking/actions",·()·=>·({␍
+     40     │ - → addBreakToActiveSession:·vi.fn(),␍
+     41     │ - → resumeBreakInProgress:·vi.fn(),␍
+     42     │ - → startBreakInProgress:·vi.fn(),␍
+     43     │ - → updateTimeEntryNotes:·vi.fn(),␍
+     44     │ - }));␍
+     45     │ - vi.mock("@/navigation",·()·=>·({␍
+     46     │ - → useRouter:·()·=>·({·refresh:·boundary.refresh,·replace:·boundary.replace·}),␍
+     47     │ - → Link:·(props:·ComponentProps<"a">)·=>·<a·{...props}·/>,␍
+     48     │ - }));␍
+     49     │ - vi.mock("@/tolgee/server",·()·=>·({␍
+     50     │ - → getTranslate:·async·()·=>·(_key:·string,·fallback:·string)·=>·fallback,␍
+     51     │ - }));␍
+     52     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     53     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     54     │ - }));␍
+     55     │ - vi.mock("@/lib/navigation/locale-redirect",·()·=>·({·redirectWithLocale:·vi.fn()·}));␍
+     56     │ - ␍
+     57     │ - function·response()·{␍
+     58     │ - → return·new·Response(␍
+     59     │ - → → JSON.stringify({␍
+     60     │ - → → → user:·{·id:·"actor-a"·},␍
+     61     │ - → → → session:·{·activeOrganizationId:·"org-a"·},␍
+     62     │ - → → → employee:·{·employeeId:·"manager-a",·organizationId:·"org-a",·role:·"manager"·},␍
+     63     │ - → → → organizationSettings:·null,␍
+     64     │ - → → }),␍
+     65     │ - → );␍
+     66     │ - }␍
+     67     │ - const·clients:·QueryClient[]·=·[];␍
+     68     │ - beforeEach(()·=>·{␍
+     69     │ - → vi.clearAllMocks();␍
+     70     │ - → boundary.fetch.mockReset().mockImplementation(async·()·=>·response());␍
+     71     │ - → vi.stubGlobal("fetch",·boundary.fetch);␍
+     72     │ - → boundary.current.mockResolvedValue({␍
+     73     │ - → → id:·"manager-a",␍
+     74     │ - → → userId:·"actor-a",␍
+     75     │ - → → organizationId:·"org-a",␍
+     76     │ - → → role:·"manager",␍
+     77     │ - → });␍
+     78     │ - → boundary.managed.mockImplementation(async·()·=>·({␍
+     79     │ - → → success:·true,␍
+     80     │ - → → data:·[␍
+     81     │ - → → → {␍
+     82     │ - → → → → id:·"report-a",␍
+     83     │ - → → → → role:·"employee",␍
+     84     │ - → → → → isFormer:·false,␍
+     85     │ - → → → → user:·{␍
+     86     │ - → → → → → id:·"person-a",␍
+     87     │ - → → → → → name:·"Admitted·Synthetic·Employee",␍
+     88     │ - → → → → → email:·"synthetic@example.test",␍
+     89     │ - → → → → → image:·null,␍
+     90     │ - → → → → },␍
+     91     │ - → → → → timeBalance:·null,␍
+     92     │ - → → → → team:·null,␍
+     93     │ - → → → },␍
+     94     │ - → → ],␍
+     95     │ - → }));␍
+     96     │ - → boundary.presence.mockResolvedValue({·success:·true,·data:·{}·});␍
+     97     │ - });␍
+     98     │ - afterEach(()·=>·{␍
+     99     │ - → cleanup();␍
+    100     │ - → for·(const·client·of·clients)·client.clear();␍
+    101     │ - → clients.length·=·0;␍
+    102     │ - → vi.unstubAllGlobals();␍
+    103     │ - → vi.restoreAllMocks();␍
+    104     │ - });␍
+    105     │ - async·function·mount()·{␍
+    106     │ - → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false,·gcTime:·0·}·}·});␍
+    107     │ - → clients.push(client);␍
+    108     │ - → const·tree·=·async·()·=>·(␍
+    109     │ - → → <QueryClientProvider·client={client}>␍
+    110     │ - → → → <OrganizationContextProvider·initialContext={null}>␍
+    111     │ - → → → → {await·TeamDirectory({·searchParams:·Promise.resolve({})·})}␍
+    112     │ - → → → </OrganizationContextProvider>␍
+    113     │ - → → </QueryClientProvider>␍
+    114     │ - → );␍
+    115     │ - → const·view·=·render(await·tree());␍
+    116     │ - → //·Model·a·successful·RSC·refresh·while·preserving·the·actual·shared·provider·and·QueryClient.␍
+    117     │ - → boundary.refresh.mockImplementation(async·()·=>·view.rerender(await·tree()));␍
+    118     │ - → return·client;␍
+    119     │ - }␍
+    120     │ - it("healthy·real·provider·admits·the·public·team·directory·and·its·employee·link",·async·()·=>·{␍
+    121     │ - → const·errors·=·vi.spyOn(console,·"error");␍
+    122     │ - → await·mount();␍
+    123     │ - → expect(await·screen.findByRole("link",·{·name:·"Admitted·Synthetic·Employee"·})).toBeTruthy();␍
+    124     │ - → expect(boundary.fetch).toHaveBeenCalledTimes(1);␍
+    125     │ - → expect(boundary.fetch.mock.calls[0][0]).toBe("/api/auth/context");␍
+    126     │ - → expect(␍
+    127     │ - → → errors.mock.calls.some((args)·=>·args.some((value)·=>·String(value).includes("nativeButton"))),␍
+    128     │ - → ).toBe(false);␍
+    129     │ - });␍
+    130     │ - it("local·Retry·refetches·failed·canonical·context·and·admits·records·after·successful·RSC·refresh",·async·()·=>·{␍
+    131     │ - → boundary.fetch.mockImplementation(␍
+    132     │ - → → async·()·=>␍
+    133     │ - → → → new·Response(JSON.stringify({·error:·"Synthetic·context·outage"·}),·{·status:·503·}),␍
+    134     │ - → );␍
+    135     │ - → const·client·=·await·mount();␍
+    136     │ - → await·waitFor(()·=>␍
+    137     │ - → → expect(␍
+    138     │ - → → → client␍
+    139     │ - → → → → .getQueryCache()␍
+    140     │ - → → → → .findAll({·queryKey:·["organization-context"]·})␍
+    141     │ - → → → → .some((q)·=>·q.state.status·===·"error"),␍
+    142     │ - → → ).toBe(true),␍
+    143     │ - → );␍
+    144     │ - → expect(screen.queryByRole("link",·{·name:·"Admitted·Synthetic·Employee"·})).toBeNull();␍
+    145     │ - → const·retry·=·screen.getByRole("button",·{·name:·"Retry"·});␍
+    146     │ - → boundary.fetch.mockImplementation(async·()·=>·response());␍
+    147     │ - → await·act(async·()·=>·fireEvent.click(retry));␍
+    148     │ - → await·waitFor(()·=>·expect(boundary.refresh).toHaveBeenCalledTimes(1));␍
+    149     │ - → await·waitFor(()·=>·expect(boundary.managed).toHaveBeenCalledTimes(2));␍
+    150     │ - → await·waitFor(()·=>·expect(boundary.fetch).toHaveBeenCalledTimes(2));␍
+  186 more lines truncated
+  
+
+src\app\[locale]\(app)\team\team-directory-feedback.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     4    │ - import·{·useTransition·}·from·"react";␍
+     5    │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";␍
+     6    │ - import·{·Button·}·from·"@/components/ui/button";␍
+     7    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     8    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     9    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+    10    │ - import·{·useRouter·}·from·"@/navigation";␍
+    11    │ - ␍
+    12    │ - export·function·TeamDirectoryLoading()·{␍
+    13    │ - → const·{·t·}·=·useTranslate();␍
+    14    │ - → return·(␍
+    15    │ - → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·p-4·lg:p-6">␍
+    16    │ - → → → <PageHeader·title={t("team.title",·"Your·Team")}·/>␍
+    17    │ - → → → <LoadingRegion␍
+    18    │ - → → → → label={{·labelKey:·"team.directory.loading",·labelDefault:·"Loading·team·members"·}}␍
+    19    │ - → → → >␍
+    20    │ - → → → → <Skeleton·className="h-12·w-full"·/>␍
+    21    │ - → → → → <Skeleton·className="mt-4·h-48·w-full"·/>␍
+    22    │ - → → → </LoadingRegion>␍
+    23    │ - → → </div>␍
+    24    │ - → );␍
+    25    │ - }␍
+    26    │ - ␍
+    27    │ - export·function·TeamDirectoryRetry()·{␍
+    28    │ - → const·{·t·}·=·useTranslate();␍
+    29    │ - → const·organization·=·useOrganization();␍
+    30    │ - → const·router·=·useRouter();␍
+    31    │ - → const·[pending,·startTransition]·=·useTransition();␍
+    32    │ - → return·(␍
+    33    │ - → → <Button␍
+    34    │ - → → → variant="outline"␍
+    35    │ - → → → disabled={pending}␍
+    36    │ - → → → onClick={()·=>␍
+    37    │ - → → → → startTransition(async·()·=>·{␍
+    38    │ - → → → → → await·organization.refetch();␍
+    39    │ - → → → → → await·router.refresh();␍
+    40    │ - → → → → })␍
+    41    │ - → → → }␍
+    42    │ - → → >␍
+    43    │ - → → → {pending·?·t("team.directory.retrying",·"Retrying…")·:·t("team.directory.retry",·"Retry")}␍
+    44    │ - → → </Button>␍
+    45    │ - → );␍
+    46    │ - }␍
+        1 │ + "use·client";
+        2 │ + 
+        3 │ + import·{·useTranslate·}·from·"@tolgee/react";
+        4 │ + import·{·useTransition·}·from·"react";
+        5 │ + import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";
+        6 │ + import·{·Button·}·from·"@/components/ui/button";
+        7 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+        8 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        9 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+       10 │ + import·{·useRouter·}·from·"@/navigation";
+       11 │ + 
+       12 │ + export·function·TeamDirectoryLoading()·{
+       13 │ + → const·{·t·}·=·useTranslate();
+       14 │ + → return·(
+       15 │ + → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·p-4·lg:p-6">
+       16 │ + → → → <PageHeader·title={t("team.title",·"Your·Team")}·/>
+       17 │ + → → → <LoadingRegion
+       18 │ + → → → → label={{
+       19 │ + → → → → → labelKey:·"team.directory.loading",
+       20 │ + → → → → → labelDefault:·"Loading·team·members",
+       21 │ + → → → → }}
+       22 │ + → → → >
+       23 │ + → → → → <Skeleton·className="h-12·w-full"·/>
+       24 │ + → → → → <Skeleton·className="mt-4·h-48·w-full"·/>
+       25 │ + → → → </LoadingRegion>
+       26 │ + → → </div>
+       27 │ + → );
+       28 │ + }
+       29 │ + 
+       30 │ + export·function·TeamDirectoryRetry()·{
+       31 │ + → const·{·t·}·=·useTranslate();
+       32 │ + → const·organization·=·useOrganization();
+       33 │ + → const·router·=·useRouter();
+       34 │ + → const·[pending,·startTransition]·=·useTransition();
+       35 │ + → return·(
+       36 │ + → → <Button
+       37 │ + → → → variant="outline"
+       38 │ + → → → disabled={pending}
+       39 │ + → → → onClick={()·=>
+       40 │ + → → → → startTransition(async·()·=>·{
+       41 │ + → → → → → await·organization.refetch();
+       42 │ + → → → → → await·router.refresh();
+       43 │ + → → → → })
+       44 │ + → → → }
+       45 │ + → → >
+       46 │ + → → → {pending
+       47 │ + → → → → ?·t("team.directory.retrying",·"Retrying…")
+       48 │ + → → → → :·t("team.directory.retry",·"Retry")}
+       49 │ + → → </Button>
+       50 │ + → );
+       51 │ + }
+    47 52 │   
+  
+
+src\app\[locale]\(app)\team\team-directory.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - import·{·act,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      3     │ - import·{·Activity,·type·ComponentProps·}·from·"react";␍
+      4     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      5     │ - import·{·TeamDirectory·}·from·"./team-directory";␍
+      6     │ - import·{·TeamDirectoryLoading·}·from·"./team-directory-feedback";␍
+      7     │ - ␍
+      8     │ - const·seams·=·vi.hoisted(()·=>·({␍
+      9     │ - → current:·vi.fn(),␍
+     10     │ - → managed:·vi.fn(),␍
+     11     │ - → redirect:·vi.fn(),␍
+     12     │ - → refresh:·vi.fn(),␍
+     13     │ - → context:·{␍
+     14     │ - → → userId:·"actor-a",␍
+     15     │ - → → activeOrganizationId:·"org-a",␍
+     16     │ - → → employeeId:·"manager-a",␍
+     17     │ - → → role:·"manager",␍
+     18     │ - → → isLoading:·false,␍
+     19     │ - → → refetch:·async·()·=>·{},␍
+     20     │ - → },␍
+     21     │ - → session:·{␍
+     22     │ - → → isPending:·false,␍
+     23     │ - → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     24     │ - → },␍
+     25     │ - }));␍
+     26     │ - ␍
+     27     │ - vi.mock("@/lib/auth-client",·async·(importOriginal)·=>·({␍
+     28     │ - → ...(await·importOriginal<typeof·import("@/lib/auth-client")>()),␍
+     29     │ - → useSession:·()·=>·seams.session,␍
+     30     │ - }));␍
+     31     │ - vi.mock("./actions",·()·=>·({␍
+     32     │ - → getCurrentEmployee:·seams.current,␍
+     33     │ - → getManagedEmployees:·seams.managed,␍
+     34     │ - }));␍
+     35     │ - vi.mock("@/tolgee/server",·()·=>·({␍
+     36     │ - → getTranslate:·async·()·=>·(_key:·string,·fallback:·string)·=>·fallback,␍
+     37     │ - }));␍
+     38     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     39     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     40     │ - }));␍
+     41     │ - vi.mock("@/lib/navigation/locale-redirect",·()·=>·({·redirectWithLocale:·seams.redirect·}));␍
+     42     │ - vi.mock("@/navigation",·()·=>·({␍
+     43     │ - → useRouter:·()·=>·({·refresh:·seams.refresh·}),␍
+     44     │ - → Link:·(props:·ComponentProps<"a">)·=>·<a·{...props}·/>,␍
+     45     │ - }));␍
+     46     │ - vi.mock("@/components/providers/organization-context-provider",·async·()·=>·{␍
+     47     │ - → const·{·useSyncExternalStore·}·=·await·import("react");␍
+     48     │ - → return·{␍
+     49     │ - → → useOrganization:·()·=>·{␍
+     50     │ - → → → //·Match·the·live·provider's·subscription·on·Activity·reactivation.␍
+     51     │ - → → → useSyncExternalStore(␍
+     52     │ - → → → → ()·=>·()·=>·{},␍
+     53     │ - → → → → ()·=>·JSON.stringify(seams.context),␍
+     54     │ - → → → );␍
+     55     │ - → → → return·seams.context;␍
+     56     │ - → → },␍
+     57     │ - → };␍
+     58     │ - });␍
+     59     │ - vi.mock("@/lib/query",·()·=>·({␍
+     60     │ - → useEmployeeClockStatuses:·()·=>·({␍
+     61     │ - → → getStatus:·()·=>·"unknown",␍
+     62     │ - → → getActivity:·()·=>·null,␍
+     63     │ - → → getBreak:·()·=>·null,␍
+     64     │ - → }),␍
+     65     │ - }));␍
+     66     │ - ␍
+     67     │ - describe("team·directory·arrivals",·()·=>·{␍
+     68     │ - → beforeEach(()·=>·{␍
+     69     │ - → → vi.clearAllMocks();␍
+     70     │ - → → seams.session·=·{␍
+     71     │ - → → → isPending:·false,␍
+     72     │ - → → → data:·{·user:·{·id:·"actor-a"·},·session:·{·activeOrganizationId:·"org-a"·}·},␍
+     73     │ - → → };␍
+     74     │ - → → seams.context·=·{␍
+     75     │ - → → → userId:·"actor-a",␍
+     76     │ - → → → activeOrganizationId:·"org-a",␍
+     77     │ - → → → employeeId:·"manager-a",␍
+     78     │ - → → → role:·"manager",␍
+     79     │ - → → → isLoading:·false,␍
+     80     │ - → → → refetch:·async·()·=>·{},␍
+     81     │ - → → };␍
+     82     │ - → → seams.current.mockResolvedValue({␍
+     83     │ - → → → id:·"manager-a",␍
+     84     │ - → → → userId:·"actor-a",␍
+     85     │ - → → → organizationId:·"org-a",␍
+     86     │ - → → → role:·"manager",␍
+     87     │ - → → });␍
+     88     │ - → → seams.managed.mockResolvedValue({·success:·false,·error:·"Private·failure·detail"·});␍
+     89     │ - → });␍
+     90     │ - ␍
+     91     │ - → it("retains·usable·records·and·the·search·when·a·refresh·fails",·async·()·=>·{␍
+     92     │ - → → seams.managed.mockResolvedValueOnce({␍
+     93     │ - → → → success:·true,␍
+     94     │ - → → → data:·[␍
+     95     │ - → → → → {␍
+     96     │ - → → → → → id:·"report-a",␍
+     97     │ - → → → → → role:·"employee",␍
+     98     │ - → → → → → isFormer:·false,␍
+     99     │ - → → → → → user:·{·id:·"person-a",·name:·"Ada",·email:·"ada@example.test",·image:·null·},␍
+    100     │ - → → → → → timeBalance:·null,␍
+    101     │ - → → → → → team:·null,␍
+    102     │ - → → → → },␍
+    103     │ - → → → ],␍
+    104     │ - → → });␍
+    105     │ - → → const·page·=·render(await·TeamDirectory({·searchParams:·Promise.resolve({})·}));␍
+    106     │ - → → fireEvent.change(screen.getByRole("textbox",·{·name:·"Search·team·members"·}),·{␍
+    107     │ - → → → target:·{·value:·"Ada"·},␍
+    108     │ - → → });␍
+    109     │ - → → page.rerender(await·TeamDirectory({·searchParams:·Promise.resolve({})·}));␍
+    110     │ - → → expect(screen.getByRole("link",·{·name:·"Ada"·})).toBeTruthy();␍
+    111     │ - → → expect(␍
+    112     │ - → → → (screen.getByRole("textbox",·{·name:·"Search·team·members"·})·as·HTMLInputElement).value,␍
+    113     │ - → → ).toBe("Ada");␍
+    114     │ - → → expect(screen.getByRole("button",·{·name:·"Retry"·})).toBeTruthy();␍
+    115     │ - → });␍
+    116     │ - → it("keeps·a·single·task·heading·and·a·real·refresh·recovery·on·read·failure",·async·()·=>·{␍
+    117     │ - → → render(await·TeamDirectory({·searchParams:·Promise.resolve({·former:·"1"·})·}));␍
+    118     │ - → → expect(screen.getAllByRole("heading",·{·level:·1·})).toHaveLength(1);␍
+    119     │ - → → expect(screen.getByRole("alert").textContent).toBe("Unable·to·load·your·team·members.");␍
+    120     │ - → → expect(screen.queryByText("Private·failure·detail")).toBeNull();␍
+    121     │ - → → fireEvent.click(screen.getByRole("button",·{·name:·"Retry"·}));␍
+    122     │ - → → await·waitFor(()·=>·expect(seams.refresh).toHaveBeenCalledOnce());␍
+    123     │ - → → expect(seams.managed).toHaveBeenCalledWith({·includeFormer:·true·});␍
+    124     │ - → });␍
+    125     │ - → it("redirects·employee-role·arrivals·without·loading·managed·records",·async·()·=>·{␍
+    126     │ - → → seams.current.mockResolvedValue({·role:·"employee"·});␍
+    127     │ - → → await·TeamDirectory({·searchParams:·Promise.resolve({})·});␍
+    128     │ - → → expect(seams.redirect).toHaveBeenCalledWith("/");␍
+    129     │ - → → expect(seams.managed).not.toHaveBeenCalled();␍
+    130     │ - → });␍
+    131     │ - → it("announces·loading·while·retaining·the·directory·heading",·()·=>·{␍
+    132     │ - → → render(<TeamDirectoryLoading·/>);␍
+    133     │ - → → expect(screen.getByRole("heading",·{·level:·1,·name:·"Your·Team"·})).toBeTruthy();␍
+    134     │ - → → expect(␍
+    135     │ - → → → screen.getByRole("status",·{·name:·"Loading·team·members"·}).getAttribute("aria-busy"),␍
+    136     │ - → → ).toBe("true");␍
+    137     │ - → });␍
+    138     │ - ␍
+    139     │ - → it("withholds·retained·records·while·the·raw·session·is·pending·despite·a·retained·organization·context",·async·()·=>·{␍
+    140     │ - → → seams.managed.mockResolvedValue({␍
+    141     │ - → → → success:·true,␍
+    142     │ - → → → data:·[␍
+    143     │ - → → → → {␍
+    144     │ - → → → → → id:·"report-a",␍
+    145     │ - → → → → → role:·"employee",␍
+    146     │ - → → → → → isFormer:·false,␍
+    147     │ - → → → → → user:·{·id:·"person-a",·name:·"Ada",·email:·"ada@example.test",·image:·null·},␍
+    148     │ - → → → → → timeBalance:·null,␍
+    149     │ - → → → → → team:·null,␍
+    150     │ - → → → → },␍
+  498 more lines truncated
+  
+
+src\app\[locale]\(app)\team\team-members-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{␍
+      4     │ - → IconArrowDown,␍
+      5     │ - → IconArrowRight,␍
+      6     │ - → IconArrowsSort,␍
+      7     │ - → IconArrowUp,␍
+      8     │ - → IconLayoutGrid,␍
+      9     │ - → IconLayoutList,␍
+     10     │ - → IconSearch,␍
+     11     │ - → IconUserCheck,␍
+     12     │ - → IconUsers,␍
+     13     │ - }·from·"@tabler/icons-react";␍
+     14     │ - import·{␍
+     15     │ - → type·ColumnDef,␍
+     16     │ - → columnVisibilityFeature,␍
+     17     │ - → createPaginatedRowModel,␍
+     18     │ - → createSortedRowModel,␍
+     19     │ - → flexRender,␍
+     20     │ - → rowPaginationFeature,␍
+     21     │ - → rowSortingFeature,␍
+     22     │ - → type·SortingState,␍
+     23     │ - → sortFn_alphanumeric,␍
+     24     │ - → sortFn_basic,␍
+     25     │ - → sortFn_text,␍
+     26     │ - → tableFeatures,␍
+     27     │ - → useTable,␍
+     28     │ - }·from·"@tanstack/react-table";␍
+     29     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     30     │ - import·{·useMemo,·useState,·useTransition·}·from·"react";␍
+     31     │ - import·{·EmployeeActivityText·}·from·"@/components/employee-activity-text";␍
+     32     │ - import·{␍
+     33     │ - → FormerEmployeeBadge,␍
+     34     │ - → ShowFormerEmployeesSwitch,␍
+     35     │ - }·from·"@/components/former-employees/former-employee-ui";␍
+     36     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+     37     │ - import·{·badgeVariants·}·from·"@/components/ui/badge-variants";␍
+     38     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     39     │ - import·{·Card,·CardContent·}·from·"@/components/ui/card";␍
+     40     │ - import·{·Input·}·from·"@/components/ui/input";␍
+     41     │ - import·{␍
+     42     │ - → Table,␍
+     43     │ - → TableBody,␍
+     44     │ - → TableCell,␍
+     45     │ - → TableHead,␍
+     46     │ - → TableHeader,␍
+     47     │ - → TableRow,␍
+     48     │ - }·from·"@/components/ui/table";␍
+     49     │ - import·{·ToggleGroup,·ToggleGroupItem·}·from·"@/components/ui/toggle-group";␍
+     50     │ - import·{·type·EmployeeClockStatus,·UserAvatar·}·from·"@/components/user-avatar";␍
+     51     │ - import·{·BalanceAdjustmentHistoryDialog·}·from·"@/components/work-balance/balance-adjustment-history-button";␍
+     52     │ - import·{·useEmployeeClockStatuses·}·from·"@/lib/query";␍
+     53     │ - import·{·cn·}·from·"@/lib/utils";␍
+     54     │ - import·{·formatSignedWorkBalance·}·from·"@/lib/work-balance/format";␍
+     55     │ - import·{·Link,·useRouter·}·from·"@/navigation";␍
+     56     │ - import·type·{·ManagedEmployee·}·from·"./team-members-data";␍
+     57     │ - ␍
+     58     │ - type·ManagedEmployeeWithPresence·=·ManagedEmployee·&·{␍
+     59     │ - → clockStatus?:·EmployeeClockStatus;␍
+     60     │ - → lastActivityAt:·string·|·null;␍
+     61     │ - → lastActivityUtcOffsetMinutes:·number·|·null;␍
+     62     │ - → /**·A·break·in·progress·(#861).·*/␍
+     63     │ - → breakStartedAt:·string·|·null;␍
+     64     │ - → breakStartedZone:·string·|·null;␍
+     65     │ - };␍
+     66     │ - ␍
+     67     │ - const·teamTableFeatures·=·tableFeatures({␍
+     68     │ - → columnVisibilityFeature,␍
+     69     │ - → rowPaginationFeature,␍
+     70     │ - → rowSortingFeature,␍
+     71     │ - → paginatedRowModel:·createPaginatedRowModel(),␍
+     72     │ - → sortedRowModel:·createSortedRowModel(),␍
+     73     │ - → sortFns:·{␍
+     74     │ - → → alphanumeric:·sortFn_alphanumeric,␍
+     75     │ - → → text:·sortFn_text,␍
+     76     │ - → → basic:·sortFn_basic,␍
+     77     │ - → },␍
+     78     │ - });␍
+     79     │ - ␍
+     80     │ - interface·TeamMembersListProps·{␍
+     81     │ - → employees:·ManagedEmployee[];␍
+     82     │ - → /**·Whether·former·employees·are·listed·too,·marked·(#1438).·Kept·in·the·URL.·*/␍
+     83     │ - → showFormer?:·boolean;␍
+     84     │ - }␍
+     85     │ - ␍
+     86     │ - const·PATH·=·"/team";␍
+     87     │ - ␍
+     88     │ - function·getBalanceVariant(balanceMinutes:·number·|·null·|·undefined)·{␍
+     89     │ - → if·(balanceMinutes·==·null·||·balanceMinutes·===·0)·return·"outline"·as·const;␍
+     90     │ - → return·balanceMinutes·>·0·?·("default"·as·const)·:·("secondary"·as·const);␍
+     91     │ - }␍
+     92     │ - ␍
+     93     │ - /**␍
+     94     │ - ·*·The·employee's·work·balance;·it·opens·their·balance·adjustment·history,␍
+     95     │ - ·*·read-only·(#996).·Everyone·on·this·list·is·the·viewer·or·someone·they␍
+     96     │ - ·*·manage,·and·the·server·checks·again·when·the·history·loads.␍
+     97     │ - ·*/␍
+     98     │ - function·TimeBalanceBadge({␍
+     99     │ - → employee,␍
+    100     │ - → noBalanceLabel,␍
+    101     │ - → workBalanceLabel,␍
+    102     │ - → historyLabel,␍
+    103     │ - }:·{␍
+    104     │ - → employee:·ManagedEmployee;␍
+    105     │ - → noBalanceLabel:·string;␍
+    106     │ - → workBalanceLabel:·string;␍
+    107     │ - → historyLabel:·string;␍
+    108     │ - })·{␍
+    109     │ - → const·balance·=·employee.timeBalance;␍
+    110     │ - → const·label·=·balance·?·formatSignedWorkBalance(balance.balanceMinutes)·:·noBalanceLabel;␍
+    111     │ - → const·accessibleLabel·=·`${workBalanceLabel}:·${label}`;␍
+    112     │ - → return·(␍
+    113     │ - → → <BalanceAdjustmentHistoryDialog␍
+    114     │ - → → → employeeId={employee.id}␍
+    115     │ - → → → trigger={␍
+    116     │ - → → → → <button␍
+    117     │ - → → → → → type="button"␍
+    118     │ - → → → → → aria-label={accessibleLabel}␍
+    119     │ - → → → → → title={historyLabel}␍
+    120     │ - → → → → → data-slot="badge"␍
+    121     │ - → → → → → className={cn(␍
+    122     │ - → → → → → → badgeVariants({␍
+    123     │ - → → → → → → → variant:·balance·?·getBalanceVariant(balance.balanceMinutes)·:·"outline",␍
+    124     │ - → → → → → → }),␍
+    125     │ - → → → → → → "relative·z-10·cursor-pointer·focus-visible:ring-2·focus-visible:ring-ring",␍
+    126     │ - → → → → → → balance·&&·"text-xs·font-normal",␍
+    127     │ - → → → → → )}␍
+    128     │ - → → → → >␍
+    129     │ - → → → → → {label}␍
+    130     │ - → → → → </button>␍
+    131     │ - → → → }␍
+    132     │ - → → />␍
+    133     │ - → );␍
+    134     │ - }␍
+    135     │ - ␍
+    136     │ - function·YouBadge({·show,·label·}:·{·show:·boolean;·label:·string·})·{␍
+    137     │ - → if·(!show)·return·null;␍
+    138     │ - → return·(␍
+    139     │ - → → <Badge·variant="outline"·className="text-xs·font-normal">␍
+    140     │ - → → → {label}␍
+    141     │ - → → </Badge>␍
+    142     │ - → );␍
+    143     │ - }␍
+    144     │ - ␍
+    145     │ - export·function·TeamMembersList({·employees,·showFormer·=·false·}:·TeamMembersListProps)·{␍
+    146     │ - → const·{·t·}·=·useTranslate();␍
+    147     │ - → const·router·=·useRouter();␍
+    148     │ - → const·[formerPending,·startFormerTransition]·=·useTransition();␍
+    149     │ - → const·[searchQuery,·setSearchQuery]·=·useState("");␍
+    150     │ - → const·[viewMode,·setViewMode]·=·useState<"cards"·|·"table">("cards");␍
+  1290 more lines truncated
+  
+
+src\components\work-balance\balance-adjustment-history-button.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - //·@vitest-environment·jsdom␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·userEvent·from·"@testing-library/user-event";␍
+      5     │ - import·{·TolgeeProvider·}·from·"@tolgee/react";␍
+      6     │ - import·{·NextIntlClientProvider·}·from·"next-intl";␍
+      7     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      8     │ - import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+      9     │ - import·{·createTestTolgee·}·from·"@/test/render-with-translations";␍
+     10     │ - import·{·BalanceAdjustmentHistoryButton·}·from·"./balance-adjustment-history-button";␍
+     11     │ - ␍
+     12     │ - const·transport·=·vi.hoisted(()·=>·({·read:·vi.fn()·}));␍
+     13     │ - vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions",·()·=>·({␍
+     14     │ - → getEmployeeWorkBalanceSectionAction:·transport.read,␍
+     15     │ - → cancelBalanceAdjustmentAction:·vi.fn(),␍
+     16     │ - → recordOvertimePayoutAction:·vi.fn(),␍
+     17     │ - → setOpeningBalanceAction:·vi.fn(),␍
+     18     │ - }));␍
+     19     │ - ␍
+     20     │ - const·clients:·QueryClient[]·=·[];␍
+     21     │ - const·emptySection·=·{␍
+     22     │ - → success:·true,␍
+     23     │ - → data:·{␍
+     24     │ - → → balance:·null,␍
+     25     │ - → → adjustments:·[],␍
+     26     │ - → → today:·"2026-11-17",␍
+     27     │ - → → timezone:·"Europe/Berlin",␍
+     28     │ - → → canManage:·false,␍
+     29     │ - → },␍
+     30     │ - };␍
+     31     │ - ␍
+     32     │ - beforeEach(()·=>·{␍
+     33     │ - → transport.read.mockReset();␍
+     34     │ - });␍
+     35     │ - afterEach(()·=>·{␍
+     36     │ - → cleanup();␍
+     37     │ - → for·(const·client·of·clients.splice(0))·client.clear();␍
+     38     │ - });␍
+     39     │ - ␍
+     40     │ - async·function·openHistory()·{␍
+     41     │ - → const·client·=·new·QueryClient({␍
+     42     │ - → → defaultOptions:·{·queries:·{·gcTime:·0,·retryDelay:·0·}·},␍
+     43     │ - → });␍
+     44     │ - → clients.push(client);␍
+     45     │ - → render(␍
+     46     │ - → → <NextIntlClientProvider·locale="en"·messages={{}}·timeZone="Europe/Berlin">␍
+     47     │ - → → → <TolgeeProvider·tolgee={createTestTolgee()}>␍
+     48     │ - → → → → <UserPreferencesProvider·timezone="Europe/Berlin">␍
+     49     │ - → → → → → <QueryClientProvider·client={client}>␍
+     50     │ - → → → → → → <BalanceAdjustmentHistoryButton·employeeId="employee-a"·/>␍
+     51     │ - → → → → → </QueryClientProvider>␍
+     52     │ - → → → → </UserPreferencesProvider>␍
+     53     │ - → → → </TolgeeProvider>␍
+     54     │ - → → </NextIntlClientProvider>,␍
+     55     │ - → );␍
+     56     │ - → await·userEvent.setup().click(screen.getByRole("button",·{·name:·"Balance·adjustments"·}));␍
+     57     │ - }␍
+     58     │ - ␍
+     59     │ - it("retries·a·failed·history·read·in·the·same·open·dialog·and·shows·the·recovered·records",·async·()·=>·{␍
+     60     │ - → transport.read.mockRejectedValue(new·Error("Synthetic·transport·failure"));␍
+     61     │ - → await·openHistory();␍
+     62     │ - → expect(await·screen.findByRole("alert")).toBeTruthy();␍
+     63     │ - → expect(screen.queryByText("No·balance·adjustments·yet.")).toBeNull();␍
+     64     │ - → const·retry·=·screen.getByRole("button",·{·name:·"Retry"·});␍
+     65     │ - → const·previousCalls·=·transport.read.mock.calls.length;␍
+     66     │ - → let·finish:·(value:·unknown)·=>·void·=·()·=>·{};␍
+     67     │ - → transport.read.mockImplementation(()·=>·new·Promise((resolve)·=>·(finish·=·resolve)));␍
+     68     │ - → await·userEvent.setup().click(retry);␍
+     69     │ - → try·{␍
+     70     │ - → → await·waitFor(()·=>·expect(transport.read).toHaveBeenCalledTimes(previousCalls·+·1));␍
+     71     │ - → → expect(screen.getByLabelText("Loading·balance·adjustments")).toBeTruthy();␍
+     72     │ - → → expect(screen.getByRole("dialog")).toBeTruthy();␍
+     73     │ - → }·finally·{␍
+     74     │ - → → await·act(async·()·=>␍
+     75     │ - → → → finish({␍
+     76     │ - → → → → ...emptySection,␍
+     77     │ - → → → → data:·{␍
+     78     │ - → → → → → ...emptySection.data,␍
+     79     │ - → → → → → adjustments:·[␍
+     80     │ - → → → → → → {␍
+     81     │ - → → → → → → → id:·"adjustment-a",␍
+     82     │ - → → → → → → → kind:·"opening_balance",␍
+     83     │ - → → → → → → → day:·"2026-11-01",␍
+     84     │ - → → → → → → → minutes:·120,␍
+     85     │ - → → → → → → → reason:·"Carried·balance·correction",␍
+     86     │ - → → → → → → → recordedAt:·"2026-11-01T08:00:00Z",␍
+     87     │ - → → → → → → → recordedBy:·{·userId:·"actor-a",·name:·"Synthetic·Administrator"·},␍
+     88     │ - → → → → → → → cancellation:·null,␍
+     89     │ - → → → → → → },␍
+     90     │ - → → → → → ],␍
+     91     │ - → → → → },␍
+     92     │ - → → → }),␍
+     93     │ - → → );␍
+     94     │ - → }␍
+     95     │ - → expect(await·screen.findByText("Carried·balance·correction")).toBeTruthy();␍
+     96     │ - → expect(screen.queryByRole("alert")).toBeNull();␍
+     97     │ - → expect(screen.getByRole("dialog")).toBeTruthy();␍
+     98     │ - });␍
+     99     │ - ␍
+    100     │ - it("distinguishes·an·empty·successful·history·and·returns·focus·on·Escape",·async·()·=>·{␍
+    101     │ - → transport.read.mockResolvedValue(emptySection);␍
+    102     │ - → await·openHistory();␍
+    103     │ - → expect(await·screen.findByText("No·balance·adjustments·yet.")).toBeTruthy();␍
+    104     │ - → expect(screen.queryByRole("alert")).toBeNull();␍
+    105     │ - → expect(screen.queryByRole("button",·{·name:·"Retry"·})).toBeNull();␍
+    106     │ - → await·userEvent.setup().keyboard("{Escape}");␍
+    107     │ - → await·waitFor(()·=>·expect(screen.queryByRole("dialog")).toBeNull());␍
+    108     │ - → expect(document.activeElement).toBe(screen.getByRole("button",·{·name:·"Balance·adjustments"·}));␍
+    109     │ - });␍
+    110     │ - ␍
+    111     │ - it("retains·the·canonical·access·refusal·without·offering·an·ineffective·read·Retry",·async·()·=>·{␍
+    112     │ - → transport.read.mockResolvedValue({␍
+    113     │ - → → success:·false,␍
+    114     │ - → → code:·"AuthorizationError",␍
+    115     │ - → → error:·"Private·refusal·detail",␍
+    116     │ - → });␍
+    117     │ - → await·openHistory();␍
+    118     │ - → expect((await·screen.findByRole("alert")).textContent).toContain("employees·you·manage");␍
+    119     │ - → expect(screen.queryByText("Private·refusal·detail")).toBeNull();␍
+    120     │ - → expect(screen.queryByRole("button",·{·name:·"Retry"·})).toBeNull();␍
+    121     │ - → expect(transport.read).toHaveBeenCalledTimes(1);␍
+    122     │ - });␍
+          1 │ + //·@vitest-environment·jsdom
+          2 │ + import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";
+          3 │ + import·{·act,·cleanup,·render,·screen,·waitFor·}·from·"@testing-library/react";
+          4 │ + import·userEvent·from·"@testing-library/user-event";
+          5 │ + import·{·TolgeeProvider·}·from·"@tolgee/react";
+          6 │ + import·{·NextIntlClientProvider·}·from·"next-intl";
+          7 │ + import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";
+          8 │ + import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";
+          9 │ + import·{·createTestTolgee·}·from·"@/test/render-with-translations";
+         10 │ + import·{·BalanceAdjustmentHistoryButton·}·from·"./balance-adjustment-history-button";
+         11 │ + 
+         12 │ + const·transport·=·vi.hoisted(()·=>·({·read:·vi.fn()·}));
+         13 │ + vi.mock("@/app/[locale]/(app)/settings/employees/work-balance-actions",·()·=>·({
+         14 │ + → getEmployeeWorkBalanceSectionAction:·transport.read,
+         15 │ + → cancelBalanceAdjustmentAction:·vi.fn(),
+         16 │ + → recordOvertimePayoutAction:·vi.fn(),
+         17 │ + → setOpeningBalanceAction:·vi.fn(),
+         18 │ + }));
+         19 │ + 
+         20 │ + const·clients:·QueryClient[]·=·[];
+         21 │ + const·emptySection·=·{
+         22 │ + → success:·true,
+         23 │ + → data:·{
+         24 │ + → → balance:·null,
+         25 │ + → → adjustments:·[],
+         26 │ + → → today:·"2026-11-17",
+         27 │ + → → timezone:·"Europe/Berlin",
+         28 │ + → → canManage:·false,
+  108 more lines truncated
+  
+
+src\components\work-balance\balance-adjustment-history-button.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconHistory,·IconLoader2·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·type·ReactNode,·useState·}·from·"react";␍
+      6     │ - import·{␍
+      7     │ - → isRefusal,␍
+      8     │ - → useBalanceAdjustmentSection,␍
+      9     │ - }·from·"@/components/settings/work-balance/use-employee-work-balance";␍
+     10     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     11     │ - import·{␍
+     12     │ - → Dialog,␍
+     13     │ - → DialogContent,␍
+     14     │ - → DialogDescription,␍
+     15     │ - → DialogHeader,␍
+     16     │ - → DialogTitle,␍
+     17     │ - → DialogTrigger,␍
+     18     │ - }·from·"@/components/ui/dialog";␍
+     19     │ - import·{·BalanceAdjustmentHistory·}·from·"./balance-adjustment-history";␍
+     20     │ - ␍
+     21     │ - /**␍
+     22     │ - ·*·Opens·the·history·of·an·employee's·balance·adjustments·from·a·work·balance␍
+     23     │ - ·*·card·(#996):·the·employee's·own,·or·one·they·manage.·Loads·it·only·when␍
+     24     │ - ·*·opened;·the·server·decides·who·may·see·it.␍
+     25     │ - ·*/␍
+     26     │ - export·function·BalanceAdjustmentHistoryButton({·employeeId·}:·{·employeeId:·string·})·{␍
+     27     │ - → const·{·t·}·=·useTranslate();␍
+     28     │ - → return·(␍
+     29     │ - → → <BalanceAdjustmentHistoryDialog␍
+     30     │ - → → → employeeId={employeeId}␍
+     31     │ - → → → trigger={␍
+     32     │ - → → → → <Button·type="button"·variant="link"·size="sm"·className="h-auto·self-start·px-0">␍
+     33     │ - → → → → → <IconHistory·className="size-4"·aria-hidden="true"·/>␍
+     34     │ - → → → → → {t("workBalance.adjustments.open",·"Balance·adjustments")}␍
+     35     │ - → → → → </Button>␍
+     36     │ - → → → }␍
+     37     │ - → → />␍
+     38     │ - → );␍
+     39     │ - }␍
+     40     │ - ␍
+     41     │ - /**␍
+     42     │ - ·*·The·read-only·history·dialog·behind·any·trigger,·such·as·the·/team·list's␍
+     43     │ - ·*·balance·badge·(#996).·`trigger`·must·be·a·single·focusable·element.␍
+     44     │ - ·*/␍
+     45     │ - export·function·BalanceAdjustmentHistoryDialog({␍
+     46     │ - → employeeId,␍
+     47     │ - → trigger,␍
+     48     │ - }:·{␍
+     49     │ - → employeeId:·string;␍
+     50     │ - → trigger:·ReactNode;␍
+     51     │ - })·{␍
+     52     │ - → const·{·t·}·=·useTranslate();␍
+     53     │ - → const·[open,·setOpen]·=·useState(false);␍
+     54     │ - ␍
+     55     │ - → return·(␍
+     56     │ - → → <Dialog·open={open}·onOpenChange={setOpen}>␍
+     57     │ - → → → <DialogTrigger·asChild>{trigger}</DialogTrigger>␍
+     58     │ - → → → <DialogContent·className="max-h-[85vh]·overflow-y-auto·sm:max-w-xl">␍
+     59     │ - → → → → <DialogHeader>␍
+     60     │ - → → → → → <DialogTitle>{t("workBalance.adjustments.title",·"Balance·adjustments")}</DialogTitle>␍
+     61     │ - → → → → → <DialogDescription>␍
+     62     │ - → → → → → → {t(␍
+     63     │ - → → → → → → → "workBalance.adjustments.description",␍
+     64     │ - → → → → → → → "Overtime·payouts·and·opening·balances·on·this·work·balance.·A·mistaken·one·is·cancelled,·never·deleted,·so·cancelled·ones·stay·listed.",␍
+     65     │ - → → → → → → )}␍
+     66     │ - → → → → → </DialogDescription>␍
+     67     │ - → → → → </DialogHeader>␍
+     68     │ - → → → → {open·?·<HistoryBody·employeeId={employeeId}·/>·:·null}␍
+     69     │ - → → → </DialogContent>␍
+     70     │ - → → </Dialog>␍
+     71     │ - → );␍
+     72     │ - }␍
+     73     │ - ␍
+     74     │ - function·HistoryBody({·employeeId·}:·{·employeeId:·string·})·{␍
+     75     │ - → const·{·t·}·=·useTranslate();␍
+     76     │ - → const·section·=·useBalanceAdjustmentSection(employeeId);␍
+     77     │ - ␍
+     78     │ - → if·(section.isLoading)·{␍
+     79     │ - → → return·(␍
+     80     │ - → → → <output␍
+     81     │ - → → → → className="flex·items-center·justify-center·p-6"␍
+     82     │ - → → → → aria-label={t("workBalance.adjustments.loading",·"Loading·balance·adjustments")}␍
+     83     │ - → → → >␍
+     84     │ - → → → → <IconLoader2·className="size-6·animate-spin·text-muted-foreground"·aria-hidden="true"·/>␍
+     85     │ - → → → </output>␍
+     86     │ - → → );␍
+     87     │ - → }␍
+     88     │ - → if·(section.isError·||·!section.data)·{␍
+     89     │ - → → return·(␍
+     90     │ - → → → <div·className="space-y-3">␍
+     91     │ - → → → → <p·role="alert"·className="text-destructive·text-sm">␍
+     92     │ - → → → → → {isRefusal(section.error)·&&·section.error.code·===·"not_permitted"␍
+     93     │ - → → → → → → ?·t(␍
+     94     │ - → → → → → → → → "workBalance.adjustments.notPermitted",␍
+     95     │ - → → → → → → → → "You·can·see·the·balance·adjustments·of·yourself·and·of·employees·you·manage.",␍
+     96     │ - → → → → → → → )␍
+     97     │ - → → → → → → :·t(␍
+     98     │ - → → → → → → → → "workBalance.adjustments.loadFailed",␍
+     99     │ - → → → → → → → → "The·balance·adjustments·could·not·be·loaded.",␍
+    100     │ - → → → → → → → )}␍
+    101     │ - → → → → </p>␍
+    102     │ - → → → → {!isRefusal(section.error)·&&·(␍
+    103     │ - → → → → → <Button␍
+    104     │ - → → → → → → variant="outline"␍
+    105     │ - → → → → → → disabled={section.isFetching}␍
+    106     │ - → → → → → → onClick={()·=>·void·section.refetch({·cancelRefetch:·false·})}␍
+    107     │ - → → → → → >␍
+    108     │ - → → → → → → {section.isFetching·?·t("common.retrying",·"Retrying…")·:·t("common.retry",·"Retry")}␍
+    109     │ - → → → → → </Button>␍
+    110     │ - → → → → )}␍
+    111     │ - → → → </div>␍
+    112     │ - → → );␍
+    113     │ - → }␍
+    114     │ - → return·<BalanceAdjustmentHistory·adjustments={section.data.adjustments}·/>;␍
+    115     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{·IconHistory,·IconLoader2·}·from·"@tabler/icons-react";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·type·ReactNode,·useState·}·from·"react";
+          6 │ + import·{
+          7 │ + → isRefusal,
+          8 │ + → useBalanceAdjustmentSection,
+          9 │ + }·from·"@/components/settings/work-balance/use-employee-work-balance";
+         10 │ + import·{·Button·}·from·"@/components/ui/button";
+         11 │ + import·{
+         12 │ + → Dialog,
+         13 │ + → DialogContent,
+         14 │ + → DialogDescription,
+         15 │ + → DialogHeader,
+         16 │ + → DialogTitle,
+         17 │ + → DialogTrigger,
+         18 │ + }·from·"@/components/ui/dialog";
+         19 │ + import·{·BalanceAdjustmentHistory·}·from·"./balance-adjustment-history";
+         20 │ + 
+         21 │ + /**
+         22 │ + ·*·Opens·the·history·of·an·employee's·balance·adjustments·from·a·work·balance
+         23 │ + ·*·card·(#996):·the·employee's·own,·or·one·they·manage.·Loads·it·only·when
+         24 │ + ·*·opened;·the·server·decides·who·may·see·it.
+         25 │ + ·*/
+         26 │ + export·function·BalanceAdjustmentHistoryButton({
+         27 │ + → employeeId,
+         28 │ + }:·{
+         29 │ + → employeeId:·string;
+         30 │ + })·{
+         31 │ + → const·{·t·}·=·useTranslate();
+         32 │ + → return·(
+         33 │ + → → <BalanceAdjustmentHistoryDialog
+         34 │ + → → → employeeId={employeeId}
+         35 │ + → → → trigger={
+  100 more lines truncated
+  
+
+Checked 6 files in 10ms. No fixes applied.
+Found 6 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

@@ -1,0 +1,1148 @@
+{
+  "kind": "static source-template inventory only",
+  "commit": "7e5cb41a2c3557399e2f3b0093890b822c8877f4",
+  "initialDev": "2dd336ccfe3b7fb084263eca6c2360df5e58bfa7",
+  "counts": {
+    "persistentPages": 153,
+    "redirectAliases": 19,
+    "sourcePageTemplates": 172,
+    "aliasTemplatesUnchangedFromInitialDev": 19
+  },
+  "coverage": "Every source page template maps exactly once to the approved persistent-page or redirect-alias inventory, and every alias destination/owner matches its ledger page issue.",
+  "limits": [
+    "Source coverage and blob equality do not prove locale/query/access behavior at runtime.",
+    "All19 alias contracts still require their destination-ticket acceptance and final integration verification.",
+    "No full route/role/domain/browser/build/catalog certification follows."
+  ],
+  "persistent": [
+    {
+      "id": "R001",
+      "issue": 1700,
+      "route": "/",
+      "file": "apps/webapp/src/app/[locale]/(app)/page.tsx"
+    },
+    {
+      "id": "R002",
+      "issue": 1701,
+      "route": "/absences",
+      "file": "apps/webapp/src/app/[locale]/(app)/absences/page.tsx"
+    },
+    {
+      "id": "R003",
+      "issue": 1820,
+      "route": "/accept-invitation/[invitationId]",
+      "file": "apps/webapp/src/app/[locale]/(auth)/accept-invitation/[invitationId]/page.tsx"
+    },
+    {
+      "id": "R004",
+      "issue": 1702,
+      "route": "/analytics",
+      "file": "apps/webapp/src/app/[locale]/(app)/analytics/page.tsx"
+    },
+    {
+      "id": "R005",
+      "issue": 1703,
+      "route": "/analytics/overtime-burn-down",
+      "file": "apps/webapp/src/app/[locale]/(app)/analytics/overtime-burn-down/page.tsx"
+    },
+    {
+      "id": "R006",
+      "issue": 1704,
+      "route": "/analytics/team-performance",
+      "file": "apps/webapp/src/app/[locale]/(app)/analytics/team-performance/page.tsx"
+    },
+    {
+      "id": "R007",
+      "issue": 1705,
+      "route": "/analytics/vacation-trends",
+      "file": "apps/webapp/src/app/[locale]/(app)/analytics/vacation-trends/page.tsx"
+    },
+    {
+      "id": "R008",
+      "issue": 1706,
+      "route": "/analytics/work-hours",
+      "file": "apps/webapp/src/app/[locale]/(app)/analytics/work-hours/page.tsx"
+    },
+    {
+      "id": "R009",
+      "issue": 1707,
+      "route": "/approvals",
+      "file": "apps/webapp/src/app/[locale]/(app)/approvals/page.tsx"
+    },
+    {
+      "id": "R010",
+      "issue": 1708,
+      "route": "/approvals/deputy-decisions/[absenceId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/approvals/deputy-decisions/[absenceId]/page.tsx"
+    },
+    {
+      "id": "R011",
+      "issue": 1709,
+      "route": "/approvals/inbox",
+      "file": "apps/webapp/src/app/[locale]/(app)/approvals/inbox/page.tsx"
+    },
+    {
+      "id": "R012",
+      "issue": 1710,
+      "route": "/approvals/review/[organizationId]/[kind]/[id]",
+      "file": "apps/webapp/src/app/[locale]/(app)/approvals/review/[organizationId]/[kind]/[id]/page.tsx"
+    },
+    {
+      "id": "R013",
+      "issue": 1711,
+      "route": "/billing/suspended",
+      "file": "apps/webapp/src/app/[locale]/(app)/billing/suspended/page.tsx"
+    },
+    {
+      "id": "R014",
+      "issue": 1712,
+      "route": "/calendar",
+      "file": "apps/webapp/src/app/[locale]/(app)/calendar/page.tsx"
+    },
+    {
+      "id": "R015",
+      "issue": 1713,
+      "route": "/calendar/[employeeId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.tsx"
+    },
+    {
+      "id": "R016",
+      "issue": 1714,
+      "route": "/compliance",
+      "file": "apps/webapp/src/app/[locale]/(app)/compliance/page.tsx"
+    },
+    {
+      "id": "R017",
+      "issue": 1715,
+      "route": "/driving-licence",
+      "file": "apps/webapp/src/app/[locale]/(app)/driving-licence/page.tsx"
+    },
+    {
+      "id": "R018",
+      "issue": 1716,
+      "route": "/driving-licence/checks/[employee]",
+      "file": "apps/webapp/src/app/[locale]/(app)/driving-licence/checks/[employee]/page.tsx"
+    },
+    {
+      "id": "R019",
+      "issue": 1717,
+      "route": "/equipment",
+      "file": "apps/webapp/src/app/[locale]/(app)/equipment/page.tsx"
+    },
+    {
+      "id": "R020",
+      "issue": 1718,
+      "route": "/equipment/assignments/[assignmentId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx"
+    },
+    {
+      "id": "R021",
+      "issue": 1719,
+      "route": "/equipment/employees/[employeeId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/equipment/employees/[employeeId]/page.tsx"
+    },
+    {
+      "id": "R022",
+      "issue": 1821,
+      "route": "/forgot-password",
+      "file": "apps/webapp/src/app/[locale]/(auth)/forgot-password/page.tsx"
+    },
+    {
+      "id": "R023",
+      "issue": 1822,
+      "route": "/init",
+      "file": "apps/webapp/src/app/[locale]/init/page.tsx"
+    },
+    {
+      "id": "R024",
+      "issue": 1823,
+      "route": "/join/[code]",
+      "file": "apps/webapp/src/app/[locale]/(auth)/join/[code]/page.tsx"
+    },
+    {
+      "id": "R025",
+      "issue": 1824,
+      "route": "/kiosk",
+      "file": "apps/webapp/src/app/[locale]/kiosk/page.tsx"
+    },
+    {
+      "id": "R026",
+      "issue": 1825,
+      "route": "/licenses",
+      "file": "apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx"
+    },
+    {
+      "id": "R027",
+      "issue": 1826,
+      "route": "/mfa",
+      "file": "apps/webapp/src/app/[locale]/mfa/page.tsx"
+    },
+    {
+      "id": "R028",
+      "issue": 1720,
+      "route": "/my-documents",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx"
+    },
+    {
+      "id": "R029",
+      "issue": 1721,
+      "route": "/my-equipment",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx"
+    },
+    {
+      "id": "R030",
+      "issue": 1722,
+      "route": "/my-requests",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-requests/page.tsx"
+    },
+    {
+      "id": "R031",
+      "issue": 1723,
+      "route": "/notifications",
+      "file": "apps/webapp/src/app/[locale]/(app)/notifications/page.tsx"
+    },
+    {
+      "id": "R032",
+      "issue": 1827,
+      "route": "/onboarding/complete",
+      "file": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx"
+    },
+    {
+      "id": "R033",
+      "issue": 1828,
+      "route": "/onboarding/notifications",
+      "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx"
+    },
+    {
+      "id": "R034",
+      "issue": 1829,
+      "route": "/onboarding/organization",
+      "file": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx"
+    },
+    {
+      "id": "R035",
+      "issue": 1830,
+      "route": "/onboarding/profile",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.tsx"
+    },
+    {
+      "id": "R036",
+      "issue": 1831,
+      "route": "/onboarding/vacation-policy",
+      "file": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.tsx"
+    },
+    {
+      "id": "R037",
+      "issue": 1832,
+      "route": "/onboarding/welcome",
+      "file": "apps/webapp/src/app/[locale]/onboarding/welcome/page.tsx"
+    },
+    {
+      "id": "R038",
+      "issue": 1833,
+      "route": "/onboarding/wellness",
+      "file": "apps/webapp/src/app/[locale]/onboarding/wellness/page.tsx"
+    },
+    {
+      "id": "R039",
+      "issue": 1834,
+      "route": "/onboarding/work-schedule",
+      "file": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page.tsx"
+    },
+    {
+      "id": "R040",
+      "issue": 1835,
+      "route": "/onboarding/work-templates",
+      "file": "apps/webapp/src/app/[locale]/onboarding/work-templates/page.tsx"
+    },
+    {
+      "id": "R041",
+      "issue": 1724,
+      "route": "/organization",
+      "file": "apps/webapp/src/app/[locale]/(app)/organization/page.tsx"
+    },
+    {
+      "id": "R042",
+      "issue": 1725,
+      "route": "/payroll",
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx"
+    },
+    {
+      "id": "R043",
+      "issue": 1726,
+      "route": "/payroll/work-balances",
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.tsx"
+    },
+    {
+      "id": "R044",
+      "issue": 1727,
+      "route": "/payroll/work-balances/[employeeId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx"
+    },
+    {
+      "id": "R045",
+      "issue": 1728,
+      "route": "/personnel-files",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx"
+    },
+    {
+      "id": "R046",
+      "issue": 1729,
+      "route": "/personnel-files/[employeeId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx"
+    },
+    {
+      "id": "R047",
+      "issue": 1730,
+      "route": "/personnel-files/document-requests",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx"
+    },
+    {
+      "id": "R048",
+      "issue": 1731,
+      "route": "/personnel-files/due-for-deletion",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx"
+    },
+    {
+      "id": "R049",
+      "issue": 1732,
+      "route": "/personnel-files/payslip-batches",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx"
+    },
+    {
+      "id": "R050",
+      "issue": 1733,
+      "route": "/personnel-files/payslip-batches/[batchId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx"
+    },
+    {
+      "id": "R051",
+      "issue": 1734,
+      "route": "/personnel-files/sick-leave",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx"
+    },
+    {
+      "id": "R052",
+      "issue": 1844,
+      "route": "/platform-admin",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/page.tsx"
+    },
+    {
+      "id": "R053",
+      "issue": 1845,
+      "route": "/platform-admin/analytics",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/analytics/page.tsx"
+    },
+    {
+      "id": "R054",
+      "issue": 1846,
+      "route": "/platform-admin/billing",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/billing/page.tsx"
+    },
+    {
+      "id": "R055",
+      "issue": 1847,
+      "route": "/platform-admin/diagnostics",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx"
+    },
+    {
+      "id": "R056",
+      "issue": 1848,
+      "route": "/platform-admin/organizations",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/organizations/page.tsx"
+    },
+    {
+      "id": "R057",
+      "issue": 1849,
+      "route": "/platform-admin/settings",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/settings/page.tsx"
+    },
+    {
+      "id": "R058",
+      "issue": 1850,
+      "route": "/platform-admin/system-email-templates",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/system-email-templates/page.tsx"
+    },
+    {
+      "id": "R059",
+      "issue": 1851,
+      "route": "/platform-admin/users",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/users/page.tsx"
+    },
+    {
+      "id": "R060",
+      "issue": 1852,
+      "route": "/platform-admin/worker-queue",
+      "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx"
+    },
+    {
+      "id": "R061",
+      "issue": 1735,
+      "route": "/reports",
+      "file": "apps/webapp/src/app/[locale]/(app)/reports/page.tsx"
+    },
+    {
+      "id": "R062",
+      "issue": 1736,
+      "route": "/reports/projects",
+      "file": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx"
+    },
+    {
+      "id": "R063",
+      "issue": 1737,
+      "route": "/reports/vehicles",
+      "file": "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx"
+    },
+    {
+      "id": "R064",
+      "issue": 1836,
+      "route": "/reset-password",
+      "file": "apps/webapp/src/app/[locale]/(auth)/reset-password/page.tsx"
+    },
+    {
+      "id": "R065",
+      "issue": 1738,
+      "route": "/scheduling",
+      "file": "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx"
+    },
+    {
+      "id": "R066",
+      "issue": 1752,
+      "route": "/settings",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/page.tsx"
+    },
+    {
+      "id": "R068",
+      "issue": 1753,
+      "route": "/settings/approval-policies",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/approval-policies/page.tsx"
+    },
+    {
+      "id": "R069",
+      "issue": 1754,
+      "route": "/settings/audit-export",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/audit-export/page.tsx"
+    },
+    {
+      "id": "R071",
+      "issue": 1755,
+      "route": "/settings/avv",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/avv/page.tsx"
+    },
+    {
+      "id": "R072",
+      "issue": 1756,
+      "route": "/settings/billable-time",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/page.tsx"
+    },
+    {
+      "id": "R073",
+      "issue": 1757,
+      "route": "/settings/billable-time/accounting",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/accounting/page.tsx"
+    },
+    {
+      "id": "R074",
+      "issue": 1758,
+      "route": "/settings/billable-time/cost-rates",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/cost-rates/page.tsx"
+    },
+    {
+      "id": "R075",
+      "issue": 1759,
+      "route": "/settings/billable-time/hand-off",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/hand-off/page.tsx"
+    },
+    {
+      "id": "R076",
+      "issue": 1760,
+      "route": "/settings/billable-time/rates",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/rates/page.tsx"
+    },
+    {
+      "id": "R077",
+      "issue": 1761,
+      "route": "/settings/billing",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/billing/page.tsx"
+    },
+    {
+      "id": "R078",
+      "issue": 1762,
+      "route": "/settings/calendar",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/calendar/page.tsx"
+    },
+    {
+      "id": "R080",
+      "issue": 1763,
+      "route": "/settings/clocking",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/clocking/page.tsx"
+    },
+    {
+      "id": "R082",
+      "issue": 1764,
+      "route": "/settings/closed-months",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/closed-months/page.tsx"
+    },
+    {
+      "id": "R083",
+      "issue": 1765,
+      "route": "/settings/compliance",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/compliance/page.tsx"
+    },
+    {
+      "id": "R084",
+      "issue": 1766,
+      "route": "/settings/compliance/works-council",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/compliance/works-council/page.tsx"
+    },
+    {
+      "id": "R086",
+      "issue": 1767,
+      "route": "/settings/custom-fields",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/custom-fields/page.tsx"
+    },
+    {
+      "id": "R087",
+      "issue": 1768,
+      "route": "/settings/customers",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/customers/page.tsx"
+    },
+    {
+      "id": "R088",
+      "issue": 1769,
+      "route": "/settings/demo",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/demo/page.tsx"
+    },
+    {
+      "id": "R090",
+      "issue": 1770,
+      "route": "/settings/driving-licence",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/driving-licence/page.tsx"
+    },
+    {
+      "id": "R092",
+      "issue": 1771,
+      "route": "/settings/employees",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/page.tsx"
+    },
+    {
+      "id": "R093",
+      "issue": 1772,
+      "route": "/settings/employees/[employeeId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/[employeeId]/page.tsx"
+    },
+    {
+      "id": "R096",
+      "issue": 1773,
+      "route": "/settings/enterprise/api-keys",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page.tsx"
+    },
+    {
+      "id": "R097",
+      "issue": 1774,
+      "route": "/settings/enterprise/api-keys/[keyId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/[keyId]/page.tsx"
+    },
+    {
+      "id": "R100",
+      "issue": 1775,
+      "route": "/settings/enterprise/domains",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/domains/page.tsx"
+    },
+    {
+      "id": "R101",
+      "issue": 1776,
+      "route": "/settings/enterprise/email",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/email/page.tsx"
+    },
+    {
+      "id": "R102",
+      "issue": 1777,
+      "route": "/settings/enterprise/identity-setup",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/identity-setup/page.tsx"
+    },
+    {
+      "id": "R104",
+      "issue": 1778,
+      "route": "/settings/equipment",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/equipment/page.tsx"
+    },
+    {
+      "id": "R105",
+      "issue": 1779,
+      "route": "/settings/export",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/export/page.tsx"
+    },
+    {
+      "id": "R106",
+      "issue": 1780,
+      "route": "/settings/export-operations",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/export-operations/page.tsx"
+    },
+    {
+      "id": "R107",
+      "issue": 1781,
+      "route": "/settings/export/history/[organizationId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/export/history/[organizationId]/page.tsx"
+    },
+    {
+      "id": "R109",
+      "issue": 1782,
+      "route": "/settings/implementation-checklist",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/implementation-checklist/page.tsx"
+    },
+    {
+      "id": "R110",
+      "issue": 1783,
+      "route": "/settings/import",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/import/page.tsx"
+    },
+    {
+      "id": "R111",
+      "issue": 1784,
+      "route": "/settings/import/[batchId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/import/[batchId]/page.tsx"
+    },
+    {
+      "id": "R112",
+      "issue": 1785,
+      "route": "/settings/kiosks",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/kiosks/page.tsx"
+    },
+    {
+      "id": "R113",
+      "issue": 1786,
+      "route": "/settings/locations",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/locations/page.tsx"
+    },
+    {
+      "id": "R114",
+      "issue": 1787,
+      "route": "/settings/locations/[locationId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/locations/[locationId]/page.tsx"
+    },
+    {
+      "id": "R115",
+      "issue": 1788,
+      "route": "/settings/my-data",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/my-data/page.tsx"
+    },
+    {
+      "id": "R116",
+      "issue": 1789,
+      "route": "/settings/notification-channels",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/notification-channels/page.tsx"
+    },
+    {
+      "id": "R117",
+      "issue": 1790,
+      "route": "/settings/notifications",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/notifications/page.tsx"
+    },
+    {
+      "id": "R118",
+      "issue": 1791,
+      "route": "/settings/organization",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/organization/page.tsx"
+    },
+    {
+      "id": "R120",
+      "issue": 1792,
+      "route": "/settings/payroll-access",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/payroll-access/page.tsx"
+    },
+    {
+      "id": "R121",
+      "issue": 1793,
+      "route": "/settings/payroll-export",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/payroll-export/page.tsx"
+    },
+    {
+      "id": "R122",
+      "issue": 1794,
+      "route": "/settings/payroll-readiness",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/payroll-readiness/page.tsx"
+    },
+    {
+      "id": "R123",
+      "issue": 1795,
+      "route": "/settings/permissions",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/permissions/page.tsx"
+    },
+    {
+      "id": "R124",
+      "issue": 1796,
+      "route": "/settings/personnel-files",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/page.tsx"
+    },
+    {
+      "id": "R125",
+      "issue": 1797,
+      "route": "/settings/position-capture",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/position-capture/page.tsx"
+    },
+    {
+      "id": "R126",
+      "issue": 1798,
+      "route": "/settings/position-stamps",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/position-stamps/page.tsx"
+    },
+    {
+      "id": "R127",
+      "issue": 1799,
+      "route": "/settings/profile",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/profile/page.tsx"
+    },
+    {
+      "id": "R128",
+      "issue": 1800,
+      "route": "/settings/projects",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/projects/page.tsx"
+    },
+    {
+      "id": "R129",
+      "issue": 1801,
+      "route": "/settings/report-share-links",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx"
+    },
+    {
+      "id": "R130",
+      "issue": 1802,
+      "route": "/settings/roles",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/roles/page.tsx"
+    },
+    {
+      "id": "R131",
+      "issue": 1803,
+      "route": "/settings/scheduled-exports",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/scheduled-exports/page.tsx"
+    },
+    {
+      "id": "R132",
+      "issue": 1804,
+      "route": "/settings/security",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/security/page.tsx"
+    },
+    {
+      "id": "R133",
+      "issue": 1805,
+      "route": "/settings/shifts",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/shifts/page.tsx"
+    },
+    {
+      "id": "R134",
+      "issue": 1806,
+      "route": "/settings/skills",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/skills/page.tsx"
+    },
+    {
+      "id": "R136",
+      "issue": 1807,
+      "route": "/settings/statistics",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/statistics/page.tsx"
+    },
+    {
+      "id": "R137",
+      "issue": 1808,
+      "route": "/settings/surcharges",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/surcharges/page.tsx"
+    },
+    {
+      "id": "R138",
+      "issue": 1809,
+      "route": "/settings/teams",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/teams/page.tsx"
+    },
+    {
+      "id": "R140",
+      "issue": 1810,
+      "route": "/settings/teams/[teamId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/teams/[teamId]/page.tsx"
+    },
+    {
+      "id": "R142",
+      "issue": 1811,
+      "route": "/settings/travel-expenses",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/travel-expenses/page.tsx"
+    },
+    {
+      "id": "R143",
+      "issue": 1812,
+      "route": "/settings/vacation",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/vacation/page.tsx"
+    },
+    {
+      "id": "R144",
+      "issue": 1813,
+      "route": "/settings/vacation/employees",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/vacation/employees/page.tsx"
+    },
+    {
+      "id": "R145",
+      "issue": 1814,
+      "route": "/settings/vacation/employees/[employeeId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/vacation/employees/[employeeId]/page.tsx"
+    },
+    {
+      "id": "R147",
+      "issue": 1815,
+      "route": "/settings/vehicles",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/vehicles/page.tsx"
+    },
+    {
+      "id": "R149",
+      "issue": 1816,
+      "route": "/settings/wellness",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/wellness/page.tsx"
+    },
+    {
+      "id": "R150",
+      "issue": 1817,
+      "route": "/settings/work-categories",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/work-categories/page.tsx"
+    },
+    {
+      "id": "R151",
+      "issue": 1818,
+      "route": "/settings/work-diagnostics",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/work-diagnostics/page.tsx"
+    },
+    {
+      "id": "R152",
+      "issue": 1819,
+      "route": "/settings/work-policies",
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/work-policies/page.tsx"
+    },
+    {
+      "id": "R153",
+      "issue": 1837,
+      "route": "/setup",
+      "file": "apps/webapp/src/app/[locale]/(setup)/setup/page.tsx"
+    },
+    {
+      "id": "R154",
+      "issue": 1838,
+      "route": "/share/[token]",
+      "file": "apps/webapp/src/app/[locale]/(share)/share/[token]/page.tsx"
+    },
+    {
+      "id": "R155",
+      "issue": 1839,
+      "route": "/sign-in",
+      "file": "apps/webapp/src/app/[locale]/(auth)/sign-in/page.tsx"
+    },
+    {
+      "id": "R156",
+      "issue": 1840,
+      "route": "/sign-up",
+      "file": "apps/webapp/src/app/[locale]/(auth)/sign-up/page.tsx"
+    },
+    {
+      "id": "R157",
+      "issue": 1739,
+      "route": "/team",
+      "file": "apps/webapp/src/app/[locale]/(app)/team/page.tsx"
+    },
+    {
+      "id": "R158",
+      "issue": 1740,
+      "route": "/team/absences",
+      "file": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx"
+    },
+    {
+      "id": "R159",
+      "issue": 1741,
+      "route": "/team/driving",
+      "file": "apps/webapp/src/app/[locale]/(app)/team/driving/page.tsx"
+    },
+    {
+      "id": "R160",
+      "issue": 1742,
+      "route": "/team/period-submissions",
+      "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/page.tsx"
+    },
+    {
+      "id": "R161",
+      "issue": 1743,
+      "route": "/team/presence",
+      "file": "apps/webapp/src/app/[locale]/(app)/team/presence/page.tsx"
+    },
+    {
+      "id": "R162",
+      "issue": 1744,
+      "route": "/team/presence/[locationId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx"
+    },
+    {
+      "id": "R163",
+      "issue": 1745,
+      "route": "/time-tracking",
+      "file": "apps/webapp/src/app/[locale]/(app)/time-tracking/page.tsx"
+    },
+    {
+      "id": "R164",
+      "issue": 1746,
+      "route": "/today",
+      "file": "apps/webapp/src/app/[locale]/(app)/today/page.tsx"
+    },
+    {
+      "id": "R165",
+      "issue": 1747,
+      "route": "/travel-expenses",
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/page.tsx"
+    },
+    {
+      "id": "R166",
+      "issue": 1748,
+      "route": "/travel-expenses/[claimId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx"
+    },
+    {
+      "id": "R167",
+      "issue": 1749,
+      "route": "/travel-expenses/finance",
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.tsx"
+    },
+    {
+      "id": "R168",
+      "issue": 1750,
+      "route": "/travel-expenses/reports/[reportId]",
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/reports/[reportId]/page.tsx"
+    },
+    {
+      "id": "R169",
+      "issue": 1841,
+      "route": "/verify-2fa",
+      "file": "apps/webapp/src/app/[locale]/(auth)/verify-2fa/page.tsx"
+    },
+    {
+      "id": "R170",
+      "issue": 1842,
+      "route": "/verify-email",
+      "file": "apps/webapp/src/app/[locale]/(auth)/verify-email/page.tsx"
+    },
+    {
+      "id": "R171",
+      "issue": 1843,
+      "route": "/verify-email-pending",
+      "file": "apps/webapp/src/app/[locale]/(auth)/verify-email-pending/page.tsx"
+    },
+    {
+      "id": "R172",
+      "issue": 1751,
+      "route": "/works-council",
+      "file": "apps/webapp/src/app/[locale]/(app)/works-council/page.tsx"
+    }
+  ],
+  "aliases": [
+    {
+      "id": "R067",
+      "route": "/settings/approval-escalation",
+      "destination": "/settings/approval-policies",
+      "query": "?tab=escalation",
+      "issue": 1753,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/approval-escalation/page.tsx",
+      "currentBlob": "59eced889369825f8efa8d77639a6a4c973f0282",
+      "baseBlob": "59eced889369825f8efa8d77639a6a4c973f0282",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R070",
+      "route": "/settings/audit-log",
+      "destination": "/settings/audit-export",
+      "query": "?tab=activity",
+      "issue": 1754,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/audit-log/page.tsx",
+      "currentBlob": "5f43cabc6393b93eb9face3bc44f08395bb29c8e",
+      "baseBlob": "5f43cabc6393b93eb9face3bc44f08395bb29c8e",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R079",
+      "route": "/settings/change-policies",
+      "destination": "/settings/work-policies",
+      "query": "?tab=changes",
+      "issue": 1819,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/change-policies/page.tsx",
+      "currentBlob": "26782bd1888a64a947c27287afdf7a3861cf1b57",
+      "baseBlob": "26782bd1888a64a947c27287afdf7a3861cf1b57",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R081",
+      "route": "/settings/clockodo-import",
+      "destination": "/settings/import",
+      "query": null,
+      "issue": 1783,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/clockodo-import/page.tsx",
+      "currentBlob": "75b4f4c5d2a9e11469b40a6458a85a38ff282a25",
+      "baseBlob": "75b4f4c5d2a9e11469b40a6458a85a38ff282a25",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R085",
+      "route": "/settings/coverage-rules",
+      "destination": "/settings/shifts",
+      "query": "?tab=coverage",
+      "issue": 1805,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
+      "currentBlob": "b2085f5b9d39680bf38d5d7860e7ffc6c21dcaa5",
+      "baseBlob": "b2085f5b9d39680bf38d5d7860e7ffc6c21dcaa5",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R089",
+      "route": "/settings/discord",
+      "destination": "/settings/notification-channels",
+      "query": "?tab=discord",
+      "issue": 1789,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/discord/page.tsx",
+      "currentBlob": "78c544e529116db14a2cc2d300ac1b521873fb98",
+      "baseBlob": "78c544e529116db14a2cc2d300ac1b521873fb98",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R091",
+      "route": "/settings/email-templates",
+      "destination": "/settings/enterprise/email",
+      "query": "?tab=templates",
+      "issue": 1776,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/email-templates/page.tsx",
+      "currentBlob": "af0259d715c1abb0778ff2a2495539998dc6ce44",
+      "baseBlob": "af0259d715c1abb0778ff2a2495539998dc6ce44",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R094",
+      "route": "/settings/employees/new",
+      "destination": "/settings/organization",
+      "query": null,
+      "issue": 1791,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/new/page.tsx",
+      "currentBlob": "fd67de44a23384df9b45912e0a12c542dbac08fc",
+      "baseBlob": "fd67de44a23384df9b45912e0a12c542dbac08fc",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R095",
+      "route": "/settings/enterprise",
+      "destination": "/settings/enterprise/domains",
+      "query": null,
+      "issue": 1775,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/page.tsx",
+      "currentBlob": "e945f0633319567d1a348f2f09d18f18496f171a",
+      "baseBlob": "e945f0633319567d1a348f2f09d18f18496f171a",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R098",
+      "route": "/settings/enterprise/audit-log",
+      "destination": "/settings/audit-export",
+      "query": "?tab=activity",
+      "issue": 1754,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/audit-log/page.tsx",
+      "currentBlob": "5f43cabc6393b93eb9face3bc44f08395bb29c8e",
+      "baseBlob": "5f43cabc6393b93eb9face3bc44f08395bb29c8e",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R099",
+      "route": "/settings/enterprise/branding",
+      "destination": "/settings/enterprise/domains",
+      "query": "?tab=branding",
+      "issue": 1775,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/branding/page.tsx",
+      "currentBlob": "ad9dbbce5a743a910db79eed0edc235d8f177a5a",
+      "baseBlob": "ad9dbbce5a743a910db79eed0edc235d8f177a5a",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R103",
+      "route": "/settings/enterprise/sso",
+      "destination": "/settings/enterprise/identity-setup",
+      "query": "?tab=sso",
+      "issue": 1777,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/sso/page.tsx",
+      "currentBlob": "09b3d21ac5dbc9420903c3af32e834d61cf42195",
+      "baseBlob": "09b3d21ac5dbc9420903c3af32e834d61cf42195",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R108",
+      "route": "/settings/holidays",
+      "destination": "/settings/vacation",
+      "query": "?tab=holidays",
+      "issue": 1812,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/holidays/page.tsx",
+      "currentBlob": "5c7a952d2eb26a97853d8abe72539a84ce718cd7",
+      "baseBlob": "5c7a952d2eb26a97853d8abe72539a84ce718cd7",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R119",
+      "route": "/settings/organizations",
+      "destination": "/settings/organization",
+      "query": null,
+      "issue": 1791,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/organizations/page.tsx",
+      "currentBlob": "294d3f51642ed614fc72314caf3f648945c1668c",
+      "baseBlob": "294d3f51642ed614fc72314caf3f648945c1668c",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R135",
+      "route": "/settings/slack",
+      "destination": "/settings/notification-channels",
+      "query": "?tab=slack",
+      "issue": 1789,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/slack/page.tsx",
+      "currentBlob": "81b6f4b24634e50e0deb1a51aa49076540dfcc6c",
+      "baseBlob": "81b6f4b24634e50e0deb1a51aa49076540dfcc6c",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R139",
+      "route": "/settings/teams-notifications",
+      "destination": "/settings/notification-channels",
+      "query": "?tab=teams",
+      "issue": 1789,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/teams-notifications/page.tsx",
+      "currentBlob": "839508e379e5dd7d9a7f87a044e5e6e1ee7e75ad",
+      "baseBlob": "839508e379e5dd7d9a7f87a044e5e6e1ee7e75ad",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R141",
+      "route": "/settings/telegram",
+      "destination": "/settings/notification-channels",
+      "query": "?tab=telegram",
+      "issue": 1789,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/telegram/page.tsx",
+      "currentBlob": "df01b2359a99a47b09d84047e633a2e6bf279766",
+      "baseBlob": "df01b2359a99a47b09d84047e633a2e6bf279766",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R146",
+      "route": "/settings/vehicle-use",
+      "destination": "/settings/vehicles",
+      "query": "?tab=use",
+      "issue": 1815,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/vehicle-use/page.tsx",
+      "currentBlob": "974865e216a29794e4d5452e38f6665033949dd2",
+      "baseBlob": "974865e216a29794e4d5452e38f6665033949dd2",
+      "byteUnchangedFromInitialDev": true
+    },
+    {
+      "id": "R148",
+      "route": "/settings/webhooks",
+      "destination": "/settings/enterprise/api-keys",
+      "query": "?tab=webhooks",
+      "issue": 1773,
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/webhooks/page.tsx",
+      "currentBlob": "e63ec552ad47d1e49ec4669f11196156f61e9c5d",
+      "baseBlob": "e63ec552ad47d1e49ec4669f11196156f61e9c5d",
+      "byteUnchangedFromInitialDev": true
+    }
+  ]
+}

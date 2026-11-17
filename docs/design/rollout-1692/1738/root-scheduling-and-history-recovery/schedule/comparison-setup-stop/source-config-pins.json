@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "capturedAt": "2026-11-17T04:52:17.855Z",
+  "root": "X:\\t3-code\\worktrees\\z8\\t3-6cc515f6-8a0a4c1209e48861",
+  "initialBranch": "test/1738-independent-checks",
+  "finalBranch": "test/1738-independent-checks",
+  "initialHead": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "finalHead": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "currentTree": "a729615f394e8108d53041d368cbf5dedb846039",
+  "historicalCommit": "83a3b30f648e74416d628c96509dcee4c765cdba",
+  "historicalTree": "f574ea9113d26cc5d4314d0f3fbcb7804bf65804",
+  "historicalSelected": false,
+  "branchSwitches": 0,
+  "currentApplicationTree": "4937e4cd57c75182b8697741dd6a8f845cbb5bbb",
+  "inheritedCandidateApplicationTree": "4937e4cd57c75182b8697741dd6a8f845cbb5bbb",
+  "historicalApplicationTree": "8f8db3bcdee37016a3bb1b9d78eb4e865a2387eb",
+  "trackedFileCount": 17286,
+  "trackedBytePinsSha256": "c8b2d75ae5afb636cc732fbe66700e13c28d3262955553a56f831c15d0db84a6",
+  "trackedChanges": [],
+  "immutableSourceOverlayExecuted": false,
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+  "verifiedCommit": null,
+  "manifests": [
+    {
+      "path": "package.json",
+      "historicalBlob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "currentBlob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "historicalSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "currentSha256": "07ee18613a569e5e7429c1fea920861ed9cd9ff7f9e5a62b02909d3afacfc77c",
+      "ownWorkingCopy": {
+        "path": "package.json",
+        "bytes": 6018,
+        "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+      },
+      "parentWorkingCopy": {
+        "path": "package.json",
+        "bytes": 6018,
+        "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+      },
+      "equal": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "historicalBlob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "currentBlob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "historicalSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "currentSha256": "2b9f3ba8ec2336f16e63a689d36c7c45d97bb47a700115ebe848dfe2a83405b5",
+      "ownWorkingCopy": {
+        "path": "apps/webapp/package.json",
+        "bytes": 8541,
+        "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+      },
+      "parentWorkingCopy": {
+        "path": "apps/webapp/package.json",
+        "bytes": 8541,
+        "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+      },
+      "equal": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "historicalBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "currentBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "historicalSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "currentSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "ownWorkingCopy": {
+        "path": "pnpm-lock.yaml",
+        "bytes": 771361,
+        "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+      },
+      "parentWorkingCopy": {
+        "path": "pnpm-lock.yaml",
+        "bytes": 771361,
+        "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+      },
+      "equal": true
+    }
+  ],
+  "ownPhysicalDependencies": {
+    "rootPresent": false,
+    "appPresent": false,
+    "installCompleted": false,
+    "copiedOrBorrowed": false
+  },
+  "generatedLicenseFilePresent": false,
+  "generatedLicenseCopied": false
+}

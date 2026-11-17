@@ -1,0 +1,27 @@
+{
+  "actor": "canonical admin",
+  "authorityUnchanged": true,
+  "steps": [
+    {
+      "name": "healthy empty coverage actual tooltip",
+      "ordinaryNotifyCopy": true
+    },
+    {
+      "name": "failed background coverage",
+      "lastLoadedLabel": true,
+      "retainsShiftCount": "Shift list (4)"
+    },
+    {
+      "name": "retained coverage Retry pending",
+      "nativeDisabled": true
+    },
+    {
+      "name": "actual coverage local Retry recovery",
+      "healthy": true
+    }
+  ],
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 4000ms exceeded"
+  }
+}

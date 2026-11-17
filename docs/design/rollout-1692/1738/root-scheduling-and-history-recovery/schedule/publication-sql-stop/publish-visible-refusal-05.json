@@ -1,0 +1,11 @@
+{
+  "point": {
+    "x": 1508.390625,
+    "y": 1048,
+    "hit": true,
+    "disabled": false
+  },
+  "toasts": "Failed to publish shifts\nDatabase query failed: publishShifts",
+  "evidence": "Visible public UI text only; no server-action response, credentials, cookies, session, storage, or private logs collected",
+  "sourceEdited": false
+}

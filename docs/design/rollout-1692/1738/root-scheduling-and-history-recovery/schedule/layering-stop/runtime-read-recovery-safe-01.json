@@ -1,0 +1,45 @@
+{
+  "verdict": "BOUNDED_READ_RECOVERY_PASS",
+  "failure": {
+    "visibleAlert": true,
+    "localRetry": true,
+    "publishStillEnabled": true,
+    "tooltipQualified": "The probe selected an unrelated Refresh data tooltip; live Publish uncertainty text was not independently asserted. The public assembly checks cover the intended copy."
+  },
+  "pending": {
+    "held": 1,
+    "text": false,
+    "retryDisabled": true
+  },
+  "recovered": {
+    "clearAlert": true
+  },
+  "supporting": {
+    "retainedTemplate": true,
+    "pendingRetryDisabled": true,
+    "held": 1,
+    "qualification": "Both reads admitted to refetch; one actual request held in the serialized action transport. Independent public assembly separately proves both settle independently."
+  },
+  "actualNextActionTransport": true,
+  "queryDataFabricated": false,
+  "zeroSchedulingWrites": true,
+  "readCalls": 25,
+  "counts": {
+    "getShifts": 2,
+    "getShiftTemplates": 6,
+    "getScheduleComplianceSummary": 3,
+    "getTargetHeatmapData": 6,
+    "getPendingShiftRequests": 2,
+    "getTravelExpenseFinanceAwaitingCount": 2,
+    "getOwnPositionCaptureAction": 2,
+    "getClockVehicleUseStatus": 2
+  },
+  "automaticRetries": "included separately from explicit local Retry in action observations",
+  "fixture": "fresh canonical own small-admin; normal public development login; notifications denied",
+  "earlierAttempts": [
+    "01: undefined return from focus probe failed sanitizer; finally cleared failure",
+    "02: prior failed alert read too early before fresh refetch; Retry selector timeout; finally released hold",
+    "03: healthy starting state, current failure/pending/recovery passed"
+  ],
+  "zeroWrites": true
+}

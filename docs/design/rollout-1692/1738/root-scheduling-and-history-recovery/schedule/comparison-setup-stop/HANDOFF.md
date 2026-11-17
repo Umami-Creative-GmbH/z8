@@ -1,0 +1,13 @@
+# Isolated #1738 independent re-check: environment blocked
+
+Stopped at the first confirmed prerequisite blocker. The single approved physical frozen/offline copy-install command exited 1 with ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK: pnpm cannot open LOCALAPPDATA/pnpm-store-operation-locks/all-stores.lock (access denied, os error 5). Root and app node_modules are absent. A read-only version query also warned that the pinned pnpm@12.16.1 could not be used and reported fallback 12.21.0; no install using that fallback was attempted.
+
+No fresh product runtime, unit, PostgreSQL, login or matched-image acceptance was obtained. All requested remaining checks stay unpassed: supporting Retry serialization, actual online write refusal/draft/retry/duplicates, settled sidebar persistence, policy/compliance acknowledgment and matched full historical/current observations. No product defect is inferred from the environment failure.
+
+Read-only provenance PASS: exact committed historical 83a3b30f648e74416d628c96509dcee4c765cdba and current d18b3877bc9c0233860e84a71568a1b9454b727a have identical root/app package manifests and lock bytes; own and parent working manifest/lock hashes also match. Current application tree equals a2a3f633c8dabf27a3dea8ee09bd586abfe947db. All 50 inherited safe payload hashes and the supplied seal match. These integrity checks do not repeat inherited runtime behavior. The inherited 313 unit/48 files plus unchanged 6 PG/2 files remain a mixed 319/50 result, not a fresh union run.
+
+The rejected root eight-path overlay was not executed, reproduced, retried or escalated. No configuration, dependency or source overlay, root/peer service use, credential reuse, fixture creation, auth state copy/save/restore, SQL mutation, source edit, commit, tracker operation or publication occurred. Historical Git selection was not attempted because no own runtime could run.
+
+Cleanup PASS: the single blank incognito preview tab was closed; no app navigation or login occurred. No own server, fixture, container, browser controller, native namespace or transport hold was created. Zero owned live resources remain. The checkout remains clean on initial T3 branch test/1738-independent-checks at exact d18b3877bc9c0233860e84a71568a1b9454b727a; no branch changes occurred. Ignored evidence is retained only under .tmp/1738-isolated-comparison-checks.
+
+Latest VERIFIED remains 769a2e7844ed1ff43d6a36145869b50cee921db6; #1738 verifiedCommit remains null. Root owns readiness and publication. Only the exact public-allowlist.json payloads are safe for handoff; private tracked-byte pins and the helper are excluded. The allowlist seals SHA256(JSON.stringify(files)) sorted by path.

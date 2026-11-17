@@ -1,0 +1,69 @@
+{
+    "head":  "11abc6c16bfb770ee6a9bff6053ee4cc9c501178",
+    "tree":  "9f3d38d04ba25f08a43c3a9d20303788958a6273",
+    "parents":  [
+                    "83a3b30f648e74416d628c96509dcee4c765cdba",
+                    "6744b09d2bc3e8df7de9fa5683f8b30214770838"
+                ],
+    "all59LedgerAnchorsPreserved":  true,
+    "baselineAncestry":  [
+                             {
+                                 "fullCommit":  "2dd336ccfe3b7fb084263eca6c2360df5e58bfa7",
+                                 "ancestor":  true,
+                                 "suppliedRef":  "2dd336ccf"
+                             },
+                             {
+                                 "fullCommit":  "2d121072ad8e664d0d621a70ddb0b433a331bdec",
+                                 "ancestor":  true,
+                                 "suppliedRef":  "2d121072a"
+                             },
+                             {
+                                 "fullCommit":  "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f",
+                                 "ancestor":  true,
+                                 "suppliedRef":  "c0a9590349f2d6042fe20c7e4fd2d2be5e21f14f"
+                             },
+                             {
+                                 "fullCommit":  "769a2e7844ed1ff43d6a36145869b50cee921db6",
+                                 "ancestor":  true,
+                                 "suppliedRef":  "769a2e7844ed1ff43d6a36145869b50cee921db6"
+                             }
+                         ],
+    "latestVerifiedCommit":  "769a2e7844ed1ff43d6a36145869b50cee921db6",
+    "mergeVerified":  false,
+    "unchangedCoverageOwners":  [
+                                    {
+                                        "mergedBlob":  "d31f02e6edc871d86bdf12dc220836493159af7e",
+                                        "path":  "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+                                        "unchanged":  true,
+                                        "beforeBlob":  "d31f02e6edc871d86bdf12dc220836493159af7e"
+                                    },
+                                    {
+                                        "mergedBlob":  "08bd2a74d013a3a942a062722a69af2a45a49d2a",
+                                        "path":  "apps/webapp/src/components/scheduling/scheduler/coverage-heatmap-overlay.tsx",
+                                        "unchanged":  true,
+                                        "beforeBlob":  "08bd2a74d013a3a942a062722a69af2a45a49d2a"
+                                    },
+                                    {
+                                        "mergedBlob":  "ba6312811e4321e8bb21fdd1a9cd6c1b92074a87",
+                                        "path":  "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+                                        "unchanged":  true,
+                                        "beforeBlob":  "ba6312811e4321e8bb21fdd1a9cd6c1b92074a87"
+                                    }
+                                ],
+    "historicalConsumerBlob":  "4591e5db4368b5866ede1c3c57b308a30b795846",
+    "historicalBoundary":  "exact old ShiftScheduler only; current supporting assembly; old day/two-read versus current week/one-read differences retained",
+    "publicBoundary":  "real providers/query/hooks/calendar/controls; only server-action transport and admitted caller props synthetic; no internal hook state fabricated",
+    "publicWrites":  0,
+    "authOrLiveBrowserClaim":  false,
+    "serverAuthorizationClaim":  false,
+    "protected1735":  {
+                          "prefix":  "docs/design/rollout-1692/1735/root-recovery-and-pdf/",
+                          "trackedCount":  202,
+                          "allBlobsPreserved":  true,
+                          "suppliedPublicationSeal":  "fe4efd6fe81a3e1590fece0369abaf3d0b681b023b3e356e2593a0fd878da692",
+                          "suppliedStagedBlobIndexDigest":  "a92892f98f57bfaffdfef1d2782860cf0bf5a4d11835baf58cc701cf721d5a0b",
+                          "validation":  "all prior blob IDs independently matched; historical seal generator not rerun"
+                      },
+    "supportingRetryPendingHypothesis":  "source-only/unexecuted after STOP",
+    "broaderQualityRuntimePgAcceptance":  "not run at STOP"
+}

@@ -1,0 +1,64 @@
+{
+  "rawSha256": "b41ce76bdcd62a6742909642152e6d6b391d6de5e4c761de9538169f7470ca24",
+  "sanitizer": "controller fixture actor redaction plus all UUID record values",
+  "ok": true,
+  "data": {
+    "url": "http://localhost:53432/en/scheduling?date=2026-11-17&employeeId=[synthetic fixture]",
+    "text": "Skip to content\nToggle Sidebar\n\nScheduling\n\nMore actions\nPerformance small · Europe/Berlin\nMy Schedule\nYour published shifts, week by week\nToday\nNov 16 – Nov 22, 2026\nMon, Nov 16\n09:00 – 17:00\nIndependent scheduling office · Independent reception\nTue, Nov 17\nToday\n\nNo shifts\n\nWed, Nov 18\n\nNo shifts\n\nThu, Nov 19\n09:00 – 17:00\nIndependent scheduling office · Independent reception\nFri, Nov 20\n\nNo shifts\n\nSat, Nov 21\n\nNo shifts\n\nSun, Nov 22\n\nNo shifts",
+    "notifications": "denied",
+    "fields": [],
+    "buttons": [
+      {
+        "text": "Toggle Sidebar",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "Clock In",
+        "aria": "Clock In",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Notifications",
+        "disabled": false
+      },
+      {
+        "text": "More actions",
+        "aria": "More actions",
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Previous week",
+        "disabled": false
+      },
+      {
+        "text": "Today",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Next week",
+        "disabled": false
+      },
+      {
+        "text": "09:00 – 17:00Independent scheduling office · Independent reception",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "09:00 – 17:00Independent scheduling office · Independent reception",
+        "aria": null,
+        "disabled": false
+      },
+      {
+        "text": "",
+        "aria": "Open Tanstack query devtools",
+        "disabled": false
+      }
+    ],
+    "errors": []
+  }
+}

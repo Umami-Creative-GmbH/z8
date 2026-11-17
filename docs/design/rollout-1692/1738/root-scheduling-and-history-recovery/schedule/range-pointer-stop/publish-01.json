@@ -1,0 +1,14 @@
+{
+  "candidate": "7e5cb41a2c3557399e2f3b0093890b822c8877f4",
+  "normalDevelopmentLogin": true,
+  "authStateSavedCopiedRestored": false,
+  "rawResponsesCaptured": false,
+  "networkLatencyMs": 1200,
+  "verdict": "FAILED",
+  "error": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 30000ms exceeded"
+  },
+  "publishRequests": 0,
+  "visibleToasts": []
+}

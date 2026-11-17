@@ -1,0 +1,18 @@
+{
+  "publicPolicy": true,
+  "events": [
+    {
+      "name": "publishShifts",
+      "status": 200
+    },
+    {
+      "name": "publishShifts",
+      "status": 200
+    }
+  ],
+  "failed": true,
+  "toasts": [
+    "Failed to publish shifts\nCannot publish: 1 coverage gap(s) detected. Review and fill gaps before publishing."
+  ],
+  "draftCount": "Publish (2)"
+}

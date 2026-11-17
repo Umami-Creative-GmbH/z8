@@ -1,0 +1,12 @@
+{
+  "route": "/en/scheduling",
+  "method": "passive actual React DOM fiber ancestry, names only",
+  "targets": [
+    "PlannerShiftScheduler",
+    "ShiftScheduler",
+    "ScheduleReadFailure",
+    "ScheduleXCalendar",
+    "ScheduleShiftList"
+  ],
+  "exactPlannerMatched": true
+}

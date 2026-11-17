@@ -1,0 +1,469 @@
+{
+    "root":  "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+    "branch":  "ai/1692-app-wide-ui-refresh",
+    "before":  "83a3b30f648e74416d628c96509dcee4c765cdba",
+    "beforeTree":  "f574ea9113d26cc5d4314d0f3fbcb7804bf65804",
+    "incoming":  "6744b09d2bc3e8df7de9fa5683f8b30214770838",
+    "base":  "58ea18603a936d102f0625e3303f4c05689a9961",
+    "deltaPaths":  [
+                       "apps/webapp/src/app/[locale]/(app)/scheduling/loading.tsx",
+                       "apps/webapp/src/app/[locale]/(app)/scheduling/page.test.tsx",
+                       "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/schedule-shift-list.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/template-sidebar.test.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/template-sidebar.tsx",
+                       "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+                       "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.tsx",
+                       "apps/webapp/src/components/scheduling/shifts/shift-dialog.tsx",
+                       "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.ts",
+                       "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+                       "apps/webapp/src/lib/navigation/route-metadata.ts",
+                       "docs/design/rollout-1692/1738.md",
+                       "docs/design/rollout-1692/1738/artifact-manifest.json",
+                       "docs/design/rollout-1692/1738/before-login-blocked.png",
+                       "docs/design/rollout-1692/1738/before-login-blocked.txt",
+                       "docs/design/rollout-1692/1738/before-source.json",
+                       "docs/design/rollout-1692/1738/capture-boundary.json",
+                       "docs/design/rollout-1692/1738/checks/activity-label-fixed.json",
+                       "docs/design/rollout-1692/1738/checks/activity-label-fixed.log",
+                       "docs/design/rollout-1692/1738/checks/activity.json",
+                       "docs/design/rollout-1692/1738/checks/activity.log",
+                       "docs/design/rollout-1692/1738/checks/biome-explicit.json",
+                       "docs/design/rollout-1692/1738/checks/biome-explicit.log",
+                       "docs/design/rollout-1692/1738/checks/biome-ordinary.json",
+                       "docs/design/rollout-1692/1738/checks/biome-ordinary.log.gz",
+                       "docs/design/rollout-1692/1738/checks/build-compile.json",
+                       "docs/design/rollout-1692/1738/checks/build-compile.log",
+                       "docs/design/rollout-1692/1738/checks/doctor-corrected.json",
+                       "docs/design/rollout-1692/1738/checks/doctor-corrected.log",
+                       "docs/design/rollout-1692/1738/checks/doctor-help.json",
+                       "docs/design/rollout-1692/1738/checks/doctor-help.log",
+                       "docs/design/rollout-1692/1738/checks/doctor.json",
+                       "docs/design/rollout-1692/1738/checks/doctor.log",
+                       "docs/design/rollout-1692/1738/checks/final-biome-explicit.json",
+                       "docs/design/rollout-1692/1738/checks/final-biome-explicit.log",
+                       "docs/design/rollout-1692/1738/checks/final-biome-lint.json",
+                       "docs/design/rollout-1692/1738/checks/final-biome-lint.log",
+                       "docs/design/rollout-1692/1738/checks/final-biome-ordinary.json",
+                       "docs/design/rollout-1692/1738/checks/final-biome-ordinary.log",
+                       "docs/design/rollout-1692/1738/checks/final-build-compile.json",
+                       "docs/design/rollout-1692/1738/checks/final-build-compile.log",
+                       "docs/design/rollout-1692/1738/checks/final-catalog-defaults.json",
+                       "docs/design/rollout-1692/1738/checks/final-catalog-defaults.log",
+                       "docs/design/rollout-1692/1738/checks/final-doctor.json",
+                       "docs/design/rollout-1692/1738/checks/final-doctor.log",
+                       "docs/design/rollout-1692/1738/checks/final-integration.json",
+                       "docs/design/rollout-1692/1738/checks/final-integration.log",
+                       "docs/design/rollout-1692/1738/checks/final-smoke-types.json",
+                       "docs/design/rollout-1692/1738/checks/final-smoke-types.log",
+                       "docs/design/rollout-1692/1738/checks/final-types.json",
+                       "docs/design/rollout-1692/1738/checks/final-types.log",
+                       "docs/design/rollout-1692/1738/checks/final-unit.json",
+                       "docs/design/rollout-1692/1738/checks/final-unit.log",
+                       "docs/design/rollout-1692/1738/checks/final-workflow-types.json",
+                       "docs/design/rollout-1692/1738/checks/final-workflow-types.log",
+                       "docs/design/rollout-1692/1738/checks/green-planner-labels.json",
+                       "docs/design/rollout-1692/1738/checks/green-planner-labels.log",
+                       "docs/design/rollout-1692/1738/checks/integration.json",
+                       "docs/design/rollout-1692/1738/checks/integration.log",
+                       "docs/design/rollout-1692/1738/checks/org-navigation.json",
+                       "docs/design/rollout-1692/1738/checks/org-navigation.log",
+                       "docs/design/rollout-1692/1738/checks/red-notes-label.json",
+                       "docs/design/rollout-1692/1738/checks/red-notes-label.log",
+                       "docs/design/rollout-1692/1738/checks/red-planner-labels.json",
+                       "docs/design/rollout-1692/1738/checks/red-planner-labels.log",
+                       "docs/design/rollout-1692/1738/checks/run-index.json",
+                       "docs/design/rollout-1692/1738/checks/smoke-types.json",
+                       "docs/design/rollout-1692/1738/checks/smoke-types.log",
+                       "docs/design/rollout-1692/1738/checks/source-02b2911260993846b20165eb6bc3db6fdc30f5aa8ae0eed1103b24588f5b1dce.json",
+                       "docs/design/rollout-1692/1738/checks/source-06aa80072bfaba4da9cc7c5dbd0d620afa5f8398804763a8879a901f0dba5ec9.json",
+                       "docs/design/rollout-1692/1738/checks/source-0cf2f4b7a035d6a2fe262dc17370b443892254fd0552d9b5d848d8456e849572.json",
+                       "docs/design/rollout-1692/1738/checks/source-24dd0ab13f700ce118fa76dcfe46185aceae555375eb839dddc758b79be0ebbc.json",
+                       "docs/design/rollout-1692/1738/checks/source-2918e839ca499eb26b8c05d2326c077e4725754c1ae99004df7ec998885a3bed.json",
+                       "docs/design/rollout-1692/1738/checks/source-2c1f1a6bdf6fe4c4f4b4c874e70e9f78ded428f644ac99615931ed47ccb621fb.json",
+                       "docs/design/rollout-1692/1738/checks/source-36c60f925612dbdab3e9ba5b6166dd816325300ee4ebe124726dd230a3b7f51d.json",
+                       "docs/design/rollout-1692/1738/checks/source-49bc6848eb275a6260743e5d343218a52238644bec4b34c2c20e6d54cb4d3bd6.json",
+                       "docs/design/rollout-1692/1738/checks/source-ae1453053a3d36b0e2ca7e168745844d37bd1b802b7354d5b4a976e8b7d2f079.json",
+                       "docs/design/rollout-1692/1738/checks/source-e595454a2ad5c114e235cb5196500203b17a070e3f015fa5776501bf48bf5ce2.json",
+                       "docs/design/rollout-1692/1738/checks/source-ed0a30ce7172b96280efafce90e3f96f997408744dff8229abe9c959605251ff.json",
+                       "docs/design/rollout-1692/1738/checks/typegen.json",
+                       "docs/design/rollout-1692/1738/checks/typegen.log",
+                       "docs/design/rollout-1692/1738/checks/types.json",
+                       "docs/design/rollout-1692/1738/checks/types.log",
+                       "docs/design/rollout-1692/1738/checks/unit-corrected-env.json",
+                       "docs/design/rollout-1692/1738/checks/unit-corrected-env.log",
+                       "docs/design/rollout-1692/1738/checks/unit-final.json",
+                       "docs/design/rollout-1692/1738/checks/unit-final.log",
+                       "docs/design/rollout-1692/1738/checks/unit.json",
+                       "docs/design/rollout-1692/1738/checks/unit.log.gz",
+                       "docs/design/rollout-1692/1738/checks/workflow-types.json",
+                       "docs/design/rollout-1692/1738/checks/workflow-types.log",
+                       "docs/design/rollout-1692/1738/cleanup.json",
+                       "docs/design/rollout-1692/1738/compressed-logs.json",
+                       "docs/design/rollout-1692/1738/consumer-comparison.json",
+                       "docs/design/rollout-1692/1738/dependency-provenance.json",
+                       "docs/design/rollout-1692/1738/doctor-final-diagnostics.json",
+                       "docs/design/rollout-1692/1738/harness/agent-browser-guide.txt",
+                       "docs/design/rollout-1692/1738/harness/artifacts.mjs",
+                       "docs/design/rollout-1692/1738/harness/browser.mjs",
+                       "docs/design/rollout-1692/1738/harness/check.mjs",
+                       "docs/design/rollout-1692/1738/harness/dev.mjs",
+                       "docs/design/rollout-1692/1738/harness/fixture.mjs",
+                       "docs/design/rollout-1692/1738/harness/mcp.mjs",
+                       "docs/design/rollout-1692/1738/harness/owned-files.json",
+                       "docs/design/rollout-1692/1738/harness/package-evidence.mjs",
+                       "docs/design/rollout-1692/1738/harness/seed.mjs",
+                       "docs/design/rollout-1692/1738/inventory.md",
+                       "docs/design/rollout-1692/1738/mcp-get_compilation_issues.txt",
+                       "docs/design/rollout-1692/1738/mcp-get_errors.txt",
+                       "docs/design/rollout-1692/1738/mcp-get_routes.txt",
+                       "docs/design/rollout-1692/1738/mcp-tools-list.txt",
+                       "docs/design/rollout-1692/1738/owned-next-process.json",
+                       "docs/design/rollout-1692/1738/raw-exploratory-logs.json.gz"
+                   ],
+    "productPaths":  [
+                         "apps/webapp/src/app/[locale]/(app)/scheduling/loading.tsx",
+                         "apps/webapp/src/app/[locale]/(app)/scheduling/page.test.tsx",
+                         "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/employee-shift-schedule.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/schedule-shift-list.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/template-sidebar.test.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/template-sidebar.tsx",
+                         "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+                         "apps/webapp/src/components/scheduling/shifts/shift-dialog-sections.tsx",
+                         "apps/webapp/src/components/scheduling/shifts/shift-dialog.tsx",
+                         "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-form.ts",
+                         "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+                         "apps/webapp/src/lib/navigation/route-metadata.ts"
+                     ],
+    "overlapPaths":  [
+                         "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+                         "apps/webapp/src/lib/navigation/route-metadata.ts"
+                     ],
+    "totalDelta":  119,
+    "productCount":  17,
+    "anchors":  [
+                    {
+                        "issue":  1693,
+                        "commit":  "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1694,
+                        "commit":  "382b8f5be837dad724d3a54274d3050b0104881f",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1695,
+                        "commit":  "bfacad421ffe77f50729ea5895c546698ef28383",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1853,
+                        "commit":  "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1700,
+                        "commit":  "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1701,
+                        "commit":  "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1820,
+                        "commit":  "996074d9fcbbaeb956a1b7316f914052d8c24733",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1702,
+                        "commit":  "416c04fc1b65f798422ddeecb8413249b064f715",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1703,
+                        "commit":  "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1704,
+                        "commit":  "f9769a74353ac6670c4a36401029faf805b2a899",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1705,
+                        "commit":  "f9769a74353ac6670c4a36401029faf805b2a899",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1706,
+                        "commit":  "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1707,
+                        "commit":  "6fa8147fae492939056a76e83e327e520d921ae1",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1708,
+                        "commit":  "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1709,
+                        "commit":  "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1710,
+                        "commit":  "273320a9376b4deb60b57ba3882fc17b37ae308a",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1711,
+                        "commit":  "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1712,
+                        "commit":  "b9abdb440e847dadf1067cea54a7279c729fb607",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1713,
+                        "commit":  "b9abdb440e847dadf1067cea54a7279c729fb607",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1714,
+                        "commit":  "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1715,
+                        "commit":  "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1716,
+                        "commit":  "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1717,
+                        "commit":  "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1718,
+                        "commit":  "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1719,
+                        "commit":  "a9b472e5864f386d881604605d593cffc189d61a",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1821,
+                        "commit":  "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1822,
+                        "commit":  "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1823,
+                        "commit":  "65b74963b69e9536af5e862199fa43a8583473cc",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1824,
+                        "commit":  "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1825,
+                        "commit":  "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1826,
+                        "commit":  "40492f6233feecfac214813f28e2f1f26b3175b2",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1720,
+                        "commit":  "ced095089163e69b232c2bce96a40cba800186d8",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1721,
+                        "commit":  "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1722,
+                        "commit":  "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1723,
+                        "commit":  "f15492e4bc5bee60293b22797d42eacdd8296190",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1827,
+                        "commit":  "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1828,
+                        "commit":  "752c500833e751df9988a3b2434d240124b89a51",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1829,
+                        "commit":  "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1830,
+                        "commit":  "63a5e6ff43e6541473a927da0a651686bfd33afe",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1831,
+                        "commit":  "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1832,
+                        "commit":  "5646e7b320376d2605b80e231b6b828f4b35f670",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1833,
+                        "commit":  "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1834,
+                        "commit":  "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1835,
+                        "commit":  "16443982de929de4f885a6cfb6de5b377374cb3e",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1724,
+                        "commit":  "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1725,
+                        "commit":  "807fcc6311ec8f0511c9eea401c144b4da070da3",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1726,
+                        "commit":  "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1727,
+                        "commit":  "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1728,
+                        "commit":  "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1729,
+                        "commit":  "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1730,
+                        "commit":  "8e3876c39725b7a8ef5218439766395401d64b80",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1731,
+                        "commit":  "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1732,
+                        "commit":  "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1733,
+                        "commit":  "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1734,
+                        "commit":  "9f2bd756833e85a33a97db496487afbc992c69ae",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1735,
+                        "commit":  "769a2e7844ed1ff43d6a36145869b50cee921db6",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1736,
+                        "commit":  "c9a56648c81206527d1935bfcb46e0a959a4157f",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1737,
+                        "commit":  "90a7e5bdb34099bf9452e9462109cdf86429d164",
+                        "ancestor":  true
+                    },
+                    {
+                        "issue":  1745,
+                        "commit":  "f9769a74353ac6670c4a36401029faf805b2a899",
+                        "ancestor":  true
+                    }
+                ],
+    "anchorCount":  59,
+    "dependencyParents":  [
+                              {
+                                  "path":  "node_modules",
+                                  "physical":  true
+                              },
+                              {
+                                  "path":  "apps/webapp/node_modules",
+                                  "physical":  true
+                              },
+                              {
+                                  "path":  "node_modules/.pnpm",
+                                  "physical":  true
+                              }
+                          ],
+    "lock":  "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "license":  "FD8CA4BF29B59368907AE8D52A5149B3959A901194F424AD605044F67C2F0BBF",
+    "licenseCount":  1
+}
