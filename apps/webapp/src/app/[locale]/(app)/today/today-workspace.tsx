@@ -7,12 +7,6 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { useOrganization } from "@/hooks/use-organization";
 import { useSession } from "@/lib/auth-client";
-import { sortActionItems } from "@/lib/manager-daily-briefing/logic";
-import type {
-	BriefingActionItem,
-	BriefingSection,
-	ManagerDailyBriefing,
-} from "@/lib/manager-daily-briefing/types";
 import { readTodayBriefing } from "./actions";
 import { TodayBriefing } from "./today-briefing";
 import { TodayPageLoading } from "./today-loading";
@@ -121,11 +115,7 @@ function ScopedTodayWorkspace({ scope, initial }: { scope: TodayScope; initial?:
 			if (!active.current || request !== generation.current) return;
 			setReadFailed(next.status === "error");
 			setArrival((previous) =>
-				next.status === "error" && previous?.status === "ready"
-					? previous
-					: next.status === "ready" && previous?.status === "ready"
-						? { status: "ready", briefing: retainFailedSections(previous.briefing, next.briefing) }
-						: next,
+				next.status === "error" && previous?.status === "ready" ? previous : next,
 			);
 		} catch {
 			if (!active.current || request !== generation.current) return;
@@ -189,39 +179,4 @@ function ScopedTodayWorkspace({ scope, initial }: { scope: TodayScope; initial?:
 			}
 		/>
 	);
-}
-
-/** Retain only same-arrival evidence for failed readers; their error remains visible. */
-function retainFailedSections(
-	previous: ManagerDailyBriefing,
-	next: ManagerDailyBriefing,
-): ManagerDailyBriefing {
-	const retain = <T extends BriefingActionItem>(
-		before: BriefingSection<T>,
-		after: BriefingSection<T>,
-	): BriefingSection<T> => (after.error ? { ...after, items: before.items } : after);
-	const sections = {
-		approvals: retain(previous.sections.approvals, next.sections.approvals),
-		attendance: retain(previous.sections.attendance, next.sections.attendance),
-		absences: retain(previous.sections.absences, next.sections.absences),
-		coverage: retain(previous.sections.coverage, next.sections.coverage),
-		overtime: retain(previous.sections.overtime, next.sections.overtime),
-		payroll: retain(previous.sections.payroll, next.sections.payroll),
-	};
-	const failedCategories = new Set(
-		Object.values(next.sections)
-			.filter((section) => section.error)
-			.flatMap((section) =>
-				previous.sections[section.id as keyof typeof sections].items.map((item) => item.category),
-			),
-	);
-	if (next.needsActionError) failedCategories.add("driving");
-	return {
-		...next,
-		sections,
-		needsAction: sortActionItems([
-			...next.needsAction,
-			...previous.needsAction.filter((item) => failedCategories.has(item.category)),
-		]),
-	};
 }
