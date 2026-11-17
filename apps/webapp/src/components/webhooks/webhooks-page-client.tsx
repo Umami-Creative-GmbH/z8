@@ -45,6 +45,8 @@ export function WebhooksPageClient({
 			return result;
 		},
 	});
+	const canComplete = () =>
+		client.getQueryData<ServerActionResult<PublicWebhookEndpoint[]>>(queryKey)?.success === true;
 	const refused = !!query.data && !query.data.success;
 	const failed = query.isError || refused;
 	const webhooks = query.data?.success ? query.data.data : [];
@@ -148,6 +150,7 @@ export function WebhooksPageClient({
 									<WebhookEndpointCard
 										key={webhook.id}
 										webhook={webhook}
+										canComplete={canComplete}
 										onUpdated={handleWebhookUpdated}
 										onDeleted={handleWebhookDeleted}
 									/>

@@ -47,11 +47,18 @@ import { WebhookSecretDialog } from "./webhook-secret-dialog";
 
 interface WebhookEndpointCardProps {
 	webhook: PublicWebhookEndpoint;
+	/** Current list snapshot must still accept command completion. Server authorization is unchanged. */
+	canComplete?: () => boolean;
 	onUpdated: (webhook: WebhookEndpoint) => void;
 	onDeleted: (webhookId: string) => void;
 }
 
-function useWebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEndpointCardProps) {
+function useWebhookEndpointCard({
+	webhook,
+	onUpdated,
+	onDeleted,
+	canComplete,
+}: WebhookEndpointCardProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [isRefreshing, startTransition] = useTransition();
@@ -68,8 +75,6 @@ function useWebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEndpoi
 	const isPending = commandPending || isRefreshing;
 	useLayoutEffect(() => {
 		life.current = {};
-		pending.current = false;
-		setCommandPending(false);
 		setNewSecret(null);
 		setIsSecretDialogOpen(false);
 		return () => {
@@ -77,9 +82,9 @@ function useWebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEndpoi
 		};
 	}, []);
 	async function runCommand(run: (current: () => boolean) => Promise<void>) {
-		if (pending.current || !life.current) return;
+		if (pending.current || !life.current || (canComplete && !canComplete())) return;
 		const owner = life.current;
-		const current = () => life.current === owner;
+		const current = () => life.current === owner && (canComplete?.() ?? true);
 		pending.current = true;
 		setCommandPending(true);
 		setCommandError(null);
@@ -94,10 +99,9 @@ function useWebhookEndpointCard({ webhook, onUpdated, onDeleted }: WebhookEndpoi
 					);
 			})
 			.finally(() => {
-				if (current()) {
-					pending.current = false;
-					setCommandPending(false);
-				}
+				// Retirement suppresses effects, but only settlement releases the dispatched command.
+				pending.current = false;
+				setCommandPending(false);
 			});
 	}
 
@@ -336,10 +340,7 @@ export function WebhookEndpointCard(props: WebhookEndpointCardProps) {
 				webhook={webhook}
 				open={isEditDialogOpen}
 				onOpenChange={setIsEditDialogOpen}
-				onSuccess={(updated) => {
-					onUpdated(updated);
-					setIsEditDialogOpen(false);
-				}}
+				onSuccess={onUpdated}
 			/>
 
 			<WebhookDeliveryLogsDialog
