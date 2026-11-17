@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useTransition } from "react";
 import { toast } from "sonner";
 import {
 	getScheduleComplianceSummary,
@@ -107,6 +108,17 @@ export function useShiftSchedulerData({
 		enabled: isManager,
 	});
 
+	// An initial failed query loses its error status while refetching. Retain
+	// the local Retry task until both supporting reads have settled.
+	const [supportingDataRetryPending, startSupportingRetry] = useTransition();
+	const retrySupportingData = () =>
+		startSupportingRetry(async () => {
+			await Promise.all([
+				retryTemplates({ cancelRefetch: false }),
+				retryCompliance({ cancelRefetch: false }),
+			]);
+		});
+
 	const updateShiftMutation = useMutation({
 		mutationFn: async (data: ShiftSchedulerUpdateInput) => {
 			const result = await upsertShift({
@@ -180,12 +192,9 @@ export function useShiftSchedulerData({
 		retryShifts,
 		templatesFailed,
 		complianceFailed,
-		supportingDataFetching: templatesFetching || complianceFetching,
-		retrySupportingData: () =>
-			Promise.all([
-				retryTemplates({ cancelRefetch: false }),
-				retryCompliance({ cancelRefetch: false }),
-			]),
+		supportingDataFetching: templatesFetching || complianceFetching || supportingDataRetryPending,
+		supportingDataRetryPending,
+		retrySupportingData,
 		complianceSummary,
 		draftCount,
 		complianceFindingsCount,
