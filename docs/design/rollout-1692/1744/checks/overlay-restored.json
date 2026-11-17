@@ -1,0 +1,18 @@
+{
+  "byteExact": true,
+  "serverStopped": true,
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx",
+      "sha256": "5b1ea103c50b679312c0dddf2bbef1eccf1f1a948f804a85963e9361b00a9992"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-presence-list.tsx",
+      "sha256": "221c4886712345a5541f0cdc4e313fcab50aeaa93d27d2b1164f0b91415d0f12"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "e96cdf9bc6b62d439cb718fe9f7b10c76e7e7ca734e4bb167aebecff0d49b509"
+    }
+  ]
+}

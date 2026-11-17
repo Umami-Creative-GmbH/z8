@@ -1,0 +1,262 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-831adb4b-b944467c4c43355c/apps/webapp
+
+ ❯ |unit| src/app/[locale]/(app)/team/presence/location-presence-list.test.tsx (1 test | 1 failed) 46ms
+   × lets readers open an employee from their current presence record without losing state or since 45ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/team/presence/location-presence-list.test.tsx > lets readers open an employee from their current presence record without losing state or since
+TestingLibraryElementError: Unable to find an accessible element with the role "link" and name "Anna Berger"
+
+Here are the accessible roles:
+
+  table:
+
+  Name "":
+  <table
+    class="w-full text-sm"
+  />
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  <thead
+    class="bg-muted/50 text-left text-muted-foreground"
+  />
+
+  Name "":
+  <tbody />
+
+  --------------------------------------------------
+  row:
+
+  Name "Name State Since":
+  <tr />
+
+  Name "Anna Berger Clocked in 08:30":
+  <tr
+    class="border-t"
+  />
+
+  Name "Ben West On break 11:45":
+  <tr
+    class="border-t"
+  />
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Name":
+  <th
+    class="px-4 py-2 font-medium"
+    scope="col"
+  />
+
+  Name "State":
+  <th
+    class="px-4 py-2 font-medium"
+    scope="col"
+  />
+
+  Name "Since":
+  <th
+    class="px-4 py-2 font-medium"
+    scope="col"
+  />
+
+  --------------------------------------------------
+  cell:
+
+  Name "Anna Berger":
+  <td
+    class="px-4 py-3 font-medium"
+  />
+
+  Name "Clocked in":
+  <td
+    class="px-4 py-3"
+  />
+
+  Name "08:30":
+  <td
+    class="px-4 py-3 tabular-nums"
+  />
+
+  Name "Ben West":
+  <td
+    class="px-4 py-3 font-medium"
+  />
+
+  Name "On break":
+  <td
+    class="px-4 py-3"
+  />
+
+  Name "11:45":
+  <td
+    class="px-4 py-3 tabular-nums"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="overflow-hidden rounded-lg border bg-card"
+    >
+      <table
+        class="w-full text-sm"
+      >
+        <thead
+          class="bg-muted/50 text-left text-muted-foreground"
+        >
+          <tr>
+            <th
+              class="px-4 py-2 font-medium"
+              scope="col"
+            >
+              Name
+            </th>
+            <th
+              class="px-4 py-2 font-medium"
+              scope="col"
+            >
+              State
+            </th>
+            <th
+              class="px-4 py-2 font-medium"
+              scope="col"
+            >
+              Since
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="border-t"
+          >
+            <td
+              class="px-4 py-3 font-medium"
+            >
+              Anna Berger
+            </td>
+            <td
+              class="px-4 py-3"
+            >
+              <span
+                class="inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3 [a&]:hover:bg-accent [a&]:hover:text-accent-foreground gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+                data-slot="badge"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="tabler-icon tabler-icon-user-check size-3.5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"
+                  />
+                  <path
+                    d="M6 21v-2a4 4 0 0 1 4 -4h4"
+                  />
+                  <path
+                    d="M15 19l2 2l4 -4"
+                  />
+                </svg>
+                Clocked in
+              </span>
+            </td>
+            <td
+              class="px-4 py-3 tabular-nums"
+            >
+              08:30
+            </td>
+          </tr>
+          <tr
+            class="border-t"
+          >
+            <td
+              class="px-4 py-3 font-medium"
+            >
+              Ben West
+            </td>
+            <td
+              class="px-4 py-3"
+            >
+              <span
+                class="inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3 [a&]:hover:bg-accent [a&]:hover:text-accent-foreground gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300"
+                data-slot="badge"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="tabler-icon tabler-icon-clock-pause size-3.5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M20.942 13.018a9 9 0 1 0 -7.909 7.922"
+                  />
+                  <path
+                    d="M12 7v5l2 2"
+                  />
+                  <path
+                    d="M17 17v5"
+                  />
+                  <path
+                    d="M21 17v5"
+                  />
+                </svg>
+                On break
+              </span>
+            </td>
+            <td
+              class="px-4 py-3 tabular-nums"
+            >
+              11:45
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/[locale]/(app)/team/presence/location-presence-list.test.tsx:27:22
+     25|   />,
+     26|  );
+     27|  const anna = screen.getByRole("link", { name: "Anna Berger" });
+       |                      ^
+     28|  expect(anna.getAttribute("href")).toBe("/settings/employees/anna");
+     29|  const row = anna.closest("tr");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  05:50:55
+   Duration  1.21s (environment 54%, import 27%, transform 7%, tests 6%, setup 5%, worker 1%)
+

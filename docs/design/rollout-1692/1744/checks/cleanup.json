@@ -1,0 +1,14 @@
+{
+  "puppeteerFinallyClosed": true,
+  "cacheMoved": false,
+  "nativeClosed": true,
+  "peerRuntimeReused": false,
+  "threeServicesRemoved": true,
+  "containers": [
+    "z8_perf_2321a75c6a6d_postgres",
+    "z8_perf_2321a75c6a6d_redis",
+    "z8_perf_2321a75c6a6d_storage"
+  ],
+  "privateManifestsRemainIgnored": true,
+  "labelsVerifiedBeforeRemoval": true
+}
