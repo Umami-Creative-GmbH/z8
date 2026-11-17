@@ -167,14 +167,12 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 	},
 	// Equipment's new title still needs Tolgee sync. Until then the shell uses
 	// its catalog-backed Settings ancestor; the page/nav have dedicated defaults.
-	...SETTINGS_ENTRIES.filter((entry) => entry.id !== "equipment").map(
-		(entry) => ({
-			id: `settings-${entry.id}`,
-			href: entry.href,
-			titleKey: entry.titleKey,
-			titleDefault: entry.titleDefault,
-		}),
-	),
+	...SETTINGS_ENTRIES.filter((entry) => entry.id !== "equipment").map((entry) => ({
+		id: `settings-${entry.id}`,
+		href: entry.href,
+		titleKey: entry.titleKey,
+		titleDefault: entry.titleDefault,
+	})),
 	{
 		id: "settings",
 		href: "/settings",
@@ -191,12 +189,8 @@ export const UNKNOWN_ROUTE_METADATA: AppRouteMetadata = {
 };
 
 export function normalizeAppPath(pathname: string): string {
-	const [firstSegment, ...remainingSegments] = pathname
-		.split("/")
-		.filter(Boolean);
-	const segments = ALL_LANGUAGES.includes(
-		firstSegment as (typeof ALL_LANGUAGES)[number],
-	)
+	const [firstSegment, ...remainingSegments] = pathname.split("/").filter(Boolean);
+	const segments = ALL_LANGUAGES.includes(firstSegment as (typeof ALL_LANGUAGES)[number])
 		? remainingSegments
 		: [firstSegment, ...remainingSegments].filter(Boolean);
 	return segments.length === 0 ? "/" : `/${segments.join("/")}`;
@@ -253,6 +247,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 		path === "/reports" ||
 		path === "/reports/projects" ||
 		path === "/settings/report-share-links" ||
+		path === "/settings/enterprise/api-keys" ||
 		path === "/reports/vehicles" ||
 		path === "/billing/suspended"
 	);
@@ -268,7 +263,6 @@ export function resolveAppRouteMetadata(pathname: string): AppRouteMetadata {
 	return (
 		[...APP_ROUTE_METADATA]
 			.sort((left, right) => right.href.length - left.href.length)
-			.find((route) => routeMatches(normalizedPath, route.href)) ??
-		UNKNOWN_ROUTE_METADATA
+			.find((route) => routeMatches(normalizedPath, route.href)) ?? UNKNOWN_ROUTE_METADATA
 	);
 }
