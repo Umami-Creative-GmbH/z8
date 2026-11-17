@@ -14,6 +14,7 @@ import { useSession } from "@/lib/auth-client";
 import type { SettingsAccess } from "@/lib/organization-action/settings-access-level";
 import type { ApiKeyResponse } from "@/lib/validations/api-key";
 import type { PublicWebhookEndpoint } from "@/lib/webhooks/types";
+import { useDeveloperSnapshotArrivals } from "./use-developer-server-snapshot";
 
 export interface DeveloperAccessProps {
 	organizationId: string;
@@ -26,6 +27,12 @@ export interface DeveloperAccessProps {
 }
 
 export function DeveloperAccessClient(props: DeveloperAccessProps) {
+	useDeveloperSnapshotArrivals({
+		organizationId: props.organizationId,
+		userId: props.currentUserId,
+		apiKeys: props.initialApiKeys,
+		webhooks: props.initialWebhooks,
+	});
 	const { t } = useTranslate();
 	const context = useOrganization();
 	const session = useSession();
