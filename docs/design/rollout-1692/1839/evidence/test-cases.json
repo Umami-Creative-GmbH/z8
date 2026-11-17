@@ -1,0 +1,2402 @@
+{
+  "unitCases": 275,
+  "integrationCases": 43,
+  "totalCases": 318,
+  "physicalFiles": 33,
+  "accounting": "Exact physical file/full name/occurrence multiset. Earlier red, failed and repeat executions are nonadditive.",
+  "files": [
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/auth-form-wrapper.test.tsx",
+      "cases": 4
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "cases": 8
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "cases": 1
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "cases": 8
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/load-auth-page-client.test.ts",
+      "cases": 2
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/store-app-session.test.ts",
+      "cases": 5
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso-store.test.ts",
+      "cases": 3
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso.test.ts",
+      "cases": 4
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "cases": 10
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-reauthentication.test.ts",
+      "cases": 2
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/hooks/use-enabled-providers.test.tsx",
+      "cases": 2
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "cases": 13
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "cases": 8
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "cases": 14
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "cases": 11
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "cases": 9
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-out.test.ts",
+      "cases": 4
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "cases": 11
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "cases": 66
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "cases": 15
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "cases": 6
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "cases": 14
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "cases": 8
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-client-arrival.test.tsx",
+      "cases": 1
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "cases": 28
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-state.test.ts",
+      "cases": 3
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-ui.test.tsx",
+      "cases": 3
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "cases": 7
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/api/auth/verify-turnstile/route.test.ts",
+      "cases": 5
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "cases": 8
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "cases": 22
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "cases": 8
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/store-app/sign-in-origin.integration.test.ts",
+      "cases": 5
+    }
+  ],
+  "cases": [
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/auth-form-wrapper.test.tsx",
+      "fullName": "AuthFormWrapper names the task as the main heading with or without organization artwork",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/auth-form-wrapper.test.tsx",
+      "fullName": "AuthFormWrapper renders a focused auth card without the legacy image panel",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/auth-form-wrapper.test.tsx",
+      "fullName": "AuthFormWrapper renders organization branding without adding a layout image",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/auth-form-wrapper.test.tsx",
+      "fullName": "AuthFormWrapper preserves the build reference, return destination and form transport",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "fullName": "auth domain config allows the platform wildcard host for Better Auth baseURL resolution",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "fullName": "auth domain config trusts the platform wildcard origin for CSRF and redirects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "fullName": "auth domain config builds exact trusted origins for an organization's generated platform URLs",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "fullName": "auth domain config allows all explicit operator origins with their configured ports and no extra wildcards",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "fullName": "auth domain config does not add unsafe configured URL ftp://bad.example.net to allowed hosts or trusted origins",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "fullName": "auth domain config does not add unsafe configured URL https://user:password@bad.example.net to allowed hosts or trusted origins",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "fullName": "auth domain config does not add unsafe configured URL https://*.bad.example.net to allowed hosts or trusted origins",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth-domain-config.test.ts",
+      "fullName": "auth domain config does not add unsafe configured URL not-a-url to allowed hosts or trusted origins",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "fullName": "extracted translation keys all have a default English value",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "fullName": "sanitizeCallbackUrl rejects unsafe local callbacks \"/\\\\evil.example/\" throughout the sign-in flow",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "fullName": "sanitizeCallbackUrl rejects unsafe local callbacks \"/\\n/evil.example/\" throughout the sign-in flow",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "fullName": "sanitizeCallbackUrl rejects unsafe local callbacks \"/safe/..//evil.example/\" throughout the sign-in flow",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "fullName": "sanitizeCallbackUrl keeps internal path callback URLs",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "fullName": "sanitizeCallbackUrl normalizes same-origin absolute callback URLs into safe internal URLs",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "fullName": "sanitizeCallbackUrl rejects cross-origin absolute callback URLs",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "fullName": "getPostSignInRedirectUrl routes protected-page callbacks through init so the active organization is loaded first",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/callback-url.test.ts",
+      "fullName": "getPostSignInRedirectUrl does not wrap init callbacks again",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/load-auth-page-client.test.ts",
+      "fullName": "loadAuthPageClient loads the client once and reuses it",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/load-auth-page-client.test.ts",
+      "fullName": "loadAuthPageClient retries after a failed load",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/store-app-session.test.ts",
+      "fullName": "store app session cookie hands an exchanged session to the web view as Better Auth's own signed cookie",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/store-app-session.test.ts",
+      "fullName": "store app session cookie refuses a token that names no session",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/store-app-session.test.ts",
+      "fullName": "store app session cookie refuses a revoked session",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/store-app-session.test.ts",
+      "fullName": "store app session cookie refuses an expired session",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/auth/store-app-session.test.ts",
+      "fullName": "store app session cookie is not reachable over HTTP",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso-store.test.ts",
+      "fullName": "persisted SSO provenance and live policy requires activated policy and a consistently configured provider, failing closed on drift",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso-store.test.ts",
+      "fullName": "persisted SSO provenance and live policy binds proof to the session lifetime and tenant with cascading foreign keys",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso-store.test.ts",
+      "fullName": "persisted SSO provenance and live policy registers the migration after every previous migration timestamp",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso.test.ts",
+      "fullName": "organization SSO session authorization accepts only verified proof for the exact session, user, organization and provider",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso.test.ts",
+      "fullName": "organization SSO session authorization requires old, credential, social and unproven sessions to reauthenticate",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso.test.ts",
+      "fullName": "organization SSO session authorization keeps organizations without an enabled requirement usable without proof",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/session-sso.test.ts",
+      "fullName": "organization SSO session authorization fails closed when a required provider is missing or the policy store fails",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch uses the installed SSO plugin's verified state and records proof on every successful login",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch rejects forged state in the real SSO callback without recording proof",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch denies provider management using membership alone",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch denies switching and nonactive organization APIs even with valid membership",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch allows matching provenance but rejects a different provider and a different session",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch records the verified provider from callback context, ignoring forged query provider/org",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch never treats a callback path, requested provider, or newly created session alone as proof",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch checks invitation and team resource ownership even if an open organization is supplied",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch filters cross-organization team listings rather than trusting the active organization",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-enforcement-plugin.test.ts",
+      "fullName": "SSO enforcement in installed Better Auth endpoint dispatch rechecks policy despite the cookie cache and lets a locked-out user switch to an open org",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-reauthentication.test.ts",
+      "fullName": "organization SSO reauthentication uses server policy and preserves state cookies and a target-org callback",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/enterprise-identity/sso-reauthentication.test.ts",
+      "fullName": "organization SSO reauthentication does not start an IdP flow without approved membership or a configured provider",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/hooks/use-enabled-providers.test.tsx",
+      "fullName": "useEnabledProviders shares provider configuration through the query cache",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/hooks/use-enabled-providers.test.tsx",
+      "fullName": "useEnabledProviders refreshes cached provider configuration after invalidation",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner links an iPhone browser to the App Store",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner links an Android phone browser to Google Play",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden inside the store app shell",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden in an installed PWA",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden on desktop Chrome",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden on iPad Safari (desktop user agent)",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden on Android tablet Chrome",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden on a phone at tablet or desktop layout width",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden without any store URL configured",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden when only the other platform's store URL is configured",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner stays hidden for 90 days after a dismissal",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner shows again once 90 days have passed since the dismissal",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/app-banner.test.ts",
+      "fullName": "decideAppBanner treats an unreadable dismissal value as not dismissed",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "fullName": "iOS auth session (ASWebAuthenticationSession) returns the callback the session intercepted",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "fullName": "iOS auth session (ASWebAuthenticationSession) reports the user closing the sheet as cancelled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "fullName": "iOS auth session (ASWebAuthenticationSession) reports any other failure as failed",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "fullName": "Android auth session (Custom Tabs) opens a Custom Tab and returns the app link it delivered",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "fullName": "Android auth session (Custom Tabs) ignores links for other schemes while waiting",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "fullName": "Android auth session (Custom Tabs) accepts a callback that arrives just after the tab closed",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "fullName": "Android auth session (Custom Tabs) reports a closed tab without a callback as cancelled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-auth-session.test.ts",
+      "fullName": "Android auth session (Custom Tabs) reports a tab that could not open as failed",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client asks for permission only when the user turns push on, then saves the device token",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client saves nothing when the user denies permission",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client drops the native token again when the server refuses to save it",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client reports native push unavailable while the server has no FCM credentials",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client re-registers on app start only for a device that turned push on",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client replaces a rotated token and removes the old one",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client stops pushes to the device when the user turns push off",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client hands a tapped notification's data to the app and saves rotated tokens",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "native push client removes the device token before sign-out and swallows failures",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "isNativePushPromptMoment offers push on pages whose news arrives by push, not on the start page",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "nativePushTapTarget switches to the notification's organization through the organization switch first",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "nativePushTapTarget opens the path directly when the organization is already active",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "nativePushTapTarget goes through the switch when the active organization is unknown",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/native-push.test.ts",
+      "fullName": "nativePushTapTarget opens a push without organization as is, and only same-origin paths",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection is false during server rendering",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection recognizes the iOS shell from its user-agent suffix",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection recognizes the Android shell from its user-agent suffix",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection is false in phone browsers outside the shell",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection ignores a marker for a platform the shell does not ship",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection ignores a marker that is only part of another product token",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection from a request's user agent reads \"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Z8StoreApp/ios\" as ios",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection from a request's user agent reads \"Mozilla/5.0 (Linux; Android 15; Pixel 8; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36 Z8StoreApp/android\" as android",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection from a request's user agent reads \"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148\" as null",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection from a request's user agent reads \"Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 NotZ8StoreApp/android\" as null",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/shell.test.ts",
+      "fullName": "store app shell detection from a request's user agent reads null as null",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "organizations of an email domain finds the organization with a custom sign-in domain under the email's domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "organizations of an email domain finds the organization with a custom sign-in domain equal to the email's domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "organizations of an email domain finds the organization whose verified SSO domain matches the email",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "organizations of an email domain ignores a lookalike domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "organizations of an email domain ignores a domain that only starts with the email's domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "store app sign-in domain starts on the one verified custom domain of the one matching organization",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "store app sign-in domain uses the main origin when the email's domain points at more than one organization",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "store app sign-in domain uses the main origin when no organization matches",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-in-domain.test.ts",
+      "fullName": "store app sign-in domain uses the main origin when the organization has no or several verified custom domains",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-out.test.ts",
+      "fullName": "signOut removes this device's push token (#843) while the session still exists",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-out.test.ts",
+      "fullName": "signOut passes its options through to Better Auth",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-out.test.ts",
+      "fullName": "signOut still signs out when the device cleanup fails",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/sign-out.test.ts",
+      "fullName": "signOut does not let a hanging device cleanup hold sign-out",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "PKCE for the store app derives the S256 challenge of RFC 7636 appendix B",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "PKCE for the store app creates a fresh 43-character verifier each time",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in signs in through the system browser and exchanges the code with its verifier",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in reports a cancelled browser sign-in without exchanging anything",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in refuses a callback with another app's scheme",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in refuses a callback with another path",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in refuses a callback with no code",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in reports a refused exchange, such as a replayed or expired code",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in reports a rate-limited start without opening the browser",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in reports a browser that could not open",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/store-app/store-app-sign-in.test.ts",
+      "fullName": "store app sign-in reports an unreachable server",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http: APP_URL-only bootstrap uses actual allowedHosts with MAIN_DOMAIN=undefined",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http: APP_URL-only bootstrap uses actual allowedHosts with MAIN_DOMAIN=different.example.com",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct: APP_URL-only bootstrap uses actual allowedHosts with MAIN_DOMAIN=undefined",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct: APP_URL-only bootstrap uses actual allowedHosts with MAIN_DOMAIN=different.example.com",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth APP_URL main host enforces global CAPTCHA and retains Cloudflare hostname binding",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth BETTER_AUTH_URL main host enforces global CAPTCHA and retains Cloudflare hostname binding",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth NEXT_PUBLIC_APP_URL main host enforces global CAPTCHA and retains Cloudflare hostname binding",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth APP_URL main host works without CAPTCHA or domain records",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth BETTER_AUTH_URL main host works without CAPTCHA or domain records",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth NEXT_PUBLIC_APP_URL main host works without CAPTCHA or domain records",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth APP_URL-only deployment accepts actual browser Origin and password-reset redirects at https://selfhost.example.net:8443",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth BETTER_AUTH_URL-only deployment accepts actual browser Origin and password-reset redirects at https://selfhost.example.net:8443",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth NEXT_PUBLIC_APP_URL-only deployment accepts actual browser Origin and password-reset redirects at https://selfhost.example.net:8443",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth APP_URL-only deployment accepts actual browser Origin and password-reset redirects at http://selfhost.example.net:8080",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth BETTER_AUTH_URL-only deployment accepts actual browser Origin and password-reset redirects at http://selfhost.example.net:8080",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth NEXT_PUBLIC_APP_URL-only deployment accepts actual browser Origin and password-reset redirects at http://selfhost.example.net:8080",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth configured main URLs preserve a different verified tenant's CAPTCHA policy",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth configured main URLs do not allow unknown hosts or spoofed forwarding: selfhost.example.net.attacker.org",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth configured main URLs do not allow unknown hosts or spoofed forwarding: team.selfhost.example.net",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth configured main URLs do not allow unknown hosts or spoofed forwarding: unknown.example.net",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth invalid/non-web configured URLs never promote arbitrary hosts to main: ftp://unknown.example.net",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth invalid/non-web configured URLs never promote arbitrary hosts to main: https://user:password@unknown.example.net",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth invalid/non-web configured URLs never promote arbitrary hosts to main: not-a-url",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /sign-up/email: accepts a valid token once and rejects replay before effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /sign-up/email: disabled global CAPTCHA permits legitimate requests",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /sign-up/email: missing CAPTCHA cannot reach auth effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /sign-in/email: accepts a valid token once and rejects replay before effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /sign-in/email: disabled global CAPTCHA permits legitimate requests",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /sign-in/email: missing CAPTCHA cannot reach auth effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /request-password-reset: accepts a valid token once and rejects replay before effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /request-password-reset: disabled global CAPTCHA permits legitimate requests",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth http /request-password-reset: missing CAPTCHA cannot reach auth effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /sign-up/email: accepts a valid token once and rejects replay before effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /sign-up/email: disabled global CAPTCHA permits legitimate requests",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /sign-up/email: missing CAPTCHA cannot reach auth effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /sign-in/email: accepts a valid token once and rejects replay before effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /sign-in/email: disabled global CAPTCHA permits legitimate requests",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /sign-in/email: missing CAPTCHA cannot reach auth effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /request-password-reset: accepts a valid token once and rejects replay before effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /request-password-reset: disabled global CAPTCHA permits legitimate requests",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct /request-password-reset: missing CAPTCHA cannot reach auth effects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects invalid or malformed tokens",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects invalid or malformed tokens",
+      "occurrence": 2,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects invalid or malformed tokens",
+      "occurrence": 3,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth fails closed on Cloudflare network errors",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth fails closed when Cloudflare returns a different hostname",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth uses the verified tenant policy and tenant Vault secret for direct API calls with headers",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth does not fall back to global policy for a verified tenant with CAPTCHA disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth fails closed for a tenant with missing Vault secret",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth organization subdomains use the global policy consistently with the auth layout",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unknown or malformed Host unknown.example.org even when global CAPTCHA is disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unknown or malformed Host missing.app.example.com even when global CAPTCHA is disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unknown or malformed Host nested.team.app.example.com even when global CAPTCHA is disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unknown or malformed Host https://app.example.com even when global CAPTCHA is disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unknown or malformed Host app.example.com/path even when global CAPTCHA is disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unknown or malformed Host user@app.example.com even when global CAPTCHA is disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unknown or malformed Host app.example.com:65536 even when global CAPTCHA is disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth ignores spoofed forwarding, organization and native-client exemption headers",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth uses the verified Host when Next.js request.url contains an internal server hostname",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth the installed browser client transports fetchOptions headers to the real guard",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth direct auth.api throws without a request or headers instead of bypassing verification",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth fails closed when the global secret is missing",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth fails closed when tenant policy lookup is unavailable",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unsuccessful or malformed Cloudflare responses: {\"success\":true}",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unsuccessful or malformed Cloudflare responses: {\"success\":\"true\",\"hostname\":\"app.example.com\"}",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+      "fullName": "Turnstile auth guard with installed Better Auth rejects unsuccessful or malformed Cloudflare responses: {\"success\":false,\"hostname\":\"app.example.com\"}",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys uses Cloudflare test keys on localhost in development",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys uses Cloudflare test keys on localhost:3000 in development",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys uses Cloudflare test keys on z8.localhost in development",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys uses Cloudflare test keys on tenant.z8.localhost:443 in development",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys uses Cloudflare test keys on 127.0.0.1:4230 in development",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys never selects test keys in production",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys never selects test keys in test",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys does not select test keys for an invalid or non-local host z8-time.app",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys does not select test keys for an invalid or non-local host z8.localhost.attacker.org",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys does not select test keys for an invalid or non-local host attacker@z8.localhost",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys does not select test keys for an invalid or non-local host z8.localhost/path",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys does not select test keys for an invalid or non-local host z8.localhost:99999",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys does not select test keys for an invalid or non-local host ",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys does not select test keys for an invalid or non-local host null",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/development-keys.test.ts",
+      "fullName": "local development Turnstile keys does not select test keys for an invalid or non-local host undefined",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "fullName": "verifyTurnstileToken verifies development requests on z8.localhost with the matching secret and hostname policy",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "fullName": "verifyTurnstileToken verifies production requests on z8.localhost with the matching secret and hostname policy",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "fullName": "verifyTurnstileToken verifies development requests on login.example.org with the matching secret and hostname policy",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "fullName": "verifyTurnstileToken still rejects failed Cloudflare validation with development keys",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "fullName": "verifyTurnstileToken keeps enterprise secrets and hostname binding even on a local development host",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/service.test.ts",
+      "fullName": "verifyTurnstileToken aborts verification after the configured timeout",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer preserves a structured server error from a non-2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback for a non-JSON non-2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer preserves a structured failure from a 2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer accepts a valid successful response and keeps the request contract",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback for malformed JSON in a 2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback for null in a 2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback for a missing success field in a 2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback for a string success field in a 2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback for a numeric success field in a 2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback for a non-string error field in a 2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer rejects status-inconsistent success from a non-2xx response",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback when fetch rejects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer uses the safe fallback when response text rejects",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/lib/turnstile/verify.test.ts",
+      "fullName": "verifyTurnstileWithServer does not return a structured server error that echoes the token",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "fullName": "auth layout and login Turnstile policy agreement keeps the local widget and auth policy aligned in development",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "fullName": "auth layout and login Turnstile policy agreement keeps the local widget and auth policy aligned in production",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "fullName": "auth layout and login Turnstile policy agreement APP_URL-only deployment renders the global widget and submits its token to login",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "fullName": "auth layout and login Turnstile policy agreement BETTER_AUTH_URL-only deployment renders the global widget and submits its token to login",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "fullName": "auth layout and login Turnstile policy agreement NEXT_PUBLIC_APP_URL-only deployment renders the global widget and submits its token to login",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "fullName": "auth layout and login Turnstile policy agreement a verified custom tenant still renders its own widget and uses its own policy",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "fullName": "auth layout and login Turnstile policy agreement CAPTCHA-disabled self-hosted login has no widget and the server also disables CAPTCHA",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+      "fullName": "auth layout and login Turnstile policy agreement a suffix-spoofed host never receives global widget context and fails closed on the server",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-client-arrival.test.tsx",
+      "fullName": "sign-in client import arrival withholds an expired token during client loading and sends a fresh real-callback value on retry",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey explains required verification and offers a real-widget retry after timeout",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey reserves native submission once and retires a late success when the actor changes",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey keeps canonical defaults and focuses the first invalid field without transport",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey submits the current challenge only once and retains fields for a fresh retry",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey invalidates a token after Challenge error and requires a fresh completion",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey invalidates a token after Challenge expiry and requires a fresh completion",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey invalidates a token after Challenge timeout and requires a fresh completion",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey ignores a late email success after domain policy changes",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey ignores a late email refusal after domain policy changes",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey ignores a late email rejection after domain policy changes",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey retires late status-read continuation when the callback changes",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey retires pending work through Activity hide and resume",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey keeps current 403 email verification continuation and cancels it on editing",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey continues unverified email with the sanitized intended destination",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey preserves inline two-factor, trust-device payload and native form continuation",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey uses the saved onboarding step after email authentication",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey recovers from an actual passkey client refusal",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey recovers from an actual sso client refusal",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey recovers from an actual google client refusal",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey renders only allowed methods with resolved branding and preserves recovery callbacks",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey retires queued native activation when email changes during validation",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey keeps the configured SSO method and exact canonical callback payload",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey reports missing SSO configuration without invoking a provider",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey uses the existing organization social redirect with a safe callback",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey retains passkey options and canonical callback sanitization",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey shows provider loading, refusal and retry through the real query transport",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey retires a late two-factor success after the callback changes",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-form-content.test.tsx",
+      "fullName": "current-domain sign-in journey keeps an already dispatched form reserved through Activity resume until it settles",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-state.test.ts",
+      "fullName": "validateLoginCredentials accepts an email and a non-empty password",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-state.test.ts",
+      "fullName": "validateLoginCredentials reports each invalid field with its message",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-state.test.ts",
+      "fullName": "validateLoginCredentials matches zod's email check",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-ui.test.tsx",
+      "fullName": "login UI sections hides alternative authentication during two-factor authentication",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-ui.test.tsx",
+      "fullName": "login UI sections disables two-factor verification until all six digits are entered",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/login-ui.test.tsx",
+      "fullName": "login UI sections disables email login until Turnstile has a token",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "fullName": "store app email screen and frozen native transport preserves resolved branding, trimmed email, PKCE, system-browser callback and final destination",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "fullName": "store app email screen and frozen native transport refuses invalid email before any native or server transport and focuses its error",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "fullName": "store app email screen and frozen native transport keeps input and retry after start status 429",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "fullName": "store app email screen and frozen native transport keeps input and retry after start status 503",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "fullName": "store app email screen and frozen native transport explains a refused code exchange without replacing the native protocol",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "fullName": "store app email screen and frozen native transport returns quietly after real native cancellation",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx",
+      "fullName": "store app email screen and frozen native transport reserves duplicate native submission and retires late completion on changed domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/api/auth/verify-turnstile/route.test.ts",
+      "fullName": "POST /api/auth/verify-turnstile derives enterprise Turnstile context from the trusted Host header",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/api/auth/verify-turnstile/route.test.ts",
+      "fullName": "POST /api/auth/verify-turnstile derives platform organization Turnstile context from platform subdomains",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/api/auth/verify-turnstile/route.test.ts",
+      "fullName": "POST /api/auth/verify-turnstile ignores spoofed x-z8-domain headers on the main domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/api/auth/verify-turnstile/route.test.ts",
+      "fullName": "POST /api/auth/verify-turnstile rejects unsupported platform subdomains before verifying Turnstile",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "unit",
+      "file": "apps/webapp/src/app/api/auth/verify-turnstile/route.test.ts",
+      "fullName": "POST /api/auth/verify-turnstile rejects missing platform organizations before verifying Turnstile",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "fullName": "installed desktop sign-in on the checked-in migration chain issues a PKCE-bound, single-use code through app-login with Accept application/json",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "fullName": "installed desktop sign-in on the checked-in migration chain issues a PKCE-bound, single-use code through app-login with Accept text/html",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "fullName": "installed desktop sign-in on the checked-in migration chain issues a PKCE-bound, single-use code through desktop-login with Accept application/json",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "fullName": "installed desktop sign-in on the checked-in migration chain issues a PKCE-bound, single-use code through desktop-login with Accept text/html",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "fullName": "installed desktop sign-in on the checked-in migration chain issues a store app code with Accept application/json that only its verifier redeems, once",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "fullName": "installed desktop sign-in on the checked-in migration chain issues a store app code with Accept text/html that only its verifier redeems, once",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "fullName": "installed desktop sign-in on the checked-in migration chain recovers an old table repeatedly without changing existing auth-code evidence",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/app-auth-code.integration.test.ts",
+      "fullName": "installed desktop sign-in on the checked-in migration chain refuses to exchange legacy codes whose PKCE challenge cannot be reconstructed",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-in and SSO approval (#1668) provider-bound sign-in produces a pending membership with the provider's role and no employee when approval is required",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-in and SSO approval (#1668) provider-bound sign-in produces an approved membership and an active employee at once when approval is not required",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-in and SSO approval (#1668) provider-bound sign-in leaves a former employee inactive and waiting for approval when approval is required",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-in and SSO approval (#1668) provider-bound sign-in changes nothing for someone who is already a member",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-in and SSO approval (#1668) verified-domain sign-in produces a pending membership and no employee when approval is required",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-in and SSO approval (#1668) verified-domain sign-in produces an approved membership when approval is not required",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) provider-bound sign-in joins a new user as an active employee and signals the seat",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) provider-bound sign-in reactivates a deactivated returner whose membership was removed",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) provider-bound sign-in reactivates an inactive employee who kept an approved membership, even while approval is required",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) provider-bound sign-in keeps a departed returner off the current roster with the membership only",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) provider-bound sign-in tells nobody again when a departed returner who kept the membership signs in (#1672)",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) provider-bound sign-in sends no seat signal when a current employee signs in again",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) provider-bound sign-in joins nothing while the membership waits for approval",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) verified domain sign-in joins a new user as an active employee and signals the seat",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) verified domain sign-in reactivates a deactivated returner whose membership was removed",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) verified domain sign-in reactivates an inactive employee who kept an approved membership, even while approval is required",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) verified domain sign-in keeps a departed returner off the current roster with the membership only",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) verified domain sign-in tells nobody again when a departed returner who kept the membership signs in (#1672)",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) verified domain sign-in sends no seat signal when a current employee signs in again",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) verified domain sign-in joins nothing while the membership waits for approval",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) an identity provider admin provider-bound: gets an admin membership, an admin employee and the organization-wide team permissions",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/auth/sso-organization-provisioning.integration.test.ts",
+      "fullName": "SSO sign-ins join the organization (#1669) an identity provider admin verified domain: an admin membership without an employee joins as an admin employee",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "fullName": "real local MFA authentication and organization authorization rejects password-only/stale/unauthorized policy changes and accepts recent actual TOTP",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "fullName": "real local MFA authentication and organization authorization uses backup codes once for recovery only and allows an explicitly verified replacement",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "fullName": "real local MFA authentication and organization authorization revokes evidence and remembered trust in the password mutation's transaction",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "fullName": "real local MFA authentication and organization authorization allows last-factor revocation and immediately denies protected access",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "fullName": "real local MFA authentication and organization authorization cannot resurrect proof when TOTP verification races a password change",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "fullName": "real local MFA authentication and organization authorization accepts only the current exact-organization SSO exemption even when SSO is optional",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "fullName": "real local MFA authentication and organization authorization accepts fresh enrollment evidence from an aged session without refreshing the durable session",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/organization-mfa/authentication.integration.test.ts",
+      "fullName": "real local MFA authentication and organization authorization keeps the actual get-session MFA hook inside the caller's database transaction",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/store-app/sign-in-origin.integration.test.ts",
+      "fullName": "store app sign-in origin on the migrated schema starts on the verified custom domain under the email's domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/store-app/sign-in-origin.integration.test.ts",
+      "fullName": "store app sign-in origin on the migrated schema starts on the custom domain of the organization with the verified SSO domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/store-app/sign-in-origin.integration.test.ts",
+      "fullName": "store app sign-in origin on the migrated schema uses the main origin for an unverified custom domain and SSO domain",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/store-app/sign-in-origin.integration.test.ts",
+      "fullName": "store app sign-in origin on the migrated schema uses the main origin for an email domain no organization verified",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "project": "integration",
+      "file": "apps/webapp/src/lib/store-app/sign-in-origin.integration.test.ts",
+      "fullName": "store app sign-in origin on the migrated schema uses the main origin for a LIKE wildcard in the email's domain",
+      "occurrence": 1,
+      "status": "passed"
+    }
+  ]
+}

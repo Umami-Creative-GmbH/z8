@@ -1,0 +1,83 @@
+{
+  "redGreen": [
+    {
+      "run": "red-verification",
+      "passed": 0,
+      "failed": 1,
+      "failedCases": [
+        {
+          "fullName": "current-domain sign-in journey explains required verification and offers a real-widget retry after timeout",
+          "firstLine": "TestingLibraryElementError: Unable to find an accessible element with the role \"status\""
+        }
+      ]
+    },
+    {
+      "run": "green-verification",
+      "passed": 1,
+      "failed": 0,
+      "failedCases": []
+    },
+    {
+      "run": "red-activation",
+      "passed": 1,
+      "failed": 1,
+      "failedCases": [
+        {
+          "fullName": "current-domain sign-in journey reserves native submission once and retires a late success when the actor changes",
+          "firstLine": "AssertionError: expected \"vi.fn()\" to be called once, but got 2 times"
+        }
+      ]
+    },
+    {
+      "run": "green-activation",
+      "passed": 2,
+      "failed": 0,
+      "failedCases": []
+    }
+  ],
+  "failedOrProvisional": [
+    {
+      "category": "package-engine-lock",
+      "result": "Restricted engine/store lock was refused. Authorized same-command escalation verified and used pinned pnpm 12.16.1; the shim fallback version print was not accepted as installation evidence."
+    },
+    {
+      "category": "initial-unsettled-captures",
+      "result": "Initial 4 before/4 after and 7 intermediate settled captures are excluded from accepted publication. Early response fields were empty without challenge frames. No auth-owner cause was proved; cold-cache settled baseline and final both completed the real widget in all 7 accepted web captures."
+    },
+    {
+      "category": "owned-file-encoding",
+      "result": "First after attempt failed before capture with one page error/timeout from invalid UTF-8 in an owned source file. Corrected encoding; final source-pinned captures have zero page errors."
+    },
+    {
+      "category": "test-environment",
+      "result": "Intermediate provider assertions awaited query notification; OTP JSDOM lacked elementFromPoint; fixed test environment/awaiting. One intermediate report had all assertions passing but an unhandled OTP error and exit 1; excluded from passed accounting."
+    },
+    {
+      "category": "frozen-layout-fixture",
+      "result": "Eight policy-consumer tests exposed an unnecessary direct QueryClient dependency. Moved Retry query access beside its rendered error consumer; frozen tests/owners unchanged and final selection green."
+    },
+    {
+      "category": "pg-preflight",
+      "result": "Canonical verifier refused the seeded runtime database before destructive reset. Fresh empty sibling databases used within the same owned PostgreSQL container; no verifier bypass or runtime fixture reset."
+    },
+    {
+      "category": "pg-harness-production-mode",
+      "result": "First 43-case execution: 37 passed/6 failed with 429 because the harness incorrectly inherited production mode. Corrected to canonical Vitest NODE_ENV=test, unchanged server/security/test source. Final fresh canonical run: 43 passed. Repeats are nonadditive."
+    },
+    {
+      "category": "ordinary-format",
+      "result": "Separate ordinary Biome profile remains failed: 15 files reported formatting differences. Explicit 100-column CRLF and scoped lint/import pass; no equivalence claim."
+    },
+    {
+      "category": "native-react",
+      "result": "agent-browser skills get core rejected by PowerShell execution policy (UnauthorizedAccess). No ExecutionPolicy/.cmd/launcher workaround or auth-state save/restore. Native React acceptance remains unpassed."
+    }
+  ],
+  "remaining": [
+    "Full production generation and complete repository-wide tests/review remain unpassed; compile-only is distinct.",
+    "Remote Tolgee synchronization/translated new-key catalogs unavailable; static English defaults and extraction regressions pass.",
+    "Live custom domain/provider OAuth, SSO/required-SSO session proof, passkey hardware, real 2FA/trusted-device persistence and physical store wrapper handoff remain unpassed runtime variants; canonical and assembled suites retain their coverage.",
+    "True browser zoom, physical devices and full-language long-copy visual acceptance remain unpassed. Saved 18px/dark and keyboard/public-link checks are actual browser observations.",
+    "Only generated synthetic small-admin normal sign-in was admitted in this runtime; no wider role/access grant or full authenticated journey claim."
+  ]
+}
