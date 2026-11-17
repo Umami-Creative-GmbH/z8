@@ -11,17 +11,9 @@ import { readTodayBriefing } from "./actions";
 import { TodayBriefing } from "./today-briefing";
 import { TodayDecisionReservations } from "./today-decision-reservations";
 import { TodayPageLoading } from "./today-loading";
-import type { TodayArrival, TodayScope } from "./today-types";
+import type { TodayArrival, TodayScope, TodayView } from "./today-types";
 
-export function TodayWorkspace({
-	scope,
-	initial,
-	initialEmployee,
-}: {
-	scope: TodayScope;
-	initial: TodayArrival;
-	initialEmployee: { id: string; role: string };
-}) {
+export function TodayWorkspace({ scope, initial }: { scope: TodayScope; initial: TodayArrival }) {
 	const session = useSession();
 	const organization = useOrganization();
 	const identity = JSON.stringify([
@@ -36,13 +28,17 @@ export function TodayWorkspace({
 	const [initialIdentity] = useState(identity);
 	const [invalidated, setInvalidated] = useState(false);
 	const status = todayViewStatus(scope, session, organization);
+	const view = {
+		...scope,
+		employeeId: organization.employeeId,
+		role: organization.role,
+	};
 	// Published display identity retires evidence; the fresh server read still owns access.
 	if (
 		!invalidated &&
 		(status !== "ready" ||
 			identity !== initialIdentity ||
-			organization.employeeId !== initialEmployee.id ||
-			organization.role !== initialEmployee.role)
+			(initial.status === "ready" && !sameTodayView(initial.view, view)))
 	)
 		setInvalidated(true);
 	if (status === "context-error") return <TodayContextError retry={organization.refetch} />;
@@ -53,8 +49,20 @@ export function TodayWorkspace({
 				key={identity}
 				scope={scope}
 				initial={invalidated ? undefined : initial}
+				view={view}
+				recheckAccess={organization.refetch}
 			/>
 		</TodayDecisionReservations>
+	);
+}
+
+type DisplayView = TodayScope & { employeeId: string | null; role: string | null };
+function sameTodayView(producer: TodayView, display: DisplayView) {
+	return (
+		producer.userId === display.userId &&
+		producer.organizationId === display.organizationId &&
+		producer.employeeId === display.employeeId &&
+		producer.role === display.role
 	);
 }
 
@@ -95,7 +103,17 @@ function TodayContextError({ retry }: { retry: () => Promise<void> }) {
 	);
 }
 
-function ScopedTodayWorkspace({ scope, initial }: { scope: TodayScope; initial?: TodayArrival }) {
+function ScopedTodayWorkspace({
+	scope,
+	initial,
+	view: { employeeId, role },
+	recheckAccess,
+}: {
+	scope: TodayScope;
+	initial?: TodayArrival;
+	view: DisplayView;
+	recheckAccess: () => Promise<void>;
+}) {
 	const { t } = useTranslate();
 	const { userId, organizationId } = scope;
 	// Server props seed this arrival once. Combined refresh uses the registered reader;
@@ -114,8 +132,13 @@ function ScopedTodayWorkspace({ scope, initial }: { scope: TodayScope; initial?:
 		const request = ++generation.current;
 		setRefreshing(true);
 		try {
-			const next = await readTodayBriefing({ userId, organizationId });
+			const result = await readTodayBriefing({ userId, organizationId });
 			if (!active.current || request !== generation.current) return;
+			const next: TodayArrival =
+				result.status === "ready" &&
+				!sameTodayView(result.view, { userId, organizationId, employeeId, role })
+					? { status: "unavailable" }
+					: result;
 			setReadFailed(next.status === "error");
 			setArrival((previous) =>
 				next.status === "error" && previous?.status === "ready" ? previous : next,
@@ -128,7 +151,11 @@ function ScopedTodayWorkspace({ scope, initial }: { scope: TodayScope; initial?:
 			pending.current = false;
 			setRefreshing(false);
 		}
-	}, [userId, organizationId]);
+	}, [userId, organizationId, employeeId, role]);
+	const retry = async () => {
+		await recheckAccess();
+		await refresh();
+	};
 	useEffect(() => {
 		active.current = true;
 		if (!firstActivation.current || !hasInitial) {
@@ -156,12 +183,7 @@ function ScopedTodayWorkspace({ scope, initial }: { scope: TodayScope; initial?:
 							)
 						: t("today.briefing.loadFailed", "Could not load the briefing. Try again.")}
 				</p>
-				<Button
-					type="button"
-					variant="outline"
-					disabled={refreshing}
-					onClick={() => void refresh()}
-				>
+				<Button type="button" variant="outline" disabled={refreshing} onClick={() => void retry()}>
 					{t("common.retry", "Retry")}
 				</Button>
 			</div>
@@ -170,7 +192,7 @@ function ScopedTodayWorkspace({ scope, initial }: { scope: TodayScope; initial?:
 		<TodayBriefing
 			briefing={arrival.briefing}
 			isRefreshing={refreshing}
-			onRetry={() => void refresh()}
+			onRetry={() => void retry()}
 			onDecision={() => void refresh()}
 			readError={
 				readFailed

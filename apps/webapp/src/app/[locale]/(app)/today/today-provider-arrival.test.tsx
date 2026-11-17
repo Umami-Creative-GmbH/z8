@@ -58,7 +58,7 @@ function ctx(
 		updatedAt: Date.now(),
 	};
 }
-function ready(title = "Old managed employee evidence"): TodayArrival {
+function ready(title = "Old managed employee evidence", producer = transportContext): TodayArrival {
 	const briefing = briefingFixture();
 	const item = {
 		id: "approval-1",
@@ -76,7 +76,17 @@ function ready(title = "Old managed employee evidence"): TodayArrival {
 	};
 	briefing.sections.approvals.items = [item];
 	briefing.needsAction = [item];
-	return { status: "ready", briefing };
+	if (!producer.employee || !producer.organizationId) throw Error("Fixture producer missing");
+	return {
+		status: "ready",
+		briefing,
+		view: {
+			userId: producer.userId,
+			organizationId: producer.organizationId,
+			employeeId: producer.employee.employeeId,
+			role: producer.employee.role,
+		},
+	};
 }
 function deferred<T>() {
 	let resolve!: (value: T) => void;
@@ -113,6 +123,7 @@ function Controls() {
 	);
 }
 function mount(initial = ready(), initialContext = ctx()) {
+	transportContext = initialContext;
 	client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
 	const content = (mode: "hidden" | "visible" = "visible") => (
 		<QueryClientProvider client={client}>
@@ -120,11 +131,7 @@ function mount(initial = ready(), initialContext = ctx()) {
 				<ViewRefreshProvider>
 					<Controls />
 					<Activity mode={mode}>
-						<TodayWorkspace
-							initialEmployee={{ id: "employee-a", role: "manager" }}
-							scope={scope}
-							initial={initial}
-						/>
+						<TodayWorkspace scope={scope} initial={initial} />
 					</Activity>
 				</ViewRefreshProvider>
 			</OrganizationContextProvider>
@@ -160,7 +167,7 @@ beforeEach(() => {
 	decisionCalls = 0;
 	transportContext = ctx();
 	h.session.isPending = false;
-	h.read.mockResolvedValue(ready("Fresh current evidence"));
+	h.read.mockImplementation(async () => ready("Fresh current evidence"));
 	h.fetch.mockImplementation(async (url: string) => {
 		if (url === "/api/auth/context") {
 			contextCalls++;
@@ -311,7 +318,7 @@ describe("independent real-provider Today priority", () => {
 			expect(screen.queryByText("Old managed employee evidence")).toBeNull();
 			await act(async () => old.resolve(ready("Retired scope read")));
 			expect(screen.queryByText("Retired scope read")).toBeNull();
-			h.read.mockResolvedValueOnce(ready("Returned authorized evidence"));
+			h.read.mockImplementationOnce(async () => ready("Returned authorized evidence"));
 			await providerArrival(ctx());
 			await screen.findAllByText("Returned authorized evidence");
 			expect(screen.queryByText("Old managed employee evidence")).toBeNull();

@@ -35,13 +35,7 @@ async function TodayPageContent() {
 
 	const scope = { userId: currentEmployee.userId, organizationId: currentEmployee.organizationId };
 	const initial = await readTodayBriefing(scope);
-	return (
-		<TodayWorkspace
-			scope={scope}
-			initial={initial}
-			initialEmployee={{ id: currentEmployee.id, role: currentEmployee.role }}
-		/>
-	);
+	return <TodayWorkspace scope={scope} initial={initial} />;
 }
 
 export default function TodayPage() {

@@ -159,6 +159,7 @@ async function arrival(
 	};
 	return {
 		status: "ready",
+		view: { ...scope, employeeId: "review-manager", role: "manager" },
 		briefing: await getManagerDailyBriefingFromSources({
 			organizationId: scope.organizationId,
 			currentEmployee: { id: "review-manager", role: "manager" },
@@ -196,12 +197,7 @@ function mount(initial: TodayArrival) {
 				<ViewRefreshProvider>
 					<Controls />
 					<Activity mode={mode}>
-						<TodayWorkspace
-							key={instance}
-							scope={scope}
-							initialEmployee={{ id: "review-manager", role: "manager" }}
-							initial={initial}
-						/>
+						<TodayWorkspace key={instance} scope={scope} initial={initial} />
 					</Activity>
 				</ViewRefreshProvider>
 			</OrganizationContextProvider>
