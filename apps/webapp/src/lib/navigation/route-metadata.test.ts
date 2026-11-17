@@ -12,6 +12,12 @@ it("opts only the driving queue into page-owned headings", () => {
 	expect(appPageOwnsHeading("/en/team/driving-other")).toBe(false);
 });
 
+it("adopts only the presence selection heading, preserving detail ownership", () => {
+	expect(appPageOwnsHeading("/de/team/presence")).toBe(true);
+	expect(appPageOwnsHeading("/en/team/presence/berlin")).toBe(false);
+	expect(appPageOwnsHeading("/en/team")).toBe(true);
+});
+
 describe("route metadata", () => {
 	it("adopts the team absence heading, retaining team ownership and independent descendants", () => {
 		expect(appPageOwnsHeading("/en/team/absences")).toBe(true);
@@ -23,7 +29,7 @@ describe("route metadata", () => {
 	it("adopts the team directory heading, preserving independently staged descendants", () => {
 		expect(appPageOwnsHeading("/de/team")).toBe(true);
 		for (const path of [
-			"/en/team/presence",
+			"/en/team/presence/berlin/detail",
 			"/en/team/driving/detail",
 			"/en/team/period-submissions/detail",
 			"/en/team/other",

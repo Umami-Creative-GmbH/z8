@@ -1,0 +1,90 @@
+{
+  "phase": "before",
+  "notificationPolicy": "BrowserContext.setPermission(origin, notifications denied); native --disable-notifications also enabled; no blocking overlay",
+  "records": [
+    {
+      "file": "before-desktop.png",
+      "width": 1600,
+      "scrollWidth": 1600,
+      "headings": [
+        "Who Is In",
+        "Who is in"
+      ],
+      "dialogs": 0,
+      "locations": [
+        {
+          "text": "Berlin office",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "Hamburg warehouse",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000002"
+        },
+        {
+          "text": "München · Kundenservice und Einsatzkoordination Süd",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000003"
+        }
+      ],
+      "theme": "light bprogress-busy",
+      "fontSize": "16px",
+      "notificationAPI": "undefined",
+      "sha256": "1015a33f4185ba59efe50be92e81f09883ea0d741938323871ab4e4453436a4c"
+    },
+    {
+      "file": "before-wide.png",
+      "width": 2400,
+      "scrollWidth": 2400,
+      "headings": [
+        "Who Is In",
+        "Who is in"
+      ],
+      "dialogs": 0,
+      "locations": [
+        {
+          "text": "Berlin office",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "Hamburg warehouse",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000002"
+        },
+        {
+          "text": "München · Kundenservice und Einsatzkoordination Süd",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000003"
+        }
+      ],
+      "theme": "light bprogress-busy",
+      "fontSize": "16px",
+      "notificationAPI": "undefined",
+      "sha256": "026eb5e8473dbfd6a2e62152dbb6fb7ef45ad0ccf96c2fb5baa7501d95e4b3c2"
+    },
+    {
+      "file": "before-phone.png",
+      "width": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Who Is In",
+        "Who is in"
+      ],
+      "dialogs": 0,
+      "locations": [
+        {
+          "text": "Berlin office",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000001"
+        },
+        {
+          "text": "Hamburg warehouse",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000002"
+        },
+        {
+          "text": "München · Kundenservice und Einsatzkoordination Süd",
+          "href": "/en/team/presence/17430000-0000-4000-8000-000000000003"
+        }
+      ],
+      "theme": "light bprogress-busy",
+      "fontSize": "16px",
+      "notificationAPI": "undefined",
+      "sha256": "7f87df240084814a19f5e0775b9ff194ce2dc7056a242eb75bb0bd2f3cd77db1"
+    }
+  ]
+}

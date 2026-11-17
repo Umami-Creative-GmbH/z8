@@ -1,0 +1,23 @@
+[
+  {
+    "role": "small-manager",
+    "login": 200,
+    "active": 200,
+    "path": "/en/team/presence",
+    "presenceLinks": 3
+  },
+  {
+    "role": "small-restricted",
+    "login": 200,
+    "active": 200,
+    "path": "/en",
+    "presenceLinks": 0
+  },
+  {
+    "role": "small-admin",
+    "login": 200,
+    "active": 200,
+    "path": "/en/team/presence",
+    "presenceLinks": 3
+  }
+]
