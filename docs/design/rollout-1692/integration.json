@@ -939,17 +939,21 @@
       "blockedBy": [
         1694
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "769a2e7844ed1ff43d6a36145869b50cee921db6",
       "implementationCommit": "7fc82645ae809bf4ee28d3c5edc32766703fc0cc",
       "provisionalIntegrationCommit": "1513a20116706380dd65a93b35104ca4eeea6066",
       "provisionalCorrectionCommit": "9870df191c6b686106b38dcfa1bf6590ed611541",
       "provisionalCorrectionIntegrationCommit": "931c3f41d7a75a4b03d13f3dbad2e6de4eac4260",
-      "pendingAcceptance": "Fresh independent recovery9/1 and canonicalPG14/2 pass on241a. Actual CSV1/XLSX1 completed and parsed with canonical parity; PDF0, repeated current compiledUI null.props STOP preserved in immutable105-file archive. Root reproduces compiler-hoisted row callbacks losing local lazy PDF primitives: identical plain4/4 and compiled-no-row pass, compiled repeated-row3fail; direct Document element preserves scope/lazy import, no document data/format/calculation or download-authority changes. Afterfix differential8/8 and real compiled annual/custom-field/hourly-projection PDF parsing pass;294 selected units/52files, all3type projects/typegen,15filelint,owned2explicit100CRLF pass. Doctor15files0errors/1unchanged roster-readiness warning. Broadexplicit1005/ordinary10formatter differences remain unpassed; earlier settings overwritten-intermediate raw-history limit persists. Fresh currentUI PDF/parsed downloads, roles/recovery/preferences/matched/native/Next acceptance still pending; earlier PDF0 is not retroactively changed. Sourcec7eab9013 and provisionalmerge9284956; verifiedCommit remainsnull.",
       "provisionalRosterCorrectionCommit": "2e78c69a1531750bdd744fdaf99f4f78fc65550d",
       "provisionalRosterCorrectionIntegrationCommit": "9f9df79f46f203f7aaa75d3f39ceb1f94dac7f7c",
       "provisionalPDFCorrectionCommit": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
-      "provisionalPDFCorrectionIntegrationCommit": "9284956219792bc328f24137ae5a17856f2dd999"
+      "provisionalPDFCorrectionIntegrationCommit": "9284956219792bc328f24137ae5a17856f2dd999",
+      "integrationCommit": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+      "verificationProofCommit": "56537aaf903e683591d429e5132868c4b67809f0",
+      "evidence": "docs/design/rollout-1692/1735.md",
+      "correctionCommit": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
+      "integrationVerification": "Bounded acceptance on1d328a1b; app tree unchanged through proof merge. Current294unit cases/52files plus unchanged canonicalPG14/2 inherited from241a give mixed-snapshot selection union308/54. Independent9public cases are separate; fresh2compiled cases overlap294 and are nonadditive. All3types/typegen/15filelint and owned2explicit100CRLF pass; Doctor0errors/1unchanged roster-readiness warning, broad100format5/ordinary10 remain unpassed. Actual current normalUI PDF9344bytes/3pages,CSV1706,XLSX10605 completed and parsed; scoped canonical125280minutes/261days/all12months/52home dates24960minutes,absence values and originalPDFfooter/display context match. Live retained-generation commandRetry, rosterRetry, fourroles,keyboard/Escape,refresh/vehiclesnavigation,saved18/sidebarreload pass. Twelve reviewed images include nine-file partial historical consumer/hook overlay restored byte-exact. Corrected exactReportsContainer native inspection and connectedNext arrays[] pass; original wrong-target/parser/count/capture failures preserved. Public202-file archive contains74exact safe runtime entries plus selected history/source/config; private exportbytes omitted, parsedreceipts and hashes declared. RootGit-blobaudit verifies202archivepaths,15source/11configpins,raw+canonicalreportprefix and noappchange. All3STOP histories remain explicit; initial settings intermediate raw-output overwrite gap and one synthetic-email tool-output exposure qualified, noauthsecrets. Livecontextrefusal/customfieldprivacy/hourlyterms/cross-tabrevocation/actororgABA/heldbrowserexports/fullgeneration/Tolgee/providers/device/truezoom/exhaustivematrices/globalroster remain unpassed. Issues remainOPEN pendingfinalreview."
     },
     {
       "id": "R062",
@@ -1068,10 +1072,12 @@
       "blockedBy": [
         1695
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1756#issuecomment-6930746417"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1756#issuecomment-6930746417",
+      "implementationCommit": "a6471f7f7b7a225a041a4bb83705e238286db080",
+      "pendingAcceptance": "113unit+57PG cases reported, all3types/typegen/lint/Next. Actual EUR-to-CHF readback,lockedrefusal/roles/preferences inherited from worker;Doctor0errors4warnings,format/liveABA/revocation/fullgeneration/catalog/device limits. Fresh serial merger pending; preserve currency exact heading and reconcile sibling-negative assertions only when adopted."
     },
     {
       "id": "R073",
@@ -1080,10 +1086,12 @@
       "blockedBy": [
         1853
       ],
-      "status": "implementing",
+      "status": "awaiting-integration",
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
-      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1757#issuecomment-6931196869"
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1757#issuecomment-6931196869",
+      "implementationCommit": "9e1fedd449eb09588875dcaeab04b9c4cd741456",
+      "pendingAcceptance": "219unit/13files case names reconciled;PG69/5 is worker summary, no public case-level PGmultiset. All3types/typegen/lint/nativeNext,46PNG hashes/27JSON checked read-only;Doctor0errors5warnings,axe0violations1incomplete per finalpage/editor. Provider/secretstore/live races/build/catalog/device/format limits. Fresh serial merger pending; metadata union retains five tabs and legitimate exact heading adoptions."
     },
     {
       "id": "R074",
@@ -1092,8 +1100,12 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "awaiting-integration",
+      "verifiedCommit": null,
+      "implementationCommit": "bcf6a4ccc4ef1ee4803808e80f8c7cc683cbfa01",
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1758#issuecomment-6932267582",
+      "pendingAcceptance": "110unit/7files plus20PG/1file=130distinct/8reported selection. All3types/typegen/lint/explicitformat;Doctor0errors6warnings,ordinaryformatqualified. Fixture redirectedsettings;admitted saves/layout/theme/matched acceptance unpassed,one redirectPNG. Canonical admission requiresorgAdmin,Projects+BillableTime and supportedcurrency; standard fixture hasnoowner/moduleinit,exactredirectcauseunproved. Fresh serial merger and honest public fixture setup required; no auth/gate/currencyunlock workaround."
     },
     {
       "id": "R075",
@@ -1102,8 +1114,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1759#issuecomment-6932393742"
     },
     {
       "id": "R076",
@@ -1112,8 +1126,10 @@
       "blockedBy": [
         1853
       ],
-      "status": "pending",
-      "verifiedCommit": null
+      "status": "implementing",
+      "verifiedCommit": null,
+      "claimedBy": "KaiSoellch",
+      "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1760#issuecomment-6933030370"
     },
     {
       "id": "R077",
