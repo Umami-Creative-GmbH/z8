@@ -2030,13 +2030,16 @@
       "evidence": "docs/design/rollout-1692/1746.md",
       "handoffLimitation": "Worker reports156unit/12PG,full3types,scopedlint/format,Next andmainaxe0,actual fixture decision persisted through publicInbox. TwoDoctorwarnings,incremental capture boundaries,live revocation andbuild/catalog/device/zoom limits await fresh merger review.",
       "integrationCommit": "14a39359b0e1418bdfbadff8d5b04954c4d9c011",
-      "latestIntegrationCommit": "1139d3887d42e73b56a407e76b8d8e247339af8d",
+      "latestIntegrationCommit": "4cc47063828e9677b9c2fe24d15f4f5117d5ce99",
       "rootProviderArrivalCorrectionCommit": "39e5e92b0135c2135a16d9b020cb30c29501b79a",
       "rootProviderArrivalEvidence": "docs/design/rollout-1692/1746/root-provider-arrival-checks.json",
       "rootIntegrationVerification": "Provisional: isolated merge tree/preservation matches; original actual-provider employee arrival3pass1fail corrected. Root179 distinct cases/11files, all3types/staticTypegen, owned4lint/explicitformat andDoctor0/0 pass. Ordinary4format findings remain; PG/runtime and fresh independent acceptance unpassed. verifiedCommit stays null.",
       "rootPartialResultCorrectionCommit": "caeffe008245793a7f6a8e51ef109bd0effffcdb",
       "rootPartialResultEvidence": "docs/design/rollout-1692/1746/root-partial-result-checks.json",
-      "rootPartialResultVerification": "Provisional: narrowed-population/partial-read retention2pass1fail corrected by accepting fresh partial results without prior row restoration.183/12,all3types,scopedlint/explicit,Doctor0/0 pass; independent/PG/runtime pending."
+      "rootPartialResultVerification": "Provisional: narrowed-population/partial-read retention2pass1fail corrected by accepting fresh partial results without prior row restoration.183/12,all3types,scopedlint/explicit,Doctor0/0 pass; independent/PG/runtime pending.",
+      "rootDecisionReservationCorrectionCommit": "a224b4c7f34e433e56b8d0844cdfc1372417b950",
+      "rootDecisionReservationEvidence": "docs/design/rollout-1692/1746/root-decision-reservation-checks.json",
+      "rootDecisionReservationVerification": "Provisional: exactActivity opposingPOST9pass1fail corrected with QueryClient/actor/org reservation through real settlement.196distinct/13files including28public,full3types,5filelint/explicit andDoctor0/0 pass. Ordinary5formatter+4testwarnings retained; independent/PG/runtime pending."
     },
     {
       "id": "R165",
