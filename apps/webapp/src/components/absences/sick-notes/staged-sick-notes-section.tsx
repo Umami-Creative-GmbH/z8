@@ -14,6 +14,7 @@ import {
 	useSickNoteDefaults,
 } from "./sick-note-files-field";
 import {
+	StagedSickNoteUploadCancelledError,
 	StagedSickNoteUploadError,
 	type UploadedSickNote,
 	useStagedSickNoteUploads,
@@ -60,6 +61,7 @@ export function useStagedSickNotes(dates: AbsenceDates) {
 			try {
 				uploaded = await uploads.stage(resolveStagedSickNoteFiles(input.files, defaults));
 			} catch (error) {
+				if (error instanceof StagedSickNoteUploadCancelledError) return null;
 				toast.error(
 					t(
 						"absences.sickNotes.request.uploadFailed",
