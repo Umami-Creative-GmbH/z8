@@ -3,6 +3,7 @@
 import { IconInbox, IconRefresh } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLayoutEffect, useState, useSyncExternalStore } from "react";
+import { useOrganization } from "@/components/providers/organization-context-provider";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -38,18 +39,56 @@ export function PeriodSubmissionsClient({
 	requestedPeriod: string | null;
 }) {
 	const { data: session, isPending } = useSession();
+	const organization = useOrganization();
 	if (
 		isPending ||
 		session?.user.id !== access.userId ||
 		session.session.activeOrganizationId !== access.organizationId
 	)
 		return <PeriodSubmissionsLoading />;
+	if (organization.error)
+		return (
+			<div className="space-y-4 p-4 md:p-6">
+				<PeriodSubmissionsContextError retry={organization.refetch} />
+			</div>
+		);
+	if (
+		organization.isLoading ||
+		organization.userId !== access.userId ||
+		organization.activeOrganizationId !== access.organizationId
+	)
+		return <PeriodSubmissionsLoading />;
+	// Display identity retires local reads; only the fresh server result decides access.
 	return (
 		<Workspace
-			key={JSON.stringify([access.userId, access.organizationId, access.scope, requestedPeriod])}
+			key={JSON.stringify([
+				access.userId,
+				access.organizationId,
+				organization.employeeId,
+				organization.role,
+				access.scope,
+				requestedPeriod,
+			])}
 			access={access}
 			requestedPeriod={requestedPeriod}
 		/>
+	);
+}
+
+function PeriodSubmissionsContextError({ retry }: { retry: () => Promise<void> }) {
+	const { t } = useTranslate();
+	return (
+		<>
+			<PageHeader title={t("team.periodSubmissions.title", "Period submissions")} />
+			<Alert variant="destructive">
+				<AlertDescription>
+					<p>{t("team.periodSubmissions.contextFailed", "Could not check your current access.")}</p>
+					<Button variant="outline" onClick={() => void retry()}>
+						{t("common.retry", "Retry")}
+					</Button>
+				</AlertDescription>
+			</Alert>
+		</>
 	);
 }
 
