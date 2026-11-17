@@ -1,0 +1,199 @@
+{
+  "head": "3f7759880ea2b77c199507b8967a73915c48ec91",
+  "appTree": "bc7dd4c878a3f8439128c73c689f5678170cbf99",
+  "sourceTree": "bc7dd4c878a3f8439128c73c689f5678170cbf99",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/hooks/use-tus-file-upload.ts",
+      "bytes": 6368,
+      "sha256": "4825e6d9d87d449540b7baea185a9b87c8748b599642f1ce57507fb61e25c481",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+      "bytes": 6166,
+      "sha256": "743a836a763f00b90ab13b2b2597fb144d9078c3eee8b760621aa6e517f8c3bd",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+      "bytes": 5427,
+      "sha256": "9cb3f3cf3272faea13839610d3b4fdfc1b3a13b6bb8f1682d036febc5b349ba0",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.lifecycle.test.tsx",
+      "bytes": 9525,
+      "sha256": "f1fa39c97b4176991c0fe1da494cf069679f1ee24f43e2116fcdeabb9b927d21",
+      "matches": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "bytes": 25199,
+      "sha256": "9d21ed51ae96b643c83ea0a813ce7a1a06cbfdbe57aae2c9de3c1d17fd14a92b",
+      "matches": true
+    }
+  ],
+  "manifests": [
+    {
+      "path": "apps/desktop/package.json",
+      "sha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "apps/docs/package.json",
+      "sha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "apps/marketing/package.json",
+      "sha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "sha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docker/targets/db-seed/package.json",
+      "sha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docker/targets/migration/package.json",
+      "sha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docker/targets/worker/package.json",
+      "sha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/desktop/package.json",
+      "sha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/docs/package.json",
+      "sha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/marketing/package.json",
+      "sha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/mobile/package.json",
+      "sha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/db-seed/package.json",
+      "sha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/migration/package.json",
+      "sha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/worker/package.json",
+      "sha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "matchesArtifactDonor": true
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "matchesArtifactDonor": true
+    }
+  ],
+  "topology": [
+    {
+      "path": "node_modules",
+      "physical": true
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true
+    }
+  ],
+  "directLinkCount": 158,
+  "allLinksOwned": true,
+  "license": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "entries": 125,
+    "donor": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d",
+    "provenance": "genuine generated artifact; all tracked package manifests and lock byte equal; no fabrication"
+  },
+  "trackedStatus": "",
+  "configPins": [
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    }
+  ]
+}

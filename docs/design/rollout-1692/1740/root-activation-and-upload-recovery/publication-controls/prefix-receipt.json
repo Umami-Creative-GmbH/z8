@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "derived": true,
+  "report": "docs/design/rollout-1692/1740.md",
+  "originalPrefix": {
+    "bytes": 32701,
+    "sha256": "a7ce7ba93d9aa08229c183054deb34a7784dca2886b1018610fa202b0457cc14"
+  },
+  "prefixByteIdentical": true,
+  "heading": "## Root bounded activation and upload recovery proof — 2026-11-17",
+  "append": {
+    "bytes": 5428,
+    "sha256": "f2f5329559387ea03beb79bd3a7958e57af860cb7d20ec5a9d097754039008d7"
+  },
+  "finalReport": {
+    "bytes": 38129,
+    "sha256": "a82eab0d0e607542cf89b92335db3abd21d9f1fa85b65ddc89eefc5db278fc67"
+  },
+  "verifiedCommit": null
+}

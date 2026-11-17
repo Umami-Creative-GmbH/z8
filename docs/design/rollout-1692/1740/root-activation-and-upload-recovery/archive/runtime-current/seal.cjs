@@ -1,0 +1,9 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');const dir=__dirname;
+const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+const files=['HANDOFF.md','results.json','candidate-audit.json','final-audit.json','fixture-provenance.json','capture-pins.json','live-manager-results.json','live-preferences-results.json','live-roles-results.json','phone-allowances.json','readback-before.json','readback-final.json','native-a11y-results.json','next-results.json','next-cleanup.json','resource-seal.json','bridge-removal.json','prepare.cjs','bridge.cjs','browser-upload.config.mts','workspace-recovery.test.tsx','upload-expanded.test.tsx','public-surrounding.test.tsx','late-commands.test.tsx','partial-cleanup.test.tsx','results.cjs','audit.cjs','final-audit.cjs','seal.cjs',...JSON.parse(fs.readFileSync(path.join(dir,'capture-pins.json'))).map(p=>p.path)];
+if(new Set(files).size!==files.length||files.some(p=>/private|controller|profile|endpoint/.test(p)))throw Error('Unsafe or duplicate allowlist');
+const entries=files.map(p=>{const b=fs.readFileSync(path.join(dir,p));return{path:p,bytes:b.length,sha256:sha(b)}});
+const allow={root:dir,scope:'Only listed files are SAFE. All unlisted paths excluded, including credentials/auth/profiles/controllers/debug endpoints/raw bodies/logs/inventories/rejected images.',candidate:'3f7759880ea2b77c199507b8967a73915c48ec91',files:entries};
+const bytes=Buffer.from(JSON.stringify(allow,null,2));fs.writeFileSync(path.join(dir,'safe-allowlist.json'),bytes);fs.writeFileSync(path.join(dir,'SHA256SUMS.txt'),entries.map(e=>e.sha256+'  '+e.path).join('\n')+'\n'+sha(bytes)+'  safe-allowlist.json\n');
+for(const e of entries)if(sha(fs.readFileSync(path.join(dir,e.path)))!==e.sha256)throw Error('Seal mismatch');
+console.log(JSON.stringify({safeFiles:entries.length,allowlistSha256:sha(bytes),verifiedCommit1740:null}));

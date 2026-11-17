@@ -1,0 +1,625 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-41aa9e05-0348e7c30589d86c/apps/webapp
+
+ ✓ |unit| src/test/1740-isolated-merger-bridge.test.tsx > assembled current workspace retains list on calendar read failure and retires on organization switch 139ms
+ × |unit| src/test/1740-isolated-merger-bridge.test.tsx > a queued public submit must not run after Activity hides and returns before onSubmit 46ms
+   → Unable to find an accessible element with the role "combobox" and name `/Absence category/i`
+
+Here are the accessible roles:
+
+  region:
+
+  Name "Notifications alt+T":
+  [36m<section[39m
+    [33maria-atomic[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Notifications alt+T"[39m
+    [33maria-live[39m=[32m"polite"[39m
+    [33maria-relevant[39m=[32m"additions text"[39m
+    [33mdata-react-aria-top-layer[39m=[32m"true"[39m
+    [33mtabindex[39m=[32m"-1"[39m
+  [36m/>[39m
+
+  --------------------------------------------------dialog:
+
+  Name "Record absence for Review Person":
+  [36m<div[39m
+    [33maria-describedby[39m=[32m"base-ui-_r_c_"[39m
+    [33maria-labelledby[39m=[32m"base-ui-_r_b_"[39m
+    [33mclass[39m=[32m"fixed z-50 flex flex-col bg-muted shadow-lg transition-transform duration-200 ease-in-out data-[sheet-open=true]:duration-300 data-[sheet-open=true]:ease-out data-[sheet-side=bottom]:data-[sheet-open=true]:animate-sheet-enter-bottom data-[sheet-side=left]:data-[sheet-open=true]:animate-sheet-enter-left data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right data-[sheet-side=top]:data-[sheet-open=true]:animate-sheet-enter-top motion-reduce:animate-none motion-reduce:transition-none [&_[data-slot=tabs-list]]:bg-border/40 inset-y-0 right-0 h-full translate-x-full border-l data-[sheet-open=true]:translate-x-0 [--sheet-inset-top:env(safe-area-inset-top)] [--sheet-inset-bottom:env(safe-area-inset-bottom)] w-[calc(100vw-0.75rem)] gap-0 overflow-hidden p-0 sm:w-3/4 sm:max-w-xl"[39m
+    [33mdata-base-ui-focusable[39m=[32m""[39m
+    [33mdata-open[39m=[32m""[39m
+    [33mdata-sheet-open[39m=[32m"true"[39m
+    [33mdata-sheet-side[39m=[32m"right"[39m
+    [33mdata-slot[39m=[32m"action-panel-content"[39m
+    [33mid[39m=[32m"_r_9_"[39m
+    [33mrole[39m=[32m"dialog"[39m
+    [33mstyle[39m=[32m"--nested-dialogs: 0;"[39m
+    [33mtabindex[39m=[32m"-1"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Record absence for Review Person":
+  [36m<h2[39m
+    [33mclass[39m=[32m"text-foreground break-words text-lg font-semibold leading-snug"[39m
+    [33mdata-slot[39m=[32m"action-panel-title"[39m
+    [33mid[39m=[32m"base-ui-_r_b_"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+    [33mdata-slot[39m=[32m"action-panel-description"[39m
+    [33mid[39m=[32m"base-ui-_r_c_"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<p[39m
+    [33mclass[39m=[32m"-mt-2 text-muted-foreground text-xs sm:col-start-2"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  group:
+
+  Name "":
+  [36m<fieldset[39m
+    [33mclass[39m=[32m"contents"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Category*":
+  [36m<button[39m
+    [33maria-describedby[39m=[32m"_r_d_-form-item-description"[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-haspopup[39m=[32m"listbox"[39m
+    [33maria-invalid[39m=[32m"false"[39m
+    [33mclass[39m=[32m"rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"[39m
+    [33mdata-placeholder[39m=[32m""[39m
+    [33mdata-size[39m=[32m"default"[39m
+    [33mdata-slot[39m=[32m"form-control"[39m
+    [33mid[39m=[32m"_r_d_-form-item"[39m
+    [33mrole[39m=[32m"combobox"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Absence duration":
+  [36m<button[39m
+    [33maria-describedby[39m=[32m"_r_10_-form-item-description"[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-haspopup[39m=[32m"listbox"[39m
+    [33mclass[39m=[32m"rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"[39m
+    [33mdata-size[39m=[32m"default"[39m
+    [33mdata-slot[39m=[32m"form-control"[39m
+    [33mid[39m=[32m"_r_10_-form-item"[39m
+    [33mrole[39m=[32m"combobox"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Deputy":
+  [36m<button[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-haspopup[39m=[32m"listbox"[39m
+    [33maria-invalid[39m=[32m"false"[39m
+    [33maria-label[39m=[32m"Deputy"[39m
+    [33mclass[39m=[32m"rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"[39m
+    [33mdata-disabled[39m=[32m""[39m
+    [33mdata-size[39m=[32m"default"[39m
+    [33mdata-slot[39m=[32m"select-trigger"[39m
+    [33mdisabled[39m=[32m""[39m
+    [33mid[39m=[32m"_r_17_-form-item"[39m
+    [33mrole[39m=[32m"combobox"[39m
+    [33mtabindex[39m=[32m"-1"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Start date*":
+  [36m<button[39m
+    [33maria-describedby[39m=[32m"_r_k_-form-item-description"[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-haspopup[39m=[32m"dialog"[39m
+    [33maria-invalid[39m=[32m"false"[39m
+    [33maria-required[39m=[32m"true"[39m
+    [33mclass[39m=[32m"relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"[39m
+    [33mdata-base-ui-click-trigger[39m=[32m""[39m
+    [33mdata-placeholder[39m=[32m""[39m
+    [33mdata-slot[39m=[32m"form-control"[39m
+    [33mid[39m=[32m"_r_k_-form-item"[39m
+    [33mname[39m=[32m"startDate"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "End date":
+  [36m<button[39m
+    [33maria-describedby[39m=[32m"_r_q_-form-item-description"[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-haspopup[39m=[32m"dialog"[39m
+    [33maria-invalid[39m=[32m"false"[39m
+    [33mclass[39m=[32m"relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"[39m
+    [33mdata-base-ui-click-trigger[39m=[32m""[39m
+    [33mdata-placeholder[39m=[32m""[39m
+    [33mdata-slot[39m=[32m"form-control"[39m
+    [33mid[39m=[32m"_r_q_-form-item"[39m
+    [33mname[39m=[32m"endDate"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Cancel":
+  [36m<button[39m
+    [33mclass[39m=[32m"relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"[39m
+    [33mdata-slot[39m=[32m"button"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Record absence":
+  [36m<button[39m
+    [33mclass[39m=[32m"relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"[39m
+    [33mdata-slot[39m=[32m"button"[39m
+    [33mtype[39m=[32m"submit"[39m
+  [36m/>[39m
+
+  Name "Close":
+  [36m<button[39m
+    [33mclass[39m=[32m"pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] absolute top-[calc(1rem+var(--sheet-inset-top,0px))] right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[open]:bg-secondary"[39m
+    [33mtabindex[39m=[32m"0"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Notes":
+  [36m<textarea[39m
+    [33maria-describedby[39m=[32m"_r_1e_-form-item-description"[39m
+    [33maria-invalid[39m=[32m"false"[39m
+    [33mautocomplete[39m=[32m"off"[39m
+    [33mclass[39m=[32m"border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-card px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"[39m
+    [33mdata-slot[39m=[32m"form-control"[39m
+    [33mid[39m=[32m"_r_1e_-form-item"[39m
+    [33mname[39m=[32m"notes"[39m
+    [33mplaceholder[39m=[32m"Add internal context for this record…"[39m
+    [33mrows[39m=[32m"3"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div[39m
+    [33mdata-base-ui-inert[39m=[32m""[39m
+  [36m>[39m
+    [36m<section[39m
+      [33maria-atomic[39m=[32m"false"[39m
+      [33maria-label[39m=[32m"Notifications alt+T"[39m
+      [33maria-live[39m=[32m"polite"[39m
+      [33maria-relevant[39m=[32m"additions text"[39m
+      [33mdata-react-aria-top-layer[39m=[32m"true"[39m
+      [33mtabindex[39m=[32m"-1"[39m
+    [36m/>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mdata-base-ui-portal[39m=[32m""[39m
+    [33mdata-slot[39m=[32m"sheet-portal"[39m
+    [33mid[39m=[32m"_r_a_"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33maria-hidden[39m=[32m"true"[39m
+      [33mclass[39m=[32m"fixed inset-0 z-50 bg-black/50 opacity-0 transition-opacity duration-200 ease-out data-[sheet-open=false]:pointer-events-none data-[sheet-open=true]:animate-sheet-fade-in data-[sheet-open=true]:opacity-100 motion-reduce:animate-none motion-reduce:transition-none"[39m
+      [33mdata-base-ui-inert[39m=[32m""[39m
+      [33mdata-open[39m=[32m""[39m
+      [33mdata-sheet-open[39m=[32m"true"[39m
+      [33mdata-slot[39m=[32m"sheet-overlay"[39m
+      [33mrole[39m=[32m"presentation"[39m
+      [33mstyle[39m=[32m"user-select: none;"[39m
+    [36m/>[39m
+    [36m<span[39m
+      [33maria-hidden[39m=[32m"true"[39m
+      [33mdata-base-ui-focus-guard[39m=[32m""[39m
+      [33mdata-base-ui-inert[39m=[32m""[39m
+      [33mdata-type[39m=[32m"inside"[39m
+      [33mstyle[39m=[32m"clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: 0px; position: fixed; top: 0px; left: 0px;"[39m
+      [33mtabindex[39m=[32m"0"[39m
+    [36m/>[39m
+    [36m<div[39m
+      [33maria-describedby[39m=[32m"base-ui-_r_c_"[39m
+      [33maria-labelledby[39m=[32m"base-ui-_r_b_"[39m
+      [33mclass[39m=[32m"fixed z-50 flex flex-col bg-muted shadow-lg transition-transform duration-200 ease-in-out data-[sheet-open=true]:duration-300 data-[sheet-open=true]:ease-out data-[sheet-side=bottom]:data-[sheet-open=true]:animate-sheet-enter-bottom data-[sheet-side=left]:data-[sheet-open=true]:animate-sheet-enter-left data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right data-[sheet-side=top]:data-[sheet-open=true]:animate-sheet-enter-top motion-reduce:animate-none motion-reduce:transition-none [&_[data-slot=tabs-list]]:bg-border/40 inset-y-0 right-0 h-full translate-x-full border-l data-[sheet-open=true]:translate-x-0 [--sheet-inset-top:env(safe-area-inset-top)] [--sheet-inset-bottom:env(safe-area-inset-bottom)] w-[calc(100vw-0.75rem)] gap-0 overflow-hidden p-0 sm:w-3/4 sm:max-w-xl"[39m
+      [33mdata-base-ui-focusable[39m=[32m""[39m
+      [33mdata-open[39m=[32m""[39m
+      [33mdata-sheet-open[39m=[32m"true"[39m
+      [33mdata-sheet-side[39m=[32m"right"[39m
+      [33mdata-slot[39m=[32m"action-panel-content"[39m
+      [33mid[39m=[32m"_r_9_"[39m
+      [33mrole[39m=[32m"dialog"[39m
+      [33mstyle[39m=[32m"--nested-dialogs: 0;"[39m
+      [33mtabindex[39m=[32m"-1"[39m
+    [36m>[39m
+      [36m<form[39m
+        [33maction[39m=[32m"javascript:throw new Error('A React form was unexpectedly submitted. If you called form.submit() manually, consider using form.requestSubmit() instead. If you\\'re trying to use event.stopPropagation() in a submit event handler, consider also calling event.preventDefault().')"[39m
+        [33mclass[39m=[32m"flex min-h-0 flex-1 flex-col"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"mt-[var(--sheet-inset-top,0px)] flex flex-col gap-1.5 p-4 min-w-0 shrink-0 border-b px-6 py-5 pr-12 text-left"[39m
+          [33mdata-slot[39m=[32m"action-panel-header"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33mclass[39m=[32m"text-foreground break-words text-lg font-semibold leading-snug"[39m
+            [33mdata-slot[39m=[32m"action-panel-title"[39m
+            [33mid[39m=[32m"base-ui-_r_b_"[39m
+          [36m>[39m
+            [0mRecord absence for Review Person[0m
+          [36m</h2>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-sm text-muted-foreground"[39m
+            [33mdata-slot[39m=[32m"action-panel-description"[39m
+            [33mid[39m=[32m"base-ui-_r_c_"[39m
+          [36m>[39m
+            [0mRecord an approved absence directly for the selected employee.[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-5"[39m
+          [33mdata-slot[39m=[32m"action-panel-body"[39m
+        [36m>[39m
+          [36m<fieldset[39m
+            [33mclass[39m=[32m"contents"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid content-start gap-2"[39m
+              [33mdata-slot[39m=[32m"form-item"[39m
+            [36m>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 data-[error=true]:text-destructive"[39m
+                [33mdata-error[39m=[32m"false"[39m
+                [33mdata-slot[39m=[32m"form-label"[39m
+                [33mfor[39m=[32m"_r_d_-form-item"[39m
+              [36m>[39m
+                [0mCategory[0m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-destructive ml-1"[39m
+                [36m>[39m
+                  [0m*[0m
+                [36m</span>[39m
+              [36m</label>[39m
+              [36m<button[39m
+                [33maria-describedby[39m=[32m"_r_d_-form-item-description"[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-haspopup[39m=[32m"listbox"[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-va...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/test/1740-isolated-merger-bridge.test.tsx > a queued public submit must not run after Activity hides and returns before onSubmit
+TestingLibraryElementError: Unable to find an accessible element with the role "combobox" and name `/Absence category/i`
+
+Here are the accessible roles:
+
+  region:
+
+  Name "Notifications alt+T":
+  <section
+    aria-atomic="false"
+    aria-label="Notifications alt+T"
+    aria-live="polite"
+    aria-relevant="additions text"
+    data-react-aria-top-layer="true"
+    tabindex="-1"
+  />
+
+  --------------------------------------------------dialog:
+
+  Name "Record absence for Review Person":
+  <div
+    aria-describedby="base-ui-_r_c_"
+    aria-labelledby="base-ui-_r_b_"
+    class="fixed z-50 flex flex-col bg-muted shadow-lg transition-transform duration-200 ease-in-out data-[sheet-open=true]:duration-300 data-[sheet-open=true]:ease-out data-[sheet-side=bottom]:data-[sheet-open=true]:animate-sheet-enter-bottom data-[sheet-side=left]:data-[sheet-open=true]:animate-sheet-enter-left data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right data-[sheet-side=top]:data-[sheet-open=true]:animate-sheet-enter-top motion-reduce:animate-none motion-reduce:transition-none [&_[data-slot=tabs-list]]:bg-border/40 inset-y-0 right-0 h-full translate-x-full border-l data-[sheet-open=true]:translate-x-0 [--sheet-inset-top:env(safe-area-inset-top)] [--sheet-inset-bottom:env(safe-area-inset-bottom)] w-[calc(100vw-0.75rem)] gap-0 overflow-hidden p-0 sm:w-3/4 sm:max-w-xl"
+    data-base-ui-focusable=""
+    data-open=""
+    data-sheet-open="true"
+    data-sheet-side="right"
+    data-slot="action-panel-content"
+    id="_r_9_"
+    role="dialog"
+    style="--nested-dialogs: 0;"
+    tabindex="-1"
+  />
+
+  --------------------------------------------------
+  heading:
+
+  Name "Record absence for Review Person":
+  <h2
+    class="text-foreground break-words text-lg font-semibold leading-snug"
+    data-slot="action-panel-title"
+    id="base-ui-_r_b_"
+  />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p
+    class="text-sm text-muted-foreground"
+    data-slot="action-panel-description"
+    id="base-ui-_r_c_"
+  />
+
+  Name "":
+  <p
+    class="-mt-2 text-muted-foreground text-xs sm:col-start-2"
+  />
+
+  --------------------------------------------------
+  group:
+
+  Name "":
+  <fieldset
+    class="contents"
+  />
+
+  --------------------------------------------------
+  combobox:
+
+  Name "Category*":
+  <button
+    aria-describedby="_r_d_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-invalid="false"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-placeholder=""
+    data-size="default"
+    data-slot="form-control"
+    id="_r_d_-form-item"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Absence duration":
+  <button
+    aria-describedby="_r_10_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="form-control"
+    id="_r_10_-form-item"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Deputy":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-invalid="false"
+    aria-label="Deputy"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-disabled=""
+    data-size="default"
+    data-slot="select-trigger"
+    disabled=""
+    id="_r_17_-form-item"
+    role="combobox"
+    tabindex="-1"
+    type="button"
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "Start date*":
+  <button
+    aria-describedby="_r_k_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-invalid="false"
+    aria-required="true"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+    data-base-ui-click-trigger=""
+    data-placeholder=""
+    data-slot="form-control"
+    id="_r_k_-form-item"
+    name="startDate"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "End date":
+  <button
+    aria-describedby="_r_q_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-invalid="false"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+    data-base-ui-click-trigger=""
+    data-placeholder=""
+    data-slot="form-control"
+    id="_r_q_-form-item"
+    name="endDate"
+    tabindex="0"
+    type="button"
+  />
+
+  Name "Cancel":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+
+  Name "Record absence":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="submit"
+  />
+
+  Name "Close":
+  <button
+    class="pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] absolute top-[calc(1rem+var(--sheet-inset-top,0px))] right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[open]:bg-secondary"
+    tabindex="0"
+    type="button"
+  />
+
+  --------------------------------------------------
+  textbox:
+
+  Name "Notes":
+  <textarea
+    aria-describedby="_r_1e_-form-item-description"
+    aria-invalid="false"
+    autocomplete="off"
+    class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-card px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="form-control"
+    id="_r_1e_-form-item"
+    name="notes"
+    placeholder="Add internal context for this record…"
+    rows="3"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div
+    data-base-ui-inert=""
+  >
+    <section
+      aria-atomic="false"
+      aria-label="Notifications alt+T"
+      aria-live="polite"
+      aria-relevant="additions text"
+      data-react-aria-top-layer="true"
+      tabindex="-1"
+    />
+  </div>
+  <div
+    data-base-ui-portal=""
+    data-slot="sheet-portal"
+    id="_r_a_"
+  >
+    <div
+      aria-hidden="true"
+      class="fixed inset-0 z-50 bg-black/50 opacity-0 transition-opacity duration-200 ease-out data-[sheet-open=false]:pointer-events-none data-[sheet-open=true]:animate-sheet-fade-in data-[sheet-open=true]:opacity-100 motion-reduce:animate-none motion-reduce:transition-none"
+      data-base-ui-inert=""
+      data-open=""
+      data-sheet-open="true"
+      data-slot="sheet-overlay"
+      role="presentation"
+      style="user-select: none;"
+    />
+    <span
+      aria-hidden="true"
+      data-base-ui-focus-guard=""
+      data-base-ui-inert=""
+      data-type="inside"
+      style="clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: 0px; position: fixed; top: 0px; left: 0px;"
+      tabindex="0"
+    />
+    <div
+      aria-describedby="base-ui-_r_c_"
+      aria-labelledby="base-ui-_r_b_"
+      class="fixed z-50 flex flex-col bg-muted shadow-lg transition-transform duration-200 ease-in-out data-[sheet-open=true]:duration-300 data-[sheet-open=true]:ease-out data-[sheet-side=bottom]:data-[sheet-open=true]:animate-sheet-enter-bottom data-[sheet-side=left]:data-[sheet-open=true]:animate-sheet-enter-left data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right data-[sheet-side=top]:data-[sheet-open=true]:animate-sheet-enter-top motion-reduce:animate-none motion-reduce:transition-none [&_[data-slot=tabs-list]]:bg-border/40 inset-y-0 right-0 h-full translate-x-full border-l data-[sheet-open=true]:translate-x-0 [--sheet-inset-top:env(safe-area-inset-top)] [--sheet-inset-bottom:env(safe-area-inset-bottom)] w-[calc(100vw-0.75rem)] gap-0 overflow-hidden p-0 sm:w-3/4 sm:max-w-xl"
+      data-base-ui-focusable=""
+      data-open=""
+      data-sheet-open="true"
+      data-sheet-side="right"
+      data-slot="action-panel-content"
+      id="_r_9_"
+      role="dialog"
+      style="--nested-dialogs: 0;"
+      tabindex="-1"
+    >
+      <form
+        action="javascript:throw new Error('A React form was unexpectedly submitted. If you called form.submit() manually, consider using form.requestSubmit() instead. If you\\'re trying to use event.stopPropagation() in a submit event handler, consider also calling event.preventDefault().')"
+        class="flex min-h-0 flex-1 flex-col"
+      >
+        <div
+          class="mt-[var(--sheet-inset-top,0px)] flex flex-col gap-1.5 p-4 min-w-0 shrink-0 border-b px-6 py-5 pr-12 text-left"
+          data-slot="action-panel-header"
+        >
+          <h2
+            class="text-foreground break-words text-lg font-semibold leading-snug"
+            data-slot="action-panel-title"
+            id="base-ui-_r_b_"
+          >
+            Record absence for Review Person
+          </h2>
+          <p
+            class="text-sm text-muted-foreground"
+            data-slot="action-panel-description"
+            id="base-ui-_r_c_"
+          >
+            Record an approved absence directly for the selected employee.
+          </p>
+        </div>
+        <div
+          class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-5"
+          data-slot="action-panel-body"
+        >
+          <fieldset
+            class="contents"
+          >
+            <div
+              class="grid content-start gap-2"
+              data-slot="form-item"
+            >
+              <label
+                class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 data-[error=true]:text-destructive"
+                data-error="false"
+                data-slot="form-label"
+                for="_r_d_-form-item"
+              >
+                Category
+                <span
+                  class="text-destructive ml-1"
+                >
+                  *
+                </span>
+              </label>
+              <button
+                aria-describedby="_r_d_-form-item-description"
+                aria-expanded="false"
+                aria-haspopup="listbox"
+                aria-invalid="false"
+                class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-va...
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ fillDialog src/test/1740-isolated-merger-bridge.test.tsx:49:27
+     47| async function fillDialog(){
+     48|   const user=userEvent.setup();
+     49|   await user.click(screen.getByRole('combobox',{name:/Absence category…
+       |                           ^
+     50|   await user.click(await screen.findByRole('option',{name:'Review home…
+     51|   await user.click(screen.getByRole('button',{name:/Start date/i}));
+ ❯ src/test/1740-isolated-merger-bridge.test.tsx:73:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  07:29:06
+   Duration  1.68s (import 44%, environment 21%, transform 21%, tests 12%, setup 2%)
+

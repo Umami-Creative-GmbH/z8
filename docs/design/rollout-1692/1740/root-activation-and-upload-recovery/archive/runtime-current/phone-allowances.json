@@ -1,0 +1,17 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "font": "18px",
+  "headingCount": 1,
+  "documentWidth": 390,
+  "notifications": "denied",
+  "firstRow": [
+    {
+      "width": 334,
+      "height": 440.234375,
+      "text": "Person 3\n\nperf-small-3-46b0d118f6da@example.test\n\nFixture team 1\n—\n\nMissing vacation policy\n\n—\n—\n—\n0\nRecord absence"
+    }
+  ]
+}

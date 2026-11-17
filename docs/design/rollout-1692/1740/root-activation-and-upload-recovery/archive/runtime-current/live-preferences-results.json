@@ -1,0 +1,125 @@
+{
+  "checks": [
+    {
+      "name": "actual saved Large preference reloads at 18px",
+      "status": "passed"
+    },
+    {
+      "name": "real dark theme control",
+      "status": "passed"
+    },
+    {
+      "name": "phone sidebar closes on first Escape and restores focus",
+      "status": "passed"
+    },
+    {
+      "name": "real light theme control",
+      "status": "passed"
+    },
+    {
+      "name": "desktop sidebar collapse persists on reload",
+      "status": "passed"
+    }
+  ],
+  "captures": [
+    {
+      "path": "current-manager-desktop-dark-18.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "rootFont": "18px",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "documentWidth": 1600,
+      "headingCount": 1,
+      "heading": {
+        "x": 315,
+        "y": 100,
+        "width": 1258,
+        "height": 35.984375
+      },
+      "notifications": "denied",
+      "sidebar": "expanded"
+    },
+    {
+      "path": "current-manager-phone-dark-18.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "rootFont": "18px",
+      "theme": "dark bprogress-busy",
+      "fontPreference": "large",
+      "documentWidth": 390,
+      "headingCount": 1,
+      "heading": {
+        "x": 18,
+        "y": 91,
+        "width": 354,
+        "height": 35.984375
+      },
+      "notifications": "denied"
+    },
+    {
+      "path": "current-manager-phone-light-18.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "rootFont": "18px",
+      "theme": "bprogress-busy light",
+      "fontPreference": "large",
+      "documentWidth": 390,
+      "headingCount": 1,
+      "heading": {
+        "x": 18,
+        "y": 91,
+        "width": 354,
+        "height": 35.984375
+      },
+      "notifications": "denied"
+    },
+    {
+      "path": "current-manager-wide-light-18.png",
+      "viewport": {
+        "width": 2400,
+        "height": 1100
+      },
+      "rootFont": "18px",
+      "theme": "bprogress-busy light",
+      "fontPreference": "large",
+      "documentWidth": 2400,
+      "headingCount": 1,
+      "heading": {
+        "x": 315,
+        "y": 100,
+        "width": 2058,
+        "height": 35.984375
+      },
+      "notifications": "denied",
+      "sidebar": "expanded"
+    },
+    {
+      "path": "current-manager-collapsed-light-18.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "rootFont": "18px",
+      "theme": "light bprogress-busy",
+      "fontPreference": "large",
+      "documentWidth": 1600,
+      "headingCount": 1,
+      "heading": {
+        "x": 90,
+        "y": 100,
+        "width": 1483,
+        "height": 35.984375
+      },
+      "notifications": "denied",
+      "sidebar": "collapsed"
+    }
+  ],
+  "limits": "CSS viewport checks; no physical device, true zoom, historical matched comparison or long translation claim"
+}

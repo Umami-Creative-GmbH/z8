@@ -1,0 +1,7 @@
+{
+  "path": "apps/webapp/src/test/1740-upload-root-bridge.test.tsx",
+  "sha256": "7258d7587a1540c7e1fa148c8c41504be7188729f312f022d4eeaa31d3b8f234",
+  "bytes": 9160,
+  "removed": true,
+  "sourceRetained": "upload-complete-recovery.test.tsx"
+}

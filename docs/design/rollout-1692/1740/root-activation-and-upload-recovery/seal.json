@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "derived": true,
+  "scope": "Binds both final index controls. Does not self-hash; complete final archive/report inventory is privately hashed at handoff.",
+  "indexedFiles": 124,
+  "totalArchiveFiles": 127,
+  "fileIndex": {
+    "path": "file-index.json",
+    "bytes": 29230,
+    "sha256": "57331c1837a79d9b215ddc6a4996031f452afd409abfcdcf8b4fe8ace09633fd"
+  },
+  "sha256sums": {
+    "path": "SHA256SUMS.txt",
+    "bytes": 14057,
+    "sha256": "64c7987a6de3f89a1542511983c8844f0c417dc085dc2f818d904712369beb1d"
+  },
+  "verifiedCommit": null,
+  "readiness": null
+}

@@ -1,0 +1,60 @@
+src\components\absences\sick-notes\use-staged-sick-note-uploads.ts:73:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  ! This hook specifies more dependencies than necessary: options.lifetimeKey.
+  
+    71 │ 	});
+    72 │ 	const [count, setCount] = useState({ done: 0, total: 0 });
+  > 73 │ 	useLayoutEffect(() => {
+       │ 	^^^^^^^^^^^^^^^
+    74 │ 		let current = true;
+    75 │ 		queueMicrotask(() => {
+  
+  i This dependency can be removed from the list.
+  
+    89 │ 			run.reject(new StagedSickNoteUploadCancelledError());
+    90 │ 		};
+  > 91 │ 	}, [options.lifetimeKey]);
+       │ 	    ^^^^^^^^^^^^^^^^^^^
+    92 │ 
+    93 │ 	function settle(): StagingRun | null {
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    91 │ → },·[options.lifetimeKey]);␍
+       │       -------------------   
+
+src\hooks\use-tus-file-upload.ts:80:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  ! This hook specifies more dependencies than necessary: lifetimeKey.
+  
+    78 │ 	const allowedFileTypesKey = allowedFileTypes.join(",");
+    79 │ 
+  > 80 │ 	useEffect(() => {
+       │ 	^^^^^^^^^
+    81 │ 		let active = true;
+    82 │ 		const uppy = new Uppy({
+  
+  i Outer scope values aren't valid dependencies because mutating them doesn't re-render the component.
+  
+    166 │ 			if (uppyRef.current === uppy) uppyRef.current = null;
+    167 │ 		};
+  > 168 │ 	}, [maxFileSize, allowedFileTypesKey, lifetimeKey]);
+        │ 	                                      ^^^^^^^^^^^
+    169 │ 
+    170 │ 	const addFile = (file: File) => {
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    168 │ → },·[maxFileSize,·allowedFileTypesKey,·lifetimeKey]);␍
+        │                                       -------------   
+
+Checked 5 files in 7ms. No fixes applied.
+Found 2 warnings.

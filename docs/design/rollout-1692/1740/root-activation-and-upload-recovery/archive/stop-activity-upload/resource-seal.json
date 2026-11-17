@@ -1,0 +1,11 @@
+{
+  "ownedProcessCount": 0,
+  "ownedNextServersStarted": 0,
+  "ownedBrowserContextsStarted": 0,
+  "ownedFixturesStarted": 0,
+  "ownedContainersStarted": 0,
+  "remainingBridges": false,
+  "processInspection": "CIM read-only, command path restricted to own absolute checkout",
+  "cleanupScope": "OWN ONLY; no other process/container/worktree/dependency cleanup",
+  "verifiedCommit": null
+}

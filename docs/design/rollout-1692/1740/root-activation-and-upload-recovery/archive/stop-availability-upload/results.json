@@ -1,0 +1,321 @@
+{
+  "stop": true,
+  "priority": "P1 current acceptance blocker",
+  "classification": "Inherited relative to the upload correction: identical assembled contract fails on full committed e597efc34. No pre-1740 comparison or newly introduced regression claimed.",
+  "candidate": "e42b89a3d739541f884f90c5f9a6179ee2dd29e0",
+  "verifiedCommit": null,
+  "runs": [
+    {
+      "commit": "e42b89a3d739541f884f90c5f9a6179ee2dd29e0",
+      "source": "public-surrounding.test.tsx",
+      "sourceSha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b",
+      "executedPhysicalPath": "apps/webapp/src/test/1740-upload-independent-bridge.test.tsx",
+      "resultDigest": "f7c3fd3d9286a7122919f5619d8685a056bf0727d712fe631bf498ac9dfaabcc",
+      "counts": {
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0
+      },
+      "identities": [
+        {
+          "name": "raw pending session with retained same-scope data keeps the assembled draft and permits a genuine action",
+          "status": "passed"
+        },
+        {
+          "name": "assembled account A-B-A retires the draft and old response, then accepts a new action",
+          "status": "passed"
+        },
+        {
+          "name": "assembled organization A-B-A retires the draft and old response, then accepts a new action",
+          "status": "passed"
+        },
+        {
+          "name": "independent list/calendar errors retain the actual form and recover through local Retry",
+          "status": "passed"
+        },
+        {
+          "name": "initial canonical context failure is distinct from healthy list/calendar; local retry coalesces and restores",
+          "status": "passed"
+        },
+        {
+          "name": "canonical role change retires the assembled form and does not dispatch queued work",
+          "status": "passed"
+        },
+        {
+          "name": "canonical employee change retires the assembled form and does not dispatch queued work",
+          "status": "passed"
+        },
+        {
+          "name": "selected employee absence then return retires a queued action and permits a new public submit",
+          "status": "passed"
+        },
+        {
+          "name": "real pending command ignores late success after Activity return and permits a new command",
+          "status": "passed"
+        },
+        {
+          "name": "real pending command ignores late refusal after Activity return and permits a new command",
+          "status": "passed"
+        },
+        {
+          "name": "real pending command ignores late rejection after Activity return and permits a new command",
+          "status": "passed"
+        },
+        {
+          "name": "assembled current workspace retains list on calendar read failure and retires on organization switch",
+          "status": "passed"
+        },
+        {
+          "name": "a queued public submit must not run after Activity hides and returns before onSubmit",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "commit": "e42b89a3d739541f884f90c5f9a6179ee2dd29e0",
+      "source": "upload-review.test.tsx",
+      "sourceSha256": "72dcb4bbd84bced60dee521bba77b33fdbe4d948357a6455563e27727ef7f8c4",
+      "executedPhysicalPath": "apps/webapp/src/test/1740-upload-independent-bridge.test.tsx",
+      "resultDigest": "6e2036780fc1148086baf91ba9192eaceb907430508030795c5207017acc0953",
+      "counts": {
+        "passed": 2,
+        "failed": 1,
+        "skipped": 0
+      },
+      "identities": [
+        {
+          "name": "real staged-note recovery: steady",
+          "status": "passed"
+        },
+        {
+          "name": "real staged-note recovery: Activity",
+          "status": "passed"
+        },
+        {
+          "name": "a retained draft can replace an upload after recording availability retires and returns",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "commit": "e42b89a3d739541f884f90c5f9a6179ee2dd29e0",
+      "source": "workspace-recovery-v1.test.tsx",
+      "sourceSha256": "96438f2716937931c581c87f0ff242482637d32ce0c18e13ea563f705b10eaae",
+      "executedPhysicalPath": "apps/webapp/src/test/1740-upload-independent-bridge.test.tsx",
+      "resultDigest": "744bafceb2af34c42a97d5341c9df73258b8aabc1c21e08746ea393a664aa84d",
+      "counts": {
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0
+      },
+      "identities": [
+        {
+          "name": "assembled workspace sick-note HTTP contract: steady",
+          "status": "passed"
+        },
+        {
+          "name": "assembled workspace sick-note HTTP contract: failed-list-return",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "commit": "e597efc34bc2bdc1fa5369496781fe6bb0105888",
+      "source": "workspace-recovery-v1.test.tsx",
+      "sourceSha256": "96438f2716937931c581c87f0ff242482637d32ce0c18e13ea563f705b10eaae",
+      "executedPhysicalPath": "apps/webapp/src/test/1740-upload-independent-bridge.test.tsx",
+      "resultDigest": "c410ee801138c7bca0cc3645a8888d0774a8f3865832742b8ecded8e61e8b173",
+      "counts": {
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0
+      },
+      "identities": [
+        {
+          "name": "assembled workspace sick-note HTTP contract: steady",
+          "status": "passed"
+        },
+        {
+          "name": "assembled workspace sick-note HTTP contract: failed-list-return",
+          "status": "failed"
+        }
+      ]
+    },
+    {
+      "commit": "e42b89a3d739541f884f90c5f9a6179ee2dd29e0",
+      "source": "workspace-recovery.test.tsx",
+      "sourceSha256": "ad3ec517e09036508f362e27124eb205e3e61cb131e5fb1f858fab3855b0900b",
+      "executedPhysicalPath": "apps/webapp/src/test/1740-upload-independent-bridge.test.tsx",
+      "resultDigest": "c0aba5220136bce2f1acf575455af768eac6285b0b921a8e4e9d022ed93264ec",
+      "counts": {
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0
+      },
+      "identities": [
+        {
+          "name": "assembled workspace sick-note HTTP contract: steady",
+          "status": "passed"
+        },
+        {
+          "name": "assembled workspace sick-note HTTP contract: failed-list-return",
+          "status": "failed"
+        }
+      ]
+    }
+  ],
+  "occurrenceAccounting": {
+    "uniqueExecutedPhysicalPaths": 1,
+    "currentDistinctFullNames": 18,
+    "currentNameCounts": {
+      "passed": 16,
+      "failed": 2
+    },
+    "currentFullNames": [
+      {
+        "name": "raw pending session with retained same-scope data keeps the assembled draft and permits a genuine action",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "assembled account A-B-A retires the draft and old response, then accepts a new action",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "assembled organization A-B-A retires the draft and old response, then accepts a new action",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "independent list/calendar errors retain the actual form and recover through local Retry",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "initial canonical context failure is distinct from healthy list/calendar; local retry coalesces and restores",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "canonical role change retires the assembled form and does not dispatch queued work",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "canonical employee change retires the assembled form and does not dispatch queued work",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "selected employee absence then return retires a queued action and permits a new public submit",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "real pending command ignores late success after Activity return and permits a new command",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "real pending command ignores late refusal after Activity return and permits a new command",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "real pending command ignores late rejection after Activity return and permits a new command",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "assembled current workspace retains list on calendar read failure and retires on organization switch",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "a queued public submit must not run after Activity hides and returns before onSubmit",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "real staged-note recovery: steady",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "real staged-note recovery: Activity",
+        "occurrences": 1,
+        "status": "passed"
+      },
+      {
+        "name": "a retained draft can replace an upload after recording availability retires and returns",
+        "occurrences": 1,
+        "status": "failed"
+      },
+      {
+        "name": "assembled workspace sick-note HTTP contract: steady",
+        "occurrences": 2,
+        "status": "passed"
+      },
+      {
+        "name": "assembled workspace sick-note HTTP contract: failed-list-return",
+        "occurrences": 2,
+        "status": "failed"
+      }
+    ],
+    "behavioralUnion": "13 surrounding public controls pass; normal upload and Activity replacement pass; one new failed availability/list-recovery contract. Direct-dialog and assembled versions of that failure overlap. Workspace steady control also overlaps normal-upload behavior. Reruns/historical controls are not added."
+  },
+  "observation": {
+    "totalHttpRequests": 1,
+    "recordCommands": 0,
+    "errorNotifications": [
+      " could not be uploaded. Remove it or try again."
+    ],
+    "draftRetained": true,
+    "fileRetained": true,
+    "retryEnabled": true,
+    "expected": "New upload request and completion through one exact replacement recording command"
+  },
+  "freshChecks": {
+    "surroundingPublic": 13,
+    "normalAndActivityHTTP": 2,
+    "assembledMinimal": {
+      "passed": 1,
+      "failed": 1
+    },
+    "canonicalPostgres": 0,
+    "types": 0,
+    "lint": 0,
+    "doctor": 0,
+    "liveRuntime": false,
+    "native": false,
+    "captures": 0
+  },
+  "inheritedOnly": {
+    "rootUnit": {
+      "passed": 589,
+      "passingFiles": 73,
+      "selectedFiles": 74,
+      "optionalSkipped": 3
+    },
+    "types": "typegen + all three projects reported green by root",
+    "lint": "five-file explicit100CRLF reported green by root",
+    "doctor": "five-file zero reported by root",
+    "earlierPostgres": {
+      "passed": 61,
+      "files": 4
+    }
+  },
+  "limits": [
+    "STOP prevents further cleanup/late-processing/cross-caller expansion, canonical PostgreSQL/migration verifier, broad units/types/lint/Doctor, normal-development fixture, browser/native/Next/preferences/roles/readback/evidence acceptance",
+    "Synthetic HTTP/component ordering evidence only; no live bucket/database action, authorization bypass, server cancellation/exactly-once guarantee",
+    "All outstanding generation/catalog/provider/device/true-zoom/broad-roster and adversarial acceptance remains open"
+  ],
+  "setupFailures": [
+    "Pinned manager lookup in sandbox reported engine store lock denial and fallback 12.21.0; fallback never used for install or tests. Approved exact12.16.1 offline physical copy succeeded.",
+    "First surrounding test command hit same engine-store denial, ran zero tests; raw log preserved privately. Same approved command passed13.",
+    "Initial read-only CIM resource check denied; approved same query succeeded.",
+    "Review branch creation needed approved access to common Git ref store; no root/peer ref changed."
+  ],
+  "configQualification": "Unmodified tracked Vitest config imported by owned private browser config. Actual installed tus-js-client4.3.1 browser entry and inlined resolution. Vite future native-loader warning unsuppressed. No application/internal hook/form/query replacement."
+}

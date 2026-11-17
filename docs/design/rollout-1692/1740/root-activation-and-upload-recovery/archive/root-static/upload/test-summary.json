@@ -1,0 +1,29 @@
+{
+  "files": 74,
+  "passed": 589,
+  "failed": 0,
+  "skipped": [
+    {
+      "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "name": "payslip upload transport uploads the same PDF again after an earlier batch consumed its temporary bytes",
+      "status": "skipped"
+    },
+    {
+      "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "name": "payslip upload transport still resumes unfinished bytes after a browser reload",
+      "status": "skipped"
+    },
+    {
+      "file": "src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "name": "payslip upload transport ignores a consumed completed URL retained by the previous client",
+      "status": "skipped"
+    }
+  ],
+  "syntheticHttp": {
+    "cases": 2,
+    "file": "upload-complete-recovery.test.tsx",
+    "command": "browser-upload.config.mts (actual browser distribution, no tracked config edits)"
+  },
+  "nonadditiveLifecycle": 6,
+  "prior13PublicChecks": "inherited independent controls, not re-counted"
+}

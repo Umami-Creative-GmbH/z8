@@ -1,0 +1,680 @@
+{
+  "scope": "Read-only intake. Only the new system TEMP output directory was written; no repo, Git/index, runtime, fixture or dependency mutation and no archived harness execution.",
+  "evidenceRoot": "X:/t3-code/worktrees/z8/t3-4882ff07-97801bb539cbda61/.tmp/1740-availability-independent-checks",
+  "frozenCandidate": "3f7759880ea2b77c199507b8967a73915c48ec91",
+  "sourceCommit": "6757981b6844a2e497c055a1fa5cebd021987675",
+  "rootHeadAtPins": "1c8cff670bd4bb243a1892459f323208e967d531",
+  "rootHeadFinal": "1c8cff670bd4bb243a1892459f323208e967d531",
+  "payload": {
+    "files": 35,
+    "bytes": 654124,
+    "rows": [
+      {
+        "path": "HANDOFF.md",
+        "bytes": 13491,
+        "sha256": "e919389bcde98a414413ac4ad182dde043fe5b5b002ff7dbf327351826e2e8d4",
+        "matches": true
+      },
+      {
+        "path": "results.json",
+        "bytes": 15842,
+        "sha256": "bf375623db0015ea7e588debbbd1d4c267a1752481f7175e90b3bbb5074a1274",
+        "matches": true
+      },
+      {
+        "path": "candidate-audit.json",
+        "bytes": 7428,
+        "sha256": "ce1ba440a6af72c27555426e0d057d80d69fb55074691774a8e54a82b585daf4",
+        "matches": true
+      },
+      {
+        "path": "final-audit.json",
+        "bytes": 2249,
+        "sha256": "5906bb6d948cc9686bbbfbbc6792e2bbadc6416a6fc5d519dd71fea4770d063a",
+        "matches": true
+      },
+      {
+        "path": "fixture-provenance.json",
+        "bytes": 926,
+        "sha256": "70ee3f950c7894a54dc08b3d5b38b26c47de62b1784efd67e8dd3ba698efb13e",
+        "matches": true
+      },
+      {
+        "path": "capture-pins.json",
+        "bytes": 2056,
+        "sha256": "c1f6141057e27f6ca112490dbc4d37a982838f401a6bec7b48d26858b90ddcd9",
+        "matches": true
+      },
+      {
+        "path": "live-manager-results.json",
+        "bytes": 969,
+        "sha256": "bf86f199b14d35788e699466f766f4e3b08cd17f4e70d19b1623e90ba3af116a",
+        "matches": true
+      },
+      {
+        "path": "live-preferences-results.json",
+        "bytes": 2904,
+        "sha256": "022a785b7e2f1b0be819d17924cc26fe91fffa15c02e5600e20415a93652563e",
+        "matches": true
+      },
+      {
+        "path": "live-roles-results.json",
+        "bytes": 649,
+        "sha256": "1c209afe9221429b4b5d283e2f1ef537fb862b2d1af71f1c8b9923d3cce60657",
+        "matches": true
+      },
+      {
+        "path": "phone-allowances.json",
+        "bytes": 385,
+        "sha256": "a985395a5d5a33e192771310a9087b1ac0a112ffddbb1dfe0d77083f2673ac5c",
+        "matches": true
+      },
+      {
+        "path": "readback-before.json",
+        "bytes": 716,
+        "sha256": "5ca3010af6c506a354195115e4099e42da8443ee3f40814cb0995dd32a735470",
+        "matches": true
+      },
+      {
+        "path": "readback-final.json",
+        "bytes": 1662,
+        "sha256": "6ac1469cff43a817c75cf0de561a6f1c6706f74664c128f4a186f5abeae125f0",
+        "matches": true
+      },
+      {
+        "path": "native-a11y-results.json",
+        "bytes": 375,
+        "sha256": "fc47ddc46f9f907c2cce7015cebc3e0c9f1d3207657bb4a00624fe26b0f2e548",
+        "matches": true
+      },
+      {
+        "path": "next-results.json",
+        "bytes": 2211,
+        "sha256": "d022e15fef8dff2e818633cff1cdac00ff6ee7826f0fff1aff8a229fa50583b5",
+        "matches": true
+      },
+      {
+        "path": "next-cleanup.json",
+        "bytes": 597,
+        "sha256": "ffc8576880a474c49fba67d6fa6216de76fb2d77b67488bcd29ac1c46226f033",
+        "matches": true
+      },
+      {
+        "path": "resource-seal.json",
+        "bytes": 1066,
+        "sha256": "7161481d54be3534e9cef5ae5ff604358ca60bbd20b17e9a0143842551c62534",
+        "matches": true
+      },
+      {
+        "path": "bridge-removal.json",
+        "bytes": 282,
+        "sha256": "79c67218fc59e463996ba691e0c94cf7f965c93e0c06da98871d333a65d93134",
+        "matches": true
+      },
+      {
+        "path": "prepare.cjs",
+        "bytes": 9855,
+        "sha256": "fb2e28e793ea6082b0cb5284718883e882939c3214c2ba1b11334f361b372d06",
+        "matches": true
+      },
+      {
+        "path": "bridge.cjs",
+        "bytes": 1018,
+        "sha256": "872d27deba75aa7d27839805c8cc7199b6c84baf8c628dbb810795edd774a431",
+        "matches": true
+      },
+      {
+        "path": "browser-upload.config.mts",
+        "bytes": 604,
+        "sha256": "c407d808ec61ac1ad75059d6699e957c5fb05532a53bec6a01925da6f6266bd0",
+        "matches": true
+      },
+      {
+        "path": "workspace-recovery.test.tsx",
+        "bytes": 9336,
+        "sha256": "ad3ec517e09036508f362e27124eb205e3e61cb131e5fb1f858fab3855b0900b",
+        "matches": true
+      },
+      {
+        "path": "upload-expanded.test.tsx",
+        "bytes": 10212,
+        "sha256": "6492ee2e200ce61a253f73135e24f357430430d71f2ce440a57a1e1605fb357f",
+        "matches": true
+      },
+      {
+        "path": "public-surrounding.test.tsx",
+        "bytes": 16413,
+        "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b",
+        "matches": true
+      },
+      {
+        "path": "late-commands.test.tsx",
+        "bytes": 10272,
+        "sha256": "633cfa492c96f1cfe5244935ee71de52c15030a0dd41df8da5ec03058c56745b",
+        "matches": true
+      },
+      {
+        "path": "partial-cleanup.test.tsx",
+        "bytes": 9662,
+        "sha256": "608d37cffff0b03bce809b0f9671737c74fe8477187c8f159e9e2fde0d7ac2d2",
+        "matches": true
+      },
+      {
+        "path": "results.cjs",
+        "bytes": 4428,
+        "sha256": "5210f2ea259d3808055381e00e02c289cd13fee5711d2559feb89b8a263dbcfa",
+        "matches": true
+      },
+      {
+        "path": "audit.cjs",
+        "bytes": 3383,
+        "sha256": "e8f6598b36b38fcc635150cdfbb95b7befd57bab08602652d6a05e2161bc43e3",
+        "matches": true
+      },
+      {
+        "path": "final-audit.cjs",
+        "bytes": 2977,
+        "sha256": "08779e0fdd61fc47f6ef61f782b70dae9f17b96b4e3871c98497c3dacc8efa07",
+        "matches": true
+      },
+      {
+        "path": "seal.cjs",
+        "bytes": 1901,
+        "sha256": "aaad2fdbce958e6f16759935884aaf6506ccb2a6c4563c9b4e8d7e0d5ccf814f",
+        "matches": true
+      },
+      {
+        "path": "current-manager-desktop-dark-18.png",
+        "bytes": 138645,
+        "sha256": "9eedeebbaafd0cd27922186165eb9a9211beb1700529f00c6a39aa0883dbd6b6",
+        "matches": true
+      },
+      {
+        "path": "current-manager-phone-dark-18.png",
+        "bytes": 42290,
+        "sha256": "1d76ee948b798b79ec58390a4b3a70e626cd4876db932f2d1e2e71cf49116184",
+        "matches": true
+      },
+      {
+        "path": "current-manager-phone-light-18.png",
+        "bytes": 43373,
+        "sha256": "ea2c51fdfd80ef394dae6019cc3da9e448dacadecbde3f22c92879114c3db252",
+        "matches": true
+      },
+      {
+        "path": "current-manager-wide-light-18.png",
+        "bytes": 141054,
+        "sha256": "8ed8dd3faee24b87c856445b978dc6907af23d661978f3d3eed5aa8a7301edcb",
+        "matches": true
+      },
+      {
+        "path": "current-manager-collapsed-light-18.png",
+        "bytes": 113914,
+        "sha256": "c21c2b0c2ec95cd79962ab5130716b34c4575d818fd1774cfee63040b6f030a5",
+        "matches": true
+      },
+      {
+        "path": "current-manager-phone-allowances-18.png",
+        "bytes": 40979,
+        "sha256": "3061fd6bb476780477318f15ee53d18efbff9569faf2309a103b7c1786ced78f",
+        "matches": true
+      }
+    ],
+    "indexDigestAlgorithm": "SHA256 of path-localeCompare-sorted sha256 + SPACE + decimal bytes + SPACE + path + LF records",
+    "indexDigest": "f7f54e9b02c81c0f68ab59386ee9f284440ec9733bf83abb01e57ba71e78d1d3"
+  },
+  "controls": {
+    "allowlist": {
+      "path": "safe-allowlist.json",
+      "bytes": 5857,
+      "sha256": "96f622fff9f0d38923cca8d47770d15d9b46d22ce602ef05e2e5263c7bc4932e"
+    },
+    "sha256sums": {
+      "path": "SHA256SUMS.txt",
+      "bytes": 3186,
+      "sha256": "be46fe9560d92d68a8026795768d83e0379049932b2f7cead9d12b385f325052",
+      "entries": 36,
+      "payloadEntries": 35,
+      "controlEntry": "safe-allowlist.json",
+      "allMatch": true
+    }
+  },
+  "validation": {
+    "json": [
+      {
+        "path": "results.json",
+        "parsed": true
+      },
+      {
+        "path": "candidate-audit.json",
+        "parsed": true
+      },
+      {
+        "path": "final-audit.json",
+        "parsed": true
+      },
+      {
+        "path": "fixture-provenance.json",
+        "parsed": true
+      },
+      {
+        "path": "capture-pins.json",
+        "parsed": true
+      },
+      {
+        "path": "live-manager-results.json",
+        "parsed": true
+      },
+      {
+        "path": "live-preferences-results.json",
+        "parsed": true
+      },
+      {
+        "path": "live-roles-results.json",
+        "parsed": true
+      },
+      {
+        "path": "phone-allowances.json",
+        "parsed": true
+      },
+      {
+        "path": "readback-before.json",
+        "parsed": true
+      },
+      {
+        "path": "readback-final.json",
+        "parsed": true
+      },
+      {
+        "path": "native-a11y-results.json",
+        "parsed": true
+      },
+      {
+        "path": "next-results.json",
+        "parsed": true
+      },
+      {
+        "path": "next-cleanup.json",
+        "parsed": true
+      },
+      {
+        "path": "resource-seal.json",
+        "parsed": true
+      },
+      {
+        "path": "bridge-removal.json",
+        "parsed": true
+      }
+    ],
+    "cjsSyntax": [
+      {
+        "path": "prepare.cjs",
+        "syntax": true,
+        "executed": false
+      },
+      {
+        "path": "bridge.cjs",
+        "syntax": true,
+        "executed": false
+      },
+      {
+        "path": "results.cjs",
+        "syntax": true,
+        "executed": false
+      },
+      {
+        "path": "audit.cjs",
+        "syntax": true,
+        "executed": false
+      },
+      {
+        "path": "final-audit.cjs",
+        "syntax": true,
+        "executed": false
+      },
+      {
+        "path": "seal.cjs",
+        "syntax": true,
+        "executed": false
+      }
+    ],
+    "typescriptParse": [
+      {
+        "path": "browser-upload.config.mts",
+        "parseDiagnostics": 0,
+        "executed": false
+      },
+      {
+        "path": "workspace-recovery.test.tsx",
+        "parseDiagnostics": 0,
+        "executed": false
+      },
+      {
+        "path": "upload-expanded.test.tsx",
+        "parseDiagnostics": 0,
+        "executed": false
+      },
+      {
+        "path": "public-surrounding.test.tsx",
+        "parseDiagnostics": 0,
+        "executed": false
+      },
+      {
+        "path": "late-commands.test.tsx",
+        "parseDiagnostics": 0,
+        "executed": false
+      },
+      {
+        "path": "partial-cleanup.test.tsx",
+        "parseDiagnostics": 0,
+        "executed": false
+      }
+    ],
+    "pngs": [
+      {
+        "path": "current-manager-desktop-dark-18.png",
+        "width": 1600,
+        "height": 1000,
+        "depth": 8,
+        "colorType": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "chunks": 37,
+        "crc": true,
+        "fullyDecoded": true,
+        "pixelsSha256": "313ace6dc2724ca74c8a3b1da65a491a434ae694588d59776d06258e66cae96c",
+        "capturePinMatches": true
+      },
+      {
+        "path": "current-manager-phone-dark-18.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "colorType": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "chunks": 14,
+        "crc": true,
+        "fullyDecoded": true,
+        "pixelsSha256": "46f407ce0b65c25fe403ec9c7d4805292b2e602bb5d99ed948b2b6425657fc5f",
+        "capturePinMatches": true
+      },
+      {
+        "path": "current-manager-phone-light-18.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "colorType": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "chunks": 14,
+        "crc": true,
+        "fullyDecoded": true,
+        "pixelsSha256": "e7e1f1e146021fb952d893a08172370c51f411742b670560ff00070d88abbea9",
+        "capturePinMatches": true
+      },
+      {
+        "path": "current-manager-wide-light-18.png",
+        "width": 2400,
+        "height": 1100,
+        "depth": 8,
+        "colorType": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "chunks": 38,
+        "crc": true,
+        "fullyDecoded": true,
+        "pixelsSha256": "6f3d314602c55434dad780d8a92d633216212633ec2d589075e3f46c643d7b4f",
+        "capturePinMatches": true
+      },
+      {
+        "path": "current-manager-collapsed-light-18.png",
+        "width": 1600,
+        "height": 1000,
+        "depth": 8,
+        "colorType": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "chunks": 31,
+        "crc": true,
+        "fullyDecoded": true,
+        "pixelsSha256": "740504be9beaeb35df1364e8e7f04a688de4e6e4294449603f059b70c5ad173f",
+        "capturePinMatches": true
+      },
+      {
+        "path": "current-manager-phone-allowances-18.png",
+        "width": 390,
+        "height": 844,
+        "depth": 8,
+        "colorType": 2,
+        "compression": 0,
+        "filter": 0,
+        "interlace": 0,
+        "chunks": 13,
+        "crc": true,
+        "fullyDecoded": true,
+        "pixelsSha256": "e41a3081ee01a12a7998e0a0c77490383c606ed1062c7f14e00fbc73ccd18e7b",
+        "capturePinMatches": true
+      }
+    ],
+    "sourceAndConfigPins": [
+      {
+        "path": "apps/webapp/src/hooks/use-tus-file-upload.ts",
+        "expectedSha256": "4825e6d9d87d449540b7baea185a9b87c8748b599642f1ce57507fb61e25c481",
+        "currentRawSha256": "4825e6d9d87d449540b7baea185a9b87c8748b599642f1ce57507fb61e25c481",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+        "expectedSha256": "743a836a763f00b90ab13b2b2597fb144d9078c3eee8b760621aa6e517f8c3bd",
+        "currentRawSha256": "743a836a763f00b90ab13b2b2597fb144d9078c3eee8b760621aa6e517f8c3bd",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+        "expectedSha256": "9cb3f3cf3272faea13839610d3b4fdfc1b3a13b6bb8f1682d036febc5b349ba0",
+        "currentRawSha256": "9cb3f3cf3272faea13839610d3b4fdfc1b3a13b6bb8f1682d036febc5b349ba0",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.lifecycle.test.tsx",
+        "expectedSha256": "f1fa39c97b4176991c0fe1da494cf069679f1ee24f43e2116fcdeabb9b927d21",
+        "currentRawSha256": "f1fa39c97b4176991c0fe1da494cf069679f1ee24f43e2116fcdeabb9b927d21",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+        "expectedSha256": "9d21ed51ae96b643c83ea0a813ce7a1a06cbfdbe57aae2c9de3c1d17fd14a92b",
+        "currentRawSha256": "9d21ed51ae96b643c83ea0a813ce7a1a06cbfdbe57aae2c9de3c1d17fd14a92b",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/vitest.config.ts",
+        "expectedSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+        "currentRawSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/next.config.ts",
+        "expectedSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "currentRawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "package.json",
+        "expectedSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+        "currentRawSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/package.json",
+        "expectedSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+        "currentRawSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "expectedSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "currentRawSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "expectedSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+        "currentRawSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+        "rawMatches": true,
+        "headCanonicalMatches": true,
+        "candidateCanonicalMatches": true
+      }
+    ],
+    "finalPinRecheck": [
+      {
+        "path": "apps/webapp/src/hooks/use-tus-file-upload.ts",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/src/components/absences/sick-notes/staged-sick-notes-section.tsx",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.lifecycle.test.tsx",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/vitest.config.ts",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/next.config.ts",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "package.json",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "apps/webapp/package.json",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "rawMatches": true,
+        "headCanonicalMatches": true
+      }
+    ]
+  },
+  "reportPrefix": {
+    "path": "docs/design/rollout-1692/1740.md",
+    "bytes": 32701,
+    "sha256": "a7ce7ba93d9aa08229c183054deb34a7784dca2886b1018610fa202b0457cc14",
+    "unchangedThroughoutAudit": true
+  },
+  "accounting": {
+    "review": {
+      "passing": 32,
+      "uniqueFullnamePhysicalPathIdentities": 32,
+      "physicalDiscoveryPaths": 2,
+      "bridgeCases": 23,
+      "stagingCases": 9,
+      "bridgeSourceVersions": 4,
+      "noFailuresOrSkips": true
+    },
+    "root": {
+      "unitsPassing": 592,
+      "passingFiles": 73,
+      "selectedFiles": 74,
+      "unchangedOptionalPayslipSkips": 3,
+      "postgresPassing": 83,
+      "postgresFiles": 5,
+      "postgresRerunByReviewer": false,
+      "typesLintDoctor": "receipt/source-identity validation only"
+    },
+    "overlap": "Nine staging cases overlap the root 592. No grand additive total is asserted; 32 review cases are independent rechecks. The 17 live assertions and axe rule counts are separate observations.",
+    "live": {
+      "assertions": 17,
+      "manager": 8,
+      "preferences": 5,
+      "roles": 4,
+      "approvedAdded": 3,
+      "foreignAbsenceDigestUnchanged": true,
+      "recordedWorkDigestsUnchanged": true,
+      "axe": {
+        "scope": "phone main only",
+        "passes": 34,
+        "violations": 0,
+        "incomplete": 0
+      }
+    }
+  },
+  "qualifications": [
+    "Native React tree introspection remains unpassed after timeout/daemon exit. Current main-region axe is independent DOM accessibility evidence.",
+    "Synthetic browser-TUS seam proves lifecycle and replacement keys, not live sick-note bucket persistence. Live records are home-office absences.",
+    "No new complete historical comparison. Six current captures are operational; earlier five-consumer historical overlay is inherited and qualified.",
+    "Full live reader/authority/Activity matrix, concurrent server revocation, atomic cancellation/exactly-once, personnel grants/privacy, former/deputy/half-day/overdrawn variants remain unpassed.",
+    "Full production generation, remote Tolgee/catalog/providers/email/payment, physical devices/true zoom, exhaustive locales/themes/accessibility and broad roster checks remain unpassed.",
+    "Persistent progress indicator and developer/Pets overlays remain qualified. Six screenshots are CSS viewport/saved-18px observations.",
+    "Current HEAD application tree has unrelated advances. Only the five correction source and six config pins are independently reconciled, not whole-app equivalence.",
+    "Initial static parser module path and ESM namespace setup failed; installed TypeScript createRequire parser then passed all six TS/MTS source syntax checks. No dependency write, product failure or harness execution."
+  ],
+  "readiness": {
+    "verifiedCommit1740": null,
+    "rootDecisionRequired": true,
+    "issuesRemainOpen": true
+  },
+  "publicationPlan": {
+    "proposedArchive": "docs/design/rollout-1692/1740/root-absence-activation-and-upload-recovery/",
+    "acceptedRuntime": "Copy exactly 35 listed files plus the 2 explicit control files into a labeled runtime/ subtree, preserving bytes.",
+    "priorStops": "Add only explicitly safe allowlisted prior STOP payloads/control files and root-approved sanitized static/PG receipts; this audit did not inspect or newly authorize those other archives. Never blanket-copy private directories.",
+    "sourcePins": "Retain frozen candidate/source commit pins and source/config hashes. Do not invent future verifiedCommit or replace historical null readiness values.",
+    "appendReport": "Append a new root section after the exact 32701-byte report prefix; do not rewrite historical claims.",
+    "verifier": "Create a new read-only publication verifier. Validate exact hashes/JSON/PNG CRC-inflate-unfilter/syntax/source pins and links without executing archived prepare/audit/seal/test drivers or changing output files.",
+    "stageAudit": "Root independently verifies staged Git blobs and original prefix preservation before proof commit; readiness metadata is a separate root decision."
+  }
+}

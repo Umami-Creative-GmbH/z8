@@ -1,0 +1,1558 @@
+{
+  "candidate": "084049d3441465dd1ed0e1eb791eb7750c820488",
+  "parents": [
+    "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+    "6473c5b41f387f9bfe1798b91be415c0f43dec02"
+  ],
+  "tree": "d1467ac0c34d5ee075962eb6929e06f1677c4233",
+  "appTree": "3fa5114f758a685a4d90f8dc50bfc670e0c4dfe8",
+  "recipe": "Start from complete root tree. Overlay 29 incoming nonoverlap entries exactly. Metadata source adds exact /team/absences after /team. Root tests retain all cases, move /en/team/absences from negative loop to incoming positive case, reconcile incoming /team to true; preserve /team/driving false and newer personnel/vehicles positives.",
+  "preservedRoot": 17397,
+  "preservedIncoming": 29,
+  "rootDelta": 2965,
+  "protectedAncestry": [
+    "769a2e7844ed1ff43d6a36145869b50cee921db6",
+    "00614f12ab899fca05b4b3096d194d4a2fa10979",
+    "03f1a8d0df8fcb2d8c73901fa6efe8e114310765",
+    "01771c655e179797b852adf217b684794e3266f7",
+    "512ac6f7b39bcf028c3c3a555ddfb140589b0796"
+  ],
+  "ownerPins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/absences/sick-note-actions.ts",
+      "rootOid": "5b32c78c4b16eba22b2dde3f5c7f2a572ddafb29",
+      "candidate": "100644 blob 5b32c78c4b16eba22b2dde3f5c7f2a572ddafb29",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.ts",
+      "rootOid": "b0629b9a98cbcd564a2590b3f21814aceb0ef5d7",
+      "candidate": "100644 blob b0629b9a98cbcd564a2590b3f21814aceb0ef5d7",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-action-helpers.ts",
+      "rootOid": "a96430eada71ba47e054fa6b275da3a6599efece",
+      "candidate": "100644 blob a96430eada71ba47e054fa6b275da3a6599efece",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-calendar-helpers.ts",
+      "rootOid": "b942e55f688615279290645182fc35dc805ad7f8",
+      "candidate": "100644 blob b942e55f688615279290645182fc35dc805ad7f8",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-metrics.ts",
+      "rootOid": "2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6",
+      "candidate": "100644 blob 2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-permissions.ts",
+      "rootOid": "bdfc959305ddd7d858d0624b4182a5bc8a7f83d5",
+      "candidate": "100644 blob bdfc959305ddd7d858d0624b4182a5bc8a7f83d5",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-types.ts",
+      "rootOid": "e0763b716ac589c655fed3e787dce94c24a33e05",
+      "candidate": "100644 blob e0763b716ac589c655fed3e787dce94c24a33e05",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-form-utils.ts",
+      "rootOid": "806a5dc26fc9e8a34ae5946452a20c1fbd46a427",
+      "candidate": "100644 blob 806a5dc26fc9e8a34ae5946452a20c1fbd46a427",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/time-tracking/actions/work-period-time-edit.ts",
+      "rootOid": "880d6efac2461cce51235597a254f40f2a32c2e0",
+      "candidate": "100644 blob 880d6efac2461cce51235597a254f40f2a32c2e0",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/time-tracking/region-data.ts",
+      "rootOid": "4d444734330e5010bbf70f49cc89217466732590",
+      "candidate": "100644 blob 4d444734330e5010bbf70f49cc89217466732590",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/absences/change-deputy-dialog.tsx",
+      "rootOid": "4e8391019479caa4dc183221319412abed143208",
+      "candidate": "100644 blob 4e8391019479caa4dc183221319412abed143208",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/absences/deputy-picker.tsx",
+      "rootOid": "9636e2bfd85e5718905b24b2c934ef16b078817c",
+      "candidate": "100644 blob 9636e2bfd85e5718905b24b2c934ef16b078817c",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+      "rootOid": "a076b2b49071332e383bd2c3b428cfb30e6f1d27",
+      "candidate": "100644 blob a076b2b49071332e383bd2c3b428cfb30e6f1d27",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-sick-note-unlink-reservation.ts",
+      "rootOid": "6acd2a096ff0778dfc9d4c1fabf58a61d6ea2d8a",
+      "candidate": "100644 blob 6acd2a096ff0778dfc9d4c1fabf58a61d6ea2d8a",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/absences/sick-notes/use-staged-sick-note-uploads.ts",
+      "rootOid": "546714c2f7e5a5d60b8f315ea095d879bcc8fc91",
+      "candidate": "100644 blob 546714c2f7e5a5d60b8f315ea095d879bcc8fc91",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/calendar/calendar-employee-selector.tsx",
+      "rootOid": "47f2ece6826ccf9c0c1768b009c5858c21863b26",
+      "candidate": "100644 blob 47f2ece6826ccf9c0c1768b009c5858c21863b26",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/calendar/calendar-view.tsx",
+      "rootOid": "f57eb4ba109fd6c9e5613c7c3f1b977c371291a3",
+      "candidate": "100644 blob f57eb4ba109fd6c9e5613c7c3f1b977c371291a3",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/calendar/work-period-edit-dialog.tsx",
+      "rootOid": "bf46a4624556882ab196d140517502fbbdfd4f40",
+      "candidate": "100644 blob bf46a4624556882ab196d140517502fbbdfd4f40",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/calendar/work-period-mileage-action.tsx",
+      "rootOid": "94f3c2dc3a6e7a228e6d9beea35b6c59b89e3f8f",
+      "candidate": "100644 blob 94f3c2dc3a6e7a228e6d9beea35b6c59b89e3f8f",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/calendar/work-period-time-edit-section.tsx",
+      "rootOid": "70ac5f2dafd9aeee141c1b8b07fe860edf9277fb",
+      "candidate": "100644 blob 70ac5f2dafd9aeee141c1b8b07fe860edf9277fb",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/employee-select/use-employee-select.ts",
+      "rootOid": "4198583ba8bc7f139d2cd67b396f58ce044efddb",
+      "candidate": "100644 blob 4198583ba8bc7f139d2cd67b396f58ce044efddb",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "rootOid": "c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "candidate": "100644 blob c0af559fd435efcb1ec7e19da1aac14274ae1821",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+      "rootOid": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26",
+      "candidate": "100644 blob bacfd6967dd26d99c59dd857cea5d4aa75a15a26",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-employee-selector.tsx",
+      "rootOid": "2c50f9ac76fcc7ba2ad14195d35b2dcfdd7584e4",
+      "candidate": "100644 blob 2c50f9ac76fcc7ba2ad14195d35b2dcfdd7584e4",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/schedule-read-failure.tsx",
+      "rootOid": "359a579bb5fca3d2abd26ba32c655c0a8fa564f2",
+      "candidate": "100644 blob 359a579bb5fca3d2abd26ba32c655c0a8fa564f2",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/template-sidebar.tsx",
+      "rootOid": "21d2241fe341a17247ecb1b34594f927d91503ce",
+      "candidate": "100644 blob 21d2241fe341a17247ecb1b34594f927d91503ce",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+      "rootOid": "52ff71ad22812b1aca95c87c85ceda97d608be48",
+      "candidate": "100644 blob 52ff71ad22812b1aca95c87c85ceda97d608be48",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.tsx",
+      "rootOid": "ce04338a66447465689b321227db26da97cabe56",
+      "candidate": "100644 blob ce04338a66447465689b321227db26da97cabe56",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/time-tracking/clock-vehicle-use.tsx",
+      "rootOid": "c731bea2a3a2710f7cbef9238f2066d560cc2355",
+      "candidate": "100644 blob c731bea2a3a2710f7cbef9238f2066d560cc2355",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/time-tracking/vehicle-use-draft.ts",
+      "rootOid": "469f904a37f307ea8a6254c3e7291f265a6aef62",
+      "candidate": "100644 blob 469f904a37f307ea8a6254c3e7291f265a6aef62",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/time-tracking/vehicle-use-fields.tsx",
+      "rootOid": "4714dab7201f55bc931c7aaf2c3e981b35785d52",
+      "candidate": "100644 blob 4714dab7201f55bc931c7aaf2c3e981b35785d52",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/ui/action-panel.tsx",
+      "rootOid": "7ca09ac660f403fa33ae892ef42672f7dc0ee599",
+      "candidate": "100644 blob 7ca09ac660f403fa33ae892ef42672f7dc0ee599",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/components/ui/table.tsx",
+      "rootOid": "c1b70834879e1a1e975b23d39dcbc2663532db63",
+      "candidate": "100644 blob c1b70834879e1a1e975b23d39dcbc2663532db63",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-calendar-data.ts",
+      "rootOid": "91705b1b2f282dd80a51c48c4019a03d789cb343",
+      "candidate": "100644 blob 91705b1b2f282dd80a51c48c4019a03d789cb343",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-calendar-employees.ts",
+      "rootOid": "c92d1eaeb80c62d948eebc2fd00aec08179b6921",
+      "candidate": "100644 blob c92d1eaeb80c62d948eebc2fd00aec08179b6921",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-organization.ts",
+      "rootOid": "90b4d335ccff05a5426acf00039f93cc434a7caf",
+      "candidate": "100644 blob 90b4d335ccff05a5426acf00039f93cc434a7caf",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/absences/vacation-balance-store.ts",
+      "rootOid": "19057a32560fd4245004d70adb62c3e18866c377",
+      "candidate": "100644 blob 19057a32560fd4245004d70adb62c3e18866c377",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/calendar/calendar-employee-context.ts",
+      "rootOid": "7ef6b16346b6f42be05526f626101e32cef92a4e",
+      "candidate": "100644 blob 7ef6b16346b6f42be05526f626101e32cef92a4e",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/jobs/driving-details-reminders.ts",
+      "rootOid": "88aad86084b857a022718c99b3d3a522e651ac4a",
+      "candidate": "100644 blob 88aad86084b857a022718c99b3d3a522e651ac4a",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "rootOid": "b0569936cb21ea6e8e62bc6eb8df9d75a74fe06f",
+      "candidate": "100644 blob 62ee3fa879faea75a2590ca7bb181af4d2d5a575",
+      "resolved": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "rootOid": "e71deb66d9386db4af89bcda6a5728165071f29c",
+      "candidate": "100644 blob 22b38107bbcf2eeef10a4fa70011e0acc8be3d30",
+      "resolved": true
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/sick-note-store.ts",
+      "rootOid": "ead77f460f5dbfb09d60f46c326027bb92c67149",
+      "candidate": "100644 blob ead77f460f5dbfb09d60f46c326027bb92c67149",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/period-submissions/submitted-content.ts",
+      "rootOid": "49780d8ab9ce120d7b04bc99f76366d27c2ff632",
+      "candidate": "100644 blob 49780d8ab9ce120d7b04bc99f76366d27c2ff632",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/vehicle-use/driving-details-missing-store.ts",
+      "rootOid": "cafa83adef4f4185f3725e4ae1a1004738a71b79",
+      "candidate": "100644 blob cafa83adef4f4185f3725e4ae1a1004738a71b79",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/vehicle-use/driving-details-missing.ts",
+      "rootOid": "158198f579b888232e6b7439fc3ad27a3e7575ec",
+      "candidate": "100644 blob 158198f579b888232e6b7439fc3ad27a3e7575ec",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/vehicle-use/driving-details-team-store.ts",
+      "rootOid": "00dd846e5ed7133b6727adbbaf503d1305b2793b",
+      "candidate": "100644 blob 00dd846e5ed7133b6727adbbaf503d1305b2793b",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/vehicle-use/policy.ts",
+      "rootOid": "ebbe47892534294f8b4f16d99760f6e8d317d219",
+      "candidate": "100644 blob ebbe47892534294f8b4f16d99760f6e8d317d219",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/lib/time-tracking/vehicle-use/work-vehicle-use.ts",
+      "rootOid": "31ee8e6d2f5ee471fa467e2c81b14a76fb1c30bc",
+      "candidate": "100644 blob 31ee8e6d2f5ee471fa467e2c81b14a76fb1c30bc",
+      "resolved": false
+    },
+    {
+      "path": "apps/webapp/src/stores/organization-settings-store.ts",
+      "rootOid": "35f3a4b3c58518f3178c46632c4de3b4614c4a2a",
+      "candidate": "100644 blob 35f3a4b3c58518f3178c46632c4de3b4614c4a2a",
+      "resolved": false
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "docs/design/rollout-1692/1740.md",
+      "oid": "fadb05a30dac6dad837c37793bef815c912930e8",
+      "bytes": 17014,
+      "sha256": "03c2d9f0e635ed0ca02a23a07321e48ba7a827afbf575222acc3d41e32a9c598"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/action.json",
+      "oid": "3e790faaca97503020476c695d5ca4a7ca6bfbf5",
+      "bytes": 5412,
+      "sha256": "930d8656be610d56eb37326cfdc502feb3610b2faf8fa08a9ec902087241ba73"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-dark-large-desktop.png",
+      "oid": "51b40770b5f96737a8b0955656e8b07fd66eb73d",
+      "bytes": 137371,
+      "sha256": "26e22b6aa78a6be6e8105430df323e0f3b4e6bb2680eea74e4545b63199968fd",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000,
+        "rawSha256": "bf96cd0a3ca8d72335f44ea7a16e087f5c502bc90bb7df9f7bdb3eb23a09dca5"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-dark-large-phone.png",
+      "oid": "6d2a13358b0ec0d0dcdedddef2c6c4e9ee0f93be",
+      "bytes": 42205,
+      "sha256": "79d702fe1a765f0803617820a41243ae62a5cfd6fb8769ef06cb1ff72eb3f98a",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480,
+        "rawSha256": "d5a57a5c6c13d3e79aaab161cb32d5a5bf89d176cfc6ae7fc24d04b0ec243bd9"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-dark-large-wide.png",
+      "oid": "66508fc8a835ebdb4a1b03b76a654b12c520b926",
+      "bytes": 137035,
+      "sha256": "fb675cd86a2eda2393e2fb05fe22c08844d7b5bcb1d9260c929df6104af1f203",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 2200,
+        "height": 1100,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 7260000,
+        "rawSha256": "7dfca5ef39940033413d3bc01c926edbb32327255e534341da00e27fcdb07bdf"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-matched-desktop.png",
+      "oid": "2ae4f203c31e803a6ff875b411c3ed12d49c6aa1",
+      "bytes": 124368,
+      "sha256": "b09b71f828779928db9a470676f34818dd95821d00016435889a4a81e8f45d74",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000,
+        "rawSha256": "1d843bb7ff680c12b360a7160ad30c1b4cd4e27f1b32d9f7b20fa91398774f0a"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-matched-phone.png",
+      "oid": "0ceb92bc76920a5bd64b697bb4d6fe9e7e9190c2",
+      "bytes": 40626,
+      "sha256": "e679f8e81debc434b2c5b69da611f0e77ad04a67d7eab64dd4fbb15767ab69bb",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480,
+        "rawSha256": "5aed5dd142643c27d03787511a599af315683ca9410a9be0222588bc13a53243"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-matched-wide.png",
+      "oid": "2d0942a9189420d5662edd2b0b069a75ac403896",
+      "bytes": 123815,
+      "sha256": "bec8790c794d390d095bd85252e3e29fa3fb3e821b20e4c1cc63df750fd1b709",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 2200,
+        "height": 1100,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 7260000,
+        "rawSha256": "842a2fd8b838fc9386022dac9bbb9701aa5cd0194eeca823c10cf302c58cb2b2"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-matched.json",
+      "oid": "e11ca8af431ffdd36e3b7a234d658fdf8320831b",
+      "bytes": 7426,
+      "sha256": "0b4cd698d03ff3b2a7e08bbf8c4dc500f9d7d3bd50847ab12c05ea368595171a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-phone-allowances.png",
+      "oid": "c8a0372e39e8045ef04682f49c3b65e7c275f017",
+      "bytes": 38331,
+      "sha256": "e9d208b8bd6f4c3cf4225f303074460e3dce731704620422be81a8c636c5d33c",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480,
+        "rawSha256": "b8cfa2ba665636893c2fc05ccd1b2647ed625753799d37366b89abd625dfa990"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/before-matched-desktop.png",
+      "oid": "1a35b13ddb733e98f27e86f5ac61c6a0aaaf183b",
+      "bytes": 125716,
+      "sha256": "aa72e18af41de0e0607fd2ab75d5882188779297090499dd926636fc4ba83dd7",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 1600,
+        "height": 1000,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 4800000,
+        "rawSha256": "5f2b745a8f01cce78800da91529ed21615b86a77b94a0e961fc7d7aa4d44921e"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/before-matched-phone.png",
+      "oid": "59b1165b21f941811c329e79f68ae0840861afa3",
+      "bytes": 35913,
+      "sha256": "529e5565fa557ab3262eeead134a37e11a31947afc2f621f0c83a16d7c45d63a",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 987480,
+        "rawSha256": "55ea0ec851c14ffcb05ee47e6971bd38415eeb861384486e06727b70d02de332"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/before-matched-wide.png",
+      "oid": "ae415e061a5c2e4a267731f9ceb8b2d4d77789b5",
+      "bytes": 121723,
+      "sha256": "86a6b61052cadb869cbb469352b08600bee7c2b707136b79a2d5fa6326fe0772",
+      "fullyDecoded": {
+        "format": "raw",
+        "width": 2200,
+        "height": 1100,
+        "channels": 3,
+        "depth": "uchar",
+        "premultiplied": false,
+        "hasAlpha": false,
+        "size": 7260000,
+        "rawSha256": "4cb1fe5a286dd376a1da4f7a6779500f46b293fb3699646cff802abb69e3b2f2"
+      }
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/before-matched.json",
+      "oid": "bbe8343ac5da0b68293a77ead330cb6d3b807100",
+      "bytes": 7866,
+      "sha256": "32c73fbc89be605713f8184d5a537e1b51a26826b70756c3c66b8b71cd99b9a1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/interactions.json",
+      "oid": "d197844a6539e8d8d4e772ef08dd62cb81dbe55c",
+      "bytes": 1674413,
+      "sha256": "467b158db6019f4fa1c5da85f079eca9f951f4ea583a78c14f2fc5c9a3737233"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/overlay-restoration.json",
+      "oid": "e6b0113d603d2c080bf0b5080ba37702be8d3054",
+      "bytes": 1481,
+      "sha256": "224a9a94f9173b38d848818974513696a2728a5e0cd901f71c71f00e7f3df750"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/record-layout.json",
+      "oid": "40f29291091cf38867042553211c684843e415bd",
+      "bytes": 3302,
+      "sha256": "b163ce33ba16f11f04aeae2cd8166024fa74a30c70539e9689fed49e5d61bd28"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/roles.json",
+      "oid": "c1e4ee0dac1545b2bdef91276eed28f97bfa9485",
+      "bytes": 1291,
+      "sha256": "b1f49406c09d8931adfc25beef34db2d729b695da40e840e7e2fb945b0071544"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/smoke.json",
+      "oid": "0ec6c19949299de0baa75c1923823ffebb1b12e0",
+      "bytes": 12933,
+      "sha256": "fe0782170e1122c8e9945a2de2eb6d7ad15272ee4ddcf46d87b6dbcdca7aa50c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/verification.json",
+      "oid": "a1e33aeb99042c746530ffe9de24422c1d82a80b",
+      "bytes": 20712,
+      "sha256": "e87ada5bdb5c47e899c4c84063539755ae49d7154af2f1b4b2011d778fa10b7e"
+    }
+  ],
+  "totalBytes": 2678953,
+  "declaredArtifacts": [
+    {
+      "path": "docs/design/rollout-1692/1740/action.json",
+      "sha256": "930d8656be610d56eb37326cfdc502feb3610b2faf8fa08a9ec902087241ba73",
+      "bytes": 5412
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-dark-large-desktop.png",
+      "sha256": "26e22b6aa78a6be6e8105430df323e0f3b4e6bb2680eea74e4545b63199968fd",
+      "bytes": 137371
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-dark-large-phone.png",
+      "sha256": "79d702fe1a765f0803617820a41243ae62a5cfd6fb8769ef06cb1ff72eb3f98a",
+      "bytes": 42205
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-dark-large-wide.png",
+      "sha256": "fb675cd86a2eda2393e2fb05fe22c08844d7b5bcb1d9260c929df6104af1f203",
+      "bytes": 137035
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-matched-desktop.png",
+      "sha256": "b09b71f828779928db9a470676f34818dd95821d00016435889a4a81e8f45d74",
+      "bytes": 124368
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-matched-phone.png",
+      "sha256": "e679f8e81debc434b2c5b69da611f0e77ad04a67d7eab64dd4fbb15767ab69bb",
+      "bytes": 40626
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-matched-wide.png",
+      "sha256": "bec8790c794d390d095bd85252e3e29fa3fb3e821b20e4c1cc63df750fd1b709",
+      "bytes": 123815
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-matched.json",
+      "sha256": "0b4cd698d03ff3b2a7e08bbf8c4dc500f9d7d3bd50847ab12c05ea368595171a",
+      "bytes": 7426
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/after-phone-allowances.png",
+      "sha256": "e9d208b8bd6f4c3cf4225f303074460e3dce731704620422be81a8c636c5d33c",
+      "bytes": 38331
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/before-matched-desktop.png",
+      "sha256": "aa72e18af41de0e0607fd2ab75d5882188779297090499dd926636fc4ba83dd7",
+      "bytes": 125716
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/before-matched-phone.png",
+      "sha256": "529e5565fa557ab3262eeead134a37e11a31947afc2f621f0c83a16d7c45d63a",
+      "bytes": 35913
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/before-matched-wide.png",
+      "sha256": "86a6b61052cadb869cbb469352b08600bee7c2b707136b79a2d5fa6326fe0772",
+      "bytes": 121723
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/before-matched.json",
+      "sha256": "32c73fbc89be605713f8184d5a537e1b51a26826b70756c3c66b8b71cd99b9a1",
+      "bytes": 7866
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/interactions.json",
+      "sha256": "467b158db6019f4fa1c5da85f079eca9f951f4ea583a78c14f2fc5c9a3737233",
+      "bytes": 1674413
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/overlay-restoration.json",
+      "sha256": "224a9a94f9173b38d848818974513696a2728a5e0cd901f71c71f00e7f3df750",
+      "bytes": 1481
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/record-layout.json",
+      "sha256": "b163ce33ba16f11f04aeae2cd8166024fa74a30c70539e9689fed49e5d61bd28",
+      "bytes": 3302
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/roles.json",
+      "sha256": "b1f49406c09d8931adfc25beef34db2d729b695da40e840e7e2fb945b0071544",
+      "bytes": 1291
+    },
+    {
+      "path": "docs/design/rollout-1692/1740/smoke.json",
+      "sha256": "fe0782170e1122c8e9945a2de2eb6d7ad15272ee4ddcf46d87b6dbcdca7aa50c",
+      "bytes": 12933
+    }
+  ],
+  "frozenOwners": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.ts",
+      "sha256": "04b52193850947d8c45102149a9181c0ea25ce33e70980db2b9f41b2827648b7",
+      "unchangedFrom": "ab309161695fe1cf6e2739f4727598fa3fa28c04"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-action-helpers.ts",
+      "sha256": "86595d0ab83ff66c1f7be8da333c88b08a35094fee77c106207cc72c1a76a988",
+      "unchangedFrom": "ab309161695fe1cf6e2739f4727598fa3fa28c04"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-calendar-helpers.ts",
+      "sha256": "08268752023708cb8b519c14ab867f568a73d3f3018f78a02b8cd11e121df320",
+      "unchangedFrom": "ab309161695fe1cf6e2739f4727598fa3fa28c04"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-metrics.ts",
+      "sha256": "ae37f0839bf93e6e920ae646690f15db93528d6f05472cb6150d727aa717f3a6",
+      "unchangedFrom": "ab309161695fe1cf6e2739f4727598fa3fa28c04"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-permissions.ts",
+      "sha256": "ef6a1f4abee060ec5caf7682517f4210d26a8b3abe2c684066f0323b92edab27",
+      "unchangedFrom": "ab309161695fe1cf6e2739f4727598fa3fa28c04"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-types.ts",
+      "sha256": "c388bd2862ebf15c8c0a07852bf85daadcb31a7889d7afe058cdf85b1acd3c18",
+      "unchangedFrom": "ab309161695fe1cf6e2739f4727598fa3fa28c04"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-form-utils.ts",
+      "sha256": "35f6a403c8a92ea47e94e1a9e85a3b3ab63626ff22b0b7cedd52d2908dcff2c1",
+      "unchangedFrom": "ab309161695fe1cf6e2739f4727598fa3fa28c04"
+    }
+  ],
+  "captureSources": {
+    "before-matched": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.test.ts",
+        "sha256": "bea11e80f5604d769e1fd86695b13272400551fcbace25a38879da07a8ca6e2b",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "d96d8ea9fbcd1c509b308035ce41a682392a58ce"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "d96d8ea9fbcd1c509b308035ce41a682392a58ce"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "d96d8ea9fbcd1c509b308035ce41a682392a58ce"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.ts",
+        "sha256": "04b52193850947d8c45102149a9181c0ea25ce33e70980db2b9f41b2827648b7",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "b0629b9a98cbcd564a2590b3f21814aceb0ef5d7"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "b0629b9a98cbcd564a2590b3f21814aceb0ef5d7"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "b0629b9a98cbcd564a2590b3f21814aceb0ef5d7"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-action-helpers.ts",
+        "sha256": "86595d0ab83ff66c1f7be8da333c88b08a35094fee77c106207cc72c1a76a988",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "a96430eada71ba47e054fa6b275da3a6599efece"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "a96430eada71ba47e054fa6b275da3a6599efece"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "a96430eada71ba47e054fa6b275da3a6599efece"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-calendar-helpers.ts",
+        "sha256": "08268752023708cb8b519c14ab867f568a73d3f3018f78a02b8cd11e121df320",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "b942e55f688615279290645182fc35dc805ad7f8"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "b942e55f688615279290645182fc35dc805ad7f8"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "b942e55f688615279290645182fc35dc805ad7f8"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-metrics.ts",
+        "sha256": "ae37f0839bf93e6e920ae646690f15db93528d6f05472cb6150d727aa717f3a6",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-permissions.ts",
+        "sha256": "ef6a1f4abee060ec5caf7682517f4210d26a8b3abe2c684066f0323b92edab27",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "bdfc959305ddd7d858d0624b4182a5bc8a7f83d5"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "bdfc959305ddd7d858d0624b4182a5bc8a7f83d5"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "bdfc959305ddd7d858d0624b4182a5bc8a7f83d5"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-types.ts",
+        "sha256": "c388bd2862ebf15c8c0a07852bf85daadcb31a7889d7afe058cdf85b1acd3c18",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "e0763b716ac589c655fed3e787dce94c24a33e05"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "e0763b716ac589c655fed3e787dce94c24a33e05"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "e0763b716ac589c655fed3e787dce94c24a33e05"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.test.tsx",
+        "sha256": "3f25c2496b79083561c2fb0e14d67f67f4091f63bff3a5ad0db4d01e409ad492",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "e0a8176e9594b756a1cda5de96558bee46cbf310"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "e0a8176e9594b756a1cda5de96558bee46cbf310"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx",
+        "sha256": "b05c16856ac28e4775e1be2089d85d6bfdbd6219ec0e46daecd5f61f064e1654",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "Git",
+            "oid": "f952617492b4a33b2d13570415c09ed686881f7a"
+          },
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "LF",
+            "oid": "f952617492b4a33b2d13570415c09ed686881f7a"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.sick-notes.test.tsx",
+        "sha256": "0e9caa720c0b87129307e784e212eced0ac29a46a91a35427e459dc12685a4e6",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "4637821d8c6f4b11a98d00c312e9f9684718eb65"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "4637821d8c6f4b11a98d00c312e9f9684718eb65"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+        "sha256": "039d5fd9733e24da0029db1b797b76785657a9f67b185479fb2aa7f9ec21efc3",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "Git",
+            "oid": "a07f2b11a37f26217238434a8df5780e0e2e2e9d"
+          },
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "LF",
+            "oid": "a07f2b11a37f26217238434a8df5780e0e2e2e9d"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-form-utils.ts",
+        "sha256": "35f6a403c8a92ea47e94e1a9e85a3b3ab63626ff22b0b7cedd52d2908dcff2c1",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "806a5dc26fc9e8a34ae5946452a20c1fbd46a427"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "806a5dc26fc9e8a34ae5946452a20c1fbd46a427"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "806a5dc26fc9e8a34ae5946452a20c1fbd46a427"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.test.tsx",
+        "sha256": "3de1a0e84c3a3403e95bbb47fe1ad62412bf216a442115261ef2002f43e6eacf",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "aedec6fef80b99e8fcf97340f1a88f13a3c27340"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "aedec6fef80b99e8fcf97340f1a88f13a3c27340"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "aedec6fef80b99e8fcf97340f1a88f13a3c27340"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.tsx",
+        "sha256": "3438c76cf1c5d0e4e11f5facf5552c9a4686dae40d217be17813f425168c5b3d",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "Git",
+            "oid": "36972d1d0ec078832ef360ae62dc9fd07d0510cd"
+          },
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "LF",
+            "oid": "36972d1d0ec078832ef360ae62dc9fd07d0510cd"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.test.tsx",
+        "sha256": "2c8e5f7ed11941bc48614ec220edb221d0104cd630fda86e0e380c951cd570ff",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "f63e84e4c63b96dde51b7a61f59a580fb2d73e12"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "f63e84e4c63b96dde51b7a61f59a580fb2d73e12"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+        "sha256": "c19c2f513dae4ea6e9fc99076f0d4dd6a4548cb99c18e196d9256afb774daca3",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "Git",
+            "oid": "8b10936f503713eab3f15a6104c6921c59b58fff"
+          },
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "LF",
+            "oid": "8b10936f503713eab3f15a6104c6921c59b58fff"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.test.tsx",
+        "sha256": "b504c9a61ba1151bdecbfd779c79d776f6b737d75ef8e16206517d0e66cbfd61",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "17d3dff5a3a918b2d73ba6234761312d3b3a7917"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "17d3dff5a3a918b2d73ba6234761312d3b3a7917"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.tsx",
+        "sha256": "63bb81ae5fb704bf30c67e617a163f43e02945e397ff5dc9795e4d5cfc3be98c",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "c1d281434bc7286bad10462355d9b916e675f7bf"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "c1d281434bc7286bad10462355d9b916e675f7bf"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "sha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+        "sha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "sha256": "997675c17ff346f359a6590d0b289c43db3552262ed04d5c7d90deb414968d5d",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "Git",
+            "oid": "0eee3e641d9d5b7675fbbf1a7d57704d361ea6c9"
+          },
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "LF",
+            "oid": "0eee3e641d9d5b7675fbbf1a7d57704d361ea6c9"
+          }
+        ]
+      }
+    ],
+    "after-matched": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.test.ts",
+        "sha256": "bea11e80f5604d769e1fd86695b13272400551fcbace25a38879da07a8ca6e2b",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "d96d8ea9fbcd1c509b308035ce41a682392a58ce"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "d96d8ea9fbcd1c509b308035ce41a682392a58ce"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "d96d8ea9fbcd1c509b308035ce41a682392a58ce"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/actions.ts",
+        "sha256": "04b52193850947d8c45102149a9181c0ea25ce33e70980db2b9f41b2827648b7",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "b0629b9a98cbcd564a2590b3f21814aceb0ef5d7"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "b0629b9a98cbcd564a2590b3f21814aceb0ef5d7"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "b0629b9a98cbcd564a2590b3f21814aceb0ef5d7"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-action-helpers.ts",
+        "sha256": "86595d0ab83ff66c1f7be8da333c88b08a35094fee77c106207cc72c1a76a988",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "a96430eada71ba47e054fa6b275da3a6599efece"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "a96430eada71ba47e054fa6b275da3a6599efece"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "a96430eada71ba47e054fa6b275da3a6599efece"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-calendar-helpers.ts",
+        "sha256": "08268752023708cb8b519c14ab867f568a73d3f3018f78a02b8cd11e121df320",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "b942e55f688615279290645182fc35dc805ad7f8"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "b942e55f688615279290645182fc35dc805ad7f8"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "b942e55f688615279290645182fc35dc805ad7f8"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-metrics.ts",
+        "sha256": "ae37f0839bf93e6e920ae646690f15db93528d6f05472cb6150d727aa717f3a6",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "2ad359e546ca0dad33e3b7fa9a7e2edc3a1922a6"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-permissions.ts",
+        "sha256": "ef6a1f4abee060ec5caf7682517f4210d26a8b3abe2c684066f0323b92edab27",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "bdfc959305ddd7d858d0624b4182a5bc8a7f83d5"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "bdfc959305ddd7d858d0624b4182a5bc8a7f83d5"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "bdfc959305ddd7d858d0624b4182a5bc8a7f83d5"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/manager-absence-types.ts",
+        "sha256": "c388bd2862ebf15c8c0a07852bf85daadcb31a7889d7afe058cdf85b1acd3c18",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "e0763b716ac589c655fed3e787dce94c24a33e05"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "e0763b716ac589c655fed3e787dce94c24a33e05"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "e0763b716ac589c655fed3e787dce94c24a33e05"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.test.tsx",
+        "sha256": "3f25c2496b79083561c2fb0e14d67f67f4091f63bff3a5ad0db4d01e409ad492",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "e0a8176e9594b756a1cda5de96558bee46cbf310"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "e0a8176e9594b756a1cda5de96558bee46cbf310"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx",
+        "sha256": "16e2eeeed81175ead340e74630cafcd58bacda55b8f2c6bcbb8e0720f080764f",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "4301740ad574c6182874f0fa3404e1a65f9e723f"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "4301740ad574c6182874f0fa3404e1a65f9e723f"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.sick-notes.test.tsx",
+        "sha256": "0e9caa720c0b87129307e784e212eced0ac29a46a91a35427e459dc12685a4e6",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "4637821d8c6f4b11a98d00c312e9f9684718eb65"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "4637821d8c6f4b11a98d00c312e9f9684718eb65"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+        "sha256": "558c0aee1503c85acd5e4a50e2c611e47e7d332d08973bef55e7f08313ca21f6",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "5b94fc5ae304ea0b6f02e32c8e91bcc1fd879e3a"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "5b94fc5ae304ea0b6f02e32c8e91bcc1fd879e3a"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-form-utils.ts",
+        "sha256": "35f6a403c8a92ea47e94e1a9e85a3b3ab63626ff22b0b7cedd52d2908dcff2c1",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "806a5dc26fc9e8a34ae5946452a20c1fbd46a427"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "806a5dc26fc9e8a34ae5946452a20c1fbd46a427"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "806a5dc26fc9e8a34ae5946452a20c1fbd46a427"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.test.tsx",
+        "sha256": "3de1a0e84c3a3403e95bbb47fe1ad62412bf216a442115261ef2002f43e6eacf",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "aedec6fef80b99e8fcf97340f1a88f13a3c27340"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "aedec6fef80b99e8fcf97340f1a88f13a3c27340"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "aedec6fef80b99e8fcf97340f1a88f13a3c27340"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.tsx",
+        "sha256": "809aecc7b327e9bcbd238a6e9992a50ed0733b136fabe1fe03efc44b2d399431",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "5cf88271d03b5effa3d21171bac6800d3187f45f"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "5cf88271d03b5effa3d21171bac6800d3187f45f"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.test.tsx",
+        "sha256": "2c8e5f7ed11941bc48614ec220edb221d0104cd630fda86e0e380c951cd570ff",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "f63e84e4c63b96dde51b7a61f59a580fb2d73e12"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "f63e84e4c63b96dde51b7a61f59a580fb2d73e12"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+        "sha256": "93177e9a8f41c92a0507c98a18fb1b4688e629ba864aed56abf0234733b4b39d",
+        "matches": [
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "ab226e1bf98ac87774a1fbd9cc38b3222c3aa493"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.test.tsx",
+        "sha256": "b504c9a61ba1151bdecbfd779c79d776f6b737d75ef8e16206517d0e66cbfd61",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "17d3dff5a3a918b2d73ba6234761312d3b3a7917"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "17d3dff5a3a918b2d73ba6234761312d3b3a7917"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.tsx",
+        "sha256": "63bb81ae5fb704bf30c67e617a163f43e02945e397ff5dc9795e4d5cfc3be98c",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "c1d281434bc7286bad10462355d9b916e675f7bf"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "c1d281434bc7286bad10462355d9b916e675f7bf"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "sha256": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "c0af559fd435efcb1ec7e19da1aac14274ae1821"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+        "sha256": "4a21120c40138f2588e89cb09194ea068029387876fe7d47efedc5e80aeb4193",
+        "matches": [
+          {
+            "ref": "ab309161695fe1cf6e2739f4727598fa3fa28c04",
+            "mode": "CRLF",
+            "oid": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+          },
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "bacfd6967dd26d99c59dd857cea5d4aa75a15a26"
+          }
+        ]
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "sha256": "b3e7187c520cecf125b3015c7e6fd91239696408bb5eaaf093d21cc9110ac78c",
+        "matches": [
+          {
+            "ref": "c0dc68bd0c7d89f81f3392d0d8a485c7dec4e00b",
+            "mode": "CRLF",
+            "oid": "556887843322d51a24f437300c6fe44ba9fbbf90"
+          },
+          {
+            "ref": "4180d4a8dcfbf4495ee1e6bd1bfb9e09922e0825",
+            "mode": "CRLF",
+            "oid": "556887843322d51a24f437300c6fe44ba9fbbf90"
+          }
+        ]
+      }
+    ]
+  },
+  "restoration": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx",
+      "afterSha256": "16e2eeeed81175ead340e74630cafcd58bacda55b8f2c6bcbb8e0720f080764f",
+      "beforeSha256": "b05c16856ac28e4775e1be2089d85d6bfdbd6219ec0e46daecd5f61f064e1654"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "afterSha256": "558c0aee1503c85acd5e4a50e2c611e47e7d332d08973bef55e7f08313ca21f6",
+      "beforeSha256": "039d5fd9733e24da0029db1b797b76785657a9f67b185479fb2aa7f9ec21efc3"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.tsx",
+      "afterSha256": "809aecc7b327e9bcbd238a6e9992a50ed0733b136fabe1fe03efc44b2d399431",
+      "beforeSha256": "3438c76cf1c5d0e4e11f5facf5552c9a4686dae40d217be17813f425168c5b3d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+      "afterSha256": "411778f8a222bb6889a370be584c5ddff0244a56241c57a43269d8bf70ebc579",
+      "beforeSha256": "c19c2f513dae4ea6e9fc99076f0d4dd6a4548cb99c18e196d9256afb774daca3"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "afterSha256": "b3e7187c520cecf125b3015c7e6fd91239696408bb5eaaf093d21cc9110ac78c",
+      "beforeSha256": "997675c17ff346f359a6590d0b289c43db3552262ed04d5c7d90deb414968d5d"
+    }
+  ],
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.test.tsx",
+      "root": "100644 blob 87619246f9d7a90930b5b3bddab7d7df5d5dc204",
+      "incoming": "100644 blob e0a8176e9594b756a1cda5de96558bee46cbf310",
+      "candidate": "100644 blob e0a8176e9594b756a1cda5de96558bee46cbf310"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx",
+      "root": "100644 blob f952617492b4a33b2d13570415c09ed686881f7a",
+      "incoming": "100644 blob 4301740ad574c6182874f0fa3404e1a65f9e723f",
+      "candidate": "100644 blob 4301740ad574c6182874f0fa3404e1a65f9e723f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.sick-notes.test.tsx",
+      "root": "100644 blob 94e373eebb15bf8a5ce4bd4a7712303298c8f5b6",
+      "incoming": "100644 blob 4637821d8c6f4b11a98d00c312e9f9684718eb65",
+      "candidate": "100644 blob 4637821d8c6f4b11a98d00c312e9f9684718eb65"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/record-absence-dialog.tsx",
+      "root": "100644 blob a07f2b11a37f26217238434a8df5780e0e2e2e9d",
+      "incoming": "100644 blob 5b94fc5ae304ea0b6f02e32c8e91bcc1fd879e3a",
+      "candidate": "100644 blob 5b94fc5ae304ea0b6f02e32c8e91bcc1fd879e3a"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absence-year-calendar.tsx",
+      "root": "100644 blob 36972d1d0ec078832ef360ae62dc9fd07d0510cd",
+      "incoming": "100644 blob 5cf88271d03b5effa3d21171bac6800d3187f45f",
+      "candidate": "100644 blob 5cf88271d03b5effa3d21171bac6800d3187f45f"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.test.tsx",
+      "root": "100644 blob ee64b72083a2da2698601eb6a022e595cc9588fb",
+      "incoming": "100644 blob f63e84e4c63b96dde51b7a61f59a580fb2d73e12",
+      "candidate": "100644 blob f63e84e4c63b96dde51b7a61f59a580fb2d73e12"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-table.tsx",
+      "root": "100644 blob 8b10936f503713eab3f15a6104c6921c59b58fff",
+      "incoming": "100644 blob ab226e1bf98ac87774a1fbd9cc38b3222c3aa493",
+      "candidate": "100644 blob ab226e1bf98ac87774a1fbd9cc38b3222c3aa493"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.test.tsx",
+      "root": null,
+      "incoming": "100644 blob 17d3dff5a3a918b2d73ba6234761312d3b3a7917",
+      "candidate": "100644 blob 17d3dff5a3a918b2d73ba6234761312d3b3a7917"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/absences/team-absences-workspace.tsx",
+      "root": null,
+      "incoming": "100644 blob c1d281434bc7286bad10462355d9b916e675f7bf",
+      "candidate": "100644 blob c1d281434bc7286bad10462355d9b916e675f7bf"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "root": "100644 blob b0569936cb21ea6e8e62bc6eb8df9d75a74fe06f",
+      "incoming": "100644 blob f80b1f231ddad063181a86fdf79cbf0ee3504fe3",
+      "candidate": "100644 blob 62ee3fa879faea75a2590ca7bb181af4d2d5a575"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "root": "100644 blob e71deb66d9386db4af89bcda6a5728165071f29c",
+      "incoming": "100644 blob 556887843322d51a24f437300c6fe44ba9fbbf90",
+      "candidate": "100644 blob 22b38107bbcf2eeef10a4fa70011e0acc8be3d30"
+    }
+  ],
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "trackedStatus": ""
+}

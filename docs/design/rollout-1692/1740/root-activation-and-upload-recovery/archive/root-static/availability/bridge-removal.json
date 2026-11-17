@@ -1,0 +1,6 @@
+{
+  "path": "apps/webapp/src/test/1740-availability-root-bridge.test.tsx",
+  "sha256": "ad3ec517e09036508f362e27124eb205e3e61cb131e5fb1f858fab3855b0900b",
+  "removed": true,
+  "source": "workspace-recovery.test.tsx"
+}
