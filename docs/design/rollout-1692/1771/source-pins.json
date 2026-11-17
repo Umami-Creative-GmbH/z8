@@ -1,0 +1,109 @@
+{
+  "base": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9",
+  "initialClean": true,
+  "branch": "feat/employee-administration-settings",
+  "initialBranchPreexisting": true,
+  "appTree": "36930b073418c8f624d0f94b74de02e2497f726b",
+  "sourceCommit": "6524ae36a9bbe6ea528959284d479d2a8377068c",
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/columns.test.tsx",
+      "sha256": "6a757041ff344ef48846cccf6f6ec56c4af431036119c6dfbda1c40c7a13a463",
+      "baseBlob": "5ff26f7f300fe88777a3908aaa361e2616b574a1",
+      "workingBlob": "3e5439a50eb633e011b73b0b78f151eba4a6b1d3"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/columns.tsx",
+      "sha256": "6fce2e67e5773931a92da8b5e74e539d6235c22b47c9f4d61e2657111b2e7ef5",
+      "baseBlob": "68865ebedb5a0ee8e18950310e013df9c22d8eac",
+      "workingBlob": "16220b142f7eeeee8e7f0f8d0b6d1c0a1bf6a044"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/employees-page-client.test.tsx",
+      "sha256": "57e8bbca1d139a5bb7f5c49c357b16839ab9ba7e9602893d56214f1ff63fdc96",
+      "baseBlob": "6bcd5f5d25510d1873fe62fd2de728f03d55c2bd",
+      "workingBlob": "cd34ea42a0e64276cfd2737042257371c944ebc6"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/employees-page-client.tsx",
+      "sha256": "7193c04b1bc0d00575058c764f45e0c091387cff4d56e191c974d8e66c2f6c75",
+      "baseBlob": "ac528d71d3bb654083b3fef0106783a0261358de",
+      "workingBlob": "23ccdef3b865a6dc3d00c367415002aefe6f81a0"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/employees-workspace.test.tsx",
+      "sha256": "06c11b947fc8dcc4308c227ddfe8e7f322b53f9584631aff05ef51aee955db94",
+      "baseBlob": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9:apps/webapp/src/app/[locale]/(app)/settings/employees/employees-workspace.test.tsx",
+      "workingBlob": "04426793407b2041a6eeffb1accba224254fefdf"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/error.tsx",
+      "sha256": "54d00acf2ac5d19170fdeea2d920704dc1773b0680870ccb2fdaa81a00c3235c",
+      "baseBlob": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9:apps/webapp/src/app/[locale]/(app)/settings/employees/error.tsx",
+      "workingBlob": "d44960138c71cc842050aed85253b4ea19850f3c"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/loading.tsx",
+      "sha256": "0f7500227641b33a8c23db5d0d8e93c9e8f69786f922417eb60088cb1c6f9cdd",
+      "baseBlob": "11cdba0d2bfcc84c31fa1ef0f2acdf04a96300d9:apps/webapp/src/app/[locale]/(app)/settings/employees/loading.tsx",
+      "workingBlob": "5aa66556b255516b20403c697f9990a7678e3b26"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/page.tsx",
+      "sha256": "ae01ed1fc5892f34804f409159061b7f9401085a81f84a8165820ed11c8d54f7",
+      "baseBlob": "4ae3545dc171b2c1c09580760a206f8011a8c57f",
+      "workingBlob": "9158d2c1b585ff9147bfddf560c1ce9be4784862"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "0fe1d0eb979f21540f7e02381a89a5ec2ea49e8ca65f4178bfa5d9f7c4891747",
+      "baseBlob": "61531e71e0d18c385346a827a434dfddc97588ed",
+      "workingBlob": "203c2b51870c687e301853d03ca6bc31a0d8c8b5"
+    }
+  ],
+  "frozenOwners": [
+    {
+      "path": "apps/webapp/src/components/organization/invite-member-dialog.tsx",
+      "sha256": "432f8cb037aef836ba54813a190cece3be677fc4d9bf70d0b23d50b8a5c1e163",
+      "baseBlob": "412fa22f7c1ee98802be2d3bd9b0e92dd986c0d9",
+      "workingBlob": "412fa22f7c1ee98802be2d3bd9b0e92dd986c0d9"
+    },
+    {
+      "path": "apps/webapp/src/components/organization/members-table.tsx",
+      "sha256": "1332e72dc33561cff912ac5dd5067dfdf0bd0ea9e641e863a356baadbb567834",
+      "baseBlob": "d927819e5a4b8e15efcb68df7a37d5aabcbc36b0",
+      "workingBlob": "d927819e5a4b8e15efcb68df7a37d5aabcbc36b0"
+    },
+    {
+      "path": "apps/webapp/src/components/organization/pending-members-card.tsx",
+      "sha256": "1b6b2f47864c1f6a98d9e75650780e5022281c960313d90d750a6c15e75e666b",
+      "baseBlob": "2015b86545d5499f7c0163565e63891a7d71ee1e",
+      "workingBlob": "2015b86545d5499f7c0163565e63891a7d71ee1e"
+    },
+    {
+      "path": "apps/webapp/src/components/organization/invite-code-management.tsx",
+      "sha256": "5eb533953f66b257fd09418a5f417c593a3ef0e446d8416b8006ca9d9810ef5d",
+      "baseBlob": "55ad63fa9e56da9d7e710ef1b2dd329a622ff78c",
+      "workingBlob": "55ad63fa9e56da9d7e710ef1b2dd329a622ff78c"
+    },
+    {
+      "path": "apps/webapp/src/components/organization/employee-lifecycle-actions.tsx",
+      "sha256": "6fdf32b9915983d31212f895de48db4c685892dc240bd0da85d6215e38569d07",
+      "baseBlob": "8f521ee4711b399e4ad49afcb3e601cb759bae77",
+      "workingBlob": "8f521ee4711b399e4ad49afcb3e601cb759bae77"
+    }
+  ],
+  "frozenOwnersMatchBase": true,
+  "queued1772": "72e90d0f05eb793f5efe236a61d1cb804fed52ba",
+  "queued1772Merged": false,
+  "latestVerified": "e59610bb265ef973c3df61f3d4de7ddf9e561833",
+  "historicalSourceSwitch": false,
+  "captures": [],
+  "qualification": "No accepted browser imagery; no live employee route journey",
+  "canonicalFixture": {
+    "path": "scripts/performance/fixture.mjs",
+    "sha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+    "privateInvocationSha256": "a71e1b977158ca6cc3aec52aa57cb970104edc925358a6ed28c82508e4356601",
+    "qualification": "Module/root resolution and pnpm guard invocation only; canonical seed/source unchanged"
+  }
+}
