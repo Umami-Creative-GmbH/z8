@@ -1,0 +1,40 @@
+{
+  "sourceSha": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+  "unit": {
+    "physicalFiles": 16,
+    "assertionOccurrences": 553,
+    "uniqueFileAndFullNames": 553,
+    "failed": 0
+  },
+  "postgres": {
+    "physicalFiles": 5,
+    "assertionOccurrences": 100,
+    "uniqueFileAndFullNames": 100,
+    "failed": 0
+  },
+  "typecheck": {
+    "staticNextTypegen": true,
+    "projects": [
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ],
+    "exit": 0
+  },
+  "format": {
+    "files": 24,
+    "lintImportExit": 0,
+    "crlf100Exit": 0,
+    "ordinaryFormatExit": 1
+  },
+  "ordinaryFormatInterpretation": "24 CRLF working files differ from ordinary default LF. Explicit 100-column CRLF format passes; ordinary format not claimed as passing.",
+  "doctor": {
+    "errorCount": 0,
+    "warningCount": 5,
+    "affectedFileCount": 4,
+    "totalDiagnosticCount": 5,
+    "score": null,
+    "scoreLabel": null
+  },
+  "readiness": null
+}

@@ -1,0 +1,35 @@
+{
+  "rootPhysical": true,
+  "appPhysical": true,
+  "virtualStorePhysical": true,
+  "leafLinkCount": 222,
+  "outsideOwnedCheckout": [],
+  "pnpm": "12.16.1",
+  "install": [
+    "--frozen-lockfile",
+    "--offline",
+    "--ignore-scripts",
+    "--package-import-method=copy"
+  ],
+  "rootLeafLinks": 5,
+  "webappLeafLinks": 153,
+  "rootAndWebappLeafLinks": 158,
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+  "licenseEntries": 125,
+  "matchingManifestLockWorkspaceFilesBeforeCopy": 22,
+  "ownedFixtureImages": [
+    {
+      "name": "postgres",
+      "id": "sha256:dd2bf3ce2dc83a81674cf7f217fcfd8a5009a4b325dda5b843bfee82a06cff6f"
+    },
+    {
+      "name": "redis",
+      "id": "sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11"
+    },
+    {
+      "name": "storage",
+      "id": "sha256:ee717072290bec9b11abfc0365f8310b00df1cd9b3639943edae47bdef05044a"
+    }
+  ]
+}
