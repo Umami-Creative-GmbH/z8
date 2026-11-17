@@ -17,3 +17,9 @@ The additional public regression found that the method promise finalizer release
 The current selection passes **285 cases across 30 files**, including ten method cases and 29 surrounding provider/form/widget cases. All three type projects, scoped lint and explicit formatting pass; Doctor reports zero findings. The earlier 43 canonical PostgreSQL cases remain pinned to the preceding correction and were not rerun for this UI-only change. Ordinary formatting remains unpassed.
 
 [Exact source pins, red/green results, commands, preservation and remaining limits](navigation-follow-up.json). Fresh independent and authenticated runtime acceptance remain pending; readiness is null. The original sealed implementation report and evidence remain unchanged.
+
+## Independent public recheck
+
+The frozen independent recheck found no P1 and passed **310 occurrences across 31 files**, including 25 new independent cases and the previous 285; 308 file/full-name labels are unique. Route type generation, workflow/smoke types, scoped lint, explicit formatting and Doctor zero findings pass. Its main app type project remains failed solely because its ignored license report is missing; ordinary formatting remains failed. [Exact result, intake hashes and blocked operations](independent-recheck.json).
+
+The isolated dependency replacement and license copy were rejected by automatic review and never executed. Runtime was not attempted. The existing prepared root environment has passed all three type projects on unchanged sign-in sources; that separate result does not turn the independent type failure into a pass. Runtime follow-up and readiness remain pending.

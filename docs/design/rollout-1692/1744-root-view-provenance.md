@@ -11,3 +11,9 @@ The original [worker report](1744.md) and149-file archive remain byte-exact. Ind
 No current-source browser/Next/native run occurred. The sole canonicalPGcontainer was label-verified removed and independently absent. Fresh independent correction/runtime acceptance and broader live authority/build/catalog/provider/device/zoom obligations remain open. No live authorization bypass is inferred from synthetic presentation evidence.
 
 [Exact source pins, expected-tree recipe, commands, failed attempts and limits](1744-root-view-provenance.json).
+
+## Independent public and static recheck
+
+The frozen recheck found no new scoped correctness issue and passed **135 cases across 14 files**, including the root 125 and ten new independent cases. The 24-case priority selection overlaps those results. Type generation, all three complete type projects, 14-file lint/import and complete 14-file Doctor scanning pass. Five owned files pass explicit formatting; two shared explicit and fourteen ordinary-profile findings remain. [Result, intake audit and limits](1744-root-independent-recheck.json).
+
+A separate read-only intake verified all 21 payload sizes/hashes, twelve JSON files, fourteen current source pins, six frozen owners and 31 configuration pins. The two owned SQLite auxiliary-file side effects and guarded restoration remain qualified. No runtime or PostgreSQL checks ran; the earlier fifteen PostgreSQL cases remain inherited and unadded. Readiness is null.
