@@ -96,8 +96,11 @@ describe("adding a missing receipt during review (#1255)", () => {
 				target: { files: [new File(["receipt"], "hotel.pdf", { type: "application/pdf" })] },
 			});
 			await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+			const progress = () => screen.getByRole("progressbar", { name: "Upload progress" });
+			expect(progress().getAttribute("aria-valuenow")).toBe("90");
 			setVisibility("hidden");
 			setVisibility("visible");
+			expect(progress().getAttribute("aria-valuenow")).toBe("90");
 			const button = () => screen.queryByRole<HTMLButtonElement>("button", { name: "Add receipt" });
 			expect(button()?.disabled).toBe(true);
 			await act(async () => attachment.resolve(new Response(null, { status })));

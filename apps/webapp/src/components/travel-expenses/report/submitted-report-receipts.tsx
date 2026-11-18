@@ -17,6 +17,7 @@ import { formatRecordedInstant } from "./format";
 import { useReportTask } from "./use-report-task";
 
 const MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
+const ATTACHMENT_PROGRESS = 90;
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 function uploadFailureMessage(
@@ -201,7 +202,7 @@ function MissingReceiptUpload({
 						? t("travelExpenses.report.receipts.processing", "Attaching receipt…")
 						: t("travelExpenses.report.receipts.uploading", "Uploading receipt…")}
 					<Progress
-						value={upload.progress}
+						value={processing ? ATTACHMENT_PROGRESS : upload.progress}
 						aria-label={t("travelExpenses.report.receipts.progress", "Upload progress")}
 					/>
 				</div>
