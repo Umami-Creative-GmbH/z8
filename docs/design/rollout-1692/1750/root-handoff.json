@@ -1,0 +1,75 @@
+{
+  "id": "R168",
+  "issue": 1750,
+  "status": "bounded-dependency-handoff-verified",
+  "verifiedCommit": "6ef2b0cdd8b3c6e16b53fe8bb32b5aa1b63e0790",
+  "appSourceTree": "234c914f8b8617a9412f4264b8d2d6cbbef93e11",
+  "scope": "Current expense report workspace and frozen cycle handoff. Final user review and broader rollout acceptance remain pending.",
+  "checks": {
+    "compatibility": {
+      "checkpoint": "6ef2b0cdd8b3c6e16b53fe8bb32b5aa1b63e0790",
+      "cases": 525,
+      "files": 50,
+      "typeProjects": 3,
+      "lint": "passed",
+      "explicitCRLF": "passed",
+      "ordinaryFormatDifferences": 4,
+      "doctorErrors": 0,
+      "doctorWarnings": 1,
+      "receipt": "root-frozen-cycle-status-checks.json"
+    },
+    "independentPostgreSQL": {
+      "checkpoint": "c592ac234b69d3a5e9b612f8f151919fa4184d38",
+      "cases": 169,
+      "suites": 12,
+      "migrations": "passed",
+      "canonicalSourceUnchanged": true,
+      "currentRerun": false,
+      "nonadditive": true,
+      "receipt": "root-independent-review-and-progress-checks.json"
+    },
+    "priorBrowser": {
+      "checkpoint": "1ad48b7d15410daffa4135e366c4b811f48fa80c",
+      "passed": [
+        "Owner autosave, Refresh, reload, submit and withdrawal",
+        "Separate late PNG attachment and reopen, with the exact reason on owner readback",
+        "Five authenticated byte readbacks, settled mobile layout, Escape focus return and scoped axe"
+      ],
+      "finding": "Explicit cycle 1 inherited the current report's draft badge. The follow-up below verifies the correction.",
+      "receipt": "root-frozen-cycle-status-checks.json"
+    },
+    "focusedBrowser": {
+      "checkpoint": "6ef2b0cdd8b3c6e16b53fe8bb32b5aa1b63e0790",
+      "currentAfterWithdrawal": "Draft with seven editable fields",
+      "explicitCycle1": "Withdrawn with frozen evidence and totals, and zero edit or withdrawal controls",
+      "cycle1Receipt": {
+        "bytes": 270,
+        "mime": "image/png",
+        "sha256": "5ec67656deac4510e1f8febf63db33aa7162d2c0d0333a32f9365944a4be8031",
+        "authorizedStatus": 200,
+        "outsiderStatus": 404,
+        "urlAndBytesPreserved": true
+      },
+      "explicitCycle2": "Approved, then Reopened for correction. Cycle 1 retained its original outcome, evidence and receipt.",
+      "outsider": "A separately signed-in actor from another organization saw the unavailable report view and no frozen evidence.",
+      "next": "The exact submitted report route rendered. Next reported zero configuration or session errors. The missing generated licenses.json on the licenses route remains a whole-app compilation issue in the isolated fixture.",
+      "receipt": "root-frozen-cycle-runtime/readback.json",
+      "commands": "root-frozen-cycle-runtime/commands.md"
+    }
+  },
+  "audit": {
+    "allowlistSha256": "5673f1b7757a3ac5bda2b6b1b02b72a9ff7b270bfcb0a2a137c08a08573d3c4c",
+    "verifiedPayloads": 2,
+    "verifiedPayloadBytes": 8966,
+    "verifiedSourceBlobs": 4,
+    "publishedAppTreeMatchesRuntime": true,
+    "workingTreeAndIndexClean": true,
+    "ownedResourcesRemaining": 0
+  },
+  "remaining": [
+    "Live linked adjustment, native React and accessibility tree, native file download, and physical device acceptance remain outstanding.",
+    "Live in-flight autosave ordering, Retry and Activity progress continuity remain unrun. The corresponding synthetic regressions are separate evidence.",
+    "Full production generation, catalogs, provider and broader authority transition matrices remain qualified."
+  ],
+  "frontier": { "integrated": 67, "awaitingIntegration": 37, "implementing": 0, "pending": 53 }
+}

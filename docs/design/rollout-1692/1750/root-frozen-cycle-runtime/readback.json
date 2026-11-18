@@ -1,0 +1,163 @@
+{
+  "disposition": "Focused exact-source runtime checks passed. Acceptance title and publication remain provisional for root review.",
+  "pins": {
+    "source": "6ef2b0cdd8b3c6e16b53fe8bb32b5aa1b63e0790",
+    "tree": "099e6670cf785bae93e8ca5847de4afdd0eeb13e",
+    "appSourceTree": "234c914f8b8617a9412f4264b8d2d6cbbef93e11",
+    "parent": "761563afb3a5f3dbcff223399063739a0a4dce00"
+  },
+  "sourceBlobSha256": {
+    "apps/webapp/src/components/travel-expenses/report/report-header.tsx": "90f216a43a7c76cf49e325a8d6491727bf7dad0550baa843f9bbb4d4bb6d7614",
+    "apps/webapp/src/components/travel-expenses/report/report-status.tsx": "1a27f63c862ce74abd64ff6a8ef09579cdb1deaca440eb2c9c8eacdd70938972",
+    "apps/webapp/src/components/travel-expenses/report/report-submission.test.tsx": "75045cd0540df7a39cb20e89ec744d3949ef67042426770a50b6b3d30ac0f091",
+    "apps/webapp/src/components/travel-expenses/report/submitted-report.tsx": "9052f8fb09f92c0125664bc853a0edf3d381de1e7eaf24ad27fbdd6b912631a3"
+  },
+  "setup": {
+    "pnpm": "12.16.1",
+    "verifyDepsBeforeRun": false,
+    "offlineFrozenPhysicalCopy": true,
+    "installLifecycleScripts": false,
+    "canonicalMigrationAndSeed": true,
+    "publicFormActors": 3,
+    "agentBrowser": "0.39.1",
+    "next": "16.4.6"
+  },
+  "ownerPending": {
+    "heading": "R168 synthetic rail receipt",
+    "badge": "Awaiting review",
+    "explicit": false,
+    "evidence": "Expenses Receipt 1: R168 synthetic rail receipt €89.90 Nov 10, 2026 · Transport · Paid by you r168-fixture.png",
+    "totals": "Totals Reimbursed to you €89.90 Paid by the company €0.00",
+    "actions": [
+      "Withdraw report"
+    ],
+    "editorFields": 0,
+    "withdrawnNotice": false,
+    "receipt": {
+      "bytes": 270,
+      "mime": "image/png",
+      "sha256": "5ec67656deac4510e1f8febf63db33aa7162d2c0d0333a32f9365944a4be8031",
+      "status": 200
+    }
+  },
+  "ownerCurrentAfterWithdrawal": {
+    "badge": "Draft",
+    "current": true,
+    "editableCount": 7,
+    "editableValues": [
+      "R168 synthetic rail receipt",
+      "89.90",
+      "R168-C1-FROZEN"
+    ],
+    "heading": "R168 synthetic rail receipt",
+    "historyLinksCycle1WithWithdrawnLabel": true,
+    "receipt": true,
+    "saved": true
+  },
+  "ownerExplicitCycle1": {
+    "heading": "R168 synthetic rail receipt",
+    "badge": "Withdrawn",
+    "explicit": true,
+    "evidence": "Expenses Receipt 1: R168 synthetic rail receipt €89.90 Nov 10, 2026 · Transport · Paid by you r168-fixture.png",
+    "totals": "Totals Reimbursed to you €89.90 Paid by the company €0.00",
+    "actions": [],
+    "editorFields": 0,
+    "withdrawnNotice": true,
+    "receipt": {
+      "bytes": 270,
+      "mime": "image/png",
+      "sha256": "5ec67656deac4510e1f8febf63db33aa7162d2c0d0333a32f9365944a4be8031",
+      "status": 200
+    }
+  },
+  "comparison": {
+    "exactVisibleEvidenceAndTotals": true,
+    "unchangedCycle1ReceiptUrl": true,
+    "originalReceipt": {
+      "mime": "image/png",
+      "bytes": 270,
+      "sha256": "5ec67656deac4510e1f8febf63db33aa7162d2c0d0333a32f9365944a4be8031"
+    },
+    "pendingAndWithdrawnReceiptBytesMatchOriginal": true,
+    "cycle1UnchangedAfterCycle2": true
+  },
+  "distinctCycle2": {
+    "explicitApproved": {
+      "heading": "R168 synthetic rail receipt correction",
+      "badge": "Approved",
+      "receiptBoundToCycle2": true
+    },
+    "explicitReopened": {
+      "heading": "R168 synthetic rail receipt correction",
+      "badge": "Reopened for correction",
+      "explicit": true,
+      "evidence": "Expenses Receipt 1: R168 synthetic rail receipt correction €89.90 Nov 10, 2026 · Transport · Paid by you r168-fixture.png",
+      "totals": "Totals Reimbursed to you €89.90 Paid by the company €0.00",
+      "actions": [],
+      "editorFields": 0,
+      "withdrawnNotice": false,
+      "receipt": {
+        "bytes": 270,
+        "mime": "image/png",
+        "sha256": "5ec67656deac4510e1f8febf63db33aa7162d2c0d0333a32f9365944a4be8031",
+        "status": 200
+      }
+    },
+    "publicReviewerReasonVisible": true
+  },
+  "restrictedOtherOrganization": {
+    "authenticated": true,
+    "reportUnavailable": true,
+    "frozenEvidenceVisible": false,
+    "protectedReceiptStatus": 404,
+    "protectedReceiptWasImage": false
+  },
+  "connectedNext": {
+    "exactExplicitReportSourceRecorded": true,
+    "configErrors": 0,
+    "sessionErrors": 0,
+    "compilationIssues": [
+      {
+        "severity": "error",
+        "file": "[project]/apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx",
+        "title": "**Module not found**: Can't resolve `'@/data/licenses.json'`"
+      }
+    ],
+    "qualification": "The target report rendered successfully. Global compilation is qualified by the missing generated license input. The repository generator requires nested pnpm dlx."
+  },
+  "attempts": [
+    "Default sandbox denied Docker daemon and pinned pnpm engine lock. Approved local execution recovered both.",
+    "T3 Preview opened the local page, then twice failed to produce screenshot frames. Closed the owned tab and used isolated agent-browser.",
+    "The public verification widget was initially pending. Sign-in waited for its normal verification-complete state.",
+    "The first candidate PNG failed full decode before upload. A locally generated Sharp PNG decoded and was used for every comparison.",
+    "A notification prompt covered the owner create control. Dismissed it through the UI and retried. A malformed shell eval created an empty untracked file, which was removed.",
+    "First teardown checks saw a serialization mismatch and transient browser closing state. Rechecked identities, closed sessions and verified zero owned residue."
+  ],
+  "unrun": [
+    "linked adjustment",
+    "native accessibility/component tree acceptance",
+    "native file-download completion",
+    "physical-device acceptance"
+  ],
+  "cleanup": {
+    "browserSessionsClosed": 3,
+    "browserProfilesRemaining": 0,
+    "browserDaemonsRemaining": 0,
+    "browserSidecarsRemaining": 0,
+    "t3PreviewTabsRemaining": 0,
+    "nextProcessesRemaining": 0,
+    "ownedListenersRemaining": 0,
+    "ownedContainersRemaining": 0,
+    "ownedAnonymousVolumesRemaining": 0,
+    "temporaryFixtureDirectoryRemoved": true,
+    "nextGeneratedOutputRemoved": true,
+    "sourceAndIndexClean": true
+  },
+  "publication": {
+    "trackerAccess": false,
+    "pullRequestAccess": false,
+    "issueDisposition": "leave open",
+    "pullRequestDisposition": "leave draft",
+    "verifiedCommit": null
+  }
+}

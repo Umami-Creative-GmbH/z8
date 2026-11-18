@@ -2157,8 +2157,8 @@
       "blockedBy": [
         1695
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "6ef2b0cdd8b3c6e16b53fe8bb32b5aa1b63e0790",
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1750#issuecomment-6915801907",
       "implementationCommit": "b8e3a5ad188396d8759738b8dfd804af3bc99c01",
@@ -2174,6 +2174,7 @@
       "relatedCommandIndependentReviewEvidence": "docs/design/rollout-1692/1750/root-independent-review-and-progress-checks.json",
       "frozenCycleStatusCorrectionCommit": "6ef2b0cdd8b3c6e16b53fe8bb32b5aa1b63e0790",
       "frozenCycleStatusEvidence": "docs/design/rollout-1692/1750/root-frozen-cycle-status-checks.json",
+      "handoffEvidence": "docs/design/rollout-1692/1750/root-handoff.json",
       "publicationQualification": "The public integration preserves the tested application tree; exact native merge and original receipt paths remain on the local review branch."
     },
     {
