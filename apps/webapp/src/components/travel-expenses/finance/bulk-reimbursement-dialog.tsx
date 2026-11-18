@@ -4,7 +4,7 @@ import { IconAlertTriangle, IconCircleCheck, IconLoader2 } from "@tabler/icons-r
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useRef, useState } from "react";
+import { type ComponentProps, useRef, useState } from "react";
 import { markTravelExpensesReimbursedAction } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -159,6 +159,7 @@ export function BulkReimbursementDialog({
 	onFinished,
 	submit = markTravelExpensesReimbursedAction,
 	description,
+	finalFocus,
 	retired = false,
 }: {
 	items: readonly BulkReimbursementItem[];
@@ -169,6 +170,7 @@ export function BulkReimbursementDialog({
 	onFinished: () => void;
 	submit?: BulkReimbursementSubmit;
 	description?: string;
+	finalFocus?: ComponentProps<typeof DialogContent>["finalFocus"];
 	/** A fresh read invalidated this captured payment; it must be composed again. */
 	retired?: boolean;
 }) {
@@ -197,6 +199,7 @@ export function BulkReimbursementDialog({
 			}}
 		>
 			<DialogContent
+				finalFocus={finalFocus}
 				showCloseButton={!command.busy}
 				className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
 			>
@@ -305,7 +308,7 @@ function SkippedList({ skipped }: { skipped: readonly BulkReimbursementSkippedIt
 }
 
 /** One expense's result line; payroll run confirmation (#853) reports the same way. */
-export function ResultRow({ label, done, text }: { label: string; done: boolean; text: string }) {
+export function ResultRow({ label, done, text }: { label?: string; done: boolean; text: string }) {
 	return (
 		<li className="flex items-start gap-3 px-3 py-2 text-sm">
 			{done ? (
@@ -320,7 +323,7 @@ export function ResultRow({ label, done, text }: { label: string; done: boolean;
 				/>
 			)}
 			<div className="min-w-0 flex-1">
-				<p className="truncate font-medium">{label}</p>
+				{label && <p className="truncate font-medium">{label}</p>}
 				<p className={done ? "tabular-nums" : "text-muted-foreground"}>{text}</p>
 			</div>
 		</li>
@@ -552,14 +555,23 @@ function BulkReimbursementResults({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const labels = new Map([
-		...items.map((item) => [settlementSourceKey(item.account.source), item.label] as const),
-		...skipped.map((item) => [settlementSourceKey(item.source), item.label] as const),
-	]);
+	const labels = new Map(
+		items.map(({ account, label }) => [settlementSourceKey(account.source), label]),
+	);
 	// What was skipped before submitting is reported with the rest.
-	const rows: Pick<BulkReimbursementRow, "source" | "outcome" | "amount" | "currency">[] = [
-		...recorded,
-		...skipped.map(({ source, outcome }) => ({ source, outcome, amount: null, currency: null })),
+	const rows = [
+		...recorded.map((row) => ({
+			...row,
+			label:
+				row.outcome === "out_of_scope" ? undefined : labels.get(settlementSourceKey(row.source)),
+		})),
+		...skipped.map(({ source, outcome, label }) => ({
+			source,
+			outcome,
+			label,
+			amount: null,
+			currency: null,
+		})),
 	];
 	const reimbursed = rows.filter((row) => row.outcome === "reimbursed").length;
 	return (
@@ -581,7 +593,7 @@ function BulkReimbursementResults({
 					return (
 						<ResultRow
 							key={key}
-							label={labels.get(key) ?? "—"}
+							label={row.label}
 							done={row.outcome === "reimbursed"}
 							text={outcomeText(t, locale, row)}
 						/>
