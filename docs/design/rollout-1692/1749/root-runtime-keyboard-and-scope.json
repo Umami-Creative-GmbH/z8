@@ -1,0 +1,348 @@
+{
+  "issue": 1749,
+  "id": "R167",
+  "status": "provisional",
+  "verifiedCommit": null,
+  "checkpoint": "e79e857c6c24541a42a000baed8e826ccc45d4ba",
+  "tree": "0bfc6f0e07758677846eb4a5dbd186c1e708206e",
+  "appSourceTree": "dabdfeb948509ebae379540360fd680ca4df4001",
+  "sourceFix": "4b9a71790af314e984c83d687b8b3db3752ea753",
+  "integration": "1bf72269aff032a8f811a48e11d5ba1835c764b5",
+  "independent": {
+    "focusedComponentCases": 13,
+    "failures": 0,
+    "previousFocusP2Reproduced": false,
+    "newConfirmedFindings": 0,
+    "scope": "Independent execution of existing public jsdom component cases; real queue and dialog with modeled read and write replies.",
+    "cases": [
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "retirement during a dispatched request preserves the unresolved-command lock and suppresses late feedback",
+        "status": "passed"
+      },
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "PRIORITY independent: omission on an empty refreshed page retains the open draft and exact retry intent",
+        "status": "passed"
+      },
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "an empty-page capability refusal closes the draft and a later grant cannot reopen it",
+        "status": "passed"
+      },
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "returns focus to the finance queue after Cancel with unchanged rows",
+        "status": "passed"
+      },
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "returns focus to the finance queue after Cancel with empty rows",
+        "status": "passed"
+      },
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "keeps the mixed reimbursement outcome while withholding the label of a refused report",
+        "status": "passed"
+      },
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "returns focus to the queue after Done closes results (empty queue: true)",
+        "status": "passed"
+      },
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "returns focus to the queue after Done closes results (empty queue: false)",
+        "status": "passed"
+      },
+      {
+        "file": "finance-bulk-eligibility.test.tsx",
+        "case": "returns focus to the queue after Escape closes results (empty queue: false)",
+        "status": "passed"
+      },
+      {
+        "file": "finance-exports.test.tsx",
+        "case": "exports the selected approved revisions and keeps one idempotency key across a retry",
+        "status": "passed"
+      },
+      {
+        "file": "finance-queue.test.tsx",
+        "case": "keeps a pending bulk payment open through Escape and native duplicate submission",
+        "status": "passed"
+      },
+      {
+        "file": "finance-queue.test.tsx",
+        "case": "opens the view the URL names",
+        "status": "passed"
+      },
+      {
+        "file": "finance-queue.test.tsx",
+        "case": "offers no selection to readers who cannot record reimbursements",
+        "status": "passed"
+      }
+    ]
+  },
+  "runtime": {
+    "fixture": "Fresh standard local performance fixture; migration recovery verification passed; Next 16.4.6 with Turbopack; actual Chromium trusted keyboard events.",
+    "route": "/en/travel-expenses/finance",
+    "organization": "Ordinary fixture login and public organization menu verified the single accessible synthetic organization. No alternate organization was available for a cross-organization switch.",
+    "reportPreparation": "Three approved synthetic receipts from one ordinary employee for the focus checks. A second nonadmin employee created D for the scope check. All four followed public creation, attachment, approval and readback paths.",
+    "keyboard": [
+      {
+        "identity": "results-done-retained-rows",
+        "case": "A",
+        "selectedBefore": 1,
+        "selectedAtResults": 1,
+        "resultCount": "1 of 1 reimbursed",
+        "resultExactTarget": true,
+        "trustedKey": "Enter",
+        "dialogClosed": true,
+        "selectedAfter": 0,
+        "sameOpener": true,
+        "openerDisabled": true,
+        "activeElementIsApprovedExpenses": true,
+        "eligibleRowsAfter": 3
+      },
+      {
+        "identity": "results-escape-retained-rows",
+        "case": "B",
+        "selectedBefore": 1,
+        "selectedAtResults": 1,
+        "resultCount": "1 of 1 reimbursed",
+        "resultExactTarget": true,
+        "trustedKey": "Escape",
+        "dialogClosed": true,
+        "selectedAfter": 0,
+        "sameOpener": true,
+        "openerDisabled": true,
+        "activeElementIsApprovedExpenses": true,
+        "eligibleRowsAfter": 2
+      },
+      {
+        "identity": "cancel-reopened-draft",
+        "case": "C",
+        "selectedBefore": 1,
+        "blankNewReference": true,
+        "trustedKey": "Enter",
+        "dialogClosed": true,
+        "sameOpener": true,
+        "openerEnabled": true,
+        "activeElementIsOpener": true,
+        "selectedAfter": 1
+      }
+    ],
+    "persistence": [
+      {
+        "case": "A",
+        "expectedReferenceRows": 1,
+        "historyRows": 1,
+        "otherReferenceRows": 0,
+        "paidRows": 1
+      },
+      {
+        "case": "B",
+        "expectedReferenceRows": 1,
+        "historyRows": 1,
+        "otherReferenceRows": 0,
+        "paidRows": 1
+      }
+    ],
+    "narrowedGrant": {
+      "allScopeSaveVerified": true,
+      "narrowedSaveVerified": true,
+      "recordPermissionRetained": true,
+      "initialTwoTargetsSelected": true,
+      "freshQueueProof": {
+        "allowedCanBeSelected": true,
+        "allowedVisible": true,
+        "excludedVisible": false
+      },
+      "result": {
+        "allowedLabel": true,
+        "excludedEmployeeLabel": false,
+        "excludedReportLabel": false,
+        "identity": "narrowed-grant-before-submit",
+        "oneOfTwo": true,
+        "resultsVisible": true,
+        "skipOutOfScope": true
+      },
+      "readback": {
+        "value": [
+          {
+            "awaiting": false,
+            "case": "C",
+            "exactReferenceRows": 1,
+            "fullOutstanding": false,
+            "historyRows": 1,
+            "loadedSettlement": true,
+            "paidRows": 1
+          },
+          {
+            "awaiting": true,
+            "case": "D",
+            "exactReferenceRows": 0,
+            "fullOutstanding": true,
+            "historyRows": 0,
+            "loadedSettlement": true,
+            "paidRows": 0
+          }
+        ],
+        "Count": 2
+      },
+      "refreshBoundary": "A second tab in the same transient officer browser was reloaded and used to prove the narrowed scope. The original first tab preserved the captured draft.",
+      "concurrentRevocationCoverage": false
+    },
+    "next": {
+      "exactRouteCompileIssues": 0,
+      "appRouter": true,
+      "financePageFileVisibleInMetadata": true,
+      "runtimeConfigErrors": 0,
+      "runtimeSessionErrors": 0,
+      "globalCompileIssues": 1,
+      "globalIssue": "Generated licenses.json was absent under the fixture constraints.",
+      "nativeReactTool": "agent-browser 0.39.1 reported no named FinanceQueue fiber on this route. Exact native React target remains unverified."
+    }
+  },
+  "historical": {
+    "rootCompatibility": {
+      "cases": 380,
+      "files": 30,
+      "at": "e79e857c6c24541a42a000baed8e826ccc45d4ba"
+    },
+    "independentPostgreSQL": {
+      "cases": 84,
+      "checkpoint": "9c96193fb6f6c77c7ebf12fbf0b9ca17f2a62a1b",
+      "migrationsPassed": true,
+      "currentRerun": false
+    },
+    "earlierRuntime": "Matched visuals, partial reimbursement, two completed ZIP downloads, and legacy/submitted settlement readback belong to the implementation snapshot."
+  },
+  "canonicalSourcePreservation": {
+    "checkpoints": [
+      "9c96193fb6f6c77c7ebf12fbf0b9ca17f2a62a1b",
+      "fa3ab8c06dd7dad77c69f13bc553752419506603",
+      "e79e857c6c24541a42a000baed8e826ccc45d4ba"
+    ],
+    "blobs": [
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/settlement.ts",
+        "blob": "88bacb8f1a57c424f2c3eddd7f760b906325c724"
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/settlement-store.ts",
+        "blob": "09d31fe0a68a612d01e594b8b3b582cbab16410e"
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/bulk-reimbursement.ts",
+        "blob": "33d619a2d32a5499c9b3be649e08aa98eb38152b"
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/finance-access.ts",
+        "blob": "5045f4e48b5c0a112128059038d9d657d3662149"
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/finance-queue-store.ts",
+        "blob": "1066996b003c70a4c8075d4b6d7b8ca81c26e2b8"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance-actions.ts",
+        "blob": "cb876eb4f085faa84064888625d22279bbe5f1e1"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance-recovery-actions.ts",
+        "blob": "d7fb5dbe42c0360d91d6a06ffff40fd60daa7619"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance-export-actions.ts",
+        "blob": "43253c5e24ba3be19b6760bbdfed6dbe105c9bd7"
+      }
+    ]
+  },
+  "receiptIntake": {
+    "sha256": "7d6832eca2793338f79f1a6531846dfad57664c6a50e48fcda21a1c0345cd06e",
+    "payloads": [
+      {
+        "file": "attempts.json",
+        "bytes": 2667,
+        "sha256": "60210cbd14cb21247a85124e5e3dd2d7d6f37a559ce9fbde442092044f0b0ef8"
+      },
+      {
+        "file": "cleanup.json",
+        "bytes": 718,
+        "sha256": "7559db2075b7ba0fd265f2898bd86d29dc91e0e3c8e5636ab31f12228abd6f28"
+      },
+      {
+        "file": "focused-public.json",
+        "bytes": 4586,
+        "sha256": "217b77139748376653d8449fa30ee774ac2e3ee35917da94813c19ef573a3117"
+      },
+      {
+        "file": "pins-and-custody.json",
+        "bytes": 7344,
+        "sha256": "40c4f395f861f4afef8491c1b3b0d650b03e6b2a8f302ce0870cd5aa3c7c12d5"
+      },
+      {
+        "file": "runtime-outcomes.json",
+        "bytes": 7999,
+        "sha256": "9c78fcea8a902f168aaa25c4be8d1a7cfd5b0aea52c3b82af55406cec96a9af6"
+      }
+    ],
+    "bytes": 23314,
+    "byteHashesVerified": true,
+    "utf8BOM": "Verified raw bytes first and stripped a UTF-8 BOM for JSON parsing. An initial unnormalized parse failed."
+  },
+  "attempts": {
+    "initial": [
+      "Verified the six Git identity pins and ordered merge parents. Read-only GitHub verification first hit a sandbox network restriction and succeeded through approved access.",
+      "Installed standard offline frozen pnpm 12.16.1 with copy and ignore-scripts, 1823 reused and zero downloaded.",
+      "Two focused Vitest invocations completed. Native-config warning on both and a timer-range warning on the controls invocation; no case failed."
+    ],
+    "setup": [
+      "Standard fixture prepare exited 0 with migration verification. Owned loopback Next dev started. Production fixture start was unused.",
+      "T3 Incognito preview reached sign-in and was closed. Literal-only preview input led to the private ephemeral native browser. Installed PowerShell shim was blocked by local execution policy; the normal installed CMD shim worked.",
+      "Normal employee dismissal of the notification prompt was needed before navigation. Initial locators queried before the new view finished mounting; the successful rerun waited for the public control.",
+      "Initial report submission was refused because no reviewer was configured. The fixture admin saved an expense reviewer through public settings.",
+      "Calendar and attachment selection had Windows command quoting misses. A second receipt needed a distinct file and the filename was explicitly awaited.",
+      "The inbox list needed a normal reload after its first approval. A Next dev indicator obstructed pointer activation of another Approve button; keyboard activation completed it.",
+      "Next runtime metadata first had no connected target and a later probe assumed an absolute URL. The exact route was confirmed after accepting Next's relative path shape."
+    ],
+    "optional": [
+      "The visual recording checkbox and scope picker required the observed label, keyboard activation and Confirm before Save. Verified save and recording permission preceded queue proof.",
+      "The second proof-tab close returned a daemon EOF. One remaining tab and the untouched blank draft proved no submit was sent. A pre-submit harness predicate then incorrectly expected report titles inside the modal; the final predicate used the two visibly selected underlying queue rows and the one blank captured draft. First and only scoped submit followed.",
+      "No payment was retried and no grading is assigned to failed harness attempts."
+    ]
+  },
+  "cleanup": {
+    "ownedBrowserSessionsClosed": 4,
+    "extraOwnedBrowserRelaunchClosed": true,
+    "ownedBrowserProcessesRemaining": 0,
+    "previewTabVerifiedAbsent": true,
+    "launchWrappersExited": true,
+    "ownedNextProcessRemaining": 0,
+    "ownedNextListenerRemaining": false,
+    "fixtureCleanupExit": 0,
+    "ownedContainersRemoved": 3,
+    "ownedExactContainerNamesAndIdsAbsent": true,
+    "ownedFixtureListenersRemaining": 0,
+    "fixtureManifestHashGuard": true,
+    "temporaryBridgesPrivatelyPreservedAndRemoved": 9,
+    "operationalDirectoryRemoved": true,
+    "ownedGeneratedRuntimePathsRemoved": [
+      "apps/webapp/.next",
+      "apps/webapp/next-env.d.ts"
+    ],
+    "generatedJunctionsUnlinkedWithoutTraversingTargets": 18
+  },
+  "limits": [
+    "Current positive-recovery browser path remains pending.",
+    "Real payroll confirmation and removal remain blocked in the standard fixture. Payroll preview is inactive by default and the application has no activation path. Canonical payroll tests are historical separate evidence.",
+    "The observed grant narrowing completed before submission. One fixture organization was accessible, so in-flight cross-organization switching remains unverified.",
+    "The exact finance route compiled cleanly. Whole-app compilation was limited by the absent generated license file, and the native tool did not expose the named queue component.",
+    "External provider behavior, full production generation, remote catalog, physical device and true zoom coverage remain outstanding."
+  ],
+  "frontier": {
+    "integrated": 65,
+    "awaitingIntegration": 39,
+    "pending": 53
+  }
+}

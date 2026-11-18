@@ -2127,7 +2127,7 @@
       "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
       "evidence": "docs/design/rollout-1692/1749.md",
       "rootCorrectionEvidence": "docs/design/rollout-1692/1749/root-settlement-withdrawal-checks.json",
-      "integrationVerification": "Provisional. Independent review at fa3ab8c06 confirmed empty refresh, refusal labels, and ordinary focus return. The current correction covers Done and Escape when closing results disables the opener. The unchanged public reproduction improved from 28/30 to 30/30, and all 380 compatibility cases and three TypeScript projects passed. Current browser keyboard and live finance acceptance remain pending.",
+      "integrationVerification": "Provisional. At e79e857c6, 13 independent focused cases and actual keyboard Done, Escape, and Cancel passed. Public history confirmed one payment per test reference. The live narrowed grant permitted one selected report, refused the excluded report, and withheld its label. Positive recovery remains pending. Live payroll confirmation and removal require an activated preview fixture. Earlier canonical PostgreSQL and current root compatibility evidence remain separate.",
       "providerCorrectionCommit": "e512a116b39706366eee3adfaad00787e04ff1dc",
       "providerCorrectionIntegrationCommit": "b9f13a387898980c5c6b684d3c7e0dff7ebd0d8f",
       "providerCorrectionEvidence": "docs/design/rollout-1692/1749/root-provider-arrival-checks.json",
@@ -2145,7 +2145,9 @@
       "focusReturnCorrectionEvidence": "docs/design/rollout-1692/1749/root-focus-and-refusal-checks.json",
       "resultsDismissalFocusCorrectionCommit": "4b9a71790af314e984c83d687b8b3db3752ea753",
       "resultsDismissalFocusCorrectionIntegrationCommit": "1bf72269aff032a8f811a48e11d5ba1835c764b5",
-      "resultsDismissalFocusCorrectionEvidence": "docs/design/rollout-1692/1749/root-results-dismissal-focus-checks.json"
+      "resultsDismissalFocusCorrectionEvidence": "docs/design/rollout-1692/1749/root-results-dismissal-focus-checks.json",
+      "runtimeKeyboardAndScopeCommit": "e79e857c6c24541a42a000baed8e826ccc45d4ba",
+      "runtimeKeyboardAndScopeEvidence": "docs/design/rollout-1692/1749/root-runtime-keyboard-and-scope.json"
     },
     {
       "id": "R168",
