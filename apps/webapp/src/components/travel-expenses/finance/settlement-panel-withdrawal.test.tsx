@@ -44,6 +44,7 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/finance-actions", () => ({
 	getTravelExpenseSettlement: async (source: { type: string; id: string }) => {
 		edge.calls.push(edge.mode);
 		if (edge.mode === "refusal") return { success: false, error: "Not found" };
+		if (edge.mode === "unauthorized") return { success: false, error: "Unauthorized" };
 		if (edge.mode === "thrown-refusal") throw new Error("Not found");
 		if (edge.mode === "rejection") throw new TypeError("Review transport unavailable");
 		if (edge.mode === "outage") return { success: false, error: "Review service unavailable" };
@@ -380,5 +381,22 @@ for (const kind of ["legacy", "report"] as const) {
 		expect(screen.queryByText(evidence)).toBeNull();
 		expect(screen.queryByLabelText("Payment reference")).toBeNull();
 		expect(edge.writes).toHaveBeenCalledTimes(1);
+	});
+	it(`${kind}: canonical Unauthorized withdraws an available settlement through later outages`, async () => {
+		edge.mode = "success";
+		const c = mount(kind);
+		await screen.findByText(evidence);
+		await reread(c, "unauthorized");
+		await waitFor(() => expect(screen.queryByText(evidence)).toBeNull());
+		expect(screen.queryByLabelText("Payment reference")).toBeNull();
+		await reread(c, "outage");
+		await screen.findByText("Unable to load the reimbursement balance. Please retry.");
+		expect(screen.queryByText(evidence)).toBeNull();
+		expect(screen.queryByLabelText("Payment reference")).toBeNull();
+		edge.mode = "fresh";
+		fireEvent.click(screen.getByRole("button", { name: "Retry", exact: true }));
+		await screen.findByText("CURRENT_AUTHORIZED_SETTLEMENT_NOTE");
+		expect(screen.queryByText(evidence)).toBeNull();
+		expect(edge.writes).not.toHaveBeenCalled();
 	});
 }
