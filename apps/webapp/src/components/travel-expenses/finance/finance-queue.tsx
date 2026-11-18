@@ -666,23 +666,23 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 						})}
 					</ul>
 					<QueuePagination view={view} hasMore={data.hasMore} onChange={setView} />
-					{canSettle && bulkSelection && (
-						<BulkReimbursementDialog
-							items={bulkSelection.items}
-							retired={bulkSelection.retired}
-							open
-							onOpenChange={(open) => {
-								if (!open) setBulkSelection(null);
-							}}
-							onFinished={() => {
-								selection.clear();
-								void queryClient.invalidateQueries({
-									queryKey: queryKeys.travelExpenses.finance(),
-								});
-							}}
-						/>
-					)}
 				</div>
+			)}
+			{canSettle && bulkSelection && (
+				<BulkReimbursementDialog
+					items={bulkSelection.items}
+					retired={bulkSelection.retired}
+					open
+					onOpenChange={(open) => {
+						if (!open) setBulkSelection(null);
+					}}
+					onFinished={() => {
+						selection.clear();
+						void queryClient.invalidateQueries({
+							queryKey: queryKeys.travelExpenses.finance(),
+						});
+					}}
+				/>
 			)}
 		</Card>
 	);
