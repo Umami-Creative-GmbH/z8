@@ -41,6 +41,7 @@ import { reportName } from "./report-name";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+type HistoryReadResult = { kind: "available"; rows: ExpenseHistoryRow[] } | { kind: "withdrawn" };
 
 const secondaryLinkClass =
 	"relative z-10 rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2";
@@ -309,8 +310,8 @@ function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean 
  * The employee's travel expenses in one place (#617): drafts, returned,
  * submitted and decided reports and earlier claims, filterable by status and
  * by whether reimbursement is still awaited (#751), with reimbursable totals
- * and settlement balances. Loaded rows stay visible while
- * a refresh runs or fails.
+ * and settlement balances. Loaded rows stay visible through transient refresh
+ * failures; a canonical access refusal withdraws them.
  */
 export function ExpenseHistory({
 	organizationId,
@@ -325,22 +326,32 @@ export function ExpenseHistory({
 }) {
 	const { t } = useTranslate();
 	const arrival = useId();
-	const { data, isError, isFetching, isLoading, refetch } = useQuery({
+	const {
+		data: result,
+		isError,
+		isFetching,
+		isLoading,
+		refetch,
+	} = useQuery({
 		queryKey: [...queryKeys.travelExpenses.history({ organizationId, employeeId }), arrival],
-		queryFn: async ({ signal }) => {
+		queryFn: async ({ signal }): Promise<HistoryReadResult> => {
 			const result = await getMyTravelExpenseHistory();
 			signal.throwIfAborted();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
+			if (!result.success) {
+				if (result.error === "Unauthorized") return { kind: "withdrawn" };
+				throw new Error(result.error);
+			}
+			return { kind: "available", rows: result.data };
 		},
 		// Coming back from a report always shows its current status.
 		staleTime: 0,
 	});
+	const data = result?.kind === "available" ? result.rows : undefined;
 	const retry = () => {
 		void refetch();
 	};
 
-	if (isError && !data) {
+	if (result?.kind === "withdrawn" || (isError && !data)) {
 		return (
 			<TravelExpenseLoadError
 				message={t(
