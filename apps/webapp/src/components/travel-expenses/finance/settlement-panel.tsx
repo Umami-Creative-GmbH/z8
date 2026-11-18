@@ -30,6 +30,18 @@ type SettlementViewer = SettlementAccountView["viewer"];
 type SettlementLine = SettlementAccount["summary"]["currencies"][number];
 type SettlementEntry = SettlementAccount["entries"][number];
 
+async function loadSettlement(source: SettlementSource): Promise<SettlementAccountView | null> {
+	try {
+		const result = await getTravelExpenseSettlement(source);
+		if (!result.success) throw new Error(result.error);
+		return result.data;
+	} catch (failure) {
+		// Persist withdrawal so a later outage cannot revive the previous account.
+		if (failure instanceof Error && failure.message === NOT_VISIBLE) return null;
+		throw failure;
+	}
+}
+
 /**
  * The settlement of one approved expense (#612): what the employee is
  * entitled to, what finance recorded as paid and the derived balance. The
@@ -40,17 +52,13 @@ export function SettlementPanel({ source }: { source: SettlementSource }) {
 	const { t } = useTranslate();
 	const scope = useFinanceReadScope();
 	const queryKey = [...queryKeys.travelExpenses.settlement(source.type, source.id), scope];
-	const { data, isError, error, isFetching, refetch } = useQuery({
+	const { data, isError, isFetching, refetch } = useQuery({
 		queryKey,
-		queryFn: async (): Promise<SettlementAccountView | null> => {
-			const result = await getTravelExpenseSettlement(source);
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
+		queryFn: () => loadSettlement(source),
 		retry: (count, failure) => failure.message !== NOT_VISIBLE && count < 2,
 	});
 
-	if (isError && error.message === NOT_VISIBLE) return null;
+	if (data === null && !isError) return null;
 	if (isError && !data) {
 		return (
 			<TravelExpenseLoadError
@@ -120,7 +128,11 @@ function SettlementAccountCard({
 	if (account.adjustmentOf) return null;
 
 	const settled = (next: SettlementAccount | null) => {
-		if (next) queryClient.setQueryData(queryKey, { ...data, account: next });
+		if (next) {
+			queryClient.setQueryData<SettlementAccountView | null>(queryKey, (current) =>
+				current ? { ...current, account: next } : current,
+			);
+		}
 		void queryClient.invalidateQueries({ queryKey: ["travel-expenses", "settlement"] });
 		void queryClient.invalidateQueries({ queryKey: ["travel-expenses", "finance"] });
 	};
