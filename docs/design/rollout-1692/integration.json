@@ -2127,7 +2127,10 @@
       "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
       "evidence": "docs/design/rollout-1692/1749.md",
       "rootCorrectionEvidence": "docs/design/rollout-1692/1749/root-settlement-withdrawal-checks.json",
-      "integrationVerification": "Provisional only. Independent merger5controls/1inherited withdrawal failure; root red repeated, nullable durable-withdrawal correction merged.313 distinct units/27files pass including12 real-provider both-consumer cases;final23/2reader subset passes;all3fulltypes/typegen,23filelint,2ownedexplicit100CRLF pass.Ordinary2findings;Doctor0errors/10retainedwarnings.66anchors and immutableR165/R166 proofs preserved.Fresh independent correction review,PG/live finance/download/payroll/provider/race acceptance unpassed;worker210unit/84PG remains inherited and nonadditive.verifiedCommitnull,issueOPEN,PRdraft."
+      "integrationVerification": "Provisional: original settlement withdrawal correction preserved. Fresh independent employee-loss probe2controlsP/1inheritedP1; root exactred then3unchangedgreen. Provider-bound reader/contextRetry and known canonicalUnauthorized withdrawal corrected in e512a116; no domain/action writes.326deduplicated unit identities/28files =324broad plus36finalreader with34overlap;all3fulltypes/typegen,4filelint/explicit100CRLF,Doctor4file0/0 pass.Ordinary4formatfindings and earlierincoming10Doctorwarnings retained.66anchors/proofs preserved. Fresh independent recheck,canonicalPG/livefinance/export/payroll/provideracceptance unpassed;verifiedCommitnull/issueOPEN/PRdraft.",
+      "providerCorrectionCommit": "e512a116b39706366eee3adfaad00787e04ff1dc",
+      "providerCorrectionIntegrationCommit": "b9f13a387898980c5c6b684d3c7e0dff7ebd0d8f",
+      "providerCorrectionEvidence": "docs/design/rollout-1692/1749/root-provider-arrival-checks.json"
     },
     {
       "id": "R168",
