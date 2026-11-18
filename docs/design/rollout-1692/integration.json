@@ -822,11 +822,15 @@
       "blockedBy": [
         1693
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "ae4dbdf71ac1a2527d2bf78d2d5b828041ee0d2c",
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1844#issuecomment-6919907573",
-      "implementationCommit": "8ee1a6c42ebdf32b25575dc9d3ac93ffe056c9cf"
+      "implementationCommit": "8ee1a6c42ebdf32b25575dc9d3ac93ffe056c9cf",
+      "integrationCommit": "71a85dbd50a9a3af2f422214da3d1036f0cbece5",
+      "evidence": "docs/design/rollout-1692/1844.md",
+      "handoffEvidence": "docs/design/rollout-1692/1844-1845-root-browser.json",
+      "integrationVerification": "Bounded handoff verified on the combined platform overview and analytics source. Real signed-out denial, normal platform-admin sign-in, canonical overview counts, both filtered destinations, fresh-load recovery, responsive geometry, and admin exit passed. Browser Back restored the heading. Metrics required a fresh load in the recorded run."
     },
     {
       "id": "R053",
@@ -835,11 +839,15 @@
       "blockedBy": [
         1694
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "ae4dbdf71ac1a2527d2bf78d2d5b828041ee0d2c",
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1845#issuecomment-6920522272",
-      "implementationCommit": "0191b181a03f1c12292008b024419656d994e98d"
+      "implementationCommit": "0191b181a03f1c12292008b024419656d994e98d",
+      "integrationCommit": "ae4dbdf71ac1a2527d2bf78d2d5b828041ee0d2c",
+      "evidence": "docs/design/rollout-1692/1845.md",
+      "handoffEvidence": "docs/design/rollout-1692/1844-1845-root-browser.json",
+      "integrationVerification": "Bounded handoff verified on the combined source. Real signed-out denial, normal platform-admin sign-in, range and bucket changes, repeated query values, browser history control restoration, and responsive geometry passed. Five metrics and three charts with tables rendered on fresh load. Chart settlement after history remains unverified."
     },
     {
       "id": "R054",
