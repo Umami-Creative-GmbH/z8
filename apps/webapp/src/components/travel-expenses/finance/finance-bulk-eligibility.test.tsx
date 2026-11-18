@@ -681,3 +681,70 @@ it("keeps the mixed reimbursement outcome while withholding the label of a refus
 	).toBeNull();
 	expect(edge.writes).toHaveBeenCalledTimes(1);
 });
+
+it.each([
+	{ dismiss: "Done", empty: true },
+	{ dismiss: "Done", empty: false },
+	{ dismiss: "Escape", empty: false },
+])(
+	"returns focus to the queue after $dismiss closes results (empty queue: $empty)",
+	async ({ dismiss, empty }) => {
+		const queue = mount();
+		const dialog = await open();
+		const opener = screen.getByRole("button", {
+			name: "Mark as reimbursed",
+			exact: true,
+			hidden: true,
+		});
+		if (empty) {
+			edge.reads.mockResolvedValue(reply([]));
+			await refresh(queue);
+		}
+		edge.writes.mockResolvedValueOnce({
+			success: true,
+			data: {
+				status: "processed",
+				rows: [
+					{
+						source: account().source,
+						outcome: "reimbursed",
+						amount: "48.00",
+						currency: "EUR",
+						replayed: false,
+					},
+				],
+			},
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Mark 1 as reimbursed" }));
+		const results = await screen.findByRole("dialog", { name: "Reimbursement results" });
+		expect(within(results).getByText("1 of 1 reimbursed")).toBeTruthy();
+		const done = within(results).getByRole("button", { name: "Done" });
+		done.focus();
+		if (dismiss === "Escape") fireEvent.keyDown(done, { key: "Escape", code: "Escape" });
+		else fireEvent.click(done);
+
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(opener.isConnected).toBe(!empty);
+		if (!empty) expect(opener).toHaveProperty("disabled", true);
+		const heading = screen.getByRole("heading", { name: "Approved expenses" });
+		await waitFor(() => expect(document.activeElement).toBe(heading));
+
+		if (!empty && dismiss === "Done") {
+			await waitFor(() => {
+				const chooser = screen.getByRole("checkbox", {
+					name: "Select all expenses awaiting reimbursement on this page",
+				});
+				expect(chooser.getAttribute("aria-disabled")).not.toBe("true");
+				expect(chooser.hasAttribute("disabled")).toBe(false);
+			});
+			const nextDialog = await open();
+			within(nextDialog)
+				.getByLabelText(/Payment reference/)
+				.focus();
+			fireEvent.click(within(nextDialog).getByRole("button", { name: "Cancel", exact: true }));
+			await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+			await waitFor(() => expect(document.activeElement).toBe(opener));
+		}
+		expect(edge.writes).toHaveBeenCalledTimes(1);
+	},
+);
