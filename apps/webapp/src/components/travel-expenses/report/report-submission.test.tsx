@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { Activity } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const reportActions = vi.hoisted(() => ({
@@ -73,6 +74,7 @@ vi.mock("@/navigation", () => ({
 
 import * as reviewActions from "@/app/[locale]/(app)/travel-expenses/report-review-actions";
 import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
+import { ReportWorkspaceScope } from "./report-workspace-scope";
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
 
 const reportId = "6a020000-0000-4000-8000-000000000001";
@@ -155,13 +157,24 @@ function mount() {
 		organizationSettings: null,
 		updatedAt: Date.now(),
 	};
-	render(
+	const view = (mode: "visible" | "hidden") => (
 		<QueryClientProvider client={client}>
 			<OrganizationContextProvider initialContext={organization}>
-				<TravelExpenseReportEditor reportId={reportId} maxReceiptBytes={1024} />
+				<ReportWorkspaceScope
+					userId={organization.userId}
+					organizationId={organization.organizationId}
+					employeeId={organization.employee.employeeId}
+					arrival="report-arrival"
+				>
+					<Activity mode={mode}>
+						<TravelExpenseReportEditor reportId={reportId} maxReceiptBytes={1024} />
+					</Activity>
+				</ReportWorkspaceScope>
 			</OrganizationContextProvider>
-		</QueryClientProvider>,
+		</QueryClientProvider>
 	);
+	const rendered = render(view("visible"));
+	return (mode: "visible" | "hidden") => rendered.rerender(view(mode));
 }
 
 async function reviewButton() {
@@ -438,6 +451,96 @@ describe("report submission", () => {
 			},
 		};
 	}
+
+	it.each(["success", "a loading error"] as const)(
+		"reconciles a submission after Activity reconnect when the first read returns %s",
+		async (readOutcome) => {
+			const command = Promise.withResolvers<{ success: true; data: { status: "submitted" } }>();
+			reportActions.submitTravelExpenseReportAction.mockReturnValue(command.promise);
+			reportActions.getTravelExpenseReportSubmission.mockResolvedValue(submittedView());
+			const setVisibility = mount();
+			fireEvent.click(await reviewButton());
+			const confirm = () =>
+				screen.findByRole<HTMLButtonElement>("button", { name: "Submit for approval" });
+			fireEvent.click(await confirm());
+			await waitFor(() =>
+				expect(reportActions.submitTravelExpenseReportAction).toHaveBeenCalledTimes(1),
+			);
+
+			setVisibility("hidden");
+			setVisibility("visible");
+			expect((await confirm()).disabled).toBe(true);
+			const readsBeforeSettlement = reportActions.getMyTravelExpenseReport.mock.calls.length;
+			reportActions.getMyTravelExpenseReport.mockResolvedValue(
+				tripReport({ status: "submitted", submissionCount: 1 }),
+			);
+			if (readOutcome === "a loading error") {
+				reportActions.getMyTravelExpenseReport.mockResolvedValueOnce({
+					success: false,
+					error: "Temporary report read failure",
+				});
+			}
+			await act(async () => command.resolve({ success: true, data: { status: "submitted" } }));
+
+			await waitFor(() =>
+				expect(reportActions.getMyTravelExpenseReport.mock.calls.length).toBeGreaterThan(
+					readsBeforeSettlement,
+				),
+			);
+			if (readOutcome === "a loading error") {
+				const retry = await screen.findByRole("button", { name: "Retry" });
+				const review = await reviewButton();
+				expect(review.disabled).toBe(true);
+				fireEvent.click(review);
+				expect(screen.queryByRole("button", { name: "Submit for approval" })).toBeNull();
+				expect(reportActions.submitTravelExpenseReportAction).toHaveBeenCalledTimes(1);
+				fireEvent.click(retry);
+			}
+			expect(await screen.findByText("Awaiting review")).toBeTruthy();
+			expect(screen.queryByRole("button", { name: "Submit for approval" })).toBeNull();
+			expect(reportActions.submitTravelExpenseReportAction).toHaveBeenCalledTimes(1);
+			expect(toast.success).not.toHaveBeenCalled();
+		},
+	);
+
+	it("reopens the editable report after its withdrawal survives Activity reconnect", async () => {
+		const command =
+			Promise.withResolvers<
+				Awaited<ReturnType<typeof reviewActions.withdrawTravelExpenseReportAction>>
+			>();
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			tripReport({ status: "submitted", submissionCount: 1 }),
+		);
+		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(submittedView());
+		vi.mocked(reviewActions.withdrawTravelExpenseReportAction).mockReturnValue(command.promise);
+		const setVisibility = mount();
+		fireEvent.click(await screen.findByRole("button", { name: "Withdraw report" }));
+		const confirm = () => screen.findByRole<HTMLButtonElement>("button", { name: "Withdraw" });
+		fireEvent.click(await confirm());
+		await waitFor(() =>
+			expect(reviewActions.withdrawTravelExpenseReportAction).toHaveBeenCalledTimes(1),
+		);
+
+		setVisibility("hidden");
+		setVisibility("visible");
+		expect((await confirm()).disabled).toBe(true);
+		const readsBeforeSettlement = reportActions.getMyTravelExpenseReport.mock.calls.length;
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(tripReport({ submissionCount: 1 }));
+		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(
+			submittedView({ status: "draft", cycleOutcome: "withdrawn" }),
+		);
+		await act(async () => command.resolve({ success: true, data: { status: "withdrawn" } }));
+
+		await waitFor(() =>
+			expect(reportActions.getMyTravelExpenseReport.mock.calls.length).toBeGreaterThan(
+				readsBeforeSettlement,
+			),
+		);
+		expect(await screen.findByRole("textbox", { name: "Purpose of the trip" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Withdraw report" })).toBeNull();
+		expect(reviewActions.withdrawTravelExpenseReportAction).toHaveBeenCalledTimes(1);
+		expect(toast.success).not.toHaveBeenCalled();
+	});
 
 	it("shows a submitted report read-only instead of its draft forms", async () => {
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(

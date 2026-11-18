@@ -479,7 +479,6 @@ function StandaloneReportBody({
 				reportId={report.id}
 				blocker={blocker}
 				loadSavedReport={() => loadSavedReport(drafts, null, mileageDrafts)}
-				onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
 			/>
 		</div>
 	);
@@ -802,7 +801,6 @@ function TripReportBody({
 							: null
 				}
 				loadSavedReport={() => loadSavedReport(drafts, details, mileageDrafts, perDiemDrafts)}
-				onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
 			/>
 		</div>
 	);
