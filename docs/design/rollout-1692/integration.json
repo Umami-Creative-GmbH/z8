@@ -2161,7 +2161,12 @@
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1750#issuecomment-6915801907",
-      "implementationCommit": "b8e3a5ad188396d8759738b8dfd804af3bc99c01"
+      "implementationCommit": "b8e3a5ad188396d8759738b8dfd804af3bc99c01",
+      "integrationCommit": "cd70c30d45597879999a4b498028bd35f7405bdb",
+      "localReviewMerge": "c8ee994d29f5a8d1739ebbf6ee2ac1c6ae13172c",
+      "localRefreshCorrectionCommit": "4dc30d2ed07b71b8cbf222807e88c85facc9fd8d",
+      "refreshCorrectionEvidence": "docs/design/rollout-1692/1750/root-refresh-correction-checks.json",
+      "publicationQualification": "The public integration preserves the tested application tree; exact native merge and original receipt paths remain on the local review branch."
     },
     {
       "id": "R169",
