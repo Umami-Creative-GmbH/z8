@@ -1,0 +1,45 @@
+{
+  "source": "abd6e73c93d822cd53dec8b7875ec476b0570a9b",
+  "actors": [
+    {
+      "actor": "small-manager",
+      "inbox": true,
+      "finance": false,
+      "reports": [],
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:35\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n0\nTo finish\n0\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\nNo travel expenses yet\nStart a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox"
+    },
+    {
+      "actor": "small-employee",
+      "inbox": false,
+      "finance": true,
+      "reports": [],
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:35\nUTC+01:00\nLoading clock status\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n0\nTo finish\n0\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\nNo travel expenses yet\nStart a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "actor": "large-admin",
+      "inbox": true,
+      "finance": true,
+      "reports": [],
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:35\nUTC+01:00\nLoading clock status\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n0\nTo finish\n0\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\nNo travel expenses yet\nStart a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    }
+  ],
+  "settings": {
+    "text": "Toggle Sidebar\nTravel Expense Policies\n09:35\nUTC+01:00\nLoading clock status\nAccount\nProfile Settings\nSecurity Settings\nNotification Settings\nWellness Settings\nPosition stamps\nMy data\nOrganization\nOrganization\nEmployees\nTeams\nCustom Roles\nIdentity & Access\nLocations\nVehicles\nCustom fields\nDomain & Branding\nImplementation checklist\nPolicies\nWork Policies\nAbsences\nEmployee Allowances\nTravel Expense Policies\nApproval\nTime Tracking\nClocking\nWork Categories\nPosition capture\nKiosks\nWork Diagnostics\nScheduling\nSkills & Qualifications\nPayroll\nPayroll Officers\nPayroll Readiness\nPayroll Export\nClosed months\nNotifications\nEmail\nChat Integrations\nIntegrations\nCalendar Sync\nDeveloper Access\nCompliance\nAudit\nData\nImport Data\nData Export\nScheduled Exports\nExport Operations\nStatistics\nSettings\nTravel Expense Policies\nTravel Expense Policies\n\nChoose who reviews expense reports, how missing receipts and foreign currencies are handled, which mileage and per diem rates apply, and which exceptions are authorized.\n\nReview\nCurrencies\nRates\nExceptions\nAccess\nExpense officers\nExpense officers export approved expense reports for bookkeeping and record reimbursements, for all employees or for named teams and employees. Owners and admins always have this access. Approving reports never grants it.\nAdd expense officer\n\nNo expense officers yet. Owners and admins handle approved expense reports.\n\nAdd expense officer\nChoose whose approved expense reports the officer handles and what they may do with them. Officers always see the reports in their scope.\nExpense officer\nSelect employee\nOfficer scope\nAll employees\nSpecific teams or employees\n\nReports of the named employees, and reports whose employee belonged to one of the teams when the report was approved. A later team change does not move a report.\n\nTeams\nFixture team 0\nFixture team 1\nEmployees\nSelect employees\nCapabilities\nCan export\nCan record reimbursements\n\nWithout either, the officer can read the reports in their scope, for example as an auditor. Recording reimbursements includes recoveries. Nobody records money for their own expenses.\n\nSave expense officer\nCancel",
+    "comboboxes": [
+      {
+        "text": "Select employee",
+        "aria": null
+      },
+      {
+        "text": "Select employees",
+        "aria": null
+      }
+    ]
+  },
+  "grant": "Created read-only, all-scope grant through existing settings form",
+  "revoked": "Revoked through existing settings confirmation",
+  "afterRevoke": {
+    "finance": false,
+    "inbox": false
+  }
+}

@@ -1,0 +1,1125 @@
+src\app\[locale]\(app)\travel-expenses\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1     │ - //·@vitest-environment·jsdom␍
+     2     │ - import·{·cleanup,·render,·screen·}·from·"@testing-library/react";␍
+     3     │ - import·{·afterEach,·expect,·it,·vi·}·from·"vitest";␍
+     4     │ - import·Page·from·"./page";␍
+     5     │ - ␍
+     6     │ - const·boundary·=·vi.hoisted(()·=>·({·auth:·vi.fn(),·finance:·vi.fn()·}));␍
+     7     │ - vi.mock("@/lib/auth-helpers",·()·=>·({·getAuthContext:·boundary.auth·}));␍
+     8     │ - vi.mock("@/lib/travel-expenses/finance-access",·()·=>·({·loadFinanceActor:·boundary.finance·}));␍
+     9     │ - vi.mock("@/tolgee/server",·()·=>·({␍
+    10     │ - → getTranslate:·async·()·=>·(_key:·string,·fallback:·string)·=>·fallback,␍
+    11     │ - }));␍
+    12     │ - vi.mock("@tolgee/react",·()·=>·({␍
+    13     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+    14     │ - }));␍
+    15     │ - vi.mock("@/navigation",·()·=>·({␍
+    16     │ - → Link:·({·children,·...props·}:·React.ComponentProps<"a">)·=>·<a·{...props}>{children}</a>,␍
+    17     │ - }));␍
+    18     │ - //·RSC·transport·boundary:·retain·the·real·destination·components·and·page·admission.␍
+    19     │ - vi.mock("@/components/travel-expenses/travel-expense-management",·()·=>·({␍
+    20     │ - → TravelExpenseManagement:·({·banners·}:·{·banners:·React.ReactNode·})·=>·<>{banners}</>,␍
+    21     │ - }));␍
+    22     │ - vi.mock("@/components/errors/no-employee-error",·()·=>·({␍
+    23     │ - → NoEmployeeError:·()·=>·<p>Employee·required</p>,␍
+    24     │ - }));␍
+    25     │ - afterEach(()·=>·{␍
+    26     │ - → cleanup();␍
+    27     │ - → vi.clearAllMocks();␍
+    28     │ - });␍
+    29     │ - ␍
+    30     │ - async·function·content()·{␍
+    31     │ - → const·child·=·Page().props.children;␍
+    32     │ - → const·element·=·await·child.type(child.props);␍
+    33     │ - → //·Resolve·server·entry·leaves·before·handing·their·serialized·children·to·the·client.␍
+    34     │ - → const·entries·=·element.props.banners?.props.children·??·[];␍
+    35     │ - → return·(␍
+    36     │ - → → <>␍
+    37     │ - → → → {␍
+    38     │ - → → → → await·Promise.all(␍
+    39     │ - → → → → → entries␍
+    40     │ - → → → → → → .filter(Boolean)␍
+    41     │ - → → → → → → .map((entry:·React.ReactElement)·=>·(entry.type·as·()·=>·Promise<React.ReactNode>)()),␍
+    42     │ - → → → → )␍
+    43     │ - → → → }␍
+    44     │ - → → </>␍
+    45     │ - → );␍
+    46     │ - }␍
+    47     │ - ␍
+    48     │ - it.each([␍
+    49     │ - → ["employee",·false,·false,·false],␍
+    50     │ - → ["employee",·true,·false,·true],␍
+    51     │ - → ["manager",·false,·true,·false],␍
+    52     │ - → ["admin",·true,·true,·true],␍
+    53     │ - ]·as·const)(␍
+    54     │ - → "keeps·%s·approval·and·finance·destinations·independent·(%s)",␍
+    55     │ - → async·(role,·canRead,·inbox,·finance)·=>·{␍
+    56     │ - → → boundary.auth.mockResolvedValue({␍
+    57     │ - → → → user:·{·id:·"user"·},␍
+    58     │ - → → → employee:·{·id:·"owner",·organizationId:·"org",·role·},␍
+    59     │ - → → });␍
+    60     │ - → → boundary.finance.mockResolvedValue({·canRead·});␍
+    61     │ - → → render(await·content());␍
+    62     │ - → → expect(Boolean(screen.queryByRole("link",·{·name:·"Open·inbox"·}))).toBe(inbox);␍
+    63     │ - → → expect(Boolean(screen.queryByRole("link",·{·name:·"Open·finance·queue"·}))).toBe(finance);␍
+    64     │ - → → if·(inbox)␍
+    65     │ - → → → expect(screen.getByRole("link",·{·name:·"Open·inbox"·}).getAttribute("href")).toBe(␍
+    66     │ - → → → → "/approvals/inbox?types=travel_expense_report,travel_expense_claim",␍
+    67     │ - → → → );␍
+    68     │ - → → if·(finance)␍
+    69     │ - → → → expect(screen.getByRole("link",·{·name:·"Open·finance·queue"·}).getAttribute("href")).toBe(␍
+    70     │ - → → → → "/travel-expenses/finance",␍
+    71     │ - → → → );␍
+    72     │ - → },␍
+    73     │ - );␍
+    74     │ - ␍
+    75     │ - it("keeps·a·task·heading·while·admission·loads·and·when·no·employee·is·admitted",·async·()·=>·{␍
+    76     │ - → const·fallback·=·Page().props.fallback;␍
+    77     │ - → render(await·fallback.type(fallback.props));␍
+    78     │ - → expect(screen.getAllByRole("heading",·{·level:·1,·name:·"Travel·Expenses"·})).toHaveLength(1);␍
+    79     │ - → cleanup();␍
+    80     │ - → boundary.auth.mockResolvedValue(null);␍
+    81     │ - → boundary.finance.mockResolvedValue(null);␍
+    82     │ - → const·child·=·Page().props.children;␍
+    83     │ - → render(await·child.type(child.props));␍
+    84     │ - → expect(screen.getAllByRole("heading",·{·level:·1,·name:·"Travel·Expenses"·})).toHaveLength(1);␍
+    85     │ - → expect(screen.queryByRole("link",·{·name:·"Open·finance·queue"·})).toBeNull();␍
+    86     │ - });␍
+         1 │ + //·@vitest-environment·jsdom
+         2 │ + import·{·cleanup,·render,·screen·}·from·"@testing-library/react";
+         3 │ + import·{·afterEach,·expect,·it,·vi·}·from·"vitest";
+         4 │ + import·Page·from·"./page";
+         5 │ + 
+         6 │ + const·boundary·=·vi.hoisted(()·=>·({·auth:·vi.fn(),·finance:·vi.fn()·}));
+         7 │ + vi.mock("@/lib/auth-helpers",·()·=>·({·getAuthContext:·boundary.auth·}));
+         8 │ + vi.mock("@/lib/travel-expenses/finance-access",·()·=>·({
+         9 │ + → loadFinanceActor:·boundary.finance,
+        10 │ + }));
+        11 │ + vi.mock("@/tolgee/server",·()·=>·({
+        12 │ + → getTranslate:·async·()·=>·(_key:·string,·fallback:·string)·=>·fallback,
+        13 │ + }));
+        14 │ + vi.mock("@tolgee/react",·()·=>·({
+        15 │ + → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),
+        16 │ + }));
+        17 │ + vi.mock("@/navigation",·()·=>·({
+        18 │ + → Link:·({·children,·...props·}:·React.ComponentProps<"a">)·=>·(
+        19 │ + → → <a·{...props}>{children}</a>
+        20 │ + → ),
+        21 │ + }));
+        22 │ + //·RSC·transport·boundary:·retain·the·real·destination·components·and·page·admission.
+        23 │ + vi.mock("@/components/travel-expenses/travel-expense-management",·()·=>·({
+        24 │ + → TravelExpenseManagement:·({·banners·}:·{·banners:·React.ReactNode·})·=>·(
+        25 │ + → → <>{banners}</>
+        26 │ + → ),
+        27 │ + }));
+        28 │ + vi.mock("@/components/errors/no-employee-error",·()·=>·({
+        29 │ + → NoEmployeeError:·()·=>·<p>Employee·required</p>,
+        30 │ + }));
+        31 │ + afterEach(()·=>·{
+        32 │ + → cleanup();
+        33 │ + → vi.clearAllMocks();
+        34 │ + });
+        35 │ + 
+        36 │ + async·function·content()·{
+        37 │ + → const·child·=·Page().props.children;
+        38 │ + → const·element·=·await·child.type(child.props);
+        39 │ + → //·Resolve·server·entry·leaves·before·handing·their·serialized·children·to·the·client.
+        40 │ + → const·entries·=·element.props.banners?.props.children·??·[];
+        41 │ + → return·(
+        42 │ + → → <>
+        43 │ + → → → {
+        44 │ + → → → → await·Promise.all(
+        45 │ + → → → → → entries
+        46 │ + → → → → → → .filter(Boolean)
+        47 │ + → → → → → → .map((entry:·React.ReactElement)·=>
+        48 │ + → → → → → → → (entry.type·as·()·=>·Promise<React.ReactNode>)(),
+        49 │ + → → → → → → ),
+        50 │ + → → → → )
+        51 │ + → → → }
+        52 │ + → → </>
+        53 │ + → );
+        54 │ + }
+        55 │ + 
+        56 │ + it.each([
+        57 │ + → ["employee",·false,·false,·false],
+        58 │ + → ["employee",·true,·false,·true],
+        59 │ + → ["manager",·false,·true,·false],
+        60 │ + → ["admin",·true,·true,·true],
+        61 │ + ]·as·const)(
+        62 │ + → "keeps·%s·approval·and·finance·destinations·independent·(%s)",
+        63 │ + → async·(role,·canRead,·inbox,·finance)·=>·{
+        64 │ + → → boundary.auth.mockResolvedValue({
+  43 more lines truncated
+  
+
+src\app\[locale]\(app)\travel-expenses\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·Suspense·}·from·"react";␍
+     2    │ - import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";␍
+     3    │ - import·{·TravelExpenseApprovalsEntry·}·from·"@/components/travel-expenses/approvals-entry";␍
+     4    │ - import·{·TravelExpenseFinanceEntry·}·from·"@/components/travel-expenses/finance/finance-entry";␍
+     5    │ - import·{·TravelExpenseManagement·}·from·"@/components/travel-expenses/travel-expense-management";␍
+     6    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     7    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     8    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     9    │ - import·{·getAuthContext·}·from·"@/lib/auth-helpers";␍
+    10    │ - import·{·loadFinanceActor·}·from·"@/lib/travel-expenses/finance-access";␍
+    11    │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+    12    │ - ␍
+    13    │ - async·function·TravelExpensesPageContent()·{␍
+    14    │ - → const·[t,·authContext,·financeActor]·=·await·Promise.all([␍
+    15    │ - → → getTranslate(),␍
+    16    │ - → → getAuthContext(),␍
+    17    │ - → → loadFinanceActor(),␍
+    18    │ - → ]);␍
+    19    │ - ␍
+    20    │ - → if·(!authContext?.employee)·{␍
+    21    │ - → → return·(␍
+    22    │ - → → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·p-6">␍
+    23    │ - → → → → <PageHeader·title={t("travelExpenses.title",·"Travel·Expenses")}·/>␍
+    24    │ - → → → → <NoEmployeeError·feature={t("travelExpenses.feature",·"manage·travel·expenses")}·/>␍
+    25    │ - → → → </div>␍
+    26    │ - → → );␍
+    27    │ - → }␍
+    28    │ - ␍
+    29    │ - → const·reviewsApprovals·=␍
+    30    │ - → → authContext.employee.role·===·"manager"·||·authContext.employee.role·===·"admin";␍
+    31    │ - → const·readsFinance·=·Boolean(financeActor?.canRead);␍
+    32    │ - → return·(␍
+    33    │ - → → <TravelExpenseManagement␍
+    34    │ - → → → userId={authContext.user.id}␍
+    35    │ - → → → organizationId={authContext.employee.organizationId}␍
+    36    │ - → → → employeeId={authContext.employee.id}␍
+    37    │ - → → → banners={␍
+    38    │ - → → → → reviewsApprovals·||·readsFinance·?·(␍
+    39    │ - → → → → → <>␍
+    40    │ - → → → → → → {reviewsApprovals·&&·<TravelExpenseApprovalsEntry·/>}␍
+    41    │ - → → → → → → {readsFinance·&&·<TravelExpenseFinanceEntry·/>}␍
+    42    │ - → → → → → </>␍
+    43    │ - → → → → )·:·null␍
+    44    │ - → → → }␍
+    45    │ - → → />␍
+    46    │ - → );␍
+    47    │ - }␍
+    48    │ - ␍
+    49    │ - async·function·TravelExpensesPageLoading()·{␍
+    50    │ - → const·t·=·await·getTranslate();␍
+    51    │ - → return·(␍
+    52    │ - → → <LoadingRegion␍
+    53    │ - → → → label={{␍
+    54    │ - → → → → labelKey:·"common.loadingRegions.travelExpenses",␍
+    55    │ - → → → → labelDefault:·"Loading·travel·expenses",␍
+    56    │ - → → → }}␍
+    57    │ - → → → className="@container/main·flex·flex-1·flex-col·gap-6·py-4·md:py-6"␍
+    58    │ - → → → role="status"␍
+    59    │ - → → >␍
+    60    │ - → → → <div·className="space-y-4·px-4·lg:px-6">␍
+    61    │ - → → → → <PageHeader·title={t("travelExpenses.title",·"Travel·Expenses")}·/>␍
+    62    │ - → → → → <Skeleton·aria-hidden="true"·className="h-4·w-80·max-w-full"·/>␍
+    63    │ - → → → → <Skeleton·aria-hidden="true"·className="h-96·w-full"·/>␍
+    64    │ - → → → </div>␍
+    65    │ - → → </LoadingRegion>␍
+    66    │ - → );␍
+    67    │ - }␍
+    68    │ - ␍
+    69    │ - export·default·function·TravelExpensesPage()·{␍
+    70    │ - → return·(␍
+    71    │ - → → <Suspense·fallback={<TravelExpensesPageLoading·/>}>␍
+    72    │ - → → → <TravelExpensesPageContent·/>␍
+    73    │ - → → </Suspense>␍
+    74    │ - → );␍
+    75    │ - }␍
+        1 │ + import·{·Suspense·}·from·"react";
+        2 │ + import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";
+        3 │ + import·{·TravelExpenseApprovalsEntry·}·from·"@/components/travel-expenses/approvals-entry";
+        4 │ + import·{·TravelExpenseFinanceEntry·}·from·"@/components/travel-expenses/finance/finance-entry";
+        5 │ + import·{·TravelExpenseManagement·}·from·"@/components/travel-expenses/travel-expense-management";
+        6 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+        7 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        8 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+        9 │ + import·{·getAuthContext·}·from·"@/lib/auth-helpers";
+       10 │ + import·{·loadFinanceActor·}·from·"@/lib/travel-expenses/finance-access";
+       11 │ + import·{·getTranslate·}·from·"@/tolgee/server";
+       12 │ + 
+       13 │ + async·function·TravelExpensesPageContent()·{
+       14 │ + → const·[t,·authContext,·financeActor]·=·await·Promise.all([
+       15 │ + → → getTranslate(),
+       16 │ + → → getAuthContext(),
+       17 │ + → → loadFinanceActor(),
+       18 │ + → ]);
+       19 │ + 
+       20 │ + → if·(!authContext?.employee)·{
+       21 │ + → → return·(
+       22 │ + → → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·p-6">
+       23 │ + → → → → <PageHeader·title={t("travelExpenses.title",·"Travel·Expenses")}·/>
+       24 │ + → → → → <NoEmployeeError
+       25 │ + → → → → → feature={t("travelExpenses.feature",·"manage·travel·expenses")}
+       26 │ + → → → → />
+       27 │ + → → → </div>
+       28 │ + → → );
+       29 │ + → }
+       30 │ + 
+       31 │ + → const·reviewsApprovals·=
+       32 │ + → → authContext.employee.role·===·"manager"·||
+       33 │ + → → authContext.employee.role·===·"admin";
+       34 │ + → const·readsFinance·=·Boolean(financeActor?.canRead);
+       35 │ + → return·(
+       36 │ + → → <TravelExpenseManagement
+       37 │ + → → → userId={authContext.user.id}
+       38 │ + → → → organizationId={authContext.employee.organizationId}
+       39 │ + → → → employeeId={authContext.employee.id}
+       40 │ + → → → banners={
+       41 │ + → → → → reviewsApprovals·||·readsFinance·?·(
+       42 │ + → → → → → <>
+       43 │ + → → → → → → {reviewsApprovals·&&·<TravelExpenseApprovalsEntry·/>}
+       44 │ + → → → → → → {readsFinance·&&·<TravelExpenseFinanceEntry·/>}
+       45 │ + → → → → → </>
+       46 │ + → → → → )·:·null
+       47 │ + → → → }
+       48 │ + → → />
+       49 │ + → );
+       50 │ + }
+       51 │ + 
+       52 │ + async·function·TravelExpensesPageLoading()·{
+       53 │ + → const·t·=·await·getTranslate();
+       54 │ + → return·(
+       55 │ + → → <LoadingRegion
+       56 │ + → → → label={{
+       57 │ + → → → → labelKey:·"common.loadingRegions.travelExpenses",
+       58 │ + → → → → labelDefault:·"Loading·travel·expenses",
+       59 │ + → → → }}
+       60 │ + → → → className="@container/main·flex·flex-1·flex-col·gap-6·py-4·md:py-6"
+       61 │ + → → → role="status"
+       62 │ + → → >
+       63 │ + → → → <div·className="space-y-4·px-4·lg:px-6">
+       64 │ + → → → → <PageHeader·title={t("travelExpenses.title",·"Travel·Expenses")}·/>
+       65 │ + → → → → <Skeleton·aria-hidden="true"·className="h-4·w-80·max-w-full"·/>
+       66 │ + → → → → <Skeleton·aria-hidden="true"·className="h-96·w-full"·/>
+       67 │ + → → → </div>
+       68 │ + → → </LoadingRegion>
+       69 │ + → );
+       70 │ + }
+       71 │ + 
+       72 │ + export·default·function·TravelExpensesPage()·{
+       73 │ + → return·(
+       74 │ + → → <Suspense·fallback={<TravelExpensesPageLoading·/>}>
+       75 │ + → → → <TravelExpensesPageContent·/>
+  4 more lines truncated
+  
+
+src\components\travel-expenses\approvals-entry.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·IconArrowRight,·IconInbox·}·from·"@tabler/icons-react";␍
+     2    │ - import·{·Button·}·from·"@/components/ui/button";␍
+     3    │ - import·{·Link·}·from·"@/navigation";␍
+     4    │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+     5    │ - ␍
+     6    │ - /**·Entry·to·the·approvals·inbox·filtered·to·expense·reports·and·claims,·for·managers·and·admins.·*/␍
+     7    │ - export·async·function·TravelExpenseApprovalsEntry()·{␍
+     8    │ - → const·t·=·await·getTranslate();␍
+     9    │ - → return·(␍
+    10    │ - → → <section·className="flex·min-w-0·flex-col·gap-3·rounded-xl·border·bg-card·p-4">␍
+    11    │ - → → → <IconInbox·aria-hidden="true"·className="size-4"·/>␍
+    12    │ - → → → <h2·className="font-medium">␍
+    13    │ - → → → → {t("travelExpenses.approvals.entry.title",·"Review·pending·travel·expense·approvals")}␍
+    14    │ - → → → </h2>␍
+    15    │ - → → → <div·className="flex·flex-1·flex-wrap·items-end·justify-between·gap-3·text-sm·text-muted-foreground">␍
+    16    │ - → → → → <span>␍
+    17    │ - → → → → → {t(␍
+    18    │ - → → → → → → "travelExpenses.approvals.description",␍
+    19    │ - → → → → → → "Open·the·unified·approvals·inbox·filtered·to·travel·expenses.",␍
+    20    │ - → → → → → )}␍
+    21    │ - → → → → </span>␍
+    22    │ - → → → → <Button·asChild·size="sm"·variant="outline">␍
+    23    │ - → → → → → <Link·href="/approvals/inbox?types=travel_expense_report,travel_expense_claim">␍
+    24    │ - → → → → → → {t("travelExpenses.approvals.entry.open",·"Open·inbox")}␍
+    25    │ - → → → → → → <IconArrowRight·aria-hidden="true"·className="ml-2·size-4"·/>␍
+    26    │ - → → → → → </Link>␍
+    27    │ - → → → → </Button>␍
+    28    │ - → → → </div>␍
+    29    │ - → → </section>␍
+    30    │ - → );␍
+    31    │ - }␍
+        1 │ + import·{·IconArrowRight,·IconInbox·}·from·"@tabler/icons-react";
+        2 │ + import·{·Button·}·from·"@/components/ui/button";
+        3 │ + import·{·Link·}·from·"@/navigation";
+        4 │ + import·{·getTranslate·}·from·"@/tolgee/server";
+        5 │ + 
+        6 │ + /**·Entry·to·the·approvals·inbox·filtered·to·expense·reports·and·claims,·for·managers·and·admins.·*/
+        7 │ + export·async·function·TravelExpenseApprovalsEntry()·{
+        8 │ + → const·t·=·await·getTranslate();
+        9 │ + → return·(
+       10 │ + → → <section·className="flex·min-w-0·flex-col·gap-3·rounded-xl·border·bg-card·p-4">
+       11 │ + → → → <IconInbox·aria-hidden="true"·className="size-4"·/>
+       12 │ + → → → <h2·className="font-medium">
+       13 │ + → → → → {t(
+       14 │ + → → → → → "travelExpenses.approvals.entry.title",
+       15 │ + → → → → → "Review·pending·travel·expense·approvals",
+       16 │ + → → → → )}
+       17 │ + → → → </h2>
+       18 │ + → → → <div·className="flex·flex-1·flex-wrap·items-end·justify-between·gap-3·text-sm·text-muted-foreground">
+       19 │ + → → → → <span>
+       20 │ + → → → → → {t(
+       21 │ + → → → → → → "travelExpenses.approvals.description",
+       22 │ + → → → → → → "Open·the·unified·approvals·inbox·filtered·to·travel·expenses.",
+       23 │ + → → → → → )}
+       24 │ + → → → → </span>
+       25 │ + → → → → <Button·asChild·size="sm"·variant="outline">
+       26 │ + → → → → → <Link·href="/approvals/inbox?types=travel_expense_report,travel_expense_claim">
+       27 │ + → → → → → → {t("travelExpenses.approvals.entry.open",·"Open·inbox")}
+       28 │ + → → → → → → <IconArrowRight·aria-hidden="true"·className="ml-2·size-4"·/>
+       29 │ + → → → → → </Link>
+       30 │ + → → → → </Button>
+       31 │ + → → → </div>
+       32 │ + → → </section>
+       33 │ + → );
+       34 │ + }
+    32 35 │   
+  
+
+src\components\travel-expenses\expense-history.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconHistory,·IconLoader2,·IconReceipt·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useQuery·}·from·"@tanstack/react-query";␍
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      6     │ - import·{·useLocale·}·from·"next-intl";␍
+      7     │ - import·{·useId·}·from·"react";␍
+      8     │ - import·{·getMyTravelExpenseHistory·}·from·"@/app/[locale]/(app)/travel-expenses/history-actions";␍
+      9     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+     10     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     11     │ - import·{·Card,·CardAction,·CardContent,·CardDescription,·CardHeader·}·from·"@/components/ui/card";␍
+     12     │ - import·{␍
+     13     │ - → Empty,␍
+     14     │ - → EmptyContent,␍
+     15     │ - → EmptyDescription,␍
+     16     │ - → EmptyHeader,␍
+     17     │ - → EmptyMedia,␍
+     18     │ - → EmptyTitle,␍
+     19     │ - }·from·"@/components/ui/empty";␍
+     20     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     21     │ - import·{·ToggleGroup,·ToggleGroupItem·}·from·"@/components/ui/toggle-group";␍
+     22     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+     23     │ - import·{␍
+     24     │ - → countExpenseHistory,␍
+     25     │ - → EXPENSE_HISTORY_FILTERS,␍
+     26     │ - → type·ExpenseHistoryFilter,␍
+     27     │ - → type·ExpenseHistoryRow,␍
+     28     │ - → filterExpenseHistory,␍
+     29     │ - → isExpenseHistoryFilter,␍
+     30     │ - → type·LegacyClaimHistoryRow,␍
+     31     │ - → type·ReportHistoryRow,␍
+     32     │ - }·from·"@/lib/travel-expenses/expense-history";␍
+     33     │ - import·{·Link·}·from·"@/navigation";␍
+     34     │ - import·{·ITEM_TYPE_ICONS,·TRIP_ICON·}·from·"./expense-icons";␍
+     35     │ - import·{·BalanceText,·ReimbursedBadge·}·from·"./finance/settlement-status";␍
+     36     │ - import·{·ContinueLegacyDraftButton·}·from·"./legacy-draft-conversion";␍
+     37     │ - import·{·DeleteDraftReportButton·}·from·"./report/delete-draft-report";␍
+     38     │ - import·{·formatMoney,·formatPlainDate,·formatPlainDateRange·}·from·"./report/format";␍
+     39     │ - import·{·ReportStatusBadge·}·from·"./report/report-status";␍
+     40     │ - import·{·reportName·}·from·"./report-name";␍
+     41     │ - import·{·TravelExpenseLoadError·}·from·"./travel-expense-load-error";␍
+     42     │ - ␍
+     43     │ - type·Translate·=·ReturnType<typeof·useTranslate>["t"];␍
+     44     │ - ␍
+     45     │ - const·secondaryLinkClass·=␍
+     46     │ - → "relative·z-10·rounded-sm·text-primary·underline·underline-offset-4·hover:text-primary/80·focus-visible:outline-2";␍
+     47     │ - ␍
+     48     │ - function·datesText(locale:·string,·dates:·{·start:·string·|·null;·end:·string·|·null·})·{␍
+     49     │ - → if·(dates.start·&&·dates.start·===·dates.end)·return·formatPlainDate(locale,·dates.start);␍
+     50     │ - → return·formatPlainDateRange(locale,·dates.start,·dates.end);␍
+     51     │ - }␍
+     52     │ - ␍
+     53     │ - function·filterLabel(t:·Translate,·filter:·ExpenseHistoryFilter):·string·{␍
+     54     │ - → switch·(filter)·{␍
+     55     │ - → → case·"all":␍
+     56     │ - → → → return·t("travelExpenses.history.filter.all",·"All");␍
+     57     │ - → → case·"needs_action":␍
+     58     │ - → → → return·t("travelExpenses.history.filter.needsAction",·"To·finish");␍
+     59     │ - → → case·"in_review":␍
+     60     │ - → → → return·t("travelExpenses.history.filter.inReview",·"In·review");␍
+     61     │ - → → case·"approved":␍
+     62     │ - → → → return·t("travelExpenses.history.filter.approved",·"Approved");␍
+     63     │ - → → case·"awaiting_reimbursement":␍
+     64     │ - → → → return·t("travelExpenses.history.filter.awaitingReimbursement",·"Awaiting·reimbursement");␍
+     65     │ - → → case·"rejected":␍
+     66     │ - → → → return·t("travelExpenses.history.filter.rejected",·"Rejected");␍
+     67     │ - → }␍
+     68     │ - }␍
+     69     │ - ␍
+     70     │ - function·claimTitle(t:·Translate,·row:·LegacyClaimHistoryRow):·string·{␍
+     71     │ - → switch·(row.claimType)·{␍
+     72     │ - → → case·"receipt":␍
+     73     │ - → → → return·t("travelExpenses.history.legacy.receipt",·"Receipt·claim");␍
+     74     │ - → → case·"mileage":␍
+     75     │ - → → → return·t("travelExpenses.history.legacy.mileage",·"Mileage·claim");␍
+     76     │ - → → case·"per_diem":␍
+     77     │ - → → → return·t("travelExpenses.history.legacy.perDiem",·"Per·diem·claim");␍
+     78     │ - → }␍
+     79     │ - }␍
+     80     │ - ␍
+     81     │ - function·RowIcon({·row·}:·{·row:·ExpenseHistoryRow·})·{␍
+     82     │ - → const·Icon·=␍
+     83     │ - → → row.source·===·"legacy_claim"␍
+     84     │ - → → → ?·IconHistory␍
+     85     │ - → → → :·row.kind·===·"trip"␍
+     86     │ - → → → → ?·TRIP_ICON␍
+     87     │ - → → → → :·ITEM_TYPE_ICONS[row.itemType·??·"receipt"];␍
+     88     │ - → return·(␍
+     89     │ - → → <span·className="flex·size-8·shrink-0·items-center·justify-center·rounded-md·bg-muted·text-muted-foreground">␍
+     90     │ - → → → <Icon·aria-hidden="true"·className="size-4"·/>␍
+     91     │ - → → </span>␍
+     92     │ - → );␍
+     93     │ - }␍
+     94     │ - ␍
+     95     │ - function·Balance({·row·}:·{·row:·ExpenseHistoryRow·})·{␍
+     96     │ - → //·A·reimbursed·expense·says·so·in·its·badge.␍
+     97     │ - → if·(!row.balance·||·row.reimbursement·===·"reimbursed")·return·null;␍
+     98     │ - → return·(␍
+     99     │ - → → <>␍
+    100     │ - → → → {row.balance.currencies.map((line)·=>·(␍
+    101     │ - → → → → <span·key={line.currency}·className="block·tabular-nums">␍
+    102     │ - → → → → → <BalanceText·line={line}·/>␍
+    103     │ - → → → → </span>␍
+    104     │ - → → → ))}␍
+    105     │ - → → </>␍
+    106     │ - → );␍
+    107     │ - }␍
+    108     │ - ␍
+    109     │ - function·ReportRowContent({·row·}:·{·row:·ReportHistoryRow·})·{␍
+    110     │ - → const·{·t·}·=·useTranslate();␍
+    111     │ - → const·locale·=·useLocale();␍
+    112     │ - → const·dates·=·datesText(locale,·row.dates);␍
+    113     │ - → const·editable·=·row.status·===·"draft"·||·row.status·===·"returned";␍
+    114     │ - → return·(␍
+    115     │ - → → <>␍
+    116     │ - → → → <div·className="min-w-0·flex-1·space-y-1">␍
+    117     │ - → → → → <p·className="flex·flex-wrap·items-center·gap-2">␍
+    118     │ - → → → → → <Link␍
+    119     │ - → → → → → → href={row.href}␍
+    120     │ - → → → → → → className="break-words·font-medium·after:absolute·after:inset-0·hover:underline·focus-visible:outline-2"␍
+    121     │ - → → → → → >␍
+    122     │ - → → → → → → {reportName(t,·row)}␍
+    123     │ - → → → → → </Link>␍
+    124     │ - → → → → → {row.adjustmentOf·&&·(␍
+    125     │ - → → → → → → <Badge·variant="outline">{t("travelExpenses.history.adjustment",·"Adjustment")}</Badge>␍
+    126     │ - → → → → → )}␍
+    127     │ - → → → → </p>␍
+    128     │ - → → → → <p·className="flex·flex-wrap·items-center·gap-x-3·text-sm·text-muted-foreground">␍
+    129     │ - → → → → → <span>␍
+    130     │ - → → → → → → {dates·??␍
+    131     │ - → → → → → → → (row.kind·===·"trip"␍
+    132     │ - → → → → → → → → ?·t("travelExpenses.report.drafts.noTravelDates",·"No·travel·dates·yet")␍
+    133     │ - → → → → → → → → :·t("travelExpenses.report.drafts.noDate",·"No·date·yet"))}␍
+    134     │ - → → → → → </span>␍
+    135     │ - → → → → → {row.kind·===·"trip"·?·(␍
+    136     │ - → → → → → → <span>␍
+    137     │ - → → → → → → → {t(␍
+    138     │ - → → → → → → → → "travelExpenses.report.drafts.expenses",␍
+    139     │ - → → → → → → → → "{count,·plural,·one·{#·expense}·other·{#·expenses}}",␍
+    140     │ - → → → → → → → → {·count:·row.itemCount·},␍
+    141     │ - → → → → → → → )}␍
+    142     │ - → → → → → → </span>␍
+    143     │ - → → → → → )·:·(␍
+    144     │ - → → → → → → row.receiptCount·>·0·&&·(␍
+    145     │ - → → → → → → → <span>␍
+    146     │ - → → → → → → → → {t(␍
+    147     │ - → → → → → → → → → "travelExpenses.report.drafts.receipts",␍
+    148     │ - → → → → → → → → → "{count,·plural,·one·{#·receipt}·other·{#·receipts}}",␍
+    149     │ - → → → → → → → → → {·count:·row.receiptCount·},␍
+    150     │ - → → → → → → → → )}␍
+  842 more lines truncated
+  
+
+src\components\travel-expenses\finance\finance-entry.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·IconArrowRight,·IconCash·}·from·"@tabler/icons-react";␍
+     2    │ - import·{·Button·}·from·"@/components/ui/button";␍
+     3    │ - import·{·Link·}·from·"@/navigation";␍
+     4    │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+     5    │ - ␍
+     6    │ - /**·Entry·to·the·finance·queue·(#612),·shown·only·to·users·with·finance·read·access.·*/␍
+     7    │ - export·async·function·TravelExpenseFinanceEntry()·{␍
+     8    │ - → const·t·=·await·getTranslate();␍
+     9    │ - → return·(␍
+    10    │ - → → <section·className="flex·min-w-0·flex-col·gap-3·rounded-xl·border·bg-card·p-4">␍
+    11    │ - → → → <IconCash·aria-hidden="true"·className="size-4"·/>␍
+    12    │ - → → → <h2·className="font-medium">{t("travelExpenses.finance.entry.title",·"Expense·finance")}</h2>␍
+    13    │ - → → → <div·className="flex·flex-1·flex-wrap·items-end·justify-between·gap-3·text-sm·text-muted-foreground">␍
+    14    │ - → → → → <span>␍
+    15    │ - → → → → → {t(␍
+    16    │ - → → → → → → "travelExpenses.finance.entry.description",␍
+    17    │ - → → → → → → "Review·approved·expenses,·outstanding·balances·and·recorded·reimbursements.",␍
+    18    │ - → → → → → )}␍
+    19    │ - → → → → </span>␍
+    20    │ - → → → → <Button·asChild·size="sm"·variant="outline">␍
+    21    │ - → → → → → <Link·href="/travel-expenses/finance">␍
+    22    │ - → → → → → → {t("travelExpenses.finance.entry.open",·"Open·finance·queue")}␍
+    23    │ - → → → → → → <IconArrowRight·aria-hidden="true"·className="ml-2·size-4"·/>␍
+    24    │ - → → → → → </Link>␍
+    25    │ - → → → → </Button>␍
+    26    │ - → → → </div>␍
+    27    │ - → → </section>␍
+    28    │ - → );␍
+    29    │ - }␍
+        1 │ + import·{·IconArrowRight,·IconCash·}·from·"@tabler/icons-react";
+        2 │ + import·{·Button·}·from·"@/components/ui/button";
+        3 │ + import·{·Link·}·from·"@/navigation";
+        4 │ + import·{·getTranslate·}·from·"@/tolgee/server";
+        5 │ + 
+        6 │ + /**·Entry·to·the·finance·queue·(#612),·shown·only·to·users·with·finance·read·access.·*/
+        7 │ + export·async·function·TravelExpenseFinanceEntry()·{
+        8 │ + → const·t·=·await·getTranslate();
+        9 │ + → return·(
+       10 │ + → → <section·className="flex·min-w-0·flex-col·gap-3·rounded-xl·border·bg-card·p-4">
+       11 │ + → → → <IconCash·aria-hidden="true"·className="size-4"·/>
+       12 │ + → → → <h2·className="font-medium">
+       13 │ + → → → → {t("travelExpenses.finance.entry.title",·"Expense·finance")}
+       14 │ + → → → </h2>
+       15 │ + → → → <div·className="flex·flex-1·flex-wrap·items-end·justify-between·gap-3·text-sm·text-muted-foreground">
+       16 │ + → → → → <span>
+       17 │ + → → → → → {t(
+       18 │ + → → → → → → "travelExpenses.finance.entry.description",
+       19 │ + → → → → → → "Review·approved·expenses,·outstanding·balances·and·recorded·reimbursements.",
+       20 │ + → → → → → )}
+       21 │ + → → → → </span>
+       22 │ + → → → → <Button·asChild·size="sm"·variant="outline">
+       23 │ + → → → → → <Link·href="/travel-expenses/finance">
+       24 │ + → → → → → → {t("travelExpenses.finance.entry.open",·"Open·finance·queue")}
+       25 │ + → → → → → → <IconArrowRight·aria-hidden="true"·className="ml-2·size-4"·/>
+       26 │ + → → → → → </Link>
+       27 │ + → → → → </Button>
+       28 │ + → → → </div>
+       29 │ + → → </section>
+       30 │ + → );
+       31 │ + }
+    30 32 │   
+  
+
+src\components\travel-expenses\report\new-receipt-expense-button.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconCar,·IconLoader2,·IconPlaneDeparture,·IconReceipt·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·type·ReactNode,·useLayoutEffect,·useRef,·useState·}·from·"react";␍
+      6     │ - import·{·toast·}·from·"sonner";␍
+      7     │ - import·{·createStandaloneMileageReportAction·}·from·"@/app/[locale]/(app)/travel-expenses/mileage-actions";␍
+      8     │ - import·{␍
+      9     │ - → createStandaloneReceiptReportAction,␍
+     10     │ - → createTripReportAction,␍
+     11     │ - }·from·"@/app/[locale]/(app)/travel-expenses/report-actions";␍
+     12     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     13     │ - import·type·{·ServerActionResult·}·from·"@/lib/effect/result";␍
+     14     │ - import·{·useRouter·}·from·"@/navigation";␍
+     15     │ - ␍
+     16     │ - /**·Creates·a·report·draft·and·opens·its·editor.·*/␍
+     17     │ - function·NewReportButton({␍
+     18     │ - → create,␍
+     19     │ - → icon,␍
+     20     │ - → label,␍
+     21     │ - → description,␍
+     22     │ - → variant,␍
+     23     │ - }:·{␍
+     24     │ - → create:·()·=>·Promise<ServerActionResult<{·reportId:·string·}>>;␍
+     25     │ - → icon:·ReactNode;␍
+     26     │ - → label:·string;␍
+     27     │ - → description:·string;␍
+     28     │ - → variant?:·"outline";␍
+     29     │ - })·{␍
+     30     │ - → const·{·t·}·=·useTranslate();␍
+     31     │ - → const·router·=·useRouter();␍
+     32     │ - → const·[creating,·setCreating]·=·useState(false);␍
+     33     │ - → const·[failed,·setFailed]·=·useState(false);␍
+     34     │ - → const·lifetime·=·useRef<object·|·null>(null);␍
+     35     │ - → const·pending·=·useRef(false);␍
+     36     │ - → useLayoutEffect(()·=>·{␍
+     37     │ - → → lifetime.current·=·{};␍
+     38     │ - → → pending.current·=·false;␍
+     39     │ - → → return·()·=>·{␍
+     40     │ - → → → lifetime.current·=·null;␍
+     41     │ - → → };␍
+     42     │ - → },·[]);␍
+     43     │ - ␍
+     44     │ - → async·function·open()·{␍
+     45     │ - → → const·arrival·=·lifetime.current;␍
+     46     │ - → → if·(!arrival·||·pending.current)·return;␍
+     47     │ - → → pending.current·=·true;␍
+     48     │ - → → setCreating(true);␍
+     49     │ - → → setFailed(false);␍
+     50     │ - → → try·{␍
+     51     │ - → → → const·result·=·await·create();␍
+     52     │ - → → → if·(lifetime.current·!==·arrival)·return;␍
+     53     │ - → → → if·(result.success)·{␍
+     54     │ - → → → → router.push(`/travel-expenses/reports/${result.data.reportId}`);␍
+     55     │ - → → → → return;␍
+     56     │ - → → → }␍
+     57     │ - → → }·catch·{␍
+     58     │ - → → → //·Reported·below.␍
+     59     │ - → → }␍
+     60     │ - → → if·(lifetime.current·!==·arrival)·return;␍
+     61     │ - → → toast.error(␍
+     62     │ - → → → t("travelExpenses.report.errors.create",·"The·expense·could·not·be·created.·Please·retry."),␍
+     63     │ - → → );␍
+     64     │ - → → setCreating(false);␍
+     65     │ - → → pending.current·=·false;␍
+     66     │ - → → setFailed(true);␍
+     67     │ - → }␍
+     68     │ - ␍
+     69     │ - → return·(␍
+     70     │ - → → <div·className="min-w-0·space-y-2">␍
+     71     │ - → → → <Button␍
+     72     │ - → → → → variant={variant}␍
+     73     │ - → → → → onClick={()·=>·void·open()}␍
+     74     │ - → → → → disabled={creating}␍
+     75     │ - → → → → aria-busy={creating}␍
+     76     │ - → → → → className="min-h-12·w-full·justify-start·px-4"␍
+     77     │ - → → → >␍
+     78     │ - → → → → {creating·?·<IconLoader2·className="size-4·animate-spin"·aria-hidden="true"·/>·:·icon}␍
+     79     │ - → → → → {label}␍
+     80     │ - → → → </Button>␍
+     81     │ - → → → <p·className="px-1·text-sm·text-muted-foreground">{description}</p>␍
+     82     │ - → → → {failed·&&·(␍
+     83     │ - → → → → <div·role="alert"·className="max-w-xs·space-y-2·text-sm">␍
+     84     │ - → → → → → <p>␍
+     85     │ - → → → → → → {t(␍
+     86     │ - → → → → → → → "travelExpenses.report.errors.create",␍
+     87     │ - → → → → → → → "The·expense·could·not·be·created.·Please·retry.",␍
+     88     │ - → → → → → → )}␍
+     89     │ - → → → → → </p>␍
+     90     │ - → → → → → <Button·variant="outline"·size="sm"·onClick={()·=>·void·open()}>␍
+     91     │ - → → → → → → {t("common.retry",·"Retry")}␍
+     92     │ - → → → → → </Button>␍
+     93     │ - → → → → </div>␍
+     94     │ - → → → )}␍
+     95     │ - → → </div>␍
+     96     │ - → );␍
+     97     │ - }␍
+     98     │ - ␍
+     99     │ - /**·Creates·a·standalone·receipt·report·(no·trip·details)·and·opens·its·editor.·*/␍
+    100     │ - export·function·NewReceiptExpenseButton()·{␍
+    101     │ - → const·{·t·}·=·useTranslate();␍
+    102     │ - → return·(␍
+    103     │ - → → <NewReportButton␍
+    104     │ - → → → create={createStandaloneReceiptReportAction}␍
+    105     │ - → → → icon={<IconReceipt·className="mr-2·size-4"·aria-hidden="true"·/>}␍
+    106     │ - → → → label={t("travelExpenses.report.actions.newReceipt",·"New·receipt")}␍
+    107     │ - → → → description={t(␍
+    108     │ - → → → → "travelExpenses.workspace.receiptDescription",␍
+    109     │ - → → → → "Record·one·expense·with·its·receipt.",␍
+    110     │ - → → → )}␍
+    111     │ - → → → variant="outline"␍
+    112     │ - → → />␍
+    113     │ - → );␍
+    114     │ - }␍
+    115     │ - ␍
+    116     │ - /**·Creates·a·standalone·mileage·report·(#606)·and·opens·its·editor.·*/␍
+    117     │ - export·function·NewMileageExpenseButton()·{␍
+    118     │ - → const·{·t·}·=·useTranslate();␍
+    119     │ - → return·(␍
+    120     │ - → → <NewReportButton␍
+    121     │ - → → → create={createStandaloneMileageReportAction}␍
+    122     │ - → → → icon={<IconCar·className="mr-2·size-4"·aria-hidden="true"·/>}␍
+    123     │ - → → → label={t("travelExpenses.report.actions.newMileage",·"New·mileage")}␍
+    124     │ - → → → description={t(␍
+    125     │ - → → → → "travelExpenses.workspace.mileageDescription",␍
+    126     │ - → → → → "Record·a·business·drive·outside·a·trip.",␍
+    127     │ - → → → )}␍
+    128     │ - → → → variant="outline"␍
+    129     │ - → → />␍
+    130     │ - → );␍
+    131     │ - }␍
+    132     │ - ␍
+    133     │ - /**·Creates·a·trip·report,·whose·expenses·share·travel·details,·and·opens·its·editor.·*/␍
+    134     │ - export·function·NewTripReportButton()·{␍
+    135     │ - → const·{·t·}·=·useTranslate();␍
+    136     │ - → return·(␍
+    137     │ - → → <NewReportButton␍
+    138     │ - → → → create={createTripReportAction}␍
+    139     │ - → → → icon={<IconPlaneDeparture·className="mr-2·size-4"·aria-hidden="true"·/>}␍
+    140     │ - → → → label={t("travelExpenses.report.actions.newTrip",·"New·trip")}␍
+    141     │ - → → → description={t(␍
+    142     │ - → → → → "travelExpenses.workspace.tripDescription",␍
+    143     │ - → → → → "Collect·expenses·with·shared·travel·details.",␍
+    144     │ - → → → )}␍
+    145     │ - → → />␍
+    146     │ - → );␍
+    147     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{
+  157 more lines truncated
+  
+
+src\components\travel-expenses\travel-expense-management.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      4     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·within·}·from·"@testing-library/react";␍
+      5     │ - import·{·Activity·}·from·"react";␍
+      6     │ - import·{·afterEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      7     │ - import·type·{␍
+      8     │ - → ExpenseHistoryRow,␍
+      9     │ - → LegacyClaimHistoryRow,␍
+     10     │ - → ReportHistoryRow,␍
+     11     │ - }·from·"@/lib/travel-expenses/expense-history";␍
+     12     │ - import·type·{·SettlementSummary·}·from·"@/lib/travel-expenses/settlement";␍
+     13     │ - ␍
+     14     │ - const·historyActions·=·vi.hoisted(()·=>·({␍
+     15     │ - → getMyTravelExpenseHistory:·vi.fn(),␍
+     16     │ - }));␍
+     17     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/history-actions",·()·=>·historyActions);␍
+     18     │ - const·reportActions·=·vi.hoisted(()·=>·({␍
+     19     │ - → createStandaloneReceiptReportAction:·vi.fn(),␍
+     20     │ - → createTripReportAction:·vi.fn(),␍
+     21     │ - → deleteDraftTravelExpenseReportAction:·vi.fn(),␍
+     22     │ - }));␍
+     23     │ - vi.mock("sonner",·()·=>·({·toast:·{·success:·vi.fn(),·error:·vi.fn()·}·}));␍
+     24     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions",·()·=>·reportActions);␍
+     25     │ - const·mileageActions·=·vi.hoisted(()·=>·({␍
+     26     │ - → createStandaloneMileageReportAction:·vi.fn(),␍
+     27     │ - }));␍
+     28     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions",·()·=>·mileageActions);␍
+     29     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/legacy-draft-actions",·()·=>·({␍
+     30     │ - → convertLegacyTravelExpenseDraftAction:·vi.fn(),␍
+     31     │ - → getLegacyTravelExpenseConversion:·vi.fn(),␍
+     32     │ - }));␍
+     33     │ - const·router·=·vi.hoisted(()·=>·({·push:·vi.fn()·}));␍
+     34     │ - const·identity·=·vi.hoisted(()·=>·({␍
+     35     │ - → userId:·"user",␍
+     36     │ - → activeOrganizationId:·"org",␍
+     37     │ - → employeeId:·"owner",␍
+     38     │ - → pending:·false,␍
+     39     │ - }));␍
+     40     │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({␍
+     41     │ - → useOrganization:·()·=>·identity,␍
+     42     │ - }));␍
+     43     │ - vi.mock("@/lib/auth-client",·()·=>·({␍
+     44     │ - → useSession:·()·=>·({␍
+     45     │ - → → isPending:·identity.pending,␍
+     46     │ - → → data:·{␍
+     47     │ - → → → user:·{·id:·identity.userId·},␍
+     48     │ - → → → session:·{·activeOrganizationId:·identity.activeOrganizationId·},␍
+     49     │ - → → },␍
+     50     │ - → }),␍
+     51     │ - }));␍
+     52     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     53     │ - → useTranslate:·()·=>·({␍
+     54     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>␍
+     55     │ - → → → fallback␍
+     56     │ - → → → → .replace(/\{count,·plural,·one·\{#·(\w+)\}·other·\{#·(\w+)\}\}/,·(_m,·one,·other)·=>␍
+     57     │ - → → → → → params?.count·===·1·?·`1·${one}`·:·`${String(params?.count)}·${other}`,␍
+     58     │ - → → → → )␍
+     59     │ - → → → → .replace(/\{(\w+)\}/g,·(match,·name)·=>·String(params?.[name]·??·match)),␍
+     60     │ - → }),␍
+     61     │ - }));␍
+     62     │ - vi.mock("next-intl",·()·=>·({␍
+     63     │ - → useLocale:·()·=>·"en-US",␍
+     64     │ - → useTranslations:·()·=>·(_key:·string)·=>·_key,␍
+     65     │ - }));␍
+     66     │ - vi.mock("@/navigation",·()·=>·({␍
+     67     │ - → Link:·({·children,·...props·}:·React.ComponentProps<"a">)·=>·<a·{...props}>{children}</a>,␍
+     68     │ - → useRouter:·()·=>·router,␍
+     69     │ - }));␍
+     70     │ - ␍
+     71     │ - import·{·TravelExpenseManagement·}·from·"./travel-expense-management";␍
+     72     │ - ␍
+     73     │ - afterEach(()·=>·{␍
+     74     │ - → cleanup();␍
+     75     │ - → vi.clearAllMocks();␍
+     76     │ - → Object.assign(identity,·{␍
+     77     │ - → → userId:·"user",␍
+     78     │ - → → activeOrganizationId:·"org",␍
+     79     │ - → → employeeId:·"owner",␍
+     80     │ - → → pending:·false,␍
+     81     │ - → });␍
+     82     │ - });␍
+     83     │ - ␍
+     84     │ - function·reportRow(overrides:·Partial<ReportHistoryRow>·&·{·id:·string·}):·ReportHistoryRow·{␍
+     85     │ - → return·{␍
+     86     │ - → → source:·"report",␍
+     87     │ - → → href:·`/travel-expenses/reports/${overrides.id}`,␍
+     88     │ - → → stage:·"needs_action",␍
+     89     │ - → → activityAt:·"2026-10-05T10:00:00.000Z",␍
+     90     │ - → → balance:·null,␍
+     91     │ - → → reimbursement:·null,␍
+     92     │ - → → dates:·{·start:·"2026-09-14",·end:·"2026-09-14"·},␍
+     93     │ - → → kind:·"standalone",␍
+     94     │ - → → status:·"draft",␍
+     95     │ - → → itemType:·"receipt",␍
+     96     │ - → → title:·"Hotel·Hamburg",␍
+     97     │ - → → itemCount:·1,␍
+     98     │ - → → receiptCount:·1,␍
+     99     │ - → → totals:·{·currency:·"EUR",·reimbursable:·"129.90",·companyPaid:·"0.00",·excludedItemCount:·0·},␍
+    100     │ - → → adjustmentOf:·null,␍
+    101     │ - → → continuedFromClaimId:·null,␍
+    102     │ - → → deletable:·false,␍
+    103     │ - → → ...overrides,␍
+    104     │ - → };␍
+    105     │ - }␍
+    106     │ - ␍
+    107     │ - function·claimRow(overrides:·Partial<LegacyClaimHistoryRow>·=·{}):·LegacyClaimHistoryRow·{␍
+    108     │ - → return·{␍
+    109     │ - → → source:·"legacy_claim",␍
+    110     │ - → → id:·"old-claim",␍
+    111     │ - → → href:·"/travel-expenses/old-claim",␍
+    112     │ - → → stage:·"approved",␍
+    113     │ - → → activityAt:·"2026-04-01T10:00:00.000Z",␍
+    114     │ - → → balance:·null,␍
+    115     │ - → → reimbursement:·null,␍
+    116     │ - → → dates:·{·start:·"2026-03-29",·end:·"2026-03-31"·},␍
+    117     │ - → → claimType:·"receipt",␍
+    118     │ - → → status:·"approved",␍
+    119     │ - → → amount:·{·amount:·"120.50",·currency:·"EUR"·},␍
+    120     │ - → → destination:·"Berlin",␍
+    121     │ - → → canContinue:·false,␍
+    122     │ - → → ...overrides,␍
+    123     │ - → };␍
+    124     │ - }␍
+    125     │ - ␍
+    126     │ - const·outstandingBalance:·SettlementSummary·=·{␍
+    127     │ - → state:·"outstanding",␍
+    128     │ - → currencies:·[␍
+    129     │ - → → {␍
+    130     │ - → → → currency:·"EUR",␍
+    131     │ - → → → entitlement:·"89.90",␍
+    132     │ - → → → reimbursed:·"50.00",␍
+    133     │ - → → → recovered:·"0.00",␍
+    134     │ - → → → balance:·"39.90",␍
+    135     │ - → → → state:·"outstanding",␍
+    136     │ - → → },␍
+    137     │ - → ],␍
+    138     │ - };␍
+    139     │ - ␍
+    140     │ - const·reimbursedBalance:·SettlementSummary·=·{␍
+    141     │ - → state:·"settled",␍
+    142     │ - → currencies:·[␍
+    143     │ - → → {␍
+    144     │ - → → → currency:·"EUR",␍
+    145     │ - → → → entitlement:·"89.90",␍
+    146     │ - → → → reimbursed:·"89.90",␍
+    147     │ - → → → recovered:·"0.00",␍
+    148     │ - → → → balance:·"0.00",␍
+    149     │ - → → → state:·"settled",␍
+    150     │ - → → },␍
+  1363 more lines truncated
+  
+
+src\components\travel-expenses\travel-expense-management.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      4     │ - import·{·type·ReactNode,·useLayoutEffect,·useRef,·useState·}·from·"react";␍
+      5     │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";␍
+      6     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+      7     │ - import·{·useSession·}·from·"@/lib/auth-client";␍
+      8     │ - import·type·{·ExpenseHistoryFilter·}·from·"@/lib/travel-expenses/expense-history";␍
+      9     │ - import·{·ExpenseHistory·}·from·"./expense-history";␍
+     10     │ - import·{␍
+     11     │ - → NewMileageExpenseButton,␍
+     12     │ - → NewReceiptExpenseButton,␍
+     13     │ - → NewTripReportButton,␍
+     14     │ - }·from·"./report/new-receipt-expense-button";␍
+     15     │ - ␍
+     16     │ - interface·TravelExpenseManagementProps·{␍
+     17     │ - → userId:·string;␍
+     18     │ - → organizationId:·string;␍
+     19     │ - → employeeId:·string;␍
+     20     │ - → /**·Independent·server-authorized·destinations,·after·personal·history.·*/␍
+     21     │ - → banners?:·ReactNode;␍
+     22     │ - }␍
+     23     │ - ␍
+     24     │ - /**␍
+     25     │ - ·*·The·Travel·Expenses·workspace·(#617):·create·a·trip·or·a·standalone·expense,␍
+     26     │ - ·*·and·find·every·report·and·earlier·claim·in·one·filterable·history.␍
+     27     │ - ·*/␍
+     28     │ - export·function·TravelExpenseManagement({␍
+     29     │ - → userId,␍
+     30     │ - → organizationId,␍
+     31     │ - → employeeId,␍
+     32     │ - → banners,␍
+     33     │ - }:·TravelExpenseManagementProps)·{␍
+     34     │ - → const·current·=·useOrganization();␍
+     35     │ - → const·session·=·useSession();␍
+     36     │ - → const·{·t·}·=·useTranslate();␍
+     37     │ - → const·matches·=␍
+     38     │ - → → !session.isPending·&&␍
+     39     │ - → → session.data?.user.id·===·userId·&&␍
+     40     │ - → → session.data.session.activeOrganizationId·===·organizationId·&&␍
+     41     │ - → → current.userId·===·userId·&&␍
+     42     │ - → → current.activeOrganizationId·===·organizationId·&&␍
+     43     │ - → → current.employeeId·===·employeeId;␍
+     44     │ - → const·[arrival,·setArrival]·=·useState(0);␍
+     45     │ - → const·[filter,·setFilter]·=·useState<ExpenseHistoryFilter>("all");␍
+     46     │ - → const·initialized·=·useRef(false);␍
+     47     │ - → //·Activity·disconnects·effects.·A·restored·page·gets·a·fresh·read/command·lifetime␍
+     48     │ - → //·before·paint,·even·when·it·returns·to·the·same·account·and·organization.␍
+     49     │ - → useLayoutEffect(()·=>·{␍
+     50     │ - → → if·(initialized.current)·setArrival((value)·=>·value·+·1);␍
+     51     │ - → → initialized.current·=·true;␍
+     52     │ - → },·[]);␍
+     53     │ - → if·(!matches)␍
+     54     │ - → → return·(␍
+     55     │ - → → → <div·className="space-y-4·p-4·lg:p-6">␍
+     56     │ - → → → → <PageHeader·title={t("travelExpenses.title",·"Travel·Expenses")}·/>␍
+     57     │ - → → → → <p·role="status">␍
+     58     │ - → → → → → {t(␍
+     59     │ - → → → → → → "travelExpenses.workspace.reconciling",␍
+     60     │ - → → → → → → "Loading·your·expenses·for·the·current·organization…",␍
+     61     │ - → → → → → )}␍
+     62     │ - → → → → </p>␍
+     63     │ - → → → </div>␍
+     64     │ - → → );␍
+     65     │ - → return·(␍
+     66     │ - → → <TravelExpenseWorkspace␍
+     67     │ - → → → key={arrival}␍
+     68     │ - → → → organizationId={organizationId}␍
+     69     │ - → → → employeeId={employeeId}␍
+     70     │ - → → → banners={banners}␍
+     71     │ - → → → filter={filter}␍
+     72     │ - → → → setFilter={setFilter}␍
+     73     │ - → → />␍
+     74     │ - → );␍
+     75     │ - }␍
+     76     │ - ␍
+     77     │ - function·TravelExpenseWorkspace({␍
+     78     │ - → organizationId,␍
+     79     │ - → employeeId,␍
+     80     │ - → banners,␍
+     81     │ - → filter,␍
+     82     │ - → setFilter,␍
+     83     │ - }:·Omit<TravelExpenseManagementProps,·"userId">·&·{␍
+     84     │ - → filter:·ExpenseHistoryFilter;␍
+     85     │ - → setFilter:·(filter:·ExpenseHistoryFilter)·=>·void;␍
+     86     │ - })·{␍
+     87     │ - → const·{·t·}·=·useTranslate();␍
+     88     │ - ␍
+     89     │ - → return·(␍
+     90     │ - → → <div·className="@container/main·flex·flex-1·flex-col·gap-6·py-4·md:py-6">␍
+     91     │ - → → → <PageHeader␍
+     92     │ - → → → → className="px-4·lg:px-6"␍
+     93     │ - → → → → title={t("travelExpenses.title",·"Travel·Expenses")}␍
+     94     │ - → → → → description={t(␍
+     95     │ - → → → → → "travelExpenses.workspace.description",␍
+     96     │ - → → → → → "Collect·trip·and·standalone·expenses,·send·them·for·review·and·follow·their·reimbursement.",␍
+     97     │ - → → → → )}␍
+     98     │ - → → → />␍
+     99     │ - → → → <section␍
+    100     │ - → → → → aria-label={t("travelExpenses.workspace.create",·"Create·an·expense·report")}␍
+    101     │ - → → → → className="grid·gap-3·px-4·sm:grid-cols-3·lg:px-6"␍
+    102     │ - → → → >␍
+    103     │ - → → → → <NewReceiptExpenseButton·/>␍
+    104     │ - → → → → <NewMileageExpenseButton·/>␍
+    105     │ - → → → → <NewTripReportButton·/>␍
+    106     │ - → → → </section>␍
+    107     │ - ␍
+    108     │ - → → → <div·className="px-4·lg:px-6">␍
+    109     │ - → → → → <ExpenseHistory␍
+    110     │ - → → → → → organizationId={organizationId}␍
+    111     │ - → → → → → employeeId={employeeId}␍
+    112     │ - → → → → → filter={filter}␍
+    113     │ - → → → → → setFilter={setFilter}␍
+    114     │ - → → → → />␍
+    115     │ - → → → </div>␍
+    116     │ - → → → {banners·&&·(␍
+    117     │ - → → → → <aside␍
+    118     │ - → → → → → aria-label={t("travelExpenses.workspace.otherWork",·"Review·and·finance")}␍
+    119     │ - → → → → → className="grid·gap-3·px-4·lg:grid-cols-2·lg:px-6"␍
+    120     │ - → → → → >␍
+    121     │ - → → → → → {banners}␍
+    122     │ - → → → → </aside>␍
+    123     │ - → → → )}␍
+    124     │ - → → </div>␍
+    125     │ - → );␍
+    126     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          4 │ + import·{·type·ReactNode,·useLayoutEffect,·useRef,·useState·}·from·"react";
+          5 │ + import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";
+          6 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+          7 │ + import·{·useSession·}·from·"@/lib/auth-client";
+          8 │ + import·type·{·ExpenseHistoryFilter·}·from·"@/lib/travel-expenses/expense-history";
+          9 │ + import·{·ExpenseHistory·}·from·"./expense-history";
+         10 │ + import·{
+         11 │ + → NewMileageExpenseButton,
+         12 │ + → NewReceiptExpenseButton,
+         13 │ + → NewTripReportButton,
+         14 │ + }·from·"./report/new-receipt-expense-button";
+         15 │ + 
+         16 │ + interface·TravelExpenseManagementProps·{
+         17 │ + → userId:·string;
+         18 │ + → organizationId:·string;
+         19 │ + → employeeId:·string;
+         20 │ + → /**·Independent·server-authorized·destinations,·after·personal·history.·*/
+         21 │ + → banners?:·ReactNode;
+         22 │ + }
+         23 │ + 
+         24 │ + /**
+  109 more lines truncated
+  
+
+src\components\travel-expenses\travel-expenses-heading.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - import·{·describe,·expect,·it·}·from·"vitest";␍
+     2    │ - import·{·appPageOwnsHeading·}·from·"@/lib/navigation/route-metadata";␍
+     3    │ - ␍
+     4    │ - describe("R165·heading·adoption",·()·=>·{␍
+     5    │ - → it("hands·only·the·personal·workspace·heading·to·the·page",·()·=>·{␍
+     6    │ - → → expect(appPageOwnsHeading("/en/travel-expenses")).toBe(true);␍
+     7    │ - → → expect(appPageOwnsHeading("/de/travel-expenses/")).toBe(true);␍
+     8    │ - → → for·(const·path·of·[␍
+     9    │ - → → → "/travel-expenses/finance",␍
+    10    │ - → → → "/travel-expenses/reports/report",␍
+    11    │ - → → ])·{␍
+    12    │ - → → → expect(appPageOwnsHeading(path)).toBe(false);␍
+    13    │ - → → }␍
+    14    │ - → });␍
+    15    │ - });␍
+        1 │ + import·{·describe,·expect,·it·}·from·"vitest";
+        2 │ + import·{·appPageOwnsHeading·}·from·"@/lib/navigation/route-metadata";
+        3 │ + 
+        4 │ + describe("R165·heading·adoption",·()·=>·{
+        5 │ + → it("hands·only·the·personal·workspace·heading·to·the·page",·()·=>·{
+        6 │ + → → expect(appPageOwnsHeading("/en/travel-expenses")).toBe(true);
+        7 │ + → → expect(appPageOwnsHeading("/de/travel-expenses/")).toBe(true);
+        8 │ + → → for·(const·path·of·[
+        9 │ + → → → "/travel-expenses/finance",
+       10 │ + → → → "/travel-expenses/reports/report",
+       11 │ + → → ])·{
+       12 │ + → → → expect(appPageOwnsHeading(path)).toBe(false);
+       13 │ + → → }
+       14 │ + → });
+       15 │ + });
+    16 16 │   
+  
+
+Checked 9 files in 12ms. No fixes applied.
+Found 9 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

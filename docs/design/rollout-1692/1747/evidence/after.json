@@ -1,0 +1,204 @@
+{
+  "phase": "after",
+  "notifications": "denied by isolated context permission",
+  "captures": [
+    {
+      "file": "after-desktop-light-default.png",
+      "width": 1600,
+      "height": 1000,
+      "theme": "light",
+      "font": "default",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "16px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:29\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-desktop-dark-default.png",
+      "width": 1600,
+      "height": 1000,
+      "theme": "dark",
+      "font": "default",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "16px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:29\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-phone-light-default.png",
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "font": "default",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "16px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\nMore actions\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-phone-dark-default.png",
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "font": "default",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "16px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\nMore actions\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-wide-light-default.png",
+      "width": 2200,
+      "height": 1200,
+      "theme": "light",
+      "font": "default",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "16px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:29\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-wide-dark-default.png",
+      "width": 2200,
+      "height": 1200,
+      "theme": "dark",
+      "font": "default",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "16px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:29\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-desktop-light-large.png",
+      "width": 1600,
+      "height": 1000,
+      "theme": "light",
+      "font": "large",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "18px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:29\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-desktop-dark-large.png",
+      "width": 1600,
+      "height": 1000,
+      "theme": "dark",
+      "font": "large",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "18px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:29\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-phone-light-large.png",
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "font": "large",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "18px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\nMore actions\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-phone-dark-large.png",
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "font": "large",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "18px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\nMore actions\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-wide-light-large.png",
+      "width": 2200,
+      "height": 1200,
+      "theme": "light",
+      "font": "large",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "18px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:29\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    },
+    {
+      "file": "after-wide-dark-large.png",
+      "width": 2200,
+      "height": 1200,
+      "theme": "dark",
+      "font": "large",
+      "h1": [
+        "Travel Expenses"
+      ],
+      "fontPx": "18px",
+      "overflow": false,
+      "permission": "denied",
+      "dialogs": 0,
+      "text": "Toggle Sidebar\n\nTravel Expenses\n\n09:29\nUTC+01:00\nClock In\nToggle theme\nTravel Expenses\nCollect trip and standalone expenses, send them for review and follow their reimbursement.\nNew receipt\n\nRecord one expense with its receipt.\n\nNew mileage\n\nRecord a business drive outside a trip.\n\nNew trip\n\nCollect expenses with shared travel details.\n\nYour expenses\nDrafts, submitted reports and earlier claims, most recently changed first.\nAll\n3\nTo finish\n3\nIn review\n0\nApproved\n0\nAwaiting reimbursement\n0\nRejected\n0\n\nUntitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft\n\nUntitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\n\nUntitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft\nReview pending travel expense approvals\nOpen the unified approvals inbox filtered to travel expenses.\nOpen inbox\nExpense finance\nReview approved expenses, outstanding balances and recorded reimbursements.\nOpen finance queue"
+    }
+  ],
+  "errors": [],
+  "source": "abd6e73c93d822cd53dec8b7875ec476b0570a9b",
+  "harnessSha256": "23d1c9590f24762d5135706240bce669201a0d54107037fb607549293ef60db7",
+  "auth": {
+    "login": 200,
+    "active": 200
+  },
+  "keyboard": [
+    "New receipt",
+    "New mileage",
+    "New trip"
+  ],
+  "collapsed": true,
+  "collapsePersisted": false,
+  "escape": {
+    "dialogs": 0,
+    "focus": "trigger"
+  }
+}

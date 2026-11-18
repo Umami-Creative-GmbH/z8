@@ -1,0 +1,356 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-dda21ee3-9d32a4e0612eb222/apps/webapp
+
+ ❯ |unit| src/components/travel-expenses/travel-expense-management.test.tsx (17 tests | 1 failed | 16 skipped) 1049ms
+   ❯ travel history recovery (4)
+     × retains Retry after a previously empty history fails to refresh 1047ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/travel-expense-management.test.tsx > travel history recovery > retains Retry after a previously empty history fails to refresh
+TestingLibraryElementError: Unable to find role="alert"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+    >
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 px-4 lg:px-6"
+      >
+        <div>
+          <h1
+            class="text-2xl font-semibold tracking-tight"
+          >
+            Travel Expenses
+          </h1>
+          <p
+            class="text-sm text-muted-foreground"
+          >
+            Collect trip and standalone expenses, send them for review and follow their reimbursement.
+          </p>
+        </div>
+        <div
+          class="flex flex-wrap gap-2 sm:justify-end"
+        >
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+            data-slot="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-receipt mr-2 size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2"
+              />
+            </svg>
+            New receipt
+          </button>
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+            data-slot="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-car mr-2 size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"
+              />
+              <path
+                d="M15 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"
+              />
+              <path
+                d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"
+              />
+            </svg>
+            New mileage
+          </button>
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+            data-slot="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-plane-departure mr-2 size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M14.639 10.258l4.83 -1.294a2 2 0 1 1 1.035 3.863l-14.489 3.883l-4.45 -5.02l2.897 -.776l2.45 1.414l2.897 -.776l-3.743 -6.244l2.898 -.777l5.675 5.727"
+              />
+              <path
+                d="M3 21h18"
+              />
+            </svg>
+            New trip
+          </button>
+        </div>
+      </div>
+      <div
+        class="px-4 lg:px-6"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card text-card-foreground shadow-sm py-0"
+          data-slot="card"
+        >
+          <div
+            class="flex min-w-0 flex-1 flex-col items-center justify-center gap-6 rounded-lg border-dashed p-6 text-center text-balance md:p-12"
+            data-slot="empty"
+          >
+            <div
+              class="flex max-w-sm flex-col items-center gap-2 text-center"
+              data-slot="empty-header"
+            >
+              <div
+                class="mb-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-6"
+                data-slot="empty-icon"
+                data-variant="icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="tabler-icon tabler-icon-receipt"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2"
+                  />
+                </svg>
+              </div>
+              <div
+                class="text-lg font-medium tracking-tight"
+                data-slot="empty-title"
+              >
+                No travel expenses yet
+              </div>
+              <div
+                class="text-muted-foreground [&>a:hover]:text-primary text-sm/relaxed [&>a]:underline [&>a]:underline-offset-4"
+                data-slot="empty-description"
+              >
+                Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+    >
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 px-4 lg:px-6"
+      >
+        <div>
+          <h1
+            class="text-2xl font-semibold tracking-tight"
+          >
+            Travel Expenses
+          </h1>
+          <p
+            class="text-sm text-muted-foreground"
+          >
+            Collect trip and standalone expenses, send them for review and follow their reimbursement.
+          </p>
+        </div>
+        <div
+          class="flex flex-wrap gap-2 sm:justify-end"
+        >
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+            data-slot="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-receipt mr-2 size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2"
+              />
+            </svg>
+            New receipt
+          </button>
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+            data-slot="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-car mr-2 size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"
+              />
+              <path
+                d="M15 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"
+              />
+              <path
+                d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"
+              />
+            </svg>
+            New mileage
+          </button>
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+            data-slot="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="tabler-icon tabler-icon-plane-departure mr-2 size-4"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M14.639 10.258l4.83 -1.294a2 2 0 1 1 1.035 3.863l-14.489 3.883l-4.45 -5.02l2.897 -.776l2.45 1.414l2.897 -.776l-3.743 -6.244l2.898 -.777l5.675 5.727"
+              />
+              <path
+                d="M3 21h18"
+              />
+            </svg>
+            New trip
+          </button>
+        </div>
+      </div>
+      <div
+        class="px-4 lg:px-6"
+      >
+        <div
+          class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card text-card-foreground shadow-sm py-0"
+          data-slot="card"
+        >
+          <div
+            class="flex min-w-0 flex-1 flex-col items-center justify-center gap-6 rounded-lg border-dashed p-6 text-center text-balance md:p-12"
+            data-slot="empty"
+          >
+            <div
+              class="flex max-w-sm flex-col items-center gap-2 text-center"
+              data-slot="empty-header"
+            >
+              <div
+                class="mb-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-6"
+                data-slot="empty-icon"
+                data-variant="icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="tabler-icon tabler-icon-receipt"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2"
+                  />
+                </svg>
+              </div>
+              <div
+                class="text-lg font-medium tracking-tight"
+                data-slot="empty-title"
+              >
+                No travel expenses yet
+              </div>
+              <div
+                class="text-muted-foreground [&>a:hover]:text-primary text-sm/relaxed [&>a]:underline [&>a]:underline-offset-4"
+                data-slot="empty-description"
+              >
+                Start a trip to collect several expenses with shared travel details, or add a single receipt or mileage expense. Drafts save automatically, so you can finish them later.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/travel-expenses/travel-expense-management.test.tsx:462:23
+    460|    await client.invalidateQueries({ queryKey: ["travel-expenses", "his…
+    461|   });
+    462|   expect(await screen.findByRole("alert")).toBeTruthy();
+       |                       ^
+    463|   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    464|   expect(await screen.findByText("€120.50")).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 skipped (17)
+   Start at  07:51:59
+   Duration  1.92s (tests 60%, environment 20%, import 16%, transform 3%, setup 1%)
+
