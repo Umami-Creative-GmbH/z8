@@ -426,6 +426,7 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 	const queryClient = useQueryClient();
 	const queueHeadingRef = useRef<HTMLHeadingElement>(null);
 	const markButtonRef = useRef<HTMLButtonElement>(null);
+	const returnToHeadingAfterResults = useRef(false);
 	const canSettle = data?.canSettle ?? false;
 	// Retained rows belong to the previous view, not the page named by the controls.
 	const selection = useSelection(
@@ -447,6 +448,7 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 	}
 	function openBulk() {
 		if (isPlaceholderData || isError || isFetching) return;
+		returnToHeadingAfterResults.current = false;
 		setBulkSelection({
 			items: selection.selected.map((account) => ({
 				account,
@@ -456,6 +458,7 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 		});
 	}
 	function returnBulkFocus() {
+		if (returnToHeadingAfterResults.current) return queueHeadingRef.current;
 		const button = markButtonRef.current;
 		return button?.isConnected && !button.disabled ? button : queueHeadingRef.current;
 	}
@@ -694,6 +697,8 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 						if (!open) setBulkSelection(null);
 					}}
 					onFinished={() => {
+						// The opener may still look enabled while the dialog is closing.
+						returnToHeadingAfterResults.current = true;
 						selection.clear();
 						void queryClient.invalidateQueries({
 							queryKey: queryKeys.travelExpenses.finance(),
