@@ -489,3 +489,115 @@ it("fresh retirement before queued TanStack validation dispatches no captured re
 	expect(finished).not.toHaveBeenCalled();
 	expect(closed).not.toHaveBeenCalled();
 });
+
+// Retained from the independent public reproduction; only the response helper is local.
+it("PRIORITY independent: omission on an empty refreshed page retains the open draft and exact retry intent", async () => {
+	const c = mount();
+	const d = await open();
+	fireEvent.change(within(d).getByLabelText(/Note/), { target: { value: "Synthetic retry note" } });
+	await submit();
+	const first = structuredClone(edge.writes.mock.calls[0][0]);
+	edge.reads.mockResolvedValueOnce(reply([]));
+	await refresh(c);
+	const retained = screen.queryByRole("dialog");
+	expect(
+		retained,
+		"An empty filtered-page omission is not permission to discard the captured payment draft",
+	).not.toBeNull();
+	expect(within(retained!).getByLabelText(/Payment reference/)).toHaveProperty(
+		"value",
+		"INDEPENDENT-BANK-48",
+	);
+	expect(within(retained!).getByLabelText(/Note/)).toHaveProperty("value", "Synthetic retry note");
+	await refresh(c);
+	await submit();
+	expect(edge.writes).toHaveBeenCalledTimes(2);
+	expect(edge.writes.mock.calls[1][0]).toEqual(first);
+});
+
+it("an empty page after a lost acknowledgement retains the exact values and idempotency key on direct retry", async () => {
+	edge.writes.mockRejectedValueOnce(
+		Error("Synthetic lost acknowledgement; no persistence simulated"),
+	);
+	const c = mount(),
+		dialog = await open();
+	fireEvent.change(within(dialog).getByLabelText(/Note/), {
+		target: { value: "Exact retained bank note" },
+	});
+	await submit();
+	const first = structuredClone(edge.writes.mock.calls[0][0]);
+	edge.reads.mockResolvedValueOnce(reply([]));
+	await refresh(c);
+	expect(screen.getByRole("dialog")).toBe(dialog);
+	expect(within(dialog).getByLabelText(/Note/)).toHaveProperty("value", "Exact retained bank note");
+	await submit();
+	expect(edge.writes).toHaveBeenCalledTimes(2);
+	expect(edge.writes.mock.calls[1][0]).toEqual(first);
+});
+
+it("empty-page transitions keep an unsettled reimbursement reserved and retain its retry key after settlement", async () => {
+	let finish: (value: { success: false; error: string }) => void = () => {
+		throw Error("No dispatched request");
+	};
+	const held = new Promise<{ success: false; error: string }>((resolve) => {
+		finish = resolve;
+	});
+	edge.writes.mockReturnValueOnce(held);
+	const c = mount(),
+		dialog = await open();
+	fireEvent.click(within(dialog).getByRole("button", { name: "Mark 1 as reimbursed" }));
+	try {
+		await waitFor(() => expect(edge.writes).toHaveBeenCalledTimes(1));
+		edge.reads.mockResolvedValueOnce(reply([]));
+		await refresh(c);
+		expect(screen.getByRole("dialog")).toBe(dialog);
+		expect(within(dialog).getByRole("button", { name: "Cancel", exact: true })).toHaveProperty(
+			"disabled",
+			true,
+		);
+		await nativeSubmit(dialog);
+		fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+		expect(screen.getByRole("dialog")).toBe(dialog);
+		expect(edge.writes).toHaveBeenCalledTimes(1);
+		await refresh(c);
+		await nativeSubmit(dialog);
+		expect(edge.writes).toHaveBeenCalledTimes(1);
+	} finally {
+		await act(async () => {
+			finish({ success: false, error: "Unauthorized" });
+			await held;
+		});
+	}
+	await screen.findByText(failureMessage);
+	const first = structuredClone(edge.writes.mock.calls[0][0]);
+	await submit();
+	expect(edge.writes).toHaveBeenCalledTimes(2);
+	expect(edge.writes.mock.calls[1][0]).toEqual(first);
+});
+
+it("an explicitly retired draft stays visible and blocked through empty and restored pages", async () => {
+	const c = mount();
+	const dialog = await open();
+	edge.included = true;
+	await refresh(c);
+	blocked();
+	edge.reads.mockResolvedValueOnce(reply([]));
+	await refresh(c);
+	expect(screen.getByRole("dialog")).toBe(dialog);
+	await nativeSubmit(blocked());
+	edge.included = false;
+	await refresh(c);
+	await nativeSubmit(blocked());
+	expect(edge.writes).not.toHaveBeenCalled();
+});
+
+it("an empty-page capability refusal closes the draft and a later grant cannot reopen it", async () => {
+	const c = mount();
+	await open();
+	edge.reads.mockResolvedValueOnce(reply([], false));
+	await refresh(c);
+	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	await refresh(c);
+	expect(screen.queryByRole("dialog")).toBeNull();
+	expect(edge.writes).not.toHaveBeenCalled();
+});
