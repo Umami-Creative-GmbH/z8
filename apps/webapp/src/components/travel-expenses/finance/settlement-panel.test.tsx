@@ -33,6 +33,7 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/finance-recovery-actions", () => (
 	recordTravelExpenseRecoveryAction: mocks.recover,
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
@@ -56,7 +57,16 @@ vi.mock("@/components/ui/date-picker", () => ({
 	),
 }));
 
+import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { SettlementPanel } from "./settlement-panel";
+
+const organizationProof = {
+	userId: "finance",
+	organizationId: "org",
+	employee: { employeeId: "finance-employee", organizationId: "org", role: "employee" as const },
+	organizationSettings: null,
+	updatedAt: Date.now(),
+};
 
 const source = { type: "report" as const, id: "6f0c4f8e-6d2a-4c38-9a53-6a3a1d1a1a11" };
 
@@ -127,7 +137,9 @@ function mount() {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(
 		<QueryClientProvider client={client}>
-			<SettlementPanel source={source} />
+			<OrganizationContextProvider initialContext={organizationProof}>
+				<SettlementPanel source={source} />
+			</OrganizationContextProvider>
 		</QueryClientProvider>,
 	);
 	return client;
@@ -333,7 +345,9 @@ describe("settlement panel (#612)", () => {
 			<QueryClientProvider
 				client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 			>
-				<SettlementPanel source={source} />
+				<OrganizationContextProvider initialContext={organizationProof}>
+					<SettlementPanel source={source} />
+				</OrganizationContextProvider>
 			</QueryClientProvider>,
 		);
 		await waitFor(() => expect(mocks.getSettlement).toHaveBeenCalled());
