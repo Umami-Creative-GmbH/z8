@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { SiteHeader } from "./site-header";
+import { FinanceHeading } from "./travel-expenses/finance/finance-heading";
 import { PageHeader } from "./ui/page-header";
 
 let pathname = "/";
@@ -29,6 +30,9 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("@/navigation", () => ({
 	usePathname: () => pathname,
+	Link: ({ href, children }: { href: string; children: ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
@@ -70,6 +74,33 @@ vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
 }));
 
 describe("SiteHeader", () => {
+	it("gives only the exact finance route one page heading during arrival", () => {
+		pathname = "/en/travel-expenses/finance";
+		const page = render(
+			<>
+				<SiteHeader />
+				<FinanceHeading />
+			</>,
+		);
+		expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual([
+			"Expense finance",
+		]);
+		page.unmount();
+		pathname = "/travel-expenses";
+		const listing = render(<><SiteHeader /><PageHeader title="Travel expenses" /></>);
+		expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual(["Travel expenses"]);
+		listing.unmount();
+		for (const excluded of [
+			"/travel-expenses/claim",
+			"/travel-expenses/finance/extra",
+			"/travel-expenses/finances",
+		]) {
+			pathname = excluded;
+			const sibling = render(<SiteHeader />);
+			expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+			sibling.unmount();
+		}
+	});
 	it("hands the personal equipment title to its page without adopting other destinations", () => {
 		pathname = "/en/my-equipment";
 		const page = render(

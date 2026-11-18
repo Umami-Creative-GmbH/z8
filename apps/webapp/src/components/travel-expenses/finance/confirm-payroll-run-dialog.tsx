@@ -34,8 +34,10 @@ import type {
 	PayrollRunToConfirm,
 } from "@/lib/travel-expenses/payroll-run-confirmation";
 import { parseSettlementPayment } from "@/lib/travel-expenses/settlement";
+import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ResultRow } from "./bulk-reimbursement-dialog";
 import { settlementFieldMessage } from "./record-reimbursement-form";
+import { type FinanceSubmission, useFinanceCommand } from "./use-finance-command";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -83,6 +85,7 @@ export function ConfirmPayrollRunButton({
 	run,
 	defaultOpen = false,
 	onConfirmed,
+	readError,
 }: {
 	run: Pick<
 		PayrollRunToConfirm,
@@ -93,15 +96,18 @@ export function ConfirmPayrollRunButton({
 	defaultOpen?: boolean;
 	/** Called once the results were shown and closed. */
 	onConfirmed: () => void;
+	/** Presentation freshness only; the action still resolves current finance authority. */
+	readError?: { retry: () => void; isRetrying: boolean };
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const [open, setOpen] = useState(defaultOpen);
 	const [rows, setRows] = useState<PayrollRunConfirmationRow[] | null>(null);
+	const command = useFinanceCommand(run.jobId, open && !readError);
 	const period = formatPlainDateRange(locale, run.periodStart, run.periodEnd);
 
 	function close(next: boolean) {
-		if (next) return;
+		if (next || command.isPending()) return;
 		setOpen(false);
 		if (rows) {
 			setRows(null);
@@ -111,11 +117,20 @@ export function ConfirmPayrollRunButton({
 
 	return (
 		<>
-			<Button type="button" size="sm" onClick={() => setOpen(true)}>
+			<Button type="button" size="sm" disabled={Boolean(readError)} onClick={() => setOpen(true)}>
 				{t("travelExpenses.finance.payrollRun.confirm.action", "Confirm as paid")}
 			</Button>
-			<Dialog open={open} onOpenChange={close}>
-				<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+			<Dialog
+				open={open}
+				onOpenChange={(next, details) => {
+					if (command.isPending()) details.cancel();
+					else close(next);
+				}}
+			>
+				<DialogContent
+					showCloseButton={!command.busy}
+					className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+				>
 					{rows ? (
 						<ConfirmationResults rows={rows} onDone={() => close(false)} />
 					) : (
@@ -146,8 +161,19 @@ export function ConfirmPayrollRunButton({
 											)}
 								</DialogDescription>
 							</DialogHeader>
+							{readError && (
+								<TravelExpenseLoadError
+									message={t(
+										"travelExpenses.finance.payrollRuns.failed",
+										"Payroll confirmations could not be loaded. Please retry.",
+									)}
+									{...readError}
+								/>
+							)}
 							{open && (
 								<ConfirmForm
+									available={!readError}
+									command={command}
 									jobId={run.jobId}
 									defaultPayday={run.defaultPayday}
 									onCancel={() => close(false)}
@@ -163,11 +189,15 @@ export function ConfirmPayrollRunButton({
 }
 
 function ConfirmForm({
+	available,
+	command,
 	jobId,
 	defaultPayday,
 	onCancel,
 	onProcessed,
 }: {
+	available: boolean;
+	command: ReturnType<typeof useFinanceCommand>;
 	jobId: string;
 	defaultPayday: string;
 	onCancel: () => void;
@@ -187,9 +217,11 @@ function ConfirmForm({
 	};
 
 	const form = useForm({
+		onSubmitMeta: { submission: null as FinanceSubmission | null },
 		defaultValues: { payday: defaultPayday },
 		canSubmitWhenInvalid: true,
-		onSubmit: async ({ value, formApi }) => {
+		onSubmit: async ({ value, formApi, meta }) => {
+			if (!meta.submission || !command.isCurrent(meta.submission)) return;
 			setProblem(null);
 			const error = paydayError(value.payday);
 			if (error) {
@@ -200,6 +232,7 @@ function ConfirmForm({
 				return;
 			}
 			const result = await confirmPayrollRunAction({ jobId, payday: value.payday });
+			if (!command.isCurrent(meta.submission)) return;
 			if (!result.success) {
 				setProblem(
 					t(
@@ -228,7 +261,21 @@ function ConfirmForm({
 			noValidate
 			onSubmit={(event) => {
 				event.preventDefault();
-				void form.handleSubmit();
+				event.stopPropagation();
+				const submission = command.reserve();
+				if (!submission) return;
+				void form
+					.handleSubmit({ submission })
+					.catch(() => {
+						if (command.isCurrent(submission))
+							setProblem(
+								t(
+									"travelExpenses.finance.payrollRun.confirm.failed",
+									"The payroll run could not be confirmed. Please retry; nothing is recorded twice.",
+								),
+							);
+					})
+					.finally(() => command.release(submission));
 			}}
 			className="grid gap-4"
 		>
@@ -272,7 +319,7 @@ function ConfirmForm({
 						<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button type="submit" disabled={isSubmitting || !available}>
 							{isSubmitting ? (
 								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 							) : (

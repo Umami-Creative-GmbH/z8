@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { removeTravelExpenseFromPayrollRunAction } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -20,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { IncludedPayrollRun } from "@/lib/travel-expenses/payroll-run-inclusion-read";
 import { formatPlainDateRange } from "../report/format";
+import { useFinanceCommand } from "./use-finance-command";
 
 /** The payroll run of a report as officers read it: its period and file format. */
 export function payrollRunLabel(
@@ -51,45 +51,57 @@ export function PayrollRunNotice({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const [pending, setPending] = useState(false);
+	const [open, setOpen] = useState(false);
+	const [problem, setProblem] = useState<string | null>(null);
+	const command = useFinanceCommand(`${reportId}:${run.jobId}`, open && canRemove);
+	const pending = command.busy;
 	const removeLabel = t("travelExpenses.finance.payrollRun.remove", "Remove from payroll run");
 
 	async function remove() {
-		setPending(true);
-		try {
-			const result = await removeTravelExpenseFromPayrollRunAction({ reportId });
-			if (result.success && result.data.status === "removed") {
-				toast.success(
-					t(
-						"travelExpenses.finance.payrollRun.removed",
-						"Removed from the payroll run. The expense awaits reimbursement again.",
-					),
-				);
-			} else if (result.success) {
-				toast.info(
-					t(
-						"travelExpenses.finance.payrollRun.notIncluded",
-						"No payroll run includes this expense any more.",
-					),
-				);
-			} else {
-				toast.error(
-					t(
-						"travelExpenses.finance.payrollRun.removeFailed",
-						"The expense could not be removed from the payroll run.",
-					),
-				);
-			}
-			onRemoved();
-		} catch {
-			toast.error(
-				t(
-					"travelExpenses.finance.payrollRun.removeFailed",
-					"The expense could not be removed from the payroll run.",
-				),
-			);
-		}
-		setPending(false);
+		const submission = command.reserve();
+		if (!submission) return;
+		setProblem(null);
+		await removeTravelExpenseFromPayrollRunAction({ reportId })
+			.then((result) => {
+				if (!command.isCurrent(submission)) return;
+				if (result.success && result.data.status === "removed") {
+					toast.success(
+						t(
+							"travelExpenses.finance.payrollRun.removed",
+							"Removed from the payroll run. The expense awaits reimbursement again.",
+						),
+					);
+				} else if (result.success) {
+					toast.info(
+						t(
+							"travelExpenses.finance.payrollRun.notIncluded",
+							"No payroll run includes this expense any more.",
+						),
+					);
+				} else {
+					setProblem(
+						t(
+							"travelExpenses.finance.payrollRun.removeFailed",
+							"The expense could not be removed from the payroll run.",
+						),
+					);
+					return;
+				}
+				setOpen(false);
+				onRemoved();
+			})
+			.catch(() => {
+				if (command.isCurrent(submission))
+					setProblem(
+						t(
+							"travelExpenses.finance.payrollRun.removeFailed",
+							"The expense could not be removed from the payroll run.",
+						),
+					);
+			})
+			.finally(() => {
+				command.release(submission);
+			});
 	}
 
 	return (
@@ -105,7 +117,13 @@ export function PayrollRunNotice({
 				</span>
 			</p>
 			{canRemove && (
-				<AlertDialog>
+				<AlertDialog
+					open={open}
+					onOpenChange={(next, details) => {
+						if (command.isPending()) details.cancel();
+						else setOpen(next);
+					}}
+				>
 					<AlertDialogTrigger asChild>
 						<Button type="button" variant="outline" size="sm" disabled={pending}>
 							{pending && <IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />}
@@ -127,9 +145,18 @@ export function PayrollRunNotice({
 								)}
 							</AlertDialogDescription>
 						</AlertDialogHeader>
+						{problem && (
+							<p role="alert" className="text-sm text-destructive">
+								{problem}
+							</p>
+						)}
 						<AlertDialogFooter>
-							<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-							<AlertDialogAction onClick={() => void remove()}>{removeLabel}</AlertDialogAction>
+							<AlertDialogCancel disabled={pending}>
+								{t("common.cancel", "Cancel")}
+							</AlertDialogCancel>
+							<Button disabled={pending} onClick={() => void remove()}>
+								{removeLabel}
+							</Button>
 						</AlertDialogFooter>
 					</AlertDialogContent>
 				</AlertDialog>

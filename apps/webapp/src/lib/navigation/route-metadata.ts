@@ -211,6 +211,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
 	const legacyClaimId = /^\/travel-expenses\/([^/]+)$/.exec(path)?.[1];
 	return (
 		path === "/travel-expenses" ||
+		path === "/travel-expenses/finance" ||
 		Boolean(legacyClaimId && z.uuid().safeParse(legacyClaimId).success) ||
 		/^\/team\/presence\/[^/]+$/.test(path) ||
 		/^\/personnel-files\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(

@@ -266,7 +266,7 @@ it.each([
 	["/de/travel-expenses/4053401F-806E-4839-AE66-96B9FA36C054/", true],
 	["/travel-expenses/00000000-0000-0000-0000-000000000000", true],
 	["/travel-expenses/ffffffff-ffff-ffff-ffff-ffffffffffff", true],
-	["/en/travel-expenses/finance", false],
+	["/en/travel-expenses/finance", true],
 	["/en/travel-expenses/reports", false],
 	["/en/travel-expenses/reports/4053401f-806e-4839-ae66-96b9fa36c054", false],
 	["/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054/receipts", false],

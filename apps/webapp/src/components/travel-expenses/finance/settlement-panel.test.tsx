@@ -6,11 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 
 const mocks = vi.hoisted(() => ({
+	session: {
+		data: { user: { id: "finance" }, session: { activeOrganizationId: "org" } },
+		isPending: false,
+	},
 	getSettlement: vi.fn(),
 	record: vi.fn(),
 	recover: vi.fn(),
 	toastSuccess: vi.fn(),
 }));
+vi.mock("@/lib/auth-client", () => ({ useSession: () => mocks.session }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -148,6 +153,33 @@ describe("settlement panel (#612)", () => {
 		mocks.toastSuccess.mockReset();
 	});
 	afterEach(cleanup);
+
+	it("retains exact payment fields and offers retry after a rejected transport", async () => {
+		mocks.getSettlement.mockResolvedValue({
+			success: true,
+			data: { viewer: "finance", canSettle: true, account: account() },
+		});
+		mocks.record.mockRejectedValueOnce(new Error("Connection lost"));
+		mount();
+		await screen.findByRole("form", { name: "Record a reimbursement" });
+		fireEvent.change(screen.getByLabelText("Amount paid (EUR)"), { target: { value: "20.50" } });
+		fireEvent.change(screen.getByLabelText("Payment date"), { target: { value: "2026-10-01" } });
+		fireEvent.change(screen.getByLabelText("Payment reference"), {
+			target: { value: "SEPA exact reference" },
+		});
+		fireEvent.change(screen.getByLabelText("Note (optional)"), { target: { value: "Exact note" } });
+		fireEvent.submit(screen.getByRole("form", { name: "Record a reimbursement" }));
+		expect(
+			await screen.findByText("The payment could not be recorded. Please retry."),
+		).toBeTruthy();
+		expect((screen.getByLabelText("Amount paid (EUR)") as HTMLInputElement).value).toBe("20.50");
+		expect((screen.getByLabelText("Payment reference") as HTMLInputElement).value).toBe(
+			"SEPA exact reference",
+		);
+		expect((screen.getByLabelText("Note (optional)") as HTMLTextAreaElement).value).toBe(
+			"Exact note",
+		);
+	});
 
 	it("shows the employee their outstanding balance and recorded payments without any recording control", async () => {
 		mocks.getSettlement.mockResolvedValue({

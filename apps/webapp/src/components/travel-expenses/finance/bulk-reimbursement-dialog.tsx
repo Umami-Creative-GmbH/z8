@@ -47,6 +47,7 @@ import {
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
 import { formatMoney } from "../report/format";
 import { settlementFieldMessage } from "./record-reimbursement-form";
+import { type FinanceSubmission, useFinanceCommand } from "./use-finance-command";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -170,9 +171,13 @@ export function BulkReimbursementDialog({
 }) {
 	const { t } = useTranslate();
 	const [rows, setRows] = useState<BulkReimbursementRow[] | null>(null);
+	const command = useFinanceCommand(
+		JSON.stringify(items.map(({ account }) => [account.source, account.summary])),
+		open,
+	);
 
 	function close(next: boolean) {
-		if (next) return;
+		if (next || command.isPending()) return;
 		onOpenChange(false);
 		if (rows) {
 			setRows(null);
@@ -181,8 +186,17 @@ export function BulkReimbursementDialog({
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={close}>
-			<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+		<Dialog
+			open={open}
+			onOpenChange={(next, details) => {
+				if (command.isPending()) details.cancel();
+				else close(next);
+			}}
+		>
+			<DialogContent
+				showCloseButton={!command.busy}
+				className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+			>
 				{rows ? (
 					<BulkReimbursementResults
 						items={items}
@@ -207,6 +221,7 @@ export function BulkReimbursementDialog({
 						{open &&
 							(items.length > 0 ? (
 								<BulkReimbursementForm
+									command={command}
 									items={items}
 									skipped={skipped}
 									submit={submit}
@@ -299,12 +314,14 @@ export function ResultRow({ label, done, text }: { label: string; done: boolean;
 }
 
 function BulkReimbursementForm({
+	command,
 	items,
 	skipped,
 	submit,
 	onCancel,
 	onProcessed,
 }: {
+	command: ReturnType<typeof useFinanceCommand>;
 	items: readonly BulkReimbursementItem[];
 	skipped: readonly BulkReimbursementSkippedItem[];
 	submit: BulkReimbursementSubmit;
@@ -333,6 +350,7 @@ function BulkReimbursementForm({
 	);
 
 	const form = useForm({
+		onSubmitMeta: { submission: null as FinanceSubmission | null },
 		defaultValues: {
 			occurredOn: defaultPaymentDate(timeZone),
 			reference: "",
@@ -340,7 +358,8 @@ function BulkReimbursementForm({
 		} satisfies FormValues,
 		// A field that was never touched has no error yet: submitting shows them all.
 		canSubmitWhenInvalid: true,
-		onSubmit: async ({ value, formApi }) => {
+		onSubmit: async ({ value, formApi, meta }) => {
+			if (!meta.submission || !command.isCurrent(meta.submission)) return;
 			setProblem(null);
 			const showFieldErrors = (errors: SettlementCommandFieldError[]) => {
 				for (const error of errors) {
@@ -376,6 +395,7 @@ function BulkReimbursementForm({
 				accounts,
 				...parsed.payment,
 			});
+			if (!command.isCurrent(meta.submission)) return;
 			if (!result.success) {
 				// Keep the key: resubmitting the same payment is a safe retry.
 				setProblem(failed);
@@ -395,7 +415,15 @@ function BulkReimbursementForm({
 			noValidate
 			onSubmit={(event) => {
 				event.preventDefault();
-				void form.handleSubmit();
+				event.stopPropagation();
+				const submission = command.reserve();
+				if (!submission) return;
+				void form
+					.handleSubmit({ submission })
+					.catch(() => {
+						if (command.isCurrent(submission)) setProblem(failed);
+					})
+					.finally(() => command.release(submission));
 			}}
 			className="grid gap-4"
 		>

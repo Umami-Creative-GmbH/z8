@@ -1,0 +1,1170 @@
+{
+  "unitFiles": 20,
+  "unitCases": 210,
+  "unitFailures": 0,
+  "postgresqlFiles": 8,
+  "postgresqlCases": 84,
+  "postgresqlExit": 0,
+  "distinctCases": 294,
+  "types": {
+    "typegen": 0,
+    "app": 0,
+    "workflowContracts": 0,
+    "smoke": 0
+  },
+  "biome": {
+    "explicitLeafFiles": 19,
+    "explicitExit": 0,
+    "ordinaryExit": 1,
+    "ordinaryErrors": 20,
+    "ordinaryWarnings": 1,
+    "lintFiles": 20,
+    "lintExit": 0
+  },
+  "doctor": {
+    "base": "8e3876c39725b7a8ef5218439766395401d64b80",
+    "scope": "changed",
+    "exit": 0,
+    "errors": 0,
+    "warnings": 5,
+    "diagnostics": [
+      {
+        "filePath": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+        "plugin": "react-doctor",
+        "rule": "tanstack-form-on-submit-requires-prevent-default",
+        "severity": "warning",
+        "title": "Form submit reloads the page around handleSubmit",
+        "message": "This submit handler calls the form's handleSubmit without event.preventDefault(), so the browser still performs a native full-page form submission and the app reloads mid-submit. Call event.preventDefault() before handleSubmit().",
+        "help": "Wrap the submit handler as onSubmit={(event) => { event.preventDefault(); form.handleSubmit(); }} because TanStack Form's handleSubmit never cancels the native submit itself.",
+        "line": 416,
+        "column": 4,
+        "offset": 13514,
+        "length": 355,
+        "endLine": 427,
+        "category": "Bugs",
+        "matchByOccurrence": true,
+        "fingerprint": "9a7d0226df6156d46435711d726642ce729b98b11eac7ab69347fe62f635bb6e"
+      },
+      {
+        "filePath": "src/components/travel-expenses/finance/confirm-payroll-run-dialog.tsx",
+        "plugin": "react-doctor",
+        "rule": "tanstack-form-on-submit-requires-prevent-default",
+        "severity": "warning",
+        "title": "Form submit reloads the page around handleSubmit",
+        "message": "This submit handler calls the form's handleSubmit without event.preventDefault(), so the browser still performs a native full-page form submission and the app reloads mid-submit. Call event.preventDefault() before handleSubmit().",
+        "help": "Wrap the submit handler as onSubmit={(event) => { event.preventDefault(); form.handleSubmit(); }} because TanStack Form's handleSubmit never cancels the native submit itself.",
+        "line": 262,
+        "column": 4,
+        "offset": 9302,
+        "length": 546,
+        "endLine": 279,
+        "category": "Bugs",
+        "matchByOccurrence": true,
+        "fingerprint": "af4f031337e32548a291fd51cf8b2612935eb72b72516d084afc78c3e5a34a40"
+      },
+      {
+        "filePath": "src/components/travel-expenses/finance/finance-exports.tsx",
+        "plugin": "react-doctor",
+        "rule": "tanstack-form-on-submit-requires-prevent-default",
+        "severity": "warning",
+        "title": "Form submit reloads the page around handleSubmit",
+        "message": "This submit handler calls the form's handleSubmit without event.preventDefault(), so the browser still performs a native full-page form submission and the app reloads mid-submit. Call event.preventDefault() before handleSubmit().",
+        "help": "Wrap the submit handler as onSubmit={(event) => { event.preventDefault(); form.handleSubmit(); }} because TanStack Form's handleSubmit never cancels the native submit itself.",
+        "line": 238,
+        "column": 4,
+        "offset": 7696,
+        "length": 508,
+        "endLine": 255,
+        "category": "Bugs",
+        "matchByOccurrence": true,
+        "suppressionHint": "An adjacent react-doctor-disable-next-line at line 235 lists \"react-doctor/no-prevent-default\" — react-doctor/tanstack-form-on-submit-requires-prevent-default is not in that list. Use the comma form: react-doctor-disable-next-line react-doctor/no-prevent-default, react-doctor/tanstack-form-on-submit-requires-prevent-default",
+        "fingerprint": "cc3ca0e26e25f73604581c3387dffbc8810e793cb2a8d5c260a4a351b9bf6de1"
+      },
+      {
+        "filePath": "src/components/travel-expenses/finance/record-reimbursement-form.tsx",
+        "plugin": "react-doctor",
+        "rule": "tanstack-form-on-submit-requires-prevent-default",
+        "severity": "warning",
+        "title": "Form submit reloads the page around handleSubmit",
+        "message": "This submit handler calls the form's handleSubmit without event.preventDefault(), so the browser still performs a native full-page form submission and the app reloads mid-submit. Call event.preventDefault() before handleSubmit().",
+        "help": "Wrap the submit handler as onSubmit={(event) => { event.preventDefault(); form.handleSubmit(); }} because TanStack Form's handleSubmit never cancels the native submit itself.",
+        "line": 287,
+        "column": 4,
+        "offset": 10213,
+        "length": 505,
+        "endLine": 304,
+        "category": "Bugs",
+        "matchByOccurrence": true,
+        "fingerprint": "b5713ae2ab614220b726cab59c909e6126d78d7db6794fa41714a62aa3db0a41"
+      },
+      {
+        "filePath": "src/components/travel-expenses/finance/use-finance-command.ts",
+        "plugin": "react-hooks-js",
+        "rule": "set-state-in-effect",
+        "severity": "warning",
+        "title": "React Compiler can't optimize this",
+        "message": "This synchronous effect update causes an extra render: Calling setState synchronously within an effect can trigger cascading renders. Prefer deriving or initializing the value before render. If the effect must read a browser API after mount, treat this as advisory or suppress it with `// react-doctor-disable-next-line react-hooks-js/set-state-in-effect`.",
+        "help": "Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).",
+        "line": 43,
+        "column": 3,
+        "offset": 1553,
+        "length": 7,
+        "endLine": 43,
+        "category": "Performance",
+        "fingerprint": "8b6082d1ea44bae7a386277dd6119376714baab9894e79aea7b863d76727f2fc"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader gives only the exact finance route one page heading during arrival",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader hands the personal equipment title to its page without adopting other destinations",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader hands the suspended recovery title to the page without opting descendants into heading ownership",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader hands the main title to converted pages while retaining unknown descendant titles",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader hands the exact vehicle report its heading and retains descendant shell titles",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader shows header actions in the requested order on the dashboard route",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader keeps secondary dashboard controls available as labeled actions in the mobile overflow",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader keeps mobile overflow actions available outside the dashboard without customization",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader does not show the dashboard customize trigger outside the dashboard route",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader shows the most specific route title instead of falling back to Dashboard",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader truncates a long title so the header actions stay on a phone screen (#846)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader clears the status bar when the app is drawn edge to edge (#846)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "name": "extracted translation keys all have a default English value",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "stored travel claim detail shows an intermediate approval alongside the original final decision",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "stored travel claim detail formats persisted currency amounts for the active locale",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "stored travel claim detail shows the stored decision timestamp when a legacy claim has no decision log",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "stored travel claim detail opens an existing claim with unknown legacy dates, original notes, receipts and decision history",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "stored travel claim detail labels the claim type, status and decisions with catalog keys (#680)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "stored travel claim detail offers retry after a failed detail load and restores the claim",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "stored travel claim detail keeps loaded detail and its receipts visible when a refresh fails",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "legacy draft continuation (#616) continues the owner's draft as a report and opens it",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "legacy draft continuation (#616) explains a refused conversion and changes nothing",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "legacy draft continuation (#616) links a converted draft to its report",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "name": "legacy draft continuation (#616) never offers continuation for a submitted claim or someone else's draft",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expenses-i18n.test.ts",
+      "name": "travel expenses i18n does not leave known travel expense UI copy as raw literals",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/travel-expenses-i18n.test.ts",
+      "name": "travel expenses i18n loads travel expense translations for the route namespace",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the request queue without adopting its independent descendants",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the report share-link settings heading without other settings or descendants",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only selected employee files, leaving other personnel workflows independently staged",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts payroll, the work-balance directory and selected balance without deeper descendants",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the personal requests page heading",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the personal documents heading without officer descendants",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the personnel file directory, preserving all descendant owners",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the employee equipment record heading without adopting its collection",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata retains independent approvals page headings",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the deputy history record, preserving other approval headings",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the complete review arrival route",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the exact vacation route while retaining staged descendants",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts refreshed analytics without adopting unconverted descendants",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts exact report titles and preserves descendant shell headings",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /de/my-requests",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/organization",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/payroll",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/scheduling",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/approvals/inbox",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/compliance",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/works-council",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/team/absences",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/team/driving",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/driving-licence",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/driving-licence/checks/employee-1",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/reports/projects",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/reports/vehicles",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/employees/employee-1",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/locations/location-1",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment/employees/employee-1",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment/assignments/assignment-1",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /de/my-equipment",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/equipment",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata matches route prefixes only at path-segment boundaries",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata normalizes locale and trailing slash segments",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-paging.test.ts",
+      "name": "finance queue paging (#753) merges reports and legacy claims newest decision first",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-paging.test.ts",
+      "name": "finance queue paging (#753) orders equal decisions by kind, then by id descending, and undecided ones last",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-paging.test.ts",
+      "name": "finance queue paging (#753) pages through the merged list without gaps or repeats",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-paging.test.ts",
+      "name": "finance queue paging (#753) reads no further than one entry past the page",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-paging.test.ts",
+      "name": "finance queue paging (#753) returns an empty last page past the end",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-params.test.ts",
+      "name": "finance queue search params (#753) opens on the first page of open expenses without filters",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-params.test.ts",
+      "name": "finance queue search params (#753) round-trips every filter and the page",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-params.test.ts",
+      "name": "finance queue search params (#753) leaves defaults out of the URL",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-params.test.ts",
+      "name": "finance queue search params (#753) ignores values it does not understand",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-params.test.ts",
+      "name": "payroll run confirmation link (#855) links to the run's confirm dialog on the finance page, which reads the run back",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/finance-queue-params.test.ts",
+      "name": "payroll run confirmation link (#855) opens no dialog for a missing, repeated or malformed run",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "isInOfficerScope covers every report with the all scope",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "isInOfficerScope covers a report recorded with one of the grant's teams",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "isInOfficerScope covers a named employee's report whatever teams it recorded",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "isInOfficerScope covers nothing without a scope",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "mergeOfficerScopes is the union of two scopes",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "resolveFinanceScopes gives owners and admins everything",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "resolveFinanceScopes gives an officer read access and only the capabilities of their grant, in its scope",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "resolveFinanceScopes keeps a grant with neither capability as read-only",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "resolveFinanceScopes never exports without read access",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/officer-scope.test.ts",
+      "name": "resolveFinanceScopes widens each capability separately when organization-wide access and a grant combine",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "keeps the loaded payroll confirmation draft and a reachable local retry when its parent read fails",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "keeps payroll removal pending and retryable after refusal, publishing only a completed removal",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "retires queued TanStack payment validation after Activity changes, including return",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "retires queued TanStack payment validation after account changes, including return",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "retires queued TanStack payment validation after actor changes, including return",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "retires queued TanStack payment validation after organization changes, including return",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "keeps an unchanged pending session continuation and rejects native duplicate payments",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "does not publish a late payment response into another account",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+      "name": "keeps payroll confirmation pending through Escape and transport failure with its payday",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-exports.test.tsx",
+      "name": "finance exports (#613) exports the selected approved revisions and keeps one idempotency key across a retry",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-exports.test.tsx",
+      "name": "finance exports (#613) shows each batch outcome with download, retry and cancel where they apply",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-exports.test.tsx",
+      "name": "finance exports (#613) explains a batch cancelled by a reopened report and points finance to a new export",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-exports.test.tsx",
+      "name": "finance exports (#613) marks a completed batch as reimbursed, listing the accounts it skips with every result",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-exports.test.tsx",
+      "name": "finance exports (#613) records nothing for a batch whose accounts were all reimbursed already",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-exports.test.tsx",
+      "name": "finance exports (#613) offers Mark as reimbursed only on completed batches, to users who record reimbursements",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-exports.test.tsx",
+      "name": "finance exports (#613) offers retry when the exports fail to load",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+      "name": "finance navigation badge (#753) shows the count of expenses awaiting reimbursement, with a spoken label",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+      "name": "finance navigation badge (#753) caps a large count",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+      "name": "finance navigation badge (#753) shows nothing when nothing is awaiting reimbursement",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+      "name": "finance navigation badge (#753) shows nothing when the count is refused",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) retains loaded accounts after a failed refresh and requires a successful local retry before selection",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) reports failed filter options separately and retries them without clearing the queue",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) does not present cached accounts as current after an observed actor return while the read is held",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) does not present cached accounts as current after an observed organization return while the read is held",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) keeps a pending bulk payment open through Escape and native duplicate submission",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) does not select retained rows while the next page is still loading",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) lists open approved expenses with employee-paid entitlement, company-paid costs and balance",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) switches to reimbursed expenses, including legacy claims, and keeps the choice in the URL",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) opens the view the URL names",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) filters by employee and by not yet exported, back on the first page, and clears the filters",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) pages forward and back",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) says when no expense matches the filters",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) lists only what no expense officer covers, with filters, pages and a way back (#756)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) says when every expense awaiting reimbursement is covered",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "finance queue (#612, #753) says when nothing is left to record and offers retry when the queue fails to load",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "bulk mark as reimbursed (#754) selects open expenses, marks them reimbursed with one payment and lists every row's outcome",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "bulk mark as reimbursed (#754) labels every skip reason",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "bulk mark as reimbursed (#754) requires a payment reference and refuses a future payment date",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "bulk mark as reimbursed (#754) offers only accounts one payment in their own currency reimburses in full",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/finance-queue.test.tsx",
+      "name": "bulk mark as reimbursed (#754) offers no selection to readers who cannot record reimbursements",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+      "name": "officer coverage gap warning (#756) offers a local retry when coverage cannot be read instead of implying all accounts are covered",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+      "name": "officer coverage gap warning (#756) counts the uncovered expenses and links to them in the finance queue",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+      "name": "officer coverage gap warning (#756) shows nothing without expense officers or for non-administrators",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+      "name": "officer coverage gap warning (#756) shows nothing when every expense is covered",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) retains exact payment fields and offers retry after a rejected transport",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) shows the employee their outstanding balance and recorded payments without any recording control",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) names the export batch a payment was marked from, for finance only (#755)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) names the payroll run that paid a reimbursement instead of its reference, for the employee too (#853)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) shows an overpayment as such instead of clamping it to zero",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) renders nothing for someone who may not see the settlement (e.g. the approving manager)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) lets finance record a reimbursement against the balance shown and reuses the key when retrying the same payment",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) explains a balance that changed meanwhile and validates the entry before sending it",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) clears a field error as soon as its value is valid, without submitting again (#688)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) keeps a field error the server returned until that field changes (#688)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "name": "settlement panel (#612) shows an approved adjustment and lets finance record the recovery of the overpayment (#615)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-status.test.tsx",
+      "name": "settlement wording (#751) labels a outstanding account Awaiting reimbursement",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-status.test.tsx",
+      "name": "settlement wording (#751) labels a settled account Reimbursed",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-status.test.tsx",
+      "name": "settlement wording (#751) labels a overpaid account Overpaid",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-status.test.tsx",
+      "name": "settlement wording (#751) labels a mixed account Needs review",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-status.test.tsx",
+      "name": "settlement wording (#751) says Reimbursed for a balance that is fully paid",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-status.test.tsx",
+      "name": "settlement wording (#751) keeps the amounts of an outstanding or overpaid balance",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/finance/settlement-status.test.tsx",
+      "name": "settlement wording (#751) never says Settled",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) attaches the selected file to the viewed submission and reloads it",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) does not offer upload when the expense is ineligible: {\"canAddReceipt\":false}",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) does not offer upload when the expense is ineligible: {\"itemType\":\"mileage\"}",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) does not offer upload when the expense is ineligible: {\"itemType\":\"per_diem\"}",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) does not offer upload when the expense is ineligible: {\"receipts\":[{\"receiptId\":\"existing\",\"fileName\":\"original.pdf\"}]}",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) keeps a refused upload visible without reloading or exposing server details",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) rejects unsupported files before uploading",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) marks supplemental evidence with the actual uploader and UTC time and offers no replacement",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) validates against the configured receipt limit",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) accepts files over the default limit when the configured limit permits them",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) explains a server rejection with HTTP 400",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+      "name": "adding a missing receipt during review (#1255) explains a server rejection with HTTP 413",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor restores saved fields on load and shows what is still needed",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor keeps a future-dated receipt from being submitted and says from when (#685)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor autosaves edits on the loaded version and reports saving, then saved",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor keeps edits after a failed save and saves them again on retry",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor does not overwrite a newer version and can load it instead",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor flags a malformed amount but still saves the valid edits",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor shows the amount in de once it loses focus, without saving again for the format (#688)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor shows the amount in en-US once it loses focus, without saving again for the format (#688)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor chooses the receipt currency from a searchable list and saves its code (#688)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor separates company-paid costs from the reimbursement total",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor shows a failed upload and refreshes the receipts after a successful one",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor previews and removes a receipt, keeping a failed removal visible",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "TravelExpenseReportEditor offers a retry when the report cannot be loaded",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "deleting a draft (#684) deletes a never-submitted draft after confirmation and returns to the expenses",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "deleting a draft (#684) keeps a cancelled draft",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+      "name": "deleting a draft (#684) does not offer deleting a draft that was submitted before",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+      "name": "travel expense finance permissions (#612) grants organization owners and admins finance read and settlement access",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+      "name": "travel expense finance permissions (#612) never derives finance access from manager approval authority",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+      "name": "travel expense finance permissions (#612) never grants finance access through custom roles, which expense officers replace (#748)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+      "name": "travel expense finance permissions (#612) lets owners and admins export in their active organization only (#613)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+      "name": "travel expense finance permissions (#612) is scoped to the active organization",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "computeSettlement shows the whole approved employee-paid entitlement as outstanding before any money is recorded",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "computeSettlement settles exactly to zero after reimbursements that add up to the entitlement",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "computeSettlement applies a signed approved adjustment and shows the resulting overpayment without clamping (spec EUR 500 → 450)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "computeSettlement never sums unlike currencies: each currency keeps its own balance",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "computeSettlement reports mixed when one currency is outstanding and another overpaid",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "computeSettlement is settled with nothing approved and nothing recorded",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "computeSettlement refuses stored amounts that are not exact two-decimal values",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "parseSettlementCommand normalizes a valid reimbursement",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "parseSettlementCommand reports every invalid field",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "parseSettlementCommand refuses more precision than the currency has and dates after the latest calendar date",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "parseSettlementCommand refuses amounts beyond the stored range and over-long references",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "parseSettlementCommand knows the latest calendar date anywhere on earth for an instant",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "planSettlementEntry records a reimbursement up to the outstanding balance against the balance finance saw",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "planSettlementEntry refuses a command based on a balance that has changed since it was shown",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "planSettlementEntry refuses another currency, more than outstanding, and anything when nothing is outstanding",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "planSettlementEntry records what a confirmed payroll run paid even beyond what is outstanding, as an overpayment (#853)",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "planSettlementEntry records a recovery only against an overpayment and never beyond it",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/lib/travel-expenses/__tests__/settlement.test.ts",
+      "name": "planSettlementEntry in full (#754): records only an entry that leaves the whole account reimbursed",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "name": "assembles the admitted read-only workspace with independent export authority",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "name": "assembles the admitted export-only workspace with independent export authority",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "name": "assembles the admitted settle-only workspace with independent export authority",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "name": "assembles the admitted both workspace with independent export authority",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "name": "refuses approver-only at the server route seam",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "name": "refuses payroll-only at the server route seam",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "name": "refuses without finance access at the server route seam",
+      "status": "passed"
+    },
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+      "name": "keeps the safe finance heading outside the suspended admission/read",
+      "status": "passed"
+    }
+  ]
+}

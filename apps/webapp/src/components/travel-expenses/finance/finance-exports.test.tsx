@@ -16,6 +16,12 @@ const mocks = vi.hoisted(() => ({
 	getReimbursement: vi.fn(),
 	markReimbursed: vi.fn(),
 }));
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: { user: { id: "finance" }, session: { activeOrganizationId: "org" } },
+		isPending: false,
+	}),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({

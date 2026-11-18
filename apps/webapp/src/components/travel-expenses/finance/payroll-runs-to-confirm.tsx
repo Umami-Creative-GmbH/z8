@@ -8,7 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { queryKeys } from "@/lib/query/keys";
 import { formatMoney, formatPlainDateRange } from "@/lib/travel-expenses/format";
 import { PAYROLL_CURRENCY } from "@/lib/travel-expenses/payroll-line-kind";
+import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ConfirmPayrollRunButton } from "./confirm-payroll-run-dialog";
+import { useFinanceReadScope } from "./use-finance-command";
 
 /**
  * The unconfirmed payroll runs (#853) that include expense reports the reader
@@ -25,14 +27,33 @@ export function PayrollRunsToConfirm({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const queryClient = useQueryClient();
-	const { data: runs } = useQuery({
-		queryKey: queryKeys.travelExpenses.payrollRunsToConfirm(),
+	const scope = useFinanceReadScope();
+	const {
+		data: runs,
+		isError,
+		isFetching,
+		refetch,
+	} = useQuery({
+		queryKey: [...queryKeys.travelExpenses.payrollRunsToConfirm(), scope],
 		queryFn: async () => {
 			const result = await getPayrollRunsToConfirmAction();
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
 	});
+	if (isError && !runs)
+		return (
+			<TravelExpenseLoadError
+				message={t(
+					"travelExpenses.finance.payrollRuns.failed",
+					"Payroll confirmations could not be loaded. Please retry.",
+				)}
+				retry={() => {
+					void refetch();
+				}}
+				isRetrying={isFetching}
+			/>
+		);
 	if (!runs || runs.length === 0) return null;
 
 	return (
@@ -72,6 +93,16 @@ export function PayrollRunsToConfirm({
 								</p>
 							</div>
 							<ConfirmPayrollRunButton
+								readError={
+									isError
+										? {
+												retry: () => {
+													void refetch();
+												},
+												isRetrying: isFetching,
+											}
+										: undefined
+								}
 								run={run}
 								defaultOpen={run.jobId === openJobId}
 								onConfirmed={() =>
