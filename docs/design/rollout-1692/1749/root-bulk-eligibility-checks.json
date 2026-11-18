@@ -1,0 +1,206 @@
+{
+  "issue": 1749,
+  "id": "R167",
+  "status": "provisional-awaiting-new-independent-recheck",
+  "verifiedCommit": null,
+  "previousPublishedCheckpoint": "fcd64a7537a46d6c1dc1b33a16dac8dbb5c2193d",
+  "correctionCommit": "84fe0865474f85c64c66942425acd3c081be616d",
+  "correctionIntegrationCommit": "152967f0bd41c563b3e4c3e0792e2485126bcaab",
+  "tree": "175e605acc57e0dc50a2408df0dfeb795bb10692",
+  "appTree": "adc3314688075e22a5b1adaf0e47ca2601499b04",
+  "orderedParents": [
+    "fcd64a7537a46d6c1dc1b33a16dac8dbb5c2193d",
+    "84fe0865474f85c64c66942425acd3c081be616d"
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+      "gitBlob": "a7b6a01a8e85b86f3870c4252bf4b76fba9a6344"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-bulk-eligibility.test.tsx",
+      "gitBlob": "362e1b1a77b2f9fbc726f2bcf1e59bd13b624bb4"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/finance-queue.tsx",
+      "gitBlob": "bc5d223aa36c05a1366deff4dcfcfc3a7c4e890c"
+    }
+  ],
+  "behavior": {
+    "trigger": "An open bank-reimbursement selection captures a report; a fresh successful queue read explicitly includes that same report in an unconfirmed payroll run.",
+    "before": "The open dialog dispatches the old captured bank-reimbursement account despite the rendered payroll inclusion.",
+    "after": "The captured batch is latched as retired, its exact draft remains visible with a review-selection alert, and click/native/queued submissions dispatch nothing.",
+    "alsoRetires": [
+      "Explicit approval loss",
+      "Loss of full-reimbursement eligibility",
+      "Changed account currency",
+      "Changed canonical full-reimbursement balance"
+    ],
+    "notEvidence": "Absence from a filtered page alone does not retire or replace the captured source.",
+    "recovery": "Retirement cannot be undone by an outage, return to old eligibility or Activity. Close and review/reselect to compose another request. Activity may retire the entire reader and close its dialog.",
+    "pending": "An already-dispatched external command remains reserved until its own promise settles; retirement suppresses obsolete feedback and does not undo or claim to prevent server persistence.",
+    "unchanged": "Canonical auth/actions/security, settlement/payroll/export writers, dates/amount calculations, expected-balance/idempotency contracts and key factories are unchanged."
+  },
+  "independentStop": {
+    "head": "fcd64a7537a46d6c1dc1b33a16dac8dbb5c2193d",
+    "safeIndexSha256": "624d99da2df93da179b175dada45028cee9a04cafe1c352a42476a6187d28a01",
+    "payloads": 70,
+    "bytes": 10059632,
+    "finalPriorityCases": {
+      "passed": 4,
+      "failed": 1
+    },
+    "classification": "One inherited Spec P1; pinned premerge queue with current shared dependencies reproduces it. No persisted write or live authorization bypass.",
+    "priorControlReruns": "Queue4/4 and settlement3/3 are unchanged overlapping controls, not additional new acceptance.",
+    "intakeAuditSha256": "99a1a7e05c7f92e178fc1892aa1da0eaa6a3d8885914eb742dc9ca2d6dad469a",
+    "qualifications": [
+      "The first independent modal-background locator attempt had one fixture failure and one pending assertion; corrected rendered inclusion/link observations preserved all behavioral assertions.",
+      "The selectedActionEnabled diagnostic treats an absent button as truthy; the actual passing DOM assertion establishes absence.",
+      "Early PowerShell quoting and snapshot ENOBUFS raw gaps remain transcript-only.",
+      "66 anchor occurrences represent 62 unique SHAs. Frozen archive maps/sizes and sealed before/after digests match; the audit did not recompute every frozen archive payload hash from Git.",
+      "Independent review stopped before broad units, PostgreSQL, quality or runtime acceptance."
+    ]
+  },
+  "rootChecks": {
+    "exactOriginalReproduction": {
+      "red": {
+        "passed": 4,
+        "failed": 1
+      },
+      "greenObserved": {
+        "passed": 5,
+        "failed": 0
+      },
+      "adaptation": "The correct blocked UI has no RPC failure. The helper now observes the explicit review-selection message only when the button was disabled before clicking; all original case names and final no-dispatch/dispatch assertions remain. Historical old-source control still dispatches once."
+    },
+    "unit": {
+      "instances": 369,
+      "distinct": 369,
+      "physicalFiles": 30,
+      "passed": 369,
+      "failed": 0,
+      "previous352": "All 352 previous case identities are included; the 17-case new permanent file contains four adapted current reproductions and thirteen root-authored controls. Root cases are not independent review.",
+      "publicSeams": "Sixteen cases use the real FinanceQueue, OrganizationContextProvider, QueryClient and TanStack dialog; one directly exercises the public BulkReimbursementDialog retired prop during queued validation.",
+      "testSelection": [
+        "src/components/site-header.test.tsx",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/travel-expenses/finance-queue-paging.test.ts",
+        "src/lib/travel-expenses/finance-queue-params.test.ts",
+        "src/lib/travel-expenses/officer-scope.test.ts",
+        "src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+        "src/components/travel-expenses/finance/finance-exports.test.tsx",
+        "src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+        "src/components/travel-expenses/finance/finance-queue.test.tsx",
+        "src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel.test.tsx",
+        "src/components/travel-expenses/finance/settlement-status.test.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+        "src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+        "src/lib/travel-expenses/__tests__/settlement.test.ts",
+        "src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+        "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+        "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "src/components/travel-expenses/travel-expenses-heading.test.ts",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel-provider.test.tsx",
+        "src/components/travel-expenses/finance/finance-reader-provider.test.tsx",
+        "src/components/travel-expenses/finance/finance-bulk-eligibility.test.tsx"
+      ],
+      "caseMultisetSha256": "b1a0026c906643c9074f00bea0548676f791c7e56b44dc899d713f0c643f3630"
+    },
+    "types": {
+      "nextTypegen": 0,
+      "application": 0,
+      "workflowContracts": 0,
+      "smoke": 0,
+      "license": "Existing genuine 125-entry ignored artifact retained; no license copy or generation."
+    },
+    "quality": {
+      "ownedFiles": 3,
+      "explicit100ColumnCRLF": 0,
+      "lintAndImports": 0,
+      "ordinaryProfile": 1,
+      "ordinaryFindings": 3,
+      "sourceWhitespace": 0
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "fcd64a7537a46d6c1dc1b33a16dac8dbb5c2193d",
+      "files": 3,
+      "complete": true,
+      "errors": 0,
+      "warnings": 4,
+      "score": null,
+      "classification": [
+        "Two existing non-component Fast Refresh exports in bulk dialog.",
+        "TanStack preventDefault warning remains despite the actual native handler calling preventDefault before handleSubmit.",
+        "Existing queue complexity warning remains; current cyclomatic34/cognitive47/depth6."
+      ],
+      "noSuppressionsOrConfigUpgrades": true
+    },
+    "noNewPostgresOrRuntime": true
+  },
+  "attempts": [
+    "Original public reproduction:4P/1P1F before source change.",
+    "First feedback adaptation checked disabled after click and mistook normal submission state for retirement:3P/2harnessF; corrected to capture before click,5P.",
+    "First permanent expansion7P/9fixtureF: factory shared a mutable currency line between captured/refreshed accounts and across cases; each account now owns a clone. Second row needed a distinct title for unique-link lookup.",
+    "Isolated fixture15P/1new Activity expectationF: existing reader remount removes the dialog. Corrected the new expectation to no old dialog and no command; no old committed assertion was changed.",
+    "Next16P/1new Activity loading observationF: await the actual fresh payroll row before checking settled disabled action.",
+    "First explicit format check failed one chaining layout; final explicit and lint pass. Ordinary three-file formatting still fails.",
+    "Final formatter-only chaining change after the unit run preserves the recorded test source modulo whitespace; no behavior assertion changed.",
+    "Vite native-config and timeout-overflow warnings remain in raw bounded-unit logs."
+  ],
+  "preservation": {
+    "unaffectedPaths": 19244,
+    "anchors": {
+      "occurrences": 66,
+      "unique": 62,
+      "preserved": true
+    },
+    "archives": [
+      {
+        "path": "1747/root-history-and-capability-recovery/",
+        "entries": 327
+      },
+      {
+        "path": "1748/root-withdrawal-and-continuation/",
+        "entries": 202
+      }
+    ],
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "temporaryBridgesRemoved": 2,
+    "existingCommittedTestChanges": 0,
+    "runtimeServicesStarted": 0
+  },
+  "commands": {
+    "guard": "$env:pnpm_config_verify_deps_before_run='false'; every pnpm invocation also uses --config.verify-deps-before-run=false",
+    "units": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit <each testSelection path as a separate argument> --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-bulk-eligibility-root-checks/unit-complete.json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "explicit": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --formatter-enabled=true --line-width=100 --line-ending=crlf <three sourcePins paths relative to apps/webapp> --config-path=biome.jsonc",
+    "lint": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --formatter-enabled=false <three sourcePins paths relative to apps/webapp> --config-path=biome.jsonc",
+    "ordinary": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check <three sourcePins paths relative to apps/webapp> --config-path=biome.jsonc",
+    "doctor": "REACT_DOCTOR_PARALLEL=1 pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base fcd64a7537a46d6c1dc1b33a16dac8dbb5c2193d --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1749-bulk-eligibility-root-checks/doctor.json"
+  },
+  "remaining": [
+    "New isolated independent recheck of the exact correction and shared finance consumers.",
+    "Fresh canonical PostgreSQL and live finance acceptance; historical worker aggregate210unit/84PG and blank readback PNGs remain historical.",
+    "Live authority/session/organization races, real payroll confirmation/removal, exports/download/provider, build/catalog, native/accessibility, device and true zoom matrices."
+  ],
+  "frontier": {
+    "integrated": 65,
+    "awaitingIntegration": 39,
+    "pending": 53,
+    "total": 157
+  },
+  "issueState": "OPEN",
+  "pullRequest": "draft",
+  "privateEvidenceDirectory": ".tmp/1749-bulk-eligibility-root-checks"
+}

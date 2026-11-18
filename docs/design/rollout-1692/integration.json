@@ -2127,13 +2127,16 @@
       "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
       "evidence": "docs/design/rollout-1692/1749.md",
       "rootCorrectionEvidence": "docs/design/rollout-1692/1749/root-settlement-withdrawal-checks.json",
-      "integrationVerification": "Provisional only: sharedFinanceReadBoundary follows actualprovider/session andpreservescoverage-adminwithoutemployee exception; knownNotfound/Unauthorized withdrawal sharedacrossreaders;selectionreset;unsettledsame-targetmutationreservationsandretiredexportcontinuationsfixed at60b6ee86. Independentqueue3controlsP/1inheritedP1;rootexactredthen4unchangedgreen.352distinctunitidentities/29files=350broad+33finalexportwith31overlap;26permanentprovidercontrols,149oldassertionsretained. All3fulltypes/typegen,17filelint/explicit100CRLF pass;ordinary17findings;Doctor17file0errors/6reviewedwarnings.66anchors/proofs preserved. Freshindependentrecheck,canonicalPG/livefinance/remainingmatrices unpassed;verifiedCommitnull,issueOPEN,PRdraft.",
+      "integrationVerification": "Provisional only: captured reimbursement batch retires after explicit fresh same-source payroll inclusion, approval/full-eligibility loss or currency/balance change; omission alone does not retarget. Exact draft retained; close/reselect required; queued/native sends blocked and unresolved reservations retained until settlement. Source84fe08654 normal merge152967f0b. Independent4controlsP/1inheritedP1F; root exact red then adapted5/5green. Root369distinct units/30files include previous352 plus17permanent controls. All3fulltypes/typegen,3filelint/explicit100CRLF pass;ordinary3findings;Doctor3files0errors/4warnings. Canonical owners and prior proof unchanged;66anchors/62SHAs preserved. Fresh independentrecheck,canonicalPG/livefinance/remainingmatrices unpassed;verifiedCommitnull,issueOPEN,PRdraft.",
       "providerCorrectionCommit": "e512a116b39706366eee3adfaad00787e04ff1dc",
       "providerCorrectionIntegrationCommit": "b9f13a387898980c5c6b684d3c7e0dff7ebd0d8f",
       "providerCorrectionEvidence": "docs/design/rollout-1692/1749/root-provider-arrival-checks.json",
       "financeLifetimeCorrectionCommit": "60b6ee86b1e677dc8858ad6dcbc635d593b075f7",
       "financeLifetimeCorrectionIntegrationCommit": "f9bcd216023c02e0a7253416b40aa61709f86fb4",
-      "financeLifetimeCorrectionEvidence": "docs/design/rollout-1692/1749/root-finance-lifetime-checks.json"
+      "financeLifetimeCorrectionEvidence": "docs/design/rollout-1692/1749/root-finance-lifetime-checks.json",
+      "bulkEligibilityCorrectionCommit": "84fe0865474f85c64c66942425acd3c081be616d",
+      "bulkEligibilityCorrectionIntegrationCommit": "152967f0bd41c563b3e4c3e0792e2485126bcaab",
+      "bulkEligibilityCorrectionEvidence": "docs/design/rollout-1692/1749/root-bulk-eligibility-checks.json"
     },
     {
       "id": "R168",
