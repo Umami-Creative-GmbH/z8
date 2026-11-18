@@ -2067,18 +2067,23 @@
       "blockedBy": [
         1853
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "378e269bc6f70d905c39ff50d5513ab9469aeca0",
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1747#issuecomment-6909500771",
       "implementationCommit": "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a",
-      "knownSharedAcceptanceFinding": "R166 bounded handoff e3957741a7f0f1aeeba748cce3af27a42870fcf1 includes the shared continuation corrections; its live retirement, accessibility and wider matrix limits remain explicit. R165 still requires current incoming-consumer acceptance.",
+      "knownSharedAcceptanceFinding": "R166 bounded handoff e3957741 includes the shared continuation corrections; current R165 actual-provider consumer controls pass. R166 live legacy-command retirement, native/axe and wider limits remain unchanged. R165 current held NewReportButton creation is a separate runtime command, not new legacy retirement proof.",
       "integrationCommit": "c70858bfe507eb99f844a455230e312cc8247b61",
       "correctionCommit": "20a7481f08b6156e912442492f8181ffe2650134",
       "correctionIntegrationCommit": "0a1048d64ae2a54292b454d757b4a1de306360c9",
       "evidence": "docs/design/rollout-1692/1747.md",
       "rootCorrectionEvidence": "docs/design/rollout-1692/1747/root-history-withdrawal-checks.json",
-      "integrationVerification": "Provisional merge/tree/map/65-anchor preservation verified. Isolated STOP found inherited Unauthorized history retention (8 unique cases:5 pass/3 fail). Root durable withdrawal correction passes183 cases/13files, all3types,4-file explicit CRLF/lint and Doctor0/0; ordinary4 formatting findings retained. Older actor/provider/session fixtures reconciled without weakening lifetime assertions. Fresh independent/PG/current runtime pending; no readiness advancement."
+      "integrationVerification": "Bounded handoff verified at 378e269bc6f70d905c39ff50d5513ab9469aeca0 with app52a1d437 unchanged. Independent203 unit/14files plus50 canonicalPG/6files=253 distinct/20files;172 frozen1748 overlaps and reruns nonadditive. Root all3types pass; isolated ignored-license mainTS limitation separate. Lint/explicit100CRLF/Doctor0/0 pass;ordinary4format findings retained. Current v2 15P/7U and focused F1-F7 seven narrow passes remain separate: real creation/readback,deletion,read recovery,held completion ordering,secondpointer,finance-only grant/direct fresh revocation denial,foreign/peer scope,prefs/current geometry/CDPnames/Next. HTTP200 rendereddenial, missing timestamped listing-banner loss, self-expense overlap, synthetic transport-only creation recovery and clipped focused PNG qualified.327file/288payload/20clone proof and328initial+aux=329committed paths independently audited;rawwhitespace198808diagnostics/82paths failed and preserved. Full accounting/native/axe/production/catalog/provider/device/zoom/exhaustive/global final review remains unpassed;issueopen/PRdraft.",
+      "proofCommit": "378e269bc6f70d905c39ff50d5513ab9469aeca0",
+      "independentReviewCommit": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+      "independentReviewAppTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+      "independentReviewEvidence": "docs/design/rollout-1692/1747/root-history-and-capability-recovery/payload/independent/handoff.json",
+      "handoffEvidence": "docs/design/rollout-1692/1747/root-handoff.json"
     },
     {
       "id": "R166",
