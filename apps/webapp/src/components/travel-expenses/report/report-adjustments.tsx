@@ -37,6 +37,7 @@ import {
 } from "@/lib/travel-expenses/adjustment";
 import type { ReportAdjustmentView } from "@/lib/travel-expenses/adjustment-store";
 import { Link, useRouter } from "@/navigation";
+import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatMoney, formatRecordedInstant, formatSignedMoney } from "./format";
 import { useReportQueryKey } from "./report-read-scope";
 import { ReportStatusBadge } from "./report-status";
@@ -200,12 +201,19 @@ export function ReportAdjustmentsPanel({ reportId }: { reportId: string }) {
 	const locale = useLocale();
 	const [open, setOpen] = useState(false);
 	const [pending, setPending] = useState(false);
-	const { data } = useReportAdjustments(reportId);
-	if (data?.role !== "original") return null;
+	const { data, isError, isFetching, refetch } = useReportAdjustments(reportId);
+	const loadError = isError ? (
+		<TravelExpenseLoadError
+			message={t("travelExpenses.report.errors.load", "Unable to load this expense. Please retry.")}
+			retry={() => void refetch()}
+			isRetrying={isFetching}
+		/>
+	) : null;
+	if (data?.role !== "original") return loadError;
 	const { eligibility, adjustments, baseline } = data;
 	if (!eligibility.ok && adjustments.length === 0) {
 		const text = ineligibleText(t, eligibility.reason);
-		return text ? <p className="text-sm text-muted-foreground">{text}</p> : null;
+		return loadError ?? (text ? <p className="text-sm text-muted-foreground">{text}</p> : null);
 	}
 	const headingId = `adjustments-${reportId}`;
 	return (
@@ -223,6 +231,7 @@ export function ReportAdjustmentsPanel({ reportId }: { reportId: string }) {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
+					{loadError}
 					<div className="space-y-3">
 						{baseline && adjustments.some((adjustment) => adjustment.applied) && (
 							<p className="text-sm">
@@ -269,7 +278,12 @@ export function ReportAdjustmentsPanel({ reportId }: { reportId: string }) {
 					</div>
 					{eligibility.ok && (
 						<>
-							<Button type="button" variant="outline" onClick={() => setOpen(true)}>
+							<Button
+								type="button"
+								variant="outline"
+								disabled={isError}
+								onClick={() => setOpen(true)}
+							>
 								<IconAdjustmentsDollar aria-hidden="true" className="mr-2 size-4" />
 								{t("travelExpenses.adjustment.create.action", "Correct with an adjustment")}
 							</Button>
@@ -294,7 +308,7 @@ export function ReportAdjustmentsPanel({ reportId }: { reportId: string }) {
 									{open && (
 										<CreateAdjustmentForm
 											reportId={reportId}
-											onCancel={() => setOpen(false)}
+											onClose={() => setOpen(false)}
 											onPendingChange={setPending}
 										/>
 									)}
@@ -324,16 +338,17 @@ function reasonError(t: Translate, value: string): string | undefined {
 
 function CreateAdjustmentForm({
 	reportId,
-	onCancel,
+	onClose,
 	onPendingChange,
 }: {
 	reportId: string;
-	onCancel: () => void;
+	onClose: () => void;
 	onPendingChange: (pending: boolean) => void;
 }) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const queryKey = useReportQueryKey(queryKeys.travelExpenses.reportAdjustments(reportId));
 	const [failure, setFailure] = useState<string | null>(null);
 	const task = useReportTask(reportId);
 	// One key per reason until answered: a retried request never creates a second adjustment.
@@ -353,6 +368,14 @@ function CreateAdjustmentForm({
 				reason,
 				idempotencyKey: attempt.current.key,
 			}).catch(() => null);
+			if (result?.success && result.data.status === "created") {
+				await queryClient.invalidateQueries({ queryKey, exact: true });
+				if (task.isCurrent(meta.task)) {
+					router.push(`/travel-expenses/reports/${result.data.reportId}`);
+				}
+				onClose();
+				return;
+			}
 			if (!task.isCurrent(meta.task)) return;
 			if (!result?.success) {
 				setFailure(
@@ -365,13 +388,6 @@ function CreateAdjustmentForm({
 			}
 			const outcome = result.data;
 			attempt.current = null;
-			if (outcome.status === "created") {
-				await queryClient.invalidateQueries({
-					queryKey: queryKeys.travelExpenses.reportAdjustments(reportId),
-				});
-				if (task.isCurrent(meta.task)) router.push(`/travel-expenses/reports/${outcome.reportId}`);
-				return;
-			}
 			setFailure(
 				outcome.status === "ineligible"
 					? t(
@@ -438,7 +454,7 @@ function CreateAdjustmentForm({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={onCancel}
+							onClick={onClose}
 							disabled={isSubmitting || task.working}
 						>
 							{t("common.cancel", "Cancel")}

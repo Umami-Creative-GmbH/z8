@@ -74,7 +74,7 @@ describe("reopening an approved report (#614)", () => {
 		await act(async () => complete({ success: false, error: "refused" }));
 		expect(within(dialog).getByLabelText(/Reason/)).toHaveProperty("value", "Exact pending reason");
 	});
-	it("retains a pending reason across Activity without applying a retired success", async () => {
+	it("keeps a pending reason across Activity and retires the confirmation after a successful reopen", async () => {
 		reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({
 			success: true,
 			data: { status: "available", submissionCycle: 2 },
@@ -106,12 +106,25 @@ describe("reopening an approved report (#614)", () => {
 		);
 		rendered.rerender(view("hidden"));
 		rendered.rerender(view("visible"));
-		await act(async () => complete({ success: true, data: { status: "reopened" } }));
-		expect(toast.success).not.toHaveBeenCalled();
 		expect(await screen.findByLabelText(/Reason/)).toHaveProperty(
 			"value",
 			"Activity keeps this reason",
 		);
+		const reads = reopenActions.getTravelExpenseReportReopenState.mock.calls.length;
+		reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({
+			success: true,
+			data: { status: "unavailable" },
+		});
+		await act(async () => complete({ success: true, data: { status: "reopened" } }));
+		await waitFor(() => {
+			expect(reopenActions.getTravelExpenseReportReopenState.mock.calls.length).toBeGreaterThan(
+				reads,
+			);
+			expect(screen.queryByRole("dialog")).toBeNull();
+			expect(screen.queryByRole("button", { name: "Reopen for correction" })).toBeNull();
+		});
+		expect(toast.success).not.toHaveBeenCalled();
+		expect(reopenActions.reopenTravelExpenseReportAction).toHaveBeenCalledTimes(1);
 	});
 	it("keeps the exact reason and dialog after a rejected transport, then retries", async () => {
 		reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({

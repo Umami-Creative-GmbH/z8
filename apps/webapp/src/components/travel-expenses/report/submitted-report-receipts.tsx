@@ -19,13 +19,11 @@ import { useReportTask } from "./use-report-task";
 const MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-class ReceiptUploadError extends Error {
-	constructor(readonly status: number) {
-		super("Receipt upload refused");
-	}
-}
-function uploadFailureMessage(t: Translate, error: Error, maxReceiptBytes: number): string {
-	const status = error instanceof ReceiptUploadError ? error.status : null;
+function uploadFailureMessage(
+	t: Translate,
+	status: number | null,
+	maxReceiptBytes: number,
+): string {
 	if (status === 409)
 		return t(
 			"travelExpenses.report.receipts.supplementConflict",
@@ -55,7 +53,7 @@ type Props = {
 	submissionCycle: number;
 	canAddReceipt: boolean;
 	receipts: SubmittedReportItemView["receipts"];
-	onChanged: () => void;
+	refreshSubmission: () => Promise<unknown>;
 	maxReceiptBytes?: number;
 };
 
@@ -86,7 +84,7 @@ export function SubmittedReportReceipts(props: Props) {
 					reportId={props.reportId}
 					itemId={props.itemId}
 					submissionCycle={props.submissionCycle}
-					onChanged={props.onChanged}
+					refreshSubmission={props.refreshSubmission}
 					maxReceiptBytes={props.maxReceiptBytes}
 				/>
 			) : null}
@@ -98,53 +96,50 @@ function MissingReceiptUpload({
 	reportId,
 	itemId,
 	submissionCycle,
-	onChanged,
+	refreshSubmission,
 	maxReceiptBytes = MAX_RECEIPT_SIZE,
-}: Pick<Props, "reportId" | "itemId" | "submissionCycle" | "onChanged" | "maxReceiptBytes">) {
+}: Pick<
+	Props,
+	"reportId" | "itemId" | "submissionCycle" | "refreshSubmission" | "maxReceiptBytes"
+>) {
 	const { t } = useTranslate();
 	const fileInput = useRef<HTMLInputElement>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [attached, setAttached] = useState(false);
 	const task = useReportTask(`${reportId}:${itemId}:${submissionCycle}`);
-	const processing = useRef<ReturnType<typeof task.reserve>>(null);
 	const upload = useTravelExpenseFileUpload({
 		process: async ({ tusFileKey, fileName }) => {
 			const activation = task.reserve();
-			if (!activation) throw new Error("Receipt task unavailable");
-			processing.current = activation;
-			const response = await fetch("/api/upload/travel-expense/report-receipt", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					reportId,
-					itemId,
-					submissionCycle,
-					tusFileKey,
-					fileName,
-				}),
-			});
-			if (!response.ok) throw new ReceiptUploadError(response.status);
-		},
-		onSuccess: () => {
-			const activation = processing.current;
 			if (!activation) return;
-			if (task.isCurrent(activation)) onChanged();
+			try {
+				const response = await fetch("/api/upload/travel-expense/report-receipt", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ reportId, itemId, submissionCycle, tusFileKey, fileName }),
+				});
+				if (response.ok) {
+					setAttached(true);
+					// The POST can settle after the upload widget's callbacks are disconnected.
+					await refreshSubmission();
+				} else if (task.isCurrent(activation)) {
+					setError(uploadFailureMessage(t, response.status, maxReceiptBytes));
+				}
+			} catch {
+				if (task.isCurrent(activation)) setError(uploadFailureMessage(t, null, maxReceiptBytes));
+			}
 			task.release(activation);
 		},
-		onError: (error) => {
-			const activation = processing.current;
-			if (!activation) {
-				if (task.isActive()) setError(uploadFailureMessage(t, error, maxReceiptBytes));
-				return;
+		onError: () => {
+			if (task.isActive() && !task.isPending()) {
+				setError(uploadFailureMessage(t, null, maxReceiptBytes));
 			}
-			if (task.isCurrent(activation)) setError(uploadFailureMessage(t, error, maxReceiptBytes));
-			task.release(activation);
 		},
 		maxFileSize: maxReceiptBytes,
 	});
 	function chooseFile(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0];
 		event.target.value = "";
-		if (!file) return;
+		if (!file || attached || upload.isUploading || task.isPending()) return;
 		if (file.size > maxReceiptBytes) {
 			setError(
 				t(
@@ -167,6 +162,9 @@ function MissingReceiptUpload({
 		setError(null);
 		upload.addFile(file);
 	}
+	if (attached) return null;
+	const processing = upload.isProcessing || task.working;
+	const busy = upload.isUploading || processing;
 	return (
 		<div className="space-y-2">
 			<input
@@ -177,17 +175,17 @@ function MissingReceiptUpload({
 				tabIndex={-1}
 				aria-label={t("travelExpenses.report.receipts.choose", "Choose receipt")}
 				accept={ALLOWED_TRAVEL_EXPENSE_MIME_TYPES.join(",")}
-				disabled={upload.isUploading}
+				disabled={busy}
 				onChange={chooseFile}
 			/>
 			<Button
 				type="button"
 				size="sm"
 				variant="outline"
-				disabled={upload.isUploading}
+				disabled={busy}
 				onClick={() => fileInput.current?.click()}
 			>
-				{upload.isUploading ? (
+				{busy ? (
 					<IconLoader2
 						aria-hidden="true"
 						className="size-4 animate-spin motion-reduce:animate-none"
@@ -197,9 +195,9 @@ function MissingReceiptUpload({
 				)}
 				{t("travelExpenses.report.receipts.add", "Add receipt")}
 			</Button>
-			{upload.isUploading ? (
+			{busy ? (
 				<div role="status" className="space-y-1 text-sm">
-					{upload.isProcessing
+					{processing
 						? t("travelExpenses.report.receipts.processing", "Attaching receipt…")
 						: t("travelExpenses.report.receipts.uploading", "Uploading receipt…")}
 					<Progress

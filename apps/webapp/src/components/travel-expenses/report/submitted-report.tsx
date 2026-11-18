@@ -1,7 +1,7 @@
 "use client";
 
 import { IconAlertTriangle } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { getTravelExpenseReportSubmission } from "@/app/[locale]/(app)/travel-expenses/report-actions";
@@ -110,8 +110,10 @@ export function SubmittedTravelExpenseReport({
 	maxReceiptBytes?: number;
 }) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
+	const queryKey = useReportQueryKey(queryKeys.travelExpenses.reportSubmission(reportId, cycle));
 	const { data, isLoading, isFetching, isError, refetch } = useQuery({
-		queryKey: useReportQueryKey(queryKeys.travelExpenses.reportSubmission(reportId, cycle)),
+		queryKey,
 		queryFn: async (): Promise<SubmittedReportView | null> => {
 			const result = await getTravelExpenseReportSubmission(reportId, cycle);
 			if (
@@ -182,9 +184,7 @@ export function SubmittedTravelExpenseReport({
 				maxReceiptBytes={maxReceiptBytes}
 				reportId={reportId}
 				data={data}
-				onChanged={() => {
-					void refetch();
-				}}
+				refreshSubmission={() => queryClient.invalidateQueries({ queryKey, exact: true })}
 			/>
 			<ReportTotals
 				id={`${reportId}-submitted`}
@@ -376,12 +376,12 @@ function SubmittedTrip({ trip }: { trip: NonNullable<SubmittedReportView["facts"
 function SubmittedExpenses({
 	reportId,
 	data,
-	onChanged,
+	refreshSubmission,
 	maxReceiptBytes,
 }: {
 	reportId: string;
 	data: SubmittedReportView;
-	onChanged: () => void;
+	refreshSubmission: () => Promise<unknown>;
 	maxReceiptBytes?: number;
 }) {
 	const { t } = useTranslate();
@@ -420,7 +420,7 @@ function SubmittedExpenses({
 									submissionCycle={data.submissionCycle}
 									canAddReceipt={data.canAddReceipt}
 									receipts={item.receipts}
-									onChanged={onChanged}
+									refreshSubmission={refreshSubmission}
 									maxReceiptBytes={maxReceiptBytes}
 								/>
 							),
@@ -450,7 +450,7 @@ function ApprovedReportPanels({
 			    including a reviewer who also has finance permission. */}
 			<SettlementPanel source={{ type: "report", id: reportId }} />
 			{access !== "owner" && <ReopenReportPanel reportId={reportId} />}
-			{access === "owner" && <ReportAdjustmentsPanel reportId={reportId} />}
+			{access === "owner" && <ReportAdjustmentsPanel key={reportId} reportId={reportId} />}
 		</>
 	);
 }

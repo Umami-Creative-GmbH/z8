@@ -7,7 +7,7 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useState } from "react";
@@ -36,7 +36,7 @@ import { REOPEN_REASON_MAX_LENGTH } from "@/lib/travel-expenses/report-reopen";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatRecordedInstant } from "./format";
 import { AdjustmentRequiredHint } from "./report-adjustments";
-import { useReportQueryKey } from "./report-read-scope";
+import { useReportLifecycleRefresh, useReportQueryKey } from "./report-read-scope";
 import { useReportTask } from "./use-report-task";
 
 const reopenSubmission = { task: null as { arrival: object; scope: string } | null };
@@ -91,14 +91,8 @@ function adjustmentText(
  * exported nor reimbursed (#614). Once it was, the panel explains that a
  * linked adjustment is needed instead; #615 mounts its adjustment action here.
  */
-export function ReopenReportPanel(props: Parameters<typeof ReopenReportPanelTask>[0]) {
-	return <ReopenReportPanelTask key={props.reportId} {...props} />;
-}
-
-function ReopenReportPanelTask({ reportId }: { reportId: string }) {
+export function ReopenReportPanel({ reportId }: { reportId: string }) {
 	const { t } = useTranslate();
-	const [open, setOpen] = useState(false);
-	const [pending, setPending] = useState(false);
 	const { data, isError, isFetching, refetch } = useQuery({
 		queryKey: useReportQueryKey(queryKeys.travelExpenses.reportReopen(reportId)),
 		queryFn: async (): Promise<TravelExpenseReportReopenState> => {
@@ -131,6 +125,27 @@ function ReopenReportPanelTask({ reportId }: { reportId: string }) {
 		);
 	}
 	return (
+		<ReopenReportControl
+			key={`${reportId}:${data.submissionCycle}`}
+			reportId={reportId}
+			submissionCycle={data.submissionCycle}
+		/>
+	);
+}
+
+function ReopenReportControl({
+	reportId,
+	submissionCycle,
+}: {
+	reportId: string;
+	submissionCycle: number;
+}) {
+	const { t } = useTranslate();
+	const [open, setOpen] = useState(false);
+	const [pending, setPending] = useState(false);
+	const [reopened, setReopened] = useState(false);
+	if (reopened) return null;
+	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<Button type="button" variant="outline" onClick={() => setOpen(true)}>
 				<IconArrowBackUp aria-hidden="true" className="mr-2 size-4" />
@@ -156,11 +171,10 @@ function ReopenReportPanelTask({ reportId }: { reportId: string }) {
 					</DialogHeader>
 					{open && (
 						<ReopenForm
-							key={`${reportId}:${data.submissionCycle}`}
 							reportId={reportId}
-							submissionCycle={data.submissionCycle}
-							onCancel={() => setOpen(false)}
-							onDone={() => setOpen(false)}
+							submissionCycle={submissionCycle}
+							onClose={() => setOpen(false)}
+							onReopened={() => setReopened(true)}
 							onPendingChange={setPending}
 						/>
 					)}
@@ -187,18 +201,18 @@ function reasonError(t: Translate, value: string): string | undefined {
 function ReopenForm({
 	reportId,
 	submissionCycle,
-	onCancel,
-	onDone,
+	onClose,
+	onReopened,
 	onPendingChange,
 }: {
 	reportId: string;
 	submissionCycle: number;
-	onCancel: () => void;
-	onDone: () => void;
+	onClose: () => void;
+	onReopened: () => void;
 	onPendingChange: (pending: boolean) => void;
 }) {
 	const { t } = useTranslate();
-	const queryClient = useQueryClient();
+	const refreshLifecycle = useReportLifecycleRefresh(reportId);
 	const [failure, setFailure] = useState<string | null>(null);
 	const task = useReportTask(`${reportId}:${submissionCycle}`);
 	const form = useForm({
@@ -212,6 +226,14 @@ function ReopenForm({
 				submissionCycle,
 				reason: value.reason,
 			}).catch(() => null);
+			if (result?.success && result.data.status === "reopened") {
+				if (task.isCurrent(meta.task)) {
+					toast.success(t("travelExpenses.report.reopen.done", "Report reopened for correction"));
+				}
+				onReopened();
+				await refreshLifecycle();
+				return;
+			}
 			if (!task.isCurrent(meta.task)) return;
 			if (!result?.success) {
 				// Server errors are English diagnostics; the reviewer sees a translated outcome.
@@ -223,25 +245,16 @@ function ReopenForm({
 				);
 				return;
 			}
-			switch (result.data.status) {
-				case "reopened":
-					toast.success(t("travelExpenses.report.reopen.done", "Report reopened for correction"));
-					break;
-				case "adjustment_required":
-					toast.error(adjustmentText(t, result.data.reason));
-					break;
-				default:
-					toast.error(
-						t(
+			toast.error(
+				result.data.status === "adjustment_required"
+					? adjustmentText(t, result.data.reason)
+					: t(
 							"travelExpenses.report.reopen.changed",
 							"The report changed meanwhile and was not reopened. Review it again.",
 						),
-					);
-			}
-			await queryClient.invalidateQueries({
-				queryKey: queryKeys.travelExpenses.report(reportId),
-			});
-			if (task.isCurrent(meta.task)) onDone();
+			);
+			await refreshLifecycle();
+			if (task.isCurrent(meta.task)) onClose();
 		},
 	});
 
@@ -297,7 +310,7 @@ function ReopenForm({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={onCancel}
+							onClick={onClose}
 							disabled={isSubmitting || task.working}
 						>
 							{t("common.cancel", "Cancel")}
