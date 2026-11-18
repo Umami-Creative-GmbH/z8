@@ -41,6 +41,22 @@ vi.mock("@/components/providers/organization-context-provider", () => ({
 	useOrganization: () => identity,
 }));
 vi.mock("@/lib/auth-client", () => ({
+	authClient: {
+		$store: {
+			atoms: {
+				session: {
+					get: () => ({
+						isPending: identity.pending,
+						data: {
+							user: { id: identity.userId },
+							session: { activeOrganizationId: identity.activeOrganizationId },
+						},
+					}),
+					subscribe: () => () => {},
+				},
+			},
+		},
+	},
 	useSession: () => ({
 		isPending: identity.pending,
 		data: {

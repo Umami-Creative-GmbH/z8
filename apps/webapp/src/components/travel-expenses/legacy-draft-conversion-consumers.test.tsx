@@ -3,7 +3,7 @@
 import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { LegacyClaimHistoryRow } from "@/lib/travel-expenses/expense-history";
 
 const boundary = vi.hoisted(() => ({
@@ -42,7 +42,7 @@ vi.mock("@tolgee/react", () => ({
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
 vi.mock("@/navigation", () => ({
-	useRouter: () => ({ push: boundary.push }),
+	useRouter: () => ({ push: boundary.push, refresh: vi.fn(), replace: vi.fn() }),
 	Link: ({ children, ...props }: { children: ReactNode; href: string }) => (
 		<a {...props}>{children}</a>
 	),
@@ -63,6 +63,7 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/mileage-actions", () => ({
 	createStandaloneMileageReportAction: vi.fn(),
 }));
 
+import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { LegacyClaimActions } from "./legacy-draft-conversion";
 import { TravelExpenseManagement } from "./travel-expense-management";
 
@@ -81,10 +82,40 @@ const claim: LegacyClaimHistoryRow = {
 	destination: null,
 	canContinue: true,
 };
+const initialContext = {
+	userId: "reader-a",
+	organizationId: "org-a",
+	employee: { employeeId: "employee-a", organizationId: "org-a", role: "employee" as const },
+	organizationSettings: null,
+	updatedAt: 1,
+};
+beforeEach(() => {
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(
+			async () =>
+				new Response(
+					JSON.stringify({
+						user: { id: boundary.user },
+						session: { activeOrganizationId: boundary.organization },
+						employee: { ...initialContext.employee, organizationId: boundary.organization },
+						organizationSettings: null,
+					}),
+					{ status: 200 },
+				),
+		),
+	);
+});
+async function continueClaim() {
+	const button = await screen.findByRole("button", { name: "Continue as report" });
+	await vi.waitFor(() => expect(button).toHaveProperty("disabled", false));
+	fireEvent.click(button);
+}
 afterEach(() => {
 	cleanup();
 	onlineManager.setOnline(true);
-	vi.clearAllMocks();
+	vi.resetAllMocks();
+	vi.unstubAllGlobals();
 	boundary.pending = false;
 	boundary.user = "reader-a";
 	boundary.organization = "org-a";
@@ -104,15 +135,21 @@ it.each(["history", "retained list"])(
 		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		const tree = () => (
 			<QueryClientProvider client={client}>
-				{consumer === "history" ? (
-					<TravelExpenseManagement organizationId="org-a" employeeId="employee-a" />
-				) : (
-					<LegacyClaimActions claim={claim} />
-				)}
+				<OrganizationContextProvider initialContext={initialContext}>
+					{consumer === "history" ? (
+						<TravelExpenseManagement
+							userId="reader-a"
+							organizationId="org-a"
+							employeeId="employee-a"
+						/>
+					) : (
+						<LegacyClaimActions claim={claim} />
+					)}
+				</OrganizationContextProvider>
 			</QueryClientProvider>
 		);
 		const view = render(tree());
-		fireEvent.click(await screen.findByRole("button", { name: "Continue as report" }));
+		await continueClaim();
 		await vi.waitFor(() => expect(boundary.convert).toHaveBeenCalledTimes(1));
 		boundary.pending = true;
 		view.rerender(tree());
@@ -135,11 +172,13 @@ it("does not show a retired conversion refusal in a later displayed account", as
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const tree = () => (
 		<QueryClientProvider client={client}>
-			<LegacyClaimActions claim={claim} />
+			<OrganizationContextProvider initialContext={initialContext}>
+				<LegacyClaimActions claim={claim} />
+			</OrganizationContextProvider>
 		</QueryClientProvider>
 	);
 	const view = render(tree());
-	fireEvent.click(await screen.findByRole("button", { name: "Continue as report" }));
+	await continueClaim();
 	await vi.waitFor(() => expect(boundary.convert).toHaveBeenCalledTimes(1));
 	boundary.user = "reader-b";
 	view.rerender(tree());
@@ -168,12 +207,14 @@ it("does not start a queued continuation after displayed session proof is interr
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const tree = () => (
 		<QueryClientProvider client={client}>
-			<LegacyClaimActions claim={claim} />
+			<OrganizationContextProvider initialContext={initialContext}>
+				<LegacyClaimActions claim={claim} />
+			</OrganizationContextProvider>
 		</QueryClientProvider>
 	);
 	const view = render(tree());
 	onlineManager.setOnline(false);
-	fireEvent.click(await screen.findByRole("button", { name: "Continue as report" }));
+	await continueClaim();
 	boundary.pending = true;
 	view.rerender(tree());
 	onlineManager.setOnline(true);
@@ -193,11 +234,13 @@ it("never reactivates a held continuation after account A returns from account B
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const tree = () => (
 		<QueryClientProvider client={client}>
-			<LegacyClaimActions claim={claim} />
+			<OrganizationContextProvider initialContext={initialContext}>
+				<LegacyClaimActions claim={claim} />
+			</OrganizationContextProvider>
 		</QueryClientProvider>
 	);
 	const view = render(tree());
-	fireEvent.click(await screen.findByRole("button", { name: "Continue as report" }));
+	await continueClaim();
 	await vi.waitFor(() => expect(boundary.convert).toHaveBeenCalledTimes(1));
 	boundary.user = "reader-b";
 	view.rerender(tree());
