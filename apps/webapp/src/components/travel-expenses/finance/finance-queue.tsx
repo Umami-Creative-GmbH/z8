@@ -35,6 +35,7 @@ import {
 	financeQueueSearch,
 	parseFinanceQueueView,
 } from "@/lib/travel-expenses/finance-queue-params";
+import { fullReimbursementLine } from "@/lib/travel-expenses/settlement";
 import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
@@ -78,6 +79,24 @@ function SourceIcon({ account }: { account: SettlementAccount }) {
 
 function accountKey(account: SettlementAccount): string {
 	return settlementSourceKey(account.source);
+}
+
+function capturedPaymentChanged(
+	items: readonly BulkReimbursementItem[],
+	accounts: readonly SettlementAccount[],
+) {
+	const current = new Map(accounts.map((account) => [accountKey(account), account]));
+	return items.some(({ account }) => {
+		const next = current.get(accountKey(account));
+		// A filtered page's omission is not evidence about this captured source.
+		if (!next) return false;
+		return (
+			next.approved === false ||
+			!isReimbursableInFull(next) ||
+			next.currency !== account.currency ||
+			fullReimbursementLine(next)?.balance !== fullReimbursementLine(account)?.balance
+		);
+	});
 }
 
 /** Bulk reimbursement (#754) pays an account in full, so only such accounts are offered. */
@@ -403,13 +422,28 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 		`${scope}|${search}|${coverage ?? ""}|${data === null ? "withdrawn" : "available"}`,
 		isPlaceholderData || isError || isFetching ? [] : (data?.accounts ?? []),
 	);
-	// What was selected when the dialog opened: a reload meanwhile changes neither the request nor its results.
-	const [bulkItems, setBulkItems] = useState<BulkReimbursementItem[] | null>(null);
+	// Preserve the composed payment; fresh disqualification cannot retarget or revive it.
+	const [bulkSelection, setBulkSelection] = useState<{
+		items: BulkReimbursementItem[];
+		retired: boolean;
+	} | null>(null);
+	const fresh = data && !isError && !isFetching && !isPlaceholderData;
+	if (fresh && bulkSelection) {
+		if (!canSettle) setBulkSelection(null);
+		else if (!bulkSelection.retired && capturedPaymentChanged(bulkSelection.items, data.accounts)) {
+			setBulkSelection({ ...bulkSelection, retired: true });
+			selection.clear();
+		}
+	}
 	function openBulk() {
 		if (isPlaceholderData || isError || isFetching) return;
-		setBulkItems(
-			selection.selected.map((account) => ({ account, label: accountLabel(t, locale, account) })),
-		);
+		setBulkSelection({
+			items: selection.selected.map((account) => ({
+				account,
+				label: accountLabel(t, locale, account),
+			})),
+			retired: false,
+		});
 	}
 	const statusLabel: Record<FinanceQueueStatus, string> = {
 		open: t("travelExpenses.finance.filter.open", "Open"),
@@ -418,7 +452,7 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 	};
 	const filtered = hasFilters(view);
 	if (data === null) {
-		if (bulkItems) setBulkItems(null);
+		if (bulkSelection) setBulkSelection(null);
 		return isError ? (
 			<TravelExpenseLoadError
 				message={t(
@@ -632,12 +666,13 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 						})}
 					</ul>
 					<QueuePagination view={view} hasMore={data.hasMore} onChange={setView} />
-					{canSettle && bulkItems && (
+					{canSettle && bulkSelection && (
 						<BulkReimbursementDialog
-							items={bulkItems}
+							items={bulkSelection.items}
+							retired={bulkSelection.retired}
 							open
 							onOpenChange={(open) => {
-								if (!open) setBulkItems(null);
+								if (!open) setBulkSelection(null);
 							}}
 							onFinished={() => {
 								selection.clear();
