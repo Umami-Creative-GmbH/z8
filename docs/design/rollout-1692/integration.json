@@ -2117,8 +2117,8 @@
       "blockedBy": [
         1853
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "543d4fc8d6592000b89f9bb46f54bb0d95cabd64",
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1749#issuecomment-6914308593",
       "implementationCommit": "ab959b57495678eb42fb4987c2eb8a2d1fc1733f",
@@ -2127,7 +2127,7 @@
       "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
       "evidence": "docs/design/rollout-1692/1749.md",
       "rootCorrectionEvidence": "docs/design/rollout-1692/1749/root-settlement-withdrawal-checks.json",
-      "integrationVerification": "Provisional. At e79e857c6, 13 independent focused cases and actual keyboard Done, Escape, and Cancel passed. Public history confirmed one payment per test reference. The live narrowed grant permitted one selected report, refused the excluded report, and withheld its label. Positive recovery remains pending. Live payroll confirmation and removal require an activated preview fixture. Earlier canonical PostgreSQL and current root compatibility evidence remain separate.",
+      "integrationVerification": "Bounded finance handoff verified at 543d4fc8. The 380 compatibility cases, 13 independent focused cases and 84 earlier canonical PostgreSQL cases remain separate. Live keyboard and narrowed-grant payment readbacks passed. Positive recovery refused €31 without writing and recorded €30 once after a €100 reimbursement and €70 correction, preserving approval evidence and ending at zero balance. Live payroll requires an activated preview fixture. Broader environment checks remain outstanding. Issue open and PR draft.",
       "providerCorrectionCommit": "e512a116b39706366eee3adfaad00787e04ff1dc",
       "providerCorrectionIntegrationCommit": "b9f13a387898980c5c6b684d3c7e0dff7ebd0d8f",
       "providerCorrectionEvidence": "docs/design/rollout-1692/1749/root-provider-arrival-checks.json",
@@ -2147,7 +2147,8 @@
       "resultsDismissalFocusCorrectionIntegrationCommit": "1bf72269aff032a8f811a48e11d5ba1835c764b5",
       "resultsDismissalFocusCorrectionEvidence": "docs/design/rollout-1692/1749/root-results-dismissal-focus-checks.json",
       "runtimeKeyboardAndScopeCommit": "e79e857c6c24541a42a000baed8e826ccc45d4ba",
-      "runtimeKeyboardAndScopeEvidence": "docs/design/rollout-1692/1749/root-runtime-keyboard-and-scope.json"
+      "runtimeKeyboardAndScopeEvidence": "docs/design/rollout-1692/1749/root-runtime-keyboard-and-scope.json",
+      "handoffEvidence": "docs/design/rollout-1692/1749/root-handoff.json"
     },
     {
       "id": "R168",

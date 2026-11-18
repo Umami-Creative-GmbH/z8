@@ -1,0 +1,132 @@
+{
+  "id": "R167",
+  "issue": 1749,
+  "status": "bounded-dependency-handoff-verified",
+  "verifiedCommit": "543d4fc8d6592000b89f9bb46f54bb0d95cabd64",
+  "tree": "4d06a3872417602d7714963eb0412d3b089e8a13",
+  "appSourceTree": "dabdfeb948509ebae379540360fd680ca4df4001",
+  "scope": "Finance workspace and shared settlement handoff. Final user review and broader rollout acceptance remain pending.",
+  "checks": {
+    "compatibility": {
+      "checkpoint": "e79e857c6c24541a42a000baed8e826ccc45d4ba",
+      "sameAppTree": true,
+      "cases": 380,
+      "files": 30,
+      "typeProjects": 3,
+      "lint": "passed",
+      "explicitCRLF": "passed",
+      "ordinaryFormatDifferences": 2,
+      "doctorErrors": 0,
+      "doctorWarnings": [
+        "Queue complexity",
+        "Queue length threshold"
+      ],
+      "receipt": "1749/root-results-dismissal-focus-checks.json"
+    },
+    "independentRuntime": {
+      "checkpoint": "e79e857c6c24541a42a000baed8e826ccc45d4ba",
+      "focusedCases": 13,
+      "newConfirmedFindings": 0,
+      "keyboardAndGrant": "Done, Escape and Cancel focus passed. Public history confirmed one payment per test reference. After the grant narrowed, a refreshed second tab displayed the authorized report. The captured draft in the first tab paid only that report and withheld the refused report label.",
+      "receipt": "1749/root-runtime-keyboard-and-scope.json"
+    },
+    "canonicalPostgreSQL": {
+      "checkpoint": "9c96193fb6f6c77c7ebf12fbf0b9ca17f2a62a1b",
+      "cases": 84,
+      "suites": 8,
+      "migrations": "passed",
+      "canonicalBlobsMatched": 8,
+      "currentRerun": false,
+      "nonadditive": true
+    },
+    "positiveRecovery": {
+      "checkpoint": "543d4fc8d6592000b89f9bb46f54bb0d95cabd64",
+      "normalWidgetAndPublicSignIn": true,
+      "roles": 3,
+      "currency": "EUR",
+      "originalApproval": "100.00",
+      "originalApprovalPreserved": true,
+      "correctedReceipt": "70.00",
+      "separatelyApprovedAdjustment": "-30.00",
+      "overpayment": "30.00",
+      "excessAttempt": "31.00",
+      "excessRefused": true,
+      "recoveriesAfterExcess": 0,
+      "validSubmittedOnce": true,
+      "recovery": "30.00",
+      "freshFinance": {
+        "reimbursements": 1,
+        "recoveries": 1,
+        "excessReferenceRows": 0,
+        "approvalAndLinkedAdjustmentPreserved": true
+      },
+      "freshEmployee": {
+        "reimbursements": 1,
+        "recoveries": 1,
+        "approvedAndLinkedAdjustmentPreserved": true
+      },
+      "endingBalanceDerivedFromPublicAmounts": "0.00",
+      "linkedFinanceDetail": "Separate approval and corrected receipt visible. The original finance detail supplied the signed delta and reason.",
+      "nextConfigAndSessionErrors": 0,
+      "reviewedBrowserPageErrors": 0,
+      "globalCompileIssue": "Generated licenses.json was absent in the isolated fixture.",
+      "nativeReactInspection": "Not exercised in recovery.",
+      "confirmedP1": 0
+    },
+    "priorBlockedAttempt": {
+      "result": "Stopped before fixture sign-in",
+      "cause": "Loopback-only browser request containment blocked the normal required Turnstile widget.",
+      "settlementActions": 0,
+      "unexpectedBrowserDiagnosticCdnContact": true,
+      "cleanupVerifierModificationAutoReviewRejected": true,
+      "cleanupVerified": true,
+      "qualification": "The retry used the normal widget exchange and installed browser. The first attempt supplies zero passing recovery observations."
+    }
+  },
+  "audit": {
+    "recoveryRetry": {
+      "manifestSha256": "ae72181fd9b4b538230cd355bc5fac9fa0ea75717214016ddfb24b58954a2bec",
+      "verifiedFiles": 2,
+      "verifiedBytes": 8768,
+      "payloads": [
+        {
+          "name": "positive-recovery.json",
+          "bytes": 6837,
+          "sha256": "75c49dd3d61fdfc3b80c6b77990f2859432533f688739534b3a3b53bafb6f139"
+        },
+        {
+          "name": "preservation-and-cleanup.json",
+          "bytes": 1931,
+          "sha256": "9d0513397d0e4485da52e9cbd7faacf734ee2a4a6e9f013b6aa726fb0d8a3a5e"
+        }
+      ]
+    },
+    "firstAttempt": {
+      "manifestSha256": "7664dce20a6e4e97b6e58a69085f301357d7f8a5a20d927c46263ac99d5a1805",
+      "verifiedFiles": 5,
+      "verifiedBytes": 8569
+    },
+    "qualification": "The retry fixture's canonical prepare completed. The migration child output was absent on Windows. The command exit and successfully seeded fixture are the evidence. Two shared preview snapshots failed to produce frames. The sandboxed local browser launch timed out. Reviewed launch of the installed browser succeeded.",
+    "protectedArchivePaths": {
+      "1747": 327,
+      "1748": 202
+    },
+    "priorAnchorOccurrences": 66,
+    "priorUniqueAncestorShas": 62,
+    "ownedResourcesRemaining": 0,
+    "workingTreeAndIndexClean": true
+  },
+  "remaining": [
+    "Live payroll confirmation and removal require an activated payroll-preview fixture. The standard fixture is inactive and the application has no activation path. Canonical payroll confirmation, removal, included-report refusal and payroll-only authority have separate earlier integration coverage.",
+    "External provider behavior, full production generation, remote catalog, physical device and true zoom matrices remain outstanding.",
+    "The grant narrowed before submission. Concurrent authority changes and an in-flight cross-organization switch remain unverified.",
+    "Whole-app fixture diagnostics retain the missing generated licenses file. The latest runtime did not repeat native React inspection."
+  ],
+  "frontier": {
+    "integrated": 66,
+    "awaitingIntegration": 38,
+    "pending": 53
+  },
+  "issueState": "OPEN",
+  "pullRequestState": "draft"
+}
