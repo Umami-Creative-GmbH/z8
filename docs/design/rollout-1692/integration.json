@@ -2081,8 +2081,8 @@
       "blockedBy": [
         1695
       ],
-      "status": "awaiting-integration",
-      "verifiedCommit": null,
+      "status": "integrated",
+      "verifiedCommit": "e3957741a7f0f1aeeba748cce3af27a42870fcf1",
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1748#issuecomment-6909502620",
       "implementationCommit": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
@@ -2090,12 +2090,14 @@
       "correctionCommit": "4cab7a5b594db3bc7e4dfdf56026d25737a2b2f4",
       "correctionIntegrationCommit": "a043fd9af51465e608bb6d00f5568e72f11d8300",
       "evidence": "docs/design/rollout-1692/1748.md",
-      "integrationVerification": "Both root withdrawal corrections preserved. Fresh independent bounded review at16a914f4a/app1f82885d: no newP1;545unit/48files includes rerunroot518 plus27independent/control identities;51canonicalPG/4files pass atdefaulttimeouts. Typegen/workflow/smoke,10filelint/Doctor0/0 pass;mainTSqualified only missingignoredlicenses.json,root prior fulltypes separate. Ownedexplicitformat pass;ordinary/sharedmetadata differences retained. SAFE61payloads/761942bytes independently audited;73publicarchivepayloads,18PNGdecoded,14currentpins,8historicalhashes,9links checked with capture/metadata/producer-receipt qualifications. Freshliveacceptance pending;verifiedCommit null. See1748/root-independent-recheck.json.",
+      "integrationVerification": "Bounded handoff verified at e3957741a7f0f1aeeba748cce3af27a42870fcf1; app1f82885d unchanged. Both withdrawal fixes pass independent545unit/48files(root518+27controls) and51canonicalPG/4 defaulttimeouts; root full3types separate,isolatedmainTSmissinglicensequalified. Ten-filelint/Doctor0/0. Core own/denied reads,receiptpreview/completeddownload,missing-objectrefusal0partial,canonicalconversion/provenance,actualreportopening/reload,localpartialreimbursement,Retry/preferences/keyboard/layouts/connectedNext observed. Raw generationA140records remain qualified(old42unsupported,16narrowed);focused29/32pass withordering13/14 andaxe28unpassed. ActualCDPnames proved,notnativeextension. Proof202files/172exactpayloads/14clones;203initialstagedpaths independently audited,Gitbytes/prefixes/verifierbothmodes pass. Rawwhitespace18103diagnostics/61paths andformat/capture/emptyforeign/overwrittenrawgap preserved. No combinedcoverage/fullglobalacceptance;issueopen/PRdraft. See1748/root-handoff.json and sealedarchive.",
       "conversionWithdrawalCorrectionCommit": "4a6eaaa2f3f2ee5ac25055b0fdc11722028b3186",
       "conversionWithdrawalIntegrationCommit": "c696178cac11641eff69ce0cd3045204eb91059a",
       "independentReviewCommit": "16a914f4a4e9ef022552ff53d938b2c1f883517f",
       "independentReviewAppTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
-      "independentReviewEvidence": "docs/design/rollout-1692/1748/root-independent-recheck.json"
+      "independentReviewEvidence": "docs/design/rollout-1692/1748/root-independent-recheck.json",
+      "proofCommit": "e3957741a7f0f1aeeba748cce3af27a42870fcf1",
+      "handoffEvidence": "docs/design/rollout-1692/1748/root-handoff.json"
     },
     {
       "id": "R167",
