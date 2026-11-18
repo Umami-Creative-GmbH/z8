@@ -2127,7 +2127,7 @@
       "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
       "evidence": "docs/design/rollout-1692/1749.md",
       "rootCorrectionEvidence": "docs/design/rollout-1692/1749/root-settlement-withdrawal-checks.json",
-      "integrationVerification": "Provisional only: captured reimbursement batch retires after explicit fresh same-source payroll inclusion, approval/full-eligibility loss or currency/balance change; omission alone does not retarget. Exact draft retained; close/reselect required; queued/native sends blocked and unresolved reservations retained until settlement. Source84fe08654 normal merge152967f0b. Independent4controlsP/1inheritedP1F; root exact red then adapted5/5green. Root369distinct units/30files include previous352 plus17permanent controls. All3fulltypes/typegen,3filelint/explicit100CRLF pass;ordinary3findings;Doctor3files0errors/4warnings. Canonical owners and prior proof unchanged;66anchors/62SHAs preserved. Fresh independentrecheck,canonicalPG/livefinance/remainingmatrices unpassed;verifiedCommitnull,issueOPEN,PRdraft.",
+      "integrationVerification": "Provisional only: empty successful queue refresh now preserves the same captured dialog, exact draft and retry-key state; explicit eligibility/provider/refusal/capability retirement and unresolved-command reservation guards remain. Source775712ef0 normalmerge53a0c4990. Independent8controlsP/1inheritedP1F, repeated/focused key consequence count separately; root unchanged9-case red8P1F to9green. Root374distinct units/30files preserve previous369 plus5permanentcontrols; old test Git prefix unchanged. All3fulltypes/typegen,2filelint/explicit100CRLF pass;ordinary2findings;correction-onlyDoctor2files0errors/1existingcomplexitywarning. Canonical owners/prior proofs/66anchors62SHAs preserved. New independentrecheck,canonicalPG/livefinance/remainingmatrices unpassed;verifiedCommitnull,issueOPEN,PRdraft.",
       "providerCorrectionCommit": "e512a116b39706366eee3adfaad00787e04ff1dc",
       "providerCorrectionIntegrationCommit": "b9f13a387898980c5c6b684d3c7e0dff7ebd0d8f",
       "providerCorrectionEvidence": "docs/design/rollout-1692/1749/root-provider-arrival-checks.json",
@@ -2136,7 +2136,10 @@
       "financeLifetimeCorrectionEvidence": "docs/design/rollout-1692/1749/root-finance-lifetime-checks.json",
       "bulkEligibilityCorrectionCommit": "84fe0865474f85c64c66942425acd3c081be616d",
       "bulkEligibilityCorrectionIntegrationCommit": "152967f0bd41c563b3e4c3e0792e2485126bcaab",
-      "bulkEligibilityCorrectionEvidence": "docs/design/rollout-1692/1749/root-bulk-eligibility-checks.json"
+      "bulkEligibilityCorrectionEvidence": "docs/design/rollout-1692/1749/root-bulk-eligibility-checks.json",
+      "emptyRefreshCorrectionCommit": "775712ef048019b88222c4f43686a9fed4c38845",
+      "emptyRefreshCorrectionIntegrationCommit": "53a0c49900e530be124e940f9f3c4aca7172dbeb",
+      "emptyRefreshCorrectionEvidence": "docs/design/rollout-1692/1749/root-empty-refresh-checks.json"
     },
     {
       "id": "R168",
