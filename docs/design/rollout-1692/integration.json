@@ -2127,10 +2127,13 @@
       "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
       "evidence": "docs/design/rollout-1692/1749.md",
       "rootCorrectionEvidence": "docs/design/rollout-1692/1749/root-settlement-withdrawal-checks.json",
-      "integrationVerification": "Provisional: original settlement withdrawal correction preserved. Fresh independent employee-loss probe2controlsP/1inheritedP1; root exactred then3unchangedgreen. Provider-bound reader/contextRetry and known canonicalUnauthorized withdrawal corrected in e512a116; no domain/action writes.326deduplicated unit identities/28files =324broad plus36finalreader with34overlap;all3fulltypes/typegen,4filelint/explicit100CRLF,Doctor4file0/0 pass.Ordinary4formatfindings and earlierincoming10Doctorwarnings retained.66anchors/proofs preserved. Fresh independent recheck,canonicalPG/livefinance/export/payroll/provideracceptance unpassed;verifiedCommitnull/issueOPEN/PRdraft.",
+      "integrationVerification": "Provisional only: sharedFinanceReadBoundary follows actualprovider/session andpreservescoverage-adminwithoutemployee exception; knownNotfound/Unauthorized withdrawal sharedacrossreaders;selectionreset;unsettledsame-targetmutationreservationsandretiredexportcontinuationsfixed at60b6ee86. Independentqueue3controlsP/1inheritedP1;rootexactredthen4unchangedgreen.352distinctunitidentities/29files=350broad+33finalexportwith31overlap;26permanentprovidercontrols,149oldassertionsretained. All3fulltypes/typegen,17filelint/explicit100CRLF pass;ordinary17findings;Doctor17file0errors/6reviewedwarnings.66anchors/proofs preserved. Freshindependentrecheck,canonicalPG/livefinance/remainingmatrices unpassed;verifiedCommitnull,issueOPEN,PRdraft.",
       "providerCorrectionCommit": "e512a116b39706366eee3adfaad00787e04ff1dc",
       "providerCorrectionIntegrationCommit": "b9f13a387898980c5c6b684d3c7e0dff7ebd0d8f",
-      "providerCorrectionEvidence": "docs/design/rollout-1692/1749/root-provider-arrival-checks.json"
+      "providerCorrectionEvidence": "docs/design/rollout-1692/1749/root-provider-arrival-checks.json",
+      "financeLifetimeCorrectionCommit": "60b6ee86b1e677dc8858ad6dcbc635d593b075f7",
+      "financeLifetimeCorrectionIntegrationCommit": "f9bcd216023c02e0a7253416b40aa61709f86fb4",
+      "financeLifetimeCorrectionEvidence": "docs/design/rollout-1692/1749/root-finance-lifetime-checks.json"
     },
     {
       "id": "R168",
