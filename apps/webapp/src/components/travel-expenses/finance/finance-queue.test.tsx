@@ -10,6 +10,7 @@ import {
 	type FinanceQueueView,
 } from "@/lib/travel-expenses/finance-queue-params";
 import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
+import { FinanceTestOrganization } from "@/test/finance-organization-fixture";
 
 const mocks = vi.hoisted(() => ({
 	actor: "finance",
@@ -47,6 +48,7 @@ vi.mock("next/navigation", () => ({
 	},
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 	Link: ({
 		href,
 		children,
@@ -194,7 +196,9 @@ function mount(props: { coverage?: "uncovered" } = {}) {
 		<QueryClientProvider
 			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 		>
-			<FinanceQueue {...props} />
+			<FinanceTestOrganization>
+				<FinanceQueue {...props} />
+			</FinanceTestOrganization>
 		</QueryClientProvider>,
 	);
 }
@@ -242,7 +246,9 @@ describe("finance queue (#612, #753)", () => {
 		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		render(
 			<QueryClientProvider client={client}>
-				<FinanceQueue />
+				<FinanceTestOrganization>
+					<FinanceQueue />
+				</FinanceTestOrganization>
 			</QueryClientProvider>,
 		);
 		await screen.findByText("€89.90 outstanding");
@@ -282,7 +288,9 @@ describe("finance queue (#612, #753)", () => {
 			const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 			const pageView = () => (
 				<QueryClientProvider client={client}>
-					<FinanceQueue />
+					<FinanceTestOrganization>
+						<FinanceQueue />
+					</FinanceTestOrganization>
 				</QueryClientProvider>
 			);
 			const rendered = render(pageView());

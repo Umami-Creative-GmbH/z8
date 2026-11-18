@@ -5,10 +5,18 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { Activity } from "react";
 import { flushSync } from "react-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { FinanceTestOrganization } from "@/test/finance-organization-fixture";
 import { ConfirmPayrollRunButton } from "./confirm-payroll-run-dialog";
 import { PayrollRunNotice } from "./payroll-run-notice";
 import { PayrollRunsToConfirm } from "./payroll-runs-to-confirm";
 import { RecordReimbursementForm } from "./record-reimbursement-form";
+
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+	Link: ({ href, children }: { href: string; children: import("react").ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
+}));
 
 const boundary = vi.hoisted(() => ({
 	actor: "a",
@@ -105,7 +113,9 @@ it("keeps the loaded payroll confirmation draft and a reachable local retry when
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(
 		<QueryClientProvider client={client}>
-			<PayrollRunsToConfirm />
+			<FinanceTestOrganization>
+				<PayrollRunsToConfirm />
+			</FinanceTestOrganization>
 		</QueryClientProvider>,
 	);
 	fireEvent.click(await screen.findByRole("button", { name: "Confirm as paid" }));

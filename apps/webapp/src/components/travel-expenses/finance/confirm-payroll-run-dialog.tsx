@@ -117,7 +117,12 @@ export function ConfirmPayrollRunButton({
 
 	return (
 		<>
-			<Button type="button" size="sm" disabled={Boolean(readError)} onClick={() => setOpen(true)}>
+			<Button
+				type="button"
+				size="sm"
+				disabled={Boolean(readError) || command.busy}
+				onClick={() => setOpen(true)}
+			>
 				{t("travelExpenses.finance.payrollRun.confirm.action", "Confirm as paid")}
 			</Button>
 			<Dialog
@@ -316,10 +321,15 @@ function ConfirmForm({
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(isSubmitting) => (
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onCancel}
+							disabled={isSubmitting || command.busy}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting || !available}>
+						<Button type="submit" disabled={isSubmitting || command.busy || !available}>
 							{isSubmitting ? (
 								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 							) : (

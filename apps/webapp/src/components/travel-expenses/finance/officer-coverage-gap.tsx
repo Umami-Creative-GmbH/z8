@@ -8,6 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { queryKeys } from "@/lib/query/keys";
 import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { FinanceReadBoundary } from "./finance-read-boundary";
+import { readFinanceResult } from "./finance-read-result";
 import { useFinanceReadScope } from "./use-finance-command";
 
 export const UNCOVERED_FINANCE_QUEUE_HREF = "/travel-expenses/finance?coverage=uncovered";
@@ -18,15 +20,19 @@ export const UNCOVERED_FINANCE_QUEUE_HREF = "/travel-expenses/finance?coverage=u
  * while the organization has expense officers and something is uncovered.
  */
 export function OfficerCoverageGapNotice() {
+	return (
+		<FinanceReadBoundary requireEmployee={false}>
+			<OfficerCoverageReader />
+		</FinanceReadBoundary>
+	);
+}
+
+function OfficerCoverageReader() {
 	const { t } = useTranslate();
 	const scope = useFinanceReadScope();
 	const { data, isError, isFetching, refetch } = useQuery({
 		queryKey: [...queryKeys.travelExpenses.officerCoverageGap(), scope],
-		queryFn: async () => {
-			const result = await getExpenseOfficerCoverageGap();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
+		queryFn: () => readFinanceResult(getExpenseOfficerCoverageGap()),
 	});
 	if (isError)
 		return (

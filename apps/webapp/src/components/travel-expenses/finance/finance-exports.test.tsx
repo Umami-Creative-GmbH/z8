@@ -7,6 +7,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TravelExpenseExportsView } from "@/app/[locale]/(app)/travel-expenses/finance-export-actions";
 import type { TravelExpenseExportBatchView } from "@/lib/travel-expenses/export-store";
 import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
+import { FinanceTestOrganization } from "@/test/finance-organization-fixture";
+
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+	Link: ({ href, children }: { href: string; children: import("react").ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
+}));
 
 const mocks = vi.hoisted(() => ({
 	getExports: vi.fn(),
@@ -145,7 +153,9 @@ function mount() {
 		<QueryClientProvider
 			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 		>
-			<FinanceExports />
+			<FinanceTestOrganization>
+				<FinanceExports />
+			</FinanceTestOrganization>
 		</QueryClientProvider>,
 	);
 }
