@@ -1,0 +1,20 @@
+{
+  "reportRows": 1,
+  "onCorrectReport": true,
+  "actionIdentified": true,
+  "actionResolutions": [
+    {
+      "identified": true,
+      "name": "convertLegacyTravelExpenseDraftAction"
+    },
+    {
+      "identified": false
+    }
+  ],
+  "main": {
+    "hasNotes": true,
+    "hasReceipt": true,
+    "hasLegacy": false,
+    "loading": false
+  }
+}

@@ -1,0 +1,636 @@
+{
+  "head": "16a914f4a4e9ef022552ff53d938b2c1f883517f",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "tree": "9d4eb6e64ab2950eaa16584da52204eec8bc7bae",
+  "indexSha256": "4d3f6be501c9fb1228c6556c68fe8072a0eba04f4459b7213bea534c925b7388",
+  "status": "",
+  "files": [
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "bytes": 1756,
+      "sha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24",
+      "blob": "8b3443699f4cd49c80712705436546ca5934476a"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "blob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "bytes": 1916,
+      "sha256": "a04b4071d09f619878e6a373756bc62745756ac5767d31194aacdaf9a947129c",
+      "blob": "ae39cee22049ee4c83bd37e90a3e25811969385c"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts",
+      "bytes": 3605,
+      "sha256": "caa6613be15b95501ad38ef73023e41ca5fc4e0564487ff6c8c100e5914e817d",
+      "blob": "c64fa97f3e4a34fa8f84b983f7e7581aaabfa1d0"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "bytes": 8147,
+      "sha256": "8981c9d05baf38381bd60d69d686fc7fe57e6f5920df4c8a0eb17a35b3cd133e",
+      "blob": "8e423d7b73f5570a45ea56134581825562d99ce1"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "bytes": 7091,
+      "sha256": "4a1b813675e75ef5a1da183c5a6c25e2e40de31434f6d459da5ee85294f121e7",
+      "blob": "ba19e9037e3e304b877091993f968a101f684b94"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "bytes": 11368,
+      "sha256": "2d5c5a04a987feb4ec96123b62053dcfeb577ba50d470572ae142571fa154774",
+      "blob": "b6b904215b1d9801f0768d35eed520b7454b923a"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "bytes": 14025,
+      "sha256": "d3beb9f9d704b56617c7048fa94f6f904398982bcf7f5acf112a06895d46e385",
+      "blob": "6e0c1bc3df826c63d149ef97d21c8b63362b8327"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "bytes": 19359,
+      "sha256": "c7a2206c22d9ef5be6d4d1917224effd422811fbf6cd2f2980663ac899107400",
+      "blob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "bytes": 14041,
+      "sha256": "b8b7ba4943baacc39961108276d6874dfb8fac80cf426d3c9484f60f7f62475b",
+      "blob": "0cd79ef79050a401e0c94879f98f57c24a082d79"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "bytes": 9303,
+      "sha256": "e35daf7803d9321aa214303d8211ae16f741f3d84ff5bc8274ccde6ed552d949",
+      "blob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "bytes": 12999,
+      "sha256": "04df26d1cf70f5ae1a040e74e98d561d9f98a221b1015b7d3b60e33dc68f8e6d",
+      "blob": "5f6f75f256c6899338b436d76248c26923ec8702"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "bytes": 7923,
+      "sha256": "5d3ad953a24f6cf4da62cda25433675bfc53b922cc6ab4f28de4ce14b899293d",
+      "blob": "225e32211910e6e2a89504996134d7673e5d1ca4"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/current-owner.ts",
+      "bytes": 656,
+      "sha256": "4b31c983896968e9385807d380f4a6596935c6526095458fde22dbc0e10ece85",
+      "blob": "17a9e4b6ce95f93642a3c1d80a60a83d8d554751"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts",
+      "bytes": 3701,
+      "sha256": "6c840562782e12116d3b859bceabb8ea79e0c6dc975b86dbd2fe99dc11969963",
+      "blob": "502b9aa3e6336e7cef0885734c947170a15f5197"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts",
+      "bytes": 14715,
+      "sha256": "d2be9e9ff0338a08a918c9325bc57a607b92e48c405720a3578f0fa016e7d607",
+      "blob": "096299b778d5ab30e648fd13ebfc3a0979ad0b5c"
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "bytes": 687,
+      "sha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "blob": "ee5b75c0f4a1e53ab7120d871d8bb0cd6d5fa7f8"
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "bytes": 213,
+      "sha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "blob": "e1ff03407fa993bf86febced177e215913454df1"
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "bytes": 252,
+      "sha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "blob": "8bf7f766f1e6385391c06810d2127373c3f1457b"
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "bytes": 453,
+      "sha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "blob": "70cb54aa1232d668bccf8230215e4dfc2d699c45"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "bytes": 1950,
+      "sha256": "f869813593c3b53b46f79536e48874f69696b4293b9895d0c9ab997eec069c0c",
+      "blob": "d2d43ed96849d68ead31443f5b453ef8bc1ebaae"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748.md",
+      "bytes": 25202,
+      "sha256": "5f3bdfcf7abef82a9d586bced2fc7b70ea54b4750df4d92a06ae761513a9686e",
+      "blob": "adbce09881de136b01593b407891eed5e4889d0e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/desktop-collapsed.png",
+      "bytes": 79091,
+      "sha256": "4516fe06a6a92b0b0a4e9b3b665a2e55d1a0ccf145d23b4fe77d1b87acc6d6d6",
+      "blob": "9022d4f8e680041cabecbdc894d6acdec9a1159b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/desktop.png",
+      "bytes": 112036,
+      "sha256": "60680385130bec42d47a30f53674f54ea6c0785644add984c87d5965ccfeffb1",
+      "blob": "75fad486c965b4550b8aa4172dc7cfeb8387ace9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/keyboard-focus.png",
+      "bytes": 79883,
+      "sha256": "a50dbaead8fa01009784d267a0ec2fc77034cfc26bb9e48a80e80247f5b05fb1",
+      "blob": "16c3c039dbd9446b806e4ab3431929aa932eb681"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/next-active-browser.json",
+      "bytes": 2218,
+      "sha256": "06cddf50978da1025f9cb1961fc4d9b8d7ac16ff8dc9c1c84bb15eb484544e03",
+      "blob": "dc88f99cdd1f53d2b19fed72f78aa97bd3ce2791"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/observations.json",
+      "bytes": 2519,
+      "sha256": "52222dd28b396169810416d06ea1de59a1cb54aacd39e913ac5ef23a1290890a",
+      "blob": "5421285e837fa599b9f8c02ed45f21173fd022bb"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/phone-menu-saved18.png",
+      "bytes": 43337,
+      "sha256": "8e446c25b4a02ad3189f6515e7b63c2dd74231c19315242bd7a622379da36d5f",
+      "blob": "a161fd06fe49625e3f06d5b22731742592f4a21e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/phone-saved18-reload.png",
+      "bytes": 43337,
+      "sha256": "8e446c25b4a02ad3189f6515e7b63c2dd74231c19315242bd7a622379da36d5f",
+      "blob": "a161fd06fe49625e3f06d5b22731742592f4a21e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/phone.png",
+      "bytes": 43189,
+      "sha256": "ad48d0b2bbf7e8c33412f9120f79122794ca6e17b28409f9e187930399222e9c",
+      "blob": "2f5f0e73019e0f4be835ad119ed5dd2fa998ba8f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/source.json",
+      "bytes": 911,
+      "sha256": "a555520d2b9ecce798e0efd0544c8769db132eb77ef4234258af89ea545baf12",
+      "blob": "3bd471f3088cc1f89c6c8c28a71c4a1fdfb0c239"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/after/wide-dark.png",
+      "bytes": 115728,
+      "sha256": "63966e6c0f6ae825c5dc258fab8c812712bc1674a7ef139b65b2092b20290cd5",
+      "blob": "f32674f7afca5ea510fc2a9610ec23ac93fabb76"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/desktop-collapsed.png",
+      "bytes": 71570,
+      "sha256": "bd55eb2c221930b0c9a612efa895b8828e7b311d076ddd28b2e9ab8a90f6f959",
+      "blob": "64003f1cd8d2e6acf788caa0adff048ba36d5baf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/desktop.png",
+      "bytes": 103630,
+      "sha256": "7b0960cde09fb9e9df848657b30f36258c02c41a571043cc400cb1ed8cb01dc6",
+      "blob": "d43bcc37817f13bf1705a49e94ead0966d2f33cf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/observations.json",
+      "bytes": 1892,
+      "sha256": "79082e4b9a7631f987dd4289af7c1fcaacfe8f720f586da44180c544162eae44",
+      "blob": "829006c2b01868a9a7cdc1a55b0e93f5459664f2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/phone-saved18-reload.png",
+      "bytes": 42476,
+      "sha256": "68bd9676a135fb95cb3ad82181b23b26b5de7c00ec632262e559e72642d91a38",
+      "blob": "feadaed0d1f9145adc29b7b676443904e85a3e35"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/phone.png",
+      "bytes": 41554,
+      "sha256": "036d4accc409f2e2a26d03536ea23df053400fa90ef336f376c0d4cfe448e13e",
+      "blob": "73e3b654ef50a787cadbebc17f4477e5036e0770"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/source.json",
+      "bytes": 1249,
+      "sha256": "c7cc96e81813dc6e36448523c26a7097110caf286324d743eebe07774bb7d408",
+      "blob": "db8542374eac21d75f08de39e9694be0ed161ba1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/before/wide-dark.png",
+      "bytes": 98912,
+      "sha256": "971c4e281e6aaa44a9029fe63ffec26f27012a0f69f6b37787625ce01b344a7a",
+      "blob": "4520ebcbb7812f5002429dc9e6ad40c5e55af7f4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/browser-parent-before.log",
+      "bytes": 112,
+      "sha256": "359ad5e74f48e0c2868add091ce27965952b8f551f7468c6078d83a9d39f431c",
+      "blob": "4d615b830ba72b34210a0b13a321ca55870e58d2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/browser-source-final.log",
+      "bytes": 111,
+      "sha256": "aae81f466c50b5cf89a5df8056861aa907a68d6a269685740de628dcd8261986",
+      "blob": "a1a05d801197c04131bd33fdc423b289fe032255"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/cleanup-next.json",
+      "bytes": 625,
+      "sha256": "10f210581c4dabddc6542d6e4c6575ebaf32ce17196ede7efd91efdc30b47bb6",
+      "blob": "963f95e24347419d76dbd3ef135caf5f3074e17a"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/cleanup-services.log",
+      "bytes": 97,
+      "sha256": "15519f30aea57657cebf812dc8d1b8db7aaf2e3c497e018718186825aa3511f8",
+      "blob": "5b91192d2b83de29ec8c8ad342bf88c7e8646d0b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/commands.txt",
+      "bytes": 2490,
+      "sha256": "e6866ef7b6b140ee1b3c05546227f45da2de32180552b92e52a6d231d933cff8",
+      "blob": "98051b8b03e425e5019c50d7527424042bcbcb34"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/conversion-action-excerpt.log",
+      "bytes": 1174,
+      "sha256": "2308c2956593bd59e024e8a59f1101a6e6770451ba2692fd6605223711fffa10",
+      "blob": "1a84522f6ac6f221309b54d950f0414d0dfe3038"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/doctor-coordinated-handoff.log",
+      "bytes": 2624,
+      "sha256": "146eaf6ae03d24bac1ef595fd5127b0d16f799ae7b4a3dfcb7986d15afb62da5",
+      "blob": "64bd722b2b3b2d1f56eb904b267d6dd1fcf51429"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/doctor-handoff.log",
+      "bytes": 2624,
+      "sha256": "d542986e76e4a9e1a8b663fa7d8a46d435f2f40bdaea56330edaa3373b023872",
+      "blob": "1e6d3e7c3837f35850dc1b98a9553ab710d277ed"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/doctor.log",
+      "bytes": 3299,
+      "sha256": "72421038b319dd78e1cb60a7a0c9c8549d478b8821d57e583ada2d24e618af9e",
+      "blob": "de0facd195d9c4233a4570b52d14cd8293fcee53"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-arrival.log",
+      "bytes": 629,
+      "sha256": "787280f0ed211318f5fd4aadc4b8d434522bf788fd1647dc63577bedaf6f9889",
+      "blob": "5f8f6f2ec4e326e1e22feb8d2a10008b28c798e7"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-conversion-lifetime.log",
+      "bytes": 629,
+      "sha256": "435c288b321eeddfe739520e149c6a19b04e4d217163c4ca1dc590682583c31a",
+      "blob": "5df009c120d3071c0d3adff4f0190e3c8c875e60"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-conversion-refused.log",
+      "bytes": 628,
+      "sha256": "a5ff29cbc305542955003b35c80b2a57a0820befd4b5d26c08869a5b844cd79d",
+      "blob": "8fbbf5d58acf984527227059e304a72190940ba8"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-conversion-retention.log",
+      "bytes": 629,
+      "sha256": "2dc4f42775ba1bb7fa3a9e08e0274128f8b02880e06dbad4621236fae99dfc4c",
+      "blob": "c73af473e76b6bef702e06efd502d03787eea3a2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-heading.log",
+      "bytes": 629,
+      "sha256": "26e4a6471ec34243cc88746f7b11fc9c6e815d561a0eb29c301b5802b7d40cbf",
+      "blob": "cdf42412ca46c8c19227a3d1236dc99fe18ecf80"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-r165-consumer.log",
+      "bytes": 629,
+      "sha256": "016082d7d6f46efb3aab4b95e73860a220934fe32e101b964f1a0ec4df11ff7c",
+      "blob": "3bc2c7f9f3d7106a0df8b01630e9229d87d1d3f5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-refusal.log",
+      "bytes": 629,
+      "sha256": "2b65864dcc8cc5d9063b01e5ca4332444f8761c8150352f37d336b11dfea2b0d",
+      "blob": "1418088717a1cd2fe86da6b584a1ce4bb7903f96"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/green-terminal.log",
+      "bytes": 629,
+      "sha256": "f0add50685e90f9c97381929b4fdecef1c2ba40dd5f4108d2541778681618ce9",
+      "blob": "00ea7814c0230b95f664cad6c826006bc9b3884c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/install-escalated.log",
+      "bytes": 11439,
+      "sha256": "5dc28ae1a4b9e71afd4a2fd571cea9e85867997f08cf849f534ef9774c019884",
+      "blob": "471cb9f69c9d18097d5c6721d2f786d590385adc"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/install.log",
+      "bytes": 1260,
+      "sha256": "ee88b0aa111bb434e6de836f6ab96cd88365e9717428540a5d00a883a2ace452",
+      "blob": "efc7f2a9d2b3ee8859b2324db2ba5677adc3f2a1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/integration-settlement-rerun.log",
+      "bytes": 37739,
+      "sha256": "aa67bd05c6440a98d08456b800fa36bfcdb281920b93d1b7bb84897760d111a8",
+      "blob": "dc429b86bdb23a987070be21547859c7e7548e17"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/integration.log",
+      "bytes": 62979,
+      "sha256": "342ebf959dc12cffd330c8ce05186618a7906e1a1847b53985419369b9bcfd53",
+      "blob": "7ec986396549332ccf35f5db78b68ac80019bbf9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/journeys.log",
+      "bytes": 63,
+      "sha256": "ef6cf51c943d082f2b2b2a7b1d200ac3ec6f56b6b5be84bfac56851cd600e72b",
+      "blob": "c52029a4ca3afbdd9bd87025615dbfdedc76b8b5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/native-corrected-run.log",
+      "bytes": 46,
+      "sha256": "07596b15f22b5d363fd29b589cc98ec0cbc12005a041c4fddd8a163437f1c02a",
+      "blob": "3a1d7af24618a3e084461a03a52d420a73b538ca"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/native-corrected.log",
+      "bytes": 2272,
+      "sha256": "3cd47995e0c98f346b58853f6ebac9cd2f577f1956521f32d27bba00bebd0f37",
+      "blob": "c187aa95b40bc1b2c394aa1066ca8b5a24d38d2f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/native.log",
+      "bytes": 167,
+      "sha256": "41cfd82038da7519f0df103ed0c7cb1a5d6f7d288f63a10d547c0204009b687d",
+      "blob": "b30fb5de272b8b470cb12019e9a7df32b66bb85c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/ordinary-final.log",
+      "bytes": 46855,
+      "sha256": "a8ff1c79903a347c22a243ca6d39277e96059c1ed913eafae793fac87013edca",
+      "blob": "848021aa5a2d72e4fe34f6bb05043d9cf8bf7a87"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/outcomes.json",
+      "bytes": 1359,
+      "sha256": "6fd4dbc5a00464d6b4baaf37a977d2c5dcf1b9bd891d29afa852d71b1f927d09",
+      "blob": "d550a9842c920e5eee9bcc553b09905eb97e7ba5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-arrival-confirming.log",
+      "bytes": 3144,
+      "sha256": "7bb34d89436d75a7a0cf0fbff4a68f3a664f1ab933d3930f1ff6d849686a93d3",
+      "blob": "e516ff3575cd9605083e4c96bb4b73c5c979dd45"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-arrival.log",
+      "bytes": 629,
+      "sha256": "a1af5cadc3b88af798420f813f800a4b1d18cbf29ef9a894c783378c0d002afe",
+      "blob": "74a86ad9cca595cec5d621401559e3f676c1d836"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-conversion-refused.log",
+      "bytes": 12654,
+      "sha256": "d577a736eefa187665d9bb834c24c8aae63d48a07d8f25fa16b9fc1383a7efd0",
+      "blob": "75b491b301a3aaf93c5b3ef4e616f8d71fc903ff"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-conversion-retention.log",
+      "bytes": 16945,
+      "sha256": "4e4b7d08520a599a5659fe29189c9ee5fbcab7e0ddde0da048f1eb5d564c17c8",
+      "blob": "4c2d3f4d94875ef3c939186e00e2ce872a55acf5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-heading.log",
+      "bytes": 1619,
+      "sha256": "870126bcbde4aa45a9c1bab06757489c072948a8a773074e928f3e0bdf2a9ef5",
+      "blob": "ac6be08bb904048f581745bbe20a706002ddd7ea"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-late-conversion.log",
+      "bytes": 2331,
+      "sha256": "809565466804a0d10b9d331c06544e3e4ebb6ae0d78958ea236a6192a0bf2e7e",
+      "blob": "6d1b09afcae8a93b514604904947eea519834e67"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-r165-consumer.log",
+      "bytes": 3109,
+      "sha256": "f4524d2da156e86855ba40cc6fc6f62d9f157a46b57d4f41acdb039d94f92ae5",
+      "blob": "17431a95de2ca1ab5109d6343726608df2310212"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-refusal.log",
+      "bytes": 24445,
+      "sha256": "cf94935ce467eff9e61282e6c35ef18799f1fa39420c23c0aece9057fb8db45c",
+      "blob": "92e9b111dff044e1febb36bd09cfd770414d3f39"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-retired-refusal-settled.log",
+      "bytes": 4037,
+      "sha256": "00949b8c675fc71d27329c4fd244a96cf36ddcdacf722468de44d84cf00b21f4",
+      "blob": "80aef08a7065a356241255d082f9772ee49d1f25"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-retired-refusal.log",
+      "bytes": 638,
+      "sha256": "62ef795897b8098e0adf697a8cf0be09e7deb363f7554ff5162e57a01defb870",
+      "blob": "92e80dc03f7a1c9da4abb25838a08e8da572b438"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/red-terminal.log",
+      "bytes": 21400,
+      "sha256": "d55049a5623077d6d5dd0cc59270fa5bf2cacda2e70755228cae9d63ceb5ad43",
+      "blob": "634d5cf214c2a882678e1573ee4e38479cdda4f4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/scoped-check.log",
+      "bytes": 17371,
+      "sha256": "5af9aacf5ede47ea5b7642b1ae1db355bfd2ebb4031e7952a80e0b9cbefacac1",
+      "blob": "32f250af8a59e82abe1941c25bf4160871a546f7"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/scoped-owned-handoff.log",
+      "bytes": 44,
+      "sha256": "bf0548009a1b653708b4ec513de4b8a4aeb2056e39c8133f2d8306547ab783ab",
+      "blob": "e32d179067758f375b135dd15284af0b6fe70ebc"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/settlement.log",
+      "bytes": 59,
+      "sha256": "1a1c8a9c6df0168e8fd70f55acc9ef7e1ec823fd78373b3441e8a6865948ddd2",
+      "blob": "d381b97605432d6dae4e7c6da23c2db97d592311"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/shared-lint-handoff.log",
+      "bytes": 43,
+      "sha256": "13d8d8d7b65ae60b5a03fdf4ca50c8efd5dc396f452e134456388e600b75683b",
+      "blob": "047856b6bfbab285dfc223dcfd3126910ba9d2e4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/type-app-handoff.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/type-smoke-handoff.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/type-workflow-handoff.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/typegen.log",
+      "bytes": 61,
+      "sha256": "8b0db89a1e25137a4cb79143a4ea63ae347e6f5f2247f026d984e133255d3084",
+      "blob": "7bab5fceadb39ca7d44c9f1a13fba79599520d0b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/unit-final.log",
+      "bytes": 4429,
+      "sha256": "cd744ff421354187a98c4bf44f718c5701d63ffe114653b13b566a2d14ff0c78",
+      "blob": "0cb31f00a8b909cc70d02470a8854d215fe013c0"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/checks/unit-handoff.log",
+      "bytes": 642,
+      "sha256": "838ca53f62323bda49ca6a9885f70aad8cfb4e48028dcc3018d9be08162366c9",
+      "blob": "3a15b47af11b8605ad615bb3285fcacf874b40b9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/approved-admin-recorded.png",
+      "bytes": 110799,
+      "sha256": "5949e376d145b2e10014ad7ae3922d42b96c100776cb5abc87e3c4b0750797a0",
+      "blob": "f1dcc5c1fa8caa51ebc0133294f88e97786681ca"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/approved-admin-settlement.png",
+      "bytes": 105830,
+      "sha256": "69d5e7be926ed888b0c29358138c262016b10135f02d82a429d4b0263e86bd13",
+      "blob": "b009312e7786a210cfb01875d8fd81f13c6293dc"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/approved-owner-readback.png",
+      "bytes": 98787,
+      "sha256": "c18185444d6e709270c0cdd3b74f8f15af3cf3aa0eadede8393ac176f0f939a7",
+      "blob": "8369892f6c81849dda52b7b5ca42937a9a0fc61f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/draft-before.png",
+      "bytes": 94218,
+      "sha256": "f690558ef382e0526dd7bb5ddee170c490a60434931b790c8822b240b19e37fe",
+      "blob": "dd7a5a731e15b6d3f27301356175584c24862ff1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/draft-converted-readback.png",
+      "bytes": 94209,
+      "sha256": "d7c24132ca5828d761ed6b18a7568745919b1f76359f0053d5c2a7d0c5aedc8f",
+      "blob": "bcb7262449ab866301696ed0abd5f2762e8067e2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/observations.json",
+      "bytes": 1181,
+      "sha256": "13a44f3d0ab28670732fe1a3e140c0d6cb2c1f38ba6852253aa7cdb40d6ef5d5",
+      "blob": "a88b03de1028268ed78192de581a8f3aafa87aec"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/retained-transient-error.png",
+      "bytes": 95169,
+      "sha256": "f087b8c51071674233b95fc691ab672f975fe6406c6077aaefc88a484a5b53b9",
+      "blob": "b64c68a352172bd710d1f4b0c8d9ef66b59659bb"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/journeys/settlement-observations.json",
+      "bytes": 505,
+      "sha256": "1fe8aa10cb575a9d1af65e820c68eaa8fccd5219afb009c463e1bf35d3ac11a7",
+      "blob": "5f9a9772537ad8865088904637884aab80d23883"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/manifest.json",
+      "bytes": 24057,
+      "sha256": "77e99103465e2735c6f76f517cc953d2006a061d8dc0246bbde2c3a3027b2e89",
+      "blob": "f738010ee6218bdb0e828b2f7935f944cba34372"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/root-conversion-withdrawal-correction.json",
+      "bytes": 18938,
+      "sha256": "4cac7ca4c002919ae528a8843effea4832e8b58f0118c93e50aa79c1c5dfe73c",
+      "blob": "fb70c23dd97475cbc81ca9846eb6da322d896e42"
+    },
+    {
+      "path": "docs/design/rollout-1692/1748/root-withdrawal-correction.json",
+      "bytes": 8472,
+      "sha256": "37b5286dfaf191461b8f49c64ca25affc426c30a3afe23e87b1a234651e3a26a",
+      "blob": "839bf19d8e2b83fd33a13dc1323f53947cbb4cbe"
+    },
+    {
+      "path": "package.json",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "blob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "blob": "04abfc145288bbae42bbaccdb88a5c012c4b186c"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "bytes": 1880,
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "blob": "72bd6c845fc48f077c52fd789d799cb0928b6873"
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "node_modules",
+      "exists": true,
+      "symlink": false,
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules"
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "exists": true,
+      "symlink": false,
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\node_modules\\.pnpm"
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "exists": true,
+      "symlink": false,
+      "resolved": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\apps\\webapp\\node_modules"
+    }
+  ],
+  "verifiedCommit": null
+}

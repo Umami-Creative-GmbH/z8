@@ -1,0 +1,22 @@
+[
+  {
+    "actorAlias": "small-restricted",
+    "canonicalClaimStatus": 404,
+    "oneHeading": true,
+    "notesPresent": false,
+    "receiptPresent": false,
+    "appError": false,
+    "backAtSignIn": false,
+    "denied": true
+  },
+  {
+    "actorAlias": "large-employee",
+    "canonicalClaimStatus": 404,
+    "oneHeading": true,
+    "notesPresent": false,
+    "receiptPresent": false,
+    "appError": false,
+    "backAtSignIn": false,
+    "denied": true
+  }
+]

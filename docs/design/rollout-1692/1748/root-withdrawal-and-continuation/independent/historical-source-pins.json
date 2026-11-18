@@ -1,0 +1,82 @@
+[
+  {
+    "kind": "before",
+    "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+    "reference": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+    "expected": "2599ae8f5568259350cd00987b5de30d0c298082d5473b169ed0024a358a00ee",
+    "gitSha256": "7925555c941c8de973fa6a802777dda6b95e3d657e59f3817dcfc94c47c9b5b1",
+    "lfSha256": "7925555c941c8de973fa6a802777dda6b95e3d657e59f3817dcfc94c47c9b5b1",
+    "crlfSha256": "2599ae8f5568259350cd00987b5de30d0c298082d5473b169ed0024a358a00ee",
+    "parentBlobMatches": true
+  },
+  {
+    "kind": "before",
+    "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+    "reference": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+    "expected": "4f8e6523734e6b0fcb59af33a0d311a48ec8d8100e97b5bcd2cccf7d47380844",
+    "gitSha256": "ee844fe8cf7ff9c7e5dd91162feb6c9f5821ab6ab062c1cbd224892545df6635",
+    "lfSha256": "ee844fe8cf7ff9c7e5dd91162feb6c9f5821ab6ab062c1cbd224892545df6635",
+    "crlfSha256": "4f8e6523734e6b0fcb59af33a0d311a48ec8d8100e97b5bcd2cccf7d47380844",
+    "parentBlobMatches": true
+  },
+  {
+    "kind": "before",
+    "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+    "reference": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+    "expected": "215e6015d7f2442b9d985c53f9cc35d0882a067f2c4ca784d4cb2a7ba549636e",
+    "gitSha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+    "lfSha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+    "crlfSha256": "215e6015d7f2442b9d985c53f9cc35d0882a067f2c4ca784d4cb2a7ba549636e",
+    "parentBlobMatches": true
+  },
+  {
+    "kind": "before",
+    "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "reference": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+    "expected": "22a3056a3a2c4e4a588fdac5ec660e6845d9c61fb33c729c30bfcde5ad093797",
+    "gitSha256": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045",
+    "lfSha256": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045",
+    "crlfSha256": "22a3056a3a2c4e4a588fdac5ec660e6845d9c61fb33c729c30bfcde5ad093797",
+    "parentBlobMatches": true
+  },
+  {
+    "kind": "after",
+    "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+    "reference": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+    "expected": "a04b4071d09f619878e6a373756bc62745756ac5767d31194aacdaf9a947129c",
+    "gitSha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7",
+    "lfSha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7",
+    "crlfSha256": "a04b4071d09f619878e6a373756bc62745756ac5767d31194aacdaf9a947129c",
+    "parentBlobMatches": true
+  },
+  {
+    "kind": "after",
+    "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+    "reference": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+    "expected": "c9820249e6b079304beea90961fe8b932b86118963f150d724c4bb2ead97a227",
+    "gitSha256": "d29890be372eb17098aac748b8660a56fb2505fe8f90fc7102dd697abc272fce",
+    "lfSha256": "d29890be372eb17098aac748b8660a56fb2505fe8f90fc7102dd697abc272fce",
+    "crlfSha256": "c9820249e6b079304beea90961fe8b932b86118963f150d724c4bb2ead97a227",
+    "parentBlobMatches": true
+  },
+  {
+    "kind": "after",
+    "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+    "reference": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+    "expected": "429d536c6e5718490cbc42bc44caeedbcd9969f22841b32d46db31c278bb3231",
+    "gitSha256": "af798dc5eb8335022c9ffcc5f5e8cdd562f055fd587f00fc3e31bc60b86ca6c8",
+    "lfSha256": "af798dc5eb8335022c9ffcc5f5e8cdd562f055fd587f00fc3e31bc60b86ca6c8",
+    "crlfSha256": "4a02f550438ead82b3703011f1acb3979710ea2414688ae3243f695a36f1dcb3",
+    "parentBlobMatches": true
+  },
+  {
+    "kind": "after",
+    "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "reference": "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8",
+    "expected": "85d6ab7c51b8d4215b71d96b61fe75d434071c790fa970ee018804a57093bcef",
+    "gitSha256": "73fea64ef1aa43a0c4b3a5bb12651f02db6bb9bb0972bb6b647605423a503d2b",
+    "lfSha256": "73fea64ef1aa43a0c4b3a5bb12651f02db6bb9bb0972bb6b647605423a503d2b",
+    "crlfSha256": "85d6ab7c51b8d4215b71d96b61fe75d434071c790fa970ee018804a57093bcef",
+    "parentBlobMatches": true
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "label": "owned-ordinary",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "biome",
+    "check",
+    "--config-path=biome.jsonc",
+    "src/components/travel-expenses/legacy-draft-conversion.tsx",
+    "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx"
+  ],
+  "exit": 1,
+  "seconds": 0.696,
+  "logBytes": 19638,
+  "logSha256": "96263d9bacecd02a30124a9abd08712a7e758222c0ed3eaab1063b7c07634060"
+}

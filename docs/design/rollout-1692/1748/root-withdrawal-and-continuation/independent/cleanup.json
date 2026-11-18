@@ -1,0 +1,18 @@
+{
+  "sourceBridges": 7,
+  "sourceBridgesAbsent": true,
+  "nestedPnpmBridgeAbsent": true,
+  "nestedBridgeSha256": "815f319c8056070541ae7ff6d74ecbb3da5c983aaf16cc033f95ede5e8d103ae",
+  "ownedProcessMatches": 0,
+  "processCheck": "Elevated CIM check of node/python/bash commands naming this checkout; no matches",
+  "service": {
+    "container": "z8_approval_workflow_repository_test_1794959588584931000_11690",
+    "remaining": 0,
+    "exit": 0
+  },
+  "activeExactOwnedResources": 0,
+  "persistentBrowserNextNativeCreated": 0,
+  "staticOwnedDependencies": "Retained only in isolated checkout; not borrowed, shared or active runtime",
+  "rootPeerCleanup": false,
+  "verifiedCommit": null
+}

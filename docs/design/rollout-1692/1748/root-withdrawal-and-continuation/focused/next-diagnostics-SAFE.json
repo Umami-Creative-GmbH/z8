@@ -1,0 +1,31 @@
+{
+  "toolsListPresent": true,
+  "compilation": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"issues\":[]}"
+      }
+    ]
+  },
+  "errors": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+      }
+    ]
+  },
+  "pageMetadata": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"sessions\":[{\"url\":\"/en/travel-expenses\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/travel-expenses/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/travel-expenses/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+      }
+    ]
+  },
+  "primaryStable": true,
+  "expectedPath": "/en/travel-expenses",
+  "exactCurrentPath": true,
+  "listContainsRetirementNotes": true
+}

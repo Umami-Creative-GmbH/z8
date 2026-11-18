@@ -1,0 +1,15 @@
+{
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "versionGuard": "if ((pnpm --config.verify-deps-before-run=false --version) -ne '12.16.1') { throw 'Pinned pnpm required' }",
+  "install": "pnpm --config.verify-deps-before-run=false install --offline --frozen-lockfile --ignore-scripts --package-import-method=copy",
+  "exit": 0,
+  "downloads": 0,
+  "pnpm": "12.16.1",
+  "lifecycleScripts": false,
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "nestedBridge": "nested-pnpm-bridge.sh",
+  "installationScope": "Prepared isolated checkout only",
+  "verifiedCommit": null
+}

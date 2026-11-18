@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "verifiedCommit": null,
+  "frozenHead": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "frozenAppTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "currentObservationAtPublication": {
+    "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "branch": "ai/1692-app-wide-ui-refresh"
+  },
+  "comparison": "Raw clone bytes equal frozen Git blobs. Only current materialized TS/TSX source comparisons replace CRLF with LF. No payload normalization.",
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "gitBlob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+      "bytes": 1861,
+      "sha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7",
+      "clone": "source/apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx.txt",
+      "currentMaterialized": {
+        "bytes": 1916,
+        "sha256": "a04b4071d09f619878e6a373756bc62745756ac5767d31194aacdaf9a947129c"
+      },
+      "currentCanonical": {
+        "bytes": 1861,
+        "sha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7"
+      },
+      "canonicalGitBlob": "ae39cee22049ee4c83bd37e90a3e25811969385c"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "gitBlob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+      "bytes": 7918,
+      "sha256": "618cf4fa30ae2590e8950551bb605e28c9ee18f46161b3aaa2aa8eea240749a9",
+      "clone": "source/apps/webapp/src/components/site-header.test.tsx.txt",
+      "currentMaterialized": {
+        "bytes": 8147,
+        "sha256": "8981c9d05baf38381bd60d69d686fc7fe57e6f5920df4c8a0eb17a35b3cd133e"
+      },
+      "currentCanonical": {
+        "bytes": 7918,
+        "sha256": "618cf4fa30ae2590e8950551bb605e28c9ee18f46161b3aaa2aa8eea240749a9"
+      },
+      "canonicalGitBlob": "8e423d7b73f5570a45ea56134581825562d99ce1"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "gitBlob": "ba19e9037e3e304b877091993f968a101f684b94",
+      "bytes": 6874,
+      "sha256": "2c23d22b368d26ffaafc5d9349c3dc6b7b7844c1a2ed2ec872d9c2b2bd4fa098",
+      "clone": "source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx.txt",
+      "currentMaterialized": {
+        "bytes": 7091,
+        "sha256": "4a1b813675e75ef5a1da183c5a6c25e2e40de31434f6d459da5ee85294f121e7"
+      },
+      "currentCanonical": {
+        "bytes": 6874,
+        "sha256": "2c23d22b368d26ffaafc5d9349c3dc6b7b7844c1a2ed2ec872d9c2b2bd4fa098"
+      },
+      "canonicalGitBlob": "ba19e9037e3e304b877091993f968a101f684b94"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "gitBlob": "b6b904215b1d9801f0768d35eed520b7454b923a",
+      "bytes": 11065,
+      "sha256": "afb6b4335bd6bed8e2474f59f0584853fccfb0c501294789c82adb6d44d96659",
+      "clone": "source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx.txt",
+      "currentMaterialized": {
+        "bytes": 11368,
+        "sha256": "2d5c5a04a987feb4ec96123b62053dcfeb577ba50d470572ae142571fa154774"
+      },
+      "currentCanonical": {
+        "bytes": 11065,
+        "sha256": "afb6b4335bd6bed8e2474f59f0584853fccfb0c501294789c82adb6d44d96659"
+      },
+      "canonicalGitBlob": "b6b904215b1d9801f0768d35eed520b7454b923a"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "gitBlob": "6e0c1bc3df826c63d149ef97d21c8b63362b8327",
+      "bytes": 13615,
+      "sha256": "0558860b7abf7f6053f69ab2650e607b3803d9ebfe10497a3cb5540190c30b0b",
+      "clone": "source/apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx.txt",
+      "currentMaterialized": {
+        "bytes": 14025,
+        "sha256": "d3beb9f9d704b56617c7048fa94f6f904398982bcf7f5acf112a06895d46e385"
+      },
+      "currentCanonical": {
+        "bytes": 13615,
+        "sha256": "0558860b7abf7f6053f69ab2650e607b3803d9ebfe10497a3cb5540190c30b0b"
+      },
+      "canonicalGitBlob": "6e0c1bc3df826c63d149ef97d21c8b63362b8327"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "gitBlob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+      "bytes": 18784,
+      "sha256": "4ffb85cedc2834daf1753dbed0496dde9127495cd30d3ae05ba22c5ac84bdba4",
+      "clone": "source/apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx.txt",
+      "currentMaterialized": {
+        "bytes": 19359,
+        "sha256": "c7a2206c22d9ef5be6d4d1917224effd422811fbf6cd2f2980663ac899107400"
+      },
+      "currentCanonical": {
+        "bytes": 18784,
+        "sha256": "4ffb85cedc2834daf1753dbed0496dde9127495cd30d3ae05ba22c5ac84bdba4"
+      },
+      "canonicalGitBlob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "gitBlob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+      "bytes": 13627,
+      "sha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3",
+      "clone": "source/apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx.txt",
+      "currentMaterialized": {
+        "bytes": 14041,
+        "sha256": "b8b7ba4943baacc39961108276d6874dfb8fac80cf426d3c9484f60f7f62475b"
+      },
+      "currentCanonical": {
+        "bytes": 13627,
+        "sha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3"
+      },
+      "canonicalGitBlob": "0cd79ef79050a401e0c94879f98f57c24a082d79"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "gitBlob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+      "bytes": 9090,
+      "sha256": "6597c5c3f20264fa981be1dfbe32bfbbd64c1c6fc3fdab7ede1bc2a3d32c2693",
+      "clone": "source/apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx.txt",
+      "currentMaterialized": {
+        "bytes": 9303,
+        "sha256": "e35daf7803d9321aa214303d8211ae16f741f3d84ff5bc8274ccde6ed552d949"
+      },
+      "currentCanonical": {
+        "bytes": 9090,
+        "sha256": "6597c5c3f20264fa981be1dfbe32bfbbd64c1c6fc3fdab7ede1bc2a3d32c2693"
+      },
+      "canonicalGitBlob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "gitBlob": "5f6f75f256c6899338b436d76248c26923ec8702",
+      "bytes": 12722,
+      "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e",
+      "clone": "source/apps/webapp/src/lib/navigation/route-metadata.test.ts.txt",
+      "currentMaterialized": {
+        "bytes": 12999,
+        "sha256": "04df26d1cf70f5ae1a040e74e98d561d9f98a221b1015b7d3b60e33dc68f8e6d"
+      },
+      "currentCanonical": {
+        "bytes": 12722,
+        "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e"
+      },
+      "canonicalGitBlob": "5f6f75f256c6899338b436d76248c26923ec8702"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "gitBlob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+      "bytes": 7641,
+      "sha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39",
+      "clone": "source/apps/webapp/src/lib/navigation/route-metadata.ts.txt",
+      "currentMaterialized": {
+        "bytes": 7923,
+        "sha256": "5d3ad953a24f6cf4da62cda25433675bfc53b922cc6ab4f28de4ce14b899293d"
+      },
+      "currentCanonical": {
+        "bytes": 7641,
+        "sha256": "1b3fb51468dc462deb240d0e40d5334b2bd9e501453c796a7057473bea5cdb39"
+      },
+      "canonicalGitBlob": "225e32211910e6e2a89504996134d7673e5d1ca4"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts",
+      "gitBlob": "c64fa97f3e4a34fa8f84b983f7e7581aaabfa1d0",
+      "bytes": 3510,
+      "sha256": "42683441abe49b9acae745ca4fb1ba8d2b6bc1070fcc74e5594dfa1458bc6307",
+      "clone": "source/apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts.txt",
+      "currentMaterialized": {
+        "bytes": 3605,
+        "sha256": "caa6613be15b95501ad38ef73023e41ca5fc4e0564487ff6c8c100e5914e817d"
+      },
+      "currentCanonical": {
+        "bytes": 3510,
+        "sha256": "42683441abe49b9acae745ca4fb1ba8d2b6bc1070fcc74e5594dfa1458bc6307"
+      },
+      "canonicalGitBlob": "c64fa97f3e4a34fa8f84b983f7e7581aaabfa1d0"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts",
+      "gitBlob": "502b9aa3e6336e7cef0885734c947170a15f5197",
+      "bytes": 3589,
+      "sha256": "664db4505f12cf9d652c7bd71aa31298324b7d6cd6cd25bbd7227af541e8655b",
+      "clone": "source/apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts.txt",
+      "currentMaterialized": {
+        "bytes": 3701,
+        "sha256": "6c840562782e12116d3b859bceabb8ea79e0c6dc975b86dbd2fe99dc11969963"
+      },
+      "currentCanonical": {
+        "bytes": 3589,
+        "sha256": "664db4505f12cf9d652c7bd71aa31298324b7d6cd6cd25bbd7227af541e8655b"
+      },
+      "canonicalGitBlob": "502b9aa3e6336e7cef0885734c947170a15f5197"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts",
+      "gitBlob": "096299b778d5ab30e648fd13ebfc3a0979ad0b5c",
+      "bytes": 14313,
+      "sha256": "99d358bf17795fb682e00d7fbfc648e7bf669ad433be76fe871182f5d18e6d4f",
+      "clone": "source/apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts.txt",
+      "currentMaterialized": {
+        "bytes": 14715,
+        "sha256": "d2be9e9ff0338a08a918c9325bc57a607b92e48c405720a3578f0fa016e7d607"
+      },
+      "currentCanonical": {
+        "bytes": 14313,
+        "sha256": "99d358bf17795fb682e00d7fbfc648e7bf669ad433be76fe871182f5d18e6d4f"
+      },
+      "canonicalGitBlob": "096299b778d5ab30e648fd13ebfc3a0979ad0b5c"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/current-owner.ts",
+      "gitBlob": "17a9e4b6ce95f93642a3c1d80a60a83d8d554751",
+      "bytes": 639,
+      "sha256": "939ae2071718830a529e09ae3855a330d8d258e72ea6647c4db4250fde0bfc50",
+      "clone": "source/apps/webapp/src/lib/travel-expenses/current-owner.ts.txt",
+      "currentMaterialized": {
+        "bytes": 656,
+        "sha256": "4b31c983896968e9385807d380f4a6596935c6526095458fde22dbc0e10ece85"
+      },
+      "currentCanonical": {
+        "bytes": 639,
+        "sha256": "939ae2071718830a529e09ae3855a330d8d258e72ea6647c4db4250fde0bfc50"
+      },
+      "canonicalGitBlob": "17a9e4b6ce95f93642a3c1d80a60a83d8d554751"
+    }
+  ]
+}

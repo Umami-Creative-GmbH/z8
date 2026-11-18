@@ -1,0 +1,5 @@
+{
+  "mutation": "none",
+  "inspected": "Only node/pnpm command lines naming this isolated checkout; count-only output",
+  "ownNodePnpmProcessCount": 0
+}

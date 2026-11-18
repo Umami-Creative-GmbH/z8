@@ -1,0 +1,23 @@
+{
+  "method": "canonical actual columns original_amount/original_currency and SQL date::text; previous amount/currency keys and JS Date comparison were invalid harness predicates",
+  "checks": [
+    {
+      "alias": "open-reload",
+      "itemCount": 1,
+      "originalAmount": true,
+      "originalCurrency": true,
+      "expenseDate": true,
+      "missingLegacyFactsUninvented": true,
+      "unchangedInitialVersion": true
+    },
+    {
+      "alias": "retirement",
+      "itemCount": 1,
+      "originalAmount": true,
+      "originalCurrency": true,
+      "expenseDate": true,
+      "missingLegacyFactsUninvented": true,
+      "unchangedInitialVersion": true
+    }
+  ]
+}

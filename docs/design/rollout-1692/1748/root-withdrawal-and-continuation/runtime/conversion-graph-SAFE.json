@@ -1,0 +1,12 @@
+{
+  "provenanceCount": 1,
+  "reportCount": 1,
+  "itemCount": 1,
+  "receiptCount": 1,
+  "reportOwn": true,
+  "itemMatches": true,
+  "legacyFactsPresent": true,
+  "legacyFactsType": "object",
+  "flagsArray": true,
+  "reportRouteMatches": true
+}

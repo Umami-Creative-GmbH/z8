@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "verifiedCommit": null,
+  "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "status": "Focused checks complete with successful-retirement ordering and axe unproved; no confirmed product P1.",
+  "newCounts": {
+    "assertions": 32,
+    "passed": 29,
+    "unpassed": 3,
+    "unit": 0,
+    "postgresqlSuites": 0,
+    "build": 0
+  },
+  "newFixture": {
+    "drafts": 2,
+    "receiptObjects": 2,
+    "reports": 2,
+    "graphs": 2,
+    "conversionRequestsPerDraft": 1,
+    "heldResponseProtocolAttempts": 1
+  },
+  "closedGaps": [
+    "Both actual React names observed on fresh unconverted draft via qualified CDP DOM fiber method.",
+    "Actual Open the report link click and actual report editor reload retained current-owner identity/provenance/expected fields."
+  ],
+  "unproved": [
+    "New-route commitment and lifetime cleanup before held response release; successful retired completion.",
+    "Main axe acceptance.",
+    "Native agent-browser React extension acceptance."
+  ],
+  "priorEvidence": {
+    "priorRuntimeCounts": "producer-declared140 PASS (46 runtime+88 persistence+6 preservation), not inherited as fresh",
+    "qualifications": [
+      "OldID42 unsupported/stale for both React names; immutable old receipt observes only Detail.",
+      "OldID16 only href boolean and claim reload; no actual prior link-click/editor reload proof."
+    ],
+    "independent545Unit51CanonicalPg": "same-app prior separate result, not rerun or added",
+    "mainTypes": "prior isolated missing-license qualification and separate root genuine-artifact pass remain separate",
+    "format": "inherited format limits remain"
+  },
+  "preservation": {
+    "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "branch": "ai/1692-app-wide-ui-refresh",
+    "trackedFileCount": 18587,
+    "trackedDigest": "4efa03ec07a569ce351e60e3bf44b5fc0d0a22f2a908d77e13296075d985b324",
+    "trackedUnchanged": true,
+    "indexUnchanged": true,
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "dependencyLinks": 158,
+    "dependencyLinksUnchanged": true,
+    "guardSha256": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+    "canonicalFixtureSha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+    "frozenPinsUnchanged": true,
+    "old34AllowlistedPayloadsUnchanged": true
+  },
+  "resources": {
+    "cleanupExactNamesAndLabels": true,
+    "ownProfileRemaining": 0,
+    "ownServicesRemaining": 0,
+    "ownPortsRemaining": 0,
+    "recordedOwnProcessesRemaining": 0,
+    "isolatedContextsRemaining": 0,
+    "ownCommandProcessesRemaining": 0,
+    "peerCleanup": false,
+    "expectedServiceCount": 3
+  },
+  "limits": [
+    "One fixture, one fixed explicit primary page/incognito context; browser default blank context unused.",
+    "No auth state copied/imported/exported/saved/restored/minted; normal transient form login with provided widget only.",
+    "No deliberate wrong password, auth SQL, role/grant/policy/tier writes, provider bypass or interception.",
+    "No save/submit/reimbursement/payment/delivery action; no external money movement.",
+    "Only exact claim-route POST Response interception and privately MCP-identified conversion action; no RSC body or response headers read/stored/logged.",
+    "No production generation, catalog/provider/device/true zoom/exhaustive authority claims.",
+    "One first raw seed exception file overwritten; attempt qualification retained, raw bytes not reconstructed."
+  ],
+  "rootOwns": "combined intake, bounded handoff/readiness decision and any publication"
+}

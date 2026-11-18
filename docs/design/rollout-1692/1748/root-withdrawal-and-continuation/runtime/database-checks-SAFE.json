@@ -1,0 +1,610 @@
+[
+  {
+    "name": "own-org time_entry preserved",
+    "result": "PASS",
+    "beforeCount": 4176,
+    "afterCount": 4176,
+    "beforeSha256": "ba2b00ced88b5398d2b1c7bb0578b5bfbb7e485f57eb01fb43642035ba05c692",
+    "afterSha256": "ba2b00ced88b5398d2b1c7bb0578b5bfbb7e485f57eb01fb43642035ba05c692"
+  },
+  {
+    "name": "own-org time_record preserved",
+    "result": "PASS",
+    "beforeCount": 2088,
+    "afterCount": 2088,
+    "beforeSha256": "6d773cede83cb7803e2ede803a6fb4600163636567eab08f2b86d4cd35ce2afe",
+    "afterSha256": "6d773cede83cb7803e2ede803a6fb4600163636567eab08f2b86d4cd35ce2afe"
+  },
+  {
+    "name": "own-org travel_expense_allowance_override preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_allowance_policy preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_allowance_policy_version preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_attachment preserved",
+    "result": "PASS",
+    "beforeCount": 5,
+    "afterCount": 5,
+    "beforeSha256": "dd629f554820411355736f897388d7d2e36bc8409fb3e4623810d1046a46ba98",
+    "afterSha256": "dd629f554820411355736f897388d7d2e36bc8409fb3e4623810d1046a46ba98"
+  },
+  {
+    "name": "own-org travel_expense_claim preserved",
+    "result": "PASS",
+    "beforeCount": 5,
+    "afterCount": 5,
+    "beforeSha256": "078dd3b18098519dc1dabd1b5bfdd1a799ba7f7201fcda615a561e74e6f06413",
+    "afterSha256": "078dd3b18098519dc1dabd1b5bfdd1a799ba7f7201fcda615a561e74e6f06413"
+  },
+  {
+    "name": "own-org travel_expense_decision_log preserved",
+    "result": "PASS",
+    "beforeCount": 1,
+    "afterCount": 1,
+    "beforeSha256": "daf55c5beb91910634791083a2fae04149eba0487f359fe991fff729954cdcfb",
+    "afterSha256": "daf55c5beb91910634791083a2fae04149eba0487f359fe991fff729954cdcfb"
+  },
+  {
+    "name": "own-org travel_expense_export_batch preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_export_batch_revision preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_legacy_draft_conversion expected canonical delta",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 1,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "058d2faa6acdd9c2df62e1721e503804d1be3cc5fbb2b1375f058f3d5e2e08cb"
+  },
+  {
+    "name": "own-org travel_expense_mileage_rate preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_payroll_run_inclusion preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_payroll_run_preview_control preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_per_diem_rate preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_policy preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_project_attribution_exception preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_project_history_capture preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_receipt_upload preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_reference_rate_policy preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_report expected canonical delta",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 1,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "3563f091a812f969460cebc532f8c87b595e1758b71f9431b97d672493279a80"
+  },
+  {
+    "name": "own-org travel_expense_report_adjustment preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_report_cycle_closure preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_report_item expected canonical delta",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 1,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "7dbb76c6240cad530c3814d7a2f3cc8b779cd6ac1cc994e46b3f5f924c7aaba3"
+  },
+  {
+    "name": "own-org travel_expense_report_item_conversion preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_report_per_diem preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_report_receipt expected canonical delta",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 1,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "3448e2933df5384dfc67a63efd7ec8883ce28ec3ed9ae5325a9706e76cd93c09"
+  },
+  {
+    "name": "own-org travel_expense_report_review_note preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_report_supplemental_receipt preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_settings preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "own-org travel_expense_settlement_entry expected canonical delta",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 1,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "75e58921cb8cadc4f91452dc6ecda6b1a5da7d48c040ab5a024aa878a26460f4"
+  },
+  {
+    "name": "own-org work_period preserved",
+    "result": "PASS",
+    "beforeCount": 2088,
+    "afterCount": 2088,
+    "beforeSha256": "5aeb790cc8bebd01cc7a33b4bd85b1b32db8fc078a0563feb31c717345276bbd",
+    "afterSha256": "5aeb790cc8bebd01cc7a33b4bd85b1b32db8fc078a0563feb31c717345276bbd"
+  },
+  {
+    "name": "foreign-org time_entry preserved",
+    "result": "PASS",
+    "beforeCount": 104400,
+    "afterCount": 104400,
+    "beforeSha256": "497a618c2e4f09573b02a5c9f6ab96f69f8386ac9c88616efd83d7e92bd0fac8",
+    "afterSha256": "497a618c2e4f09573b02a5c9f6ab96f69f8386ac9c88616efd83d7e92bd0fac8"
+  },
+  {
+    "name": "foreign-org time_record preserved",
+    "result": "PASS",
+    "beforeCount": 52200,
+    "afterCount": 52200,
+    "beforeSha256": "d4f31728ae61658780341e3b565c86d49f49e6c7b3ea861c1bd00d86001cd3de",
+    "afterSha256": "d4f31728ae61658780341e3b565c86d49f49e6c7b3ea861c1bd00d86001cd3de"
+  },
+  {
+    "name": "foreign-org travel_expense_allowance_override preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_allowance_policy preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_allowance_policy_version preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_attachment preserved",
+    "result": "PASS",
+    "beforeCount": 1,
+    "afterCount": 1,
+    "beforeSha256": "fd217d479d0262f1c533fe050c1fbb5557606378d15acc0c8e5f194d64cbcef1",
+    "afterSha256": "fd217d479d0262f1c533fe050c1fbb5557606378d15acc0c8e5f194d64cbcef1"
+  },
+  {
+    "name": "foreign-org travel_expense_claim preserved",
+    "result": "PASS",
+    "beforeCount": 1,
+    "afterCount": 1,
+    "beforeSha256": "5ae8be97a19d0add42429f98ab88d89a517bfb46fcd5fdb8c22ef4be2b336ffc",
+    "afterSha256": "5ae8be97a19d0add42429f98ab88d89a517bfb46fcd5fdb8c22ef4be2b336ffc"
+  },
+  {
+    "name": "foreign-org travel_expense_decision_log preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_export_batch preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_export_batch_revision preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_legacy_draft_conversion preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_mileage_rate preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_payroll_run_inclusion preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_payroll_run_preview_control preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_per_diem_rate preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_policy preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_project_attribution_exception preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_project_history_capture preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_receipt_upload preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_reference_rate_policy preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report_adjustment preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report_cycle_closure preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report_item preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report_item_conversion preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report_per_diem preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report_receipt preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report_review_note preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_report_supplemental_receipt preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_settings preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org travel_expense_settlement_entry preserved",
+    "result": "PASS",
+    "beforeCount": 0,
+    "afterCount": 0,
+    "beforeSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "afterSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "foreign-org work_period preserved",
+    "result": "PASS",
+    "beforeCount": 52200,
+    "afterCount": 52200,
+    "beforeSha256": "a7aa319fd4ad5ddd03d79656ece71ff45844fd90591e44e5d6d488790216da8b",
+    "afterSha256": "a7aa319fd4ad5ddd03d79656ece71ff45844fd90591e44e5d6d488790216da8b"
+  },
+  {
+    "name": "draft original travel_expense_claim unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "draft original travel_expense_attachment unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "draft original travel_expense_decision_log unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "submitted original travel_expense_claim unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "submitted original travel_expense_attachment unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "submitted original travel_expense_decision_log unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "approved original travel_expense_claim unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "approved original travel_expense_attachment unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "approved original travel_expense_decision_log unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "unavailable original travel_expense_claim unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "unavailable original travel_expense_attachment unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "unavailable original travel_expense_decision_log unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "same-org-sentinel original travel_expense_claim unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "same-org-sentinel original travel_expense_attachment unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "same-org-sentinel original travel_expense_decision_log unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "foreign-sentinel original travel_expense_claim unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "foreign-sentinel original travel_expense_attachment unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "foreign-sentinel original travel_expense_decision_log unchanged",
+    "result": "PASS"
+  },
+  {
+    "name": "One conversion provenance for valid draft",
+    "result": "PASS"
+  },
+  {
+    "name": "Converted receipt keeps exact original storage/checksum/filename identity",
+    "result": "PASS"
+  },
+  {
+    "name": "Converted item retains entered amount/currency and multiline notes",
+    "result": "PASS"
+  },
+  {
+    "name": "Conversion immutable snapshot preserves original and calculated money, zone, destination and notes",
+    "result": "PASS"
+  },
+  {
+    "name": "Only intended local partial reimbursement persisted once",
+    "result": "PASS"
+  },
+  {
+    "name": "Missing receipt draft has no partial conversion",
+    "result": "PASS"
+  }
+]

@@ -1,0 +1,70 @@
+{
+  "graphs": [
+    {
+      "alias": "open-reload",
+      "conversionCount": 1,
+      "reportCount": 1,
+      "itemCount": 1,
+      "receiptCount": 1,
+      "ownerScoped": true,
+      "reportDraft": true,
+      "standalone": true,
+      "itemAmount": false,
+      "itemCurrency": false,
+      "itemDate": false,
+      "itemDescription": true,
+      "receiptPreserved": true,
+      "provenanceNotes": true,
+      "provenanceAmount": true,
+      "provenanceDate": true,
+      "convertedByCurrentOwner": true,
+      "originalRowsUnchanged": true
+    },
+    {
+      "alias": "retirement",
+      "conversionCount": 1,
+      "reportCount": 1,
+      "itemCount": 1,
+      "receiptCount": 1,
+      "ownerScoped": true,
+      "reportDraft": true,
+      "standalone": true,
+      "itemAmount": false,
+      "itemCurrency": false,
+      "itemDate": false,
+      "itemDescription": true,
+      "receiptPreserved": true,
+      "provenanceNotes": true,
+      "provenanceAmount": true,
+      "provenanceDate": true,
+      "convertedByCurrentOwner": true,
+      "originalRowsUnchanged": true
+    }
+  ],
+  "foreignAllSentinelsUnchanged": true,
+  "timekeepingBothOrganizationsUnchanged": true,
+  "originalsAllUnchanged": true,
+  "changedOwnTables": [
+    {
+      "table": "travel_expense_legacy_draft_conversion",
+      "before": 0,
+      "after": 2
+    },
+    {
+      "table": "travel_expense_report",
+      "before": 0,
+      "after": 2
+    },
+    {
+      "table": "travel_expense_report_item",
+      "before": 0,
+      "after": 2
+    },
+    {
+      "table": "travel_expense_report_receipt",
+      "before": 0,
+      "after": 2
+    }
+  ],
+  "onlyExpectedTablesChanged": true
+}

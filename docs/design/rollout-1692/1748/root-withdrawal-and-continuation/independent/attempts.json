@@ -1,0 +1,70 @@
+[
+  {
+    "attempt": "restricted GitHub issue/spec read",
+    "outcome": "Socket permission denial; escalated read succeeded; read-only"
+  },
+  {
+    "attempt": "restricted pnpm --version",
+    "outcome": "Engine-store permission denial printed fallback 12.21.0. No package execution used fallback. Elevated guard confirmed 12.16.1."
+  },
+  {
+    "attempt": "first Python pnpm launcher",
+    "outcome": "WinError 2 before package execution. Explicit pnpm.cmd lookup fixed only launcher."
+  },
+  {
+    "attempt": "priority-objections",
+    "outcome": "27 pass/1 failed assertion/3 bailed pending in actual records. Review test clicked Retry before its outage state committed; no product finding."
+  },
+  {
+    "attempt": "shell inline edit",
+    "outcome": "Quoting caused Python SyntaxError; no files changed. The following priority-objections-settled reran unchanged source: 4 pass/1 same failure/3 pending."
+  },
+  {
+    "attempt": "priority-objections-waited",
+    "outcome": "4 pass/1 harness failure/3 pending. Family refresh consumed finite conversion mock values concurrently. Preserved attempt2 source; persistent outage until deliberate recovery fixed the test seam. Final 8 objections pass."
+  },
+  {
+    "attempt": "restricted Docker availability probe",
+    "outcome": "Docker pipe permission denied; authorized canonical disposable runner then succeeded."
+  },
+  {
+    "attempt": "optional restricted CIM process inventory",
+    "outcome": "Permission denied. Final elevated exact checkout process check succeeded with zero matches."
+  },
+  {
+    "attempt": "optional Pillow availability probe",
+    "outcome": "Module absent. No installation. PNG CRC, decompression and scanline filter reconstruction used standard library; all18 visually inspected."
+  },
+  {
+    "attempt": "quality/types launcher console",
+    "outcome": "cp1252 UnicodeEncodeError after successful lint and typegen and after recorded explicit-format exit1. Completed receipts/logs retained. Console handling fixed; remaining commands resumed without rerunning completed checks."
+  },
+  {
+    "attempt": "main TypeScript",
+    "outcome": "Exit1, only missing ignored licenses.json TS2307. No artifact copied/generated; not accepted as green."
+  },
+  {
+    "attempt": "format profiles",
+    "outcome": "Explicit whole-scope two metadata findings; ordinary owned two findings. Separate two-file explicit100CRLF passes. No fixes or suppressions."
+  },
+  {
+    "attempt": "TypeScript JS parser API",
+    "outcome": "Installed TypeScript7 native package has no expected ScriptTarget/CreateSourceFile JS API. Failed before parsing; installed Babel TSX parser completed22files zero diagnostics."
+  },
+  {
+    "attempt": "report prefix check",
+    "outcome": "Initial assertion used LF Git blob against materialized CRLF byte receipt. Rechecked actual materialized bytes; both exact prefix hashes match. No report edit."
+  },
+  {
+    "attempt": "pnpm bridge cleanup guard",
+    "outcome": "First seal expected LF instead of the known Windows text-write CRLF bytes. Guard refused deletion. Exact expected materialized CRLF bytes then matched before deletion."
+  },
+  {
+    "attempt": "optional status reads",
+    "outcome": "A not-yet-written buffered log and a missing README/path probe printed read diagnostics. Later final receipts exist; no product/config mutation."
+  },
+  {
+    "attempt": "known Vite config warning",
+    "outcome": "Current native config-loader compatibility warning retained. No suppressing environment flag set."
+  }
+]

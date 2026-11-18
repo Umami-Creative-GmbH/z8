@@ -1,0 +1,276 @@
+{
+  "verifiedCommit": null,
+  "assertions": [
+    {
+      "id": 1,
+      "name": "Two scoped business drafts seeded",
+      "predicate": "drafts=attachments=realObjects=2; no authority/time writes",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "seed-SAFE.json"
+    },
+    {
+      "id": 2,
+      "name": "Actual draft settled",
+      "predicate": "Continue visible/enabled; retained multiline notes settled before conversion",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "react-draft-attempt1-SAFE.json"
+    },
+    {
+      "id": 3,
+      "name": "Actual React names",
+      "predicate": "both requested names in actual resolved DOM fiber ancestry before conversion",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "react-draft-SAFE.json"
+    },
+    {
+      "id": 4,
+      "name": "Conversion panel capture",
+      "predicate": "page h1, panel h2 and enabled action captured together",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "draft-panel-current.png"
+    },
+    {
+      "id": 5,
+      "name": "First public conversion persisted",
+      "predicate": "one conversion row and actual correct automatic report arrival",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "first-conversion-SAFE.json"
+    },
+    {
+      "id": 6,
+      "name": "Actual action identification",
+      "predicate": "actual Next MCP resolved observed opaque Next-Action ID to conversion action",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "first-conversion-SAFE.json"
+    },
+    {
+      "id": 7,
+      "name": "Actual Open report link click",
+      "predicate": "actual original-draft and Open report links clicked; correct report destination",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "report-open-reload-SAFE.json"
+    },
+    {
+      "id": 8,
+      "name": "Opened report retained fields",
+      "predicate": "correct identity, provenance, original link, notes, receipt, amount and plain date",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "report-open-reload-SAFE.json"
+    },
+    {
+      "id": 9,
+      "name": "Actual report reload",
+      "predicate": "report page actually reloaded and retained identity/provenance/fields",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "report-open-reload-SAFE.json"
+    },
+    {
+      "id": 10,
+      "name": "Real held server conversion",
+      "predicate": "one conversion request; one real 2xx response held after one persisted graph",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "retirement-held-SAFE.json"
+    },
+    {
+      "id": 11,
+      "name": "Actual pending button",
+      "predicate": "disabled conversion button observed while genuine response held",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "retirement-held-SAFE.json"
+    },
+    {
+      "id": 12,
+      "name": "Actual Back link click",
+      "predicate": "real claim Back link clicked during held response",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "retirement-attempt1-SAFE.json"
+    },
+    {
+      "id": 13,
+      "name": "Pre-release route commitment",
+      "predicate": "new route and claim lifetime withdrawal confirmed before releasing response",
+      "observed": null,
+      "result": "UNPASSED",
+      "evidence": "retirement-attempt1-SAFE.json",
+      "qualification": "Wait incorrectly required retained notes to disappear everywhere; destination list legitimately shows the notes. No separate pre-release URL receipt. Cannot infer commitment from final destination."
+    },
+    {
+      "id": 14,
+      "name": "Successful retired completion",
+      "predicate": "pre-release commitment plus unmodified successful response delivery and no revival",
+      "observed": false,
+      "result": "UNPASSED",
+      "evidence": "retirement-attempt1-SAFE.json",
+      "qualification": "One bounded protocol attempt only. No further conversion request or extra draft. Failure is harness evidence gap, not product P1."
+    },
+    {
+      "id": 15,
+      "name": "Genuine response finished without cancellation",
+      "predicate": "original response continued unmodified; network finished=1/cancelled=0/failed=0",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "retirement-attempt1-SAFE.json",
+      "qualification": "This alone does not prove retirement ordering."
+    },
+    {
+      "id": 16,
+      "name": "Bounded final list view",
+      "predicate": "after release page stays on list with no observed report navigation or old feedback",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "retirement-attempt1-SAFE.json",
+      "qualification": "6.5 second post-release observation; pre-release ordering unproved."
+    },
+    {
+      "id": 17,
+      "name": "Fixed primary page",
+      "predicate": "all focused receipts retain primary pointer/target and one isolated page",
+      "result": "PASS",
+      "evidence": "react-draft-SAFE.json; report-open-reload-SAFE.json; retirement-attempt1-SAFE.json; claim-next-diagnostics-SAFE.json",
+      "observed": true,
+      "qualification": "Initial seal read primaryTargetStable instead of the actual primaryStable receipt key. Corrected against existing actual receipts; no browser or product rerun."
+    },
+    {
+      "id": 18,
+      "name": "Both canonical graphs",
+      "predicate": "one scoped draft report/item/receipt/provenance graph per seeded draft",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "database-controls-SAFE.json"
+    },
+    {
+      "id": 19,
+      "name": "Graph provenance and objects",
+      "predicate": "original receipt identity and provenance notes/amount/date/current owner preserved",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "database-controls-SAFE.json"
+    },
+    {
+      "id": 20,
+      "name": "Canonical item fields",
+      "predicate": "actual original_amount/original_currency/date match expected; no invented category/payer; version1",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "graph-fields-SAFE.json",
+      "qualification": "Earlier invalid column/date predicates are preserved as failed harness observations in database-controls-SAFE.json."
+    },
+    {
+      "id": 21,
+      "name": "Original legacy rows",
+      "predicate": "both original claims, attachments and log row sets unchanged",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "originals-before-SAFE.json; originals-after-SAFE.json"
+    },
+    {
+      "id": 22,
+      "name": "Foreign sentinels",
+      "predicate": "all 29 foreign travel tables and actual time tables unchanged",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "database-before-SAFE.json; database-after-SAFE.json"
+    },
+    {
+      "id": 23,
+      "name": "Actual timekeeping controls",
+      "predicate": "time_record/time_entry/work_period digests in both organizations unchanged",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "database-before-SAFE.json; database-after-SAFE.json"
+    },
+    {
+      "id": 24,
+      "name": "Expected business delta only",
+      "predicate": "only four expected graph tables changed, each +2",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "database-controls-SAFE.json"
+    },
+    {
+      "id": 25,
+      "name": "Actual connected compilation",
+      "predicate": "actual tool available; parsed issue count0",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "claim-next-diagnostics-SAFE.json"
+    },
+    {
+      "id": 26,
+      "name": "Actual connected errors",
+      "predicate": "parsed config/session error arrays empty with one connected session",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "claim-next-diagnostics-SAFE.json"
+    },
+    {
+      "id": 27,
+      "name": "Exact page metadata",
+      "predicate": "connected metadata names exact claim URL and actual claim page",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "claim-next-diagnostics-SAFE.json"
+    },
+    {
+      "id": 28,
+      "name": "Main axe acceptance",
+      "predicate": "trusted installed tool executes actual main-region axe audit",
+      "observed": null,
+      "result": "UNPASSED",
+      "evidence": "attempts-SAFE.json",
+      "qualification": "No root/app axe-core or readily discoverable global axe tool; no install/copy/launcher bypass."
+    },
+    {
+      "id": 29,
+      "name": "Tracked/index/pins preserved",
+      "predicate": "18587 tracked bytesets, index, branch/HEAD/app, lock and genuine license unchanged",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "preservation-final-SAFE.json"
+    },
+    {
+      "id": 30,
+      "name": "Dependency topology preserved",
+      "predicate": "same158 internal dependency links unchanged",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "preservation-final-SAFE.json"
+    },
+    {
+      "id": 31,
+      "name": "Prior public evidence immutable",
+      "predicate": "prior SAFE index and all34 allowlisted payloads retain exact bytes/hashes",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "preservation-final-SAFE.json"
+    },
+    {
+      "id": 32,
+      "name": "Exact cleanup complete",
+      "predicate": "all owned services/ports/processes/profile/isolated contexts0",
+      "observed": true,
+      "result": "PASS",
+      "evidence": "resources-final-SAFE.json"
+    }
+  ],
+  "counts": {
+    "total": 32,
+    "passed": 29,
+    "unpassed": 3
+  },
+  "unitCases": 0,
+  "postgresqlSuiteCases": 0,
+  "countsAre": "focused runtime/readback/preservation predicates, not suite cases or independent guarantees"
+}
