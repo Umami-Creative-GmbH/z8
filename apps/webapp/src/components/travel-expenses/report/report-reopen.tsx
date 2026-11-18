@@ -33,8 +33,13 @@ import type { TravelExpenseReportReopenState } from "@/lib/approvals/server/trav
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { REOPEN_REASON_MAX_LENGTH } from "@/lib/travel-expenses/report-reopen";
+import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatRecordedInstant } from "./format";
 import { AdjustmentRequiredHint } from "./report-adjustments";
+import { useReportQueryKey } from "./report-read-scope";
+import { useReportTask } from "./use-report-task";
+
+const reopenSubmission = { task: null as { arrival: object; scope: string } | null };
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -86,17 +91,33 @@ function adjustmentText(
  * exported nor reimbursed (#614). Once it was, the panel explains that a
  * linked adjustment is needed instead; #615 mounts its adjustment action here.
  */
-export function ReopenReportPanel({ reportId }: { reportId: string }) {
+export function ReopenReportPanel(props: Parameters<typeof ReopenReportPanelTask>[0]) {
+	return <ReopenReportPanelTask key={props.reportId} {...props} />;
+}
+
+function ReopenReportPanelTask({ reportId }: { reportId: string }) {
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
-	const { data } = useQuery({
-		queryKey: queryKeys.travelExpenses.reportReopen(reportId),
+	const [pending, setPending] = useState(false);
+	const { data, isError, isFetching, refetch } = useQuery({
+		queryKey: useReportQueryKey(queryKeys.travelExpenses.reportReopen(reportId)),
 		queryFn: async (): Promise<TravelExpenseReportReopenState> => {
 			const result = await getTravelExpenseReportReopenState(reportId);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
 	});
+	if (isError)
+		return (
+			<TravelExpenseLoadError
+				message={t(
+					"travelExpenses.report.errors.loadSubmission",
+					"Unable to load the submitted report. Please retry.",
+				)}
+				retry={() => void refetch()}
+				isRetrying={isFetching}
+			/>
+		);
 	if (!data || data.status === "unavailable") return null;
 	if (data.status === "adjustment_required") {
 		return (
@@ -115,7 +136,12 @@ export function ReopenReportPanel({ reportId }: { reportId: string }) {
 				<IconArrowBackUp aria-hidden="true" className="mr-2 size-4" />
 				{t("travelExpenses.report.reopen.action", "Reopen for correction")}
 			</Button>
-			<Dialog open={open} onOpenChange={setOpen}>
+			<Dialog
+				open={open}
+				onOpenChange={(next) => {
+					if (!pending) setOpen(next);
+				}}
+			>
 				<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
 					<DialogHeader>
 						<DialogTitle>
@@ -130,10 +156,12 @@ export function ReopenReportPanel({ reportId }: { reportId: string }) {
 					</DialogHeader>
 					{open && (
 						<ReopenForm
+							key={`${reportId}:${data.submissionCycle}`}
 							reportId={reportId}
 							submissionCycle={data.submissionCycle}
 							onCancel={() => setOpen(false)}
 							onDone={() => setOpen(false)}
+							onPendingChange={setPending}
 						/>
 					)}
 				</DialogContent>
@@ -161,25 +189,31 @@ function ReopenForm({
 	submissionCycle,
 	onCancel,
 	onDone,
+	onPendingChange,
 }: {
 	reportId: string;
 	submissionCycle: number;
 	onCancel: () => void;
 	onDone: () => void;
+	onPendingChange: (pending: boolean) => void;
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [failure, setFailure] = useState<string | null>(null);
+	const task = useReportTask(`${reportId}:${submissionCycle}`);
 	const form = useForm({
 		defaultValues: { reason: "" },
-		onSubmit: async ({ value }) => {
+		onSubmitMeta: reopenSubmission,
+		onSubmit: async ({ value, meta }) => {
+			if (!meta.task || !task.isCurrent(meta.task)) return;
 			setFailure(null);
 			const result = await reopenTravelExpenseReportAction({
 				reportId,
 				submissionCycle,
 				reason: value.reason,
-			});
-			if (!result.success) {
+			}).catch(() => null);
+			if (!task.isCurrent(meta.task)) return;
+			if (!result?.success) {
 				// Server errors are English diagnostics; the reviewer sees a translated outcome.
 				setFailure(
 					t(
@@ -207,7 +241,7 @@ function ReopenForm({
 			await queryClient.invalidateQueries({
 				queryKey: queryKeys.travelExpenses.report(reportId),
 			});
-			onDone();
+			if (task.isCurrent(meta.task)) onDone();
 		},
 	});
 
@@ -217,7 +251,13 @@ function ReopenForm({
 			noValidate
 			onSubmit={(event) => {
 				event.preventDefault();
-				void form.handleSubmit();
+				const activation = task.reserve();
+				if (!activation) return;
+				onPendingChange(true);
+				void form.handleSubmit({ task: activation }).finally(() => {
+					task.release(activation);
+					onPendingChange(false);
+				});
 			}}
 		>
 			<form.Field
@@ -254,10 +294,15 @@ function ReopenForm({
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(isSubmitting) => (
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onCancel}
+							disabled={isSubmitting || task.working}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button type="submit" disabled={isSubmitting || task.working}>
 							{isSubmitting ? (
 								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							) : (

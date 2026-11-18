@@ -1,0 +1,21 @@
+{
+  "source": "7e466fae2668148a856b6dfb2fdaf605d7366029",
+  "origin": "owned loopback development server",
+  "privacyClone": true,
+  "get_project_metadata": {
+    "unpassed": true,
+    "message": "fetch failed"
+  },
+  "get_page_metadata": {
+    "unpassed": true,
+    "message": "fetch failed"
+  },
+  "get_errors": {
+    "unpassed": true,
+    "message": "fetch failed"
+  },
+  "get_compilation_issues": {
+    "unpassed": true,
+    "message": "fetch failed"
+  }
+}

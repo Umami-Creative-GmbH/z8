@@ -1,0 +1,53 @@
+{
+  "actions": [
+    {
+      "disabled": false,
+      "name": "Toggle Sidebar"
+    },
+    {
+      "disabled": false,
+      "name": "Current timezone Europe/Berlin, 14:04, UTC+01:00"
+    },
+    {
+      "disabled": false,
+      "name": "Clock In"
+    },
+    {
+      "disabled": false,
+      "name": "Refresh data"
+    },
+    {
+      "disabled": false,
+      "name": "Toggle theme"
+    },
+    {
+      "disabled": false,
+      "name": "Notifications"
+    },
+    {
+      "disabled": false,
+      "name": "Notifications"
+    },
+    {
+      "disabled": false,
+      "name": "More actions"
+    }
+  ],
+  "cycleLinks": [
+    {
+      "href": "/api/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f/receipts/1e27ea3b-0a20-4e10-b6d7-d627c5245d3b?cycle=1",
+      "text": "receipt.png"
+    },
+    {
+      "href": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f?cycle=2",
+      "text": "Submission 2 on Nov 16, 2026, 1:04 PM UTC: awaiting review"
+    }
+  ],
+  "evidenceText": "Toggle Sidebar\n\nTravel Expenses\n\n14:04\nUTC+01:00\nClock In\nToggle theme\nBack to the current report\nStandalone receipt\nAwaiting review\nCustomer workshop train ticket\n\nSubmission 1, submitted Nov 16, 2026, 1:03 PM UTC\n\nThis is an earlier submission of the report, kept exactly as it was submitted.\n\nThis submission was withdrawn before a decision.\n\nExpenses\n\nReceipt 1: Customer workshop train ticket\n\n€89.90\n\nNov 10, 2026 · Transport · Paid by you\n\nreceipt.png\nTotals\nReimbursed to you\n€89.90\nPaid by the company\n€0.00\nHistory\nEvery step of this report, oldest first. Times are shown in UTC.\n\nSubmitted\n\nNov 16, 2026, 1:03 PM UTC\nSubmission 1 · By Person 2\n\nWithdrawn\n\nNov 16, 2026, 1:04 PM UTC\nSubmission 1 · By Person 2\n\nSubmitted\n\nNov 16, 2026, 1:04 PM UTC\nSubmission 2 · By Person 2\n\nIn review\n\nWaiting for review.\nSubmissions\nEach submission stays exactly as it was sent for review.\nSubmission 1 on Nov 16, 2026, 1:03 PM UTC: withdrawn\nSubmission 2 on Nov 16, 2026, 1:04 PM UTC: awaiting review",
+  "fields": [],
+  "h1": [
+    "Customer workshop train ticket"
+  ],
+  "path": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f?cycle=1",
+  "source": "7abdd84e8adc22ae113697621eb0d60742c7a8e8"
+}

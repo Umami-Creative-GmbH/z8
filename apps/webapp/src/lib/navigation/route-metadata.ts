@@ -209,10 +209,12 @@ export function normalizeAppPath(pathname: string): string {
 export function appPageOwnsHeading(pathname: string): boolean {
 	const path = normalizeAppPath(pathname);
 	const legacyClaimId = /^\/travel-expenses\/([^/]+)$/.exec(path)?.[1];
+	const reportId = /^\/travel-expenses\/reports\/([^/]+)$/.exec(path)?.[1];
 	return (
 		path === "/travel-expenses" ||
 		path === "/travel-expenses/finance" ||
 		Boolean(legacyClaimId && z.uuid().safeParse(legacyClaimId).success) ||
+		Boolean(reportId && z.uuid().safeParse(reportId).success) ||
 		/^\/team\/presence\/[^/]+$/.test(path) ||
 		/^\/personnel-files\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
 			path,

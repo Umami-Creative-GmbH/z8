@@ -1,14 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const reportActions = vi.hoisted(() => ({
@@ -21,10 +14,15 @@ const reportActions = vi.hoisted(() => ({
 	addTripReportItemAction: vi.fn(),
 	removeTripReportItemAction: vi.fn(),
 }));
-vi.mock(
-	"@/app/[locale]/(app)/travel-expenses/report-actions",
-	() => reportActions,
-);
+const session = vi.hoisted(() => ({
+	data: { user: { id: "review-user" }, session: { activeOrganizationId: "review-org" } },
+	isPending: false,
+}));
+vi.mock("@/lib/auth-client", () => ({ useSession: () => session }));
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
+vi.mock("@/app/[locale]/(app)/travel-expenses/finance-actions", () => ({
+	getTravelExpenseSettlement: async () => ({ success: false, error: "Expense report not found" }),
+}));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-project-actions", () => ({
 	getReportProjectChoicesAction: async () => ({
 		success: true,
@@ -46,16 +44,10 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
 			fallback
-				.replace(
-					/\{count, plural, one \{# (\w+)\} other \{# (\w+)\}\}/,
-					(_m, one, other) =>
-						params?.count === 1
-							? `1 ${one}`
-							: `${String(params?.count)} ${other}`,
+				.replace(/\{count, plural, one \{# (\w+)\} other \{# (\w+)\}\}/, (_m, one, other) =>
+					params?.count === 1 ? `1 ${one}` : `${String(params?.count)} ${other}`,
 				)
-				.replace(/\{(\w+)\}/g, (match, name) =>
-					String(params?.[name] ?? match),
-				),
+				.replace(/\{(\w+)\}/g, (match, name) => String(params?.[name] ?? match)),
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
@@ -71,14 +63,8 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/adjustment-actions", () => ({
 	}),
 }));
 vi.mock("@/navigation", () => ({
-	Link: ({
-		href,
-		children,
-		...props
-	}: {
-		href: string;
-		children: React.ReactNode;
-	}) => (
+	useRouter: () => ({ replace: vi.fn() }),
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
 		<a href={href} {...props}>
 			{children}
 		</a>
@@ -86,6 +72,7 @@ vi.mock("@/navigation", () => ({
 }));
 
 import * as reviewActions from "@/app/[locale]/(app)/travel-expenses/report-review-actions";
+import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
 
 const reportId = "6a020000-0000-4000-8000-000000000001";
@@ -157,9 +144,22 @@ function mount() {
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
+	const organization = {
+		userId: session.data.user.id,
+		organizationId: session.data.session.activeOrganizationId,
+		employee: {
+			employeeId: "review-employee",
+			organizationId: session.data.session.activeOrganizationId,
+			role: "employee" as const,
+		},
+		organizationSettings: null,
+		updatedAt: Date.now(),
+	};
 	render(
 		<QueryClientProvider client={client}>
-			<TravelExpenseReportEditor reportId={reportId} maxReceiptBytes={1024} />
+			<OrganizationContextProvider initialContext={organization}>
+				<TravelExpenseReportEditor reportId={reportId} maxReceiptBytes={1024} />
+			</OrganizationContextProvider>
 		</QueryClientProvider>,
 	);
 }
@@ -179,6 +179,33 @@ afterEach(() => {
 });
 
 describe("report submission", () => {
+	it("retires an open review when the report target changes", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const view = (id: string) => (
+			<QueryClientProvider client={client}>
+				<TravelExpenseReportEditor reportId={id} maxReceiptBytes={1024} />
+			</QueryClientProvider>
+		);
+		const rendered = render(view(reportId));
+		fireEvent.click(await reviewButton());
+		await screen.findByRole("dialog");
+		const nextId = "6a020000-0000-4000-8000-000000000099";
+		reportActions.getMyTravelExpenseReport.mockResolvedValue({
+			...tripReport(),
+			data: {
+				...tripReport().data,
+				id: nextId,
+				trip: {
+					...tripReport().data.trip,
+					purpose: "Another trip",
+				},
+			},
+		});
+		rendered.rerender(view(nextId));
+		await screen.findByRole("heading", { level: 1, name: "Another trip" });
+		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(reportActions.submitTravelExpenseReportAction).not.toHaveBeenCalled();
+	});
 	it("shows each expense's project, inherited or its own, in the review step (#617)", async () => {
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(
 			tripReport({
@@ -222,23 +249,17 @@ describe("report submission", () => {
 		expect(within(dialog).getByText("Train to Hamburg")).toBeTruthy();
 		expect(within(dialog).getByText("Hotel Hamburg")).toBeTruthy();
 		const totals = within(dialog).getByRole("region", { name: "Totals" });
-		expect(
-			within(totals).getByText("Reimbursed to you").nextElementSibling
-				?.textContent,
-		).toBe("€89.90");
-		expect(
-			within(totals).getByText("Paid by the company").nextElementSibling
-				?.textContent,
-		).toBe("€240.00");
-
-		fireEvent.click(
-			within(dialog).getByRole("button", { name: "Submit for approval" }),
+		expect(within(totals).getByText("Reimbursed to you").nextElementSibling?.textContent).toBe(
+			"€89.90",
+		);
+		expect(within(totals).getByText("Paid by the company").nextElementSibling?.textContent).toBe(
+			"€240.00",
 		);
 
+		fireEvent.click(within(dialog).getByRole("button", { name: "Submit for approval" }));
+
 		await waitFor(() =>
-			expect(
-				reportActions.submitTravelExpenseReportAction,
-			).toHaveBeenCalledWith({
+			expect(reportActions.submitTravelExpenseReportAction).toHaveBeenCalledWith({
 				reportId,
 				reviewed: {
 					detailsVersion: 5,
@@ -265,9 +286,7 @@ describe("report submission", () => {
 		);
 		await waitFor(() => expect(toast.success).toHaveBeenCalled());
 		// The page reloads the report, which is no longer an editable draft.
-		await waitFor(() =>
-			expect(reportActions.getMyTravelExpenseReport).toHaveBeenCalledTimes(3),
-		);
+		await waitFor(() => expect(reportActions.getMyTravelExpenseReport).toHaveBeenCalledTimes(3));
 	});
 
 	it("keeps an incomplete report in draft and says why", async () => {
@@ -278,9 +297,7 @@ describe("report submission", () => {
 		const button = await reviewButton();
 		expect(button.disabled).toBe(true);
 		expect(
-			screen.getByText(
-				"Complete everything listed under “Still needed” before submitting.",
-			),
+			screen.getByText("Complete everything listed under “Still needed” before submitting."),
 		).toBeTruthy();
 	});
 
@@ -298,9 +315,7 @@ describe("report submission", () => {
 		const dialog = await screen.findByRole("dialog", {
 			name: "Submit expense report",
 		});
-		fireEvent.click(
-			within(dialog).getByRole("button", { name: "Submit for approval" }),
-		);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Submit for approval" }));
 
 		const alert = await within(dialog).findByRole("alert");
 		expect(alert.textContent).toContain("No one can review this report yet");
@@ -329,9 +344,7 @@ describe("report submission", () => {
 		const dialog = await screen.findByRole("dialog", {
 			name: "Submit expense report",
 		});
-		fireEvent.click(
-			within(dialog).getByRole("button", { name: "Submit for approval" }),
-		);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Submit for approval" }));
 
 		const alert = await within(dialog).findByRole("alert");
 		const details = within(alert)
@@ -354,9 +367,7 @@ describe("report submission", () => {
 		const dialog = await screen.findByRole("dialog", {
 			name: "Submit expense report",
 		});
-		fireEvent.click(
-			within(dialog).getByRole("button", { name: "Submit for approval" }),
-		);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Submit for approval" }));
 
 		expect((await within(dialog).findByRole("alert")).textContent).toContain(
 			"changed after you reviewed it",
@@ -432,9 +443,7 @@ describe("report submission", () => {
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(
 			tripReport({ status: "submitted", submissionCount: 1 }),
 		);
-		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(
-			submittedView(),
-		);
+		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(submittedView());
 		mount();
 
 		expect(await screen.findByText("Awaiting review")).toBeTruthy();
@@ -442,17 +451,26 @@ describe("report submission", () => {
 		const currentStep = screen
 			.getAllByRole("listitem")
 			.find((item) => item.getAttribute("aria-current") === "step");
-		expect(currentStep?.textContent).toContain(
-			"Waiting for review by Morgan Manager.",
-		);
-		expect(
-			screen.queryByRole("textbox", { name: "Purpose of the trip" }),
-		).toBeNull();
+		expect(currentStep?.textContent).toContain("Waiting for review by Morgan Manager.");
+		expect(screen.queryByRole("textbox", { name: "Purpose of the trip" })).toBeNull();
 		const link = screen.getByRole("link", { name: /ticket\.pdf/ });
 		// Each submission's receipts are the exact frozen files of that cycle (#603).
 		expect(link.getAttribute("href")).toBe(
 			`/api/travel-expenses/reports/${reportId}/receipts/r-1?cycle=1`,
 		);
+	});
+
+	it("does not label an earlier withdrawn submission with the current report status", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			tripReport({ status: "submitted", submissionCount: 2 }),
+		);
+		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(
+			submittedView({ latestCycle: 2, cycleOutcome: "withdrawn" }),
+		);
+		mount();
+		await screen.findByText("This submission was withdrawn before a decision.");
+		expect(within(screen.getByRole("banner")).queryByText("Awaiting review")).toBeNull();
+		expect(screen.queryByRole("button", { name: "Withdraw report" })).toBeNull();
 	});
 
 	it("offers missing-receipt upload beside the submitted item when the server allows it (#1255)", async () => {
@@ -481,20 +499,12 @@ describe("report submission", () => {
 				reviewerName: null,
 			});
 			approved.data.facts.items[0].receipts = [];
-			reportActions.getTravelExpenseReportSubmission.mockResolvedValue(
-				approved,
-			);
+			reportActions.getTravelExpenseReportSubmission.mockResolvedValue(approved);
 			mount();
 			await screen.findByText("Train to Hamburg");
-			expect(
-				Boolean(screen.queryByRole("button", { name: "Add receipt" })),
-			).toBe(canAddReceipt);
-			expect(
-				screen.queryByRole("button", { name: "Withdraw report" }),
-			).toBeNull();
-			expect(
-				screen.queryByRole("textbox", { name: "Purpose of the trip" }),
-			).toBeNull();
+			expect(Boolean(screen.queryByRole("button", { name: "Add receipt" }))).toBe(canAddReceipt);
+			expect(screen.queryByRole("button", { name: "Withdraw report" })).toBeNull();
+			expect(screen.queryByRole("textbox", { name: "Purpose of the trip" })).toBeNull();
 		},
 	);
 
@@ -502,38 +512,28 @@ describe("report submission", () => {
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(
 			tripReport({ status: "submitted", submissionCount: 1 }),
 		);
-		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(
-			submittedView(),
-		);
-		vi.mocked(
-			reviewActions.withdrawTravelExpenseReportAction,
-		).mockResolvedValue({
+		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(submittedView());
+		vi.mocked(reviewActions.withdrawTravelExpenseReportAction).mockResolvedValue({
 			success: true,
 			data: { status: "withdrawn" },
 		});
 		mount();
 
-		fireEvent.click(
-			await screen.findByRole("button", { name: "Withdraw report" }),
-		);
+		fireEvent.click(await screen.findByRole("button", { name: "Withdraw report" }));
 		const dialog = await screen.findByRole("alertdialog", {
 			name: "Withdraw this report?",
 		});
 		fireEvent.click(within(dialog).getByRole("button", { name: "Withdraw" }));
 
 		await waitFor(() =>
-			expect(
-				reviewActions.withdrawTravelExpenseReportAction,
-			).toHaveBeenCalledWith({
+			expect(reviewActions.withdrawTravelExpenseReportAction).toHaveBeenCalledWith({
 				reportId,
 				submissionCycle: 1,
 			}),
 		);
 		await waitFor(() => expect(toast.success).toHaveBeenCalled());
 		// The report is reloaded and opens as an editable draft again.
-		await waitFor(() =>
-			expect(reportActions.getMyTravelExpenseReport).toHaveBeenCalledTimes(2),
-		);
+		await waitFor(() => expect(reportActions.getMyTravelExpenseReport).toHaveBeenCalledTimes(2));
 	});
 
 	it("shows the reviewer's note and comments on a returned report and lets the employee correct and resubmit it", async () => {
@@ -569,9 +569,7 @@ describe("report submission", () => {
 		);
 		mount();
 
-		expect(
-			await screen.findByText("The hotel invoice is not itemized."),
-		).toBeTruthy();
+		expect(await screen.findByText("The hotel invoice is not itemized.")).toBeTruthy();
 		expect(screen.getByText("Upload the itemized invoice")).toBeTruthy();
 		expect(screen.getByText("Returned for changes")).toBeTruthy();
 		// The earlier submission stays readable.
@@ -581,9 +579,7 @@ describe("report submission", () => {
 				.getAttribute("href"),
 		).toBe(`/travel-expenses/reports/${reportId}?cycle=1`);
 		// The returned report is edited and submitted like a draft.
-		expect(
-			screen.getByRole("textbox", { name: "Purpose of the trip" }),
-		).toBeTruthy();
+		expect(screen.getByRole("textbox", { name: "Purpose of the trip" })).toBeTruthy();
 		expect((await reviewButton()).disabled).toBe(false);
 	});
 });

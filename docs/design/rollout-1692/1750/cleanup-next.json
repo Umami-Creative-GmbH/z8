@@ -1,0 +1,11 @@
+{
+  "checkout": "WORKTREE_ROOT",
+  "expectedPid": 55580,
+  "portClosed": true,
+  "terminatedByThisCheck": false,
+  "port": 62904,
+  "creationAndParentAvailable": false,
+  "expectedPidAbsent": true,
+  "expectedOrigin": "http://localhost:62904",
+  "qualification": "Runtime was already absent at final inspection. Final PID creation/parent identity and final termination were not captured. Earlier overlay stop records are separate evidence."
+}

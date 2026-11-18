@@ -37,7 +37,11 @@ import { useMileageItemDraft } from "./use-mileage-item-draft";
  * date, route, distance and vehicle; the amount is always the server's
  * calculation with the organization's rate effective on that date.
  */
-export function MileageItemEditor({
+export function MileageItemEditor(props: Parameters<typeof MileageItemEditorTask>[0]) {
+	return <MileageItemEditorTask key={`${props.reportId}:${props.item.id}`} {...props} />;
+}
+
+function MileageItemEditorTask({
 	reportId,
 	item,
 	reimbursementCurrency,

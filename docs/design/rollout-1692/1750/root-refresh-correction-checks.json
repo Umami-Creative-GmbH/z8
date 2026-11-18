@@ -1,0 +1,65 @@
+{
+  "issue": 1750,
+  "verifiedCommit": null,
+  "sourceTree": "a2b883f0e6e369aeed7d8e8f337dbfb06dfc633a",
+  "localReview": {
+    "merge": "c8ee994d29f5a8d1739ebbf6ee2ac1c6ae13172c",
+    "tree": "31144e5b29b86a6ccc39d88d5345592e2c81ce41",
+    "orderedParents": [
+      "c711f0ad3e4457f46a49324ee648c91912b494ba",
+      "b8e3a5ad188396d8759738b8dfd804af3bc99c01"
+    ],
+    "correction": "4dc30d2ed07b71b8cbf222807e88c85facc9fd8d",
+    "correctionTree": "63f37a6f1e510760c99051b6b20a993a7a11741f",
+    "qualification": "These are local provenance IDs. The public branch preserves the tested application tree and publishes a sanitized evidence copy."
+  },
+  "finding": "Same-owner refresh remounted the editable report and discarded the draft and pending state or Retry. Both client-refetch controls passed. The pinned premerge owner passed all four cases.",
+  "regression": {
+    "red": { "files": 1, "passed": 2, "failed": 2, "exit": 1 },
+    "green": { "files": 1, "passed": 4, "failed": 0, "exit": 0 },
+    "finalFocused": { "files": 2, "passed": 10, "failed": 0, "exit": 0 },
+    "scopeQualification": "The refresh harness assembles the real organization and ViewRefresh providers and the server-composed page element, using synthetic transport. The scope tests mock provider output. These runs establish no live authority or account-return guarantee."
+  },
+  "compatibility": {
+    "first": { "files": 50, "passed": 513, "failed": 2, "exit": 1 },
+    "fixtureCorrection": "The merged finance boundary reaches the real organization provider. The submission test only mocked Link and lacked a matching session and organization provider. The test now supplies these prerequisites and a synthetic missing settlement response. Original receipt assertions remain intact.",
+    "correctedSubmission": { "files": 1, "passed": 14, "failed": 0, "exit": 0 },
+    "final": { "files": 50, "passed": 515, "failed": 0, "skipped": 0, "snapshots": 0, "exit": 0 },
+    "counting": "515 distinct physical-file, full-name, and occurrence identities. The incoming 22-file and finance 30-file selections share three files. One refresh test file was added. Focused and submission reruns are included in 515."
+  },
+  "quality": {
+    "typegenAndTypeProjectsExit": 0,
+    "typeProjects": ["application", "workflow contracts", "smoke"],
+    "scopedPaths": 5,
+    "lintExit": 0,
+    "explicit100ColumnCrlfExit": 0,
+    "ordinaryFormatExit": 1,
+    "ordinaryFormatFindings": 5,
+    "sourceWhitespaceExit": 0,
+    "doctor": { "version": "0.9.22", "files": 5, "errors": 0, "warnings": 0, "complete": true }
+  },
+  "tools": {
+    "pnpm": "12.16.1",
+    "verifyDependenciesBeforeRun": false,
+    "unitProject": "unit",
+    "unitMaxWorkers": 1,
+    "typeCommand": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck"
+  },
+  "publication": {
+    "historicalEvidenceFiles": 102,
+    "pathSanitizedFiles": 26,
+    "refreshedEvidenceIndexes": 2,
+    "unchangedHistoricalEvidenceFiles": 74,
+    "unchangedPngFiles": 12,
+    "accountPathReplacements": 6,
+    "workingTreePathReplacements": 475,
+    "localStorePathReplacements": 1
+  },
+  "unpassed": [
+    "Independent current-source review and PostgreSQL rerun",
+    "Live refresh with real pending and failed saves",
+    "Live current and prior cycle readbacks, receipt bytes and role transitions",
+    "Current runtime, connected Next, native React and native download checks",
+    "Full production generation, catalogs, physical devices and true zoom"
+  ]
+}

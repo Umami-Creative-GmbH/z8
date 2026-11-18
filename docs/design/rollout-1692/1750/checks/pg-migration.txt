@@ -1,0 +1,8 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+Migration recovery verification: probing custom schema refusal
+Migration recovery verification: recreating incident state
+Migration recovery verification: applying recovery migration
+Migration recovery verification: checking retry idempotency
+Migration recovery verification: checking anchor-present index recovery
+Migration recovery verification: checking fresh migration chain
+Migration recovery verification: passed

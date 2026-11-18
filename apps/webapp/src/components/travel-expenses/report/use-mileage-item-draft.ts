@@ -48,7 +48,7 @@ export function useMileageItemDraft({
 					"Your latest changes to an expense could not be saved. Open it again to check it.",
 				),
 			),
-		save: async (values, expectedVersion): Promise<DraftSaveOutcome<ReportItemView>> => {
+		save: async (values, expectedVersion, isCurrent): Promise<DraftSaveOutcome<ReportItemView>> => {
 			const parsed = parseMileageItemDraft(values);
 			const errors = parsed.ok ? null : parsed.errors;
 			// Malformed fields keep their last saved value so valid edits still save.
@@ -67,8 +67,10 @@ export function useMileageItemDraft({
 			switch (result.data.status) {
 				case "saved":
 					lastSaved.current = toDraftInput(toFormValues(mileageDraftOf(result.data.item), locale));
-					setSaved(result.data.item);
-					onSaved?.(result.data.item);
+					if (isCurrent()) {
+						setSaved(result.data.item);
+						onSaved?.(result.data.item);
+					}
 					return errors
 						? { status: "invalid", errors, version: result.data.item.version }
 						: { status: "saved", version: result.data.item.version };

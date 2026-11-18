@@ -268,10 +268,21 @@ it.each([
 	["/travel-expenses/ffffffff-ffff-ffff-ffff-ffffffffffff", true],
 	["/en/travel-expenses/finance", true],
 	["/en/travel-expenses/reports", false],
-	["/en/travel-expenses/reports/4053401f-806e-4839-ae66-96b9fa36c054", false],
+	["/en/travel-expenses/reports/4053401f-806e-4839-ae66-96b9fa36c054", true],
 	["/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054/receipts", false],
 	["/en/travel-expenses/not-a-claim", false],
 	["/en/travel-expenses/4053401f-806e-9839-ae66-96b9fa36c054", false],
 ])("retained legacy claim heading ownership: %s", (path, owns) => {
+	expect(appPageOwnsHeading(path)).toBe(owns);
+});
+
+it.each([
+	["/travel-expenses/reports/6a020000-0000-4000-8000-000000000001", true],
+	["/de/travel-expenses/reports/6A020000-0000-4000-8000-000000000001/", true],
+	["/travel-expenses/reports/invalid", false],
+	["/travel-expenses/reports/6a020000-0000-f000-8000-000000000001", false],
+	["/travel-expenses/reports/6a020000-0000-4000-1000-000000000001", false],
+	["/travel-expenses/reports/6a020000-0000-4000-8000-000000000001/receipt", false],
+])("report detail heading ownership: %s", (path, owns) => {
 	expect(appPageOwnsHeading(path)).toBe(owns);
 });

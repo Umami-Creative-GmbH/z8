@@ -1,0 +1,30 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+[logger error] Failed query: insert into "audit_log" ("id", "organization_id", "entity_type", "entity_id", "action", "performed_by", "employee_id", "changes", "metadata", "ip_address", "user_agent", "timestamp") values (default, $1, $2, $3, $4, $5, $6, $7, $8, default, default, $9)
+params: t602-org,approval,b8d3b858-63e4-414f-a32a-68486dea393b,travel_expense.submitted,t602-requester,e6020000-0000-4000-8000-000000000001,,{"model":"report","approverId":"e6020000-0000-4000-8000-000000000002","submissionCycle":1,"submittedRevisionId":"89674748-97bb-4d14-aa87-b78cf5036fd9"},2026-11-16T12:30:30.857Z: insert or update on table "audit_log" violates foreign key constraint "audit_log_organization_id_organization_id_fk"
+[logger error] Failed query: insert into "audit_log" ("id", "organization_id", "entity_type", "entity_id", "action", "performed_by", "employee_id", "changes", "metadata", "ip_address", "user_agent", "timestamp") values (default, $1, $2, $3, $4, $5, $6, $7, $8, default, default, $9)
+params: t602-org,approval,b1539b43-fbd0-4b8d-b7c6-6c9288b6c29f,travel_expense.submitted,t602-requester,e6020000-0000-4000-8000-000000000001,,{"model":"report","approverId":"e6020000-0000-4000-8000-000000000001","selfApproval":"owner_no_other_reviewer","submissionCycle":1,"submittedRevisionId":"81c0663a-67ca-476e-b748-b9836370d2e9"},2026-11-16T12:30:31.740Z: insert or update on table "audit_log" violates foreign key constraint "audit_log_organization_id_organization_id_fk"
+[logger error] Approval evidence: evidence_incomplete
+[logger error] Stored receipt content does not match its recorded identity
+[logger error] Storage unavailable
+[logger error] Stored receipt content does not match its recorded identity
+[logger error] storage unavailable
+ Test Files  8 passed (8)
+      Tests  109 passed (109)
+   Start at  12:30:19
+   Duration  49.50s (tests 72%, import 19%, transform 9%)
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:79368) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in [contact removed] Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:35148) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in [contact removed] Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:99368) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in [contact removed] Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:88848) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in [contact removed] Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:38952) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in [contact removed] Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:47512) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in [contact removed] Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)

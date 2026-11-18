@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useCallback } from "react";
 import { getReportProjectIssuesAction } from "@/app/[locale]/(app)/travel-expenses/report-project-actions";
 import { queryKeys } from "@/lib/query/keys";
+import { useReportQueryKey } from "./report-read-scope";
 
 /**
  * The draft's expenses whose project (own or inherited from the trip) is not
@@ -16,7 +17,9 @@ import { queryKeys } from "@/lib/query/keys";
 export function useReportProjectIssues(reportId: string, fingerprint: string) {
 	const queryClient = useQueryClient();
 	const query = useQuery({
-		queryKey: queryKeys.travelExpenses.reportProjectIssues(reportId, fingerprint),
+		queryKey: useReportQueryKey(
+			queryKeys.travelExpenses.reportProjectIssues(reportId, fingerprint),
+		),
 		queryFn: async () => {
 			const result = await getReportProjectIssuesAction({ reportId });
 			if (!result.success) throw new Error(result.error);

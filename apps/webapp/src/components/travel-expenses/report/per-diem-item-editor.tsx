@@ -34,7 +34,11 @@ import { usePerDiemItemDraft } from "./use-per-diem-item-draft";
  * overnight, and the meals provided on each travel day; the allowance is
  * always the server's daily calculation with the organization's dated rates.
  */
-export function PerDiemItemEditor({
+export function PerDiemItemEditor(props: Parameters<typeof PerDiemItemEditorTask>[0]) {
+	return <PerDiemItemEditorTask key={`${props.reportId}:${props.item.id}`} {...props} />;
+}
+
+function PerDiemItemEditorTask({
 	reportId,
 	item,
 	reimbursementCurrency,

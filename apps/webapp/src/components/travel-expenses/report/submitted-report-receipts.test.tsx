@@ -1,20 +1,12 @@
 /* @vitest-environment jsdom */
-import {
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { UseTusFileUploadOptions } from "@/hooks/use-tus-file-upload";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
-			fallback.replace(/\{(\w+)\}/g, (match, name) =>
-				String(params?.[name] ?? match),
-			),
+			fallback.replace(/\{(\w+)\}/g, (match, name) => String(params?.[name] ?? match)),
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
@@ -38,9 +30,7 @@ import { SubmittedReportReceipts } from "./submitted-report-receipts";
 const reportId = "report-1";
 const itemId = "item-1";
 const fetchMock = vi.fn();
-function mount(
-	overrides: Partial<React.ComponentProps<typeof SubmittedReportReceipts>> = {},
-) {
+function mount(overrides: Partial<React.ComponentProps<typeof SubmittedReportReceipts>> = {}) {
 	const onChanged = vi.fn();
 	render(
 		<SubmittedReportReceipts
@@ -62,6 +52,26 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 describe("adding a missing receipt during review (#1255)", () => {
+	it("suppresses a retired receipt completion", async () => {
+		vi.stubGlobal("fetch", fetchMock);
+		let complete!: (value: unknown) => void;
+		fetchMock.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					complete = resolve;
+				}),
+		);
+		const { onChanged } = mount();
+		fireEvent.change(screen.getByLabelText("Choose receipt"), {
+			target: { files: [new File(["receipt"], "hotel.pdf", { type: "application/pdf" })] },
+		});
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+		cleanup();
+		await act(async () => {
+			complete({ ok: true });
+		});
+		expect(onChanged).not.toHaveBeenCalled();
+	});
 	it("attaches the selected file to the viewed submission and reloads it", async () => {
 		vi.stubGlobal("fetch", fetchMock);
 		fetchMock.mockResolvedValue({
@@ -72,40 +82,32 @@ describe("adding a missing receipt during review (#1255)", () => {
 		expect(screen.getByRole("button", { name: "Add receipt" })).toBeTruthy();
 		fireEvent.change(screen.getByLabelText("Choose receipt"), {
 			target: {
-				files: [
-					new File(["receipt"], "hotel.pdf", { type: "application/pdf" }),
-				],
+				files: [new File(["receipt"], "hotel.pdf", { type: "application/pdf" })],
 			},
 		});
 		await waitFor(() => expect(onChanged).toHaveBeenCalledOnce());
-		expect(fetchMock).toHaveBeenCalledWith(
-			"/api/upload/travel-expense/report-receipt",
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					reportId,
-					itemId,
-					submissionCycle: 2,
-					tusFileKey: "tus-upload",
-					fileName: "hotel.pdf",
-				}),
-			},
-		);
+		expect(fetchMock).toHaveBeenCalledWith("/api/upload/travel-expense/report-receipt", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				reportId,
+				itemId,
+				submissionCycle: 2,
+				tusFileKey: "tus-upload",
+				fileName: "hotel.pdf",
+			}),
+		});
 	});
 	it.each([
 		{ canAddReceipt: false },
 		{ itemType: "mileage" as const },
 		{ itemType: "per_diem" as const },
 		{ receipts: [{ receiptId: "existing", fileName: "original.pdf" }] },
-	])(
-		"does not offer upload when the expense is ineligible: %j",
-		(overrides) => {
-			mount(overrides);
-			expect(screen.queryByRole("button", { name: "Add receipt" })).toBeNull();
-			expect(screen.queryByLabelText("Choose receipt")).toBeNull();
-		},
-	);
+	])("does not offer upload when the expense is ineligible: %j", (overrides) => {
+		mount(overrides);
+		expect(screen.queryByRole("button", { name: "Add receipt" })).toBeNull();
+		expect(screen.queryByLabelText("Choose receipt")).toBeNull();
+	});
 
 	it("keeps a refused upload visible without reloading or exposing server details", async () => {
 		vi.stubGlobal("fetch", fetchMock);
@@ -117,9 +119,7 @@ describe("adding a missing receipt during review (#1255)", () => {
 		const { onChanged } = mount();
 		fireEvent.change(screen.getByLabelText("Choose receipt"), {
 			target: {
-				files: [
-					new File(["receipt"], "hotel.pdf", { type: "application/pdf" }),
-				],
+				files: [new File(["receipt"], "hotel.pdf", { type: "application/pdf" })],
 			},
 		});
 		expect((await screen.findByRole("alert")).textContent).toBe(
@@ -137,9 +137,7 @@ describe("adding a missing receipt during review (#1255)", () => {
 				files: [new File(["text"], "notes.txt", { type: "text/plain" })],
 			},
 		});
-		expect(screen.getByRole("alert").textContent).toContain(
-			"Attach a PDF or an image",
-		);
+		expect(screen.getByRole("alert").textContent).toContain("Attach a PDF or an image");
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
@@ -204,9 +202,7 @@ describe("adding a missing receipt during review (#1255)", () => {
 		const { onChanged } = mount({ maxReceiptBytes: 2 * 1024 * 1024 });
 		fireEvent.change(screen.getByLabelText("Choose receipt"), {
 			target: {
-				files: [
-					new File(["receipt"], "hotel.pdf", { type: "application/pdf" }),
-				],
+				files: [new File(["receipt"], "hotel.pdf", { type: "application/pdf" })],
 			},
 		});
 		expect((await screen.findByRole("alert")).textContent).toBe(message);

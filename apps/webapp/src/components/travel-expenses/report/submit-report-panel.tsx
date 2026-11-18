@@ -3,7 +3,7 @@
 import { IconAlertTriangle, IconLoader2, IconSend } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	type SubmitTravelExpenseReportOutcome,
@@ -34,6 +34,7 @@ import { itemTitle } from "./item-title";
 import { pendingReceiptException } from "./pending-receipt-exception";
 import { AdjustmentDeltaPreview } from "./report-adjustments";
 import { ReportTotals } from "./report-summary";
+import { useReportTask } from "./use-report-task";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -225,7 +226,10 @@ function outcomeMessage(
 				};
 			}
 			return {
-				title: t("travelExpenses.report.submit.adjustmentTitle", "This adjustment cannot be submitted"),
+				title: t(
+					"travelExpenses.report.submit.adjustmentTitle",
+					"This adjustment cannot be submitted",
+				),
 				body: t(
 					"travelExpenses.report.submit.adjustment",
 					"The report this adjustment corrects is no longer approved in this currency, so no signed difference can be calculated. Your adjustment stays saved as a draft.",
@@ -346,15 +350,24 @@ export function SubmitReportPanel({
 	const [submitting, setSubmitting] = useState(false);
 	const [report, setReport] = useState<ReportView | null>(null);
 	const [problem, setProblem] = useState<Problem | null>(null);
+	const task = useReportTask(reportId);
+	const reviewTrigger = useRef<HTMLButtonElement>(null);
 	const totals = report ? receiptReportTotals(report.items, report.reimbursementCurrency) : null;
 
 	async function openReview() {
+		const activation = task.reserve();
+		if (!activation) return;
 		setProblem(null);
 		setLoading(true);
 		// No `finally` here or in submit: the React Compiler cannot compile try
 		// statements with one.
 		try {
 			const saved = await loadSavedReport();
+			if (!task.isCurrent(activation)) {
+				setLoading(false);
+				task.release(activation);
+				return;
+			}
 			if (saved) {
 				setReport(saved);
 				setOpen(true);
@@ -367,15 +380,24 @@ export function SubmitReportPanel({
 				);
 			}
 		} catch {
+			if (!task.isCurrent(activation)) {
+				setLoading(false);
+				task.release(activation);
+				return;
+			}
 			toast.error(
 				t("travelExpenses.report.errors.load", "Unable to load this expense. Please retry."),
 			);
 		}
 		setLoading(false);
+		setLoading(false);
+		task.release(activation);
 	}
 
 	async function submit() {
 		if (!report) return;
+		const activation = task.reserve();
+		if (!activation) return;
 		setSubmitting(true);
 		setProblem(null);
 		try {
@@ -393,6 +415,11 @@ export function SubmitReportPanel({
 					})),
 				},
 			});
+			if (!task.isCurrent(activation)) {
+				setSubmitting(false);
+				task.release(activation);
+				return;
+			}
 			if (!result.success) {
 				setProblem({
 					title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
@@ -413,6 +440,11 @@ export function SubmitReportPanel({
 				setProblem(outcomeMessage(t, result.data, { locale, report }));
 			}
 		} catch {
+			if (!task.isCurrent(activation)) {
+				setSubmitting(false);
+				task.release(activation);
+				return;
+			}
 			setProblem({
 				title: t("travelExpenses.report.submit.failedTitle", "The report was not submitted"),
 				body: t(
@@ -422,6 +454,8 @@ export function SubmitReportPanel({
 			});
 		}
 		setSubmitting(false);
+		setSubmitting(false);
+		task.release(activation);
 	}
 
 	const hintId = `${reportId}-submit-hint`;
@@ -432,6 +466,7 @@ export function SubmitReportPanel({
 				{submitHint(t, blocker)}
 			</p>
 			<Button
+				ref={reviewTrigger}
 				type="button"
 				disabled={blocker !== null || loading}
 				aria-describedby={hintId}
@@ -444,8 +479,14 @@ export function SubmitReportPanel({
 				)}
 				{t("travelExpenses.report.submit.review", "Review and submit")}
 			</Button>
-			<Dialog open={open && report !== null} onOpenChange={(next) => !submitting && setOpen(next)}>
-				<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+			<Dialog
+				open={open && report !== null}
+				onOpenChange={(next) => !task.isPending() && setOpen(next)}
+			>
+				<DialogContent
+					className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"
+					finalFocus={reviewTrigger}
+				>
 					<DialogHeader>
 						<DialogTitle>
 							{t("travelExpenses.report.submit.title", "Submit expense report")}

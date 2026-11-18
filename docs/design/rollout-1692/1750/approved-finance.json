@@ -1,0 +1,70 @@
+{
+  "actions": [
+    {
+      "disabled": false,
+      "name": "Toggle Sidebar"
+    },
+    {
+      "disabled": false,
+      "name": "Current timezone Europe/Berlin, 14:12, UTC+01:00"
+    },
+    {
+      "disabled": false,
+      "name": "Clock In"
+    },
+    {
+      "disabled": false,
+      "name": "Refresh data"
+    },
+    {
+      "disabled": false,
+      "name": "Toggle theme"
+    },
+    {
+      "disabled": false,
+      "name": "Notifications"
+    },
+    {
+      "disabled": false,
+      "name": "Notifications"
+    },
+    {
+      "disabled": false,
+      "name": "More actions"
+    },
+    {
+      "disabled": false,
+      "name": "Pick a date"
+    },
+    {
+      "disabled": false,
+      "name": "Record reimbursement"
+    },
+    {
+      "disabled": false,
+      "name": "Reopen for correction"
+    }
+  ],
+  "cycleLinks": [
+    {
+      "href": "/api/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f/receipts/1e27ea3b-0a20-4e10-b6d7-d627c5245d3b?cycle=2",
+      "text": "receipt.png"
+    },
+    {
+      "href": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f?cycle=1",
+      "text": "Submission 1 on Nov 16, 2026, 1:03 PM UTC: withdrawn"
+    }
+  ],
+  "evidenceText": "Toggle Sidebar\n\nTravel Expenses\n\n14:12\nUTC+01:00\nClock In\nToggle theme\nBack to expense finance\nStandalone receipt\nApproved\nCycle two corrected train ticket\n\nSubmission 2, submitted Nov 16, 2026, 1:04 PM UTC\n\nApproved by Person 1 on Nov 16, 2026, 1:10 PM UTC.\n\nExpenses\n\nReceipt 1: Cycle two corrected train ticket\n\n€89.90\n\nNov 10, 2026 · Transport · Paid by you\n\nreceipt.png\nTotals\nReimbursed to you\n€89.90\nPaid by the company\n€0.00\nReimbursement\nAwaiting reimbursement\n\n€89.90 outstanding\n\nApproved employee-paid amount\n€89.90\nReimbursed\n€0.00\n\nRecord money already paid to the employee. Z8 does not transfer any money.\n\nAmount paid (EUR)\nPayment date\nPick a date\nPayment reference\n\nFor example the bank transfer or payroll run reference.\n\nNote (optional)\nRecord reimbursement\nReopen for correction\nHistory\nEvery step of this report, oldest first. Times are shown in UTC.\n\nSubmitted\n\nNov 16, 2026, 1:03 PM UTC\nSubmission 1 · By Person 2\n\nWithdrawn\n\nNov 16, 2026, 1:04 PM UTC\nSubmission 1 · By Person 2\n\nSubmitted\n\nNov 16, 2026, 1:04 PM UTC\nSubmission 2 · By Person 2\n\nApproved\n\nNov 16, 2026, 1:10 PM UTC\nSubmission 2 · By Person 1\nSubmissions\nEach submission stays exactly as it was sent for review.\nSubmission 1 on Nov 16, 2026, 1:03 PM UTC: withdrawn\nSubmission 2 on Nov 16, 2026, 1:04 PM UTC: approved",
+  "fields": [
+    {
+      "name": "note",
+      "value": ""
+    }
+  ],
+  "h1": [
+    "Cycle two corrected train ticket"
+  ],
+  "path": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f",
+  "source": "61c0d1f1f73851924aa12a3ce5c565c8d0d69794"
+}

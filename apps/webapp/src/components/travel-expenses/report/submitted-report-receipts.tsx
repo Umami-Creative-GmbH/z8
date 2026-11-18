@@ -14,6 +14,7 @@ import {
 } from "@/lib/travel-expenses/attachment-validation";
 import type { SubmittedReportItemView } from "@/lib/travel-expenses/report-read";
 import { formatRecordedInstant } from "./format";
+import { useReportTask } from "./use-report-task";
 
 const MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
 
@@ -23,11 +24,7 @@ class ReceiptUploadError extends Error {
 		super("Receipt upload refused");
 	}
 }
-function uploadFailureMessage(
-	t: Translate,
-	error: Error,
-	maxReceiptBytes: number,
-): string {
+function uploadFailureMessage(t: Translate, error: Error, maxReceiptBytes: number): string {
 	const status = error instanceof ReceiptUploadError ? error.status : null;
 	if (status === 409)
 		return t(
@@ -71,27 +68,21 @@ export function SubmittedReportReceipts(props: Props) {
 			{props.receipts
 				.filter((receipt) => receipt.addedAfterSubmission)
 				.map((receipt) => (
-					<p
-						key={receipt.receiptId}
-						className="break-words text-sm text-muted-foreground"
-					>
+					<p key={receipt.receiptId} className="break-words text-sm text-muted-foreground">
 						{t(
 							"travelExpenses.report.receipts.addedAfterSubmission",
 							"{fileName}: Added after submission by {name} on {date}.",
 							{
 								fileName: receipt.fileName,
 								name: receipt.uploadedByName ?? "—",
-								date: receipt.uploadedAt
-									? formatRecordedInstant(locale, receipt.uploadedAt)
-									: "—",
+								date: receipt.uploadedAt ? formatRecordedInstant(locale, receipt.uploadedAt) : "—",
 							},
 						)}
 					</p>
 				))}
-			{props.canAddReceipt &&
-			props.itemType === "receipt" &&
-			props.receipts.length === 0 ? (
+			{props.canAddReceipt && props.itemType === "receipt" && props.receipts.length === 0 ? (
 				<MissingReceiptUpload
+					key={`${props.reportId}:${props.itemId}:${props.submissionCycle}`}
 					reportId={props.reportId}
 					itemId={props.itemId}
 					submissionCycle={props.submissionCycle}
@@ -109,34 +100,45 @@ function MissingReceiptUpload({
 	submissionCycle,
 	onChanged,
 	maxReceiptBytes = MAX_RECEIPT_SIZE,
-}: Pick<
-	Props,
-	"reportId" | "itemId" | "submissionCycle" | "onChanged" | "maxReceiptBytes"
->) {
+}: Pick<Props, "reportId" | "itemId" | "submissionCycle" | "onChanged" | "maxReceiptBytes">) {
 	const { t } = useTranslate();
 	const fileInput = useRef<HTMLInputElement>(null);
 	const [error, setError] = useState<string | null>(null);
+	const task = useReportTask(`${reportId}:${itemId}:${submissionCycle}`);
+	const processing = useRef<ReturnType<typeof task.reserve>>(null);
 	const upload = useTravelExpenseFileUpload({
 		process: async ({ tusFileKey, fileName }) => {
-			const response = await fetch(
-				"/api/upload/travel-expense/report-receipt",
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						reportId,
-						itemId,
-						submissionCycle,
-						tusFileKey,
-						fileName,
-					}),
-				},
-			);
+			const activation = task.reserve();
+			if (!activation) throw new Error("Receipt task unavailable");
+			processing.current = activation;
+			const response = await fetch("/api/upload/travel-expense/report-receipt", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					reportId,
+					itemId,
+					submissionCycle,
+					tusFileKey,
+					fileName,
+				}),
+			});
 			if (!response.ok) throw new ReceiptUploadError(response.status);
 		},
-		onSuccess: onChanged,
-		onError: (error) =>
-			setError(uploadFailureMessage(t, error, maxReceiptBytes)),
+		onSuccess: () => {
+			const activation = processing.current;
+			if (!activation) return;
+			if (task.isCurrent(activation)) onChanged();
+			task.release(activation);
+		},
+		onError: (error) => {
+			const activation = processing.current;
+			if (!activation) {
+				if (task.isActive()) setError(uploadFailureMessage(t, error, maxReceiptBytes));
+				return;
+			}
+			if (task.isCurrent(activation)) setError(uploadFailureMessage(t, error, maxReceiptBytes));
+			task.release(activation);
+		},
 		maxFileSize: maxReceiptBytes,
 	});
 	function chooseFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -173,10 +175,7 @@ function MissingReceiptUpload({
 				name="receipt"
 				className="sr-only"
 				tabIndex={-1}
-				aria-label={t(
-					"travelExpenses.report.receipts.choose",
-					"Choose receipt",
-				)}
+				aria-label={t("travelExpenses.report.receipts.choose", "Choose receipt")}
 				accept={ALLOWED_TRAVEL_EXPENSE_MIME_TYPES.join(",")}
 				disabled={upload.isUploading}
 				onChange={chooseFile}
@@ -201,20 +200,11 @@ function MissingReceiptUpload({
 			{upload.isUploading ? (
 				<div role="status" className="space-y-1 text-sm">
 					{upload.isProcessing
-						? t(
-								"travelExpenses.report.receipts.processing",
-								"Attaching receipt…",
-							)
-						: t(
-								"travelExpenses.report.receipts.uploading",
-								"Uploading receipt…",
-							)}
+						? t("travelExpenses.report.receipts.processing", "Attaching receipt…")
+						: t("travelExpenses.report.receipts.uploading", "Uploading receipt…")}
 					<Progress
 						value={upload.progress}
-						aria-label={t(
-							"travelExpenses.report.receipts.progress",
-							"Upload progress",
-						)}
+						aria-label={t("travelExpenses.report.receipts.progress", "Upload progress")}
 					/>
 				</div>
 			) : null}

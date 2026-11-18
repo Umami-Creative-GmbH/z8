@@ -1,0 +1,48 @@
+{
+  "actions": [
+    {
+      "disabled": false,
+      "name": "Toggle Sidebar"
+    },
+    {
+      "disabled": false,
+      "name": "Current timezone Europe/Berlin, 14:05, UTC+01:00"
+    },
+    {
+      "disabled": false,
+      "name": "Clock In"
+    },
+    {
+      "disabled": false,
+      "name": "Refresh data"
+    },
+    {
+      "disabled": false,
+      "name": "Toggle theme"
+    },
+    {
+      "disabled": false,
+      "name": "Notifications"
+    },
+    {
+      "disabled": false,
+      "name": "Notifications"
+    },
+    {
+      "disabled": false,
+      "name": "More actions"
+    },
+    {
+      "disabled": false,
+      "name": "Back"
+    }
+  ],
+  "cycleLinks": [],
+  "evidenceText": "Toggle Sidebar\n\nTravel Expenses\n\n14:05\nUTC+01:00\nClock In\nToggle theme\n404\nPage not found\nThe page may have moved, the link may be outdated, or the address may be incorrect.\nGo to Dashboard\nSettings\nBack",
+  "fields": [],
+  "h1": [
+    "Page not found"
+  ],
+  "path": "/en/travel-expenses/reports/173cfbfb-92ff-4158-b5db-8d520adb045f",
+  "source": "7abdd84e8adc22ae113697621eb0d60742c7a8e8"
+}

@@ -1,18 +1,20 @@
+import { randomUUID } from "node:crypto";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { BackLink } from "@/components/travel-expenses/back-link";
+import { ReportArrivalHeading } from "@/components/travel-expenses/report/report-arrival-heading";
+import { ReportWorkspaceScope } from "@/components/travel-expenses/report/report-workspace-scope";
 import { SubmittedTravelExpenseReport } from "@/components/travel-expenses/report/submitted-report";
 import { TravelExpenseReportEditor } from "@/components/travel-expenses/report/travel-expense-report-editor";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
-import {
-	financeActorReads,
-	loadFinanceActor,
-} from "@/lib/travel-expenses/finance-access";
+import { financeActorReads, loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { loadAuthorizedTravelExpenseReport } from "@/lib/travel-expenses/report-read";
+import { isEditableReportStatus } from "@/lib/travel-expenses/report-return";
 import { getTranslate } from "@/tolgee/server";
 
 type ReportPageProps = {
@@ -21,9 +23,7 @@ type ReportPageProps = {
 };
 
 /** An earlier submission cycle named by `?cycle=` (#603); undefined for the current report. */
-function requestedCycle(
-	value: string | string[] | undefined,
-): number | undefined {
+function requestedCycle(value: string | string[] | undefined): number | undefined {
 	const cycle = typeof value === "string" ? Number(value) : Number.NaN;
 	return Number.isInteger(cycle) && cycle > 0 ? cycle : undefined;
 }
@@ -38,12 +38,20 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 	const cycle = requestedCycle(search.cycle);
 	if (!actor?.employee)
 		return (
-			<NoEmployeeError
-				feature={t("travelExpenses.feature", "manage travel expenses")}
-			/>
+			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 lg:px-6">
+				<PageHeader title={t("travelExpenses.report.items.title", "Expenses")} />
+				<NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />
+			</div>
 		);
 	const authorized = await loadAuthorizedTravelExpenseReport(reportId);
 	if (authorized.status !== "found") notFound();
+	const arrival = randomUUID();
+	const scope = {
+		userId: actor.user.id,
+		organizationId: actor.employee.organizationId,
+		employeeId: actor.employee.id,
+		arrival,
+	};
 	if (authorized.access !== "owner") {
 		// Reviewers see only the frozen submission the Approvals inbox lets them
 		// decide; finance (#612) sees the approved frozen submission and its settlement.
@@ -57,56 +65,66 @@ async function ReportContent({ params, searchParams }: ReportPageProps) {
 					employeeId: authorized.report.employeeId,
 				})));
 		return (
-			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
-				{financeReader ? (
-					<BackLink href="/travel-expenses/finance">
-						{t("travelExpenses.finance.back", "Back to expense finance")}
-					</BackLink>
-				) : (
-					<BackLink href="/approvals/inbox">
-						{t("travelExpenses.report.backToApprovals", "Back to approvals")}
-					</BackLink>
-				)}
-				<SubmittedTravelExpenseReport
-					reportId={reportId}
-					cycle={cycle}
-					maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
-				/>
-			</div>
-		);
-	}
-	return (
-		<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
-			{cycle === undefined ? (
-				<>
-					<BackLink href="/travel-expenses">
-						{t(
-							"travelExpenses.report.backToTravelExpenses",
-							"Back to travel expenses",
-						)}
-					</BackLink>
-					<TravelExpenseReportEditor
-						reportId={reportId}
-						maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
-					/>
-				</>
-			) : (
-				<>
-					{/* An earlier submission is reached from the current report, so it leads back there. */}
-					<BackLink href={`/travel-expenses/reports/${reportId}`}>
-						{t(
-							"travelExpenses.report.backToCurrent",
-							"Back to the current report",
-						)}
-					</BackLink>
+			<ReportWorkspaceScope key={arrival} {...scope}>
+				<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
+					{financeReader ? (
+						<BackLink href="/travel-expenses/finance">
+							{t("travelExpenses.finance.back", "Back to expense finance")}
+						</BackLink>
+					) : (
+						<BackLink href="/approvals/inbox">
+							{t("travelExpenses.report.backToApprovals", "Back to approvals")}
+						</BackLink>
+					)}
 					<SubmittedTravelExpenseReport
 						reportId={reportId}
 						cycle={cycle}
 						maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
 					/>
-				</>
-			)}
-		</div>
+				</div>
+			</ReportWorkspaceScope>
+		);
+	}
+	// Refresh the authorized data without discarding an unchanged editable draft.
+	const workspaceKey =
+		cycle === undefined && isEditableReportStatus(authorized.report.status)
+			? JSON.stringify([
+					reportId,
+					scope.userId,
+					scope.organizationId,
+					scope.employeeId,
+					authorized.report.status,
+					authorized.report.submissionCount,
+				])
+			: arrival;
+	return (
+		<ReportWorkspaceScope key={workspaceKey} {...scope}>
+			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4 md:py-6 lg:px-6">
+				{cycle === undefined ? (
+					<>
+						<BackLink href="/travel-expenses">
+							{t("travelExpenses.report.backToTravelExpenses", "Back to travel expenses")}
+						</BackLink>
+						<TravelExpenseReportEditor
+							reportId={reportId}
+							maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+						/>
+					</>
+				) : (
+					<>
+						{/* An earlier submission is reached from the current report, so it leads back there. */}
+						<BackLink href={`/travel-expenses/reports/${reportId}`}>
+							{t("travelExpenses.report.backToCurrent", "Back to the current report")}
+						</BackLink>
+						<SubmittedTravelExpenseReport
+							reportId={reportId}
+							cycle={cycle}
+							maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+						/>
+					</>
+				)}
+			</div>
+		</ReportWorkspaceScope>
 	);
 }
 
@@ -122,6 +140,7 @@ export default function TravelExpenseReportPage(props: ReportPageProps) {
 					role="status"
 					className="mx-auto w-full max-w-3xl px-4 py-4 md:py-6 lg:px-6"
 				>
+					<ReportArrivalHeading />
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</LoadingRegion>
 			}

@@ -1,0 +1,63 @@
+{
+  "privacyLimited": true,
+  "failures": [
+    {
+      "operation": "sandbox pnpm invocation",
+      "result": "C: engine-store operation lock access denied",
+      "recovery": "Authorized engine-lock escalation; frozen offline copy install succeeded"
+    },
+    {
+      "operation": "synthetic login",
+      "result": "Unknown actor key, then HTTP 400 for missing CAPTCHA header",
+      "recovery": "Actual generated actor key and public dummy CAPTCHA header through the normal development endpoint"
+    },
+    {
+      "operation": "native element selection",
+      "result": "Stale ref and guessed file-input selector refused",
+      "recovery": "Fresh native snapshot and source-confirmed receipt input; actual upload completed"
+    },
+    {
+      "operation": "historical appearance capture",
+      "result": "Covered-element refusal while account menu remained open; Light lookup then found no matching menu item",
+      "recovery": "Attempt state clones retained; dismissed menu and recaptured correct themes"
+    },
+    {
+      "operation": "capture focus metadata",
+      "result": "Initial focus capture was too broad",
+      "recovery": "Published clones contain only tag/label; no excluded input hashes or pointers"
+    },
+    {
+      "operation": "native receipt file download",
+      "result": "Command reached daemon but no response returned; os error 10060. No output file produced.",
+      "passed": false,
+      "qualification": "Protected HTTP byte readback passed separately; native file-download completion remains unpassed"
+    },
+    {
+      "operation": "Notification permission probe",
+      "result": "Notification API unavailable with disable-notifications flag",
+      "passed": false,
+      "qualification": "Prevents fixture prompts; does not prove explicit denied permission or all-native acceptance"
+    },
+    {
+      "operation": "first report submission",
+      "result": "Canonical no_reviewer refusal",
+      "recovery": "Draft retained. Synthetic administrator configured an eligible reviewer through public settings; subsequent submission succeeded"
+    },
+    {
+      "operation": "evidence helper read",
+      "result": "Helper contained invalid zero bytes and was not executed",
+      "recovery": "Replaced the owned helper; published artifacts must pass independent JSON parsing and full PNG decoding"
+    },
+    {
+      "operation": "final connected runtime checks",
+      "passed": false,
+      "result": "Owned port/PID and exact three fixture names absent. Restart failed with no such object for own PostgreSQL container. Final Next probes fetched no response; native tree was empty; final mobile focus and old-cycle receipt attempt were blank/not found.",
+      "qualification": "No fixture restored or regenerated. Earlier populated captures remain pinned to their actual source. Final-source native/Next and old-cycle bytes acceptance remains unpassed."
+    },
+    {
+      "operation": "final cleanup verification",
+      "result": "Initial script execution policy and sandbox CIM read refused; process-scoped script execution and approved identity-read escalation used. Docker PowerShell template quoting failed, then corrected. Exact absence independently checked with native child-process arguments.",
+      "qualification": "No claim of final termination, ID/creation capture, or label-wide cleanup."
+    }
+  ]
+}

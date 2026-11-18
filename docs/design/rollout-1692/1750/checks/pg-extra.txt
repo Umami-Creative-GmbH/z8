@@ -1,0 +1,16 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+[logger error] Receipt 577a32e2-50ee-472c-b147-1c6ef49a1e15 could not be read
+[logger error] queue down
+[logger error] claim failed
+ Test Files  3 passed (3)
+      Tests  33 passed (33)
+   Start at  12:59:46
+   Duration  17.44s (tests 77%, import 17%, transform 6%)
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:61916) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in [contact removed] Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:99900) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in [contact removed] Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
