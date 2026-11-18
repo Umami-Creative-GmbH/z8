@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
+import { FinanceTestOrganization } from "@/test/finance-organization-fixture";
 import Page from "./page";
 
 const boundary = vi.hoisted(() => ({ read: true, settle: false, export: false }));
@@ -30,6 +31,7 @@ vi.mock("next/navigation", () => ({
 	useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 	Link: ({ children, ...props }: { children: ReactNode; href: string }) => (
 		<a {...props}>{children}</a>
 	),
@@ -74,7 +76,7 @@ it.each([
 			<QueryClientProvider
 				client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 			>
-				{await content()}
+				<FinanceTestOrganization>{await content()}</FinanceTestOrganization>
 			</QueryClientProvider>,
 		);
 		expect(await screen.findByRole("heading", { name: "Approved expenses" })).toBeTruthy();

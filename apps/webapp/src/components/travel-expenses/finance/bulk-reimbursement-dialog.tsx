@@ -502,10 +502,15 @@ function BulkReimbursementForm({
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(isSubmitting) => (
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onCancel}
+							disabled={isSubmitting || command.busy}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button type="submit" disabled={isSubmitting || command.busy}>
 							{isSubmitting && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
 							{t("travelExpenses.finance.bulk.submit", "Mark {count} as reimbursed", {
 								count: items.length,

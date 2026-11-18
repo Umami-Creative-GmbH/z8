@@ -3,15 +3,12 @@
 import { type QueryKey, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useTransition } from "react";
 import {
 	getTravelExpenseSettlement,
 	type SettlementAccountView,
 } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
-import { useOrganization } from "@/components/providers/organization-context-provider";
 import { Card, CardAction, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
 import {
@@ -21,29 +18,17 @@ import {
 	formatRecordedInstant,
 } from "../report/format";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { FinanceReadBoundary } from "./finance-read-boundary";
+import { readFinanceResult } from "./finance-read-result";
 import { PayrollRunNotice } from "./payroll-run-notice";
 import { RecordReimbursementForm } from "./record-reimbursement-form";
 import { OverpaidOwnerNotice, SettlementAdjustmentLines } from "./settlement-adjustments";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 import { useFinanceReadScope } from "./use-finance-command";
 
-const ACCESS_REFUSALS = new Set(["Not found", "Unauthorized"]);
-
 type SettlementViewer = SettlementAccountView["viewer"];
 type SettlementLine = SettlementAccount["summary"]["currencies"][number];
 type SettlementEntry = SettlementAccount["entries"][number];
-
-async function loadSettlement(source: SettlementSource): Promise<SettlementAccountView | null> {
-	try {
-		const result = await getTravelExpenseSettlement(source);
-		if (!result.success) throw new Error(result.error);
-		return result.data;
-	} catch (failure) {
-		// Persist withdrawal so a later outage cannot revive the previous account.
-		if (failure instanceof Error && ACCESS_REFUSALS.has(failure.message)) return null;
-		throw failure;
-	}
-}
 
 /**
  * The settlement of one approved expense (#612): what the employee is
@@ -52,46 +37,18 @@ async function loadSettlement(source: SettlementSource): Promise<SettlementAccou
  * permission, records reimbursements. Everyone else sees nothing.
  */
 export function SettlementPanel({ source }: { source: SettlementSource }) {
-	const current = useOrganization();
-	const session = useSession();
 	const { t } = useTranslate();
-	const [isRetrying, startRetry] = useTransition();
-	const matches =
-		!session.isPending &&
-		!current.isLoading &&
-		!current.error &&
-		Boolean(current.employeeId) &&
-		Boolean(current.organizationId) &&
-		current.userId === session.data?.user.id &&
-		current.organizationId === session.data?.session.activeOrganizationId;
-	if (!matches) {
-		if (session.isPending || current.isLoading) return <SettlementLoading />;
-		if (current.error) {
-			return (
-				<TravelExpenseLoadError
-					message={t(
-						"travelExpenses.settlement.errors.load",
-						"Unable to load the reimbursement balance. Please retry.",
-					)}
-					retry={() => {
-						startRetry(async () => {
-							await current.refetch();
-						});
-					}}
-					isRetrying={isRetrying}
-				/>
-			);
-		}
-		return null;
-	}
-	// A replacement employee or role needs fresh canonical settlement evidence.
-	const identity = JSON.stringify([
-		current.userId,
-		current.organizationId,
-		current.employeeId,
-		current.role,
-	]);
-	return <SettlementReader key={identity} source={source} />;
+	return (
+		<FinanceReadBoundary
+			loading={<SettlementLoading />}
+			errorMessage={t(
+				"travelExpenses.settlement.errors.load",
+				"Unable to load the reimbursement balance. Please retry.",
+			)}
+		>
+			<SettlementReader source={source} />
+		</FinanceReadBoundary>
+	);
 }
 
 function SettlementLoading() {
@@ -112,8 +69,8 @@ function SettlementReader({ source }: { source: SettlementSource }) {
 	const queryKey = [...queryKeys.travelExpenses.settlement(source.type, source.id), scope];
 	const { data, isError, isFetching, refetch } = useQuery({
 		queryKey,
-		queryFn: () => loadSettlement(source),
-		retry: (count, failure) => !ACCESS_REFUSALS.has(failure.message) && count < 2,
+		queryFn: () => readFinanceResult(getTravelExpenseSettlement(source)),
+		retry: (count) => count < 2,
 	});
 
 	if (data === null && !isError) return null;

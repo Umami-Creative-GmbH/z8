@@ -47,6 +47,8 @@ import {
 	isReimbursableInFull,
 	settlementSourceKey,
 } from "./bulk-reimbursement-dialog";
+import { FinanceReadBoundary } from "./finance-read-boundary";
+import { readFinanceResult } from "./finance-read-result";
 import { payrollRunLabel } from "./payroll-run-notice";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 import { settlementTitle } from "./settlement-title";
@@ -95,6 +97,7 @@ function useSelection(viewKey: string, accounts: readonly SettlementAccount[]) {
 		keys: new Set(),
 	});
 	const keys = state.viewKey === viewKey ? state.keys : new Set<string>();
+	if (state.viewKey !== viewKey) setState({ viewKey, keys: new Set() });
 	const selectable = accounts.filter(isSelectable);
 	const selected = selectable.filter((account) => keys.has(accountKey(account)));
 	function set(next: Iterable<string>) {
@@ -164,13 +167,22 @@ function QueueFilters({
 		refetch,
 	} = useQuery({
 		queryKey: [...queryKeys.travelExpenses.financeQueueFilters(), scope],
-		queryFn: async () => {
-			const result = await getTravelExpenseFinanceQueueFilterOptions();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
+		queryFn: () => readFinanceResult(getTravelExpenseFinanceQueueFilterOptions()),
 		staleTime: 60_000,
 	});
+	if (options === null)
+		return isError ? (
+			<TravelExpenseLoadError
+				message={t(
+					"travelExpenses.finance.filter.failed",
+					"Filter options could not be loaded. Please retry.",
+				)}
+				retry={() => {
+					void refetch();
+				}}
+				isRetrying={isFetching}
+			/>
+		) : null;
 	// Any change of filter starts again on the first page.
 	const filter = (patch: Partial<FinanceQueueView>) => onChange({ ...view, ...patch, page: 1 });
 	const employeeOptions = (options?.employees ?? []).map((employee) => ({
@@ -356,6 +368,14 @@ function QueuePagination({
  * reimbursement and no expense officer covers.
  */
 export function FinanceQueue(props: { coverage?: FinanceQueueCoverage } = {}) {
+	return (
+		<FinanceReadBoundary>
+			<FinanceQueueArrival {...props} />
+		</FinanceReadBoundary>
+	);
+}
+
+function FinanceQueueArrival(props: { coverage?: FinanceQueueCoverage }) {
 	const scope = useFinanceReadScope();
 	return <FinanceQueueContent key={scope} {...props} />;
 }
@@ -368,20 +388,19 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 	const search = financeQueueSearch(view);
 	const { data, isError, isFetching, isLoading, isPlaceholderData, refetch } = useQuery({
 		queryKey: [...queryKeys.travelExpenses.financeQueue(search, coverage), scope],
-		queryFn: async () => {
-			const result = coverage
-				? await getTravelExpenseFinanceQueue(view, coverage)
-				: await getTravelExpenseFinanceQueue(view);
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
+		queryFn: () =>
+			readFinanceResult(
+				coverage
+					? getTravelExpenseFinanceQueue(view, coverage)
+					: getTravelExpenseFinanceQueue(view),
+			),
 		placeholderData: (previous, query) => (query?.queryKey.at(-1) === scope ? previous : undefined),
 	});
 	const queryClient = useQueryClient();
 	const canSettle = data?.canSettle ?? false;
 	// Retained rows belong to the previous view, not the page named by the controls.
 	const selection = useSelection(
-		`${scope}|${search}|${coverage ?? ""}`,
+		`${scope}|${search}|${coverage ?? ""}|${data === null ? "withdrawn" : "available"}`,
 		isPlaceholderData || isError || isFetching ? [] : (data?.accounts ?? []),
 	);
 	// What was selected when the dialog opened: a reload meanwhile changes neither the request nor its results.
@@ -398,6 +417,21 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 		all: t("travelExpenses.finance.filter.all", "All approved"),
 	};
 	const filtered = hasFilters(view);
+	if (data === null) {
+		if (bulkItems) setBulkItems(null);
+		return isError ? (
+			<TravelExpenseLoadError
+				message={t(
+					"travelExpenses.finance.queue.failed",
+					"Unable to load the finance queue. Please retry.",
+				)}
+				retry={() => {
+					void refetch();
+				}}
+				isRetrying={isFetching}
+			/>
+		) : null;
+	}
 
 	return (
 		<Card className="gap-4 overflow-hidden pb-0">

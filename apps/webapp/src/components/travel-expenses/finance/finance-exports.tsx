@@ -11,7 +11,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	type CreateTravelExpenseExportResult,
@@ -39,6 +39,8 @@ import {
 	type BulkReimbursementItem,
 	type BulkReimbursementSkippedItem,
 } from "./bulk-reimbursement-dialog";
+import { FinanceReadBoundary } from "./finance-read-boundary";
+import { readFinanceResult } from "./finance-read-result";
 import { settlementTitle } from "./settlement-title";
 import {
 	type FinanceSubmission,
@@ -368,7 +370,7 @@ function ExportSelection({
 				})}
 			>
 				{({ isSubmitting, count }) => (
-					<Button type="submit" disabled={isSubmitting || count === 0}>
+					<Button type="submit" disabled={isSubmitting || command.busy || count === 0}>
 						{isSubmitting ? (
 							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 						) : (
@@ -418,10 +420,23 @@ function MarkBatchReimbursed({
 	const queryClient = useQueryClient();
 	const [loading, setLoading] = useState(false);
 	const [reimbursement, setReimbursement] = useState<BatchReimbursement | null>(null);
+	const arrival = useRef<symbol | null>(null);
+	const pendingRead = useRef<symbol | null>(null);
+	useLayoutEffect(() => {
+		arrival.current = Symbol(batch.id);
+		return () => {
+			arrival.current = null;
+		};
+	}, [batch.id]);
 
 	const open = async () => {
+		const activation = arrival.current;
+		if (!activation || pendingRead.current) return;
+		pendingRead.current = activation;
 		setLoading(true);
 		const result = await getTravelExpenseExportReimbursement(batch.id).catch(() => null);
+		if (pendingRead.current === activation) pendingRead.current = null;
+		if (arrival.current !== activation) return;
 		setLoading(false);
 		if (!result?.success || result.data.status !== "ready") {
 			toast.error(
@@ -481,22 +496,29 @@ function BatchItem({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const [busy, setBusy] = useState(false);
+	const command = useFinanceCommand(`export-batch:${batch.id}`);
+	const busy = command.busy;
 
 	const run = async (
 		action: () => Promise<{ success: boolean }>,
 		failure: string,
 	): Promise<void> => {
-		setBusy(true);
+		const submission = command.reserve();
+		if (!submission) return;
 		// Promise#finally rather than try/finally: the React Compiler cannot
 		// compile try statements without a catch clause.
-		await action()
+		await Promise.resolve()
+			.then(() => (command.isCurrent(submission) ? action() : { success: false }))
 			.then((result) => {
-				if (!result.success) toast.error(failure);
+				if (command.isCurrent(submission) && !result.success) toast.error(failure);
+			})
+			.catch(() => {
+				if (command.isCurrent(submission)) toast.error(failure);
 			})
 			.finally(() => {
-				setBusy(false);
-				onChanged();
+				const current = command.isCurrent(submission);
+				command.release(submission);
+				if (current) onChanged();
 			});
 	};
 
@@ -614,6 +636,14 @@ function BatchItem({
  * the export permission; an export never records a reimbursement.
  */
 export function FinanceExports() {
+	return (
+		<FinanceReadBoundary>
+			<FinanceExportsArrival />
+		</FinanceReadBoundary>
+	);
+}
+
+function FinanceExportsArrival() {
 	const scope = useFinanceReadScope();
 	return <FinanceExportsContent key={scope} scope={scope} />;
 }
@@ -624,11 +654,7 @@ function FinanceExportsContent({ scope }: { scope: string | null }) {
 	const queryKey = [...queryKeys.travelExpenses.financeExports(), scope];
 	const { data, isError, isFetching, isLoading, refetch } = useQuery({
 		queryKey,
-		queryFn: async () => {
-			const result = await getTravelExpenseExports();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
+		queryFn: () => readFinanceResult(getTravelExpenseExports()),
 		placeholderData: (previous) => previous,
 		// Follow running jobs until they finish.
 		refetchInterval: (query) =>
@@ -641,6 +667,19 @@ function FinanceExportsContent({ scope }: { scope: string | null }) {
 	const refresh = () => {
 		void queryClient.invalidateQueries({ queryKey });
 	};
+	if (data === null)
+		return isError ? (
+			<TravelExpenseLoadError
+				message={t(
+					"travelExpenses.finance.exports.errors.load",
+					"Unable to load exports. Please retry.",
+				)}
+				retry={() => {
+					void refetch();
+				}}
+				isRetrying={isFetching}
+			/>
+		) : null;
 
 	return (
 		<section aria-labelledby="travel-expense-exports-heading" className="space-y-4">

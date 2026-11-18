@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FinanceTestOrganization } from "@/test/finance-organization-fixture";
 
 const mocks = vi.hoisted(() => ({ getGap: vi.fn() }));
 vi.mock("@/lib/auth-client", () => ({
@@ -26,6 +27,7 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 	Link: ({ href, children }: { href: string; children: ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
@@ -41,7 +43,9 @@ function mount() {
 		<QueryClientProvider
 			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 		>
-			<OfficerCoverageGapNotice />
+			<FinanceTestOrganization>
+				<OfficerCoverageGapNotice />
+			</FinanceTestOrganization>
 		</QueryClientProvider>,
 	);
 }
