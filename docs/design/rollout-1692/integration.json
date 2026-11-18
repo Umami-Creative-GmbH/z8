@@ -2090,9 +2090,12 @@
       "correctionCommit": "4cab7a5b594db3bc7e4dfdf56026d25737a2b2f4",
       "correctionIntegrationCommit": "a043fd9af51465e608bb6d00f5568e72f11d8300",
       "evidence": "docs/design/rollout-1692/1748.md",
-      "integrationVerification": "Provisional merge and prior detail withdrawal correction preserved. Independent recheck42 distinct/4files:41pass/1P1;36existing overlap priorroot508. Shared conversion Unauthorized then transient failure revives report link; pinned baseline hides it. Root exact red5pass/1fail, exactgreen6/6,10permanent public cases pass. Shared cache now preserves canonical withdrawal until fresh success; Retry and authorized retention preserved. Current518 distinct/43files pass,full3types/typegen,10filelint/Doctor0/0. Owned2 explicit100CRLF pass;ordinary and2sharedmetadata formatting findings remain. No freshPG/runtime/native/download acceptance. New independent review pending;verifiedCommit null. See1748/root-conversion-withdrawal-correction.json.",
+      "integrationVerification": "Both root withdrawal corrections preserved. Fresh independent bounded review at16a914f4a/app1f82885d: no newP1;545unit/48files includes rerunroot518 plus27independent/control identities;51canonicalPG/4files pass atdefaulttimeouts. Typegen/workflow/smoke,10filelint/Doctor0/0 pass;mainTSqualified only missingignoredlicenses.json,root prior fulltypes separate. Ownedexplicitformat pass;ordinary/sharedmetadata differences retained. SAFE61payloads/761942bytes independently audited;73publicarchivepayloads,18PNGdecoded,14currentpins,8historicalhashes,9links checked with capture/metadata/producer-receipt qualifications. Freshliveacceptance pending;verifiedCommit null. See1748/root-independent-recheck.json.",
       "conversionWithdrawalCorrectionCommit": "4a6eaaa2f3f2ee5ac25055b0fdc11722028b3186",
-      "conversionWithdrawalIntegrationCommit": "c696178cac11641eff69ce0cd3045204eb91059a"
+      "conversionWithdrawalIntegrationCommit": "c696178cac11641eff69ce0cd3045204eb91059a",
+      "independentReviewCommit": "16a914f4a4e9ef022552ff53d938b2c1f883517f",
+      "independentReviewAppTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+      "independentReviewEvidence": "docs/design/rollout-1692/1748/root-independent-recheck.json"
     },
     {
       "id": "R167",
