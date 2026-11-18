@@ -14,22 +14,14 @@ describe("platform admin analytics page", () => {
 	});
 
 	it("uses the selected range and bucket for controls and fresh analytics data", () => {
-		expect(source).toContain(
-			"parsePlatformAnalyticsParams((await searchParams) ?? {})",
-		);
+		expect(source).toContain("parsePlatformAnalyticsParams((await searchParams) ?? {})");
 		expect(source.indexOf("await connection()")).toBeLessThan(
-			source.indexOf(
-				"parsePlatformAnalyticsParams((await searchParams) ?? {})",
-			),
+			source.indexOf("parsePlatformAnalyticsParams((await searchParams) ?? {})"),
 		);
 		expect(source).toMatch(
 			/<PlatformAnalyticsControls\s+range=\{parsedParams\.range\}\s+bucket=\{parsedParams\.bucket\}\s*\/>/,
 		);
-		expect(source).toMatch(
-			/key=\{`\$\{parsedParams\.range\}-\$\{parsedParams\.bucket\}`\}/,
-		);
-		expect(source).toContain(
-			"<PlatformAnalyticsDataSection parsedParams={parsedParams} />",
-		);
+		expect(source).toMatch(/key=\{`\$\{parsedParams\.range\}-\$\{parsedParams\.bucket\}`\}/);
+		expect(source).toContain("<PlatformAnalyticsDataSection parsedParams={parsedParams} />");
 	});
 });
