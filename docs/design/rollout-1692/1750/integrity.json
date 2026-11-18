@@ -596,8 +596,8 @@
   ],
   "report": {
     "file": "../1750.md",
-    "bytes": 23412,
-    "sha256": "6fd143d162813a6ff94f3c252ce1e7792fe260f4e61c4b9b239f1464128c7787",
+    "bytes": 24954,
+    "sha256": "c3a3815cc8cd9f35dc2138bd9f32bc1355e329ef12c8c31c868e663730e080c5",
     "canonicalLineEndings": "LF"
   },
   "exclusions": "Private inputs and contact-bearing original captures/diagnostics are not indexed, referenced or hashed. This index excludes itself."
