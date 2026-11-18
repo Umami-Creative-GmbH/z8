@@ -12,7 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
-import { useId, useState } from "react";
+import { type Ref, useId, useRef, useState } from "react";
 import {
 	type FinanceQueueCoverage,
 	getTravelExpenseFinanceQueue,
@@ -307,9 +307,11 @@ function QueueFilters({
 function SelectionBar({
 	selection,
 	onMark,
+	markButtonRef,
 }: {
 	selection: ReturnType<typeof useSelection>;
 	onMark: () => void;
+	markButtonRef: Ref<HTMLButtonElement>;
 }) {
 	const { t } = useTranslate();
 	const { selectable, selected } = selection;
@@ -328,7 +330,13 @@ function SelectionBar({
 			<span className="text-sm text-muted-foreground tabular-nums">
 				{t("travelExpenses.finance.bulk.selected", "{count} selected", { count: selected.length })}
 			</span>
-			<Button size="sm" className="ml-auto" disabled={selected.length === 0} onClick={onMark}>
+			<Button
+				ref={markButtonRef}
+				size="sm"
+				className="ml-auto"
+				disabled={selected.length === 0}
+				onClick={onMark}
+			>
 				<IconCash aria-hidden="true" className="size-4" />
 				{t("travelExpenses.finance.bulk.action", "Mark as reimbursed")}
 			</Button>
@@ -416,6 +424,8 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 		placeholderData: (previous, query) => (query?.queryKey.at(-1) === scope ? previous : undefined),
 	});
 	const queryClient = useQueryClient();
+	const queueHeadingRef = useRef<HTMLHeadingElement>(null);
+	const markButtonRef = useRef<HTMLButtonElement>(null);
 	const canSettle = data?.canSettle ?? false;
 	// Retained rows belong to the previous view, not the page named by the controls.
 	const selection = useSelection(
@@ -445,6 +455,10 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 			retired: false,
 		});
 	}
+	function returnBulkFocus() {
+		const button = markButtonRef.current;
+		return button?.isConnected && !button.disabled ? button : queueHeadingRef.current;
+	}
 	const statusLabel: Record<FinanceQueueStatus, string> = {
 		open: t("travelExpenses.finance.filter.open", "Open"),
 		reimbursed: t("travelExpenses.finance.filter.reimbursed", "Reimbursed"),
@@ -470,7 +484,7 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 	return (
 		<Card className="gap-4 overflow-hidden pb-0">
 			<CardHeader>
-				<h2 className="font-semibold leading-none">
+				<h2 className="font-semibold leading-none" ref={queueHeadingRef} tabIndex={-1}>
 					{t("travelExpenses.finance.queue.title", "Approved expenses")}
 				</h2>
 				<CardDescription>
@@ -577,7 +591,9 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 				</>
 			) : (
 				<div className="border-t">
-					{canSettle && <SelectionBar selection={selection} onMark={openBulk} />}
+					{canSettle && (
+						<SelectionBar selection={selection} onMark={openBulk} markButtonRef={markButtonRef} />
+					)}
 					<ul className="divide-y" aria-busy={isFetching}>
 						{data.accounts.map((account) => {
 							const title = settlementTitle(t, locale, account.title);
@@ -671,6 +687,7 @@ function FinanceQueueContent({ coverage }: { coverage?: FinanceQueueCoverage }) 
 			{canSettle && bulkSelection && (
 				<BulkReimbursementDialog
 					items={bulkSelection.items}
+					finalFocus={returnBulkFocus}
 					retired={bulkSelection.retired}
 					open
 					onOpenChange={(open) => {

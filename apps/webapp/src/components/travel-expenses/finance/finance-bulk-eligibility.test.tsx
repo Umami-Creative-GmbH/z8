@@ -492,13 +492,13 @@ it("fresh retirement before queued TanStack validation dispatches no captured re
 
 // Retained from the independent public reproduction; only the response helper is local.
 it("PRIORITY independent: omission on an empty refreshed page retains the open draft and exact retry intent", async () => {
-	const c = mount();
+	const queue = mount();
 	const d = await open();
 	fireEvent.change(within(d).getByLabelText(/Note/), { target: { value: "Synthetic retry note" } });
 	await submit();
 	const first = structuredClone(edge.writes.mock.calls[0][0]);
 	edge.reads.mockResolvedValueOnce(reply([]));
-	await refresh(c);
+	await refresh(queue);
 	const retained = screen.queryByRole("dialog");
 	expect(
 		retained,
@@ -509,7 +509,7 @@ it("PRIORITY independent: omission on an empty refreshed page retains the open d
 		"INDEPENDENT-BANK-48",
 	);
 	expect(within(retained!).getByLabelText(/Note/)).toHaveProperty("value", "Synthetic retry note");
-	await refresh(c);
+	await refresh(queue);
 	await submit();
 	expect(edge.writes).toHaveBeenCalledTimes(2);
 	expect(edge.writes.mock.calls[1][0]).toEqual(first);
@@ -519,7 +519,7 @@ it("an empty page after a lost acknowledgement retains the exact values and idem
 	edge.writes.mockRejectedValueOnce(
 		Error("Synthetic lost acknowledgement; no persistence simulated"),
 	);
-	const c = mount(),
+	const queue = mount(),
 		dialog = await open();
 	fireEvent.change(within(dialog).getByLabelText(/Note/), {
 		target: { value: "Exact retained bank note" },
@@ -527,7 +527,7 @@ it("an empty page after a lost acknowledgement retains the exact values and idem
 	await submit();
 	const first = structuredClone(edge.writes.mock.calls[0][0]);
 	edge.reads.mockResolvedValueOnce(reply([]));
-	await refresh(c);
+	await refresh(queue);
 	expect(screen.getByRole("dialog")).toBe(dialog);
 	expect(within(dialog).getByLabelText(/Note/)).toHaveProperty("value", "Exact retained bank note");
 	await submit();
@@ -543,13 +543,13 @@ it("empty-page transitions keep an unsettled reimbursement reserved and retain i
 		finish = resolve;
 	});
 	edge.writes.mockReturnValueOnce(held);
-	const c = mount(),
+	const queue = mount(),
 		dialog = await open();
 	fireEvent.click(within(dialog).getByRole("button", { name: "Mark 1 as reimbursed" }));
 	try {
 		await waitFor(() => expect(edge.writes).toHaveBeenCalledTimes(1));
 		edge.reads.mockResolvedValueOnce(reply([]));
-		await refresh(c);
+		await refresh(queue);
 		expect(screen.getByRole("dialog")).toBe(dialog);
 		expect(within(dialog).getByRole("button", { name: "Cancel", exact: true })).toHaveProperty(
 			"disabled",
@@ -559,7 +559,7 @@ it("empty-page transitions keep an unsettled reimbursement reserved and retain i
 		fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
 		expect(screen.getByRole("dialog")).toBe(dialog);
 		expect(edge.writes).toHaveBeenCalledTimes(1);
-		await refresh(c);
+		await refresh(queue);
 		await nativeSubmit(dialog);
 		expect(edge.writes).toHaveBeenCalledTimes(1);
 	} finally {
@@ -576,28 +576,108 @@ it("empty-page transitions keep an unsettled reimbursement reserved and retain i
 });
 
 it("an explicitly retired draft stays visible and blocked through empty and restored pages", async () => {
-	const c = mount();
+	const queue = mount();
 	const dialog = await open();
 	edge.included = true;
-	await refresh(c);
+	await refresh(queue);
 	blocked();
 	edge.reads.mockResolvedValueOnce(reply([]));
-	await refresh(c);
+	await refresh(queue);
 	expect(screen.getByRole("dialog")).toBe(dialog);
 	await nativeSubmit(blocked());
 	edge.included = false;
-	await refresh(c);
+	await refresh(queue);
 	await nativeSubmit(blocked());
 	expect(edge.writes).not.toHaveBeenCalled();
 });
 
 it("an empty-page capability refusal closes the draft and a later grant cannot reopen it", async () => {
-	const c = mount();
+	const queue = mount();
 	await open();
 	edge.reads.mockResolvedValueOnce(reply([], false));
-	await refresh(c);
+	await refresh(queue);
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-	await refresh(c);
+	await refresh(queue);
 	expect(screen.queryByRole("dialog")).toBeNull();
 	expect(edge.writes).not.toHaveBeenCalled();
+});
+
+it.each([
+	{ refreshedRows: "unchanged", empty: false },
+	{ refreshedRows: "empty", empty: true },
+])(
+	"returns focus to the finance queue after Cancel with $refreshedRows rows",
+	async ({ empty }) => {
+		const queue = mount();
+		await screen.findByRole("link", { name: new RegExp(title) });
+		fireEvent.click(
+			screen.getByRole("checkbox", {
+				name: "Select all expenses awaiting reimbursement on this page",
+			}),
+		);
+		const opener = screen.getByRole("button", { name: "Mark as reimbursed", exact: true });
+		opener.focus();
+		fireEvent.click(opener);
+		const dialog = await screen.findByRole("dialog");
+		within(dialog)
+			.getByLabelText(/Payment reference/)
+			.focus();
+		edge.reads.mockResolvedValueOnce(reply(empty ? [] : [account()]));
+		await refresh(queue);
+		expect(opener.isConnected).toBe(!empty);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Cancel", exact: true }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		const destination = empty ? screen.getByRole("heading", { name: "Approved expenses" }) : opener;
+		await waitFor(() => expect(document.activeElement).toBe(destination));
+		expect(edge.writes).not.toHaveBeenCalled();
+	},
+);
+
+it("keeps the mixed reimbursement outcome while withholding the label of a refused report", async () => {
+	const available = account();
+	const refused = account();
+	refused.source = { type: "report", id: "0892fc1f-ad7a-4c29-847f-a1ae86a45adc" };
+	refused.employeeName = "Synthetic excluded employee";
+	refused.title = {
+		kind: "trip",
+		purpose: "Synthetic excluded report",
+		startDate: null,
+		endDate: null,
+	};
+	edge.reads.mockResolvedValueOnce(reply([available, refused]));
+	const queue = mount();
+	const dialog = await open();
+	edge.reads.mockResolvedValueOnce(reply([available]));
+	await refresh(queue);
+	edge.writes.mockResolvedValueOnce({
+		success: true,
+		data: {
+			status: "processed",
+			rows: [
+				{
+					source: available.source,
+					outcome: "reimbursed",
+					amount: "48.00",
+					currency: "EUR",
+					replayed: false,
+				},
+				{
+					source: refused.source,
+					outcome: "out_of_scope",
+					amount: null,
+					currency: null,
+					replayed: false,
+				},
+			],
+		},
+	});
+	fireEvent.click(within(dialog).getByRole("button", { name: "Mark 2 as reimbursed" }));
+	const results = await screen.findByRole("dialog", { name: "Reimbursement results" });
+	expect(within(results).getByText("1 of 2 reimbursed")).toBeTruthy();
+	expect(within(results).getByText(new RegExp(title))).toBeTruthy();
+	expect(within(results).getByText("Skipped: out of scope")).toBeTruthy();
+	expect(
+		within(results).queryByText(/Synthetic excluded employee|Synthetic excluded report/),
+	).toBeNull();
+	expect(edge.writes).toHaveBeenCalledTimes(1);
 });
