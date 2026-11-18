@@ -2170,6 +2170,8 @@
       "activityReconciliationEvidence": "docs/design/rollout-1692/1750/root-activity-reconciliation-checks.json",
       "relatedCommandReconciliationCommit": "c592ac234b69d3a5e9b612f8f151919fa4184d38",
       "relatedCommandReconciliationEvidence": "docs/design/rollout-1692/1750/root-related-command-reconciliation-checks.json",
+      "attachmentProgressCorrectionCommit": "1ad48b7d15410daffa4135e366c4b811f48fa80c",
+      "relatedCommandIndependentReviewEvidence": "docs/design/rollout-1692/1750/root-independent-review-and-progress-checks.json",
       "publicationQualification": "The public integration preserves the tested application tree; exact native merge and original receipt paths remain on the local review branch."
     },
     {
