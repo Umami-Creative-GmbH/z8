@@ -173,7 +173,7 @@ export function SubmittedTravelExpenseReport({
 					itemType: data.facts.reportKind === "trip" ? null : (firstItem?.type ?? null),
 					title: data.facts.trip ? data.facts.trip.purpose : (firstItem?.description ?? null),
 				}}
-				status={latest ? data.status : undefined}
+				status={data.cycleOutcome === "pending" ? "submitted" : data.cycleOutcome}
 			/>
 			<SubmissionHeading reportId={reportId} data={data} latest={latest} />
 			<SubmissionNotices reportId={reportId} data={data} latest={latest} />

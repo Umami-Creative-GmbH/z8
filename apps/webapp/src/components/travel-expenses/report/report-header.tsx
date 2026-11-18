@@ -3,9 +3,8 @@
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/ui/page-header";
-import type { TravelExpenseReportStatus } from "@/db/schema/travel-expense";
 import { type ReportNameSource, reportKindLabel, reportName } from "../report-name";
-import { ReportStatusBadge } from "./report-status";
+import { type ReportBadgeStatus, ReportStatusBadge } from "./report-status";
 
 /**
  * The one header of every expense report view (#688): the kind line, the
@@ -18,7 +17,7 @@ export function ReportHeader({
 	actions,
 }: {
 	source: ReportNameSource;
-	status?: TravelExpenseReportStatus;
+	status?: ReportBadgeStatus;
 	actions?: ReactNode;
 }) {
 	const { t } = useTranslate();

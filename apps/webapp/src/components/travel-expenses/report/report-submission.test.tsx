@@ -75,6 +75,7 @@ vi.mock("@/navigation", () => ({
 import * as reviewActions from "@/app/[locale]/(app)/travel-expenses/report-review-actions";
 import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { ReportWorkspaceScope } from "./report-workspace-scope";
+import { SubmittedTravelExpenseReport } from "./submitted-report";
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
 
 const reportId = "6a020000-0000-4000-8000-000000000001";
@@ -142,7 +143,7 @@ function tripReport(overrides: Record<string, unknown> = {}) {
 	};
 }
 
-function mount() {
+function mount(cycle?: number) {
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
@@ -167,7 +168,15 @@ function mount() {
 					arrival="report-arrival"
 				>
 					<Activity mode={mode}>
-						<TravelExpenseReportEditor reportId={reportId} maxReceiptBytes={1024} />
+						{cycle === undefined ? (
+							<TravelExpenseReportEditor reportId={reportId} maxReceiptBytes={1024} />
+						) : (
+							<SubmittedTravelExpenseReport
+								reportId={reportId}
+								cycle={cycle}
+								maxReceiptBytes={1024}
+							/>
+						)}
 					</Activity>
 				</ReportWorkspaceScope>
 			</OrganizationContextProvider>
@@ -575,6 +584,46 @@ describe("report submission", () => {
 		expect(within(screen.getByRole("banner")).queryByText("Awaiting review")).toBeNull();
 		expect(screen.queryByRole("button", { name: "Withdraw report" })).toBeNull();
 	});
+
+	it.each([
+		{
+			status: "draft",
+			cycleOutcome: "withdrawn",
+			latestCycle: 1,
+			label: "Withdrawn",
+			current: "Draft",
+		},
+		{
+			status: "returned",
+			cycleOutcome: "reopened",
+			latestCycle: 1,
+			label: "Reopened for correction",
+			current: "Returned for changes",
+		},
+		{
+			status: "submitted",
+			cycleOutcome: "approved",
+			latestCycle: 2,
+			label: "Approved",
+			current: "Awaiting review",
+		},
+	])(
+		"labels the explicit $cycleOutcome submission from its frozen outcome",
+		async ({ label, current, ...view }) => {
+			reportActions.getTravelExpenseReportSubmission.mockResolvedValue(submittedView(view));
+			mount(1);
+			await screen.findByRole("heading", { level: 1, name: "Customer workshop" });
+			const banner = within(screen.getByRole("banner"));
+			expect(banner.queryByText(current)).toBeNull();
+			expect(banner.getByText(label)).toBeTruthy();
+			expect(reportActions.getTravelExpenseReportSubmission).toHaveBeenCalledWith(reportId, 1);
+			expect(screen.queryByRole("button", { name: "Withdraw report" })).toBeNull();
+			expect(screen.queryByRole("textbox", { name: "Purpose of the trip" })).toBeNull();
+			expect(screen.getByRole("link", { name: /ticket\.pdf/ }).getAttribute("href")).toBe(
+				`/api/travel-expenses/reports/${reportId}/receipts/r-1?cycle=1`,
+			);
+		},
+	);
 
 	it("offers missing-receipt upload beside the submitted item when the server allows it (#1255)", async () => {
 		reportActions.getMyTravelExpenseReport.mockResolvedValue(
