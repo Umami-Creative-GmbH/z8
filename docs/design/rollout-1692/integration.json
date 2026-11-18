@@ -2127,7 +2127,7 @@
       "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
       "evidence": "docs/design/rollout-1692/1749.md",
       "rootCorrectionEvidence": "docs/design/rollout-1692/1749/root-settlement-withdrawal-checks.json",
-      "integrationVerification": "Provisional. Independent review at 9c96193fb confirmed empty-refresh draft and retry-key retention and passed 374 unit cases and 84 PostgreSQL cases. Correction 296469aeb restores queue focus after closing and withholds captured labels after explicit per-target refusal. Current 377 unit cases, typegen, three TypeScript projects, lint, and explicit CRLF formatting passed. Independent review of the current correction and browser keyboard acceptance remain pending.",
+      "integrationVerification": "Provisional. Independent review at fa3ab8c06 confirmed empty refresh, refusal labels, and ordinary focus return. The current correction covers Done and Escape when closing results disables the opener. The unchanged public reproduction improved from 28/30 to 30/30, and all 380 compatibility cases and three TypeScript projects passed. Current browser keyboard and live finance acceptance remain pending.",
       "providerCorrectionCommit": "e512a116b39706366eee3adfaad00787e04ff1dc",
       "providerCorrectionIntegrationCommit": "b9f13a387898980c5c6b684d3c7e0dff7ebd0d8f",
       "providerCorrectionEvidence": "docs/design/rollout-1692/1749/root-provider-arrival-checks.json",
@@ -2142,7 +2142,10 @@
       "emptyRefreshCorrectionEvidence": "docs/design/rollout-1692/1749/root-empty-refresh-checks.json",
       "focusReturnCorrectionCommit": "296469aeb76e161255fe6c81b104b596afe3801f",
       "focusReturnCorrectionIntegrationCommit": "358e1a35d9101f66e459365542287ca62deb4ba5",
-      "focusReturnCorrectionEvidence": "docs/design/rollout-1692/1749/root-focus-and-refusal-checks.json"
+      "focusReturnCorrectionEvidence": "docs/design/rollout-1692/1749/root-focus-and-refusal-checks.json",
+      "resultsDismissalFocusCorrectionCommit": "4b9a71790af314e984c83d687b8b3db3752ea753",
+      "resultsDismissalFocusCorrectionIntegrationCommit": "1bf72269aff032a8f811a48e11d5ba1835c764b5",
+      "resultsDismissalFocusCorrectionEvidence": "docs/design/rollout-1692/1749/root-results-dismissal-focus-checks.json"
     },
     {
       "id": "R168",
