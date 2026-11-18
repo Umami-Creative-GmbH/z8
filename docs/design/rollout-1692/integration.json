@@ -2072,7 +2072,13 @@
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1747#issuecomment-6909500771",
       "implementationCommit": "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a",
-      "knownSharedAcceptanceFinding": "Shared legacy continuation pending-session navigation failure reproduced in R165. R166 implementation includes a compatible correction; it still requires fresh serial merger/runtime verification before R165 is verified."
+      "knownSharedAcceptanceFinding": "R166 bounded handoff e3957741a7f0f1aeeba748cce3af27a42870fcf1 includes the shared continuation corrections; its live retirement, accessibility and wider matrix limits remain explicit. R165 still requires current incoming-consumer acceptance.",
+      "integrationCommit": "c70858bfe507eb99f844a455230e312cc8247b61",
+      "correctionCommit": "20a7481f08b6156e912442492f8181ffe2650134",
+      "correctionIntegrationCommit": "0a1048d64ae2a54292b454d757b4a1de306360c9",
+      "evidence": "docs/design/rollout-1692/1747.md",
+      "rootCorrectionEvidence": "docs/design/rollout-1692/1747/root-history-withdrawal-checks.json",
+      "integrationVerification": "Provisional merge/tree/map/65-anchor preservation verified. Isolated STOP found inherited Unauthorized history retention (8 unique cases:5 pass/3 fail). Root durable withdrawal correction passes183 cases/13files, all3types,4-file explicit CRLF/lint and Doctor0/0; ordinary4 formatting findings retained. Older actor/provider/session fixtures reconciled without weakening lifetime assertions. Fresh independent/PG/current runtime pending; no readiness advancement."
     },
     {
       "id": "R166",
