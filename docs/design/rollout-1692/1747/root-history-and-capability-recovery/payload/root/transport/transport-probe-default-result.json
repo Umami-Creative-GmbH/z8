@@ -1,0 +1,11 @@
+{
+  "endpoint": "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+  "method": "HEAD",
+  "credentials": false,
+  "token": false,
+  "configurationChanged": false,
+  "transportReached": false,
+  "name": "TypeError",
+  "message": "fetch failed",
+  "causeCode": "EACCES"
+}

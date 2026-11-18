@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "explicitAllowlist": true,
+  "qualifier": "Final additive index includes original SHA256.json unchanged plus execution-exit and verification addenda. Index does not hash itself.",
+  "payloads": [
+    {
+      "file": "HANDOFF.md",
+      "bytes": 3788,
+      "sha256": "6e2be52f5cde5396dc6866987775447f849af133eb3d432334b159c12a90ad86"
+    },
+    {
+      "file": "RELEASE.json",
+      "bytes": 1486,
+      "sha256": "75386e8ce65fa37d280e05d01a3877cf483270dbc1050a0432fa7744ef089c0c"
+    },
+    {
+      "file": "REPORT.json",
+      "bytes": 3107,
+      "sha256": "45c00cea3ea26a744f2d185cbdec83b3445d7aab74dde9c33a3ecb422d254e85"
+    },
+    {
+      "file": "SEAL-VERIFICATION.json",
+      "bytes": 383,
+      "sha256": "1f9af39b2d4c5f1f4fbdf8b27e53603e9ccf7cc8e3ffa4bd870f882ffb7fbb25"
+    },
+    {
+      "file": "SHA256.json",
+      "bytes": 4283,
+      "sha256": "8048275bec564451a97510f71321a60c3f34288fda2e916e525e928410e405dc"
+    },
+    {
+      "file": "assertion-ledger.json",
+      "bytes": 12750,
+      "sha256": "2d64740a07711a80a41d3442d21de171ed68bbad5b7bb1fc6e5b0e841d3756c6"
+    },
+    {
+      "file": "attempts.json",
+      "bytes": 3203,
+      "sha256": "fb152a90284dded8beeaa3f1b1e8aecf65db852ab9c5c6cc4ad7a7bbbcaa2798"
+    },
+    {
+      "file": "auth-boundary-SAFE.json",
+      "bytes": 626,
+      "sha256": "94505e9da9d8100564b0fffe76b2ce9354ec23651c50744f866250f5b021657d"
+    },
+    {
+      "file": "browser-cleanup-SAFE.json",
+      "bytes": 173,
+      "sha256": "b9ca6accb667af19c47dfd9c4580dac38d3c67a4a2bda25767cc969d99d042f5"
+    },
+    {
+      "file": "captures.json",
+      "bytes": 565,
+      "sha256": "b564a146576b76591bbe4a692de9ca3c870c63e0e7df06d45c4d033c24537e6a"
+    },
+    {
+      "file": "commands.json",
+      "bytes": 4406,
+      "sha256": "86982e7cf9e6ad068ff974c56abd3b0a2137c862586e6515153299d142b9ce18"
+    },
+    {
+      "file": "database-after-seed-SAFE.json",
+      "bytes": 9507,
+      "sha256": "3a32e0df83222b347079fa1c6c75b27de32fd818db24ac1c0b55584f88977a0e"
+    },
+    {
+      "file": "database-final-SAFE.json",
+      "bytes": 9507,
+      "sha256": "3a32e0df83222b347079fa1c6c75b27de32fd818db24ac1c0b55584f88977a0e"
+    },
+    {
+      "file": "database-initial-SAFE.json",
+      "bytes": 9507,
+      "sha256": "6788524b0cf8893acd20aa8f34f12398b68f2263a85e06d6b9f17adfde5de184"
+    },
+    {
+      "file": "database-preservation-SAFE.json",
+      "bytes": 3613,
+      "sha256": "587f3edff6e0a47c6cfde5ac93daf4170024b9c17587d25423b5ddbfdb3de25b"
+    },
+    {
+      "file": "execution-exits-addendum.json",
+      "bytes": 924,
+      "sha256": "7e4dc0825d02b102523ee55a62a6b4d3c104bce7221450a007b8f9fa073cf89b"
+    },
+    {
+      "file": "harness-hashes.json",
+      "bytes": 4166,
+      "sha256": "9731c40ec5be6197897fead5ed8403db9e6eea5ea3090bc8103324ed232cc82b"
+    },
+    {
+      "file": "mcp-tools-SAFE.json",
+      "bytes": 5500,
+      "sha256": "2aa091864ff3fb406095a3059acd233cee33ecce4684aa3ec1924aaa1204fd00"
+    },
+    {
+      "file": "next-diagnostics-SAFE.json",
+      "bytes": 2768,
+      "sha256": "c6824342fd5ec65183df9a3bfbcd6cbe2da88b2835be3e737021ce4b0c529156"
+    },
+    {
+      "file": "originals-after-SAFE.json",
+      "bytes": 2258,
+      "sha256": "141cf40080076cbe4f6ead2ad26b9671818f6ecc685115cc3bfa93c678a60e8d"
+    },
+    {
+      "file": "originals-before-SAFE.json",
+      "bytes": 2294,
+      "sha256": "112dcec446328df04d56a2911c60c1ccd6d62f26fd5865acbda07b9b18b5f38c"
+    },
+    {
+      "file": "preflight-SAFE.json",
+      "bytes": 1398,
+      "sha256": "8750b62a612bfe11ada29b90f9865d930d6f2f947b86f719de32275dcb7a3c1a"
+    },
+    {
+      "file": "preservation-final-SAFE.json",
+      "bytes": 1382,
+      "sha256": "6c88c694166185997bfa2a76ca37f89484dde7567a91d5ff51cc1dae48753fba"
+    },
+    {
+      "file": "process-cleanup-SAFE.json",
+      "bytes": 256,
+      "sha256": "f1f27bdc8fbb3f26466e1c6236832e8f907759d4f3909e3a43a8308662e0f607"
+    },
+    {
+      "file": "process-inventory-SAFE.json",
+      "bytes": 115,
+      "sha256": "022e09a91e60211036b37a91283a4a2375218344bfa670b8dbc9508471a435bc"
+    },
+    {
+      "file": "resources-final-SAFE.json",
+      "bytes": 238,
+      "sha256": "25cf6e1964a3a02491cff40a665c64e95645f1c9066dae0f2f7a13817b79028d"
+    },
+    {
+      "file": "seed-SAFE.json",
+      "bytes": 287,
+      "sha256": "9106b8b858306a436e97344336aa2e1c68fc9be7eb377a882fb51e0bdcf3b634"
+    },
+    {
+      "file": "sign-in-pre-submit-SAFE.json",
+      "bytes": 126,
+      "sha256": "7c74acc8ff3569a0f972d7c10d77a365dc2e45dfbfff2063f306aa18b1d42615"
+    }
+  ],
+  "files": 28,
+  "bytes": 88616,
+  "pngPayloads": 0,
+  "verifiedCommit": null
+}

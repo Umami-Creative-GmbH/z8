@@ -1,0 +1,17 @@
+{
+  "frontier": {
+    "integrated": 64,
+    "awaiting-integration": 40,
+    "pending": 53
+  },
+  "ticketCount": 157,
+  "unrelatedLedgerPreserved": true,
+  "reportPrefix": {
+    "bytes": 19019,
+    "sha256": "77fea0d8d1223397aeb2c521bdb2bb55f12af5be1bda7840b0eb1268a312850f",
+    "preserved": true
+  },
+  "sourcePinsMatch": true,
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "publicReceiptSha256": "1d5d704ea124a46801f81ee48578ec0a20b2698233cd3771ccafe6ccab410195"
+}

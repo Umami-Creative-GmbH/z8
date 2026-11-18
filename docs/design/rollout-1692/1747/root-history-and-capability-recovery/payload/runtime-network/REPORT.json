@@ -1,0 +1,71 @@
+{
+  "scope": "Bounded current-source R165/#1747 runtime; no publication/readiness",
+  "verifiedCommit": null,
+  "source": {
+    "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+    "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+    "branch": "ai/1692-app-wide-ui-refresh"
+  },
+  "productCounts": {
+    "total": 22,
+    "PASS": 15,
+    "FAIL": 0,
+    "UNPASSED": 7
+  },
+  "scopedP1": 0,
+  "auth": {
+    "transportPreflightStatus": 405,
+    "normalCorrectPublicFormSubmissions": 2,
+    "successes": 2,
+    "wrongPassword": 0,
+    "canonicalVerifierUnchanged": true,
+    "noAPIAuthOrStateExport": true
+  },
+  "database": "Exactly expected final +4 reports/+2 items after five creates and one own-draft deletion; seeded originals and populated foreign/time tables unchanged.",
+  "diagnostics": {
+    "routeCompileIssues": 0,
+    "proactiveCompilationIssues": 0,
+    "connectedConfigErrors": 0,
+    "connectedSessionErrors": 0,
+    "reactNames": [
+      "TravelExpenseManagement",
+      "ExpenseHistory"
+    ],
+    "reactMethod": "CDP DOM fiber ancestry names only",
+    "nativeAgentBrowser": "policy blocked",
+    "axe": "unavailable"
+  },
+  "preservation": {
+    "trackedFilesChecked": 18871,
+    "dependencyPriorFilesChecked": 184811,
+    "protectedChanges": 0,
+    "indexUnchanged": true,
+    "lockLicenseUnchanged": true,
+    "oldV1AndNetworkDiagnosisUnchanged": true
+  },
+  "cleanup": {
+    "ownedLiveResources": 0,
+    "ownedControllerClosed": true,
+    "remainingUniqueRunNodePnpmChromeProcesses": 0,
+    "remainingOwnedPortListeners": 0,
+    "remainingOwnedServices": 0,
+    "ownedBrowserClosed": true,
+    "remainingRecordedOwnedProcesses": 0,
+    "exactManifestServiceCount": 3,
+    "noPeerResourceMutation": true,
+    "ownedNextClosed": true,
+    "remainingOwnedProfiles": 0,
+    "ownedContextsClosed": true,
+    "ownedPortCount": 5
+  },
+  "remaining": [
+    "Initial-loading safe h1 and unknown-vs-empty lifecycle",
+    "Full accounting/status/provenance matrix beyond observed records",
+    "Naturally rejected create recovery",
+    "Finance read-only grant/revoke via owner/admin UI",
+    "Foreign authenticated arrival and in-flight authority races",
+    "axe audit",
+    "Full production generation/catalog/providers/devices/true zoom/exhaustive matrices"
+  ],
+  "history": "v1 remains 0/22, cause-unproved as sealed. Newer root transport diagnosis remains distinct. This run did not rerun or add independent unit/PG suite counts. Latest verified commit/frontier remain unchanged."
+}

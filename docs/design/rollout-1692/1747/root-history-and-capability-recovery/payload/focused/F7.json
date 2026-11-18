@@ -1,0 +1,47 @@
+{
+  "at": "2026-11-18T04:23:18.780Z",
+  "events": [
+    {
+      "event": "real-create-response-held-after-execution",
+      "at": "2026-11-18T04:23:17.235Z",
+      "responseStage": true,
+      "successStatus": true
+    },
+    {
+      "event": "SECOND-trusted-CDP-pointer-same-measured-button-center",
+      "at": "2026-11-18T04:23:17.361Z",
+      "geometry": {
+        "x": 492,
+        "y": 201,
+        "w": 424,
+        "h": 48,
+        "disabled": true,
+        "busy": "true"
+      }
+    },
+    {
+      "event": "released-unmodified",
+      "at": "2026-11-18T04:23:18.166Z"
+    }
+  ],
+  "requests": 1,
+  "heldCount": 1,
+  "createdGraphDelta": 1,
+  "items": [
+    {
+      "type": "receipt"
+    }
+  ],
+  "geometry": {
+    "x": 492,
+    "y": 201,
+    "w": 424,
+    "h": 48,
+    "disabled": true,
+    "busy": "true"
+  },
+  "preReleasePath": "/en/travel-expenses",
+  "completedOwnCreatedReport": true,
+  "pass": true,
+  "qualification": "Second separate trusted pointer while disabled at measured same button center; one request and one canonical report/item before release. No retirement rerun or new coverage count inferred from old R10."
+}

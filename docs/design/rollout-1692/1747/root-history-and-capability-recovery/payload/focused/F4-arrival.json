@@ -1,0 +1,25 @@
+{
+  "at": "2026-11-18T04:23:55.059Z",
+  "destinations": [],
+  "view": {
+    "path": "/en/travel-expenses/finance",
+    "h1": [
+      {
+        "text": "Travel Expenses",
+        "x": 337,
+        "y": 22,
+        "w": 835.34375,
+        "h": 20
+      }
+    ],
+    "statuses": [],
+    "alerts": [],
+    "retry": false,
+    "empty": false,
+    "noMatch": false,
+    "rows": 0
+  },
+  "denialCopyObserved": false,
+  "mainText": "Toggle Sidebar\nTravel Expenses\n05:23\nUTC+01:00\nClock In\nToggle theme\n404\nPage not found\nThe page may have moved, the link may be outdated, or the address may be incorrect.\nGo to Dashboard\nSettings\nBack",
+  "qualification": "Fresh server arrival only; no in-flight revocation race tested"
+}

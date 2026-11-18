@@ -1,0 +1,12 @@
+diff --git a/apps/webapp/src/lib/navigation/route-metadata.ts b/apps/webapp/src/lib/navigation/route-metadata.ts
+index 225e32211..af46342d7 100644
+--- a/apps/webapp/src/lib/navigation/route-metadata.ts
++++ b/apps/webapp/src/lib/navigation/route-metadata.ts
+@@ -210,6 +210,7 @@ export function appPageOwnsHeading(pathname: string): boolean {
+ 	const path = normalizeAppPath(pathname);
+ 	const legacyClaimId = /^\/travel-expenses\/([^/]+)$/.exec(path)?.[1];
+ 	return (
++		path === "/travel-expenses" ||
+ 		Boolean(legacyClaimId && z.uuid().safeParse(legacyClaimId).success) ||
+ 		/^\/team\/presence\/[^/]+$/.test(path) ||
+ 		/^\/personnel-files\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(

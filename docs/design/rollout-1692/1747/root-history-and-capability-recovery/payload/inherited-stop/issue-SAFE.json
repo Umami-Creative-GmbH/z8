@@ -1,0 +1,13 @@
+{
+  "number": 1747,
+  "state": "OPEN",
+  "assignee": "KaiSoellch",
+  "existingStartComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1747#issuecomment-6909500771",
+  "blocker": 1853,
+  "blockerVerifiedCommit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+  "blockerAncestor": true,
+  "readonlyGitHubVerified": true,
+  "newComments": 0,
+  "assignmentWrites": 0,
+  "verifiedCommit": null
+}

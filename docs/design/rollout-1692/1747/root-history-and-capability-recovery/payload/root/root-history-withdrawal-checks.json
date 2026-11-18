@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "issue": 1747,
+  "readiness": "provisional; independent recheck and current runtime pending",
+  "verifiedCommit": null,
+  "date": "2026-11-18",
+  "provenance": {
+    "publishedParent": "bceb0ee32ca64e1d0fcf36906e89b0509665c479",
+    "implementation": "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a",
+    "nativeMerge": "c70858bfe507eb99f844a455230e312cc8247b61",
+    "nativeTree": "52914144178afccc17f7093ee588817be99d6180",
+    "nativeAppTree": "887eab4a441b413763f93588dfe5d874ebfffb75",
+    "correction": "20a7481f08b6156e912442492f8181ffe2650134",
+    "correctionMerge": "0a1048d64ae2a54292b454d757b4a1de306360c9",
+    "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+    "latestVerified": "e3957741a7f0f1aeeba748cce3af27a42870fcf1"
+  },
+  "finding": {
+    "classification": "Inherited presentation acceptance gap, reproduced in incoming and pinned premerge consumer; no live authorization bypass proved.",
+    "trigger": "A successful personal history read, followed by canonical Unauthorized and then a transient failure, kept old expense links visible.",
+    "oldReader": "All unsuccessful results threw, retaining the prior successful query data.",
+    "correction": "Canonical Unauthorized now replaces cached rows with a withdrawn outcome. Later transport or ordinary service failures preserve that withdrawal. Only a fresh success supplies rows or a healthy empty state.",
+    "authority": "The existing authenticated history action, canonical services, organization permissions, shared conversion production source, dates and storage owners are unchanged."
+  },
+  "independentStop": {
+    "safeDirectory": "C:/Users/KAIHEN~1/AppData/Local/Temp/z8-r165-review-bceb0ee-SAFE",
+    "index": "SHA256.json",
+    "indexSha256": "0f8bb1c3fa10466d981bae4e594b674972ece096dfbd911db32104619718f67b",
+    "files": 56,
+    "bytes": 6242185,
+    "cases": 8,
+    "filesWithCases": 2,
+    "passed": 5,
+    "failed": 3,
+    "findings": 1,
+    "standardsFindings": 0,
+    "specFindings": 1,
+    "overlapFindings": 0,
+    "broadChecks": "Stopped before broader checks, PG, artifact-content acceptance and runtime.",
+    "intake": {
+      "path": "C:/Users/KAIHEN~1/AppData/Local/Temp/z8-safe-intake-1747-5403eeb9fad240fdb40d989b084df8a5/reconciliation.json",
+      "sha256": "61f11ac307b0e27df069eef67784ed93356c143645044de1309655e84079a25f",
+      "validatedJson": 22,
+      "failedAttemptSyntax": "prepare-attempt3.py:60 remains an explicitly failed intermediate; final prepare.py and 11 other Python files parse.",
+      "provenanceCaveat": "COMMANDS.md attributes metadata copying to commit-candidate.py, but that script only stages/commits. Independently reconstructed trees still match."
+    }
+  },
+  "rootTdd": {
+    "red": {
+      "file": ".tmp/1747-history-withdrawal-root-checks/red.json",
+      "cases": 8,
+      "passed": 5,
+      "failed": 3
+    },
+    "afterFixExactProbes": {
+      "file": ".tmp/1747-history-withdrawal-root-checks/green-exact.json",
+      "cases": 8,
+      "currentCasesPassed": 7,
+      "unchangedPremergeControlFailed": 1,
+      "overallPassed": false,
+      "qualification": "The requested test-name exclusion did not exclude the premerge control. Filename green-exact is historical and does not label this overall run green."
+    },
+    "permanent": {
+      "path": "apps/webapp/src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "cases": 9,
+      "passed": 9,
+      "includes": [
+        "three distinct creation actions",
+        "real header Refresh and local Retry",
+        "initial and formerly authorized canonical refusal",
+        "withdrawal through structured/rejected outages",
+        "fresh success and healthy-empty recovery",
+        "ordinary failure retention"
+      ]
+    },
+    "initialCompatibility": {
+      "cases": 183,
+      "files": 13,
+      "passed": 178,
+      "failed": 5,
+      "classification": "Older fixtures omitted required management actor/provider or shared session atom. The first failure also left queued mock implementations for later cases."
+    },
+    "testReconciliation": {
+      "productionChanges": false,
+      "changedFiles": [
+        "legacy-draft-conversion-consumers.test.tsx",
+        "travel-expense-management.test.tsx"
+      ],
+      "changes": [
+        "Use the real organization provider and its HTTP edge in existing consumer tests.",
+        "Supply required userId and session-store atom.",
+        "Wait for the enabled continuation before activation.",
+        "Reset queued mocks between cases."
+      ],
+      "assertions": "Existing pending, queued, account-return and late-refusal assertions remain unchanged."
+    },
+    "finalCompatibility": {
+      "cases": 183,
+      "files": 13,
+      "passed": 183,
+      "failed": 0,
+      "skipped": 0,
+      "nonadditiveRuns": "The standalone nine and reconciled thirty are included in 183; the exact seven current probes overlap behavior and are not added."
+    },
+    "unitSelection": [
+      "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "src/components/travel-expenses/travel-expenses-heading.test.ts",
+      "src/app/[locale]/(app)/travel-expenses/page.test.tsx",
+      "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "src/lib/navigation/route-metadata.test.ts",
+      "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+      "src/components/travel-expenses/travel-expense-list.test.tsx",
+      "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "src/components/travel-expenses/expense-history-withdrawal.test.tsx"
+    ]
+  },
+  "quality": {
+    "typegen": 0,
+    "mainTypes": 0,
+    "workflowTypes": 0,
+    "smokeTypes": 0,
+    "explicit100ColumnCrLf": {
+      "files": 4,
+      "exit": 0
+    },
+    "lint": {
+      "files": 4,
+      "exit": 0
+    },
+    "ordinaryFormat": {
+      "files": 4,
+      "exit": 1,
+      "findings": 4
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "c70858bfe507eb99f844a455230e312cc8247b61",
+      "files": 4,
+      "errorCount": 0,
+      "warningCount": 0,
+      "exit": 0,
+      "score": null
+    },
+    "sourceWhitespace": 0,
+    "limits": "No blanket archive whitespace, full build, supply-chain or whole-branch acceptance claim."
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "blob": "38a42e80c95046e94962abe90ab8c2f356a0312a"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/expense-history.tsx",
+      "blob": "8e631437ffedb23b50dbeaa49bbd40ed3cb9733c"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "blob": "add33b6384fe6add972aa7b4544fa3f942a82bd5"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx",
+      "blob": "86bc11d1ec354b62953839a757cd0ce8ea291845"
+    }
+  ],
+  "preservation": {
+    "verifiedAnchorOccurrences": 65,
+    "missingAnchors": 0,
+    "nativeImportNonoverlap": {
+      "root": 18783,
+      "incoming": 85
+    },
+    "onlyRootCorrectionPaths": [
+      "apps/webapp/src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+      "apps/webapp/src/components/travel-expenses/expense-history.tsx",
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx"
+    ],
+    "prior1748Archive": {
+      "defaultVerifierExit": 0,
+      "archiveBytesUnchanged": true,
+      "currentSourceMatches": 12,
+      "currentSourcePins": 14,
+      "expectedSourceEvolution": [
+        {
+          "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "frozen": "ba19e9037e3e304b877091993f968a101f684b94",
+          "current": "add33b6384fe6add972aa7b4544fa3f942a82bd5"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "frozen": "225e32211910e6e2a89504996134d7673e5d1ca4",
+          "current": "af46342d736672775d7b9f49116991231a2863e0"
+        }
+      ],
+      "qualification": "Frozen proof and failed attempts were not resealed or rewritten. Its optional current-source comparison now differs only at the exact listing metadata addition and this legitimate consumer-test reconciliation."
+    },
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "licenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf"
+  },
+  "resources": {
+    "temporaryBridgesRemoved": 5,
+    "hashGuarded": true,
+    "startedNext": false,
+    "startedBrowser": false,
+    "startedFixture": false,
+    "ownedLiveResources": 0
+  },
+  "remaining": [
+    "Fresh independent isolated correction review and appropriate canonical PG checks.",
+    "Current listing runtime, settled expanded/wide comparison and same-source captures.",
+    "Live retirement/revocation/account/organization transition matrix.",
+    "Full production generation, catalog/provider/device/true-zoom/global acceptance.",
+    "The historical worker 87-unit/50-PG results remain inherited and are not added.",
+    "#1748 bounded handoff and its live retirement/axe/foreign-data qualifications remain as documented."
+  ],
+  "commands": {
+    "pnpmGuard": "Set pnpm_config_verify_deps_before_run=false and pass --config.verify-deps-before-run=false on each invocation.",
+    "unit": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit <unitSelection> --maxWorkers=1 --reporter=json --outputFile <ignored results>",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "format": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc --line-width=100 --line-ending=crlf <four sourcePins>",
+    "lint": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome lint --config-path=biome.jsonc <four sourcePins>",
+    "ordinary": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc <four sourcePins>",
+    "doctor": "REACT_DOCTOR_PARALLEL=1 pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base c70858bfe507eb99f844a455230e312cc8247b61 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out <ignored results>"
+  },
+  "attemptQualifications": [
+    "Initial non-escalated pinned pnpm formatter hit engine-store operation-lock access denied; ordinary narrow engine access succeeded. No dependency install or mutation.",
+    "First formatter fixed files and reported missing button type in the new test; explicit type=button fixed that test-only diagnostic.",
+    "Initial git add placed --literal-pathspecs after add, an unsupported option; no staging occurred. Empty staged-list readback preceded corrected global-option staging."
+  ],
+  "localEvidence": [
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/red.json",
+      "bytes": 4948,
+      "sha256": "840eac41898afc7dc4d308ed3b727c0ed87e6947774871b1ed6ae0d217b7aa84"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/green-exact.json",
+      "bytes": 4081,
+      "sha256": "7fca2a4a679bd5117b42eae2c72914b5177848dee6868bf2da6ea19a5e993462"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/permanent.json",
+      "bytes": 3511,
+      "sha256": "a410b684e7ceba52c4da6dd437d1175ac77f6b5248c5d8c81869d68198a69dee"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/compatibility.json",
+      "bytes": 70365,
+      "sha256": "633d3fcbf1f799692d7ac02b85db088fd885ed918b511dd3bfdc6a48e1db6c67"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/reconciled-consumers.json",
+      "bytes": 10307,
+      "sha256": "2fc7689c131755588ffbcbb47cc57015961ae50320eb1716be2f1fdc25c6f89b"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/compatibility-final.json",
+      "bytes": 61800,
+      "sha256": "492d9e00bb4c2513abf036cae282478a060751af3f2b254c9ace7859fe42b611"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/types-final.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/doctor-final.json",
+      "bytes": 3719,
+      "sha256": "e74f7b56adbf3d869bebfa588ed828bf61451ab11c3b09f29ac9d80fcf1b202e"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/biome-explicit-final.log",
+      "bytes": 44,
+      "sha256": "0c7ccd0fee3d46c6b19ac4c8807404982e7a2ed502815792a49ca8f548afc25b"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/lint-final.log",
+      "bytes": 43,
+      "sha256": "555e29f8c3aaeb6d244a5345ad938a899252b8c80e2825bdade51282e2570728"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/biome-ordinary-final.log",
+      "bytes": 38580,
+      "sha256": "949115696d0c6b5790a948b7c32bff86744c6de6076fd623006874891dc251ab"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/quality-exits-final.json",
+      "bytes": 55,
+      "sha256": "b2b6c0b6194144fac3661376f84931860ed56ed183a32fa38b086d70b606cd21"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/prior-archive-default.log",
+      "bytes": 401,
+      "sha256": "5aadd58cbc649920511044e93466d4e361201c1def62593bb12ad9c36990216a"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/adoption-audit.json",
+      "bytes": 703,
+      "sha256": "ab22728cbda1b43838f1830cb790d4355ee43140fb4a2e3b03a47fe07d3bd8c1"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/bridges.json",
+      "bytes": 993,
+      "sha256": "28b2ef27c5feb8093c60934375a83fa15696a87c5a54d13640a09414a700a875"
+    },
+    {
+      "path": ".tmp/1747-history-withdrawal-root-checks/bridge-removal.json",
+      "bytes": 479,
+      "sha256": "be12f937ff7db3b6565c8c92fbff6818e401e9686c086765585fef94234b7775"
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "scope": "NEW focused current-source run only; stable IDs independent of attempt counts",
+  "assertions": [
+    {
+      "id": "F1",
+      "status": "PASS",
+      "predicate": "Initial client history loading after exact route commit, visible route-owned h1 and loading status; unmodified release produces fresh rows",
+      "evidence": [
+        "F1-held.json",
+        "F1.json"
+      ],
+      "qualification": "Chronology records route commitment before release. Earliest shell/fallback is not evaluated as route behavior. Scope is current-route non-auth POST; overlapping shared reads may occur; no exactly-one-reader identification."
+    },
+    {
+      "id": "F2",
+      "status": "PASS",
+      "predicate": "Initial unknown history failure shows error/local Retry rather than healthy empty; actual Retry restores fresh rows; healthy-empty and no-match/Show all are distinct",
+      "evidence": [
+        "F2-outage.json",
+        "F2.json",
+        "F2-healthy-empty-control.json",
+        "F2-no-match-control-v2.json"
+      ],
+      "qualification": "New page with no prior history success. Seven exact-route non-auth POST disruptions include retries/shared reads; no Unauthorized simulation or one-reader claim. Correct current label is Show all expenses."
+    },
+    {
+      "id": "F3",
+      "status": "PASS",
+      "predicate": "Admin creates actual all-scope read-only expense-officer grant through canonical settings UI; grantee fresh arrival has Finance only and actually opens read-only queue",
+      "evidence": [
+        "F3-before-save.json",
+        "F3-grant.json",
+        "F3-destinations.json",
+        "F3-finance.json"
+      ],
+      "qualification": "Canonical is_active=true, can_export=false, can_record_reimbursements=false. Queue offered filters/reading without export or reimbursement controls. Visible approved row is the grantee own legacy claim; self-reimbursement exclusion overlaps, so this does not separately prove another-person settlement admission or hidden API refusal. Early editor-open sample preceded picker animation; later actual option selection/save/readback is authoritative."
+    },
+    {
+      "id": "F4",
+      "status": "PASS",
+      "predicate": "Normal admin Revoke access confirmation changes actual grant is_active to false; fresh grantee listing loses Finance; actual direct reload renders not-found denial without queue rows",
+      "evidence": [
+        "F4-revoke.json",
+        "F4-arrival.json",
+        "F4-direct-denial.json"
+      ],
+      "qualification": "Fresh-arrival revocation only. Actual canonical schema has is_active, not revoked_at. Direct streamed response is HTTP 200 while rendering Page not found. The raw direct-denial receipt pass:false used an overstrict HTTP404 assumption; preserved unchanged as harness predicate failure, not a product failure or a missing rendered denial. No claim about an in-flight race."
+    },
+    {
+      "id": "F5",
+      "status": "PASS",
+      "predicate": "Fresh correctly authenticated foreign-org and same-org different employee arrivals display own populated scope while excluding creator seeded/current drafts",
+      "evidence": [
+        "login-large-employee.json",
+        "login-small-restricted.json",
+        "F5-large-employee.json",
+        "F5-small-restricted.json"
+      ],
+      "qualification": "Both reach actual /en/travel-expenses, each sees own seeded claim and one row. Normal public sign-ins and offered org selection only; no active-org API or authority SQL. Creator current draft graphs already existed. This is observed listing privacy, not exhaustive direct-object matrices."
+    },
+    {
+      "id": "F6",
+      "status": "PASS",
+      "predicate": "Exactly one settled-page click-correlated non-auth create POST fails at Request stage before dispatch; local feedback/busy reset/history retained; actual local Retry produces exactly one canonical report/item graph",
+      "evidence": [
+        "F6-failure.json",
+        "F6.json"
+      ],
+      "qualification": "Synthetic browser transport failure only. No naturally rejected business command/live authority refusal, payload forging, private headers or action/RSC body inspection. Before/after database graph readback and inline create-specific feedback establish the controlled request scope."
+    },
+    {
+      "id": "F7",
+      "status": "PASS",
+      "predicate": "Real create held at Response stage after execution receives second separate trusted CDP pointer at measured same disabled button center; one request/one canonical graph before release; unmodified completion opens own editor",
+      "evidence": [
+        "F7-pre-release.json",
+        "F7.json"
+      ],
+      "qualification": "One fresh receipt graph. This narrowly closes v2 R10 second-pointer traceability; old retirement coverage is not rerun or summed."
+    },
+    {
+      "id": "F8",
+      "status": "UNPASSED",
+      "predicate": "Observed exported/payroll-included-but-unpaid status fixture has no Reimbursed badge",
+      "evidence": [],
+      "qualification": "Optional scenario not executed; approved legacy seed is not export/payroll inclusion proof. No widened finance/accounting/editor acceptance."
+    },
+    {
+      "id": "U1",
+      "status": "UNPASSED",
+      "predicate": "Full native agent-browser next-dev-loop",
+      "evidence": [
+        "next-tools.json",
+        "next-diagnostics.json"
+      ],
+      "qualification": "Native PowerShell launcher remains policy-blocked; no bypass/install/restore. Next MCP compilation and runtime diagnostics are independently clean for this run. No native extension or React state proof claimed."
+    },
+    {
+      "id": "U2",
+      "status": "UNPASSED",
+      "predicate": "Axe audit",
+      "evidence": [],
+      "qualification": "Unavailable; no install performed."
+    },
+    {
+      "id": "U3",
+      "status": "UNPASSED",
+      "predicate": "New focused PNG pixel-layout acceptance",
+      "evidence": [
+        "capture.json",
+        "focused-personal-history.png"
+      ],
+      "qualification": "PNG decodes and shows personal rows, but left title/content edge is clipped despite geometry sampling. Raw capture calls itself settled; visual review supersedes that claim. Single partial capture, no reproducible scoped product P1 or whole-window/sidebar layout conclusion. Existing v2 geometry/pixel qualifications unchanged."
+    },
+    {
+      "id": "U4",
+      "status": "UNPASSED",
+      "predicate": "Full production, catalog and provider matrices",
+      "evidence": [],
+      "qualification": "Not exercised; only canonical disposable development fixture and unchanged real development widget were used."
+    },
+    {
+      "id": "U5",
+      "status": "UNPASSED",
+      "predicate": "Actual devices and true browser zoom",
+      "evidence": [],
+      "qualification": "Private desktop Chromium only; prior v2 device/zoom qualifications remain."
+    },
+    {
+      "id": "U6",
+      "status": "UNPASSED",
+      "predicate": "Exhaustive finance/accounting/editor, direct-object and live capability-race matrices",
+      "evidence": [],
+      "qualification": "Frozen owners and broader canonical/public/PG evidence remain root-owned; not executed or promoted here."
+    }
+  ],
+  "focusedTotals": {
+    "PASS": 7,
+    "FAIL": 0,
+    "UNPASSED": 1
+  },
+  "allLedgerTotals": {
+    "PASS": 7,
+    "FAIL": 0,
+    "UNPASSED": 7
+  },
+  "confirmedScopedP1": 0,
+  "inheritedSuiteCountsAdded": 0,
+  "verifiedCommit": null
+}

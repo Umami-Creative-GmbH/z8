@@ -1,0 +1,23 @@
+{
+    "ownsRuntime":  false,
+    "ownsIndex":  false,
+    "startedNext":  false,
+    "checkout":  "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb",
+    "stagedPaths":  [
+
+                    ],
+    "ownsGit":  false,
+    "ownsPackageOperation":  false,
+    "ownedLiveProcesses":  [
+
+                           ],
+    "ownsCheckout":  false,
+    "status":  [
+
+               ],
+    "startedBrowser":  false,
+    "indexLockPresent":  false,
+    "ownedLiveProcessCount":  0,
+    "preserveEvidence":  true,
+    "preserveDependencies":  true
+}

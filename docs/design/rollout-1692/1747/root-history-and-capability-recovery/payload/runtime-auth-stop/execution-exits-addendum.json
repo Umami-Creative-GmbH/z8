@@ -1,0 +1,25 @@
+{
+  "source": "Unified exec completion receipts read after exact-owned termination; this addendum supplements descriptive exits in commands.json",
+  "processCommands": [
+    {
+      "command": "node .tmp/1747-current-runtime-20261118a/runtime.mjs",
+      "exit": 1,
+      "reason": "Deliberately terminated during exact-owned cleanup; not a compilation/product failure"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118a/controller.mjs",
+      "exit": 1,
+      "reason": "Failed sandbox attempt controller deliberately stopped after identity verification"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118a/controller2.mjs",
+      "exit": 1,
+      "reason": "Deliberately stopped after browser/context and pool were gracefully closed"
+    },
+    {
+      "command": "node .tmp/1747-current-runtime-20261118a/seal.mjs",
+      "exit": 0
+    }
+  ],
+  "noProductPredicatesAdded": true
+}

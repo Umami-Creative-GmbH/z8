@@ -1,0 +1,1533 @@
+{
+  "scope": "Raw copies unchanged. BOM removal/UTF16LE decoding for parsing only; JSON in any extension classified.",
+  "files": [
+    {
+      "path": "payload/inherited-stop/anchors.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 121808,
+      "sha256": "41cd043125bb918686363ee4c9bfef0efb78d4dabdc294ae64e1e4eeb38a65c7"
+    },
+    {
+      "path": "payload/inherited-stop/archive-current-source-evolution.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3603,
+      "sha256": "ca0e28235a944b4225fb2865cdd9cab9150bcb25decbb95ccbe266f4a117f499"
+    },
+    {
+      "path": "payload/inherited-stop/bridges.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1954,
+      "sha256": "0d6f7e2762e18c95fbb51e6639ff6f4d19beef005961023970a275e50d6ed6f8"
+    },
+    {
+      "path": "payload/inherited-stop/candidate.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 292,
+      "sha256": "3c0d566673533d2d8fa10055b8b2104286b0cca1c69f53baba4488511ad6e2d5"
+    },
+    {
+      "path": "payload/inherited-stop/classification-command.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 550,
+      "sha256": "d11c96c23c6bcba44fb873a94ed0c5e467a946a9b11510194ef759816318ebef"
+    },
+    {
+      "path": "payload/inherited-stop/classification-vitest.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2749,
+      "sha256": "a58f470fd63a6fb0e30f004b9b61499e4b890b7ce9b90cc32f6b117336541146"
+    },
+    {
+      "path": "payload/inherited-stop/dependency-after-inventory.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 40125,
+      "sha256": "5296a3f0d2ce3dfa16cd83435d94f2fcddd0615da34b18beef5a68ef755a0bad"
+    },
+    {
+      "path": "payload/inherited-stop/expected-map.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2928429,
+      "sha256": "cd8e286fb582f3990f928906d96db292552b30de15289774037aaa2061bbffdb"
+    },
+    {
+      "path": "payload/inherited-stop/finding.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1635,
+      "sha256": "97b190f241246e1146f0ec66dc2e0b1b4783228c19d73d9c03c1898d0e3797c0"
+    },
+    {
+      "path": "payload/inherited-stop/issue-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 408,
+      "sha256": "924f43180eb1629bb5051622937c96357cdf71597e4aab1ae2914fbf48954f62"
+    },
+    {
+      "path": "payload/inherited-stop/merge-prediction.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 761,
+      "sha256": "8d508de4ab3c34904079af3e49d97d2262dfac1abf27a6bacbfa3494517dc742"
+    },
+    {
+      "path": "payload/inherited-stop/prep-attempt1-commands.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 16657,
+      "sha256": "a9cb5fd2d59b6c0f61c4160cc86d57e4f18fbde47e372a770898c5637c72332a"
+    },
+    {
+      "path": "payload/inherited-stop/prep-attempt2-commands.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 16947,
+      "sha256": "8bbdd0045cb630dc72d535ac638a3f97458d0f10ad49e85a7cb1cefeac1663f3"
+    },
+    {
+      "path": "payload/inherited-stop/prep-commands.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 16981,
+      "sha256": "f8dd376f419f7a6d7cb63152c994f67cc1b5de81a6c99e73d585cf8058238077"
+    },
+    {
+      "path": "payload/inherited-stop/prep-hash-audit.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 13208,
+      "sha256": "0a5654075893ebc6645ad514325d4ba1649364b58ba66b288ac06c3410e0bb2d"
+    },
+    {
+      "path": "payload/inherited-stop/preservation.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 576,
+      "sha256": "80f069d097f51ace64ccf41a0999d1434516fc7eaa4599646e5752ddd322fb55"
+    },
+    {
+      "path": "payload/inherited-stop/priority-command.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 555,
+      "sha256": "ddc2e9098586b6ec15a8f5b9f5da789f0b3656acb5918fe9c5a1eee5c5745545"
+    },
+    {
+      "path": "payload/inherited-stop/priority-vitest.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2673,
+      "sha256": "b5d13f939770f29e3d7a8b1348e6037f4112ce4883013c8fb764042f1bf0e41e"
+    },
+    {
+      "path": "payload/inherited-stop/protected-archive-verifier.log",
+      "encoding": "UTF-16LE BOM",
+      "parse": "pass",
+      "extension": ".log",
+      "bytes": 806,
+      "sha256": "1e481ac8364f64bd32316f752164f66cdcc0110dd50c0fc2494fc7a7a11a8f13"
+    },
+    {
+      "path": "payload/inherited-stop/release.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 603,
+      "sha256": "c5819eedd978a502dd7c4a6283e0e0f8b4c009fddc72ae65432e8b008ac83936"
+    },
+    {
+      "path": "payload/inherited-stop/root-baseline.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2916188,
+      "sha256": "2852d660f7bda607ec1dec5db86f6d182c503542958550d0026ea89b21425068"
+    },
+    {
+      "path": "payload/inherited-stop/STOP.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 254,
+      "sha256": "7af6d6153e0c58a45eb78c50f986091b780eefe815ff37b60824fe97a7f7bc34"
+    },
+    {
+      "path": "payload/inherited-stop/test-multiset.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3023,
+      "sha256": "c6eb8b75dc8b09f389c0346a278915b68aca6e0f41a4c939ad85fb22e48cc244"
+    },
+    {
+      "path": "payload/independent/archive-verifier.log",
+      "encoding": "UTF-16LE BOM",
+      "parse": "pass",
+      "extension": ".log",
+      "bytes": 806,
+      "sha256": "1e481ac8364f64bd32316f752164f66cdcc0110dd50c0fc2494fc7a7a11a8f13"
+    },
+    {
+      "path": "payload/independent/bridge-removal.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 270,
+      "sha256": "70ad8e51999fb22f98dc8125f2154df09f19e0e4b5fa4044fad58b8e4754beb5"
+    },
+    {
+      "path": "payload/independent/bridge.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 356,
+      "sha256": "7c247d74f85fa1625d09b76d611b96d1e0bc6a46f5e37b831784311938ea3b06"
+    },
+    {
+      "path": "payload/independent/case-multiset.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 125429,
+      "sha256": "8a2200ae3959fb3d7a4c09bce9fa47a38f5534d7a89a13b6d0f377206c77dd2a"
+    },
+    {
+      "path": "payload/independent/commands-extra.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3044,
+      "sha256": "6f8372d716f3709def1bebc65afc8f6e3baad14ccf281e441af02450d820ed46"
+    },
+    {
+      "path": "payload/independent/commands.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 7020,
+      "sha256": "b50ccc9600f91e3dc2e48b0189900a742d8e1a7f1955aa047fec88020f00cef5"
+    },
+    {
+      "path": "payload/independent/dependency-receipt.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2475,
+      "sha256": "6e6a8a2378dc2c6cb7396e1603e1e70c7546e48a79114f59f2bcaac3798395b3"
+    },
+    {
+      "path": "payload/independent/doctor.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3722,
+      "sha256": "c1650a05ef6942fd09bf57161011530488d5cd6f0872f7930ba699fe2c038bf8"
+    },
+    {
+      "path": "payload/independent/fixture-audit-final.log",
+      "encoding": "UTF-16LE BOM",
+      "parse": "pass",
+      "extension": ".log",
+      "bytes": 686,
+      "sha256": "ac6620c696601c50a62f7e95ac1f42eed3abad3ea5d7138e0c924ab0d3eafe57"
+    },
+    {
+      "path": "payload/independent/fixture-reconciliation.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2807,
+      "sha256": "7902b185c145e33efc88806cf5522dc7e13b03d5513e19ad01bb08fdcbd1dc63"
+    },
+    {
+      "path": "payload/independent/handoff.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 8880,
+      "sha256": "b079611dda9bb7d1bc69eeec6aec6e53f55a07b9ca5742526a9931206bc8f2c7"
+    },
+    {
+      "path": "payload/independent/pg6.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 20904,
+      "sha256": "82bd97307ff6778469140b7b095dfb21ddb03f59d793416922df7a161b1c95d4"
+    },
+    {
+      "path": "payload/independent/preservation.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 12937,
+      "sha256": "a97e5a5f526969775f96402fb8756923cd35c79123fc479b13c845a4a58892fd"
+    },
+    {
+      "path": "payload/independent/priority-attempt1.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 36794,
+      "sha256": "0ad44f5976bf8df9d644ba507319d7f0a6da92a67b1d381a63ccf0f3b0c2cabb"
+    },
+    {
+      "path": "payload/independent/priority-attempt2.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 5061,
+      "sha256": "6d88791e1c7949862f73f14dbaafc97babab433e5e2372a158e906a04d320279"
+    },
+    {
+      "path": "payload/independent/priority-final.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 7425,
+      "sha256": "3843ef9aa5af23a6de6d6637d9e035683e1129a71f6dae345837d6ea3ed4a934"
+    },
+    {
+      "path": "payload/independent/resource-release-attempt1.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 572,
+      "sha256": "b524652e8777b014bc8dc3cfabed6d76323bf3c14dc0eac64d5c840ad2b8d6be"
+    },
+    {
+      "path": "payload/independent/resource-release.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 491,
+      "sha256": "19437c7d44d490cf718bb9b5c0e5168519d1615bee437ea197a43df467e1885f"
+    },
+    {
+      "path": "payload/independent/unit13.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 61826,
+      "sha256": "bdf4c46c5de3c0c626b72bf919b3f60d0a7933816fcfa373a68f4d391c1ba62b"
+    },
+    {
+      "path": "payload/runtime-auth-stop/RELEASE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1486,
+      "sha256": "75386e8ce65fa37d280e05d01a3877cf483270dbc1050a0432fa7744ef089c0c"
+    },
+    {
+      "path": "payload/runtime-auth-stop/REPORT.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3107,
+      "sha256": "45c00cea3ea26a744f2d185cbdec83b3445d7aab74dde9c33a3ecb422d254e85"
+    },
+    {
+      "path": "payload/runtime-auth-stop/SEAL-VERIFICATION.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 383,
+      "sha256": "1f9af39b2d4c5f1f4fbdf8b27e53603e9ccf7cc8e3ffa4bd870f882ffb7fbb25"
+    },
+    {
+      "path": "payload/runtime-auth-stop/SHA256.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 4283,
+      "sha256": "8048275bec564451a97510f71321a60c3f34288fda2e916e525e928410e405dc"
+    },
+    {
+      "path": "payload/runtime-auth-stop/assertion-ledger.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 12750,
+      "sha256": "2d64740a07711a80a41d3442d21de171ed68bbad5b7bb1fc6e5b0e841d3756c6"
+    },
+    {
+      "path": "payload/runtime-auth-stop/attempts.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3203,
+      "sha256": "fb152a90284dded8beeaa3f1b1e8aecf65db852ab9c5c6cc4ad7a7bbbcaa2798"
+    },
+    {
+      "path": "payload/runtime-auth-stop/auth-boundary-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 626,
+      "sha256": "94505e9da9d8100564b0fffe76b2ce9354ec23651c50744f866250f5b021657d"
+    },
+    {
+      "path": "payload/runtime-auth-stop/browser-cleanup-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 173,
+      "sha256": "b9ca6accb667af19c47dfd9c4580dac38d3c67a4a2bda25767cc969d99d042f5"
+    },
+    {
+      "path": "payload/runtime-auth-stop/captures.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 565,
+      "sha256": "b564a146576b76591bbe4a692de9ca3c870c63e0e7df06d45c4d033c24537e6a"
+    },
+    {
+      "path": "payload/runtime-auth-stop/commands.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 4406,
+      "sha256": "86982e7cf9e6ad068ff974c56abd3b0a2137c862586e6515153299d142b9ce18"
+    },
+    {
+      "path": "payload/runtime-auth-stop/database-after-seed-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 9507,
+      "sha256": "3a32e0df83222b347079fa1c6c75b27de32fd818db24ac1c0b55584f88977a0e"
+    },
+    {
+      "path": "payload/runtime-auth-stop/database-final-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 9507,
+      "sha256": "3a32e0df83222b347079fa1c6c75b27de32fd818db24ac1c0b55584f88977a0e"
+    },
+    {
+      "path": "payload/runtime-auth-stop/database-initial-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 9507,
+      "sha256": "6788524b0cf8893acd20aa8f34f12398b68f2263a85e06d6b9f17adfde5de184"
+    },
+    {
+      "path": "payload/runtime-auth-stop/database-preservation-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3613,
+      "sha256": "587f3edff6e0a47c6cfde5ac93daf4170024b9c17587d25423b5ddbfdb3de25b"
+    },
+    {
+      "path": "payload/runtime-auth-stop/execution-exits-addendum.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 924,
+      "sha256": "7e4dc0825d02b102523ee55a62a6b4d3c104bce7221450a007b8f9fa073cf89b"
+    },
+    {
+      "path": "payload/runtime-auth-stop/harness-hashes.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 4166,
+      "sha256": "9731c40ec5be6197897fead5ed8403db9e6eea5ea3090bc8103324ed232cc82b"
+    },
+    {
+      "path": "payload/runtime-auth-stop/mcp-tools-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 5500,
+      "sha256": "2aa091864ff3fb406095a3059acd233cee33ecce4684aa3ec1924aaa1204fd00"
+    },
+    {
+      "path": "payload/runtime-auth-stop/next-diagnostics-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2768,
+      "sha256": "c6824342fd5ec65183df9a3bfbcd6cbe2da88b2835be3e737021ce4b0c529156"
+    },
+    {
+      "path": "payload/runtime-auth-stop/originals-after-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2258,
+      "sha256": "141cf40080076cbe4f6ead2ad26b9671818f6ecc685115cc3bfa93c678a60e8d"
+    },
+    {
+      "path": "payload/runtime-auth-stop/originals-before-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2294,
+      "sha256": "112dcec446328df04d56a2911c60c1ccd6d62f26fd5865acbda07b9b18b5f38c"
+    },
+    {
+      "path": "payload/runtime-auth-stop/preflight-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1398,
+      "sha256": "8750b62a612bfe11ada29b90f9865d930d6f2f947b86f719de32275dcb7a3c1a"
+    },
+    {
+      "path": "payload/runtime-auth-stop/preservation-final-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1382,
+      "sha256": "6c88c694166185997bfa2a76ca37f89484dde7567a91d5ff51cc1dae48753fba"
+    },
+    {
+      "path": "payload/runtime-auth-stop/process-cleanup-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 256,
+      "sha256": "f1f27bdc8fbb3f26466e1c6236832e8f907759d4f3909e3a43a8308662e0f607"
+    },
+    {
+      "path": "payload/runtime-auth-stop/process-inventory-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 115,
+      "sha256": "022e09a91e60211036b37a91283a4a2375218344bfa670b8dbc9508471a435bc"
+    },
+    {
+      "path": "payload/runtime-auth-stop/resources-final-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 238,
+      "sha256": "25cf6e1964a3a02491cff40a665c64e95645f1c9066dae0f2f7a13817b79028d"
+    },
+    {
+      "path": "payload/runtime-auth-stop/seed-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 287,
+      "sha256": "9106b8b858306a436e97344336aa2e1c68fc9be7eb377a882fb51e0bdcf3b634"
+    },
+    {
+      "path": "payload/runtime-auth-stop/sign-in-pre-submit-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 126,
+      "sha256": "7c74acc8ff3569a0f972d7c10d77a365dc2e45dfbfff2063f306aa18b1d42615"
+    },
+    {
+      "path": "payload/runtime-network/RELEASE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1234,
+      "sha256": "daa29508ae0f4c9961a8e879f1bfbbe09bbe911c5d7fdfe13e00af969ba43532"
+    },
+    {
+      "path": "payload/runtime-network/REPORT.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2507,
+      "sha256": "1bbc1286b6485b6ab1dec5a31e5deb0eb413c53983869f53a49a39e88a5e6271"
+    },
+    {
+      "path": "payload/runtime-network/SEAL-VERIFICATION.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 372,
+      "sha256": "13066c0b3f139b84f2e457675f52daea0a78793f936dae0235c3702df9a54c41"
+    },
+    {
+      "path": "payload/runtime-network/assertion-ledger.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 15316,
+      "sha256": "acf69b60acd02d9cdf4f67d939cbb38137e68d5368ba19d3b51331794835bda5"
+    },
+    {
+      "path": "payload/runtime-network/attempts.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 11760,
+      "sha256": "971456623c71e7997152e3abc45d57fe49e04add21c691f424728fa1ec79cec2"
+    },
+    {
+      "path": "payload/runtime-network/browser-cleanup-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 172,
+      "sha256": "90c580d74ab3349478246ff0e2aa6d2eeb3cae225aebb959aebf916c34380045"
+    },
+    {
+      "path": "payload/runtime-network/captures.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2104,
+      "sha256": "38ca6f7f49583d4a20cd6c4f630451c3c34764c97b0b6cce1747113594ef31c8"
+    },
+    {
+      "path": "payload/runtime-network/chronology-preservation-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1038,
+      "sha256": "54d9245bf0cac46547e74afa0163eb4415f53a846e2dd6cb39cd267663a58ad7"
+    },
+    {
+      "path": "payload/runtime-network/commands.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 8777,
+      "sha256": "df5c7eca110046e230e238aa0c577e90e41c6cfe0d5d90c4f41ac2ed1246ff57"
+    },
+    {
+      "path": "payload/runtime-network/creation-graphs-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2784,
+      "sha256": "c2f4ec41e26fc5127e5821d6e46fee7f222212d7c060b966c487aebcbe7ae045"
+    },
+    {
+      "path": "payload/runtime-network/database-after-seed-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 9506,
+      "sha256": "39440fe6b3adae815c3b3acbc2a1a566351ee436d333fda6b57c633e3b01f44c"
+    },
+    {
+      "path": "payload/runtime-network/database-final-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 9506,
+      "sha256": "b20501bdc22b4df7562471f762b573b74765002e124140d6fdafae6365ab0b46"
+    },
+    {
+      "path": "payload/runtime-network/database-initial-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 9506,
+      "sha256": "0325873cc7188c9f08d82152486e88c811ef3941ecb43965b41888f96954593c"
+    },
+    {
+      "path": "payload/runtime-network/database-preservation-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3023,
+      "sha256": "2e99ad164c825a322a35a1b1f724b0f5017d4e0d15b399a22f993a60fc540074"
+    },
+    {
+      "path": "payload/runtime-network/deletion-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 412,
+      "sha256": "3cd6b458c2ee09ae842119b0692422c6925618938cd6579edaac3414092d489d"
+    },
+    {
+      "path": "payload/runtime-network/desktop-1600-expanded-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2661,
+      "sha256": "8b457eace44a2e0d8ea03f7fdde089a82e2e5ba9fd697d8e21a4f957be2e165b"
+    },
+    {
+      "path": "payload/runtime-network/desktop-1600-expanded-corrected-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2639,
+      "sha256": "0707815f89912930e5260270d1a2be020bb8a71f14465f1f6e58a1e59465f25f"
+    },
+    {
+      "path": "payload/runtime-network/desktop-1600-large-reloaded-v2-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2639,
+      "sha256": "b85c19ce61e7cb0985bb8f3518f0998c6e1feb9dc89c21b05f568059533a563d"
+    },
+    {
+      "path": "payload/runtime-network/filters-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1730,
+      "sha256": "928aed7755b0c06a61df22457ea608b10d9ceb04d731ad4d67997040145e18ee"
+    },
+    {
+      "path": "payload/runtime-network/final-listing-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1165,
+      "sha256": "e0e180807a6fb8d632020e753cc2ede285a9e84f785751a4058f950ad630a10a"
+    },
+    {
+      "path": "payload/runtime-network/harness-hashes.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 6314,
+      "sha256": "8bfba8c1336d9d8674801b99b6b55f77fe3129d70c2362607b3bb1d5f84998b5"
+    },
+    {
+      "path": "payload/runtime-network/keyboard-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 639,
+      "sha256": "4e0583a8a4a935f1ea04015f68b6d94e5deef3581d5fce185266515d6cf603b4"
+    },
+    {
+      "path": "payload/runtime-network/manager-destination-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 409,
+      "sha256": "04e7858b109dd127543cb6dbf54d4b27c15bf46e08f6bce44f5b51ca8438c1c2"
+    },
+    {
+      "path": "payload/runtime-network/manager-scope-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 748,
+      "sha256": "1ef11073fa5527245c7651df545b2e4e77e22a51607ee28eaa0614dece4012fa"
+    },
+    {
+      "path": "payload/runtime-network/mcp-tools-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 5507,
+      "sha256": "cf299ac05978655f89f5dbf8da4a9c35e1451d5aadb211a6814627c47eb12f66"
+    },
+    {
+      "path": "payload/runtime-network/native-commands.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 10265,
+      "sha256": "cb0f900d8e719bd28e0fbece3fe09c97399de2e73e1af357b03159e64c6f66c3"
+    },
+    {
+      "path": "payload/runtime-network/next-diagnostics-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 4644,
+      "sha256": "4db743fa5426b48af434c707074b9fbe9cecf16f631770b5d09a516a079564e6"
+    },
+    {
+      "path": "payload/runtime-network/originals-after-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2257,
+      "sha256": "340f06908c42fc119f31e2756fd75c807411757a8da9e9d0339b151dc2928287"
+    },
+    {
+      "path": "payload/runtime-network/originals-before-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2293,
+      "sha256": "eb80ad8d67bf7b3eee6d2e9358388e223dd374fdf6f04015ba3be49907dd2420"
+    },
+    {
+      "path": "payload/runtime-network/ownership-before-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 204,
+      "sha256": "7c509a2ae881307768bdfee8f7f8f8964c257ba0f0e9afba38d9f4979650204c"
+    },
+    {
+      "path": "payload/runtime-network/pending-held-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 353,
+      "sha256": "8984f3c95ab856b7d9e01ada813e6041110921d49d05678bd7f05b5c9e3ba9b3"
+    },
+    {
+      "path": "payload/runtime-network/phone-390-large-v2-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2144,
+      "sha256": "b5f82a0cf3763a652b55e4c97799414c888b22d02d4c42a0ff37c822c2d27265"
+    },
+    {
+      "path": "payload/runtime-network/preferences-phone-v2-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1612,
+      "sha256": "099ee9fdb52539d2ca758a81dbfcd5620e7ad7acd30cc1176f099a2c6febbb27"
+    },
+    {
+      "path": "payload/runtime-network/preflight-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1502,
+      "sha256": "aad0f768d520501897501d80e0475e76c08b5399e970651eae54c9242ee3528b"
+    },
+    {
+      "path": "payload/runtime-network/preservation-final-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1381,
+      "sha256": "a121f67fe0f5d2a91df7c9abab7961ede07b653876923c158caaf3949c876129"
+    },
+    {
+      "path": "payload/runtime-network/process-cleanup-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 271,
+      "sha256": "85d2efe8c18a32ca265d89a81d766c526771500f61a54d4c478a407927e380da"
+    },
+    {
+      "path": "payload/runtime-network/refresh-retry-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 373,
+      "sha256": "69190957f29222fde0684750bfd1d6e1aed8e63a9948273218ba2f59bf31c2cf"
+    },
+    {
+      "path": "payload/runtime-network/resources-final-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 445,
+      "sha256": "c1eb918f81bb3dbbb09b47f6f27874ffc00739e67654e66af950f7e65312bb72"
+    },
+    {
+      "path": "payload/runtime-network/retirement-completion-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 574,
+      "sha256": "7df2334a89cbe8646cad1db457ed82b106f158ab03b40085f0d2387399280c0b"
+    },
+    {
+      "path": "payload/runtime-network/retirement-pre-release-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 329,
+      "sha256": "431249106330db1aab495f3184ab05483b0e29a31e870f6fdb6a914a37ae1e8c"
+    },
+    {
+      "path": "payload/runtime-network/seed-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 249,
+      "sha256": "1426b0cdb07d3a92ce7f0985a44a8f9a8f4b96cf0606affe6bf0ab07945c28c0"
+    },
+    {
+      "path": "payload/runtime-network/sign-in-pre-submit-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 125,
+      "sha256": "cdd0b0b1b4976372dc4278e9d88218079717d22b4dd708d2af32cb0c8187a025"
+    },
+    {
+      "path": "payload/runtime-network/source-pins.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 7877,
+      "sha256": "b8b581710234a37a7f8d28754c5877e9674ed784768f947a125af8bf807106b4"
+    },
+    {
+      "path": "payload/runtime-network/transport-preflight-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 217,
+      "sha256": "f8f329df79b2f8a99e52710668f79effbf205416d5363854b573c7f012b61c1e"
+    },
+    {
+      "path": "payload/runtime-network/wide-2400-dark-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2658,
+      "sha256": "0f6c1da4df872913c53c283afa7ea469eac95e449e1c889e8158ee3aa88dca7c"
+    },
+    {
+      "path": "payload/runtime-network/wide-2400-dark-corrected-SAFE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2639,
+      "sha256": "7b3db74498af69d356b474f1740ce2cdbcf939de33ddc6129ed2e0edea0a2ef6"
+    },
+    {
+      "path": "payload/focused/F1-held.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1418,
+      "sha256": "8e2c3fa40719178b21019abc9663b350dfc765a3a0f443a7d4948c7efa9d4ceb"
+    },
+    {
+      "path": "payload/focused/F1.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2044,
+      "sha256": "099e99025961dbfcd54271fca6a15a42ebfd7f9ea6ced03c3f0f48a2a1deb3ac"
+    },
+    {
+      "path": "payload/focused/F2-healthy-empty-control.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 599,
+      "sha256": "0b248b25e84b406f3a094221aa9dfefb613b7d6e195718eabfbad115840a22e3"
+    },
+    {
+      "path": "payload/focused/F2-no-match-control-v2.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1113,
+      "sha256": "4b09f13cd5a909c9d296524ac4637f78e817e4ac6235b19c82262054024a399f"
+    },
+    {
+      "path": "payload/focused/F2-outage.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1583,
+      "sha256": "2447101d272ed6781a24acaef94fa56903dd19f747d32aaa62244c88b9025eed"
+    },
+    {
+      "path": "payload/focused/F2.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2006,
+      "sha256": "70606e74fa1909156705bca45ad9db3efbc039adc2bfe0bafb38197e9ed44dc0"
+    },
+    {
+      "path": "payload/focused/F3-before-save.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 175,
+      "sha256": "db5838912c4d171bf58c6f699150fe16818cf0387eb37faaaee61eefa80abfb7"
+    },
+    {
+      "path": "payload/focused/F3-destinations.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 170,
+      "sha256": "41bc52f74c8005a2fe18c089da6ee86d49c07df705c091e9e84ab0a2f7da070c"
+    },
+    {
+      "path": "payload/focused/F3-editor-open.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 187,
+      "sha256": "ec3cd94a35d5da48cd01087f2be2bd3d56c89c2336e2bd9c439520209fce6313"
+    },
+    {
+      "path": "payload/focused/F3-finance.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1435,
+      "sha256": "20640ccf57ca506caf21072ab68b0c53bc768edfac982db3df6ca0d854cb4256"
+    },
+    {
+      "path": "payload/focused/F3-grant.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 270,
+      "sha256": "fe682afa305eecabf26ee78484ce384ca1c204ff6c518221bec073a47a7fc0d1"
+    },
+    {
+      "path": "payload/focused/F4-arrival.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 725,
+      "sha256": "c15da8c1becfa36500e1c2d9db1a0290b87d220ce8dfa3e837f5c0cabaa021f1"
+    },
+    {
+      "path": "payload/focused/F4-direct-denial.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 486,
+      "sha256": "16003435c5fdd801a2683bd918e91214289f8d4390c62259ac71d1442f3bfd25"
+    },
+    {
+      "path": "payload/focused/F4-revoke.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 341,
+      "sha256": "f215c6fba00a7d75530c1e485801fbe386c0b3b8892eea42d8cb7aab3f45bafd"
+    },
+    {
+      "path": "payload/focused/F5-large-employee.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 614,
+      "sha256": "72ff27b9f6de0e24967a0784f668bb994d3540f886ce11793db3370ec7a03378"
+    },
+    {
+      "path": "payload/focused/F5-small-restricted.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 616,
+      "sha256": "c1c1170769811926552c597f8575b66245ac58231024e4c6dbe480294c990d4a"
+    },
+    {
+      "path": "payload/focused/F6-failure.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1210,
+      "sha256": "93112085e665b15ff82924c5d6f6949df50a50e510b5fea3996c59c3fca7e9a0"
+    },
+    {
+      "path": "payload/focused/F6.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 647,
+      "sha256": "6e5a3c4f51e9e70efe0302fc2526beae6efe83e9908c7349ca4c3a0a574f1d86"
+    },
+    {
+      "path": "payload/focused/F7-pre-release.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 775,
+      "sha256": "f27333003d1d5ad8e0aa37229ae833641132e6ac23883168f785ae4a58a4b8b8"
+    },
+    {
+      "path": "payload/focused/F7.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1142,
+      "sha256": "92a12c0b73e8e3c246d74addb3e552dfddccca32693f5297f92db53345d2621c"
+    },
+    {
+      "path": "payload/focused/RELEASE.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1280,
+      "sha256": "c5ab2c2b98ea5a5b0589ed6361de50c9fbb2b491720286678c2b4d4cb9e029b6"
+    },
+    {
+      "path": "payload/focused/REPORT.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1304,
+      "sha256": "e5c28593b7cfd4957e462494fe3b1c686dea929280ef6f30d48926d51442d612"
+    },
+    {
+      "path": "payload/focused/SEAL-VERIFICATION.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 667,
+      "sha256": "00e5a75a6c27ae9a800759a088210bbb0ae5fdfe9a15ac8fd2f43be1f642c9a6"
+    },
+    {
+      "path": "payload/focused/attempts.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 6997,
+      "sha256": "d43a716c0a78ba937a59d910c5db3978ba21da8b92da8170ff71a068074b1599"
+    },
+    {
+      "path": "payload/focused/browser-cleanup.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 164,
+      "sha256": "5a7d7670d21c047fac874281612b251a97126fcc9a9d67c519787d1177967436"
+    },
+    {
+      "path": "payload/focused/capture-review.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 476,
+      "sha256": "452f55c9cb5389a55be008955beabb4219b852da6fa1ce86d61411ad1f83a4c9"
+    },
+    {
+      "path": "payload/focused/capture.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 698,
+      "sha256": "d0efc6fa4126a6756841d4644fd904df645c839befe5f637a47428e802e273b8"
+    },
+    {
+      "path": "payload/focused/cleanup-qualifications.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 592,
+      "sha256": "fa079a70b57b8ebb71d94e153db8d08ce9ed4a2cf6168e47570ad438605794ec"
+    },
+    {
+      "path": "payload/focused/commands.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 5728,
+      "sha256": "1cebe0aba8ec7fc92f3db02d1115fd53a87c88b4b2106071d65627f1326f1135"
+    },
+    {
+      "path": "payload/focused/database-after-seed.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 10380,
+      "sha256": "a160e2d0a2a6b1dac4a107249f0f1f18cc7f7a999db7800833a01eaf00afdf88"
+    },
+    {
+      "path": "payload/focused/database-final.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 10380,
+      "sha256": "a736f756cd276a1f1c6b4cc35b731ff6e54888748ae109e0ef04c4d89c27587d"
+    },
+    {
+      "path": "payload/focused/database-initial.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 10380,
+      "sha256": "8945f75e7dc7122c1a90f78ee1d714eb5884f27344fd9d862da2ef2f3b3cb6d5"
+    },
+    {
+      "path": "payload/focused/harness-hashes.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 5488,
+      "sha256": "3290c8a92ce5e3c1a34c12578bd10e34ca15a36daa6869b9b24bc85cae07c0f9"
+    },
+    {
+      "path": "payload/focused/login-large-employee.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 182,
+      "sha256": "e3aaaff6adaec62201de2f5d23ccaa8b37f69a40ddbbc9cc7181140f026df6fe"
+    },
+    {
+      "path": "payload/focused/login-small-admin.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 182,
+      "sha256": "9f7082fb1b81038410e0759723291fbec64552c65b300989f5980ffb44c1b31f"
+    },
+    {
+      "path": "payload/focused/login-small-employee.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 187,
+      "sha256": "0b37a6acc9a79a28edeb525b9fadb16335757891c2f96e96ff3267507b162199"
+    },
+    {
+      "path": "payload/focused/login-small-manager.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 182,
+      "sha256": "e72d13eec9a88cfa6235c41cc8141cae8cb5d9f729f7744cf66204f8258be983"
+    },
+    {
+      "path": "payload/focused/login-small-restricted.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 182,
+      "sha256": "ca569cd61d99f7f7015999916d37e10a7cf3e7a1b476dc442d651796c481cd3d"
+    },
+    {
+      "path": "payload/focused/next-diagnostics.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 9330,
+      "sha256": "61f8c0a134174bd902a0c2abda0407f51635913ed7b026a76db0493ebb86f163"
+    },
+    {
+      "path": "payload/focused/next-tools.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 5316,
+      "sha256": "5d850eaf662fd0c14fc527fc6a0f7e70fb5c02a9fbcb85c5d6004750e275402e"
+    },
+    {
+      "path": "payload/focused/originals-after.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1842,
+      "sha256": "421e5b77762cc5e83c7acacd34775fe61e5c56f512a73f7982673a3ca195b3a1"
+    },
+    {
+      "path": "payload/focused/originals-before.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1842,
+      "sha256": "0640c61400248eb22ddf886f12c5d5862f466526afb33b68b74a9afcefad7f63"
+    },
+    {
+      "path": "payload/focused/predicate-ledger.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 7481,
+      "sha256": "33f424b5edd09c24d2defc77de7de7bebcf99917eca30e9e4fe53df7d71f9fd2"
+    },
+    {
+      "path": "payload/focused/preflight.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 1246,
+      "sha256": "6d43be8549cb403316ae93f0c7cc4be0c9b2febdf378ca87cefc853a9558f103"
+    },
+    {
+      "path": "payload/focused/preservation-database.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3023,
+      "sha256": "ce6733629f9ac37dad57fa33fe04fd63871f6220881d9a8e122fcf6dcd585ae9"
+    },
+    {
+      "path": "payload/focused/preservation-final.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 776,
+      "sha256": "766dad1ebc8073a56e3fc6b602fa7a14b3cfe9f86177fbad7fe4567f1e16c903"
+    },
+    {
+      "path": "payload/focused/process-cleanup.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 653,
+      "sha256": "d6e9fd51536813871b0cea72b974e3015b702ce420b249a8ee1192f2d0c86393"
+    },
+    {
+      "path": "payload/focused/resources-final.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 424,
+      "sha256": "58b496247557884b5a29871dfc01fd49591819156b9eaf962667aaa780f50997"
+    },
+    {
+      "path": "payload/focused/seed.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 231,
+      "sha256": "28e1df97f1758c0da67b325dfc2c4b5f76248e2a3be35dd4d97adb6b09817dab"
+    },
+    {
+      "path": "payload/focused/transport.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 263,
+      "sha256": "10b97d286794b9cf30c2acfb9a4c513413d4f20517c2163c6d109001e9c9385e"
+    },
+    {
+      "path": "payload/native/inherited-stop/audit.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 22474,
+      "sha256": "143ee6453966340b10ac84b25d22f993a6a30d88c17f348c7c07d2d364391412"
+    },
+    {
+      "path": "payload/native/inherited-stop/reconciliation.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 8638,
+      "sha256": "61f11ac307b0e27df069eef67784ed93356c143645044de1309655e84079a25f"
+    },
+    {
+      "path": "payload/native/inherited-stop/SHA256.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 433,
+      "sha256": "89b2f03815188b4d9a74d06823748efb0459ee8d16bcf765acdc7d8ca97c7bcc"
+    },
+    {
+      "path": "payload/native/independent/audit.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 12048,
+      "sha256": "d63ab4027def2ea159a099bb3c6d619e6dbac997d5e691a68b5bef31e6d237f3"
+    },
+    {
+      "path": "payload/native/independent/SHA256.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 309,
+      "sha256": "66fd700713360b4ce320ef14688f7a57b22108a6f3ffceb7c80759f36472850e"
+    },
+    {
+      "path": "payload/native/runtime-auth-stop/audit.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 6334,
+      "sha256": "d441bd2cb0053852137faf95655f5359b8ac3be188092a6139f0030e5ad91419"
+    },
+    {
+      "path": "payload/native/runtime-auth-stop/SHA256.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 321,
+      "sha256": "4f7cafb6607874314817df7dbb777a72c316124c1ff2813e9478acd30da4c6fa"
+    },
+    {
+      "path": "payload/native/runtime-network/audit.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 32738,
+      "sha256": "c8e56f4be96b2d988cfa694f89450e388523b49d64e48b367cb0a8bd061db5a5"
+    },
+    {
+      "path": "payload/native/runtime-network/SHA256.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 309,
+      "sha256": "a272306fbfa40ecba0dcacf02b3754b1e20589a265a0c1892a90d0499488f5d2"
+    },
+    {
+      "path": "payload/native/focused/audit.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 21948,
+      "sha256": "534fbd89e0285735b8c87d46a793e15e0ded2e4cb98e613823ea97896fa58427"
+    },
+    {
+      "path": "payload/native/focused/SHA256.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 331,
+      "sha256": "39aeee1459bb662e3872af734a19ebbbbdc6eca57dbff2b4dd53fdb12e274603"
+    },
+    {
+      "path": "payload/root/root-history-withdrawal-checks.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 14496,
+      "sha256": "1d5d704ea124a46801f81ee48578ec0a20b2698233cd3771ccafe6ccab410195"
+    },
+    {
+      "path": "payload/root/bounded-summary.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 8170,
+      "sha256": "5fcf0b8e9450dfdb7d4d892b9928351e71e68130562c424e49221177d0004ce5"
+    },
+    {
+      "path": "payload/root/red.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 4948,
+      "sha256": "840eac41898afc7dc4d308ed3b727c0ed87e6947774871b1ed6ae0d217b7aa84"
+    },
+    {
+      "path": "payload/root/green-exact.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 4081,
+      "sha256": "7fca2a4a679bd5117b42eae2c72914b5177848dee6868bf2da6ea19a5e993462"
+    },
+    {
+      "path": "payload/root/compatibility.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 70365,
+      "sha256": "633d3fcbf1f799692d7ac02b85db088fd885ed918b511dd3bfdc6a48e1db6c67"
+    },
+    {
+      "path": "payload/root/compatibility-final.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 61800,
+      "sha256": "492d9e00bb4c2513abf036cae282478a060751af3f2b254c9ace7859fe42b611"
+    },
+    {
+      "path": "payload/root/doctor-final.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 3719,
+      "sha256": "e74f7b56adbf3d869bebfa588ed828bf61451ab11c3b09f29ac9d80fcf1b202e"
+    },
+    {
+      "path": "payload/root/quality-exits-final.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 55,
+      "sha256": "b2b6c0b6194144fac3661376f84931860ed56ed183a32fa38b086d70b606cd21"
+    },
+    {
+      "path": "payload/root/unit-selection.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 892,
+      "sha256": "3cdcb9f64c2b406b88fe2498311f21b57f72771017bd6528768f1225066d3b76"
+    },
+    {
+      "path": "payload/root/adoption-audit.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 703,
+      "sha256": "ab22728cbda1b43838f1830cb790d4355ee43140fb4a2e3b03a47fe07d3bd8c1"
+    },
+    {
+      "path": "payload/root/metadata-audit.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 480,
+      "sha256": "bfe3ea6fed5451662ef3dfe0e18e18f4c920e3f9990b9202ef30e428359a5681"
+    },
+    {
+      "path": "payload/root/bridge-removal.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 479,
+      "sha256": "be12f937ff7db3b6565c8c92fbff6818e401e9686c086765585fef94234b7775"
+    },
+    {
+      "path": "payload/root/transport/network-diagnosis-confirmed.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 2745,
+      "sha256": "b0f73a5f9a6783d27749203b6b59cee912bfd342f8240d916f96ece48ebf652c"
+    },
+    {
+      "path": "payload/root/transport/transport-probe-result.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 218,
+      "sha256": "512b506cb3a7f8d220d0ff431a3dc3dc6dff0d9ce95e8a53687fddd98db9280a"
+    },
+    {
+      "path": "payload/root/transport/transport-probe-default-result.json",
+      "encoding": "UTF-8",
+      "parse": "pass",
+      "extension": ".json",
+      "bytes": 279,
+      "sha256": "9626fb07790cdfb7583af94ed794beb02258ca3c6f6d439d7d8f617da86c4ed5"
+    }
+  ]
+}

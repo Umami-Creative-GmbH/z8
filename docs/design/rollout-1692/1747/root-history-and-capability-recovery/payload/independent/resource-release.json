@@ -1,0 +1,18 @@
+{
+  "startedBrowser": false,
+  "stagedPaths": [],
+  "ownsPackageOperation": false,
+  "ownsCheckout": false,
+  "processInventorySucceeded": true,
+  "status": [],
+  "preserveEvidence": true,
+  "checkout": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb",
+  "ownedLiveProcesses": [],
+  "ownsGit": false,
+  "ownsIndex": false,
+  "ownedLiveProcessCount": 0,
+  "startedNext": false,
+  "preserveDependencies": true,
+  "ownsRuntime": false,
+  "indexLockPresent": false
+}

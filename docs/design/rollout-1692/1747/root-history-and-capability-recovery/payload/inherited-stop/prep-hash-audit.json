@@ -1,0 +1,372 @@
+{
+  "files": 61,
+  "bytes": 3109642,
+  "checks": [
+    {
+      "path": "committed-evidence/1747.md",
+      "bytes": 18814,
+      "sha256": "b38ec82f60dae9ba3524ee5035a04a2ed356e947f91afb3b0ac93dd5397f688e",
+      "match": true
+    },
+    {
+      "path": "committed-evidence/1748/root-conversion-withdrawal-correction.json",
+      "bytes": 18646,
+      "sha256": "2c83788ac8f719b11a0bd40b3446464373b89d662f27c67db06984d985467c55",
+      "match": true
+    },
+    {
+      "path": "committed-evidence/1748/root-independent-recheck.json",
+      "bytes": 37232,
+      "sha256": "cd438e941ffb3b93bd339eb3a7cb6197264a99ae800ee5f431125e5b59f8b846",
+      "match": true
+    },
+    {
+      "path": "committed-evidence/1748/root-withdrawal-correction.json",
+      "bytes": 8264,
+      "sha256": "390aa3b2e2fab2af8b257cf638fb60c821e7d9e1b4a1d13072ba230dfa45ec8a",
+      "match": true
+    },
+    {
+      "path": "committed-evidence/1748.md",
+      "bytes": 28008,
+      "sha256": "5e6ff4426c433630f18e5cad901142c1be4cdd313510a081346a7a7c4b101455",
+      "match": true
+    },
+    {
+      "path": "current-root-evidence-summary.json",
+      "bytes": 10841,
+      "sha256": "6c37f8d3b8cc31ecbf790f2a3235af4c4cbf67d286f5d127b473a075d57efd12",
+      "match": true
+    },
+    {
+      "path": "frozen-domain-comparison.json",
+      "bytes": 424,
+      "sha256": "aa00b047f8087a79db0695ba728187b4b325c8caee22a19780591bf8cf9bf167",
+      "match": true
+    },
+    {
+      "path": "handoff.md",
+      "bytes": 8069,
+      "sha256": "3ae27edbff6d520ec8d2f19e384b0f593da3b2da958ec0e65dd11790a61356a7",
+      "match": true
+    },
+    {
+      "path": "heading-composition-map.json",
+      "bytes": 9555,
+      "sha256": "1a485166a421a75aba1b690c13547c21702a4c9a0e3bd0b4ffbced30ed1dd0f9",
+      "match": true
+    },
+    {
+      "path": "historical-shared-test-to-current-root.patch.txt",
+      "bytes": 7792,
+      "sha256": "8e81ba1cc05cdf38ce0a04bd4d718f44d0fe7bf7e6117be6c326522e7c3a8dce",
+      "match": true
+    },
+    {
+      "path": "metadata-base-to-incoming.patch.txt",
+      "bytes": 555,
+      "sha256": "0c6d094ec0e68b85c3ae879df4fae05f7123916c0e520e8b3c64c99d021337e7",
+      "match": true
+    },
+    {
+      "path": "metadata-base-to-root.patch.txt",
+      "bytes": 2488,
+      "sha256": "348469c2e428045f2fa3bf9fd78bedd7fad2a9b06e75dc9d992af154f2e12c66",
+      "match": true
+    },
+    {
+      "path": "preservation-map.json",
+      "bytes": 26112,
+      "sha256": "230bf9b638e7ab2dbf112950043f8c75e514fce2bd7258116a63fdd0e3310c24",
+      "match": true
+    },
+    {
+      "path": "prior-prep/consumer-map.json",
+      "bytes": 6129,
+      "sha256": "d053ac47101a554688dc4374d91f4c3169d8934d841159140df146cd76b0e640",
+      "match": true
+    },
+    {
+      "path": "prior-prep/handoff.md",
+      "bytes": 13749,
+      "sha256": "7c361a30b4442dfb33b5d8be97d13ede69971d8a0af17166806e1f325173dfd6",
+      "match": true
+    },
+    {
+      "path": "prior-prep/incoming-committed-manifest.json",
+      "bytes": 15878,
+      "sha256": "98aabf2e130c6d4f371caee70a6848c3d42fe52b78225465872d8233bbda7e2d",
+      "match": true
+    },
+    {
+      "path": "prior-prep/provenance-check.json",
+      "bytes": 18343,
+      "sha256": "5de46fa14c3a8dcf56484b7087d9fe9d643bea338027a2a3759ff30608f64f96",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/00-travel-expense-management.test.tsx",
+      "bytes": 24140,
+      "sha256": "e1aad9d4169206aa97e2476c159779ec0ddc291d348436d5960e9671aa891e2d",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/01-travel-expenses-heading.test.ts",
+      "bytes": 508,
+      "sha256": "472e1fc6f52bd3e0704cc711a1044fa479ea8c6a6a38f87fa2011e3aec7993b0",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/02-page.test.tsx",
+      "bytes": 3274,
+      "sha256": "9af6c2ccd29e62fc668283a2f15e7be7c4ad235b4f8ef67bee111dc26fcb206f",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/03-expense-history.test.ts",
+      "bytes": 10418,
+      "sha256": "15d6a687eb037784b449303ea915a58da8bbc904db941d969709d13ca01576eb",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/04-route-metadata.test.ts",
+      "bytes": 8009,
+      "sha256": "ac07f792ef96ebc089f66a0ee27b9aa36efd3b3d7006a5da324a026854b1ac16",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/05-travel-expenses-i18n.test.ts",
+      "bytes": 3206,
+      "sha256": "97622bbb2b07d5d3117b9812ea0146d0d39410c1e8a850bbf799b40426ccbd77",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/06-expense-history.integration.test.ts",
+      "bytes": 18007,
+      "sha256": "b751ff9508865a70b36685f1c691345b3afbc4dbcaf5fac387fa49bf00f2acbc",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/07-expense-officer-access.integration.test.ts",
+      "bytes": 23222,
+      "sha256": "eda0e9077ea869477c8cba1c9d081e7cc963745cfe2290b47dfd74b531821849",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/08-export-reimbursement.integration.test.ts",
+      "bytes": 24125,
+      "sha256": "e33de4aa4d5dd61d4f30e4f62b5309f66eb5ab004883615d4ddce07d1f433519",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/09-mileage-policy.integration.test.ts",
+      "bytes": 19356,
+      "sha256": "5382425e271456401a8503846e20ed2828b6edc7a94eee66832a92d1b56ac5ef",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/10-report-draft.integration.test.ts",
+      "bytes": 21999,
+      "sha256": "c49bb34b4e3b9c791b46d0402edffe4fc0d95251fc5ffc96b3a020c32a8ccc6d",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-test-sources/11-trip-report-draft.integration.test.ts",
+      "bytes": 15796,
+      "sha256": "0cddc438bbafd45e4610ed3c42ecf0b5ee9f355529190e5dc475fa77b77ddf06",
+      "match": true
+    },
+    {
+      "path": "prior-prep/public-tests.json",
+      "bytes": 41361,
+      "sha256": "63c64206497a638f699a1af128070c8c55f518775287073be03e3ae0018db43e",
+      "match": true
+    },
+    {
+      "path": "prior-prep/SHA256.json",
+      "bytes": 4213,
+      "sha256": "95d2b2b542b7fda5696e7867b2d5b84928f9fdddb830387f81a53c8fe265dae8",
+      "match": true
+    },
+    {
+      "path": "prior-prep/source-newline-provenance.json",
+      "bytes": 3701,
+      "sha256": "1806142263702e983a3f5d751e5de90f07891d1b79cfce2d152762c1dcb4b17b",
+      "match": true
+    },
+    {
+      "path": "prior-prep-receipt.json",
+      "bytes": 354,
+      "sha256": "9f1e0ca7505e69857239dcb5b3a62927ccb3812b7a9c1d8ae936367e7aec73c4",
+      "match": true
+    },
+    {
+      "path": "protected-root-pins.json",
+      "bytes": 43891,
+      "sha256": "2d4ebbbfeecc95ca8554c75d6ee6f0921b14b49ca7b532c61c14a6529ddbd8a9",
+      "match": true
+    },
+    {
+      "path": "provenance-refresh.json",
+      "bytes": 3244,
+      "sha256": "d475b98d520f81799e8e4c2ea405a8752c8333263ae5909c905318eae5a0ef7d",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/app/[locale]/(app)/app-layout-content.test.tsx",
+      "bytes": 15026,
+      "sha256": "b81cbf58a440c5f8667665d8c3e50a7cfdbd5833dcb3ca612598050084eaa560",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/app/[locale]/(app)/travel-expenses/page.test.tsx",
+      "bytes": 3274,
+      "sha256": "9af6c2ccd29e62fc668283a2f15e7be7c4ad235b4f8ef67bee111dc26fcb206f",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/site-header.test.tsx",
+      "bytes": 7918,
+      "sha256": "618cf4fa30ae2590e8950551bb605e28c9ee18f46161b3aaa2aa8eea240749a9",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "bytes": 6874,
+      "sha256": "2c23d22b368d26ffaafc5d9349c3dc6b7b7844c1a2ed2ec872d9c2b2bd4fa098",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "bytes": 11065,
+      "sha256": "afb6b4335bd6bed8e2474f59f0584853fccfb0c501294789c82adb6d44d96659",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "bytes": 18784,
+      "sha256": "4ffb85cedc2834daf1753dbed0496dde9127495cd30d3ae05ba22c5ac84bdba4",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "bytes": 9090,
+      "sha256": "6597c5c3f20264fa981be1dfbe32bfbbd64c1c6fc3fdab7ede1bc2a3d32c2693",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/travel-expenses/travel-expense-list.test.tsx",
+      "bytes": 2905,
+      "sha256": "917eb3f63e2345d8aadc69241eabcbb3d2c7e3c5e7cdbe6d9021fa8a5eed54ca",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/travel-expenses/travel-expense-management.test.tsx",
+      "bytes": 24140,
+      "sha256": "e1aad9d4169206aa97e2476c159779ec0ddc291d348436d5960e9671aa891e2d",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/travel-expenses/travel-expenses-heading.test.ts",
+      "bytes": 508,
+      "sha256": "472e1fc6f52bd3e0704cc711a1044fa479ea8c6a6a38f87fa2011e3aec7993b0",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/components/travel-expenses/travel-expenses-i18n.test.ts",
+      "bytes": 3206,
+      "sha256": "97622bbb2b07d5d3117b9812ea0146d0d39410c1e8a850bbf799b40426ccbd77",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/lib/navigation/route-metadata.test.ts",
+      "bytes": 12722,
+      "sha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "bytes": 10418,
+      "sha256": "15d6a687eb037784b449303ea915a58da8bbc904db941d969709d13ca01576eb",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/lib/travel-expenses/expense-history.integration.test.ts",
+      "bytes": 18007,
+      "sha256": "b751ff9508865a70b36685f1c691345b3afbc4dbcaf5fac387fa49bf00f2acbc",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "bytes": 23222,
+      "sha256": "eda0e9077ea869477c8cba1c9d081e7cc963745cfe2290b47dfd74b531821849",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/lib/travel-expenses/export-reimbursement.integration.test.ts",
+      "bytes": 24125,
+      "sha256": "e33de4aa4d5dd61d4f30e4f62b5309f66eb5ab004883615d4ddce07d1f433519",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/lib/travel-expenses/mileage-policy.integration.test.ts",
+      "bytes": 19356,
+      "sha256": "5382425e271456401a8503846e20ed2828b6edc7a94eee66832a92d1b56ac5ef",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/lib/travel-expenses/report-draft.integration.test.ts",
+      "bytes": 21999,
+      "sha256": "c49bb34b4e3b9c791b46d0402edffe4fc0d95251fc5ffc96b3a020c32a8ccc6d",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/lib/travel-expenses/trip-report-draft.integration.test.ts",
+      "bytes": 15796,
+      "sha256": "0cddc438bbafd45e4610ed3c42ecf0b5ee9f355529190e5dc475fa77b77ddf06",
+      "match": true
+    },
+    {
+      "path": "public-test-sources/src/proxy.saved-locale-query.test.tsx",
+      "bytes": 6646,
+      "sha256": "cb3f02cd497bce5dd3f0b320e6c22b53b0a7b938caf968611926651cd21c9a69",
+      "match": true
+    },
+    {
+      "path": "public-tests-current-map.json",
+      "bytes": 73208,
+      "sha256": "ba415f68ef58447668be195cf3dcdaff2465b6bc881241b4c03fb41bea02c0c6",
+      "match": true
+    },
+    {
+      "path": "root-advance-map.json",
+      "bytes": 42866,
+      "sha256": "c12aaf5b638f58c36da0df8df5c9e9a4490034afc210b9a74e4db30b110976e4",
+      "match": true
+    },
+    {
+      "path": "root-tracked-blobs.txt",
+      "bytes": 2189966,
+      "sha256": "16bceb3a359a1731b91d3e04bb191193765f9987f856761fc2a4d3e1249fc983",
+      "match": true
+    },
+    {
+      "path": "scope-and-nonexecution.json",
+      "bytes": 865,
+      "sha256": "4cce691442f753ed6edc373064bd5ec1ab7ea6e7d46abed13a473e2ad362fe92",
+      "match": true
+    },
+    {
+      "path": "shared-conversion-owner.json",
+      "bytes": 16802,
+      "sha256": "ec12e38a1d81346e12acb8ccbd128033882a39111f3f6dbd87be9edf7eac0302",
+      "match": true
+    },
+    {
+      "path": "source-map.json",
+      "bytes": 31131,
+      "sha256": "24527bf315ad9f02bb06a89fed73cab962b9c997ea770d1ed92689aac93242aa",
+      "match": true
+    }
+  ]
+}

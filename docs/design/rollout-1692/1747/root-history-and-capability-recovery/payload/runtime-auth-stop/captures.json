@@ -1,0 +1,24 @@
+{
+  "currentRouteScreenshots": [],
+  "pngPayloads": 0,
+  "pngDecode": "N/A: no PNG in SAFE payloads; no authenticated route capture obtained",
+  "matchedHistoricalComparison": "UNPASSED: immutable-source boundary; no overlay or historical driver executed",
+  "layouts": [
+    {
+      "case": "1600 desktop expanded",
+      "state": "UNPASSED"
+    },
+    {
+      "case": "2400 wide dark",
+      "state": "UNPASSED"
+    },
+    {
+      "case": "390 phone",
+      "state": "UNPASSED"
+    },
+    {
+      "case": "saved18px reload",
+      "state": "UNPASSED"
+    }
+  ]
+}

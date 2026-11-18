@@ -1,0 +1,29 @@
+{
+  "at": "2026-11-18T04:26:30.678Z",
+  "view": {
+    "path": "/en/travel-expenses",
+    "h1": [
+      {
+        "text": "Travel Expenses",
+        "x": 280,
+        "y": 89,
+        "w": 1296,
+        "h": 36
+      }
+    ],
+    "statuses": [],
+    "alerts": [],
+    "retry": false,
+    "empty": false,
+    "noMatch": false,
+    "rows": 4
+  },
+  "clip": {
+    "x": 276,
+    "y": 85,
+    "width": 1300,
+    "height": 915
+  },
+  "pixelsScope": "Settled main content from route heading down; header/account/sidebar excluded. No whole-window/sidebar pixel claim.",
+  "qualification": "One focused current-source history capture only; existing v2 capture matrix not repeated or added as new coverage."
+}

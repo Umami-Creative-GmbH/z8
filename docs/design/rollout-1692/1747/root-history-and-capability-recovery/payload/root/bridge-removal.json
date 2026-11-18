@@ -1,0 +1,11 @@
+{
+  "removed": [
+    "apps/webapp/src/components/travel-expenses/r165-root-management.tsx",
+    "apps/webapp/src/components/travel-expenses/r165-root-expense-history.tsx",
+    "apps/webapp/src/components/travel-expenses/report/r165-root-new-buttons.tsx",
+    "apps/webapp/src/components/travel-expenses/r165-review-classification.test.tsx",
+    "apps/webapp/src/components/travel-expenses/r165-review-priority.test.tsx"
+  ],
+  "hashGuarded": true,
+  "originalsPreserved": true
+}

@@ -1,0 +1,15 @@
+{
+  "ownedLiveResources": 0,
+  "ownedControllerClosed": true,
+  "remainingUniqueRunNodePnpmChromeProcesses": 0,
+  "remainingOwnedPortListeners": 0,
+  "remainingOwnedServices": 0,
+  "ownedBrowserClosed": true,
+  "remainingRecordedOwnedProcesses": 0,
+  "exactManifestServiceCount": 3,
+  "noPeerResourceMutation": true,
+  "ownedNextClosed": true,
+  "remainingOwnedProfiles": 0,
+  "ownedContextsClosed": true,
+  "ownedPortCount": 5
+}

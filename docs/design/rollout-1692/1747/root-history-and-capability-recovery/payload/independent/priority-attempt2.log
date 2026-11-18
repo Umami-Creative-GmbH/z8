@@ -1,0 +1,4 @@
+JSON report written to X:/t3-code/worktrees/z8/t3-feed5eb4-aa0b72ce8cdd59fb/.tmp/r165-independent-SAFE/priority-attempt2.json
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.

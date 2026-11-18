@@ -1,0 +1,17 @@
+{
+  "expectedMapEqual": true,
+  "trackedCandidateEntries": 18869,
+  "rootBaselineEntries": 18791,
+  "rootNonoverlapExact": 18783,
+  "incomingChangedPaths": 86,
+  "rootExistingPathsLegitimatelyChanged": 8,
+  "archivePathsExact": 202,
+  "allRootDesignPathsExact": 8450,
+  "protectedAdvancePaths": 207,
+  "orderedParentsVerified": true,
+  "appTreeVerified": true,
+  "ledgerUnchanged": true,
+  "allRootNonoverlapModesBlobsPreserved": true,
+  "allIncomingNonoverlapModesBlobsPreserved": true,
+  "routeTemplatesAliasesAndAllUnchangedSourcePreservedByFullMap": true
+}

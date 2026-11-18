@@ -1,0 +1,77 @@
+{
+  "attempts": [
+    {
+      "id": "A01",
+      "kind": "launcher",
+      "state": "FAIL",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --version; agent-browser skills get core",
+      "exit": 1,
+      "observation": "Sandbox pnpm engine-store lock denied and reported fallback12.21.0; no runtime/package command executed using fallback. Native agent-browser.ps1 blocked by PSSecurityException."
+    },
+    {
+      "id": "A02",
+      "kind": "shell-harness",
+      "state": "FAIL",
+      "observation": "Initial node -e bootstrap transformation failed PowerShell parsing before execution; exact operation replaced with new bootstrap.mjs. No source/package mutation."
+    },
+    {
+      "id": "A03",
+      "kind": "browser-harness",
+      "state": "FAIL",
+      "command": "node .tmp/1747-current-runtime-20261118a/call.mjs start-browser.js",
+      "exit": 0,
+      "harnessOk": false,
+      "observation": "Sandboxed Chromium launch TimeoutError before browser state assignment; no route assertion."
+    },
+    {
+      "id": "A04",
+      "kind": "dependent-harness",
+      "state": "FAIL",
+      "command": "node .tmp/1747-current-runtime-20261118a/call.mjs login.js",
+      "exit": 0,
+      "harnessOk": false,
+      "observation": "TypeError because preceding browser launch did not assign page; no form submission."
+    },
+    {
+      "id": "A05",
+      "kind": "shell-harness",
+      "state": "FAIL",
+      "observation": "Owned restart-controller.ps1 execution policy denied; no ExecutionPolicy change or launcher bypass. Later native inline commands performed exact cleanup."
+    },
+    {
+      "id": "A06",
+      "kind": "process-inspection",
+      "state": "FAIL",
+      "observation": "Sandbox Get-CimInstance access denied; its unconditional trailing marker was NOT accepted as cleanup proof. Escalated identity check/cleanup later succeeded."
+    },
+    {
+      "id": "A07",
+      "kind": "browser-harness",
+      "state": "PASS",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs start-browser.js",
+      "exit": 0,
+      "harnessOk": true,
+      "observation": "Authorized isolated private harness controller; fresh context and profile, no restored auth."
+    },
+    {
+      "id": "A08",
+      "kind": "public-form-auth-boundary",
+      "state": "FAIL",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs login.js",
+      "exit": 0,
+      "harnessOk": false,
+      "observation": "Correct fresh canonical credentials privately ingested. Public form remained sign-in with Verification failed. Wait timed out. No scoped R165 product finding."
+    },
+    {
+      "id": "A09",
+      "kind": "public-form-auth-boundary",
+      "state": "FAIL",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs login-exact.js",
+      "exit": 0,
+      "harnessOk": false,
+      "observation": "Public-form exact-value control passed for both fields before submission. Same Verification failed and bounded wait timeout; stopped retries."
+    }
+  ],
+  "classification": "Harness/tool/auth boundary failures separate from product; zero confirmed scoped P1.",
+  "privateDetailsRetained": true
+}

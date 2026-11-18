@@ -1,0 +1,374 @@
+{
+  "schemaVersion": 1,
+  "issue": 1747,
+  "purpose": "Read-only SAFE evidence intake, not source review, test execution, runtime acceptance or readiness decision.",
+  "verifiedCommit": null,
+  "input": {
+    "directory": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb\\.tmp\\r165-independent-SAFE",
+    "index": "SHA256.json",
+    "indexBytes": 9999,
+    "indexSha256": "91d1c7c4374990458a9a8ac4c5b0f9d1229e7918b74acdb9d6acf8688ac6bc79",
+    "expectedIndexMatch": true,
+    "payloadFiles": 60,
+    "payloadBytes": 632791,
+    "hashMismatches": [],
+    "jsonFilesParsed": 17,
+    "additionalUtf16JsonLogParsed": "archive-verifier.log",
+    "typescriptTsxFilesParsed": 13,
+    "images": 0
+  },
+  "cases": {
+    "identity": [
+      "file",
+      "fullName",
+      "occurrence"
+    ],
+    "finalRuns": [
+      {
+        "name": "priority-final.json",
+        "run": "priority-final",
+        "total": 20,
+        "passed": 20,
+        "failed": 0,
+        "pending": 0,
+        "observedAssertionResults": 20,
+        "files": 1,
+        "statusCounts": {
+          "passed": 20
+        }
+      },
+      {
+        "name": "unit13.json",
+        "run": "unit13",
+        "total": 183,
+        "passed": 183,
+        "failed": 0,
+        "pending": 0,
+        "observedAssertionResults": 183,
+        "files": 13,
+        "statusCounts": {
+          "passed": 183
+        }
+      },
+      {
+        "name": "pg6.json",
+        "run": "pg6",
+        "total": 50,
+        "passed": 50,
+        "failed": 0,
+        "pending": 0,
+        "observedAssertionResults": 50,
+        "files": 6,
+        "statusCounts": {
+          "passed": 50
+        }
+      }
+    ],
+    "unit": 203,
+    "unitFiles": 14,
+    "postgres": 50,
+    "postgresFiles": 6,
+    "totalDistinct": 253,
+    "files": 20,
+    "duplicateIdentities": 0,
+    "declaredMultisetMismatch": [],
+    "overlapFrozen1748": {
+      "unit": 159,
+      "postgres": 13,
+      "total": 172,
+      "identityMismatch": [],
+      "notAdditive": true,
+      "source": "docs/design/rollout-1692/1748/root-withdrawal-and-continuation/independent/test-multiset.json"
+    },
+    "priorAttempts": [
+      {
+        "name": "priority-attempt1.json",
+        "run": "priority-attempt1",
+        "total": 13,
+        "passed": 0,
+        "failed": 1,
+        "pending": 0,
+        "statusCounts": {
+          "failed": 1,
+          "pending": 12
+        },
+        "identitiesAlreadyInFinal": 13,
+        "notAdditive": true
+      },
+      {
+        "name": "priority-attempt2.json",
+        "run": "priority-attempt2",
+        "total": 13,
+        "passed": 13,
+        "failed": 0,
+        "pending": 0,
+        "statusCounts": {
+          "passed": 13
+        },
+        "identitiesAlreadyInFinal": 13,
+        "notAdditive": true
+      }
+    ]
+  },
+  "fixtureAudit": {
+    "method": "Own static Babel AST walk over frozen before and indexed current clones. No archived audit code executed.",
+    "results": [
+      {
+        "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "beforeAssertions": 9,
+        "afterAssertions": 10,
+        "removed": [],
+        "added": [
+          "expect(button).toHaveProperty(\"disabled\", false)"
+        ],
+        "testNamesUnchanged": true,
+        "testNames": 4
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx",
+        "beforeAssertions": 63,
+        "afterAssertions": 63,
+        "removed": [],
+        "added": [],
+        "testNamesUnchanged": true,
+        "testNames": 22
+      }
+    ],
+    "totalBefore": 72,
+    "totalAfter": 73,
+    "assertionsRemoved": 0,
+    "additionalExpectation": "Wait for enabled Continue as report before activation.",
+    "testNamesPreserved": true,
+    "probes": {
+      "real": [
+        "TravelExpenseManagement",
+        "history and shared conversion leaves",
+        "OrganizationContextProvider",
+        "QueryClient",
+        "ViewRefreshProvider",
+        "HeaderRefreshButton"
+      ],
+      "adapted": [
+        "session hook and atom",
+        "auth-context HTTP transport",
+        "server actions",
+        "navigation",
+        "translations",
+        "toasts"
+      ],
+      "scope": "Synthetic assembled public seams. No live authorization, browser or provider guarantee inferred."
+    }
+  },
+  "quality": {
+    "typegen": {
+      "recordedExit": 0,
+      "receipt": "typegen.log"
+    },
+    "workflowTypes": {
+      "recordedExit": 0
+    },
+    "smokeTypes": {
+      "recordedExit": 0
+    },
+    "mainTypes": {
+      "recordedExit": 1,
+      "onlyDiagnostic": "src/app/[locale]/(auth)/licenses/page.tsx(7,22): error TS2307: Cannot find module '@/data/licenses.json' or its corresponding type declarations.",
+      "qualification": "Ignored licenses.json absent in isolated checkout; no copy/generation. Root complete type result remains separate inherited evidence."
+    },
+    "lint": {
+      "recordedExit": 0,
+      "files": 4
+    },
+    "explicit100CrLf": {
+      "recordedExit": 0,
+      "files": 4
+    },
+    "ordinaryFormatting": {
+      "recordedExit": 1,
+      "findings": 4
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "ok": true,
+      "summary": {
+        "errorCount": 0,
+        "warningCount": 0,
+        "affectedFileCount": 0,
+        "totalDiagnosticCount": 0,
+        "score": null,
+        "scoreLabel": null
+      },
+      "changedFiles": 4
+    }
+  },
+  "source": {
+    "frozenHead": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+    "tree": "e1887d9b62886063435f93c86719995e71ce6fd2",
+    "app": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+    "parents": [
+      "0a1048d64ae2a54292b454d757b4a1de306360c9"
+    ],
+    "currentRootAtAudit": {
+      "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+      "app": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c"
+    },
+    "snapshotPins": [
+      {
+        "path": "apps/webapp/src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 11256
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/expense-history.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 15696
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 8325
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 25148
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 7957
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/travel-expense-management.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 3809
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 14025
+      },
+      {
+        "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 7321
+      },
+      {
+        "path": "apps/webapp/src/components/providers/view-refresh-provider.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 4072
+      },
+      {
+        "path": "apps/webapp/src/components/header-refresh-button.tsx",
+        "gitMatch": true,
+        "materializedMatch": true,
+        "cloneMatch": true,
+        "bytes": 1337
+      }
+    ],
+    "anchors": 65,
+    "missingAnchors": [],
+    "frontier": {
+      "integrated": 64,
+      "awaiting-integration": 40,
+      "pending": 53
+    },
+    "nodes": 157,
+    "edges": 159,
+    "rootNonoverlap": {
+      "checked": 18780,
+      "unexpected": []
+    },
+    "incomingNonoverlap": {
+      "checked": 82,
+      "unexpected": []
+    },
+    "comparison": "mode,type,blob by path; selection excludes opposite-parent changes and recorded correction/metadata paths",
+    "mergeBase": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+    "prior1748Archive": {
+      "paths": 202,
+      "gitDiffSinceBoundedProof": "",
+      "sourcePinCount": 14,
+      "unchangedSourcePins": 12,
+      "expectedSourceEvolution": [
+        {
+          "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+          "frozen": "ba19e9037e3e304b877091993f968a101f684b94",
+          "current": "add33b6384fe6add972aa7b4544fa3f942a82bd5"
+        },
+        {
+          "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "frozen": "225e32211910e6e2a89504996134d7673e5d1ca4",
+          "current": "af46342d736672775d7b9f49116991231a2863e0"
+        }
+      ],
+      "verifierLog": {
+        "encoding": "UTF16LE with BOM",
+        "status": "PASS",
+        "mode": "archive",
+        "archiveFiles": 202,
+        "payloads": 172
+      },
+      "notExecutedByAuditor": true
+    }
+  },
+  "cleanup": {
+    "bridgeHashesAgree": true,
+    "sealedReleaseReceipt": {
+      "startedBrowser": false,
+      "stagedPaths": [],
+      "ownsPackageOperation": false,
+      "ownsCheckout": false,
+      "processInventorySucceeded": true,
+      "status": [],
+      "preserveEvidence": true,
+      "checkout": "X:\\t3-code\\worktrees\\z8\\t3-feed5eb4-aa0b72ce8cdd59fb",
+      "ownedLiveProcesses": [],
+      "ownsGit": false,
+      "ownsIndex": false,
+      "ownedLiveProcessCount": 0,
+      "startedNext": false,
+      "preserveDependencies": true,
+      "ownsRuntime": false,
+      "indexLockPresent": false
+    },
+    "qualification": "Process/container absence and clean isolated index are producer receipts, not a fresh OS/runtime inventory by this auditor. PG log independently contains ownership-label verification and disposable-container removal."
+  },
+  "retainedFailures": [
+    "First priority attempt used All 2 versus actual All2 before refusal exercised: one failed harness case, twelve unrun pending records. Thirteen-case correction and final twenty-case expansion are nonadditive.",
+    "Initial non-escalated engine-lock denial and fallback12.21 version output do not prove pinned execution; successful escalated version/install receipts record12.16.1 and physical ignore-scripts install.",
+    "Initial producer fixture parser path failed; installed own Babel parser audit succeeded.",
+    "Initial producer resource inventory failed; successful retry receipt remains separately sealed.",
+    "This intake initially attempted an ESM import of installed CommonJS Babel parser and received exports is not defined; createRequire loaded the installed static parser successfully. No source/test code ran."
+  ],
+  "packagingCaveat": {
+    "severity": "Minor traceability qualification, no source/count discrepancy",
+    "missingIndexedReference": [
+      {
+        "reference": "docker-release.log",
+        "command": "docker ps --all --filter 'name=^/z8_approval_workflow_repository_test_1794971184289582700_13971$' --format '{{.Names}}'",
+        "result": "Escalated exact owned container readback empty"
+      }
+    ],
+    "corroboration": "Sealed pg6.log records exact label-owned container removal. The later docker ps empty readback exists only as the commands-extra summary in this SAFE; no missing file was read or reconstructed."
+  },
+  "disposition": "Integrity, count, source-pin and assertion-preservation intake passes with packaging qualification; no new tests, package commands, archived scripts, runtime, repository/index mutation or readiness decision."
+}

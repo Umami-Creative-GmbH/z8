@@ -1,0 +1,29 @@
+{
+  "at": "2026-11-18T04:22:44.104Z",
+  "failed": 1,
+  "requests": 1,
+  "freshReports": [
+    {
+      "kind": "standalone",
+      "status": "draft"
+    }
+  ],
+  "items": [
+    {
+      "type": "receipt"
+    }
+  ],
+  "editorRouteReached": true,
+  "events": [
+    {
+      "event": "one-create-transport-failure-before-dispatch",
+      "at": "2026-11-18T04:22:40.730Z"
+    },
+    {
+      "event": "actual-create-local-retry",
+      "at": "2026-11-18T04:22:40.794Z"
+    }
+  ],
+  "pass": true,
+  "qualification": "Single before-dispatch synthetic transport failure followed by actual local Retry; not a naturally rejected command or authority refusal"
+}

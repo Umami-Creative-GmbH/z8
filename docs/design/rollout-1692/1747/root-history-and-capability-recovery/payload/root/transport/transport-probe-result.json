@@ -1,0 +1,9 @@
+{
+  "endpoint": "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+  "method": "HEAD",
+  "credentials": false,
+  "token": false,
+  "configurationChanged": false,
+  "transportReached": true,
+  "status": 405
+}

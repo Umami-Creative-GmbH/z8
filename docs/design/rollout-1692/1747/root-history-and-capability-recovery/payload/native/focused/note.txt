@@ -1,0 +1,11 @@
+Focused #1747 SAFE intake passes with narrow qualifications.
+
+All52payloads/191678bytes match;50JSON parse. OnePNG fully decoded withGDI+1300x915,4758000RGBAbytes and visually inspected: left edge clipped, pixelacceptance remainsUNPASSED.
+
+F1–F7 support7narrowPASS/0FAIL; optionalF8+U1–U6 remain7UNPASSED.21attempts are notcoverage. Priorv1/v2counts unchanged/nonadditive.
+
+F1ispostcommit CLIENT-historyloading, notearliestsharedshell. F2unknown/error/Retry hasseparateempty/no-matchcontrols; preservegenericnoMatch:false alongside specificsmessage:true. F3canonicalreadonlygrantflags andfinanceonly/actualnavigation pass; ownexpense settlement exclusion overlaps. F4inactivegrant andfresh renderednotFound pass despite streamedHTTP200; rawpass:false HTTP404assumption retained. Listingdestinations[] hasnoindependentlytimestampedlistingpath because sameviewalreadyfinance—qualifythatportion. F5foreign+peerpositiveownscope privacy pass. F6onebefore-dispatchsyntheticcreatefailure→zero graph/retainedhistory→Retry1graph; notnaturalbusinessrefusal. F7separateCDPsecondpointereventwhilebusy/onegraph precedesunmodifiedrelease/owneditor.
+
+Independentlyrecountedseed:4claims/attachments/objects+1log. UI:2reports+2receiptitems+1grantthenrevoke.4originalaliasgroups/12table snapshots (9populated), fullforeign postseednamespace and6populatedtimekeeping pairs unchanged. FreshHEAD/app/index/4pins/65anchors/cleanstatus and releasedfalse0lease match. Fullbyte/OS/containercleanup remainproducerreceipts.
+
+No tests, archiveddrivers, source/runtime/Git/index/tracker mutations orreadinessdecision. OnlynewTEMPoutputs.

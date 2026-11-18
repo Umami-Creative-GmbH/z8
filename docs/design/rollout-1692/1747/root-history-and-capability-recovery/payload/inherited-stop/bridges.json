@@ -1,0 +1,31 @@
+[
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-9e91ce57-fc9997590e8a7cdb\\apps\\webapp\\src\\components\\travel-expenses\\r165-root-management.tsx",
+    "sha256": "9c004df1e35d65788121cdaa5f807f9f40e8a97f696ae2050e78f654a180779d",
+    "source": "apps/webapp/src/components/travel-expenses/travel-expense-management.tsx",
+    "rootRawSha256": "90777b2798983cd9a1a062a2f031c1c144c5b0044451fe01dd03406613fee5e2",
+    "gitBlob": "fc2bb34cce172ab1f7ce39c4cf722cc67a172372"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-9e91ce57-fc9997590e8a7cdb\\apps\\webapp\\src\\components\\travel-expenses\\r165-root-expense-history.tsx",
+    "sha256": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+    "source": "apps/webapp/src/components/travel-expenses/expense-history.tsx",
+    "rootRawSha256": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+    "gitBlob": "fbf319eddd356961243e407e0daa42fdee06eaf1"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-9e91ce57-fc9997590e8a7cdb\\apps\\webapp\\src\\components\\travel-expenses\\report\\r165-root-new-buttons.tsx",
+    "sha256": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+    "source": "apps/webapp/src/components/travel-expenses/report/new-receipt-expense-button.tsx",
+    "rootRawSha256": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+    "gitBlob": "9dca7129e8c7277caecdf31ef8d63534b594f229"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-9e91ce57-fc9997590e8a7cdb\\apps\\webapp\\src\\components\\travel-expenses\\r165-review-classification.test.tsx",
+    "sha256": "e343741076f020cdb17bb07b7dfd1b2227cb7d35b4ba8e97ce7f86867118b672"
+  },
+  {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-9e91ce57-fc9997590e8a7cdb\\apps\\webapp\\src\\components\\travel-expenses\\r165-review-priority.test.tsx",
+    "sha256": "c8c3980dac0b7e0d8e2430a0deb8a6a708ea75c73e573de347f58919709298fa"
+  }
+]

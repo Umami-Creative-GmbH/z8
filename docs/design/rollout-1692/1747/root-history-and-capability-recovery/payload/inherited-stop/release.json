@@ -1,0 +1,21 @@
+{
+  "status": "RELEASEALL",
+  "limitedOwnershipOnly": true,
+  "runtimeProcessesStarted": 0,
+  "browserSessionsStarted": 0,
+  "containersStarted": 0,
+  "containersRemoved": 0,
+  "outstandingProcesses": 0,
+  "outstandingContainers": 0,
+  "outstandingPorts": 0,
+  "outstandingBridges": 0,
+  "ownedServicesAbsent": "none were created",
+  "dependenciesRetainedAsOwnPhysicalOfflineCopy": true,
+  "dependencyInternalLinks": 222,
+  "cleanTrackedSourceAndIndex": true,
+  "cleanUntrackedStatus": true,
+  "trackerWrites": 0,
+  "pushes": 0,
+  "rootIntegration": false,
+  "verifiedCommit": null
+}
