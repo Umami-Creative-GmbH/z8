@@ -2121,7 +2121,13 @@
       "verifiedCommit": null,
       "claimedBy": "KaiSoellch",
       "claimComment": "https://github.com/Umami-Creative-GmbH/z8/issues/1749#issuecomment-6914308593",
-      "implementationCommit": "ab959b57495678eb42fb4987c2eb8a2d1fc1733f"
+      "implementationCommit": "ab959b57495678eb42fb4987c2eb8a2d1fc1733f",
+      "integrationCommit": "f02276195d0a2ca9b67a64395c930cc2b932e30b",
+      "correctionCommit": "de1b2749080796cc9aac00e287d37c972264584e",
+      "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
+      "evidence": "docs/design/rollout-1692/1749.md",
+      "rootCorrectionEvidence": "docs/design/rollout-1692/1749/root-settlement-withdrawal-checks.json",
+      "integrationVerification": "Provisional only. Independent merger5controls/1inherited withdrawal failure; root red repeated, nullable durable-withdrawal correction merged.313 distinct units/27files pass including12 real-provider both-consumer cases;final23/2reader subset passes;all3fulltypes/typegen,23filelint,2ownedexplicit100CRLF pass.Ordinary2findings;Doctor0errors/10retainedwarnings.66anchors and immutableR165/R166 proofs preserved.Fresh independent correction review,PG/live finance/download/payroll/provider/race acceptance unpassed;worker210unit/84PG remains inherited and nonadditive.verifiedCommitnull,issueOPEN,PRdraft."
     },
     {
       "id": "R168",
