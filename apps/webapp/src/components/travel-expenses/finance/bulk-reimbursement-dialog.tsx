@@ -159,6 +159,7 @@ export function BulkReimbursementDialog({
 	onFinished,
 	submit = markTravelExpensesReimbursedAction,
 	description,
+	retired = false,
 }: {
 	items: readonly BulkReimbursementItem[];
 	skipped?: readonly BulkReimbursementSkippedItem[];
@@ -168,12 +169,14 @@ export function BulkReimbursementDialog({
 	onFinished: () => void;
 	submit?: BulkReimbursementSubmit;
 	description?: string;
+	/** A fresh read invalidated this captured payment; it must be composed again. */
+	retired?: boolean;
 }) {
 	const { t } = useTranslate();
 	const [rows, setRows] = useState<BulkReimbursementRow[] | null>(null);
 	const command = useFinanceCommand(
 		JSON.stringify(items.map(({ account }) => [account.source, account.summary])),
-		open,
+		open && !retired,
 	);
 
 	function close(next: boolean) {
@@ -218,10 +221,21 @@ export function BulkReimbursementDialog({
 									)}
 							</DialogDescription>
 						</DialogHeader>
+						{retired && (
+							<Alert role="alert">
+								<AlertDescription>
+									{t(
+										"travelExpenses.finance.bulk.selectionChanged",
+										"One or more selected expenses changed. Close this dialog and review the current expenses before starting another payment.",
+									)}
+								</AlertDescription>
+							</Alert>
+						)}
 						{open &&
 							(items.length > 0 ? (
 								<BulkReimbursementForm
 									command={command}
+									retired={retired}
 									items={items}
 									skipped={skipped}
 									submit={submit}
@@ -315,6 +329,7 @@ export function ResultRow({ label, done, text }: { label: string; done: boolean;
 
 function BulkReimbursementForm({
 	command,
+	retired,
 	items,
 	skipped,
 	submit,
@@ -322,6 +337,7 @@ function BulkReimbursementForm({
 	onProcessed,
 }: {
 	command: ReturnType<typeof useFinanceCommand>;
+	retired: boolean;
 	items: readonly BulkReimbursementItem[];
 	skipped: readonly BulkReimbursementSkippedItem[];
 	submit: BulkReimbursementSubmit;
@@ -510,7 +526,7 @@ function BulkReimbursementForm({
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting || command.busy}>
+						<Button type="submit" disabled={isSubmitting || command.busy || retired}>
 							{isSubmitting && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
 							{t("travelExpenses.finance.bulk.submit", "Mark {count} as reimbursed", {
 								count: items.length,
