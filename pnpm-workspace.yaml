@@ -100,9 +100,8 @@ overrides:
   uuid: 14.0.3
 
 patchedDependencies:
-#  drizzle-kit@0.31.11: patches/drizzle-kit@0.31.11.patch
-#  next@16.4.3: patches/next@16.4.3.patch
-#  next@16.4.6: patches/next@16.4.6.patch
+  drizzle-kit@0.31.11: patches/drizzle-kit@0.31.11.patch
+  next@16.4.6: patches/next@16.4.6.patch
 
 permissions:
   "@tanstack/react-hotkeys":

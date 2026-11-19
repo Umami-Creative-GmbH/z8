@@ -11,8 +11,7 @@ tracks changes, passing checks and remaining image/runtime qualification.
 
 Next 16.4.6 carries the maintained stream-completion patch in
 `patches/next@16.4.6.patch`. It waits for final work but also completes naturally
-when a client disconnects. The older 16.4.3 patch still covers a transitive
-dependency; do not remove it merely because the app has upgraded.
+when a client disconnects. The workspace now resolves only 16.4.6.
 
 After any framework, patch or lockfile update, run:
 

@@ -17,7 +17,7 @@ import {
 	ReactFlow,
 	useReactFlow,
 } from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
+import "@xyflow/react/style.css";
 import { useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -63,7 +63,7 @@ type PersonNodeData = {
 
 type PersonFlowNode = Node<PersonNodeData, "person">;
 
-const FLOW_PADDING = 0.18;
+const FLOW_PADDING = "7.63%";
 const FLOW_MIN_ZOOM = 0.2;
 const FLOW_MAX_ZOOM = 1.5;
 const FLOW_CENTER_ZOOM = 1.05;
