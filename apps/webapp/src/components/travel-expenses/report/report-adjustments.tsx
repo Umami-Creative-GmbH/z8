@@ -26,10 +26,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { ClientForm } from "@/components/ui/client-form";
-import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query/keys";
 import {
 	ADJUSTMENT_REASON_MAX_LENGTH,
@@ -40,6 +37,7 @@ import type { ReportAdjustmentView } from "@/lib/travel-expenses/adjustment-stor
 import { Link, useRouter } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatMoney, formatRecordedInstant, formatSignedMoney } from "./format";
+import { TFormTextareaField } from "@/components/ui/tanstack-form-textarea";
 import { useReportQueryKey } from "./report-read-scope";
 import { ReportStatusBadge } from "./report-status";
 import { useReportTask } from "./use-report-task";
@@ -426,20 +424,12 @@ function CreateAdjustmentForm({
 				}}
 			>
 				{(field) => (
-					<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)} required>
-							{t("travelExpenses.adjustment.create.reason", "Reason for the correction")}
-						</TFormLabel>
-						<TFormControl hasError={fieldHasError(field)}>
-							<Textarea
-								value={field.state.value}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-								rows={3}
-							/>
-						</TFormControl>
-						<TFormMessage field={field} />
-					</TFormItem>
+					<TFormTextareaField
+						required
+						rows={3}
+						field={field}
+						label={t("travelExpenses.adjustment.create.reason", "Reason for the correction")}
+					/>
 				)}
 			</form.Field>
 			{failure && (

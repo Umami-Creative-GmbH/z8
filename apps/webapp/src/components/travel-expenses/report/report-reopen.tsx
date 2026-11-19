@@ -26,10 +26,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { ClientForm } from "@/components/ui/client-form";
-import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
 import type { TravelExpenseReportReopenState } from "@/lib/approvals/server/travel-expense-report-reopen";
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
@@ -37,6 +34,7 @@ import { REOPEN_REASON_MAX_LENGTH } from "@/lib/travel-expenses/report-reopen";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatRecordedInstant } from "./format";
 import { AdjustmentRequiredHint } from "./report-adjustments";
+import { TFormTextareaField } from "@/components/ui/tanstack-form-textarea";
 import { useReportLifecycleRefresh, useReportQueryKey } from "./report-read-scope";
 import { useReportTask } from "./use-report-task";
 
@@ -282,20 +280,12 @@ function ReopenForm({
 				}}
 			>
 				{(field) => (
-					<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)} required>
-							{t("travelExpenses.report.reopen.reason", "Reason for the employee")}
-						</TFormLabel>
-						<TFormControl hasError={fieldHasError(field)}>
-							<Textarea
-								value={field.state.value}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-								rows={3}
-							/>
-						</TFormControl>
-						<TFormMessage field={field} />
-					</TFormItem>
+					<TFormTextareaField
+						required
+						rows={3}
+						field={field}
+						label={t("travelExpenses.report.reopen.reason", "Reason for the employee")}
+					/>
 				)}
 			</form.Field>
 			{failure && (

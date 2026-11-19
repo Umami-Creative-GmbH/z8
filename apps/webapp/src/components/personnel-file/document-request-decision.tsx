@@ -20,14 +20,12 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { ClientForm } from "@/components/ui/client-form";
-import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	DOCUMENT_REQUEST_TEXT_MAX_LENGTH,
 	type DocumentRequestView,
 } from "@/lib/personnel-file/document-request.types";
+import { TFormTextareaField } from "@/components/ui/tanstack-form-textarea";
 import { useDocumentRequestErrorMessage } from "./document-request-labels";
 import {
 	documentRequestSubmissionMeta,
@@ -227,9 +225,7 @@ function ReturnDocumentRequestDialog({
 					onSubmit={() => {
 						const submission = confirmation.reserve();
 						if (!submission) return;
-						void form
-							.handleSubmit({ submission })
-							.finally(() => confirmation.release(submission));
+						void form.handleSubmit({ submission }).finally(() => confirmation.release(submission));
 					}}
 					className="grid gap-4"
 				>
@@ -260,21 +256,13 @@ function ReturnDocumentRequestDialog({
 						}}
 					>
 						{(field) => (
-							<TFormItem>
-								<TFormLabel hasError={fieldHasError(field)} required>
-									{t("settings.personnelFiles.requests.return.reason", "Reason")}
-								</TFormLabel>
-								<TFormControl hasError={fieldHasError(field)}>
-									<Textarea
-										disabled={pending}
-										value={field.state.value}
-										maxLength={DOCUMENT_REQUEST_TEXT_MAX_LENGTH}
-										onChange={(event) => field.handleChange(event.target.value)}
-										onBlur={field.handleBlur}
-									/>
-								</TFormControl>
-								<TFormMessage field={field} />
-							</TFormItem>
+							<TFormTextareaField
+								required
+								maxLength={DOCUMENT_REQUEST_TEXT_MAX_LENGTH}
+								field={field}
+								disabled={pending}
+								label={t("settings.personnelFiles.requests.return.reason", "Reason")}
+							/>
 						)}
 					</form.Field>
 					<AlertDialogFooter>
