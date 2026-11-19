@@ -179,6 +179,7 @@ const { submitHistoricalPolicyClockOut } = await import(
 	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
 );
 const { processDueEscalations } = await import("@/lib/approvals/escalation/transfer");
+const { loadApprovalInboxDecisionTarget } = await import("@/lib/approvals/inbox/decision-service");
 const { approvalRolloutLockScope } = await import("@/lib/approvals/authority/gate");
 const { decideTimeApproval } = await import("./time-approval-decision");
 type DecisionInput = Parameters<typeof decideTimeApproval>[0];
@@ -729,6 +730,17 @@ describe("time approval decision (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
+	});
+
+	it("loads a pending legacy edit as a time correction for an inbox decision", async () => {
+		const { approval } = await submitted("time_correction", "legacy");
+
+		await expect(
+			loadApprovalInboxDecisionTarget({
+				approvalId: approval.id,
+				organizationId: ids.organization,
+			}),
+		).resolves.toMatchObject({ status: "pending", workflowKind: "time_correction" });
 	});
 
 	describe("requester correction listing", () => {

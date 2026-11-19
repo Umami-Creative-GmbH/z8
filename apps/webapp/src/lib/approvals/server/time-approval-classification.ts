@@ -35,19 +35,18 @@ export async function classifyPersistedTimeApprovalRequest(
 	input: {
 		organizationId: string;
 		request: { metadata: unknown; reason: string | null; requestedBy: string };
-		period: { clockInId: string | null; clockOutId: string | null; pendingChanges: unknown };
+		period?: { clockInId: string | null; clockOutId: string | null; pendingChanges: unknown };
 	},
 ): Promise<TimeApprovalKind> {
 	const { request, period } = input;
 	const kind = classifyTimeApprovalRequest({
 		metadata: request.metadata,
 		reason: request.reason,
-		pendingChanges: period.pendingChanges,
+		pendingChanges: period?.pendingChanges,
 	});
-	if (kind !== "unclassified") return kind;
-	const endpointIds = [period.clockInId, period.clockOutId].filter((id): id is string =>
-		Boolean(id),
-	);
+	if (kind !== "unclassified" || !period) return kind;
+	const { clockInId, clockOutId } = period;
+	const endpointIds = [clockInId, clockOutId].filter((id): id is string => Boolean(id));
 	// A pending correction's own rows are inactive (superseded without a
 	// successor) until approval; the request names them exactly (#301).
 	const namedPendingIds = namedCorrectionEntryIds(request.metadata);
@@ -77,6 +76,7 @@ export async function classifyPersistedTimeApprovalRequest(
 							: []),
 					),
 				),
+				columns: { id: true, replacesEntryId: true },
 			})
 		: [];
 	return classifyTimeApprovalRequest({
@@ -86,12 +86,12 @@ export async function classifyPersistedTimeApprovalRequest(
 		verifiedRelationalCorrectionIds: correctionEvidence.map((entry) => entry.id),
 		verifiedRelationalCorrectionIdsByEndpoint: {
 			clockIn: correctionEvidence.flatMap((entry) =>
-				entry.id === period.clockInId || entry.replacesEntryId === period.clockInId
+				clockInId && (entry.id === clockInId || entry.replacesEntryId === clockInId)
 					? [entry.id]
 					: [],
 			),
 			clockOut: correctionEvidence.flatMap((entry) =>
-				entry.id === period.clockOutId || entry.replacesEntryId === period.clockOutId
+				clockOutId && (entry.id === clockOutId || entry.replacesEntryId === clockOutId)
 					? [entry.id]
 					: [],
 			),
