@@ -1,0 +1,70 @@
+{
+  "status": "STOP",
+  "blockingFinding": {
+    "title": "Organization round-trip remount releases original unlink reservation before settlement",
+    "classification": "Inherited in canonical provider plus premerge consumers; not introduced-only or authorization-bypass finding",
+    "candidate": "eba7258abf1071997dd5e1c3ea13f08fb88b5a5b",
+    "control": "a904b3d19815bd511c67514fb48078cd4aec262f",
+    "observed": "2 same-document unlinkSickNoteAction calls while first remains unresolved",
+    "expected": "1 original unsettled command",
+    "seam": "Actual QueryClient, OrganizationContextProvider, current/premerge overview and shared panel; only auth/session and action/translation/navigation transport mocked",
+    "mechanism": "OrganizationContextProvider keys OrganizationSettingsStoreProvider by user/org. A→B→A remounts the panel, resetting component-local pendingUnlink. Candidate standalone same-instance Activity/target/actor/org tests pass; assembled provider remount does not preserve reservation."
+  },
+  "merge": {
+    "head": "eba7258abf1071997dd5e1c3ea13f08fb88b5a5b",
+    "tree": "ea2677419d7a2eef80052e563c6e1e3edc43d75a",
+    "parents": [
+      "a904b3d19815bd511c67514fb48078cd4aec262f",
+      "e194f9f367ff747ecab779ebd47c2ba34c684b84"
+    ],
+    "independentResolvedTree": "ea2677419d7a2eef80052e563c6e1e3edc43d75a"
+  },
+  "preservation": {
+    "verifiedAncestors": 57,
+    "priorRolloutPaths": 6394,
+    "allParentTrackedPaths": 16690,
+    "priorUnchanged": 16684,
+    "deleted": 0,
+    "incomingUnreconciledBlobs": 53,
+    "configsUnchanged": true,
+    "physicalDependencyParents": 3,
+    "internalLeafLinks": 158,
+    "lockHash": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "licensesUnchanged": true,
+    "inventory": {
+      "counts": {
+        "persistentPages": 153,
+        "redirectAliases": 19,
+        "sourcePageTemplates": 172,
+        "aliasTemplatesUnchangedFromInitialDev": 19
+      },
+      "persistentCount": 153,
+      "aliasesCount": 19
+    }
+  },
+  "tests": {
+    "freshCases": 7,
+    "physicalFiles": 2,
+    "passed": 4,
+    "failed": 3,
+    "controlCases": 1,
+    "notAdditiveToHistorical": true
+  },
+  "quality": {
+    "appSourceDiffCheck": "pass",
+    "allOtherQuality": "not run after blocker"
+  },
+  "limitations": [
+    "Fresh broad compatible units and canonical PostgreSQL suites (including expected-scope PG20) not run after confirmed source blocker",
+    "Next typegen/all3 TS projects, lint/import/formatter profiles and bounded Doctor not run after blocker",
+    "Real downstream self-marker/employee-count/selected-doc observer invalidation probes not reached; accepted retired-write invalidation was not certified by spying",
+    "Public pending/retained session,read-error Retry and R049/R050 controls not freshly rerun",
+    "No runtime/browser fixture,auth,storage,protected-byte readback,role/revocation,matched captures,saved preferences/nativeReact/Next checks launched",
+    "Worker142/19 units,65PG/3 and553 browser source remain historical; e194 final target followup remains static history, no merged-runtime claim",
+    "No full production generation,Tolgee/catalog/provider/device/truezoom/allABA/globalfourpathrosterguard or wholebranch clean claim",
+    "No authorization bypass or duplicate persisted write claim; action transport is held/mocked and the actual canonical provider/components cause the remount"
+  ],
+  "mutations": "Normal noff incoming merge and exact heading-test reconciliation only. No product fix, tracker, report, ledger, README, push, PR, dev merge or deploy.",
+  "cleanup": "4 own ignored bridges removed only after archive byte equality; no services/processes/browser/containers were created",
+  "release": "RELEASE ALL checkout/index/Git/package/runtime/process ownership to root. Provisional merge remains; root owns fix/readiness/publication."
+}

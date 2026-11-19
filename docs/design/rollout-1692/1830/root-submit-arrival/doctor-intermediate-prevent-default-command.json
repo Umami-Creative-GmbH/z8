@@ -1,0 +1,28 @@
+{
+  "env": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "exitCode": 0,
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "react-doctor",
+    "apps/webapp",
+    "--scope",
+    "changed",
+    "--base",
+    "1fb2263e97bf266522f1cf50be957889383701cd",
+    "--include-untracked",
+    "--verbose",
+    "--no-supply-chain",
+    "--no-telemetry",
+    "--no-score",
+    "--json",
+    "--json-out",
+    "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1830-root-checks\\doctor.json",
+    "--max-duration",
+    "90"
+  ]
+}

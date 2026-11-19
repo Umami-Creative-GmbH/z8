@@ -1,0 +1,52 @@
+{
+  "policy": "notifications-denied-for-fixture-origin",
+  "failedRefreshRetainsRows": 200,
+  "retryRecovered": 200,
+  "observedPublicReadAttempts": 2,
+  "calendar": {
+    "expected": "/en/calendar/db0833c9-fd45-43e7-8c51-7e06a3d5ccd0?date=2025-12-31",
+    "actual": "/en/calendar/db0833c9-fd45-43e7-8c51-7e06a3d5ccd0?date=2025-12-31"
+  },
+  "filtered": {
+    "url": "?team=dcdac460-62bf-4348-9589-2d0a11628c70",
+    "teams": [
+      "Fixture Person 3Fixture team 1",
+      "Fixture Person 7Fixture team 1",
+      "Fixture Person 1Fixture team 1",
+      "Fixture Person 5Fixture team 1"
+    ]
+  },
+  "persistedFont": {
+    "size": "18px",
+    "value": "large"
+  },
+  "collapsedAfterReload": "true",
+  "mobileFirstEscape": {
+    "visibleDialogs": 0,
+    "focus": "trigger",
+    "path": "/en/team/driving",
+    "scrollWidth": 390,
+    "width": 390,
+    "font": "18px"
+  },
+  "small-manager": {
+    "auth": {
+      "login": 200,
+      "active": 200
+    },
+    "url": "/en/team/driving",
+    "names": [
+      "Fixture Person 3Fixture team 1",
+      "Fixture Person 7Fixture team 1",
+      "Fixture Person 5Fixture team 1"
+    ]
+  },
+  "small-restricted": {
+    "auth": {
+      "login": 200,
+      "active": 200
+    },
+    "url": "/en",
+    "names": []
+  }
+}

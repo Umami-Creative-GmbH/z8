@@ -274,6 +274,7 @@
       "formatAccessCheck": "Verificación de acceso al formato",
       "nobodyEmployedInPeriod": "Ninguna persona a la que tienes acceso en nómina estuvo contratada en este período.",
       "noConfiguredTarget": "No hay un destino de exportación de nómina configurado",
+      "notPayment": "La exportación prepara los datos de nómina. No realiza ningún pago.",
       "queued": "Exportación de nómina en cola",
       "selectFormat": "Seleccionar formato",
       "target": "Destino de exportación de nómina",
@@ -374,6 +375,7 @@
       "blockers": "Bloqueos",
       "employees": "Empleados",
       "ready": "Listo",
+      "title": "Resumen de preparación de nómina",
       "workedHours": "Horas trabajadas"
     },
     "title": "Nómina",
@@ -383,6 +385,7 @@
       "title": "Nóminas no disponibles temporalmente"
     },
     "workBalances": {
+      "accessChanged": "Este saldo laboral ya no está disponible en tu alcance de nómina.",
       "back": "Saldos de trabajo",
       "backToPayroll": "Nómina",
       "description": "Registre y cancele pagos de horas extras de los empleados cubiertos por su acceso a la nómina, incluidos los empleados que se han marchado.",
@@ -391,6 +394,13 @@
       "loading": "Cargando saldos de trabajo",
       "loadingEmployee": "Cargando el saldo de trabajo",
       "open": "Saldos de trabajo",
+      "openEmployee": "Abrir saldo del empleado",
+      "projectionUnavailable": "La proyección del saldo no está disponible. Los registros de ajuste permanecen abajo.",
+      "refresh": "Actualizar balance de trabajo",
+      "refreshing": "Actualizando balance de trabajo…",
+      "retry": "Reintentar balance de trabajo",
+      "scopeChanged": "Cargando el ámbito de nómina actual…",
+      "stale": "No se pudo actualizar. Se muestran los registros cargados anteriormente; actualiza antes de realizar cambios.",
       "title": "Saldos de trabajo"
     }
   }

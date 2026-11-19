@@ -48,6 +48,7 @@ export function DomainsAndBrandingTabs({
 						"settings.navigation.domainBranding.description",
 						"Configure your organization’s custom domain and branding",
 					),
+					measure: true,
 					panel: (
 						<DomainManagement
 							initialDomains={initialDomains}
@@ -63,6 +64,7 @@ export function DomainsAndBrandingTabs({
 						"settings.navigation.domainBranding.description",
 						"Configure your organization’s custom domain and branding",
 					),
+					measure: true,
 					panel: (
 						<BrandingForm
 							initialBranding={initialBranding}

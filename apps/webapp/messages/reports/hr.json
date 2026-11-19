@@ -13,9 +13,11 @@
       "yes": "Da"
     },
     "description": "Generirajte sveobuhvatna izvješća o radnim satima i odsutnostima s porezno relevantnim podacima o radu od kuće",
+    "employeeNumber": "Broj zaposlenika",
     "employeeSelector": {
       "error": "Učitavanje članova tima nije uspjelo",
       "label": "Zaposlenik",
+      "loading": "Učitavanje članova tima",
       "placeholder": "Odaberite zaposlenika..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Učitavanje postavki organizacije prije omogućavanja zadanih postavki.",
       "period": "Razdoblje",
-      "selectPeriod": "Odaberite razdoblje"
+      "selectPeriod": "Odaberite razdoblje",
+      "settingsError": "Postavke organizacije nisu dostupne",
+      "settingsRequired": "Za korištenje preddefiniranih postavki potrebne su postavke organizacije.",
+      "title": "Generiraj izvještaj o zaposleniku"
     },
     "generate": "Generiraj izvješće",
     "generating": "Generiranje izvješća…",
@@ -62,6 +67,7 @@
       "month": "Mjesec",
       "noHomeOfficeDays": "U ovom razdoblju nema zabilježenih dana rada od kuće.",
       "overtime": "Prekovremeni sati",
+      "title": "Pregled izvještaja",
       "total": "Ukupno",
       "totalHomeOfficeDays": "Ukupno dana rada od kuće",
       "totalHomeOfficeHours": "Ukupno odrađenih sati od kuće",
@@ -266,6 +272,9 @@
         "noPermission": "Nemate dopuštenje za pregled izvješća o projektima.",
         "title": "Izvješća o projektima"
       },
+      "refreshFailed": "Osvježavanje projektnih izvještaja nije uspjelo",
+      "scopeLoading": "Učitavanje trenutnog opsega izvještaja…",
+      "scopeUnavailable": "Trenutni opseg izvještaja nije moguće učitati.",
       "status": {
         "active": "Aktivno",
         "archived": "Arhivirano",
@@ -324,7 +333,6 @@
         "failedGenerate": "Generiranje izvješća nije uspjelo",
         "failedPortfolio": "Generiranje izvješća o portfelju nije uspjelo",
         "failedProject": "Generiranje izvješća o projektu nije uspjelo",
-        "failedProjectReport": "Generiranje izvješća o projektu nije uspjelo",
         "portfolioGenerated": "Izvješće o portfelju je generirano",
         "projectGenerated": "Izvješće generirano za {name}",
         "unexpectedError": "Došlo je do neočekivane pogreške"
@@ -376,6 +384,8 @@
         "loading": "Učitavanje poveznica za dijeljenje…",
         "revokedAutomatically": "Automatski opozvano dana {date}: autor više ne vidi svaki projekt u njemu",
         "revokedBy": "Opozvao/la {name} dana {date}",
+        "scopeLoading": "Učitavanje trenutnog opsega poveznice za dijeljenje…",
+        "scopeUnavailable": "Trenutni opseg poveznice za dijeljenje nije moguće učitati.",
         "someone": "netko",
         "title": "Poveznice na ovo izvješće",
         "views": "{count, plural, one {# pregled} other {# pregleda} }",
@@ -398,7 +408,8 @@
         "description": "Poveznica odmah prestaje raditi i njezina se snimka stanja briše. Zapis i zapisnik pregleda se zadržavaju.",
         "done": "Poveznica je opozvana",
         "failed": "Poveznicu nije bilo moguće opozvati",
-        "title": "Opozvati ovu poveznicu?"
+        "titleDeletedReport": "Opozvati poveznicu za dijeljenje za izbrisani izvještaj, {period}?",
+        "titleNamed": "Opozvati poveznicu za dijeljenje za {report}, {period}?"
       },
       "status": {
         "active": "Aktivno",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "arhivirano",
       "archivedBadge": "Arhivirano",
+      "comparison": "Mjesečna prijeđena udaljenost po vozilu i zaposleniku",
       "empty": {
         "description": "U ovom razdoblju nije zabilježen dovršen rad s prijeđenom udaljenošću.",
         "title": "Nema vožnje u ovom razdoblju"
@@ -457,6 +469,7 @@
         "period": "Razdoblje"
       },
       "generate": "Generiraj izvješće",
+      "generated": "Generirano {time}",
       "generating": "Generiranje izvješća…",
       "kilometres": "{distance} km",
       "noReportYet": "Izvješće još nije generirano",
@@ -465,7 +478,11 @@
         "description": "Prijeđeni kilometri za posao po vozilu i zaposleniku, po mjesecima",
         "feature": "pregledajte izvješće o udaljenosti po vozilu"
       },
+      "scope": "Zaposlenici koji su vam dostupni u ovoj organizaciji",
+      "scopeLoading": "Potvrđivanje trenutne organizacije i zaposlenika…",
+      "scopeUnavailable": "Trenutni opseg izvještaja o vozilima nije moguće učitati.",
       "selectPeriod": "Odaberite razdoblje i generirajte izvješće.",
+      "staged": "Razdoblje je promijenjeno. Generirajte izvještaj kako biste ažurirali rezultate i preuzimanja.",
       "table": {
         "employee": "Zaposlenik",
         "licencePlate": "Registarska oznaka",
@@ -473,8 +490,7 @@
         "vehicle": "Vozilo",
         "vehicleAndEmployee": "Vozilo / zaposlenik"
       },
-      "title": "Udaljenost po vozilu",
-      "totalDriven": "Prijeđeno: {distance}"
+      "title": "Udaljenost po vozilu"
     }
   }
 }

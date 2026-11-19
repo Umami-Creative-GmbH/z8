@@ -1,0 +1,8 @@
+{
+  "recordedCreationMatchesExpected": true,
+  "recordedOwnedTreeCount": 27,
+  "remainingOwnedPids": [],
+  "listeners": 0,
+  "remainingNative": [],
+  "cleanupQualification": "Pre-stop readback confirmed exact executable, parent, creation and listener. Stop script date parser raised nonterminating culture errors; recorded creation independently rechecked here. Only exact owned tree was stopped."
+}

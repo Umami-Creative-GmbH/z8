@@ -1,0 +1,32 @@
+{
+  "rawSources": [
+    {
+      "name": "fixture-01-private/runtime-private.json",
+      "sha256": "58750827b0b6d2242cd94624ac8dd791b105fca691057ce2f76f7d8b231ccd7a"
+    },
+    {
+      "name": "fixture-01-private/fixture-private.json",
+      "sha256": "42f6a7182206d6e9934f222b5d9c61082697d1501408aff8322e3549bd9fa10e"
+    },
+    {
+      "name": "final-get_compilation_issues.private.json",
+      "sha256": "cf6c7a0fcdcd8efb1616b9521c82e00305ca235898eb554a5825ebaf862660e8"
+    },
+    {
+      "name": "final-get_errors.private.json",
+      "sha256": "488a7eb99b61e8f5ead4aacd649cbf6374271b86393732e92a41217760c3dffe"
+    },
+    {
+      "name": "final-get_page_metadata.private.json",
+      "sha256": "1cefbbb0f85bc7dc6bf7315359c9cae0c5187fc17d833cffb5d511cd9c097ba7"
+    },
+    {
+      "name": "final-reload-get-errors.private.json",
+      "sha256": "d685cd95954b09a4cb4928e6fd5adda71a6d1bd6e0939418ca5460ef749dcf2b"
+    }
+  ],
+  "procedure": "no raw action responses; private fixture data read in memory only for ownership and normal form login; exact synthetic emails/actor IDs redacted by capture helper; safe Next summaries keep only route/count/error kind, not stacks; accepted PNG pixels decoded and reviewed",
+  "authStateWritten": false,
+  "privateFailureImageInspected": false,
+  "rejectionPreserved": "failed-attempts.txt item14; clarified single reviewed attempt item15"
+}

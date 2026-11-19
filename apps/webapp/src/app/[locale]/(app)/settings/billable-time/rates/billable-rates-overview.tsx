@@ -42,6 +42,7 @@ import type {
 } from "@/lib/billable-time/billable-rates";
 import { formatBillableAmount, formatRateDate, periodContains } from "@/lib/billable-time/format";
 import type { BillableRateTarget } from "@/lib/billable-time/rate-target";
+import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 
 function useLevelLabels(): Record<RateLevel, { title: string; description: string }> {
@@ -93,63 +94,104 @@ function targetOf(series: BillableRateSeriesSummary): BillableRateTarget | null 
 	}
 }
 
-function targetName(series: BillableRateSeriesSummary): string {
-	switch (series.level) {
-		case "employee_project":
-			return `${series.employeeName ?? "?"} · ${series.projectName ?? "?"}`;
-		case "project":
-			return series.projectName ?? "?";
-		case "customer":
-			return series.customerName ?? "?";
-		case "employee":
-			return series.employeeName ?? "?";
-	}
+/**
+ * The display name of a rate's target. A target whose project, customer or
+ * employee no longer resolves is named "Deleted …" and flagged so it can be muted.
+ */
+function useTargetName(): (series: BillableRateSeriesSummary) => {
+	name: string;
+	deleted: boolean;
+} {
+	const { t } = useTranslate();
+	const deletedProject = t("settings.billableTime.rates.deletedProject", "Deleted project");
+	const deletedCustomer = t("settings.billableTime.rates.deletedCustomer", "Deleted customer");
+	const deletedEmployee = t("settings.billableTime.rates.deletedEmployee", "Deleted employee");
+	return (series) => {
+		switch (series.level) {
+			case "employee_project":
+				return {
+					name: `${series.employeeName ?? deletedEmployee} · ${series.projectName ?? deletedProject}`,
+					deleted: series.employeeName === null || series.projectName === null,
+				};
+			case "project":
+				return {
+					name: series.projectName ?? deletedProject,
+					deleted: series.projectName === null,
+				};
+			case "customer":
+				return {
+					name: series.customerName ?? deletedCustomer,
+					deleted: series.customerName === null,
+				};
+			case "employee":
+				return {
+					name: series.employeeName ?? deletedEmployee,
+					deleted: series.employeeName === null,
+				};
+		}
+	};
+}
+
+/** The page header's "Add rate" action and the panel it opens. */
+export function AddBillableRateAction({ options }: { options: BillableRateTargetOptions }) {
+	const { t } = useTranslate();
+	const router = useRouter();
+	const [adding, setAdding] = useState(false);
+
+	return (
+		<>
+			<Button onClick={() => setAdding(true)}>
+				<IconPlus aria-hidden="true" className="mr-2 size-4" />
+				{t("settings.billableTime.rates.add", "Add rate")}
+			</Button>
+			<AddRatePanel
+				open={adding}
+				onOpenChange={setAdding}
+				options={options}
+				onChanged={() => router.refresh()}
+			/>
+		</>
+	);
 }
 
 export function BillableRatesOverview({
 	currency,
 	series,
-	options,
 }: {
 	currency: string;
 	series: BillableRateSeriesSummary[];
-	options: BillableRateTargetOptions;
 }) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const { locale, timezone } = useDisplayContext();
 	const labels = useLevelLabels();
+	const targetName = useTargetName();
 	const today = Temporal.Now.plainDateISO(timezone).toString();
 	const [selected, setSelected] = useState<{ target: BillableRateTarget; title: string } | null>(
 		null,
 	);
-	const [adding, setAdding] = useState(false);
 
 	return (
 		<div className="space-y-6">
-			<div className="flex flex-wrap items-start justify-between gap-3">
-				<p className="max-w-xl text-sm text-muted-foreground">
-					{t(
-						"settings.billableTime.rates.intro",
-						"Rates are in {currency} per hour. For each piece of work the most specific rate in effect on the day it started applies: employee on a project, then project, then customer, then employee.",
-						{ currency },
-					)}
-				</p>
-				<Button onClick={() => setAdding(true)}>
-					<IconPlus aria-hidden="true" className="mr-2 size-4" />
-					{t("settings.billableTime.rates.add", "Add rate")}
-				</Button>
-			</div>
+			<p className="max-w-xl text-sm text-muted-foreground">
+				{t(
+					"settings.billableTime.rates.intro",
+					"Rates are in {currency} per hour. For each piece of work the most specific rate in effect on the day it started applies: employee on a project, then project, then customer, then employee.",
+					{ currency },
+				)}
+			</p>
 
 			{RATE_LEVELS.map((level) => {
 				const rows = series
 					.filter((entry) => entry.level === level)
-					.map((entry) => ({ entry, name: targetName(entry) }))
+					.map((entry) => ({ entry, ...targetName(entry) }))
 					.sort((left, right) => left.name.localeCompare(right.name));
 				return (
 					<Card key={level}>
 						<CardHeader>
-							<CardTitle className="text-base">{labels[level].title}</CardTitle>
+							<CardTitle as="h2" className="text-base">
+								{labels[level].title}
+							</CardTitle>
 							<CardDescription>{labels[level].description}</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -169,7 +211,7 @@ export function BillableRatesOverview({
 										</TableRow>
 									</TableHeader>
 									<TableBody>
-										{rows.map(({ entry, name }) => {
+										{rows.map(({ entry, name, deleted }) => {
 											const target = targetOf(entry);
 											const current = entry.periods.find((period) => periodContains(period, today));
 											const next = entry.periods
@@ -177,7 +219,16 @@ export function BillableRatesOverview({
 												.at(-1);
 											return (
 												<TableRow key={entry.periods[0]?.id ?? name}>
-													<TableCell className="font-medium">{name}</TableCell>
+													<TableCell
+														className={cn(
+															"max-w-xs",
+															deleted ? "text-muted-foreground" : "font-medium",
+														)}
+													>
+														<span className="block truncate" title={name}>
+															{name}
+														</span>
+													</TableCell>
 													<TableCell className="tabular-nums">
 														{current
 															? t("settings.billableTime.rates.ratePerHour", "{rate}/h", {
@@ -194,6 +245,11 @@ export function BillableRatesOverview({
 															<Button
 																variant="outline"
 																size="sm"
+																aria-label={t(
+																	"settings.billableTime.rates.historyAction",
+																	"History of the rate for {name}",
+																	{ name },
+																)}
 																onClick={() => setSelected({ target, title: name })}
 															>
 																{t("settings.billableTime.rates.history", "History")}
@@ -219,13 +275,6 @@ export function BillableRatesOverview({
 				target={selected?.target ?? null}
 				title={selected?.title ?? ""}
 				description={selected ? labels[selected.target.level].title : undefined}
-				onChanged={() => router.refresh()}
-			/>
-
-			<AddRatePanel
-				open={adding}
-				onOpenChange={setAdding}
-				options={options}
 				onChanged={() => router.refresh()}
 			/>
 		</div>

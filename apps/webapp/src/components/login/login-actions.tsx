@@ -16,6 +16,7 @@ export type LoginActionsProps = {
 	requires2FA: boolean;
 	showEmailPassword: boolean;
 	isLoading: boolean;
+	emailPending?: boolean;
 	turnstile: LoginActionsTurnstileProps;
 	forgotPasswordHref: string;
 	signUpHref: string;
@@ -26,6 +27,7 @@ export function LoginActions({
 	requires2FA,
 	showEmailPassword,
 	isLoading,
+	emailPending = isLoading,
 	turnstile,
 	forgotPasswordHref,
 	signUpHref,
@@ -42,17 +44,23 @@ export function LoginActions({
 						disabled={isLoading || (turnstile.config?.enabled && !turnstile.token)}
 						type="submit"
 					>
-						{isLoading ? (
+						{emailPending ? (
 							<>
-								<IconLoader2 className="size-4 animate-spin" />
+								<IconLoader2
+									aria-hidden="true"
+									className="size-4 animate-spin motion-reduce:animate-none"
+								/>
 								{t("auth.logging-in", "Logging in...")}
 							</>
 						) : (
 							t("auth.login", "Login")
 						)}
 					</Button>
-					<div className="-mt-6 text-center">
-						<Link className="text-xs underline-offset-2 hover:underline" href={forgotPasswordHref}>
+					<div className="text-center">
+						<Link
+							className="inline-flex min-h-9 items-center text-sm underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
+							href={forgotPasswordHref}
+						>
 							{t("auth.forgot-password", "Forgot your password?")}
 						</Link>
 					</div>

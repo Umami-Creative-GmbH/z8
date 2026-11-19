@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Aprobă",
       "approveLabel": "Aprobă {title}",
+      "decided": "Decizie salvată. Reîmprospătați pentru a încărca lista de așteptare actuală.",
       "description": "Cereri care așteaptă o decizie a managerului.",
       "empty": "Nu există aprobări în așteptare.",
       "openInbox": "Deschide inboxul",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Aprobări în așteptare",
       "reject": "Respinge",
       "rejectLabel": "Respinge {title}",
+      "retry": "Reîncercați aprobările",
       "title": "Aprobări",
       "toast": {
         "approved": "Cerere aprobată",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Astăzi",
-      "description": "Examinați elementele care necesită acțiune astăzi, apoi treceți direct la fluxul de lucru potrivit.",
+      "accessUnavailable": "Acest rezumat este indisponibil pentru angajatul și organizația curente.",
+      "contextFailed": "Nu s-a putut verifica accesul dvs. actual. Încercați din nou.",
+      "drivingUnavailable": "Detaliile privind deplasarea nu au putut fi verificate.",
+      "incomplete": "Unele verificări sunt indisponibile. Examinați erorile din secțiune; aceste rezultate sunt incomplete.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Perioadele de lucru ale angajaților dvs. fără vehicul sau fără index de kilometraj.",
           "title": "Detalii de deplasare lipsă ({count})"
         }
       },
+      "loadFailed": "Nu s-a putut încărca rezumatul. Încercați din nou.",
       "needsAction": {
         "description": "Începeți de aici pentru cele mai urgente acțiuni operaționale.",
-        "empty": "Totul este în regulă. Nu este necesară nicio acțiune a managerului în acest moment.",
+        "noExceptions": "Nu s-a detectat nicio monitorizare operațională în acest instantaneu. Acest lucru nu confirmă prezența angajatului.",
         "title": "Necesită acțiune"
       },
+      "partial": "Parțial",
+      "refreshFailed": "Nu s-a putut reîmprospăta. Sunt afișate rezultatele anterioare; încercați din nou înainte de a acționa.",
+      "refreshing": "Se reîmprospătează rezumatul. Rezultatele anterioare rămân vizibile.",
+      "retainedSection": "Sunt afișate rezultatele anterioare. Reîncercați pentru a verifica modificările.",
+      "retry": "Reîncercați rezumatul",
+      "retrySection": "Reîncercați {title}",
+      "scope": "Monitorizare operațională pentru angajații pe care îi puteți supraveghea în organizația activă.",
       "sections": {
         "empty": "Nu s-au detectat probleme."
       },
@@ -41,10 +53,11 @@
         "info": "Info",
         "warning": "Avertisment"
       },
+      "snapshot": "Instantaneu actualizat {time}. Utilizați Reîmprospătare date pentru a verifica modificările.",
       "summaryAriaLabel": "Rezumatul de astăzi",
       "supportingSectionsAriaLabel": "Secțiuni conexe",
       "title": "Informare zilnică pentru manager",
-      "updatedAt": "{date} - Actualizat la {time}"
+      "unavailable": "Indisponibil"
     }
   }
 }

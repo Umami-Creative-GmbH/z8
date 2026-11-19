@@ -1,6 +1,12 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,12 +18,20 @@ const nav = vi.hoisted(() => ({ refresh: vi.fn() }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
-			fallback.replace(/\{(\w+)\}/g, (match, name: string) => String(params?.[name] ?? match)),
+		t: (
+			_key: string,
+			fallback: string,
+			params?: Record<string, string | number>,
+		) =>
+			fallback.replace(/\{(\w+)\}/g, (match, name: string) =>
+				String(params?.[name] ?? match),
+			),
 	}),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock("@/components/providers/app-locale-provider", () => ({ useAppLocale: () => "en" }));
+vi.mock("@/components/providers/app-locale-provider", () => ({
+	useAppLocale: () => "en",
+}));
 vi.mock("@/navigation", () => ({
 	Link: ({
 		href,
@@ -35,20 +49,35 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: nav.refresh }),
 }));
 vi.mock("@/components/ui/action-panel", () => {
-	const Pass = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
+	const Pass = ({ children }: { children?: ReactNode }) => (
+		<div>{children}</div>
+	);
 	return {
-		ActionPanel: ({ children, open }: { children?: ReactNode; open: boolean }) =>
-			open ? <div role="dialog">{children}</div> : null,
+		ActionPanel: ({
+			children,
+			open,
+		}: {
+			children?: ReactNode;
+			open: boolean;
+		}) => (open ? <div role="dialog">{children}</div> : null),
 		ActionPanelBody: Pass,
 		ActionPanelContent: Pass,
 		ActionPanelDescription: Pass,
 		ActionPanelFooter: Pass,
 		ActionPanelHeader: Pass,
-		ActionPanelTitle: ({ children }: { children?: ReactNode }) => <h2>{children}</h2>,
+		ActionPanelTitle: ({ children }: { children?: ReactNode }) => (
+			<h2>{children}</h2>
+		),
 	};
 });
 vi.mock("@/components/ui/date-picker", () => ({
-	DatePicker: ({ value, onChange }: { value?: string | null; onChange: (v: string) => void }) => (
+	DatePicker: ({
+		value,
+		onChange,
+	}: {
+		value?: string | null;
+		onChange: (v: string) => void;
+	}) => (
 		<input
 			aria-label="Deadline picker"
 			value={value ?? ""}
@@ -56,9 +85,12 @@ vi.mock("@/components/ui/date-picker", () => ({
 		/>
 	),
 }));
-vi.mock("@/app/[locale]/(app)/personnel-files/document-request-actions", () => ({
-	createDocumentRequestAction: vi.fn(),
-}));
+vi.mock(
+	"@/app/[locale]/(app)/personnel-files/document-request-actions",
+	() => ({
+		createDocumentRequestAction: vi.fn(),
+	}),
+);
 
 function expiring(overrides: Partial<ExpiringDocument>): ExpiringDocument {
 	return {
@@ -93,8 +125,27 @@ const documents = [
 ];
 
 function renderCard() {
-	render(<ExpiringDocumentsCard documents={documents} leadDays={30} today="2026-10-18" />);
+	render(
+		<ExpiringDocumentsCard
+			documents={documents}
+			leadDays={30}
+			today="2026-10-18"
+		/>,
+	);
 }
+
+it("names the attention section and opens the authorized document category", () => {
+	renderCard();
+	expect(
+		screen.getByRole("heading", { level: 2, name: /Expiring documents/ })
+			.textContent,
+	).toContain("3");
+	expect(
+		screen
+			.getByRole("link", { name: /First aid card 2024/ })
+			.getAttribute("href"),
+	).toBe("/personnel-files/employee-1?category=certificate");
+});
 
 function rowOf(title: string): HTMLElement {
 	const row = screen.getByText(title).closest("li");
@@ -113,7 +164,9 @@ describe("requesting a renewal from Expiring documents", () => {
 	it("links each row to the employee's file and offers a renewal only where none is requested", () => {
 		renderCard();
 		const first = rowOf("First aid card 2024");
-		expect(within(first).getByRole("link", { name: /First aid card 2024/ })).toHaveProperty(
+		expect(
+			within(first).getByRole("link", { name: /First aid card 2024/ }),
+		).toHaveProperty(
 			"href",
 			expect.stringContaining("/personnel-files/employee-1"),
 		);
@@ -124,7 +177,11 @@ describe("requesting a renewal from Expiring documents", () => {
 		).toBeTruthy();
 
 		const requested = rowOf("Language course");
-		expect(within(requested).queryByRole("button", { name: /^Request a renewal of / })).toBeNull();
+		expect(
+			within(requested).queryByRole("button", {
+				name: /^Request a renewal of /,
+			}),
+		).toBeNull();
 		expect(within(requested).getByText("Renewal requested")).toBeTruthy();
 	});
 
@@ -135,7 +192,9 @@ describe("requesting a renewal from Expiring documents", () => {
 		});
 		renderCard();
 		fireEvent.click(
-			within(rowOf("First aid card 2024")).getByRole("button", { name: /^Request a renewal of / }),
+			within(rowOf("First aid card 2024")).getByRole("button", {
+				name: /^Request a renewal of /,
+			}),
 		);
 		const dialog = screen.getByRole("dialog");
 		expect(within(dialog).getByText("Request a renewal")).toBeTruthy();
@@ -163,7 +222,9 @@ describe("requesting a renewal from Expiring documents", () => {
 	it("warns that the employee never sees an HR-only renewed document", () => {
 		renderCard();
 		fireEvent.click(
-			within(rowOf("Medical fitness")).getByRole("button", { name: /^Request a renewal of / }),
+			within(rowOf("Medical fitness")).getByRole("button", {
+				name: /^Request a renewal of /,
+			}),
 		);
 		expect(
 			within(screen.getByRole("dialog")).getByText(
@@ -180,7 +241,9 @@ describe("requesting a renewal from Expiring documents", () => {
 		});
 		renderCard();
 		fireEvent.click(
-			within(rowOf("First aid card 2024")).getByRole("button", { name: /^Request a renewal of / }),
+			within(rowOf("First aid card 2024")).getByRole("button", {
+				name: /^Request a renewal of /,
+			}),
 		);
 		const dialog = screen.getByRole("dialog");
 		fireEvent.change(within(dialog).getByRole("textbox", { name: /^Title/ }), {

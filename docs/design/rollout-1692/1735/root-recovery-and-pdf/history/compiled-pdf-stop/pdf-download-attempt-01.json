@@ -1,0 +1,22 @@
+{
+  "kind": "captured tool observation summary; exact raw RPC response appeared in tool output, not a saved HTTP transcript",
+  "candidate": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "report": "own small-admin, Person 0, 2025-01-01 through 2025-12-31",
+  "watcherInstalledBeforeActualPointerClick": true,
+  "defaultDownloadTimeoutMs": 30000,
+  "result": {
+    "ok": false,
+    "error": {
+      "name": "Error",
+      "message": "Native download did not complete within default 30 seconds"
+    }
+  },
+  "bothClickAndWatcherPromisesHandled": true,
+  "unhandledTimeouts": 0,
+  "completedPdfFiles": 0,
+  "parsedPdfFiles": 0,
+  "followupVisibleErrorObservations": [
+    "pdf-error-observation-02.json",
+    "pdf-error-observation-03.json"
+  ]
+}

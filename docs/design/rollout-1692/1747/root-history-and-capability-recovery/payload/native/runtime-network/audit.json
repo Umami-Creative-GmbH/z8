@@ -1,0 +1,840 @@
+{
+  "schemaVersion": 1,
+  "issue": 1747,
+  "purpose": "Read-only SAFE intake; no new product review/runtime/test execution or readiness decision",
+  "verifiedCommit": null,
+  "input": {
+    "directory": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1747-current-runtime-20261118b\\SAFE",
+    "index": "SHA256-final.json",
+    "indexBytes": 8302,
+    "indexSha256": "742e2206163482442c83ea6615261b1ca95283fd7ed9fbd7f395e714d8992b9f",
+    "files": 51,
+    "payloadBytes": 517361,
+    "jsonPayloads": 46,
+    "allBytesHashesVerified": true,
+    "scriptContentPayloads": 0,
+    "markdownPayloads": 1,
+    "pngPayloads": 4,
+    "finalIndexSelfExcluded": true
+  },
+  "predicateAccounting": {
+    "uniqueNamedPredicates": 22,
+    "producerCounts": {
+      "PASS": 15,
+      "FAIL": 0,
+      "UNPASSED": 7
+    },
+    "intakeSupportedAtRecordedBoundedReceiptScope": 15,
+    "contradictedPasses": 0,
+    "unpassedRemainUnpassed": 7,
+    "unpassedIds": [
+      "R165-R01",
+      "R165-R06",
+      "R165-R07",
+      "R165-R11",
+      "R165-R14",
+      "R165-R15",
+      "R165-R22"
+    ],
+    "countMeaning": "Named final producer predicates, not unit/PG cases, commands, attempts or independent browser reruns.",
+    "controllerInvocations": 28,
+    "controllerHarnessFailures": 2,
+    "attemptsAddedAsPredicates": 0,
+    "allEvidenceAndAttemptReferencesResolve": true
+  },
+  "support": {
+    "creation": {
+      "aliases": [
+        "receipt",
+        "mileage",
+        "trip"
+      ],
+      "typedGraphs": [
+        {
+          "alias": "receipt",
+          "report": [
+            {
+              "kind": "standalone",
+              "status": "draft",
+              "reimbursement_currency": "EUR",
+              "trip_purpose": null,
+              "trip_time_zone": null,
+              "trip_start_date": null,
+              "trip_end_date": null
+            }
+          ],
+          "items": [
+            {
+              "type": "receipt",
+              "expense_date": null
+            }
+          ],
+          "listingLink": true
+        },
+        {
+          "alias": "mileage",
+          "report": [
+            {
+              "kind": "standalone",
+              "status": "draft",
+              "reimbursement_currency": "EUR",
+              "trip_purpose": null,
+              "trip_time_zone": null,
+              "trip_start_date": null,
+              "trip_end_date": null
+            }
+          ],
+          "items": [
+            {
+              "type": "mileage",
+              "expense_date": null
+            }
+          ],
+          "listingLink": true
+        },
+        {
+          "alias": "trip",
+          "report": [
+            {
+              "kind": "trip",
+              "status": "draft",
+              "reimbursement_currency": "EUR",
+              "trip_purpose": null,
+              "trip_time_zone": "Europe/Berlin",
+              "trip_start_date": null,
+              "trip_end_date": null
+            }
+          ],
+          "items": [],
+          "listingLink": true
+        }
+      ],
+      "qualification": "Recorded editor heading arrays include retained editor/list DOM. They prove neither a single-visible-H1 count nor a complete settled editor layout; final-list and layout receipts supply visible listing H1 evidence."
+    },
+    "heldCreation": {
+      "pending": {
+        "at": "2026-11-18T03:50:38.596Z",
+        "method": "CDP Fetch Response stage, exact non-auth listing POST, no response/request headers or bodies read or captured",
+        "requests": 1,
+        "heldResponses": 1,
+        "finished": 0,
+        "failed": 0,
+        "cancelled": 0,
+        "responseStage": true,
+        "successStatus": true,
+        "busyDisabled": true,
+        "createdReportDelta": 1
+      },
+      "preRelease": {
+        "at": "2026-11-18T03:50:44.109Z",
+        "pathname": "/en/time-tracking",
+        "actualAwayNavigationClicked": true,
+        "newRouteCommittedBeforeRelease": true,
+        "heldResponseStillOwned": true,
+        "heldResponses": 1,
+        "primaryStable": true,
+        "method": "separate timestamped pre-release URL receipt; no notes-disappearance predicate"
+      },
+      "completion": {
+        "at": "2026-11-18T03:50:47.116Z",
+        "method": "CDP Fetch Response stage, exact non-auth listing POST, no response/request headers or bodies read or captured",
+        "requests": 1,
+        "heldResponses": 1,
+        "finished": 1,
+        "failed": 0,
+        "cancelled": 0,
+        "responseStage": true,
+        "successStatus": true,
+        "busyDisabled": true,
+        "createdReportDelta": 1,
+        "actualNavigationClicked": true,
+        "releasedUnmodified": true,
+        "afterPath": "/en/time-tracking",
+        "lateNavigation": false,
+        "feedback": false,
+        "preReleaseDepartureProved": true,
+        "retiredCompletionProved": true
+      },
+      "strictTimestampOrder": true,
+      "separatePreReleaseUrl": true,
+      "qualifiedR10": "Indexed receipts establish disabled/busy state, one request and one new draft. No separately indexed second trusted pointer/activation receipt supports a broader claim of observed duplicate-input rejection. This narrows that claim; it is not a product failure."
+    },
+    "deletion": {
+      "at": "2026-11-18T03:51:36.453Z",
+      "normalConfirmation": {
+        "title": "Delete this draft?",
+        "buttons": [
+          "Cancel",
+          "Delete draft"
+        ]
+      },
+      "deletedOwnNewDraft": true,
+      "remainingItemsForDeletedReport": 0,
+      "reportCountDelta": -1,
+      "itemCountDelta": -1,
+      "otherTablesUnchanged": true,
+      "foreignOrgAllTablesUnchanged": true,
+      "originalsUnchanged": true,
+      "restoredSixRows": true
+    },
+    "filters": {
+      "sixCountsMatch": true,
+      "orderScope": "Three newest created drafts first; not exhaustive tie/global ordering.",
+      "initialNoMatchMatcherFalsePreserved": true,
+      "keyboardCorrectedWordingAndShowAllSupported": true
+    },
+    "retry": {
+      "method": "CDP Fetch Request stage, exact non-auth /en/travel-expenses POST only; synthetic transport outage, not authority refusal",
+      "syntheticNonAuth": true,
+      "failedRequests": 6,
+      "delayed": 1,
+      "rowsHeld": 6,
+      "rowsAfterFailure": 6,
+      "rowsRecovered": 6,
+      "authorityRevocationNotProved": true
+    },
+    "roles": {
+      "employeePersonalOnly": true,
+      "managerApprovalClicked": true,
+      "sameOrgDifferentEmployeeCreatorDraftsAbsent": true,
+      "financeGrantAndForeignAuthenticatedArrivalUnpassed": true
+    },
+    "preferences": {
+      "saved18DarkReload": true,
+      "sidebarReload": true,
+      "phoneFirstEscapeAndFocus": true,
+      "keyboardActualTripCreationAndNavigation": true
+    },
+    "react": {
+      "method": "CDP DOM fiber ancestry resolved names only; no props/state inspection or native extension proof",
+      "names": [
+        "TravelExpenseManagement",
+        "ExpenseHistory"
+      ],
+      "nativeExtensionProof": false
+    },
+    "next": {
+      "rootAndRouteMatch": true,
+      "compileRouteIssues": 0,
+      "compilationIssuesReturned": 0,
+      "connectedConfigErrors": 0,
+      "connectedSessionErrors": 0,
+      "sessionScope": "/en/travel-expenses",
+      "exhaustiveGlobalMatrixClaim": false
+    }
+  },
+  "database": {
+    "seedDeltas": [
+      {
+        "org": "small",
+        "table": "travel_expense_attachment",
+        "countDelta": 4
+      },
+      {
+        "org": "small",
+        "table": "travel_expense_claim",
+        "countDelta": 4
+      },
+      {
+        "org": "small",
+        "table": "travel_expense_decision_log",
+        "countDelta": 1
+      },
+      {
+        "org": "large",
+        "table": "travel_expense_attachment",
+        "countDelta": 1
+      },
+      {
+        "org": "large",
+        "table": "travel_expense_claim",
+        "countDelta": 1
+      }
+    ],
+    "expectedUiDeltas": [
+      {
+        "org": "small",
+        "table": "travel_expense_report",
+        "countDelta": 4
+      },
+      {
+        "org": "small",
+        "table": "travel_expense_report_item",
+        "countDelta": 2
+      }
+    ],
+    "unexpectedUiDeltas": [],
+    "originalAliases": [
+      {
+        "alias": "legacy-draft",
+        "same": true
+      },
+      {
+        "alias": "legacy-review",
+        "same": true
+      },
+      {
+        "alias": "legacy-approved",
+        "same": true
+      },
+      {
+        "alias": "other-employee",
+        "same": true
+      },
+      {
+        "alias": "foreign-org",
+        "same": true
+      }
+    ],
+    "originalSetsUnchanged": true,
+    "populatedTimekeepingDigests": [
+      {
+        "org": "small",
+        "table": "time_entry",
+        "count": 4176,
+        "same": true
+      },
+      {
+        "org": "small",
+        "table": "time_record",
+        "count": 2088,
+        "same": true
+      },
+      {
+        "org": "small",
+        "table": "work_period",
+        "count": 2088,
+        "same": true
+      },
+      {
+        "org": "large",
+        "table": "time_entry",
+        "count": 104400,
+        "same": true
+      },
+      {
+        "org": "large",
+        "table": "time_record",
+        "count": 52200,
+        "same": true
+      },
+      {
+        "org": "large",
+        "table": "work_period",
+        "count": 52200,
+        "same": true
+      }
+    ],
+    "allSixTimekeepingPairsEqual": true,
+    "foreignTables": 32,
+    "foreignTravelTables": 29,
+    "foreignPopulatedTravelSentinels": [
+      {
+        "table": "travel_expense_claim",
+        "count": 1
+      },
+      {
+        "table": "travel_expense_attachment",
+        "count": 1
+      }
+    ],
+    "foreignAfterSeedToFinalUnchanged": true,
+    "emptyTablesNotPromotedToPopulatedProof": true,
+    "receiptObjects": "Five final68-byte object hashes are producer-readback receipts; actual object bytes not copied/decoded here."
+  },
+  "captures": {
+    "fullyDecoded": [
+      {
+        "path": "desktop-1600-expanded-corrected.png",
+        "width": 1312,
+        "height": 1000,
+        "channels": 3,
+        "pixelBytes": 3936000,
+        "pixelSha256": "46e587128e7ff84c075fbff8165ea39b497389dd055fe81ebf1ab7b3a3f51321",
+        "allChunkCrc": true
+      },
+      {
+        "path": "desktop-1600-large-reloaded-v2.png",
+        "width": 1312,
+        "height": 1000,
+        "channels": 3,
+        "pixelBytes": 3936000,
+        "pixelSha256": "c726550500fe75317f9b8e640ddd48cf9daa748530783037ce3900c50f6cc36a",
+        "allChunkCrc": true
+      },
+      {
+        "path": "phone-390-large-v2.png",
+        "width": 390,
+        "height": 844,
+        "channels": 3,
+        "pixelBytes": 987480,
+        "pixelSha256": "ce670abb4986c3d528bf81529c6081979267f01fd862ce0b8034cdbf1089e087",
+        "allChunkCrc": true
+      },
+      {
+        "path": "wide-2400-dark-corrected.png",
+        "width": 2112,
+        "height": 1200,
+        "channels": 3,
+        "pixelBytes": 7603200,
+        "pixelSha256": "b0c3dbe87dcdc4dd9967d3b9e7510a1ef686124b1931f2514fda60c8e93a06d6",
+        "allChunkCrc": true
+      }
+    ],
+    "independentlyReversedAllPngFilters": true,
+    "chunkCrcAllMatch": true,
+    "producerPixelDigestsAllMatch": true,
+    "visuallyInspected": [
+      "desktop-1600-expanded-corrected.png",
+      "desktop-1600-large-reloaded-v2.png",
+      "phone-390-large-v2.png",
+      "wide-2400-dark-corrected.png"
+    ],
+    "visualObservations": [
+      "All four are current dark18px viewport images with clear complete listing heading/creation controls.",
+      "Desktop/wide are main-region clips; they exclude actual sidebar/account and cannot serve as whole-window/sidebar images. Geometry independently supports actual sidebar relation.",
+      "Phone shows three stacked creation controls, a locally clipped/scrollable filter group and first current row; not all below-fold phone content.",
+      "Developer/Pets overlays remain visible. No historical paired, physical-device or true-zoom acceptance."
+    ],
+    "geometry": {
+      "desktop": {
+        "h1Left": 315,
+        "mainLeft": 288,
+        "sidebarRight": 288,
+        "stableSamples": 3,
+        "hitTests": true
+      },
+      "wide": {
+        "h1Left": 315,
+        "mainLeft": 288,
+        "sidebarRight": 288,
+        "stableSamples": 3,
+        "hitTests": true
+      },
+      "phone": {
+        "h1Left": 18,
+        "mainLeft": 0,
+        "width": 390,
+        "stableSamples": 3,
+        "hitTests": true
+      }
+    },
+    "unsettledOriginalCaptureAttempts": "Two private clipped originals remain excluded; accepted corrected captures are separate and hashes match."
+  },
+  "source": {
+    "freshHead": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+    "freshAppTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+    "freshBranch": "ai/1692-app-wide-ui-refresh",
+    "freshIndexSha256": "cf1f8dccd45d276aeba291ae589ac1ec71706ad1deee18c20c35afd0972ef124",
+    "gitClean": true,
+    "selectedBytePinsChecked": 52,
+    "selectedBytePinsAllMatch": true,
+    "pinResults": [
+      {
+        "path": "pnpm-lock.yaml",
+        "expected": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "actual": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/data/licenses.json",
+        "expected": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+        "actual": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+        "match": true
+      },
+      {
+        "path": ".tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs",
+        "expected": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+        "actual": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+        "match": true
+      },
+      {
+        "path": "scripts/performance/fixture.mjs",
+        "expected": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+        "actual": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+        "match": true
+      },
+      {
+        "path": "apps/desktop/package.json",
+        "expected": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+        "actual": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+        "match": true
+      },
+      {
+        "path": "apps/docs/next.config.mjs",
+        "expected": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+        "actual": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+        "match": true
+      },
+      {
+        "path": "apps/docs/package.json",
+        "expected": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+        "actual": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+        "match": true
+      },
+      {
+        "path": "apps/marketing/next.config.ts",
+        "expected": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+        "actual": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+        "match": true
+      },
+      {
+        "path": "apps/marketing/package.json",
+        "expected": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+        "actual": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+        "match": true
+      },
+      {
+        "path": "apps/mobile/package.json",
+        "expected": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+        "actual": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/next.config.ts",
+        "expected": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "actual": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/package.json",
+        "expected": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+        "actual": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/expense-history.tsx",
+        "expected": "1ddadfc3d6a820f38a1d7ca422cef1cd608fae41dae81078597eeb991c566871",
+        "actual": "1ddadfc3d6a820f38a1d7ca422cef1cd608fae41dae81078597eeb991c566871",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/report/new-receipt-expense-button.tsx",
+        "expected": "a8358aa19d36dcdae3c8a470f13562ecac037f567b4bd3cc44602459eb61ff22",
+        "actual": "a8358aa19d36dcdae3c8a470f13562ecac037f567b4bd3cc44602459eb61ff22",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/travel-expense-management.test.tsx",
+        "expected": "7c1851c0e921e2825af7f62e22adee7a80981bc61e53bae6d257ffead9e3193c",
+        "actual": "7c1851c0e921e2825af7f62e22adee7a80981bc61e53bae6d257ffead9e3193c",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/components/travel-expenses/travel-expense-management.tsx",
+        "expected": "bde3b8bcecc010b342b87148bf17eecbf5be1bf32281c9fb80d78336cd8c08c5",
+        "actual": "bde3b8bcecc010b342b87148bf17eecbf5be1bf32281c9fb80d78336cd8c08c5",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "expected": "81ee37601797f32da4885033ad0dd28048c7cdd8d222e922a1376e8e8697a83b",
+        "actual": "81ee37601797f32da4885033ad0dd28048c7cdd8d222e922a1376e8e8697a83b",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/expense-history.integration.test.ts",
+        "expected": "1808108c73c70093ae0e4664962cdb410e6969bd67e7ff100ec4462cc1b67f18",
+        "actual": "1808108c73c70093ae0e4664962cdb410e6969bd67e7ff100ec4462cc1b67f18",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/lib/travel-expenses/expense-history.ts",
+        "expected": "7b16c0cb993572dfae35068f2d335353240e3bdab733c1e685b15183efdae404",
+        "actual": "7b16c0cb993572dfae35068f2d335353240e3bdab733c1e685b15183efdae404",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/lib/turnstile/auth-plugin.test.ts",
+        "expected": "43ad2cd078afd39fd609d57bcb7e555521462e1bc587befeabaf09fcbaee5a71",
+        "actual": "43ad2cd078afd39fd609d57bcb7e555521462e1bc587befeabaf09fcbaee5a71",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/lib/turnstile/auth-plugin.ts",
+        "expected": "5764ae8d034927f0e7e24ddbf9a5fb97a60096c0e153894a8cb4551fae6aae3e",
+        "actual": "5764ae8d034927f0e7e24ddbf9a5fb97a60096c0e153894a8cb4551fae6aae3e",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/lib/turnstile/service.test.ts",
+        "expected": "3d0cee489f1d0f9460c3f8f80c802f03301abddd4d9b7826132b91b0f8789cc8",
+        "actual": "3d0cee489f1d0f9460c3f8f80c802f03301abddd4d9b7826132b91b0f8789cc8",
+        "match": true
+      },
+      {
+        "path": "apps/webapp/src/lib/turnstile/service.ts",
+        "expected": "0cd123f12129bedc660a38833d392b6edbe8055f4eca9e543d9191c28232e645",
+        "actual": "0cd123f12129bedc660a38833d392b6edbe8055f4eca9e543d9191c28232e645",
+        "match": true
+      },
+      {
+        "path": "docker/targets/db-seed/package.json",
+        "expected": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+        "actual": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+        "match": true
+      },
+      {
+        "path": "docker/targets/db-seed/pnpm-lock.yaml",
+        "expected": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+        "actual": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+        "match": true
+      },
+      {
+        "path": "docker/targets/migration/package.json",
+        "expected": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+        "actual": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+        "match": true
+      },
+      {
+        "path": "docker/targets/migration/pnpm-lock.yaml",
+        "expected": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+        "actual": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+        "match": true
+      },
+      {
+        "path": "docker/targets/worker/package.json",
+        "expected": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+        "actual": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+        "match": true
+      },
+      {
+        "path": "docker/targets/worker/pnpm-lock.yaml",
+        "expected": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+        "actual": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/desktop/package.json",
+        "expected": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+        "actual": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/docs/next.config.mjs",
+        "expected": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+        "actual": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/docs/package.json",
+        "expected": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+        "actual": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/marketing/next.config.ts",
+        "expected": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+        "actual": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/marketing/package.json",
+        "expected": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+        "actual": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/mobile/package.json",
+        "expected": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+        "actual": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/next.config.ts",
+        "expected": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "actual": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/package.json",
+        "expected": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+        "actual": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/db-seed/package.json",
+        "expected": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+        "actual": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/db-seed/pnpm-lock.yaml",
+        "expected": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+        "actual": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/migration/package.json",
+        "expected": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+        "actual": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/migration/pnpm-lock.yaml",
+        "expected": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+        "actual": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/worker/package.json",
+        "expected": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+        "actual": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/worker/pnpm-lock.yaml",
+        "expected": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+        "actual": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/package.json",
+        "expected": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+        "actual": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/pnpm-lock.yaml",
+        "expected": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "actual": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/source/apps/webapp/src/lib/navigation/route-metadata.ts",
+        "expected": "b981444d81f2bf922849c6823c9ad1990501ccd974e29a8d504be6514077604f",
+        "actual": "b981444d81f2bf922849c6823c9ad1990501ccd974e29a8d504be6514077604f",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/next.config.ts",
+        "expected": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "actual": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/package.json",
+        "expected": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+        "actual": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/package.json",
+        "expected": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+        "actual": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/pnpm-lock.yaml",
+        "expected": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "actual": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "match": true
+      },
+      {
+        "path": "docs/design/rollout-1692/1740/root-activation-and-upload-recovery/archive/stop-queued-activation/resolved-route-metadata.ts",
+        "expected": "ee14541d8cc9ce4dfad7329eed2f2bee09f4d61ec4221f5ab7f53112ee4c0e32",
+        "actual": "ee14541d8cc9ce4dfad7329eed2f2bee09f4d61ec4221f5ab7f53112ee4c0e32",
+        "match": true
+      },
+      {
+        "path": "package.json",
+        "expected": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+        "actual": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+        "match": true
+      }
+    ],
+    "anchorOccurrences": 65,
+    "missingAnchors": [],
+    "full18871TrackedAnd184811DependencyPriorFilePreservation": "Producer receipt only; fresh intake checks selected52 byte pins, cleanGit/index/source and65 anchor ancestry. Excluded inventories were not read or independently rehashed."
+  },
+  "cleanup": {
+    "freshLeaseStatus": "released",
+    "freshLeaseOwnership": false,
+    "freshLeaseResources": 0,
+    "leaseMatchesSealed": true,
+    "exactOSAndContainerProfileCleanup": "Producer receipts only; no excluded private identity inventory accessed and no OS/service mutation performed.",
+    "producerResourceCount": 0
+  },
+  "chronology": {
+    "oldV1Remains0of22": true,
+    "networkDiagnosisDistinct": true,
+    "sourceAuthUnchanged": true,
+    "correctFreshForms": 2,
+    "wrongPasswordAttempts": 0,
+    "earlierFailureCauseNotRetroactivelyEdited": true
+  },
+  "retainedFailures": [
+    {
+      "kind": "tooling",
+      "command": "agent-browser skills get core",
+      "exit": 1,
+      "category": "PSSecurityException UnauthorizedAccess; no policy or alternate-launcher bypass"
+    },
+    {
+      "kind": "harness",
+      "file": "attempt-arrival.js-1794974129086.json",
+      "bytes": 61,
+      "sha256": "e62850562ccc3a84068eba5a449a1502f071bdf76c1cfd5b25bab2e0ca130a6b",
+      "harnessOk": false,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs arrival.js",
+      "shellExit": 1
+    },
+    {
+      "kind": "harness",
+      "file": "attempt-preferences.js-1794973945845.json",
+      "bytes": 61,
+      "sha256": "e62850562ccc3a84068eba5a449a1502f071bdf76c1cfd5b25bab2e0ca130a6b",
+      "harnessOk": false,
+      "command": "node .tmp/1747-current-runtime-20261118b/call2.mjs preferences.js",
+      "shellExit": 1
+    },
+    {
+      "kind": "harness",
+      "step": "preferences.js",
+      "category": "Large submenu not yet mounted; one correction after waiting; original private exception preserved"
+    },
+    {
+      "kind": "harness",
+      "step": "arrival.js / arrival-v2.js",
+      "category": "Exact visible text locator failed; one correction used observed canonical sidebar href. Precommit sample and all-DOM count 11 rejected as acceptance; no additional arrival retry."
+    },
+    {
+      "kind": "capture",
+      "step": "layout.js",
+      "category": "Original element PNG crop clipped heading despite correct geometry; two original PNGs quarantined and excluded from SAFE. Corrected native viewport-clip captures accepted."
+    },
+    {
+      "kind": "assertion-harness",
+      "step": "filters.js",
+      "category": "No-match wording matcher returned false. Exact visible No expenses with this status and actual Show all were captured in keyboard receipt; no product finding."
+    },
+    {
+      "kind": "tooling",
+      "command": "& .tmp/1747-current-runtime-20261118b/inventory.ps1",
+      "exit": 1,
+      "category": "Own script-file policy blocked; normal inline PowerShell commands used, no ExecutionPolicy change"
+    },
+    {
+      "kind": "tooling",
+      "command": "Get-CimInstance Win32_Process",
+      "exit": 1,
+      "category": "Default sandbox access denied; approved read-only ownership inventory and exact cleanup succeeded"
+    },
+    {
+      "kind": "tooling",
+      "step": "read-only rg filename globs",
+      "category": "Three Windows literal wildcard paths invalid; no source effect or product assertion"
+    },
+    {
+      "kind": "tooling",
+      "step": "preview_open about:blank",
+      "category": "Unsupported about protocol; normal empty incognito preview tab opened then closed, never navigated or authenticated. Explicit authorized local Chromium harness used."
+    }
+  ],
+  "limits": [
+    "Initial-loading/unknown-state, broad accounting, rejected creation, finance grant/revoke, foreign authenticated arrival and axe remain UNPASSED.",
+    "No runtime/controller/test/module/archived harness was executed in this intake. No source/Git/index/package/runtime/tracker or readiness mutation.",
+    "Private-value scans, exactOS cleanup and full excluded-inventory preservation remain producer receipts; excluded inputs never read."
+  ],
+  "disposition": "SAFE integrity/count/source intake PASS at recorded bounded scope with narrow R10/geometry/headings traceability qualifications retained. Parent owns further runtime, publication and readiness."
+}

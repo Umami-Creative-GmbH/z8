@@ -1,0 +1,23 @@
+[
+  {
+    "path": "apps/webapp/src/components/travel-expenses/review1748-independent-baseline-conversion.tsx",
+    "bytes": 7767,
+    "sha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+    "originalBlob": "6dbf7efd3e97ee56663960eb56c7162d273debf1",
+    "originalSha256": "1320f5b1b61925d21c5a4b814773b6e8bb90d1c2bbe8a981f8478ab8e1aeeb16",
+    "adaptation": "none; byte exact"
+  },
+  {
+    "path": "apps/webapp/src/components/travel-expenses/review1748-independent-baseline-detail.tsx",
+    "bytes": 11067,
+    "sha256": "788bc620fcdd4a8e86233784659570e20c183d25f6730d70efe291eb2cd64f32",
+    "originalBlob": "edf63b75e39c3c1d19500170b6c935e75fe9fadd",
+    "originalSha256": "ee844fe8cf7ff9c7e5dd91162feb6c9f5821ab6ab062c1cbd224892545df6635",
+    "adaptation": "one relative import redirected to exact pinned conversion source"
+  },
+  {
+    "path": "apps/webapp/src/test/review1748-independent-conversion.test.tsx",
+    "bytes": 7341,
+    "sha256": "8ba8e4aa07519d05fb599c8efdc20381fc376bc51c968bdab6142c45a51d5e63"
+  }
+]

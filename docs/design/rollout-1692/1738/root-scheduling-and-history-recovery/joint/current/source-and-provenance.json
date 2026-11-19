@@ -1,0 +1,81 @@
+{
+  "corrections": [
+    {
+      "name": "history",
+      "commit": "03f1a8d0df8fcb2d8c73901fa6efe8e114310765",
+      "parent": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+      "tree": "1761c1a84f4e0c54b5ed9cc5afffc4f04abac9b1",
+      "changedPaths": [
+        "apps/webapp/src/app/[locale]/(app)/team/team-directory-context.test.tsx",
+        "apps/webapp/src/app/[locale]/(app)/team/team-members-list.test.tsx",
+        "apps/webapp/src/components/settings/work-balance/use-employee-work-balance.ts",
+        "apps/webapp/src/components/work-balance/balance-adjustment-history-button.test.tsx",
+        "apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx",
+        "docs/design/rollout-1692/1739.md"
+      ],
+      "unchangedPriorPaths": 17400
+    },
+    {
+      "name": "supportingRetry",
+      "commit": "512ac6f7b39bcf028c3c3a555ddfb140589b0796",
+      "parent": "03f1a8d0df8fcb2d8c73901fa6efe8e114310765",
+      "tree": "d7e8ac62d0dcabb51d679eaa4d8eff763b1b514f",
+      "changedPaths": [
+        "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+        "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+        "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+        "docs/design/rollout-1692/1738.md"
+      ],
+      "unchangedPriorPaths": 17402
+    }
+  ],
+  "sourcePaths": [
+    {
+      "path": "scripts/performance/team-directory-fixture.mjs",
+      "sha256": "19e2023df192aad41838e0df0772ee4c965c4fee68430a1acdb021b4738858a5"
+    },
+    {
+      "path": "apps/webapp/scripts/performance-fixture.ts",
+      "sha256": "00ac1750f21ecd66f2485642a3db2377179f88d43390ee64b438514b0148588d"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    }
+  ],
+  "ownControllers": [
+    {
+      "privateExcluded": "fixture-driver.mjs",
+      "sha256": "a418d66578c5f2d72ba4219a09727f808e859d5705fe95eae8d38b94e4519d87"
+    },
+    {
+      "privateExcluded": "start-next.mjs",
+      "sha256": "2feb8c84b3c1db024f1bc0d44899f1eeebcc7ac869398271e655f10774c0a3f2"
+    },
+    {
+      "privateExcluded": "start-chrome.mjs",
+      "sha256": "51efdeb071b7ed329ed1475a216cbc6a643f8258ca53ee78208ccab24f7fd64d"
+    }
+  ],
+  "rawToSafe": "Fresh images are direct screenshots of synthetic fixture pages; no private failure capture. Sanitized JSON receipts are explicit visible fields/counters/scoped digests only. Original tool-transcript body/script expansion excluded. No private manifest/helper/log/body/image is public.",
+  "selectedImages": {
+    "fresh": 7,
+    "inherited": 8,
+    "fullDecode": 15,
+    "reviewContactSheet": "local derived montage excluded; includes only exact incoming allowlisted images plus seven fresh screenshots",
+    "reviewed": true
+  },
+  "skills": "Diagnosing/TDD authorized public seams; runtime Next tools plus actual isolated Chromium. React performance/composition and fetched Web Interface Guidelines applied to bounded changed interactions; inherited Doctor/types/profile checks retained. No whole-branch design/security/native-extension audit."
+}

@@ -1,0 +1,153 @@
+{
+  "branch": "feat/onboarding-vacation-policy",
+  "worktree": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+  "latestLocalAI": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "includedHeadBeforeOwnCommit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "requiredAncestors": true,
+  "rootSourceAndArtifacts": "All incoming source/artifacts remain as latest local integration; only three vacation-policy route files and own report/evidence are owned changes. Payroll organizationId projection and heading opt-ins are unchanged.",
+  "defaultConfigSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+  "configRestoredByteExact": true,
+  "dependencies": {
+    "workspaceLocal": true,
+    "packages": 1668,
+    "method": "single frozen offline copy install; scripts ignored; zero downloads",
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "borrowedTreesMutated": false
+  },
+  "pngs": [
+    {
+      "file": "after-biweekly-no-carryover-phone.png",
+      "width": 390,
+      "height": 1410,
+      "sha256": "60e204630ae7b296b1107892cdb8adc920c3ce5792d9d039d7dad346e0ae3074"
+    },
+    {
+      "file": "after-desktop.png",
+      "width": 1600,
+      "height": 1264,
+      "sha256": "e0dcd820cbbdf80e8b2f81c349f3517a408739ff8fb9a10dbcbb5eaafd57cc7e"
+    },
+    {
+      "file": "after-non-admin.png",
+      "width": 1600,
+      "height": 1258,
+      "sha256": "ccd58b81169a61ce5187deedd59fd12b5e42fca6e9d747902c36b9ab8a37cf78"
+    },
+    {
+      "file": "after-pending.png",
+      "width": 1600,
+      "height": 1308,
+      "sha256": "ec7df92e2f4de1acc8824dfe06d001d76f83553b94daa676d37ce7cc79a10643"
+    },
+    {
+      "file": "after-phone-large-dark.png",
+      "width": 390,
+      "height": 1745,
+      "sha256": "9ff43eef31eb83a611eebb4296a3307722ad66799312e68780a6ad4cb8e155f9"
+    },
+    {
+      "file": "after-phone.png",
+      "width": 390,
+      "height": 1512,
+      "sha256": "494cdb0fd5d21a2878334a183bf014ea621b27acfc51477cd58c7e82d8c5d0d7"
+    },
+    {
+      "file": "after-save-refusal.png",
+      "width": 1600,
+      "height": 1264,
+      "sha256": "b40531f11abc97d518f3a96842dbb5daf8616e593d7f063ba9fc0dc7c971d882"
+    },
+    {
+      "file": "after-skip-refusal.png",
+      "width": 1600,
+      "height": 1264,
+      "sha256": "e125195d8a60e54590237dd9608f7be6104584edc0e13819bc0767a8886213f4"
+    },
+    {
+      "file": "after-wide-large-dark.png",
+      "width": 2200,
+      "height": 1421,
+      "sha256": "8d54292ce51638679d3161fd4cdd657c78ce0c4ba2a780214a816f396265493b"
+    },
+    {
+      "file": "before-desktop.png",
+      "width": 1600,
+      "height": 1265,
+      "sha256": "e183643665ffd6bac05909feca5951041d52685507013936b3512748c38b1a80"
+    },
+    {
+      "file": "before-phone.png",
+      "width": 390,
+      "height": 1353,
+      "sha256": "3cc7c16d0a3721986df76b0320073575f9ca5a874f800477738eb7fafda7c1c4"
+    },
+    {
+      "file": "default-after-desktop.png",
+      "width": 1600,
+      "height": 1264,
+      "sha256": "d00297cef965bafa6ba7f0185db7e01e5d1659c5524c83307c3cf9614a36cd20"
+    },
+    {
+      "file": "default-after-phone.png",
+      "width": 390,
+      "height": 1512,
+      "sha256": "d706ef93a07fe39826ec26a96cdcbd059bd9f624049b3ca4d39048ebc236f0b4"
+    },
+    {
+      "file": "default-before-desktop.png",
+      "width": 1600,
+      "height": 1265,
+      "sha256": "c9a01fd65f3ee91483bb290e3760e4672d5622d2de7b41e7fb420153f75f31b5"
+    },
+    {
+      "file": "default-before-phone.png",
+      "width": 390,
+      "height": 1353,
+      "sha256": "a2c403a597a9a21164d16d2a8d3f93f39f79154e9acf7273d5620b5f0d0aeae4"
+    },
+    {
+      "file": "default-pending.png",
+      "width": 1600,
+      "height": 1308,
+      "sha256": "7ebac251a4251dfb87e1642f2d1c38e5333ea071e55c863df6613f89e1a770bc"
+    },
+    {
+      "file": "default-save-refusal.png",
+      "width": 1600,
+      "height": 1264,
+      "sha256": "85dc75f7a4cb05710be6df97750e99b21f03cef68241ab5485890841f4b5b564"
+    }
+  ],
+  "counts": {
+    "unitFiles": 18,
+    "unitPassed": 138,
+    "pageTests": 31,
+    "postgresFiles": 4,
+    "postgresPassed": 26
+  },
+  "limits": [
+    "Inherited vacation writers lack administrator authorization; real failure proof is DB refusal, not permission-loss refusal.",
+    "Latest local #1727 is provisional per root, whose independent fixes/review are not this ticket.",
+    "Explicit webapp CRLF formatting unpassed on final LF bytes; explicit LF/lint and checkout profiles pass.",
+    "Two narrowly documented Doctor exceptions; final diagnostics zero.",
+    "Original overlay journeys remain qualified; fresh default-config captures/actions/native diagnostics are distinct.",
+    "Successful default-actions source and final presentation source are archived separately; final runtime rechecks focus/refusal/skip/admission/readback.",
+    "Production generation/Tolgee/providers/long translations/physical device/true browser zoom/global transitions unpassed."
+  ],
+  "cleanup": {
+    "first": {
+      "processCount": 4,
+      "verifiedRepo": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+      "stoppedOwnedNextTree": true,
+      "portClosed": true
+    },
+    "second": {
+      "processCount": 44,
+      "verifiedRepo": "X:\\t3-code\\worktrees\\z8\\t3-85517330-bbdcf9e5111567b9",
+      "stoppedOwnedNextTree": true,
+      "portClosed": true
+    },
+    "bothFixtureCommandsVerifiedThreeOwnedContainersRemoved": true
+  },
+  "noPushPrIssueClosureDevMergeDeployment": true
+}

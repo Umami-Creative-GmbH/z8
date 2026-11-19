@@ -1,0 +1,93 @@
+{
+  "head": "670a6b1a762517393579651c96c0dc7098554b19",
+  "branch": "feat/1821-forgot-password",
+  "dirty": "",
+  "componentSha256": "601b425b564915a9b4634f0b11c26ebb161a80e82755292ecedb1ee75e2d7640",
+  "checks": [
+    {
+      "label": "tests",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/components/forgot-password-form.test.tsx",
+        "src/components/ui/tanstack-form.test.tsx",
+        "src/components/auth-form-wrapper.test.tsx",
+        "src/components/auth-shell-controls.test.tsx",
+        "src/lib/turnstile/auth-plugin.test.ts",
+        "src/lib/turnstile/service.test.ts",
+        "src/lib/turnstile/verify.test.ts",
+        "src/lib/turnstile/development-keys.test.ts",
+        "src/lib/domain/platform-domain.test.ts",
+        "src/lib/domain/request-domain.test.ts",
+        "src/lib/domain/request-origin.test.ts",
+        "src/lib/auth-domain-config.test.ts",
+        "src/lib/email/auth-emails.test.ts",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "src/app/[locale]/(auth)/layout-turnstile.test.tsx",
+        "src/app/[locale]/(auth)/layout.test.tsx",
+        "src/app/[locale]/(auth)/primary-fallbacks.test.tsx",
+        "src/components/auth-form-fallbacks.test.tsx",
+        "src/lib/auth/reserved-email-guard.test.ts"
+      ],
+      "exitCode": 0,
+      "output": "\n RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-83cae483-8b250e104719624c/apps/webapp\n\n\n Test Files  19 passed (19)\n      Tests  240 passed (240)\n   Start at  07:39:25\n   Duration  4.90s (environment 61%, import 22%, tests 9%, transform 5%, setup 3%)\n\n(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:\n  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `\"type\": \"module\"` in the closest package.json\nSet `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.\n"
+    },
+    {
+      "label": "types",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "output": "Generating route types...\n✓ Types generated successfully\n$ next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false && tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false && tsc --project tsconfig.smoke.json --noEmit --incremental false\n"
+    },
+    {
+      "label": "biome",
+      "command": [
+        "pnpm",
+        "--filter",
+        "webapp",
+        "exec",
+        "biome",
+        "check",
+        "src/components/forgot-password-form.tsx",
+        "src/components/forgot-password-form.test.tsx"
+      ],
+      "exitCode": 0,
+      "output": "Checked 2 files in 55ms. No fixes applied.\n"
+    },
+    {
+      "label": "doctor",
+      "command": [
+        "pnpm",
+        "exec",
+        "react-doctor",
+        "apps/webapp/src/components/forgot-password-form.tsx",
+        "--no-telemetry",
+        "--verbose"
+      ],
+      "exitCode": 0,
+      "output": "✔ Select projects › desktop, docs, marketing, webapp\nScanning 1 selected file\n\nNo changed source files in X:\\t3-code\\worktrees\\z8\\t3-83cae483-8b250e104719624c\\apps\\desktop, skipping.\n\nNo changed source files in X:\\t3-code\\worktrees\\z8\\t3-83cae483-8b250e104719624c\\apps\\docs, skipping.\n\nNo changed source files in X:\\t3-code\\worktrees\\z8\\t3-83cae483-8b250e104719624c\\apps\\marketing, skipping.\n\n✔ Scanned 1 file in 2.9s\n\nReact Doctor — t3-83cae483-8b250e104719624c\nScore unavailable.\n\n✔ No issues found!\n  Full diagnostics written to C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\react-doctor-d9696d55-8fb0-47fc-9110-4845772b36e7\n"
+    },
+    {
+      "label": "diff",
+      "command": [
+        "pnpm",
+        "exec",
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "output": "warning: in the working copy of 'docs/design/rollout-1692/1821/quality.json', LF will be replaced by CRLF the next time Git touches it\n"
+    }
+  ]
+}

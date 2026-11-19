@@ -60,7 +60,7 @@ function ClockinConnectStep({
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<IconKey className="size-5" />
+					<IconKey className="size-5" aria-hidden="true" />
 					{t("settings.clockinImport.credentials.title", "Clockin API Token")}
 				</CardTitle>
 				<CardDescription>
@@ -92,9 +92,9 @@ function ClockinConnectStep({
 						}
 					>
 						{controller.busyAction === "connect" ? (
-							<IconLoader2 className="mr-2 size-4 animate-spin" />
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						) : (
-							<IconArrowRight className="mr-2 size-4" />
+							<IconArrowRight className="mr-2 size-4" aria-hidden="true" />
 						)}
 						{t(
 							"settings.clockinImport.credentials.connect",
@@ -143,12 +143,12 @@ function ClockinPreviewStep({
 						value={preview.absences}
 					/>
 				</div>
-				<div className="flex justify-between">
+				<div className="flex flex-wrap justify-between gap-2">
 					<Button
 						variant="outline"
 						onClick={() => controller.setStep("connect")}
 					>
-						<IconArrowLeft className="mr-2 size-4" />
+						<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 						{t("common.back", "Back")}
 					</Button>
 					<Button
@@ -156,9 +156,9 @@ function ClockinPreviewStep({
 						disabled={controller.busyAction === "mapping"}
 					>
 						{controller.busyAction === "mapping" ? (
-							<IconLoader2 className="mr-2 size-4 animate-spin" />
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						) : (
-							<IconUsers className="mr-2 size-4" />
+							<IconUsers className="mr-2 size-4" aria-hidden="true" />
 						)}
 						{t("settings.clockinImport.preview.next", "Map Employees")}
 					</Button>
@@ -188,7 +188,7 @@ function ClockinMappingStep({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<p className="text-sm text-muted-foreground">
+				<p className="text-sm tabular-nums text-muted-foreground">
 					{t("settings.clockinImport.mapping.summary", "Mapped employees")}:{" "}
 					{controller.mappedCount}/{controller.mappings.length}
 				</p>
@@ -198,9 +198,11 @@ function ClockinMappingStep({
 							key={entry.clockinEmployeeId}
 							className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1.3fr_1fr]"
 						>
-							<div>
-								<p className="font-medium">{entry.clockinEmployeeName}</p>
-								<p className="text-sm text-muted-foreground">
+							<div className="min-w-0">
+								<p className="truncate font-medium" title={entry.clockinEmployeeName}>
+									{entry.clockinEmployeeName}
+								</p>
+								<p className="truncate text-sm text-muted-foreground">
 									{entry.clockinEmployeeEmail ??
 										t(
 											"settings.clockinImport.mapping.noEmail",
@@ -217,7 +219,7 @@ function ClockinMappingStep({
 										event.target.value,
 									)
 								}
-								className="h-10 rounded-md border border-input px-3 text-sm"
+								className="h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 							>
 								<option value="">
 									{t(
@@ -234,16 +236,16 @@ function ClockinMappingStep({
 						</div>
 					))}
 				</div>
-				<div className="flex justify-between">
+				<div className="flex flex-wrap justify-between gap-2">
 					<Button
 						variant="outline"
 						onClick={() => controller.setStep("preview")}
 					>
-						<IconArrowLeft className="mr-2 size-4" />
+						<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 						{t("common.back", "Back")}
 					</Button>
 					<Button onClick={() => controller.setStep("selection")}>
-						<IconArrowRight className="mr-2 size-4" />
+						<IconArrowRight className="mr-2 size-4" aria-hidden="true" />
 						{t("common.continue", "Continue")}
 					</Button>
 				</div>
@@ -346,12 +348,12 @@ function ClockinSelectionStep({
 						/>
 					</div>
 				</div>
-				<div className="flex justify-between">
+				<div className="flex flex-wrap justify-between gap-2">
 					<Button
 						variant="outline"
 						onClick={() => controller.setStep("mapping")}
 					>
-						<IconArrowLeft className="mr-2 size-4" />
+						<IconArrowLeft className="mr-2 size-4" aria-hidden="true" />
 						{t("common.back", "Back")}
 					</Button>
 					<Button
@@ -363,7 +365,7 @@ function ClockinSelectionStep({
 							!selections.dateRange.endDate
 						}
 					>
-						<IconArrowRight className="mr-2 size-4" />
+						<IconArrowRight className="mr-2 size-4" aria-hidden="true" />
 						{t(
 							"settings.clockinImport.selection.startReviewScan",
 							"Start Review Scan",
@@ -380,7 +382,7 @@ function ClockinImportingStep() {
 	return (
 		<Card>
 			<CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
-				<IconLoader2 className="size-4 animate-spin" />
+				<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 				{t(
 					"settings.clockinImport.review.starting",
 					"Starting Clockin import review scan…",
@@ -402,7 +404,7 @@ function ClockinReviewStep({
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2">
-					<IconCheck className="size-5 text-green-600" aria-hidden="true" />
+					<IconCheck className="size-5 text-primary" aria-hidden="true" />
 					{t(
 						"settings.clockinImport.review.startedTitle",
 						"Import review scan started",
@@ -410,9 +412,8 @@ function ClockinReviewStep({
 				</CardTitle>
 				<CardDescription>
 					{t(
-						"settings.clockinImport.review.scanningDescription",
-						"Review batch {reviewBatchId} is scanning. Review and approve records before commit.",
-						{ reviewBatchId },
+						"settings.clockinImport.review.scanningDescriptionWithoutId",
+						"The review scan is running. Review and approve records before they are imported.",
 					)}
 				</CardDescription>
 			</CardHeader>
@@ -437,7 +438,7 @@ function PreviewStat({ label, value }: { label: string; value: number }) {
 	return (
 		<div className="rounded-lg border p-4">
 			<p className="text-sm text-muted-foreground">{label}</p>
-			<p className="font-semibold text-2xl">{value}</p>
+			<p className="font-semibold text-2xl tabular-nums">{value.toLocaleString()}</p>
 		</div>
 	);
 }

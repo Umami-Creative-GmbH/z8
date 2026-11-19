@@ -1,0 +1,53 @@
+{
+  "source": {
+    "head": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+    "files": {
+      "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+      "apps/webapp/src/lib/validations/onboarding.ts": "e02f2606635fd058415c5cfe108d044e16342956bcf40ecf2f11e8f7d5f932e3"
+    }
+  },
+  "checks": [
+    "small-admin invalid-name focus",
+    "small-admin touch calendar fits",
+    "small-admin calendar Escape returns focus",
+    "small-admin real unauthenticated refusal retains name",
+    "small-admin refusal made no profile changes",
+    "small-admin held save disables controls",
+    "small-admin single pending save POST",
+    "small-admin saved date remains 2000-02-29 across LA browser / UTC DB",
+    "small-admin saved display preferences and explicit opt-out",
+    "small-admin saved structured identity",
+    "small-admin authoritative save destination",
+    "small-admin real skip refusal retains input",
+    "small-admin real skip preserves stored profile/preferences",
+    "small-admin authoritative skip destination",
+    "small-admin saved preference visible through actual settings reader",
+    "small-restricted invalid-name focus",
+    "small-restricted touch calendar fits",
+    "small-restricted calendar Escape returns focus",
+    "small-restricted real unauthenticated refusal retains name",
+    "small-restricted refusal made no profile changes",
+    "small-restricted held save disables controls",
+    "small-restricted single pending save POST",
+    "small-restricted saved date remains 2000-02-29 across LA browser / UTC DB",
+    "small-restricted saved display preferences and explicit opt-out",
+    "small-restricted saved structured identity",
+    "small-restricted authoritative save destination",
+    "small-restricted real skip refusal retains input",
+    "small-restricted real skip preserves stored profile/preferences",
+    "small-restricted authoritative skip destination",
+    "small-restricted saved preference visible through actual settings reader"
+  ],
+  "errors": [],
+  "selection": {
+    "time": "12-hour (8:00 AM)",
+    "week": "Sunday",
+    "consent": "false"
+  },
+  "savedSettings": {
+    "week_start_day": "sunday",
+    "time_format": "12h",
+    "help_improve_product": false,
+    "onboarding_step": "wellness"
+  }
+}

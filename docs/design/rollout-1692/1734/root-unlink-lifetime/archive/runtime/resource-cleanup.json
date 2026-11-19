@@ -1,0 +1,9 @@
+{
+  "browserControllerParentAbsent": true,
+  "browserPidAbsent": true,
+  "nextPortClosed": true,
+  "zeroOwnedRuntimeResources": true,
+  "nativePidAbsent": true,
+  "exactOwnServicesAbsent": 3,
+  "noGlobalKillOrServiceEnumeration": true
+}

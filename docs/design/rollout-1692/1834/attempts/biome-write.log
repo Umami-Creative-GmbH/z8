@@ -1,0 +1,39 @@
+src\app\[locale]\onboarding\work-schedule\page-client.tsx:57:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: attempt.
+  
+    55 │ 	const [attempt, setAttempt] = useState(0);
+    56 │ 
+  > 57 │ 	useEffect(() => {
+       │ 	^^^^^^^^^
+    58 │ 		let cancelled = false;
+    59 │ 		setIsAdmin(null);
+  
+  i This dependency can be removed from the list.
+  
+    105 │ 			cancelled = true;
+    106 │ 		};
+  > 107 │ 	}, [replace, attempt, skipFallback, accessFallback]);
+        │ 	             ^^^^^^^
+    108 │ 
+    109 │ 	return { isAdmin, skipError, retry: () => setAttempt((value) => value + 1) };
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    107 │ → },·[replace,·attempt,·skipFallback,·accessFallback]);␍
+        │                ---------                               
+
+Skipped 2 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 3 files in 12ms. Fixed 3 files.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+

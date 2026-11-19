@@ -1,0 +1,35 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-23efd673-c653899c5ba7311d/apps/webapp
+
+ ❯ |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx (9 tests | 1 failed | 8 skipped) 101ms
+   × keeps the loaded payroll confirmation draft and a reachable local retry when its parent read fails 100ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/finance/finance-command-lifetime.test.tsx > keeps the loaded payroll confirmation draft and a reachable local retry when its parent read fails
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/travel-expenses/finance/finance-command-lifetime.test.tsx:99:87
+     97|  expect(screen.queryByRole("dialog")).not.toBeNull();
+     98|  expect((screen.getByLabelText(/Payday/) as HTMLInputElement).value).t…
+     99|  expect(screen.getByRole("button",{name:"Confirm as paid"}).hasAttribu…
+       |                                                                                       ^
+    100|  fireEvent.click(screen.getByRole("button",{name:"Retry"}));
+    101|  await waitFor(()=>expect(screen.queryByRole("alert")).toBeNull());
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 skipped (9)
+   Start at  12:48:29
+   Duration  1.08s (environment 40%, import 34%, tests 12%, transform 10%, setup 3%)

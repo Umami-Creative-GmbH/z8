@@ -1,0 +1,39 @@
+{
+  "message": "real PDF downloaded",
+  "checks": [
+    {
+      "name": "small-employee has no payroll controls",
+      "actual": true
+    },
+    {
+      "name": "small-restricted has no payroll controls",
+      "actual": true
+    },
+    {
+      "name": "small-manager with actual payroll grant admitted",
+      "actual": true
+    },
+    {
+      "name": "small-admin with actual payroll grant admitted",
+      "actual": true
+    },
+    {
+      "name": "eight employee rows from authorized reader",
+      "actual": 8
+    },
+    {
+      "name": "actual loaded rows",
+      "actual": [
+        "Person 0No employee numberFixture team 0Fixed0 hNoneReady for payroll",
+        "Person 1No employee numberFixture team 1Fixed0 hNoneReady for payroll",
+        "Person 2No employee numberFixture team 0Fixed0 hNoneReady for payroll",
+        "Person 3No employee numberFixture team 1Fixed0 hNoneReady for payroll",
+        "Person 4No employee numberFixture team 0Fixed0 hNoneReady for payroll",
+        "Person 5No employee numberFixture team 1Fixed0 hNoneReady for payroll",
+        "Person 6No employee numberFixture team 0Fixed0 hNoneReady for payroll",
+        "Person 7No employee numberFixture team 1Fixed0 hNoneReady for payroll"
+      ]
+    }
+  ],
+  "errors": []
+}

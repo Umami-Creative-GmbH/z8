@@ -8,6 +8,7 @@ import { useUserTimezone } from "@/components/providers/user-preferences-provide
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AbsenceEvent, CalendarEvent } from "@/lib/calendar/types";
+import { runningWorkPeriodTitle } from "./running-work-period-labels";
 
 type AbsenceDeputy = NonNullable<AbsenceEvent["metadata"]["deputy"]>;
 
@@ -138,6 +139,9 @@ export function DayDetails({ selectedDate, events, timezone: selectedTimezone }:
 }
 
 function getEventTitle(event: CalendarEvent, t: ReturnType<typeof useTranslate>["t"]) {
+	if (event.type === "work_period" && event.metadata.isRunning) {
+		return runningWorkPeriodTitle(event, t);
+	}
 	return event.titleKey
 		? t(event.titleKey, event.title, getEventTranslationParams(event))
 		: event.title;

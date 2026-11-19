@@ -3,7 +3,8 @@
 import { IconAlertCircle, IconCalendar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useId, useTransition } from "react";
+import { useId, useMemo, useTransition } from "react";
+import { DataTableToolbar } from "@/components/data-table-server/data-table-toolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,6 +94,7 @@ export function PeriodSubmissionOverview({
 }: PeriodSubmissionOverviewProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	const number = useMemo(() => new Intl.NumberFormat(locale), [locale]);
 	const router = useRouter();
 	const [pending, startTransition] = useTransition();
 	const statusLabel = usePeriodSubmissionStatusLabel();
@@ -107,23 +109,31 @@ export function PeriodSubmissionOverview({
 
 	return (
 		<div className="flex flex-col gap-4" aria-busy={pending}>
-			<div className="flex flex-col gap-1.5 sm:max-w-xs">
-				<label htmlFor={pickerId} className="text-sm font-medium">
-					{t("team.periodSubmissions.period", "Submission period")}
-				</label>
-				<Select value={selected.startDate} onValueChange={selectPeriod}>
-					<SelectTrigger id={pickerId} className="tabular-nums">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{periods.map((period) => (
-							<SelectItem key={period.startDate} value={period.startDate} className="tabular-nums">
-								{range(period.startDate, period.endDate)}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
+			<DataTableToolbar
+				filterControls={
+					<div className="flex w-full flex-col gap-1.5 sm:max-w-sm">
+						<label htmlFor={pickerId} className="text-sm font-medium">
+							{t("team.periodSubmissions.period", "Submission period")}
+						</label>
+						<Select value={selected.startDate} onValueChange={selectPeriod} disabled={pending}>
+							<SelectTrigger id={pickerId} className="w-full tabular-nums">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{periods.map((period) => (
+									<SelectItem
+										key={period.startDate}
+										value={period.startDate}
+										className="tabular-nums"
+									>
+										{range(period.startDate, period.endDate)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				}
+			/>
 
 			{running ? (
 				<p className="text-sm text-muted-foreground">
@@ -144,14 +154,18 @@ export function PeriodSubmissionOverview({
 			) : (
 				<>
 					<ul
-						className="flex flex-wrap gap-2"
+						className="grid grid-cols-1 gap-x-6 gap-y-3 rounded-lg border bg-card p-4 sm:grid-cols-3 xl:grid-cols-5"
 						aria-label={t("team.periodSubmissions.summary", "Statuses")}
 					>
-						{STATUS_ORDER.filter((status) => counts[status] > 0).map((status) => (
-							<li key={status}>
-								<Badge variant={STATUS_VARIANTS[status]} className="tabular-nums">
-									{statusLabel(status)}: {counts[status]}
-								</Badge>
+						{STATUS_ORDER.map((status) => (
+							<li
+								key={status}
+								className="flex min-w-0 items-baseline justify-between gap-3 sm:block sm:space-y-1"
+							>
+								<p className="text-sm text-muted-foreground">{statusLabel(status)}</p>
+								<p className="text-lg font-semibold tabular-nums sm:text-2xl">
+									{number.format(counts[status])}
+								</p>
 							</li>
 						))}
 					</ul>
@@ -165,7 +179,10 @@ export function PeriodSubmissionOverview({
 						</p>
 					) : null}
 					<div className="overflow-hidden rounded-lg border bg-card">
-						<Table>
+						<Table
+							mobileLayout="stacked"
+							aria-label={t("team.periodSubmissions.records", "Employee submissions")}
+						>
 							<TableHeader>
 								<TableRow>
 									<TableHead>{t("team.periodSubmissions.columns.employee", "Employee")}</TableHead>
@@ -184,8 +201,8 @@ export function PeriodSubmissionOverview({
 										key={row.employeeId}
 										className={cn(row.highlighted && "bg-amber-50 dark:bg-amber-950/30")}
 									>
-										<TableCell className="font-medium">
-											<span className="inline-flex items-center gap-2">
+										<TableCell className="whitespace-normal font-medium">
+											<span className="inline-flex items-center gap-2 break-words">
 												{row.highlighted ? (
 													<IconAlertCircle
 														className="size-4 text-amber-600 dark:text-amber-400"
@@ -200,11 +217,13 @@ export function PeriodSubmissionOverview({
 												) : null}
 											</span>
 										</TableCell>
-										<TableCell className="tabular-nums">
+										<TableCell className="whitespace-normal tabular-nums">
 											{range(row.startDate, row.endDate)}
 										</TableCell>
 										<TableCell>
-											<Badge variant={STATUS_VARIANTS[row.status]}>{statusLabel(row.status)}</Badge>
+											<Badge className="whitespace-normal" variant={STATUS_VARIANTS[row.status]}>
+												{statusLabel(row.status)}
+											</Badge>
 										</TableCell>
 										<TableCell className="text-right">
 											<Button asChild variant="ghost" size="sm">
@@ -217,9 +236,7 @@ export function PeriodSubmissionOverview({
 													)}
 												>
 													<IconCalendar className="size-4" aria-hidden="true" />
-													<span className="hidden sm:inline">
-														{t("team.periodSubmissions.openCalendar", "Calendar")}
-													</span>
+													<span>{t("team.periodSubmissions.openCalendar", "Calendar")}</span>
 												</Link>
 											</Button>
 										</TableCell>

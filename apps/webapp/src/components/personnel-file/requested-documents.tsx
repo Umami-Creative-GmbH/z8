@@ -4,6 +4,7 @@ import { IconSend, IconUpload } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
+import { Temporal } from "temporal-polyfill";
 import { Button } from "@/components/ui/button";
 import type { DocumentRequestView } from "@/lib/personnel-file/document-request.types";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
@@ -31,9 +32,13 @@ export function RequestedDocuments({
 	const [uploading, setUploading] = useState<DocumentRequestView | null>(null);
 	const [submitting, setSubmitting] = useState<DocumentRequestView | null>(null);
 	const headingId = useId();
+	const outstanding = requests
+		.filter((request) => request.status === "open")
+		.toSorted((a, b) => Temporal.PlainDate.compare(a.deadline, b.deadline));
+	const remaining = requests.filter((request) => request.status !== "open");
 	if (requests.length === 0) return null;
 	return (
-		<section aria-labelledby={headingId} className="space-y-3">
+		<section aria-labelledby={headingId} className="min-w-0 space-y-4">
 			<div className="space-y-1">
 				<h2 id={headingId} className="text-lg font-semibold tracking-tight">
 					{t("settings.personnelFiles.myDocuments.requested.title", "Requested documents")}
@@ -45,44 +50,63 @@ export function RequestedDocuments({
 					)}
 				</p>
 			</div>
-			<DocumentRequestList
-				requests={requests}
-				timezone={capability.timezone}
-				actions={(request) =>
-					request.status === "open" ? (
-						<>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => setUploading(request)}
-								aria-label={t(
-									"settings.personnelFiles.myDocuments.requested.upload.open",
-									"Upload a document for {title}",
-									{ title: request.title },
-								)}
-							>
-								<IconUpload aria-hidden="true" className="size-4" />
-								{t("settings.personnelFiles.myDocuments.requested.upload.button", "Upload")}
-							</Button>
-							<Button
-								type="button"
-								size="sm"
-								disabled={request.pendingDocuments.length === 0}
-								onClick={() => setSubmitting(request)}
-								aria-label={t(
-									"settings.personnelFiles.myDocuments.requested.submit.open",
-									"Submit {title}",
-									{ title: request.title },
-								)}
-							>
-								<IconSend aria-hidden="true" className="size-4" />
-								{t("settings.personnelFiles.myDocuments.requested.submit.button", "Submit")}
-							</Button>
-						</>
-					) : null
-				}
-			/>
+			<p className="text-sm text-muted-foreground">
+				{t(
+					"settings.personnelFiles.myDocuments.requested.fileNote",
+					"Uploaded documents are in your personnel file immediately. Cancelling this form or a returned request does not remove them.",
+				)}
+			</p>
+			{outstanding.length > 0 ? (
+				<DocumentRequestList
+					requests={outstanding}
+					timezone={capability.timezone}
+					actions={(request) =>
+						request.status === "open" ? (
+							<>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => setUploading(request)}
+									aria-label={t(
+										"settings.personnelFiles.myDocuments.requested.upload.open",
+										"Upload a document for {title}",
+										{ title: request.title },
+									)}
+								>
+									<IconUpload aria-hidden="true" className="size-4" />
+									{t("settings.personnelFiles.myDocuments.requested.upload.button", "Upload")}
+								</Button>
+								<Button
+									type="button"
+									size="sm"
+									disabled={request.pendingDocuments.length === 0}
+									onClick={() => setSubmitting(request)}
+									aria-label={t(
+										"settings.personnelFiles.myDocuments.requested.submit.open",
+										"Submit {title}",
+										{ title: request.title },
+									)}
+								>
+									<IconSend aria-hidden="true" className="size-4" />
+									{t("settings.personnelFiles.myDocuments.requested.submit.button", "Submit")}
+								</Button>
+							</>
+						) : null
+					}
+				/>
+			) : null}
+			{remaining.length > 0 ? (
+				<div className="space-y-3">
+					<h3 className="font-medium">
+						{t(
+							"settings.personnelFiles.myDocuments.requested.other",
+							"Submitted and completed requests",
+						)}
+					</h3>
+					<DocumentRequestList requests={remaining} timezone={capability.timezone} />
+				</div>
+			) : null}
 			{uploading ? (
 				<DocumentDialog
 					key={uploading.id}
@@ -104,7 +128,11 @@ export function RequestedDocuments({
 				/>
 			) : null}
 			<SubmitDocumentRequestDialog
-				request={submitting}
+				key={submitting?.id ?? "closed"}
+				request={
+					requests.find((request) => request.id === submitting?.id && request.status === "open") ??
+					null
+				}
 				onOpenChange={(open) => {
 					if (!open) setSubmitting(null);
 				}}

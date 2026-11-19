@@ -1,5 +1,6 @@
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TodayTitle } from "./today-title";
 
 const TODAY_SUMMARY_LOADING_KEYS = [
 	"critical",
@@ -27,12 +28,12 @@ export function TodayPageLoading() {
 				labelKey: "common.loadingRegions.todaySManagerBriefing",
 				labelDefault: "Loading today's manager briefing",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
 			<header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
 				<div className="space-y-3">
-					<Skeleton aria-hidden="true" className="h-8 w-48" />
+					<TodayTitle />
 					<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
 				</div>
 				<Skeleton aria-hidden="true" className="h-4 w-40" />

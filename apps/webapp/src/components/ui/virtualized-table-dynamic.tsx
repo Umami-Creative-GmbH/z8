@@ -32,7 +32,7 @@ export function TableSkeleton({ rowCount = 5 }: { rowCount?: number }) {
 			{/* Row skeletons */}
 			<div className="divide-y">
 				{Array.from({ length: rowCount }).map((_, i) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton rows don't reorder
+					// oxlint-disable-next-line react/no-array-index-key -- Static skeleton rows don't reorder
 					<div key={i} className="flex gap-4 p-4">
 						<Skeleton className="h-4 w-24" />
 						<Skeleton className="h-4 w-32" />

@@ -61,6 +61,23 @@ describe("BillingPricingCards", () => {
 		).toBeTruthy();
 	});
 
+	it("formats the headline seat prices as currency in the app locale", () => {
+		locale.current = "de";
+		try {
+			renderCards();
+		} finally {
+			locale.current = "en";
+		}
+
+		// German puts the euro sign after the amount (a no-break space, which the
+		// default text normalizer reads as a space).
+		expect(screen.getByText("4 €")).toBeTruthy();
+		expect(screen.getByText("3 €")).toBeTruthy();
+		expect(screen.queryByText("€4")).toBeNull();
+		// The catalog string carries its own euro sign, so it gets the bare amount once.
+		expect(screen.getByText("€36/seat billed annually")).toBeTruthy();
+	});
+
 	it("shows only the full seat price while kiosk seats are off", () => {
 		renderCards();
 

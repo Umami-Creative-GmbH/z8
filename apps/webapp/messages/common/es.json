@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "El acceso a esta organización está en pausa hasta que se actualice la facturación.",
       "adminDescription": "Su prueba terminó o la suscripción ya no es válida. Actualice la facturación para seguir usando Z8.",
       "goToBilling": "Ir a facturación",
       "memberDescription": "Esta organización está suspendida. Contacte a un administrador de la organización para actualizar la facturación.",
@@ -165,6 +166,13 @@
     "teal": "Verde azulado"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Algo salió mal. Inténtalo de nuevo.",
+      "formerEmployee": "No se puede elegir a exempleados. Elige a alguien de la plantilla actual.",
+      "invalidInput": "Revisa los datos ingresados e inténtalo de nuevo.",
+      "notAllowed": "No tienes acceso a esta configuración.",
+      "signInRequired": "Inicia sesión para continuar."
+    },
     "actions": "Acciones",
     "active": "Activo",
     "add": "Agregar",
@@ -174,6 +182,7 @@
     "approve": "Aprobar",
     "assign": "Asignar",
     "back": "Atrás",
+    "backToDashboard": "Volver al panel",
     "brandLogo": "Logotipo de {brand}",
     "breadcrumb": {
       "breadcrumb": "Ruta de navegación",
@@ -195,6 +204,7 @@
     "copy": "Copiar",
     "create": "Crear",
     "current": "Actual",
+    "date": "Fecha",
     "datePicker": {
       "clearDate": "Borrar fecha",
       "placeholder": "Seleccionar una fecha"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} min",
     "edit": "Editar",
     "employees": "Empleados",
-    "enabled": "Habilitado",
     "error": "Error",
     "error-occurred": "Ocurrió un error",
     "errors": {
       "monthClosed": "{month} está cerrado. Debe reabrirse antes de poder modificar el trabajo o las ausencias."
     },
     "fieldPresets": "Ajustes predefinidos de {label}",
+    "filters": "Filtros",
     "focusInput": "Enfocar campo",
     "gender": {
       "female": "Femenino",
@@ -253,6 +263,7 @@
       "application": "Cargando aplicación",
       "auditExportSettings": "Cargando configuración de exportación de auditoría",
       "authentication": "Cargando autenticación",
+      "billableTimeSettings": "Cargando la configuración de tiempo facturable",
       "changePolicySettings": "Cargando configuración de directivas de cambios",
       "coverageRuleSettings": "Cargando configuración de reglas de cobertura",
       "customerSettings": "Cargando configuración de clientes",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Cargando configuración de datos de demostración",
       "deploymentDiagnostics": "Cargando diagnósticos de implementación",
       "employeeReports": "Cargando informes de empleados",
+      "employees": "Cargando empleados",
+      "employeeVacationAllowance": "Cargando la asignación de vacaciones del empleado",
       "employeeVacationAllowances": "Cargando asignaciones de vacaciones de empleados",
       "exportOperations": "Cargando operaciones de exportación",
       "holidaySettings": "Cargando configuración de días festivos",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Cargando horario de turnos",
       "shiftTemplateSettings": "Cargando configuración de plantillas de turnos",
       "skillSettings": "Cargando configuración de habilidades",
+      "statistics": "Cargando estadísticas",
       "surchargeSettings": "Cargando configuración de recargos",
       "team": "Cargando equipo",
       "todaySManagerBriefing": "Cargando informe de hoy para responsables",
@@ -315,8 +329,6 @@
     },
     "more": "más",
     "moreActions": "Más acciones",
-    "moveDown": "Bajar",
-    "moveUp": "Mover hacia arriba",
     "name": "Nombre",
     "navigation": {
       "retry": "Reintentar navegación",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Notificaciones} other {Notificaciones (# sin leer)}}"
     },
+    "offline": "Sin conexión",
     "open": "Abrir",
     "openEnded": "Sin fecha de finalización",
     "openMenu": "Abrir menú",
@@ -389,6 +402,7 @@
     "removing": "Eliminando...",
     "reset": "Restablecer",
     "retry": "Reintentar",
+    "retrying": "Reintentando…",
     "revoke": "Revocar",
     "save": "Guardar",
     "saveChanges": "Guardar cambios",
@@ -403,7 +417,9 @@
       "sidebar": "Barra lateral",
       "toggleSidebar": "Alternar barra lateral"
     },
+    "signIn": "Iniciar sesión",
     "skip": "Omitir",
+    "skipToContent": "Ir al contenido",
     "start": "Inicio",
     "status": "Estado",
     "submitting": "Enviando…",
@@ -422,6 +438,9 @@
     },
     "to": "a",
     "today": "Hoy",
+    "tryAgain": "Volver a intentarlo",
+    "unavailable": "No disponible",
+    "undo": "Deshacer",
     "unexpectedError": "Ocurrió un error inesperado",
     "unknown": "Desconocido",
     "unknownEmployee": "Empleado desconocido",
@@ -575,6 +594,7 @@
       "submit": "Registrar comprobación original",
       "suspensionNotice": "Una nueva comprobación satisfactoria no restablece automáticamente una autorización suspendida. Se requiere una nueva comprobación y una decisión explícita de restablecimiento.",
       "title": "Inspeccionar el permiso original de {name}",
+      "transportError": "No se pudo registrar la comprobación. Se conservan los datos introducidos; vuelve a intentarlo tras comprobar tu conexión y tu responsabilidad.",
       "verifier": "Confirmo que los datos registrados y los resultados de cada clase individual reflejan mi inspección."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "No se pudo cargar el registro del permiso de conducir. Compruebe su responsabilidad de verificación actual.",
       "loading": "Cargando el registro del permiso de conducir…",
       "notIntended": "{name} no es un conductor previsto. Solo se requiere una verificación para conductores previstos.",
+      "retained": "La evidencia conservada está disponible para su revisión. No hay nuevas comprobaciones disponibles para exempleados.",
       "title": "Verificación del permiso de conducir de {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Estado",
         "team": "Equipo"
       },
+      "customOrder": "Ordenado por la columna y la dirección seleccionadas.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Verificación pendiente ahora",
+      "dueOrder": "Primero las comprobaciones que vencen ahora y después el siguiente plazo.",
       "empty": {
         "description": "Los conductores previstos bajo su responsabilidad de verificación aparecen aquí. Consulte con un administrador si falta alguien.",
         "title": "Aún no hay nadie que verificar"
@@ -607,6 +630,8 @@
       "loadError": "No se pudo cargar la lista. Compruebe su responsabilidad de verificación actual.",
       "loading": "Cargando conductores previstos…",
       "noMatches": "Ningún conductor previsto coincide con la búsqueda o el filtro.",
+      "refresh": "Actualizar la lista de trabajo de comprobaciones",
+      "refreshing": "Actualizando la lista de trabajo de comprobaciones…",
       "search": "Buscar por nombre",
       "status": {
         "active": "Activo",
@@ -682,6 +707,7 @@
       "failed": "Clase inspeccionada incorrecta",
       "field": "Campo corregido",
       "from": "Desde la fecha (UTC)",
+      "fromHelp": "El período comienza a las 00:00 UTC.",
       "globalSuspension": "Toda autorización de conducción suspendida",
       "help": "Las confirmaciones originales, los suplementos con fecha y las decisiones de autorización efectivas se mantienen separados. La evidencia anterior necesaria para comprender el período seleccionado se etiqueta como contexto. Todas las horas de eventos y límites de período a continuación usan UTC.",
       "impedimentReported": "Impedimento de conducción notificado",
@@ -716,6 +742,7 @@
       "suspended": "Autorización suspendida",
       "title": "Historial de verificaciones y autorizaciones",
       "to": "Antes de la fecha (UTC)",
+      "toHelp": "El período termina antes de las 00:00 UTC de esta fecha.",
       "unavailable": "El historial no está disponible. Compruebe el período y su acceso actual.",
       "value": "Valor corregido",
       "verifierConfirmation": "Confirmación del verificador registrada en el momento de la verificación original"
@@ -751,7 +778,6 @@
         "teamNotFound": "Ese equipo ya no existe."
       },
       "notRequired": "No requerido (excluido)",
-      "removed": "Asignación como conductor previsto eliminada",
       "required": "Requerido",
       "saved": "Conductores previstos guardados",
       "targetOrganization": "Toda la organización",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Autorización de conducción",
       "loading": "Cargando autorización de conducción…",
+      "loadingEmployees": "Cargando empleados para la planificación…",
       "noEmployees": "No hay empleados coincidentes.",
       "recordingHelp": "Siempre puede registrar el tiempo de trabajo y el uso real del vehículo. Seleccionar un vehículo no otorga autorización de conducción; las clases verificadas no determinan la idoneidad para cada vehículo.",
       "refresh": "Actualizar estado de conducción",
+      "refreshEmployees": "Actualizar empleados de planificación",
+      "rosterUnavailable": "Los empleados de planificación no están disponibles. Comprueba tu acceso actual a la organización y vuelve a intentarlo.",
       "search": "Buscar empleado",
       "searchHelp": "Se muestran hasta 50 empleados. Ajuste la búsqueda para encontrar a otro empleado. Esta vista no contiene registros de inspección.",
       "title": "Estado de conducción para la planificación",
       "unavailable": "El estado de la autorización de conducción no está disponible."
     },
     "page": {
+      "reconciling": "Cargando el acceso a permisos de conducir para la organización actual…",
+      "scope": "Autorización de conducción, comprobaciones originales y planificación en tu organización activa. Cada vista se ajusta a tu acceso actual.",
       "title": "Permiso de conducir"
     },
     "policyTitle": "Política de la organización",
@@ -960,6 +991,13 @@
       "description": "Necesita un perfil de empleado para {feature}. Por favor cree una organización o contacte a su administrador.",
       "emailBody": "Hola,\n\nnecesito que se configure un perfil de empleado para acceder a las funciones de la plataforma. ¿Podría ayudarme con esto?\n\n¡Gracias!",
       "emailSubject": "Configuración del perfil de empleado requerida",
+      "formerEmployee": {
+        "description": "Vuelves a ser miembro de esta organización, pero tu empleo anterior finalizó. Un administrador debe volver a contratarte antes de que puedas {feature}.",
+        "emailBody": "Hola:\n\nVuelvo a ser miembro de la organización, pero mi empleo anterior finalizó. ¿Podrías volver a contratarme para que pueda acceder a las funciones de la plataforma?\n\n¡Gracias!",
+        "emailSubject": "Solicitud de recontratación",
+        "helpText": "Pide a tu administrador que vuelva a contratarte. Hasta entonces, no podrás usar esta organización.",
+        "title": "Tu empleo aquí ha finalizado"
+      },
       "helpText": "Si fue invitado a una organización, pida a su administrador que configure su perfil de empleado.",
       "title": "Perfil de empleado requerido"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Cargando cola de tareas"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Verificar un inicio de sesión existente"
+    },
     "banner": {
       "action": "Revisar requisitos y verificar",
       "requirement": "Esta organización requiere autenticación verificada a partir del {deadline}."
     },
     "code": {
       "label": "Código del autenticador",
+      "required": "Introduce un código del autenticador",
       "verify": "Verificar autenticador"
     },
     "continue": "Continuar tras la verificación",
@@ -1056,6 +1098,8 @@
       "title": "Registrar o sustituir un autenticador",
       "warning": "Añadir o sustituir un factor requiere verificación en un plazo de cinco minutos. Verifique el de sustitución antes de eliminar el factor anterior. Se permite revocar su último factor y puede bloquear el acceso a las organizaciones indicadas arriba; no concede un nuevo plazo de registro."
     },
+    "loading": "Cargando verificación de seguridad",
+    "navigation": "Organización y cuenta",
     "organization": {
       "select": "Seleccionar otra organización"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Error al verificar la contraseña",
       "label": "Contraseña actual",
+      "required": "Introduce tu contraseña actual",
       "verified": "Contraseña verificada. Puede registrar su primer autenticador, o verificar a continuación un autenticador existente o un código de respaldo.",
       "verify": "Verificar contraseña"
     },
@@ -1097,7 +1142,16 @@
       "description": "Para la recuperación, verifique su contraseña arriba e introduzca un código de respaldo no utilizado. Esto borrará la verificación local previa en todas sus organizaciones.",
       "label": "Código de respaldo",
       "lockout": "Si un único administrador pierde todas las vías de autenticación y recuperación, la organización permanecerá bloqueada. No existe una vía de omisión para administradores o soporte técnico.",
-      "success": "La recuperación solo permite el registro de sustitución. Verifique un autenticador antes de volver a su organización."
+      "nextSteps": "Vuelve a verificar tu contraseña antes de verificar un autenticador.",
+      "open": "Recuperar con un código de respaldo",
+      "required": "Introduce un código de respaldo sin usar",
+      "success": "La recuperación solo permite el registro de sustitución. Verifique un autenticador antes de volver a su organización.",
+      "title": "Recuperación de la cuenta"
+    },
+    "requirements": {
+      "empty": "No hay requisitos de organización registrados para esta cuenta.",
+      "selected": "Organización seleccionada",
+      "title": "Requisitos de la organización"
     },
     "security": {
       "factorWarning": "Eliminar un factor puede bloquear el acceso a las organizaciones que lo requieren. Verifique primero un factor de sustitución; eliminar el último factor no concede un nuevo período de gracia.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Directiva de autenticación de la organización (propietarios/administradores)"
     },
     "signout": "Cerrar sesión",
+    "signout.failed": "No se pudo cerrar sesión. Vuelve a intentarlo.",
     "social": {
       "verify": "Verificar inicio de sesión existente con {provider}"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Administrador de plataforma",
     "reports": "Informes",
     "scheduling": "Programación",
+    "secondary-label": "Configuración y ayuda",
     "settings": "Configuración",
     "team": "Equipo",
     "teamAbsences": "Ausencias del equipo",
     "teamDriving": "Detalles de conducción",
-    "team-label": "Equipo",
+    "team-organization-label": "Equipo y organización",
     "teamPeriodSubmissions": "Envíos del período",
     "teamPresence": "Quién está presente",
     "time-tracking": "Seguimiento de Tiempo",
     "today": "Hoy",
     "travel-expenses": "Gastos de viaje",
+    "workplace-label": "Espacio de trabajo",
     "worksCouncil": "Comité de empresa"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Tu turno terminó a las {endTime} ({timezone}). Registra tu salida si has terminado de trabajar.",
         "title": "Aún tienes la entrada registrada"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} vuelve a ser miembro, pero su empleo anterior finalizó. No tiene acceso hasta que lo vuelvas a contratar.",
+        "title": "Un exempleado necesita ser recontratado"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# empleado sigue vinculado únicamente a un responsable anterior: {names}. Asigna un responsable actual.} other {# empleados siguen vinculados únicamente a un responsable anterior: {names}. Asigna un responsable actual.}}",
@@ -1735,6 +1796,7 @@
         "title": "¡Hora de hidratarse!"
       }
     },
+    "countFailed": "Recuento de no leídos no disponible",
     "description": "Revisa actualizaciones, aprobaciones y alertas del sistema en una sola línea de tiempo.",
     "empty": {
       "description": "¡Estás al día! Las nuevas notificaciones aparecerán aquí.",
@@ -1754,6 +1816,8 @@
       "read": "Leídas",
       "unread": "No leídas"
     },
+    "loading": "Cargando notificaciones…",
+    "loadingCount": "Cargando recuento de no leídas…",
     "nativePush": {
       "attention": {
         "title": "Algo requiere tu atención"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Turnos abiertos por una desactivación",
         "equipment_return_reminder": "Recordatorios de devolución de equipamiento",
         "forgotten_clock_out_reminder": "Registro de salida olvidado",
+        "former_employee_needs_rehire": "Exempleados que necesitan recontratación",
         "former_employee_reports_without_manager": "Empleados sin un responsable actual",
         "kiosk_command_refused": "Fichaje de quiosco no registrado",
         "kiosk_fob_registered": "Llavero de quiosco registrado",
@@ -1871,6 +1936,7 @@
       "placeholder": "Buscar notificaciones..."
     },
     "selection": {
+      "actions": "Notificaciones seleccionadas",
       "selectAll": "Seleccionar todas las visibles",
       "selectAllAria": "Seleccionar todas las notificaciones visibles",
       "selectNamedAria": "Seleccionar {title}",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "{count} notificaciones eliminadas",
       "deleteFailed": "Error al eliminar las notificaciones",
+      "deletePartial": "{count} eliminadas; {failed} fallidas. Reintenta con la selección restante.",
       "markedRead": "{count} notificaciones marcadas como leídas",
-      "markReadFailed": "Error al marcar las notificaciones como leídas"
+      "markReadFailed": "Error al marcar las notificaciones como leídas",
+      "readPartial": "{count} marcadas como leídas; {failed} fallidas. Reintenta con la selección restante."
     },
     "unreadBadge": "{count} sin leer",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} visibles · últimas {limit} notificaciones"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}h",
     "pm": "PM"
   },
-  "userAvatar": {
-    "alt": "Avatar de usuario"
-  },
   "user": {
+    "account": "Cuenta",
     "font-size": "Tamaño de fuente",
     "language": "Idioma",
+    "loadingAccount": "Cargando cuenta",
     "logging-out": "Cerrando sesión...",
     "log-out": "Cerrar Sesión",
     "log-out-failed": "No se pudo cerrar la sesión. Por favor, inténtalo de nuevo.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Basado en el tiempo",
     "theme-time-info": "El modo basado en el tiempo está usando el modo {currentMode}. Cambiará a {nextMode} a las {time}.",
     "theme-toggle": "Cambiar tema"
+  },
+  "userAvatar": {
+    "alt": "Avatar de usuario"
   },
   "vacationBalance": {
     "conflictingPolicies": "Políticas de vacaciones en conflicto",

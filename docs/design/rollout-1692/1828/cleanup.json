@@ -1,0 +1,16 @@
+{
+  "nextPort": 52660,
+  "listening": false,
+  "ownedContainersRemaining": 0,
+  "namedNativeProcessesRemaining": 0,
+  "originalNextConfigRestored": true,
+  "privateManifestsRemainLocal": true,
+  "requiredAncestors": [
+    "02cc68035aa335505742b38178b06842bb233a3e",
+    "807fcc6311ec8f0511c9eea401c144b4da070da3",
+    "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+    "bfacad421ffe77f50729ea5895c546698ef28383",
+    "19862ee6586b4e07831c6f5a8b7e06d0f698cedd"
+  ],
+  "allRequiredAncestorsVerified": true
+}

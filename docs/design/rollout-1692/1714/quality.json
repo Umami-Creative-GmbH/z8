@@ -1,0 +1,49 @@
+{
+  "issue": 1714,
+  "preparedBase": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+  "integrationAtVerification": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+  "tests": {
+    "suites": 19,
+    "passed": 130
+  },
+  "fullTypecheck": "passed",
+  "biome": {
+    "files": 10,
+    "result": "passed"
+  },
+  "reactDoctor": {
+    "files": 10,
+    "findings": 0,
+    "numericScore": null,
+    "supplyChain": false
+  },
+  "runtime": {
+    "assertions": 35,
+    "pageErrors": [],
+    "captures": 23,
+    "connectedNextCompilationIssues": [],
+    "connectedNextConfigErrors": [],
+    "connectedNextSessionErrors": []
+  },
+  "cleanup": {
+    "browser": "closed",
+    "next": "verified owned tree stopped",
+    "containers": "three label-verified services removed",
+    "driverRunLock": "removed",
+    "privateManifests": "ignored"
+  },
+  "limits": [
+    "Remote catalog sync",
+    "Complete production static generation",
+    "Provider/SSO/MFA/email/logo variants",
+    "Native authenticated React tree/inspect/renders",
+    "Physical device/store safe areas",
+    "True browser/OS zoom",
+    "Exhaustive translations/contrast and screen-reader certification",
+    "Wholly healthy live audit configuration; all-clear verified at component/domain seam",
+    "Exhaustive destination mutations, feature switches and former-employee variants"
+  ],
+  "finalIntegration": "eaf8aa1ef97029cd4327ba7f2568383f63d2b40c",
+  "finalIntegrationMerge": "8739e051d7c7e33dc639b1cf8e43dbe4e5e6159e",
+  "finalSync": "docs only; app/package tree byte-identical to tested tree"
+}

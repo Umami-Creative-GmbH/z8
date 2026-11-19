@@ -1,0 +1,24 @@
+[
+  {
+    "name": "get_compilation_issues",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"issues\":[]}"
+        }
+      ]
+    }
+  },
+  {
+    "name": "get_errors",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+        }
+      ]
+    }
+  }
+]

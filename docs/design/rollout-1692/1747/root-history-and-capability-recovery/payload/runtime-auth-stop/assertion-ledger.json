@@ -1,0 +1,358 @@
+{
+  "schemaVersion": 1,
+  "source": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "product": [
+    {
+      "id": "R165-R01",
+      "predicate": "Actual ready/loading /travel-expenses heading and personal mixed history",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R02",
+      "predicate": "Visible New receipt -> correct editor, canonical graph and listing readback",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R03",
+      "predicate": "Visible New mileage -> correct editor, canonical graph and listing readback",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R04",
+      "predicate": "Visible New trip -> correct editor, canonical graph and listing readback",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R05",
+      "predicate": "Six filters/counts and sort order of mixed personal records",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R06",
+      "predicate": "Provenance, expense dates, amounts, approval and reimbursement distinctions",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R07",
+      "predicate": "Healthy empty history distinct from no-match and unknown; actual Show all",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R08",
+      "predicate": "Own draft deletion through real confirmation and exact graph delta",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R09",
+      "predicate": "Actual global Header Refresh with synthetic non-auth read outage retains authorized rows; local Retry recovers",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R10",
+      "predicate": "Pending creation duplicate protection",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R11",
+      "predicate": "Rejected creation recovery",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R12",
+      "predicate": "Real held creation response retirement with pre-release URL/lifetime ordering",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R13",
+      "predicate": "Employee personal-only and manager approval destination",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R14",
+      "predicate": "Finance read-only grant and fresh arrival refusal/revocation through actual UI",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R15",
+      "predicate": "Other employee and foreign organization cannot see creator drafts",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R16",
+      "predicate": "Settled expanded 1600 desktop h1/main/sidebar geometry and hit testing",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R17",
+      "predicate": "Settled 2400 wide dark geometry and hit testing",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R18",
+      "predicate": "390 phone drawer first Escape/focus and keyboard creation/filter/navigation",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R19",
+      "predicate": "Saved theme/sidebar/text size 18px across actual refresh/navigation",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R20",
+      "predicate": "Actual React TravelExpenseManagement and ExpenseHistory names",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R21",
+      "predicate": "Current-only screenshots with source/hash and decoded PNG evidence",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    },
+    {
+      "id": "R165-R22",
+      "predicate": "Installed axe main audit",
+      "state": "UNPASSED",
+      "reason": "Correct fresh-credential public form remained sign-in with Verification failed; no authenticated R165 UI observed.",
+      "evidence": [
+        "auth-boundary-SAFE.json",
+        "next-diagnostics-SAFE.json"
+      ]
+    }
+  ],
+  "productUniqueFinalPredicates": {
+    "total": 22,
+    "PASS": 0,
+    "FAIL": 0,
+    "UNPASSED": 22
+  },
+  "infrastructure": [
+    {
+      "id": "R165-I01",
+      "predicate": "Exact HEAD/app tree/branch and tracked/index clean before activation",
+      "state": "PASS",
+      "evidence": [
+        "preflight-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I02",
+      "predicate": "Prior relevant leases released before activation",
+      "state": "PASS",
+      "evidence": [
+        "preflight-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I03",
+      "predicate": "One fresh canonical prepare with migration verifier and standard seed",
+      "state": "PASS",
+      "evidence": [
+        "commands.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I04",
+      "predicate": "Canonical business seed and populated other-employee/foreign sentinels; not UI-created",
+      "state": "PASS",
+      "evidence": [
+        "seed-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I05",
+      "predicate": "All three populated canonical timekeeping table digests unchanged in both orgs",
+      "state": "PASS",
+      "evidence": [
+        "database-preservation-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I06",
+      "predicate": "Original seeded claims/attachments/decisions preserved and exact expected seed-only graph delta",
+      "state": "PASS",
+      "evidence": [
+        "database-preservation-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I07",
+      "predicate": "Connected tools/list and exact-source route-only compile issues empty",
+      "state": "PASS",
+      "evidence": [
+        "next-diagnostics-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I08",
+      "predicate": "Connected Next config/session errors empty for sign-in session only",
+      "state": "PASS",
+      "evidence": [
+        "next-diagnostics-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I09",
+      "predicate": "Tracked files/index/Git/config/license/lock/dependency bytes and links unchanged for recorded baseline",
+      "state": "PASS",
+      "evidence": [
+        "preservation-final-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I10",
+      "predicate": "Exact owned services/processes/listeners/browser/context/profile zero",
+      "state": "PASS",
+      "evidence": [
+        "resources-final-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I11",
+      "predicate": "Every other ignored old archive independently rehashed against pre-run baseline",
+      "state": "UNPASSED",
+      "evidence": [
+        "preservation-final-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I12",
+      "predicate": "Native agent-browser extension/tool preflight",
+      "state": "FAIL",
+      "evidence": [
+        "attempts.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    },
+    {
+      "id": "R165-I13",
+      "predicate": "Global proactive get_compilation_issues",
+      "state": "UNPASSED",
+      "evidence": [
+        "next-diagnostics-SAFE.json"
+      ],
+      "classification": "Infrastructure/control; not product acceptance"
+    }
+  ],
+  "infrastructureCounts": {
+    "total": 13,
+    "PASS": 10,
+    "FAIL": 1,
+    "UNPASSED": 2
+  },
+  "countsExcluded": "No unit, assembled public probe, PostgreSQL suite, producer assertion, attempt or command count is included in runtime product predicates."
+}

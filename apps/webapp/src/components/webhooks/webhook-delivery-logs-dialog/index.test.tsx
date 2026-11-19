@@ -11,11 +11,17 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string) => fallback,
+		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+			fallback.replace(/\{(\w+)\}/g, (match, name: string) =>
+				params && name in params ? String(params[name]) : match,
+			),
 	}),
 }));
 vi.mock("next-intl", () => ({
 	useLocale: () => "en",
+}));
+vi.mock("@/stores/organization-settings-store", () => ({
+	useOrganizationTimezone: () => "Europe/Berlin",
 }));
 vi.mock("@/app/[locale]/(app)/settings/webhooks/actions", () => ({
 	getWebhookDeliveryLogs: mocks.getWebhookDeliveryLogs,
@@ -147,6 +153,44 @@ describe("WebhookDeliveryLogsDialog", () => {
 
 		expect(await screen.findByText("Delivery service unavailable")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+	});
+
+	it("expands delivery details from a labelled disclosure button in the organization's zone", async () => {
+		mocks.getWebhookDeliveryLogs.mockResolvedValue({
+			success: true,
+			data: {
+				deliveries: [{ ...delivery("absence_request_approved"), payload: { marker: "payload-1" } }],
+				total: 1,
+			},
+		});
+		const user = userEvent.setup();
+		render(
+			<WebhookDeliveryLogsDialog
+				webhookId="webhook-1"
+				webhookName="Payroll"
+				open
+				onOpenChange={vi.fn()}
+			/>,
+		);
+
+		// 08:00 UTC is 10:00 in Europe/Berlin (CEST) on 10 July.
+		const disclosure = await screen.findByRole("button", {
+			name: "Details for absence_request_approved at Jul 10, 10:00:00",
+		});
+		expect(disclosure.getAttribute("aria-expanded")).toBe("false");
+		const details = document.getElementById(disclosure.getAttribute("aria-controls") ?? "");
+		expect(details).toBeTruthy();
+		expect(details?.hidden).toBe(true);
+		expect(screen.queryByText(/payload-1/)).toBeNull();
+
+		await user.click(disclosure);
+		expect(disclosure.getAttribute("aria-expanded")).toBe("true");
+		expect(details?.hidden).toBe(false);
+		expect(screen.getByText(/payload-1/)).toBeTruthy();
+
+		await user.click(disclosure);
+		expect(disclosure.getAttribute("aria-expanded")).toBe("false");
+		expect(screen.queryByText(/payload-1/)).toBeNull();
 	});
 
 	it("resets pagination when switching away and back", async () => {

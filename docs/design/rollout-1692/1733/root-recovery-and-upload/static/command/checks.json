@@ -1,0 +1,101 @@
+{
+  "status": "source checks complete; fresh independent PostgreSQL and runtime acceptance pending",
+  "source": "15b00b502bc2a2fd7f556433ba52c2da9768ea37",
+  "provisionalIntegration": "a076560ff3fbf7d857c4258cee08e6c22f19609e",
+  "previousScopeSource": "3045b2565e1eee25c8f35ccba46ee72a3ad35df9",
+  "previousCandidate": "44308be60ceba39d69ae3379dc26f8ab206a3a9a",
+  "lastVerified": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+  "behavior": "Confirmation and matching edits retain their shared reservation while their request is unsettled across Activity. Retired results do not publish feedback; a visible resumed arrival reads the current batch before release. Settled hidden commands release their reservation for restoration. Readback failures keep the existing query Retry. No backend cancellation, idempotency, authorization, storage, dates or notification policy changes.",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.tsx",
+      "rawSha256": "d1bf4e8396a17b28f20dc30233b64cca242c8fa06e699de824cdda6567af2718",
+      "lfSha256": "0ad69aaa5b08267ca226ad4fc4a128a5305633d2c7d4003956ea09367d81e6db",
+      "gitBlob": "5af47d41c2e64a8dfa75d620a31d044c5bed0ced"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-workspace-scope.test.tsx",
+      "rawSha256": "96eef7aea4f24f79e3f413652b9c4cba341c350cc70905dd65cd86eaee2fd19b",
+      "lfSha256": "61d903f94b12420f42e4e8e5aa3abc6c4c20a5b0e375d7d6d3a9e40eb7ed8c08",
+      "gitBlob": "a6473e380609a6cc5569b8c1dceec10a6118c3d1"
+    }
+  ],
+  "cleanupHelper": {
+    "path": "apps/webapp/src/lib/run-with-cleanup.ts",
+    "gitBlob": "c86518134ffb792b1299137170a990a1f2e2ca10",
+    "modified": false,
+    "boundary": "Existing helper awaits the action; current readback is inside that action and reservation release is synchronous cleanup. No async cleanup passed to its void callback."
+  },
+  "redGreen": {
+    "red": {
+      "file": "confirmation-red.json",
+      "passed": 3,
+      "failed": 1,
+      "observed": "Expected one public confirmation call, observed two after Activity resume."
+    },
+    "firstGreen": {
+      "file": "confirmation-green.json",
+      "passed": 12
+    },
+    "outcomeControls": {
+      "file": "lifetime-controls.json",
+      "passed": 16
+    },
+    "compilerCompatible": {
+      "file": "cleanup-helper-green.json",
+      "passed": 16,
+      "boundary": "Two actual files. An additional requested run-with-cleanup.test.ts pattern did not exist and supplied no cases; no separate helper suite is claimed. Existing helper behavior is exercised through the actual workspace."
+    }
+  },
+  "finalUnit": {
+    "file": "unit-final.json",
+    "command": "unit-command.json",
+    "caseInstances": 457,
+    "physicalFiles": 64,
+    "passed": 457,
+    "failed": 0,
+    "defaultTimeoutMs": 5000,
+    "boundary": "One final run. Earlier452, intermediate457 and focused controls overlap and are nonadditive."
+  },
+  "types": {
+    "file": "typecheck-final.log",
+    "typegen": true,
+    "projects": 3,
+    "exit": 0,
+    "attestation": "Root observed final completed shell65069 exit0 at the compiler-compatible source; earlier inline-finally type output is separately retained."
+  },
+  "quality": {
+    "file": "quality.json",
+    "files": 8,
+    "lintExit": 0,
+    "newTestFormat100Exit": 0,
+    "workspacePreservedFormat80Exit": 0,
+    "fullFormat100Exit": 1,
+    "ordinaryExit": 1,
+    "doctor": {
+      "file": "doctor-compatible.log",
+      "files": 8,
+      "errors": 0,
+      "warnings": 3,
+      "exit": 0,
+      "boundary": "Retained lifecycle/unpacking state-reset compiler warnings and upload-busy callback effect. No suppressions. Inline-finally experiment had three compiler errors/new size warning and was replaced with the existing helper plus unchanged progress markup extracted to a small component."
+    },
+    "whitespaceExit": 0
+  },
+  "preservedFailure": {
+    "path": ".tmp/1733-root-checks/runtime/HANDOFF-runtime.md",
+    "candidate": "44308be60ceba39d69ae3379dc26f8ab206a3a9a",
+    "cases": 27,
+    "passed": 26,
+    "failed": 1,
+    "publicFiles": 24,
+    "boundary": "No fixture/PG/browser/native/Next was run after that independent source blocker. Exact public allowlist/hashes and all prior source checks remain untouched."
+  },
+  "pending": [
+    "Fresh independent confirmation/update Activity and readback probes.",
+    "Fresh canonical PostgreSQL20, actual context/preview recovery and intake/confirmation/readback/native/Next/matched acceptance.",
+    "No universal unmount/account-org ABA or RSC freshness claim; no server idempotency or cancellation claim.",
+    "Whole-branch roster guard, full generation, catalogs, providers, physical devices, true zoom and exhaustive matrices remain unpassed."
+  ],
+  "provenance": "Intermediate red/green and inline-finally stages were uncommitted and not separately hash-sealed; no commit pin is invented. Final source/test bytes are the committed source above."
+}

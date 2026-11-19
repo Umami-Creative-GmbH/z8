@@ -1,0 +1,10 @@
+{
+  "publicAdminPolicy": {
+    "maxDailyHours": 6,
+    "enabled": true
+  },
+  "visibleFindings": 2,
+  "acknowledgmentDialogReached": true,
+  "staleCheck": "blocked by automatic approval review before execution",
+  "publicationNotConfirmed": true
+}

@@ -45,7 +45,7 @@ const textField = (max: number) =>
 		.string({ error: "invalidText" })
 		.trim()
 		.max(max, "tooLong")
-		// biome-ignore lint/suspicious/noControlCharactersInRegex: Reject controls before PostgreSQL and single-line address rendering.
+		// oxlint-disable-next-line eslint/no-control-regex -- Reject controls before PostgreSQL and single-line address rendering.
 		.regex(/^[^\u0000-\u001f\u007f]*$/, "invalidText");
 
 /** A saved profile: every field optional, trimmed, codes upper-cased. Issue messages are ProfileFieldErrors. */

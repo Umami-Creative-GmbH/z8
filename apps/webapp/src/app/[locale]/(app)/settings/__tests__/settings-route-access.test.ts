@@ -99,11 +99,10 @@ describe("org-admin settings route access", () => {
 			readTestText(join(SETTINGS_ROOT, "payroll-access/page.tsx"), "utf8"),
 		);
 
-		expect(source).toContain(
-			'className="flex flex-1 flex-col gap-6 p-4 md:p-6"',
-		);
-		expect(source).toContain('className="space-y-1"');
-		expect(source).toContain('className="text-2xl font-semibold"');
+		expect(source).toContain("<PageHeader");
+		expect(source).toContain('className="page-frame"');
+		expect(source).toContain('className="page-measure space-y-6"');
+		expect(source).not.toContain("text-2xl");
 	});
 
 	it("treats owners as org admins for settings route checks", () => {

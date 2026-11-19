@@ -1,0 +1,7 @@
+{
+  "source": ".tmp/1735-independent-checks/public-recovery-02.test.tsx",
+  "target": "apps/webapp/src/test/independent1735-recovery/public-recovery.test.tsx",
+  "sourceSha256": "1671b570aa24215038ffe248b4dbf83ee7941d6f94f53baba0ac4a2f1160e82c",
+  "targetSha256": "1671b570aa24215038ffe248b4dbf83ee7941d6f94f53baba0ac4a2f1160e82c",
+  "change": "Adds QueryClient-only positive recovery control after retaining missing UI Retry observation. No production source edit."
+}

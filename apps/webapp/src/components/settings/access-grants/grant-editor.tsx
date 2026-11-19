@@ -3,6 +3,7 @@
 import { IconEdit, IconLoader2, IconPlus, IconUserOff } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { EmployeeMultiSelect, type SelectableEmployee } from "@/components/employee-select";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -166,7 +167,9 @@ export function RevokeGrantDialog({
 					<AlertDialogCancel disabled={pending}>{copy.cancel}</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={(event) => {
-							event.preventDefault();
+							// Keep the dialog open until the revocation settles; the caller closes it on success.
+							keepAlertDialogOpen(event);
+							if (pending) return;
 							onConfirm();
 						}}
 						disabled={pending}

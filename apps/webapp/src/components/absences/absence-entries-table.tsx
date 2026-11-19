@@ -1,44 +1,34 @@
 "use client";
 
+import { IconCircleCheck, IconCircleX, IconClock } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { toast } from "sonner";
-import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
-import { DataTable, DataTableToolbar } from "@/components/data-table-server";
+import {
+	DataTable,
+	DataTablePagination,
+	DataTableToolbar,
+} from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import type { AbsenceChangeKind } from "@/lib/absences/change-request-types";
 import { formatDateRange, formatDays } from "@/lib/absences/date-utils";
-import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
+import {
+	getSickDetailLabel,
+	getSickDetailLabelKey,
+} from "@/lib/absences/sick-details";
 import type { AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
 import type { SickNoteMarker as SickNoteMarkerData } from "@/lib/personnel-file/sick-note-store";
-import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
-import { useRouter } from "@/navigation";
-import { AbsenceChangeDialog } from "./absence-change-dialog";
-import { AbsenceChangeHistory } from "./absence-change-history";
-import { AbsenceEntryActions } from "./absence-entry-actions";
 import { CategoryBadge } from "./category-badge";
-import { ChangeDeputyDialog } from "./change-deputy-dialog";
 import { DeputyName } from "./deputy-name";
-import { AbsenceSickNotesPanel } from "./sick-notes/absence-sick-notes-panel";
-import { AttachSickNoteDialog } from "./sick-notes/attach-sick-note-dialog";
+import { OwnAbsenceEntryActions, useOwnAbsenceActions } from "./own-absence-actions";
 import { SickNoteMarker } from "./sick-notes/sick-note-marker";
-import { useOwnAbsenceSickNotes } from "./sick-notes/use-own-absence-sick-notes";
-import { useOwnAbsenceChanges } from "./use-own-absence-changes";
 
 type TranslateFn = ReturnType<typeof useTranslate>["t"];
 
+/** Needs `OwnAbsenceActionsProvider`, which owns the row actions and their dialogs (#1863). */
 interface AbsenceEntriesTableProps {
 	absences: AbsenceWithDays[];
 	currentDate: string;
-	onUpdate?: () => void;
-}
-
-/** Sick notes go on the employee's own sick leave unless it was rejected (#982). */
-function takesSickNotes(absence: AbsenceWithDays): boolean {
-	return absence.category.type === "sick" && absence.status !== "rejected";
 }
 
 // Format period for display
@@ -54,7 +44,10 @@ function formatPeriod(period: DayPeriod, t: TranslateFn): string {
 }
 
 // Translate status for display
-function getStatusLabel(status: "pending" | "approved" | "rejected", t: TranslateFn): string {
+function getStatusLabel(
+	status: "pending" | "approved" | "rejected",
+	t: TranslateFn,
+): string {
 	switch (status) {
 		case "pending":
 			return t("absences.status.pending", "Pending");
@@ -65,65 +58,26 @@ function getStatusLabel(status: "pending" | "approved" | "rejected", t: Translat
 	}
 }
 
-export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: AbsenceEntriesTableProps) {
+export function AbsenceEntriesTable({
+	absences,
+	currentDate,
+}: AbsenceEntriesTableProps) {
 	const { t } = useTranslate();
-	const { refresh } = useRouter();
-	// Pending absence requests keep their submission periods open (#1350).
-	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
-	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
-	const sickNotes = useOwnAbsenceSickNotes(absences);
-	const [sickNotesOf, setSickNotesOf] = useState<AbsenceWithDays | null>(null);
-	const [attachingTo, setAttachingTo] = useState<AbsenceWithDays | null>(null);
-	const [changingDeputyOf, setChangingDeputyOf] = useState<AbsenceWithDays | null>(null);
-	const [changeOf, setChangeOf] = useState<{
-		absence: AbsenceWithDays;
-		kind: AbsenceChangeKind;
-	} | null>(null);
-	const changes = useOwnAbsenceChanges();
-	const changed = () => {
-		void changes.refetch();
-		refresh();
-		void invalidateReadiness();
-		onUpdate?.();
-	};
-
-	// Attaching can turn "without certificate" into "with certificate".
-	const handleSickNotesChanged = () => {
-		void sickNotes.refresh();
-		refresh();
-		onUpdate?.();
-	};
-
-	const handleCancel = async (absenceId: string) => {
-		setCancelingId(absenceId);
-
-		const result = await cancelAbsenceRequest(absenceId);
-
-		setCancelingId(null);
-
-		if (result.success) {
-			toast.success(t("absences.toast.requestCancelled", "Absence cancelled"));
-			// Revalidate the page data to reflect the cancelled absence
-			refresh();
-			void invalidateReadiness();
-			onUpdate?.();
-		} else {
-			toast.error(
-				result.error || t("absences.toast.cancelFailed", "Failed to cancel absence request"),
-			);
-		}
-	};
+	const actions = useOwnAbsenceActions();
 
 	// Filter absences by search
 	const filteredAbsences = (() => {
 		if (!search) return absences;
-		const searchLower = search.toLowerCase();
+		const searchLower = search.toLocaleLowerCase();
+		// Match the status as the person reads it, in their language.
 		return absences.filter(
 			(absence) =>
-				absence.category.name.toLowerCase().includes(searchLower) ||
-				absence.notes?.toLowerCase().includes(searchLower) ||
-				absence.status.toLowerCase().includes(searchLower),
+				absence.category.name.toLocaleLowerCase().includes(searchLower) ||
+				absence.notes?.toLocaleLowerCase().includes(searchLower) ||
+				getStatusLabel(absence.status, t)
+					.toLocaleLowerCase()
+					.includes(searchLower),
 		);
 	})();
 
@@ -140,17 +94,23 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			cell: ({ row }) => (
 				<AbsenceTypeCell
 					absence={row.original}
-					sickNoteMarker={sickNotes.markers[row.original.id]}
-					onOpenSickNotes={() => setSickNotesOf(row.original)}
+					sickNoteMarker={actions.sickNoteMarkers[row.original.id]}
+					onOpenSickNotes={() => actions.openSickNotes(row.original)}
 				/>
 			),
 		},
 		{
 			accessorKey: "days",
-			header: () => <div className="text-right">{t("absences.table.headers.days", "Days")}</div>,
+			header: () => (
+				<div className="text-right">
+					{t("absences.table.headers.days", "Days")}
+				</div>
+			),
 			cell: ({ row }) => {
 				return (
-					<div className="text-right tabular-nums">{formatDays(row.original.absenceDays, t)}</div>
+					<div className="text-right tabular-nums">
+						{formatDays(row.original.absenceDays, t)}
+					</div>
 				);
 			},
 		},
@@ -158,24 +118,25 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			accessorKey: "status",
 			header: t("absences.table.headers.status", "Status"),
 			cell: ({ row }) => (
-				<Badge
-					variant={
-						row.original.status === "approved"
-							? "default"
-							: row.original.status === "pending"
-								? "secondary"
-								: "destructive"
-					}
-				>
-					{getStatusLabel(row.original.status, t)}
-				</Badge>
+				<div className="flex flex-col items-start gap-1">
+					<AbsenceStatusBadge status={row.original.status} />
+					{actions.hasPendingChange(row.original.id) ? (
+						// Explains why the row's change actions are unavailable.
+						<span className="text-muted-foreground text-xs">
+							{t("absences.table.changePending", "Change request pending")}
+						</span>
+					) : null}
+				</div>
 			),
 		},
 		{
 			accessorKey: "notes",
 			header: t("absences.table.headers.notes", "Notes"),
 			cell: ({ row }) => (
-				<span className="max-w-[200px] truncate text-muted-foreground block">
+				<span
+					className="block max-w-[200px] truncate text-muted-foreground"
+					title={row.original.notes || undefined}
+				>
 					{row.original.notes || "—"}
 				</span>
 			),
@@ -183,20 +144,14 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 		{
 			id: "actions",
 			header: () => (
-				<div className="text-right">{t("absences.table.headers.actions", "Actions")}</div>
+				<div className="text-right">
+					{t("absences.table.headers.actions", "Actions")}
+				</div>
 			),
 			cell: ({ row }) => (
-				<AbsenceEntryActions
+				<OwnAbsenceEntryActions
 					absence={row.original}
 					currentDate={currentDate}
-					canAttachSickNote={sickNotes.canAttach && takesSickNotes(row.original)}
-					changeRequests={changes.data}
-					changesLoaded={changes.isSuccess}
-					isCanceling={cancelingId === row.original.id}
-					onRequestChange={(kind) => setChangeOf({ absence: row.original, kind })}
-					onChangeDeputy={() => setChangingDeputyOf(row.original)}
-					onAttachSickNote={() => setAttachingTo(row.original)}
-					onCancel={() => handleCancel(row.original.id)}
 				/>
 			),
 		},
@@ -204,28 +159,6 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 
 	return (
 		<div className="space-y-4">
-			{changes.isError ? (
-				<p role="alert" className="text-sm text-destructive">
-					{t("absences.change.historyFailed", "Could not load change requests.")}{" "}
-					<Button variant="link" onClick={() => void changes.refetch()}>
-						{t("common.retry", "Retry")}
-					</Button>
-				</p>
-			) : null}
-			{changes.data?.length ? (
-				<AbsenceChangeHistory requests={changes.data} onChanged={changed} />
-			) : null}
-			{changeOf ? (
-				<AbsenceChangeDialog
-					absence={changeOf.absence}
-					kind={changeOf.kind}
-					open
-					onOpenChange={(open) => {
-						if (!open) setChangeOf(null);
-					}}
-					onChanged={changed}
-				/>
-			) : null}
 			<DataTableToolbar
 				search={search}
 				onSearchChange={setSearch}
@@ -238,56 +171,58 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			<DataTable
 				columns={columns}
 				data={filteredAbsences}
+				getRowId={(absence) => absence.id}
 				className="bg-card"
+				mobileLayout="stacked"
 				pinLastColumn
 				emptyMessage={
 					search
-						? t("absences.table.noSearchResults", "No absences match your search.")
+						? t(
+								"absences.table.noSearchResults",
+								"No absences match your search.",
+							)
 						: t("absences.table.noRequests", "No absence requests found.")
 				}
-			/>
-			{sickNotesOf ? (
-				<AbsenceSickNotesPanel
-					absence={sickNotesOf}
-					open
-					onOpenChange={(open) => {
-						if (!open) setSickNotesOf(null);
-					}}
-					canAttach={sickNotes.canAttach && takesSickNotes(sickNotesOf)}
-					onChanged={handleSickNotesChanged}
-				/>
-			) : null}
-			{changingDeputyOf ? (
-				<ChangeDeputyDialog
-					absence={changingDeputyOf}
-					open
-					onOpenChange={(open) => {
-						if (!open) setChangingDeputyOf(null);
-					}}
-					onChanged={() => {
-						refresh();
-						onUpdate?.();
-					}}
-				/>
-			) : null}
-			{attachingTo ? (
-				<AttachSickNoteDialog
-					absence={attachingTo}
-					open
-					onOpenChange={(open) => {
-						if (!open) setAttachingTo(null);
-					}}
-					onAttached={handleSickNotesChanged}
-				/>
-			) : null}
+			>
+				{(table) => <DataTablePagination table={table} />}
+			</DataTable>
 		</div>
+	);
+}
+
+const STATUS_BADGE = {
+	approved: {
+		icon: IconCircleCheck,
+		className: "border-primary/30 bg-primary/10 text-primary",
+	},
+	pending: {
+		icon: IconClock,
+		className:
+			"border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+	},
+	rejected: {
+		icon: IconCircleX,
+		className: "border-destructive/30 bg-destructive/10 text-destructive",
+	},
+} as const;
+
+/** Status as text with an icon; colour supports it and matches the calendar legend. */
+function AbsenceStatusBadge({ status }: { status: AbsenceWithDays["status"] }) {
+	const { t } = useTranslate();
+	const { icon: Icon, className } = STATUS_BADGE[status];
+	return (
+		<Badge variant="outline" className={className}>
+			<Icon aria-hidden="true" />
+			{getStatusLabel(status, t)}
+		</Badge>
 	);
 }
 
 function AbsenceDateRangeCell({ absence }: { absence: AbsenceWithDays }) {
 	const { t } = useTranslate();
 	const dateRangeText = formatDateRange(absence.startDate, absence.endDate);
-	const showPeriods = absence.startPeriod !== "full_day" || absence.endPeriod !== "full_day";
+	const showPeriods =
+		absence.startPeriod !== "full_day" || absence.endPeriod !== "full_day";
 	const startPeriod = formatPeriod(absence.startPeriod, t);
 	const endPeriod = formatPeriod(absence.endPeriod, t);
 
@@ -334,7 +269,10 @@ function AbsenceTypeCell({
 			/>
 			{absence.category.type === "sick" && absence.sickDetail && (
 				<span className="text-muted-foreground text-xs">
-					{t(getSickDetailLabelKey(absence.sickDetail), getSickDetailLabel(absence.sickDetail))}
+					{t(
+						getSickDetailLabelKey(absence.sickDetail),
+						getSickDetailLabel(absence.sickDetail),
+					)}
 				</span>
 			)}
 			{absence.category.type === "sick" ? (
@@ -345,7 +283,9 @@ function AbsenceTypeCell({
 			) : null}
 			{absence.deputy ? (
 				<span className="text-xs">
-					<span className="text-muted-foreground">{t("absences.deputy.label", "Deputy")}</span>{" "}
+					<span className="text-muted-foreground">
+						{t("absences.deputy.label", "Deputy")}
+					</span>{" "}
 					<DeputyName deputy={absence.deputy} className="font-medium" />
 				</span>
 			) : null}

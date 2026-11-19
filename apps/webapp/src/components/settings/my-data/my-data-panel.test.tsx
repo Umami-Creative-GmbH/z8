@@ -54,6 +54,31 @@ describe("personal data export transport failures", () => {
 		expect(mocks.request).toHaveBeenCalledWith();
 		expect(mocks.success).toHaveBeenCalled();
 	});
+	it("says when no export has been requested yet", () => {
+		render(<MyDataPanel exports={[]} />);
+		expect(screen.getByText(/You have not requested an export yet/)).toBeTruthy();
+	});
+	it("explains why a new export cannot be requested while one is being prepared", () => {
+		render(
+			<MyDataPanel
+				exports={[
+					{
+						id: "export-1",
+						kind: "employee",
+						status: "processing",
+						createdAt: "2026-10-01T08:00:00Z",
+						completedAt: null,
+						expiresAt: "2026-10-08T08:05:00Z",
+						sizeBytes: null,
+					},
+				]}
+			/>,
+		);
+		const button = screen.getByRole("button", { name: "Request export" });
+		expect(button.hasAttribute("disabled")).toBe(true);
+		expect(button.getAttribute("aria-describedby")).toBe("my-data-export-in-progress");
+		expect(screen.getByText(/already being prepared/)).toBeTruthy();
+	});
 	it("reports a rejected export request and enables retry", async () => {
 		mocks.request.mockRejectedValue(new Error("offline"));
 		render(<MyDataPanel exports={[]} />);

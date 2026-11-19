@@ -61,6 +61,7 @@
           "allowance": "İzin Hakkı",
           "allowanceForYear": "{year} Yılı İzin Hakkı",
           "assignedPolicy": "Atanan Politika",
+          "backToAllowances": "Çalışan izin haklarına geri dön",
           "cancel": "İptal",
           "carryover": "Devreden İzin",
           "carryoverDaysOptional": "Devreden İzin Günleri (İsteğe Bağlı)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Varsayılan: {days} gün",
           "employeeInformation": "Çalışan Bilgileri",
           "errors": {
+            "adjustmentReasonRequired": "Bu düzeltmeyi kaydetmek için bir neden girin.",
             "createAdjustmentFailed": "Düzeltme oluşturulamadı",
-            "unexpected": "Beklenmedik bir hata oluştu",
+            "loadFailed": "Çalışanın izin hakkı yüklenemedi.",
             "updateAllowanceFailed": "İzin hakkı güncellenemedi",
             "updatePolicyAssignmentFailed": "Politika ataması güncellenemedi"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "çalışan izin haklarını yönet",
           "managers": "Yöneticiler",
           "overrideEffectivePolicy": "Bu çalışan için atanan politika hakkını ({days} gün) geçersiz kıl",
+          "partialSave": {
+            "description": "Girdileriniz korunur. Yeniden deneme yalnızca eksik kalanları kaydeder.",
+            "failed": {
+              "adjustment": "Manuel düzeltme kaydedilemedi: {reason}",
+              "allowance": "Özel izin hakkı kaydedilemedi: {reason}",
+              "policy": "Politika ataması kaydedilemedi: {reason}"
+            },
+            "pending": {
+              "adjustment": "Manuel düzeltme henüz kaydedilmedi.",
+              "allowance": "Özel izin hakkı henüz kaydedilmedi.",
+              "policy": "Politika ataması henüz kaydedilmedi."
+            },
+            "retry": "Kaydedilmemiş değişiklikleri tekrar dene",
+            "saved": {
+              "adjustment": "Manuel düzeltme kaydedildi.",
+              "allowance": "Özel izin hakkı kaydedildi.",
+              "policy": "Politika ataması kaydedildi."
+            },
+            "title": "Bazı değişiklikler kaydedilmedi",
+            "titleNothingSaved": "Değişiklikler kaydedilmedi"
+          },
           "policyOptionDays": "{name} ({days} gün)",
           "position": "Pozisyon",
           "postingsSkipped": "Politika yapılandırması çözülene kadar otomatik izin girişleri atlanır.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Uyarı: \"{name}\" şirket varsayılan politikasıdır. Bunu silmeden önce başka bir politikayı varsayılan olarak ayarlamalısınız.",
       "delete-description-v2": "\"{name}\" politikasını silmek istediğinizden emin misiniz? Bu işlem, bu politika için yapılan tüm atamaları da kaldıracaktır.",
       "deleteFailed": "Politika silinemedi",
+      "deleteLastDefault": "Bu, tek şirket varsayılan politikasıdır. Önce başka bir politikayı varsayılan olarak ayarlayın.",
       "delete-title": "İzin Politikasını Sil",
       "header": {
         "accrual": "Tahakkuk",
@@ -334,6 +358,7 @@
       },
       "loadError": "Politikalar yüklenemedi",
       "max-days": "Maksimum {days} gün",
+      "no-end-date": "Bitiş tarihi yok",
       "none": "Yok",
       "no-policies-created": "Henüz oluşturulmuş bir izin politikası yok. Ekibinizin izin haklarını tanımlamak için bir politika oluşturun.",
       "noSearchResults": "Aramanızla eşleşen politika bulunamadı.",

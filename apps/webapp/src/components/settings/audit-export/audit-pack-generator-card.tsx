@@ -210,8 +210,9 @@ function AuditPackGeneratorCardForOrganization({
 
 	useEffect(() => {
 		void Promise.resolve().then(loadRequestsForEffect);
+		const operation = organizationOperationRef.current;
 		return () => {
-			organizationOperationRef.current.active = false;
+			operation.active = false;
 			requestsOperationRef.current += 1;
 		};
 	}, []);
@@ -601,65 +602,66 @@ function RecentAuditPackRequests({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{requests.map((request) => (
-							<TableRow key={request.id}>
-								<TableCell className="text-sm">
-									{formatDateTime(request.createdAt, displayContext)}
-								</TableCell>
-								<TableCell className="text-sm">
-									{formatDate(request.startDate, displayContext)} -{" "}
-									{formatDate(request.endDate, displayContext)}
-								</TableCell>
-								<TableCell>
-									<RequestStatusBadge status={request.status} t={t} />
-								</TableCell>
-								<TableCell className="text-sm">
-									{request.artifact?.entryCount ?? "-"}
-									{request.artifact ? (
-										<AppendAssuranceNote
-											assurance={request.artifact.appendAssurance}
-											t={t}
-										/>
-									) : null}
-								</TableCell>
-								<TableCell className="text-right">
-									{request.status === "completed" ? (
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => void onDownload(request.id)}
-											disabled={downloadingRequestId === request.id}
-										>
-											{downloadingRequestId === request.id ? (
-												<IconLoader2 className="size-4 animate-spin" />
-											) : (
-												<IconDownload className="size-4" />
-											)}
-											<span className="sr-only">
-												{t(
-													"settings.auditExport.auditPack.download",
-													"Download",
+						{requests.map((request) => {
+							const period = `${formatDate(request.startDate, displayContext)} - ${formatDate(request.endDate, displayContext)}`;
+							return (
+								<TableRow key={request.id}>
+									<TableCell className="text-sm">
+										{formatDateTime(request.createdAt, displayContext)}
+									</TableCell>
+									<TableCell className="text-sm">{period}</TableCell>
+									<TableCell>
+										<RequestStatusBadge status={request.status} t={t} />
+									</TableCell>
+									<TableCell className="text-sm">
+										{request.artifact?.entryCount ?? "-"}
+										{request.artifact ? (
+											<AppendAssuranceNote
+												assurance={request.artifact.appendAssurance}
+												t={t}
+											/>
+										) : null}
+									</TableCell>
+									<TableCell className="text-right">
+										{request.status === "completed" ? (
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={() => void onDownload(request.id)}
+												disabled={downloadingRequestId === request.id}
+											>
+												{downloadingRequestId === request.id ? (
+													<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+												) : (
+													<IconDownload className="size-4" aria-hidden="true" />
 												)}
-											</span>
-										</Button>
-									) : request.status === "failed" ? (
-										<span className="text-xs text-destructive">
-											{request.errorMessage ||
-												t("settings.auditExport.auditPack.failed", "Failed")}
-										</span>
-									) : (
-										<span className="text-xs text-muted-foreground">
-											{request.completedAt
-												? formatDateTime(request.completedAt, displayContext)
-												: t(
-														"settings.auditExport.auditPack.pending",
-														"Pending",
+												<span className="sr-only">
+													{t(
+														"settings.auditExport.auditPack.downloadNamed",
+														"Download audit pack for {period}",
+														{ period },
 													)}
-										</span>
-									)}
-								</TableCell>
-							</TableRow>
-						))}
+												</span>
+											</Button>
+										) : request.status === "failed" ? (
+											<span className="text-xs text-destructive">
+												{request.errorMessage ||
+													t("settings.auditExport.auditPack.failed", "Failed")}
+											</span>
+										) : (
+											<span className="text-xs text-muted-foreground">
+												{request.completedAt
+													? formatDateTime(request.completedAt, displayContext)
+													: t(
+															"settings.auditExport.auditPack.pending",
+															"Pending",
+														)}
+											</span>
+										)}
+									</TableCell>
+								</TableRow>
+							);
+						})}
 					</TableBody>
 				</Table>
 			)}
@@ -691,7 +693,7 @@ function AppendAssuranceNote({
 	const continued = assurance.postAnchor ?? 0;
 	if (limited > 0) {
 		return (
-			<p className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
+			<p className="flex items-center gap-1 text-xs text-warning">
 				<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />
 				{t(
 					"settings.auditExport.auditPack.lineageLimited",
@@ -752,7 +754,7 @@ function RequestStatusBadge({
 			);
 		case "completed":
 			return (
-				<Badge className="gap-1 bg-green-600 hover:bg-green-600">
+				<Badge variant="success" className="gap-1">
 					<IconCheck className="size-3" />
 					{t("settings.auditExport.auditPack.statusCompleted", "Completed")}
 				</Badge>

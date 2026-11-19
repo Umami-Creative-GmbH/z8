@@ -5,25 +5,20 @@ import {
 	IconClock,
 	IconUsers,
 } from "@tabler/icons-react";
-import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
-import { employee } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { Link } from "@/navigation";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
-
-async function getCurrentEmployee(userId: string) {
-	return await db.query.employee.findFirst({
-		where: eq(employee.userId, userId),
-	});
-}
+import { AnalyticsHeading } from "./analytics-heading";
+import { AnalyticsTabs } from "./analytics-tabs";
+import { findAnalyticsEmployeeByUserId } from "./current-employee-scope";
 
 export default function AnalyticsLayout({
 	children,
@@ -41,23 +36,22 @@ export default function AnalyticsLayout({
 	);
 }
 
-function AnalyticsLayoutLoading() {
+async function AnalyticsLayoutLoading() {
+	const t = await getTranslate();
 	return (
 		<LoadingRegion
-			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.analyticsNavigation",
 				labelDefault: "Loading analytics navigation",
 			}}
 		>
-			<div className="space-y-2 px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-9 w-48" />
+			<div className="space-y-2">
+				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
 			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton aria-hidden="true" className="h-10 w-full max-w-3xl" />
-			</div>
+			<Skeleton aria-hidden="true" className="h-10 w-full max-w-3xl" />
 		</LoadingRegion>
 	);
 }
@@ -72,11 +66,16 @@ async function AnalyticsLayoutContent({
 		return redirectWithLocale("/sign-in");
 	}
 
-	const currentEmployee = await getCurrentEmployee(session.user.id);
+	const currentEmployee = await findAnalyticsEmployeeByUserId(
+		db,
+		session.user.id,
+		session.session.activeOrganizationId,
+	);
 
 	if (!currentEmployee) {
 		return (
-			<div className="@container/main flex flex-1 items-center justify-center p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<NoEmployeeError
 					feature={t("analytics.access.noEmployeeFeature", "view analytics")}
 				/>
@@ -87,7 +86,8 @@ async function AnalyticsLayoutContent({
 	// Role-based access control: Only admins and managers can access analytics
 	if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
 		return (
-			<div className="@container/main flex flex-1 items-center justify-center p-6">
+			<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+				<AnalyticsHeading title={t("analytics.layout.title", "Analytics")} />
 				<div className="text-center">
 					<h2 className="text-2xl font-bold">
 						{t("analytics.access.restrictedTitle", "Access Restricted")}
@@ -104,24 +104,22 @@ async function AnalyticsLayoutContent({
 	}
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{/* Page Header */}
-			<div className="px-4 lg:px-6">
-				<h1 className="text-3xl font-bold tracking-tight">
-					{t("analytics.layout.title", "Analytics")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
+			<div>
+				<AnalyticsHeading
+					title={t("analytics.layout.title", "Analytics")}
+					description={t(
 						"analytics.layout.description",
 						"Comprehensive insights into team performance, work hours, and absence patterns",
 					)}
-				</p>
+				/>
 			</div>
 
 			{/* Sub-navigation Tabs */}
-			<div className="px-4 lg:px-6">
-				<Tabs defaultValue="overview" className="w-full">
-					<TabsList className="max-w-full">
+			<div>
+				<AnalyticsTabs>
+					<TabsList className="h-auto max-w-full flex-wrap justify-start gap-1">
 						<TabsTrigger value="overview" asChild>
 							<Link href="/analytics">
 								<IconChartBar className="mr-2 size-4" />
@@ -156,7 +154,7 @@ async function AnalyticsLayoutContent({
 							</Link>
 						</TabsTrigger>
 					</TabsList>
-				</Tabs>
+				</AnalyticsTabs>
 			</div>
 
 			{/* Page Content */}

@@ -1,0 +1,23 @@
+# Every pnpm shell set pnpm_config_verify_deps_before_run=false first.
+pnpm --config.verify-deps-before-run=false --config.verify-store-integrity=true install --offline --frozen-lockfile --ignore-scripts --package-import-method=copy
+pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs prepare .tmp/1748/fixture
+pnpm --config.verify-deps-before-run=false node .tmp/1748/seed.mjs
+pnpm --config.verify-deps-before-run=false --dir apps/webapp run i18n:metadata
+pnpm --config.verify-deps-before-run=false node .tmp/1748/dev.mjs dev X:/t3-code/worktrees/z8/t3-2a184f7c-c55e0704d64f87a8 .tmp/1748/fixture
+pnpm --config.verify-deps-before-run=false node .tmp/1748/browser.mjs before
+pnpm --config.verify-deps-before-run=false node .tmp/1748/browser.mjs after
+pnpm --config.verify-deps-before-run=false node .tmp/1748/journeys.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1748/settlement.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1748/native.mjs
+# Native session: r166-1748-isolated-2a184f7c, no --restore. Normal development login via private stdin.
+# Browser helper's download completion remained unpassed; independent CDP completion is in after/observations.json.
+pnpm --config.verify-deps-before-run=false --dir apps/webapp exec next typegen
+pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.typecheck.json --noEmit --incremental false
+pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false
+pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsc --project tsconfig.smoke.json --noEmit --incremental false
+pnpm --config.verify-deps-before-run=false --dir apps/webapp exec react-doctor --scope changed --base e50692c3bc5194ab1c16d2fe8d12664ab11aafd7 --verbose --no-supply-chain --no-parallel
+# Scope arguments and complete unit/PostgreSQL invocations are in ../1748.md.
+# Cold consumer-only comparison: stop-next.ps1 -> overlay.mjs parent -> dev -> browser before -> stop-next.ps1 -> overlay.mjs restore -> dev -> browser after.
+# overlay.mjs guarded four source files, refused unexpected changes, and verified byte-exact restoration. No active .next was moved.
+& .tmp/1748/stop-next.ps1 -FixturePointer .tmp/1748/fixture-pointer.txt -RecordPath .tmp/1748/cleanup-next.json
+pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs cleanup .tmp/1748/fixture

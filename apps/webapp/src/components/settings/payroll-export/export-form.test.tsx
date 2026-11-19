@@ -95,7 +95,7 @@ vi.mock("@/components/ui/label", () => ({
 		children,
 		...props
 	}: React.LabelHTMLAttributes<HTMLLabelElement>) => (
-		// biome-ignore lint/a11y/noLabelWithoutControl: Tests preserve the component's label surface while mocking controls.
+		// oxlint-disable-next-line jsx-a11y/label-has-associated-control -- Tests preserve the component's label surface while mocking controls.
 		<label {...props}>{children}</label>
 	),
 }));

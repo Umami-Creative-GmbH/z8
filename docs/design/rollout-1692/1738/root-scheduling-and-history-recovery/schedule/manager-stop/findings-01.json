@@ -1,0 +1,93 @@
+{
+  "candidate": "3f22ce77ccc5219338237b9522f19b9405539355",
+  "verifiedCommit": null,
+  "priorities": {
+    "selectedWeekListCount": "PASS:4 rendered /2 draft; canonical fixture4 in-range/6 total; Nov15 andNov23 excluded",
+    "pendingHit": "PASS:native disabled/pointer-events auto/z30/elementFromPoint BUTTON and2trusted pointerdowns;1request;0Edit",
+    "persistedPublication": "PASS:2rows/current admin/same timestamp;boundary/foreign/alreadyPublished/recorded-work digests preserved",
+    "employeeVisibility": "PASS:fresh normal login/2ownpublished/noDraftOrPlanner/firstEscape"
+  },
+  "stop": {
+    "severity": "critical acceptance blocker",
+    "actor": "standard canonical small-manager",
+    "observed": "normal public /en/scheduling entry repeatedly returns to /en/;12s bounded uncontested reproduction captured exact action names/statuses/navigation/visible dashboard heading",
+    "runtimeCause": "Not directly observed; no action bodies or React error values captured.",
+    "sourceSupportedHypothesis": "Manager without manageable scheduling subareas cannot read templates; getShiftTemplates returns Unauthorized, scheduler throws result.error; QueryProvider treats Unauthorized as session failure and replaces sign-in; proxy redirects authenticated sign-in to dashboard.",
+    "newCorrectionRegression": false,
+    "attributionQualification": "Source chain unchanged from prior7e5; not proven introduced by range/hit fix or R065. No historical runtime comparison run.",
+    "scope": "No ad hoc membership/grant/policy changes; no request interference or writes during bounded manager reproduction"
+  },
+  "noFurtherWritesAfterPublication": true,
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx",
+      "bytes": 3188,
+      "sha256": "ae9345732197a155d6a3eb92e210f1afad71a0e644c4244d23889f54ad42b90a",
+      "headBlob": "e497cbd4a6ee4550ff4f0e1eeb9f51b649ffdd2e",
+      "prior7e5Blob": "e497cbd4a6ee4550ff4f0e1eeb9f51b649ffdd2e"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/template-actions.ts",
+      "bytes": 4345,
+      "sha256": "044571329b0d3aa4079d3c7565afd17a9a9730567faa0a9193d012a8d3fe6b00",
+      "headBlob": "9d27e34ff824e4a8e67e219fca40e3ed72e9f81d",
+      "prior7e5Blob": "9d27e34ff824e4a8e67e219fca40e3ed72e9f81d"
+    },
+    {
+      "path": "apps/webapp/src/lib/settings-scheduling-access.ts",
+      "bytes": 7946,
+      "sha256": "f625aabeeac4bc241e9074a4407a138f978e75bea6437f2569dc8c71318457c4",
+      "headBlob": "710899514cb5854a99f8f00b174a23e478bbfb39",
+      "prior7e5Blob": "710899514cb5854a99f8f00b174a23e478bbfb39"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "bytes": 5588,
+      "sha256": "181fceda5d4e47f454e2dc881a250129d21b30c637306994455f91811849b851",
+      "headBlob": "1d35178af1764619c777e5b4f2382367deec4526",
+      "prior7e5Blob": "1d35178af1764619c777e5b4f2382367deec4526"
+    },
+    {
+      "path": "apps/webapp/src/lib/query/provider.tsx",
+      "bytes": 3073,
+      "sha256": "c3f18cd100050998a9d82fa8a7cd61abe5f8b60265f9e505d76abef2c795894b",
+      "headBlob": "e4fbe7dcde80b9423aef7ac67edb43f352da5239",
+      "prior7e5Blob": "e4fbe7dcde80b9423aef7ac67edb43f352da5239"
+    },
+    {
+      "path": "apps/webapp/src/lib/api-error.ts",
+      "bytes": 1500,
+      "sha256": "954fbe214d1b8fe9a16d538a8cdbdfbc3ee7879b8ea6d1d45d067d4f0cd3f288",
+      "headBlob": "bbf3c350607bcb48203469ba99a25340b4d8c776",
+      "prior7e5Blob": "bbf3c350607bcb48203469ba99a25340b4d8c776"
+    },
+    {
+      "path": "apps/webapp/src/proxy.ts",
+      "bytes": 11054,
+      "sha256": "8fc54572989282209505c50cfcfdbed166e8b5de7ecf52bf35f101084acacdeb",
+      "headBlob": "a0329b856f28072f834a622ca83f11aadaa633d4",
+      "prior7e5Blob": "a0329b856f28072f834a622ca83f11aadaa633d4"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+      "bytes": 13116,
+      "sha256": "05b3b4fab2ad322d83628902cbf4aa087d9b2e677c20d1c677c4022e0158f297",
+      "headBlob": "2798fff14aa95ef8aa8a3b436a14933d289c6dbb",
+      "prior7e5Blob": "8b7895278fe181ad5c7f115b99d58e2747ef0d6f"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+      "bytes": 4075,
+      "sha256": "474d2d98c9ab3aac0f7d25b93d10a9d9de5e07cf64229518f5c6d51870718b06",
+      "headBlob": "aaf3fc9bd9ee933e8a2e782748920473c68299c5",
+      "prior7e5Blob": "6766507623a34da3ecbdb4e0a4fd9bf3e1570679"
+    },
+    {
+      "path": "apps/webapp/scripts/performance-fixture.ts",
+      "bytes": 15716,
+      "sha256": "00ac1750f21ecd66f2485642a3db2377179f88d43390ee64b438514b0148588d",
+      "headBlob": "7bdec4956f752617a44d118bc7176171583f4776",
+      "prior7e5Blob": "7bdec4956f752617a44d118bc7176171583f4776"
+    }
+  ]
+}

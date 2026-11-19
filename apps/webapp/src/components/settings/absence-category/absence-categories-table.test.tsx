@@ -215,8 +215,11 @@ describe("AbsenceCategoriesTable", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
 		await waitFor(() => expect(mocks.deleteAbsenceCategory).toHaveBeenCalledWith("cat_1"));
-		expect(mocks.toastError).toHaveBeenCalledWith(
+		// The dialog stays open and names the refusal inline, so the admin can cancel or retry.
+		expect((await screen.findByRole("alert")).textContent).toBe(
 			"This category is still in use. Deactivate it instead, or remove what depends on it first.",
 		);
+		expect(screen.getByRole("button", { name: "Delete" })).toBeTruthy();
+		expect(mocks.toastError).not.toHaveBeenCalled();
 	});
 });

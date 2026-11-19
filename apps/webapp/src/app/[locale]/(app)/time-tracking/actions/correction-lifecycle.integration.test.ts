@@ -943,6 +943,68 @@ describe("approval-based correction lifecycles on PostgreSQL", () => {
 		expect(only(rows).previous_entry_id).toBe(retained?.id);
 	});
 
+	async function recordWorkWithoutManager(role: "owner" | "admin") {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await admin.query("delete from employee_managers where id = $1", [ids.managerLink]);
+		await admin.query("update member set role = $1 where organization_id = $2 and user_id = $3", [
+			role,
+			ids.organization,
+			ids.requesterUser,
+		]);
+		actAs(ids.requesterUser, { isOrgAdmin: true });
+		return work;
+	}
+
+	it.each([
+		{ role: "owner", rollout: "legacy" },
+		{ role: "admin", rollout: "canonical" },
+	] as const)(
+		"applies a $role's own deletion without a manager in $rollout routing",
+		async ({ role, rollout }) => {
+			const work = await recordWorkWithoutManager(role);
+			await setCorrectionRollout(rollout);
+
+			await expect(
+				requestTimeEntryDeletion({
+					workPeriodId: work.id,
+					submissionId: randomUUID(),
+					reason: "Duplicate entry",
+				}),
+			).resolves.toMatchObject({ success: true, data: { status: "approved" } });
+			expect((await period(work.id)).deleted_at).not.toBeNull();
+			expect(await corrections(work.id)).toHaveLength(2);
+		},
+	);
+
+	it("routes an owner's own deletion without a manager to the configured policy approver", async () => {
+		const work = await recordWorkWithoutManager("owner");
+		const { rows: policies } = await admin.query<{ id: string }>(
+			`insert into approval_policy (organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, 'Review changes', true, 1, $2, now()) returning id`,
+			[ids.organization, ids.adminUser],
+		);
+		await admin.query(
+			`insert into approval_policy_stage
+			 (organization_id, policy_id, step_order, label, approver_type, approver_employee_id, fallback_behavior, updated_at)
+			 values ($1, $2, 1, 'Review', 'specific_employee', $3, 'fail', now())`,
+			[ids.organization, only(policies).id, ids.admin],
+		);
+
+		await expect(
+			requestTimeEntryDeletion({
+				workPeriodId: work.id,
+				submissionId: randomUUID(),
+				reason: "Duplicate entry",
+			}),
+		).resolves.toMatchObject({ success: true, data: { status: "pending" } });
+		const { rows } = await admin.query<{ approver_id: string }>(
+			"select approver_id from approval_request where organization_id = $1 and id = $2",
+			[ids.organization, await pendingApprovalId(work.id)],
+		);
+		expect(only(rows).approver_id).toBe(ids.admin);
+		expect((await period(work.id)).deleted_at).toBeNull();
+	});
+
 	it("approves a business deletion as a soft-deleted period with a zero-length sentinel", async () => {
 		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
 		actAs(ids.requesterUser);

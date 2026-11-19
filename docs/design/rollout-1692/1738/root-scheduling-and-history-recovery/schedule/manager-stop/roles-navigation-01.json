@@ -1,0 +1,36 @@
+{
+  "candidate": "3f22ce77ccc5219338237b9522f19b9405539355",
+  "authStateSavedCopiedRestored": false,
+  "initialCanonicalFixtureRolesOnly": true,
+  "employeeKeyboard": {
+    "openedWithEnter": true,
+    "firstEscapeClosed": true,
+    "focusReturned": true
+  },
+  "employeeNext": {
+    "noDraftControl": true,
+    "heading": "Nov 23 – Nov 29, 2026"
+  },
+  "employeeDesktop": {
+    "date": "11/16/2026",
+    "heading": "My Schedule"
+  },
+  "restrictedLogin": {
+    "navigationWrapperLostContext": true
+  },
+  "restricted": {
+    "heading": "My Schedule",
+    "plannerActions": 0,
+    "foreignAssignedVisible": false,
+    "draftVisible": false,
+    "notifications": "denied"
+  },
+  "managerLogin": {
+    "navigationWrapperLostContext": true
+  },
+  "verdict": "FAIL",
+  "error": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 30000ms exceeded"
+  }
+}

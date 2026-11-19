@@ -1,5 +1,8 @@
 {
   "settings": {
+    "approvalSettings": {
+      "pageDescription": "Konfigurer hvem som godkjenner forespørsler, når forfalte godkjenninger eskaleres, og hvilke godkjenningsproblemer som krever oppfølging."
+    },
     "approvalTriage": {
       "correctionError": "Angi et heltall fra 0 til 60 minutter.",
       "correctionHelp": "Null deaktiverer hurtigsporet for små korreksjoner, inkludert endringer uten differanse. Ellers brukes 1–60 minutter; all påkrevd dokumentasjon må fortsatt verifiseres.",
@@ -138,6 +141,7 @@
           "defaultTax": "Standard: {treatment}",
           "description": "Koble hver kunde til den eksisterende kontakten i regnskapsprogrammet før første overlevering, og overstyr avgiftsbehandlingen ved behov.",
           "edit": "Rediger",
+          "editAction": "Rediger regnskap for {name}",
           "empty": "Ingen kunder ennå",
           "inactive": "Inaktiv",
           "notLinked": "Ikke koblet",
@@ -157,6 +161,8 @@
           "start": "Importer kunder"
         },
         "keyMissing": "API-nøkkelen mangler i hemmelighetslageret. Erstatt tilkoblingen med en ny nøkkel.",
+        "loadFailed": "Kunne ikke laste inn regnskapsinnstillingene.",
+        "loading": "Laster inn regnskapsinnstillinger",
         "netPrices": {
           "label": "Denne sevdesk-kontoen legger inn fakturapriser som nettopriser",
           "required": "Z8 overleverer nettopriser. Bekreft at sevdesk legger inn priser som nettopriser"
@@ -225,6 +231,7 @@
         "employeeTitle": "Kostnadssats",
         "empty": "Ingen kostpris ennå. Margin for denne ansattes arbeid vises som ukjent kostnad.",
         "history": "Historikk",
+        "historyAction": "Historikk for kostnadssats for {name}",
         "hourly": "Per time",
         "inactive": "Inaktiv",
         "intro": "En kostnadssats er en ansatts totale interne kostnad per time i {currency}, som brukes til margin. Den er atskilt fra lønnen: endring av den ene vil aldri endre den andre.",
@@ -234,6 +241,7 @@
         "ratePerHour": "{rate}/t",
         "saved": "Kostnadssats lagret",
         "set": "Angi kostnadssats",
+        "setAction": "Angi kostnadssats for {name}",
         "setRateHelp": "Den nye kostnadssatsen gjelder fra denne datoen frem til neste endring. Den endrer aldri lønn, lønnsutbetaling eller timefortjeneste.",
         "startsOn": "Starter {date}",
         "today": "I dag",
@@ -378,11 +386,14 @@
           "empty": "Ingen overføringer ennå",
           "gone": "Slettet i verktøyet",
           "open": "Åpne",
+          "openAction": "Åpne overlevering for {name}, {period}",
           "period": "Periode",
           "status": "Status",
           "title": "Overføringer",
           "total": "Nettototal"
         },
+        "loadFailed": "Kunne ikke laste inn overleveringene.",
+        "loading": "Laster inn overleveringer",
         "marks": {
           "compare": "Sammenlign",
           "compareItem": "Sammenlign {item}",
@@ -495,6 +506,9 @@
         "customerRate": "Fakturerbar timepris",
         "customerRateTitle": "Fakturerbar timepris for {name}",
         "dateRequired": "Velg den første dagen den gjelder",
+        "deletedCustomer": "Slettet kunde",
+        "deletedEmployee": "Slettet ansatt",
+        "deletedProject": "Slettet prosjekt",
         "effectiveFrom": "Gjelder fra",
         "employee": "Ansatt",
         "employeeProjectRateFor": "Fakturerbar timepris for {name} på dette prosjektet",
@@ -511,10 +525,13 @@
         "endsFrom": "Gjelder ikke lenger fra",
         "for": "For",
         "history": "Historikk",
+        "historyAction": "Historikk for sats for {name}",
         "hourlyRate": "Timepris",
         "inEffect": "Gjeldende",
         "inEffectTodayHint": "Gjeldende i dag: {rate}",
         "intro": "Satser er i {currency} per time. For hvert arbeid gjelder den mest spesifikke satsen som var gjeldende dagen det startet: ansatt på et prosjekt, deretter prosjekt, deretter kunde, deretter ansatt.",
+        "invalidDate": "Angi en gyldig dato.",
+        "invalidRate": "Angi en positiv timesats med maksimalt to desimaler.",
         "level": {
           "customer": "Kunde",
           "customerDescription": "Gjelder for arbeid på kundens prosjekter uten en prosjektsats.",
@@ -542,6 +559,8 @@
         "setRate": "Angi sats",
         "setRateHelp": "Den nye satsen gjelder fra denne datoen frem til neste satsendring. Tidligere datoer priser om arbeid som ikke er fakturert ennå.",
         "startsOn": "Starter {date}",
+        "switchedOff": "Fakturerbar tid er slått av.",
+        "targetNotFound": "Fant ikke den ansatte, prosjektet eller kunden.",
         "today": "I dag",
         "unchanged": "Den satsen gjelder allerede"
       },
@@ -550,6 +569,9 @@
     "billing": {
       "description": "Administrer abonnement, betalingsmåter og fakturaer",
       "title": "Fakturering og abonnement"
+    },
+    "breadcrumbs": {
+      "label": "Brødsmulesti for innstillinger"
     },
     "closedMonths": {
       "automatic": {
@@ -587,6 +609,8 @@
       },
       "historyEmpty": "Ingen måneder har blitt stengt ennå.",
       "historyTitle": "Historikk",
+      "loadErrorDescription": "Last inn siden på nytt for å prøve igjen.",
+      "loadErrorTitle": "Kunne ikke laste inn lukkede måneder",
       "locationNotFound": "Denne lokasjonen finnes ikke lenger.",
       "monthsDescription": "Ved å stenge en måned låses arbeid, tildeling og fravær for lønnskjøring. Notater kan fortsatt redigeres.",
       "monthsTitle": "Måneder",
@@ -628,13 +652,19 @@
     },
     "compliance": {
       "description": "Gjennomgå og administrer forespørsler om samsvarsunntak fra teammedlemmer",
+      "metadata": {
+        "description": "Konfigurer innstillinger for ArbZG-samsvar og administrer unntaksforespørsler",
+        "title": "Samsvarsinnstillinger | ArbZG"
+      },
       "title": "ArbZG-samsvar"
     },
     "customDomains": {
       "title": "Domene og merkevarebygging"
     },
     "customers": {
+      "accountingAction": "Bokføring for {name}",
       "column": {
+        "actions": "Handlinger",
         "contactPerson": "Kontaktperson",
         "email": "E-post",
         "name": "Firmanavn",
@@ -643,11 +673,13 @@
       "create": "Legg til kunde",
       "created": "Kunde opprettet",
       "createFailed": "Kunne ikke opprette kunde",
-      "deleted": "Kunde slettet",
+      "deleteAction": "Slett {name}",
       "delete": {
+        "confirm": "Slett {name}",
         "description": "Er du sikker på at du vil slette \"{name}\"? Prosjekter tilknyttet denne kunden vil fortsette å fungere, men kundereferansen vil bli fjernet.",
         "title": "Slett kunde"
       },
+      "deleted": "Kunde slettet",
       "deleteFailed": "Kunne ikke slette kunde",
       "description": "Administrer kundekontakter for prosjekttilordninger",
       "dialog": {
@@ -658,6 +690,8 @@
         "editTitle": "Rediger kunde",
         "save": "Lagre endringer"
       },
+      "edit": "Rediger kunde",
+      "editAction": "Rediger {name}",
       "empty": {
         "description": "Legg til din første kunde for å tilordne dem til prosjekter.",
         "title": "Ingen kunder ennå"
@@ -680,6 +714,7 @@
         "description": "{count} kunder totalt",
         "title": "Alle kunder"
       },
+      "loadFailed": "Kunne ikke laste inn kunder. Sjekk tilkoblingen og prøv igjen.",
       "managerNoProjects": "Ingen administrerte prosjekter tilgjengelig. Opprett eller administrer et prosjekt før du legger til kunder.",
       "projectRequired": "Velg et prosjekt først",
       "title": "Kunder",
@@ -905,7 +940,7 @@
         "columnDate": "Dato",
         "columnSize": "Størrelse",
         "columnStatus": "Status",
-        "deleteDialogDescription": "Er du sikker på at du vil slette denne eksporten? Denne handlingen kan ikke angres.",
+        "deleteDialogDescriptionNamed": "Slette eksporten opprettet {date} kl. {time}? Denne handlingen kan ikke angres.",
         "deleteDialogTitle": "Slett eksport",
         "deleteError": "Kunne ikke slette eksport",
         "deleteSuccess": "Eksport slettet",
@@ -914,7 +949,7 @@
         "downloadError": "Kunne ikke laste ned",
         "downloadSuccess": "Nedlasting startet",
         "emptyDescription": "Ingen eksporter ennå",
-        "emptyHint": "Opprett din første eksport ved å bruke skjemaet ovenfor",
+        "emptyHintNewExportTab": "Opprett din første eksport i fanen Ny eksport.",
         "moreCategories": "+{count} flere",
         "statusCompleted": "Fullført",
         "statusFailed": "Mislyktes",
@@ -935,6 +970,7 @@
         "connectionFailed": "Tilkobling mislyktes",
         "connectionSuccess": "Tilkobling vellykket",
         "deleteDialogDescription": "Er du sikker på at du vil slette denne lagringskonfigurasjonen?",
+        "deleteDialogDescriptionNamed": "Slette lagringskonfigurasjonen for bucket \"{bucket}\"?",
         "deleteDialogTitle": "Slett konfigurasjon",
         "deleteError": "Kunne ikke slette konfigurasjon",
         "deleteSuccess": "Konfigurasjon slettet",
@@ -962,7 +998,7 @@
         "verified": "Verifisert"
       },
       "storageNotConfigured": {
-        "description": "Konfigurer S3-lagring før du oppretter eksporter",
+        "descriptionWithTab": "Konfigurer S3-lagring i fanen Lagringsinnstillinger før du oppretter eksporter.",
         "title": "Lagring ikke konfigurert"
       },
       "tabs": {
@@ -980,6 +1016,7 @@
         "attribution": "Tildelt av {actor} {time}",
         "editor": "Kontrolløromfang",
         "empty": "Ingen kontrolløransvar tildelt",
+        "failed": "Kunne ikke oppdatere eller få tilgang til ansvar for førerkortkontroll. Sjekk tillatelsene og valgene dine.",
         "formerEmployee": "Tidligere ansatte kan ikke legges til. Velg ansatte fra den nåværende listen.",
         "history": "Ansvarshistorikk",
         "historyEntry": "Tildelt av {grantor} {granted}; tilbakekalt av {revoker} {revoked}",
@@ -990,6 +1027,7 @@
         "myUntil": "Ansvaret ditt opphører etter {date} ({timezone}).",
         "none": "Du har for øyeblikket ikke ansvar for kontroll av førerkort.",
         "noTeams": "Ingen team tilgjengelig",
+        "notEnabled": "Førerkortkontroll er ikke slått på for denne organisasjonen.",
         "person": "Kontrollør",
         "revoked": "Kontrolløransvar tilbakekalt",
         "revokeDescription": "Kontrolløren mister umiddelbart tilgang til kontroller i dette omfanget. En ny tildeling kreves for å gjenopprette ansvaret.",
@@ -1109,8 +1147,12 @@
       },
       "emailTemplates": "E-postmaler",
       "empty": "Ingen e-postmaler er tilgjengelige for denne organisasjonen.",
-      "eyebrow": "Driftskommunikasjon",
       "reset": "E-postmal tilbakestilt til systemmal",
+      "resetDialog": {
+        "confirm": "Tilbakestill mal",
+        "description": "Dette sletter organisasjonens egendefinerte emne og brødtekst for denne e-posten. E-poster som sendes etter dette, vil bruke systemmalen.",
+        "title": "Tilbakestille “{template}” til systemmalen?"
+      },
       "resetFailed": "Kunne ikke tilbakestille e-postmal",
       "saved": "E-postmal lagret",
       "saveFailed": "Kunne ikke lagre e-postmal",
@@ -1276,6 +1318,7 @@
       "savedPending": "Ansettelsesdato er lagret. Arbeidssaldoer oppdateres.",
       "savedRefreshFailed": "Ansettelsesdato er lagret. Last inn denne siden på nytt for å oppdatere de viste resultatene.",
       "saveFailed": "Kunne ikke lagre denne korreksjonen. Generer en ny forhåndsvisning og prøv igjen.",
+      "stalePreview": "Det gjennomgåtte ansettelsesforholdet eller konfigurasjonen ble endret. Generer en ny forhåndsvisning.",
       "title": "Korriger faktisk ansettelsesstart",
       "total": "Totalt før bruk",
       "unknown": "Ikke registrert",
@@ -1436,6 +1479,8 @@
       "employee": {
         "outstanding": "{count, plural, =0 {Ingen utestående returer} one {# utestående retur} other {# utestående returer}}",
         "overdue": "{count, plural, other {# forfalt}}",
+        "returns": "Innleveringer fra ansatte",
+        "scope": "Autorisert utstyr for denne ansatte",
         "title": "Utstyr for ansatte"
       },
       "errors": {
@@ -1689,8 +1734,11 @@
       },
       "openOverview": "Åpne utstyrsoversikt",
       "overview": {
+        "asOf": "Per {date} ({timezone})",
         "description": "Hvem som har hver gjenstand, hva som må returneres, og hver registrerte overlevering.",
-        "failed": "Kunne ikke laste inn utstyr. Last inn siden på nytt for å prøve igjen."
+        "failed": "Kunne ikke laste inn utstyr. Last inn siden på nytt for å prøve igjen.",
+        "scope": "Dine autoriserte utstyrsoppføringer",
+        "summaryScope": "Innleveringer og beredskap i ditt ansvarsområde"
       },
       "personal": {
         "closed": "Returnert og lukket",
@@ -1701,6 +1749,7 @@
         "failed": "Kunne ikke laste inn utstyret ditt. Last inn siden på nytt for å prøve igjen.",
         "keep": "Kan beholdes",
         "quantity": "{count} utlevert",
+        "remaining": "{count} som skal returneres",
         "title": "Mitt utstyr",
         "toggleHistory": "Vis overleveringshistorikk",
         "toReturn": "Skal returneres"
@@ -1831,11 +1880,9 @@
     },
     "error": {
       "actions": {
-        "backToSettings": "Tilbake til innstillinger",
-        "tryAgain": "Prøv igjen"
+        "backToSettings": "Tilbake til innstillinger"
       },
       "description": "Det oppsto en feil under lasting av innstillingssiden. Dette kan være et midlertidig problem.",
-      "errorId": "Feil-ID: {digest}",
       "title": "Noe gikk galt"
     },
     "export": {
@@ -1941,9 +1988,16 @@
       "failed": "Tilordningen kunne ikke oppdateres. Prøv igjen.",
       "noEmployees": "Ingen ansattspesifikke innstillinger",
       "noTeams": "Ingen teamspesifikke innstillinger",
+      "organizationDefaultRemoved": "Organisasjonsstandard fjernet",
       "orgDescription": "Standardinnstilling for alle ansatte med mindre den overstyres",
       "remove": "Fjern {target}",
+      "removedFor": "Overstyring fjernet for {name}",
       "valueFor": "{setting} for {target}"
+    },
+    "featureOff": {
+      "askAdmin": "Be en organisasjonsadministrator om å slå på dette.",
+      "status": "Slått av for denne organisasjonen",
+      "turnOn": "Slå på i Organisasjonsinnstillinger"
     },
     "group": {
       "account": "Konto",
@@ -2221,12 +2275,21 @@
       "title": "Implementeringssjekkliste"
     },
     "import": {
+      "commitConfirm": {
+        "pending": "Starter iverksetting…"
+      },
       "csv": {
         "acceptSelected": "Godkjenn valgte gyldige rader",
         "applyMapping": "Bruk tilordning",
         "chooseSource": "Velg en kildeverdi",
         "chooseTarget": "Velg en eksisterende oppføring",
         "commit": "Lagre godkjente rader",
+        "commitConfirm": {
+          "confirm": "Importer rader",
+          "description": "Import oppretter fullført arbeid for de tilknyttede ansatte, med kjøretøydetaljene radene inneholder. Dette kjører i bakgrunnen. Rader som overlapper med eksisterende arbeid, importeres ikke: En import overskriver aldri arbeid.",
+          "irreversible": "En import kan ikke angres. For å endre importert arbeid i etterkant, må du korrigere det i timeregistreringen.",
+          "title": "{count, plural, one {Importere # godkjent rad?} other {Importere # godkjente rader?}}"
+        },
         "committing": "Importerer godkjente rader …",
         "description": "Importer én fullført arbeidsperiode per rad. Vis pauser som mellomrom mellom rader. Ingenting registreres før du gjennomgår og godkjenner det.",
         "download": "Last ned CSV-mal",
@@ -2304,6 +2367,12 @@
           "unmappedProject": "Fakturerbar i Clockodo, men Clockodo-prosjektet er ikke koblet til et Z8-prosjekt."
         },
         "commitAccepted": "Bekreft godtatte rader",
+        "commitConfirm": {
+          "confirm": "Iverksett rader",
+          "description": "Iverksetting oppretter oppføringene de godkjente radene beskriver i denne organisasjonen, for eksempel timeregistreringer, fravær, ansatte, kunder eller innstillinger, eller kobler dem der du har valgt. Dette kjører i bakgrunnen. Avviste rader importeres ikke.",
+          "irreversible": "En import kan ikke angres. For å endre iverksatte oppføringer i etterkant, må du redigere dem der de administreres.",
+          "title": "{count, plural, one {Iverksette # godkjent rad?} other {Iverksette # godkjente rader?}}"
+        },
         "commitFailed": "Kunne ikke starte importbekreftelse",
         "commitQueued": "Satte {count} godtatte rader i kø for bekreftelse",
         "committing": "Fullfører...",
@@ -2393,6 +2462,7 @@
         },
         "title": "Importgjennomgang"
       },
+      "sourceTabs": "Importkilde",
       "supportedSources": "Importer arbeid fra CSV-filer eller koble til støttede leverandører som Clockodo og Clockin.",
       "title": "Importer data"
     },
@@ -2496,7 +2566,6 @@
       },
       "issueCodeConfirm": "Utsted ny kode",
       "listDescription": "Hver kiosk tilhører én lokasjon. Parkoble en enhet ved å åpne kiosksiden på den og taste inn parkoblingskoden.",
-      "listTitle": "Kiosker",
       "loadFailed": "Kunne ikke laste inn kiosker.",
       "neverSeen": "Aldri",
       "nfcFobReaderOn": "NFC-brikkeleser på",
@@ -2591,6 +2660,9 @@
       "assignEmployeeDescription": "Tildel en ansatt som veileder for denne lokasjonen",
       "assignEmployeeToSubarea": "Tildel ansatt til delområde",
       "assignEmployeeToSubareaDescription": "Tildel en ansatt som veileder for {subareaName}",
+      "assignmentRemovedFrom": "Fjernet {name} fra {place}",
+      "assignmentRestored": "Gjenopprettet {name}",
+      "assignmentRestoreFailed": "Tildelingen kunne ikke gjenopprettes",
       "backToList": "Tilbake til lokasjoner",
       "create": "Opprett lokasjon",
       "created": "Lokasjon opprettet",
@@ -2598,10 +2670,14 @@
       "deleted": "Lokasjon slettet",
       "deleteDescription": "Er du sikker på at du vil slette denne lokasjonen? Dette vil også slette alle delområder og ansatttildelinger.",
       "deleteFailed": "Kunne ikke slette lokasjon",
+      "deleteNamedTitle": "Slette lokasjon {name}?",
       "deleteSubareaDescription": "Er du sikker på at du vil slette dette delområdet? Dette vil også fjerne alle ansatttildelinger.",
+      "deleteSubareaNamedTitle": "Slette delområde {name}?",
       "deleteSubareaTitle": "Slett delområde",
       "deleteTitle": "Slett lokasjon",
       "description": "Administrer organisasjonens lokasjoner og delområder",
+      "detailLoadFailed": "Denne lokasjonen kunne ikke lastes inn",
+      "detailLoadFailedDescription": "Den kan ha blitt slettet, eller tilkoblingen mislyktes. Prøv igjen eller gå tilbake til lokasjonslisten.",
       "details": "Lokasjonsdetaljer",
       "dialog": {
         "create": "Opprett lokasjon",
@@ -2614,7 +2690,6 @@
       "employee": "Ansatt",
       "employeeAssigned": "Ansatt tildelt",
       "employeeAssignFailed": "Kunne ikke tildele ansatt",
-      "employeeRemoved": "Ansatt fjernet",
       "employeeRemoveFailed": "Kunne ikke fjerne ansatt",
       "field": {
         "active": "Aktiv",
@@ -2635,7 +2710,10 @@
         "subareaName": "Navn",
         "subareaNamePlaceholder": "f.eks. Kasse, Lager, Bistro"
       },
+      "loadFailed": "Lokasjoner kunne ikke lastes inn",
+      "loadFailedDescription": "Sjekk tilkoblingen, og prøv igjen.",
       "name": "Navn",
+      "nameRequired": "Navn er obligatorisk",
       "noAvailableEmployees": "Alle ansatte er allerede tilordnet denne lokasjonen",
       "noAvailableEmployeesSubarea": "Alle ansatte er allerede tilordnet dette delområdet",
       "noLocations": "Ingen lokasjoner ennå",
@@ -2671,6 +2749,9 @@
       "updated": "Plassering oppdatert",
       "updateFailed": "Kunne ikke oppdatere plassering"
     },
+    "mobileNav": {
+      "open": "Innstillingsmeny"
+    },
     "myData": {
       "aboutDownload": "Last den ned her mens du er logget inn. Filer slettes etter 7 dager.",
       "aboutEquipment": "Inkluderer oppbevarte utstyrstildelinger, tilstander, notater, korrigeringer, fysiske mottak og tapte eller ettergitte utfall, med gjenfinninger registrert separat.",
@@ -2683,7 +2764,9 @@
       "exportDescription": "En ZIP-fil med alt denne organisasjonen har lagret om deg, som JSON- og CSV-filer med en forklaring. Den dekker kun denne organisasjonen.",
       "exportTitle": "Eksport av personopplysninger",
       "listLabel": "Dine eksporter",
+      "loadFailed": "Dataeksporteringene dine kunne ikke lastes inn. Prøv igjen.",
       "noEmployeeRecord": "Du har ingen ansattprofil i denne organisasjonen. For å få en kopi av personopplysningene den har lagret om deg, kan du kontakte organisasjonens administratorer.",
+      "noExports": "Du har ikke bedt om en eksport ennå. Be om en for å laste ned en kopi av dataene dine.",
       "refusalDailyLimit": "Du kan be om én eksport av opplysningene dine hver 24. time. Prøv igjen senere.",
       "refusalInProgress": "En eksport av dataene dine klargjøres allerede. Du vil bli varslet når den er klar.",
       "refusalStorage": "Fillagring er ikke konfigurert for denne organisasjonen ennå. Ta kontakt med administratorene.",
@@ -2697,7 +2780,14 @@
       "title": "Mine data",
       "unavailable": "Mine data er ikke tilgjengelig for kontoen din i denne organisasjonen."
     },
+    "nav": {
+      "disabledEntry": "{title} (deaktivert)",
+      "label": "Innstillingsnavigasjon"
+    },
     "navigation": {
+      "approval": {
+        "title": "Godkjenning"
+      },
       "audit": {
         "activity": "Aktivitet",
         "description": "Gjennomgå aktivitet og konfigurer signerte revisjonseksporter",
@@ -2757,7 +2847,8 @@
       "description": "Velg hvordan og når du vil bli varslet",
       "digestTime": "Tidspunkt for sammendrag",
       "discord": {
-        "description": "Konfigurer Discord-varsler for organisasjonen din."
+        "description": "Konfigurer Discord-varsler for organisasjonen din.",
+        "setupInstructions": "Tilkobling av Discord fra denne siden er ikke tilgjengelig ennå. Tilkoblingen krever Discord-applikasjonens bot-token, applikasjons-ID og offentlige nøkkel."
       },
       "escalations": "Eskaleringer",
       "escalationsDescription": "Eskaler ubesvarte godkjenningsforespørsler etter det konfigurerte tidsavbruddet.",
@@ -2770,6 +2861,9 @@
       "saveFailed": "Kunne ikke lagre varslingsinnstillinger for {channelName}",
       "saveSettings": "Lagre innstillinger",
       "slack": {
+        "connect": "Koble til Slack",
+        "connectFailed": "Slack-tilkoblingen kunne ikke startes. Prøv igjen.",
+        "connectUnavailable": "Slack er ikke tilgjengelig på denne Z8-installasjonen.",
         "description": "Konfigurer Slack-varsler for organisasjonen din."
       },
       "status": {
@@ -2783,11 +2877,12 @@
         "unknown": "Ukjent status"
       },
       "teams": {
-        "description": "Konfigurer Microsoft Teams-varsler for organisasjonen din."
+        "description": "Konfigurer Microsoft Teams-varsler for organisasjonen din.",
+        "setupInstructions": "For å koble til Microsoft Teams må du legge til Z8-appen i Microsoft 365-leietakeren din. Z8-boten sender deretter en oppsettlenke som en organisasjonsadministrator åpner for å koble leietakeren til denne organisasjonen."
       },
       "timeout": "Tidsavbrudd",
+      "timeoutInvalid": "Angi et helt antall timer fra 1 til 168.",
       "timezone": "Tidssone",
-      "timezonePlaceholder": "Europe/Berlin…",
       "title": "Varslingsinnstillinger"
     },
     "organizations": {
@@ -2830,6 +2925,7 @@
       "empty": "Ingen passnøkler konfigurert",
       "emptyDescription": "Legg til en passnøkkel for å aktivere passordløs autentisering",
       "loadError": "Kunne ikke laste inn passnøkler",
+      "loading": "Laster inn adgangsnøkler",
       "title": "Passnøkler",
       "unnamed": "Passnøkkel uten navn"
     },
@@ -2846,6 +2942,7 @@
       "editorDescription": "Velg en lønnsansvarlig og angi om vedkommende skal ha tilgang til alle eller et bestemt omfang.",
       "editTitle": "Rediger lønnsansvarlig",
       "employees": "Ansatte",
+      "loading": "Laster inn innstillinger for lønnsansvarlig",
       "noGrants": "Ingen lønnsansvarlige er lagt til ennå.",
       "noScope": "Ingen lønnsomfang tilordnet",
       "noTeams": "Ingen team tilgjengelig",
@@ -2872,7 +2969,6 @@
     },
     "positionCapture": {
       "assignmentFailed": "Tildelingen ble ikke lagret",
-      "assignmentRemoved": "Tildeling fjernet",
       "assignmentRemoveFailed": "Tildelingen ble ikke fjernet",
       "assignmentSaved": "Tildeling lagret",
       "assignmentsDescription": "Den mest spesifikke tildelingen har forrang: en ansatts egen tildeling over primærteamets, og et teams over hele organisasjonens. Bruk «av» for å ekskludere et team eller en ansatt.",
@@ -2883,6 +2979,7 @@
       "description": "Registrer posisjoner ved ansattes egne stemplingshendelser, med samtykke",
       "enabled": "Registrer posisjoner",
       "enabledDescription": "Å slå dette av stopper registreringen for alle. Registrerte posisjoner beholdes frem til slettedatoen.",
+      "loadFailed": "Innstillinger for posisjonsregistrering kunne ikke lastes inn",
       "noNotice": "Ingen erklæring er publisert ennå. Å lagre en formålsbeskrivelse publiserer versjon 1.",
       "noticeDescription": "Hva ansatte samtykker til: Z8s faste tekst og din formålsbeskrivelse. Å redigere formålet eller beholde posisjoner lenger publiserer en ny versjon; forkorting av oppbevaringstiden gjør det ikke.",
       "noticeTitle": "Posisjonserklæring",
@@ -2907,6 +3004,7 @@
       "accessLogDescription": "Hver gang noen andre får se dine registrerte posisjoner, føres det opp her.",
       "accessLogEmpty": "Ingen andre har fått se posisjonene dine.",
       "accessLogExport": "Dataeksport",
+      "accessLogLoadFailed": "Listen over hvem som så posisjonene dine, kunne ikke lastes inn. Last inn siden på nytt for å prøve igjen.",
       "accessLogRemovedWorkPeriod": "En arbeidsperiode som ikke lenger eksisterer",
       "accessLogTitle": "Hvem som så posisjonene dine",
       "accessLogWorkPeriod": "Arbeidsperiode den {date}",
@@ -2923,6 +3021,7 @@
       "consentUndecided": "Du har ikke bestemt deg ennå.",
       "consentWithdrawn": "Du trakk tilbake samtykket ditt den {date}.",
       "description": "Hvorvidt posisjonen din registreres med stemplingene dine, og samtykket ditt",
+      "loadFailed": "Innstillingene for posisjonsstempling kunne ikke lastes inn.",
       "noNotice": "Organisasjonen din har ikke publisert noen posisjonserklæring.",
       "noticeDescription": "Dette er hva du samtykker til. En ny versjon publiseres hvis formålet endres eller posisjoner oppbevares lenger.",
       "noticeTitle": "Posisjonserklæring",
@@ -2954,6 +3053,7 @@
       "firstName": "Fornavn",
       "firstNamePlaceholder": "Ada…",
       "gender": {
+        "clear": "Fjern merking",
         "female": "Kvinne",
         "label": "Kjønn",
         "male": "Mann",
@@ -2966,6 +3066,7 @@
       "lastName": "Etternavn",
       "lastNamePlaceholder": "Lovelace…",
       "loadFailed": "Kunne ikke laste inn profil",
+      "loadFailedDetail": "Profilen din kunne ikke lastes inn, så den kan ikke redigeres akkurat nå. Prøv igjen.",
       "personalInformation": "Personlig informasjon",
       "pronouns": "Pronomen",
       "pronouns.custom": "Egendefinerte pronomen",
@@ -2989,7 +3090,9 @@
       "uploadProfilePicture": "Last opp profilbilde"
     },
     "projects": {
+      "budgetUsed": "Budsjett brukt",
       "column": {
+        "actions": "Handlinger",
         "budget": "Budsjett",
         "customer": "Kunde",
         "deadline": "Frist",
@@ -3002,6 +3105,12 @@
       "created": "Prosjekt opprettet",
       "createFailed": "Kunne ikke opprette prosjekt",
       "customerDeleted": "{name} (slettet)",
+      "deadline": {
+        "overdue": "{count, plural, one {# dag over forfall} other {# dager over forfall}}",
+        "remaining": "{count, plural, one {# dag gjenstår} other {# dager gjenstår}}",
+        "today": "Forfaller i dag",
+        "tomorrow": "Forfaller i morgen"
+      },
       "description": "Administrer prosjekter, budsjetter, frister og tidsfordelinger",
       "dialog": {
         "create": "Opprett prosjekt",
@@ -3011,6 +3120,8 @@
         "editTitle": "Rediger prosjekt",
         "save": "Lagre endringer"
       },
+      "edit": "Rediger prosjekt",
+      "editAction": "Rediger {name}",
       "empty": {
         "description": "Opprett ditt første prosjekt for å begynne å registrere tid på det.",
         "title": "Ingen prosjekter ennå"
@@ -3061,6 +3172,7 @@
         "description": "{count} prosjekter totalt",
         "title": "Alle prosjekter"
       },
+      "loadFailed": "Prosjekter kunne ikke lastes inn. Kontroller tilkoblingen og prøv igjen.",
       "members": {
         "addManager": "Legg til prosjektleder",
         "assignEmployee": "Tildel ansatt",
@@ -3081,7 +3193,6 @@
         "noTeams": "Ingen team tildelt",
         "remove": "Fjern {name}",
         "removed": "{name} fjernet",
-        "removeFailed": "Kunne ikke fjerne {name}",
         "selectEmployee": "Velg en ansatt",
         "selectTeam": "Velg et team",
         "teamAssigned": "Team tildelt",
@@ -3099,6 +3210,13 @@
         "saved": "Malen {name} er lagret",
         "submit": "Lagre som mal",
         "title": "Lagre som mal"
+      },
+      "status": {
+        "active": "Aktiv",
+        "archived": "Arkivert",
+        "completed": "Fullført",
+        "paused": "Pauset",
+        "planned": "Planlagt"
       },
       "tabs": {
         "projects": "Prosjekter",
@@ -3118,6 +3236,16 @@
         "edit": "Rediger {name}",
         "editAction": "Rediger {name}",
         "empty": "Ingen oppgaver ennå. Oppgaver lar folk angi hva i prosjektet tiden deres ble brukt på.",
+        "errors": {
+          "booked": "Det er ført tid på denne oppgaven, så den kan ikke slettes.",
+          "descriptionTooLong": "Oppgavebeskrivelsen er for lang.",
+          "duplicateName": "En oppgave med dette navnet finnes allerede i dette prosjektet.",
+          "estimateInvalid": "Angi estimatet som et positivt antall timer.",
+          "nameRequired": "Angi et oppgavenavn.",
+          "nameTooLong": "Oppgavenavnet er for langt.",
+          "notAllowed": "Du har ikke tilgang til å administrere oppgavene i dette prosjektet.",
+          "notFound": "Denne oppgaven finnes ikke lenger."
+        },
         "estimate": "Estimat: {hours} t",
         "field": {
           "description": "Beskrivelse",
@@ -3167,7 +3295,6 @@
         "delete": "Slett",
         "deleteAction": "Slett {name}",
         "deleted": "{name} slettet",
-        "deleteFailed": "Kunne ikke slette {name}",
         "deleteQuestion": "Vil du slette denne malen?",
         "description": "Maler for nye prosjekter: oppgaver, budsjett, frist, ledere og medlemmer.",
         "dialogDescription": "Nye prosjekter opprettet fra denne malen kopierer innholdet én gang.",
@@ -3215,6 +3342,7 @@
         },
         "listCount": "{count, plural, one {# mal} other {# maler}}",
         "listTitle": "Alle maler",
+        "loadFailed": "Prosjektmaler kunne ikke lastes inn. Kontroller tilkoblingen og prøv igjen.",
         "managers": {
           "empty": "Ingen prosjektledere",
           "picker": "Prosjektleder som skal legges til",
@@ -3339,6 +3467,7 @@
         "mobile": "Mobil",
         "tablet": "Nettbrett"
       },
+      "loadFailed": "De aktive øktene dine kunne ikke lastes inn. Prøv igjen.",
       "none": "Ingen aktive økter",
       "othersRevoked": "Alle andre økter ble tilbakekalt",
       "revoke": "Tilbakekall",
@@ -3346,6 +3475,11 @@
       "revokeAllOthers": "Tilbakekall alle andre økter",
       "revoked": "Økten ble tilbakekalt",
       "revokeFailed": "Kunne ikke tilbakekalle økten",
+      "revokeOthersDescription": "{count, plural, one {Dette logger deg ut på # annen enhet. Du forblir pålogget her.} other {Dette logger deg ut på # andre enheter. Du forblir pålogget her.}}",
+      "revokeOthersTitle": "Tilbakekall alle andre økter?",
+      "revokeSession": "Tilbakekall økt: {session}",
+      "revokeSessionDescription": "Dette logger ut {session}. Alle som bruker den, må logge inn på nytt.",
+      "revokeSessionTitle": "Tilbakekall denne økten?",
       "revoking": "Tilbakekaller…",
       "securityTip": "Hvis du ser en økt du ikke gjenkjenner, må du tilbakekalle den umiddelbart og endre passordet ditt.",
       "signedIn": "Logget inn",
@@ -3356,7 +3490,7 @@
     "socialAccounts": {
       "connect": "Koble til",
       "connected": "Tilkoblet",
-      "connectedAs": "Tilkoblet som {accountId}",
+      "connectedOn": "Tilkoblet {date}",
       "connectFailed": "Kunne ikke koble til konto",
       "connecting": "Kobler til…",
       "connectProvider": "Koble til {provider}-kontoen din",
@@ -3364,8 +3498,9 @@
       "disconnect": "Koble fra",
       "disconnectDescription": "Dette vil fjerne koblingen til den sosiale kontoen din. Du kan koble den til igjen når som helst.",
       "disconnectFailed": "Kunne ikke koble fra konto",
+      "disconnectProviderTitle": "Koble fra {provider}?",
       "disconnectSuccess": "Kontoen ble koblet fra",
-      "disconnectTitle": "Koble fra konto?",
+      "linkedForSignIn": "Koblet til for pålogging",
       "loadFailed": "Kunne ikke laste inn tilkoblede kontoer",
       "title": "Sosiale kontoer",
       "unexpectedError": "Det oppsto en uventet feil"
@@ -3391,6 +3526,7 @@
       "description": "Se statistikk og måleverdier for instansen din",
       "lastUpdated": "Sist oppdatert",
       "loadError": "Kunne ikke laste inn statistikk",
+      "loadErrorRetry": "Last inn siden på nytt for å prøve igjen.",
       "managerDescription": "Gå gjennom skrivebeskyttet analyse for teamene du administrerer.",
       "sections": {
         "absenceBreakdown": "Fraværsfordeling",
@@ -3542,6 +3678,7 @@
       "effectiveTo": "Gyldig til",
       "legacy": {
         "description": "Beholdes kun som referanse. Disse oppføringene ble aldri brukt til å beregne utgifter og kan ikke lenger redigeres; konfigurer datofestede satser for kjøregodtgjørelse ovenfor.",
+        "loadFailed": "Tidligere retningslinjeposter kunne ikke lastes inn",
         "title": "Tidligere retningslinjeoppføringer"
       },
       "mileage": {
@@ -3812,6 +3949,7 @@
       "archivedTitle": "Arkivert",
       "archiveInstead": "Arkiver i stedet",
       "archiveNamed": "Arkiver {name}",
+      "count": "{count, plural, other {# kjøretøy} }",
       "delete": "Slett",
       "deleteConfirm": "Slett kjøretøy",
       "deleted": "Kjøretøy slettet",
@@ -3843,12 +3981,12 @@
         "teamsDescription": "Alle medlemmer av et tilordnet team får dette kjøretøyet foreslått først."
       },
       "listDescription": "Arkiverte kjøretøy kan ikke lenger velges, men forblir på arbeidet de ble registrert på.",
-      "listTitle": "Kjøretøy",
       "loadFailed": "Kunne ikke laste inn kjøretøy.",
       "logbookNotice": {
         "description": "Z8 registrerer hvilket kjøretøy som ble brukt under arbeidet og kilometerstanden. Det er ikke en godkjent kjørebok for skatteformål (Fahrtenbuch): avlesninger kan korrigeres, og verken formål med turen eller forretningspartner registreres.",
         "title": "Ikke en skattegodkjent kjørebok"
       },
+      "noActive": "Ingen aktive kjøretøy. Legg til et kjøretøy eller gjenopprett et arkivert.",
       "noDrivers": "Ingen tilordnede sjåfører",
       "photos": {
         "accessChanged": "Tilgangen din ble endret. Åpne kjøretøyinnstillingene på nytt for å sjekke tillatelsene dine.",
@@ -3910,7 +4048,6 @@
       "usedTitle": "{name} ble registrert på arbeid"
     },
     "vehicleUse": {
-      "assignmentRemoved": "Tilordning fjernet",
       "assignmentSaved": "Tilordning lagret",
       "assignmentsDescription": "Ansatte som blir spurt, kan registrere kjøretøybruk når de stempler. Ansatte med forventet kjøretøybruk blir spurt hver gang, og arbeidet deres flagges til opplysningene er fullstendige. Ingen blir noensinne hindret i å stemple. Den mest spesifikke tilordningen har forrang: en ansatts egen over primærteamets, og et teams over hele organisasjonens.",
       "enabled": "Registrer kjøretøybruk",
@@ -3925,7 +4062,7 @@
         "invalidTarget": "Velg hvem tilordningen gjelder for.",
         "teamNotFound": "Det teamet finnes ikke lenger."
       },
-      "loadFailed": "Innstillingene for kjøretøybruk kunne ikke lastes inn. Last inn siden på nytt.",
+      "loadFailedRetry": "Innstillingene for kjøretøybruk kunne ikke lastes inn.",
       "mode": "Modus",
       "modeAsked": "Spurt",
       "modeExpected": "Kjøretøybruk forventet",
@@ -3958,6 +4095,13 @@
       "description": "Konfigurer vannpåminnelser og væskesporing under arbeidsøktene dine",
       "glasses": "glass",
       "increaseDailyGoal": "Øk daglig mål",
+      "loadFailed": "Innstillingene for vannpåminnelser kunne ikke lastes inn. Prøv igjen.",
+      "presets": {
+        "active": "Aktiv",
+        "custom": "Egendefinert",
+        "light": "Lett",
+        "moderate": "Moderat"
+      },
       "reminderFrequency": "Påminnelsesfrekvens",
       "saved": "Velværeinnstillinger lagret",
       "saveError": "Kunne ikke lagre velværeinnstillinger",
@@ -4095,6 +4239,9 @@
         "hidden": "Skjult"
       },
       "absenceVisibility": "Synlighet for fravær",
+      "accessSectionTitle": "Få tilgang til og se gjennom eksporter",
+      "addLocation": "Legg til et sted",
+      "addTeam": "Legg til et team",
       "description": "Konfigurer personvernsikker tilgang for bedriftsutvalg og gjennomgangseksporter",
       "exportEnabled": "Aktiver gjennomgangseksporter",
       "exportEnabledDescription": "Tillat autoriserte brukere i bedriftsutvalget å generere personvernfiltrerte gjennomgangspakker.",
@@ -4107,14 +4254,26 @@
       "identityVisibility": "Identitetssynlighet",
       "minimumThreshold": "Minimumsterskel for aggregering",
       "minimumThresholdDescription": "Grupper under denne størrelsen skjules for å redusere risikoen for re-identifisering.",
+      "minimumThresholdInvalid": "Angi et heltall på minst 5",
+      "noLocationFound": "Ingen steder funnet",
+      "noLocationsAvailable": "Ingen flere steder å legge til",
+      "noTeamFound": "Ingen team funnet",
+      "noTeamsAvailable": "Ingen flere team å legge til",
+      "removeScopeItem": "Fjern {name}",
       "save": "Lagre innstillinger",
       "saved": "Innstillinger for driftsråd er lagret",
       "saveError": "Kunne ikke lagre innstillinger for driftsråd",
+      "searchLocations": "Søk etter steder",
+      "searchTeams": "Søk etter team",
+      "selectedLocations": "Valgte steder",
+      "selectedTeams": "Valgte team",
       "title": "Driftsrådsmodus",
-      "visibleLocationIds": "Synlige steds-ID-er",
-      "visibleLocationIdsDescription": "Valgfrie kommaseparerte steds-ID-er. La stå tomt for å inkludere alle steder.",
-      "visibleTeamIds": "Synlige team-ID-er",
-      "visibleTeamIdsDescription": "Valgfrie kommaseparerte team-ID-er. La stå tomt for å inkludere alle team."
+      "unknownLocation": "Ukjent sted ({shortId})",
+      "unknownTeam": "Ukjent team ({shortId})",
+      "visibleLocations": "Synlige steder",
+      "visibleLocationsDescription": "La stå tomt for å inkludere alle steder.",
+      "visibleTeams": "Synlige team",
+      "visibleTeamsDescription": "La stå tomt for å inkludere alle team."
     }
   }
 }

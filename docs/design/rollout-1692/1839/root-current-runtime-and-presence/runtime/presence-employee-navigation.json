@@ -1,0 +1,8 @@
+{
+  "expectedEmployeeDestination": true,
+  "arrival": {
+    "freshHeading": false,
+    "retryVisible": true,
+    "employeeLinks": 0
+  }
+}

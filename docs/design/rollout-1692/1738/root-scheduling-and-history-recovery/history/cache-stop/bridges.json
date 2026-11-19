@@ -1,0 +1,12 @@
+[
+  {
+    "from": ".tmp/1739-independent-correction-checks/directory-public.test.tsx",
+    "to": "apps/webapp/src/test/.tmp/1739-independent-correction-checks/directory-public.test.tsx",
+    "sha256": "ed2d7d842caceb47bf19601255f4a1a82c7b818d9bf068965df7f3606ebe58e5"
+  },
+  {
+    "from": ".tmp/1739-independent-correction-checks/history-public.test.tsx",
+    "to": "apps/webapp/src/test/.tmp/1739-independent-correction-checks/history-public.test.tsx",
+    "sha256": "9d418029f6d7512fda65baccdfddb15a45f277cbcb9457917c3465eb868821eb"
+  }
+]

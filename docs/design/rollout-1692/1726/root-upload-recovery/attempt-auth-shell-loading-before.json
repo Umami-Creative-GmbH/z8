@@ -1,0 +1,255 @@
+{
+  "phase": "before",
+  "source": {
+    "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+    "sha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3",
+    "canonicalSha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3"
+  },
+  "checks": [],
+  "captures": [
+    {
+      "name": "before-failed.png",
+      "path": "/en/licenses",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [],
+      "main": [
+        {
+          "x": 40,
+          "width": 1520
+        },
+        {
+          "x": 0,
+          "width": 0
+        }
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "0a3642f7c9084fbfe5d818442527a65c837f9396d9ddeaf71e455fdaa6313603"
+      },
+      "source": {
+        "path": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+        "sha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3",
+        "canonicalSha256": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3"
+      }
+    }
+  ],
+  "errors": [
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering."
+  ],
+  "requests": [],
+  "responses": [
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "path": "/en/licenses",
+      "status": 200,
+      "method": "GET"
+    }
+  ],
+  "failure": "Waiting for selector `input[placeholder=\"Search packages or licenses…\"]` failed",
+  "failurePage": {
+    "path": "/en/licenses",
+    "title": "z8 - time app",
+    "visibleText": "Loading authentication"
+  }
+}

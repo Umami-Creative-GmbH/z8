@@ -1,0 +1,3548 @@
+{
+  "schema": 1,
+  "baseline": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+  "scope": "Two report appends and the immutable 445-file bounded scheduling/team proof. This audit does not advance readiness or add application test coverage.",
+  "stagedPaths": 447,
+  "archiveFiles": 445,
+  "archiveRawBytes": 6216116,
+  "protectedPriorPaths": 17404,
+  "appTree": "d5eb14eebaa958d12f238fe37faae8e18242bef0",
+  "appEntriesUnchanged": true,
+  "verifiedTicketAnchors": 59,
+  "baselineAncestry": true,
+  "sourceAndConfigurationPins": 23,
+  "archiveSealSha256": {
+    "publication": {
+      "bytes": 953,
+      "sha256": "3febf60a12f9bbbf05ffaa63a0204bc54325b22cb90cf54eed1ed36d4cd7263e",
+      "normalization": "valid-utf8-no-nul",
+      "lf": {
+        "bytes": 953,
+        "sha256": "3febf60a12f9bbbf05ffaa63a0204bc54325b22cb90cf54eed1ed36d4cd7263e"
+      },
+      "crlf": {
+        "bytes": 978,
+        "sha256": "066b7dd7b91581a7304daf2dc92bcfc231a0f0da469fdc7369999006b91fa106"
+      }
+    },
+    "fileIndex": {
+      "bytes": 205600,
+      "sha256": "8b4b4e271ddc54f1f13ca82dca19919ca33535bf1c30b46906b13f08797a32dd",
+      "normalization": "valid-utf8-no-nul",
+      "lf": {
+        "bytes": 205600,
+        "sha256": "8b4b4e271ddc54f1f13ca82dca19919ca33535bf1c30b46906b13f08797a32dd"
+      },
+      "crlf": {
+        "bytes": 211495,
+        "sha256": "e16f93c42dec0c802793429b73eed99033655ba2eb881c5cb4a7ca8c0cb62c16"
+      }
+    },
+    "results": {
+      "bytes": 38819,
+      "sha256": "c0433c2ba346191ee212a058f8a88cfe8c3189577fbb1e5143623e3163f0721d",
+      "normalization": "valid-utf8-no-nul",
+      "lf": {
+        "bytes": 38819,
+        "sha256": "c0433c2ba346191ee212a058f8a88cfe8c3189577fbb1e5143623e3163f0721d"
+      },
+      "crlf": {
+        "bytes": 40064,
+        "sha256": "e7e823e319a5ce9d1f309e623b5b32c3457e92c68aa0fcc496e2380e6a799423"
+      }
+    },
+    "payloadIndex": {
+      "bytes": 243820,
+      "sha256": "7df7f7192eaf4887e4641b05d45c48b9eeb3b0f02a8b03636f72edf173f93be8",
+      "normalization": "valid-utf8-no-nul",
+      "lf": {
+        "bytes": 243820,
+        "sha256": "7df7f7192eaf4887e4641b05d45c48b9eeb3b0f02a8b03636f72edf173f93be8"
+      },
+      "crlf": {
+        "bytes": 250866,
+        "sha256": "fc6ba9e093ddb7df301bc13212827bd7e5620932f9b9ff68e739ed9a6cab5baa"
+      }
+    },
+    "archiveIndex": {
+      "bytes": 10935,
+      "sha256": "d9b82ac1d7a9bd4d3bafab97aa977e07dead132f2fb42caaa98094fe8825ff91",
+      "normalization": "valid-utf8-no-nul",
+      "lf": {
+        "bytes": 10935,
+        "sha256": "d9b82ac1d7a9bd4d3bafab97aa977e07dead132f2fb42caaa98094fe8825ff91"
+      },
+      "crlf": {
+        "bytes": 11197,
+        "sha256": "51f62ccb9bf589c6249783c52b33f62b9e66e843ab6a66c3dcebf9bb7d1a24c5"
+      }
+    },
+    "sourcePins": {
+      "bytes": 10198,
+      "sha256": "caf48c79701c7a07464414188cd1f5ec93e02616e45b92c599bca7d80906b442",
+      "normalization": "valid-utf8-no-nul",
+      "lf": {
+        "bytes": 10198,
+        "sha256": "caf48c79701c7a07464414188cd1f5ec93e02616e45b92c599bca7d80906b442"
+      },
+      "crlf": {
+        "bytes": 10430,
+        "sha256": "5b97504d47ac49d4b958de5b028d9ed7c41cd6d6e9fba866498a8af8a6b0ad50"
+      }
+    },
+    "originalArchives": [
+      {
+        "destination": "schedule/coverage-stop",
+        "recipe": "sha-space-path-LF",
+        "sealSha256": "026a64195a5f9ef69815c3836847834eb30a10a21cffa617e3965fc9a0063874",
+        "indexSha256": "d86b5b9079809ccc47b68e056bd265af171ee37fb0a2e60c2a352f6c5a47ce62"
+      },
+      {
+        "destination": "schedule/layering-stop",
+        "recipe": "JSON.stringify(files)",
+        "sealSha256": "a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9",
+        "indexSha256": "cacc6533ac36136538a665341139d21c612d2267d1643a7f33c6f8d529f7acf3"
+      },
+      {
+        "destination": "schedule/publication-sql-stop",
+        "recipe": "path-TAB-bytes-TAB-sha-LF",
+        "sealSha256": "54ebb36cfb1d79d5e2a27609973fbb68f37c073001cba683e43ad19b51664dae",
+        "indexSha256": "ecf51efccc9138aa84adc21048a34a7878a2079d37f354e0534db39a7f9d89f6"
+      },
+      {
+        "destination": "schedule/range-pointer-stop",
+        "recipe": "path-TAB-bytes-TAB-sha-LF",
+        "sealSha256": "e4ed0ede248c77399706e504078d3d9299a99c66f8bcaa53d6ad5118daaab2d1",
+        "indexSha256": "2042511e9bdfac279064ee380147fe6f9dabc09314133a5a908bdbfc82693fc9"
+      },
+      {
+        "destination": "schedule/manager-stop",
+        "recipe": "JSON.stringify(files)",
+        "sealSha256": "84d6047e7b9193dc249b169fa290e8d582305a16bb5ed8dbaf1f9358557472f1",
+        "indexSha256": "7ab334bcd53117c15e4321c00778028668347e0bc3b5271d9f6b0b5aabbc4f6b"
+      },
+      {
+        "destination": "schedule/manager-repeat-stop",
+        "recipe": "JSON.stringify(files)",
+        "sealSha256": "bb2d4f9c27d0c4502b2280c4df0e70b7ed3fcfb47a58b76865b6acbbc1f03e17",
+        "indexSha256": "254e53b27994ee14e301f035ba5288d45c9a941c8c07d841d30f5bccf09938ea"
+      },
+      {
+        "destination": "schedule/manager-pass",
+        "recipe": "JSON.stringify(files)",
+        "sealSha256": "163d7072806a75e33a59fa9d2b7a3b8e12d235bbab8e1d47cfae63753589c637",
+        "indexSha256": "0c8bb5a2ebcc28b466712d54d2cc7c1dd2e9b4f982ae9c84199a3774123da0e9"
+      },
+      {
+        "destination": "schedule/comparison-setup-stop",
+        "recipe": "JSON.stringify(files)",
+        "sealSha256": "dcc7f5ac477fb4e9eee920d733928fb4465b491794229fe3d1c21cc51e120bf6",
+        "indexSha256": "c0ead6386b456f1634c1fee2b3221eba8df762a030c561df492838a0ac50b373"
+      },
+      {
+        "destination": "schedule/isolated-final",
+        "recipe": "JSON.stringify(files)",
+        "sealSha256": "f2c1bb6305c3ec9a140ca7c727db2e95e52f499ecc4374b15a58ea0186e2ddcb",
+        "indexSha256": "096bc040ebbee1647ac9c55445a14835537c1c2c92539b628480e6dc780311cc"
+      },
+      {
+        "destination": "history/context-stop",
+        "recipe": "derived-safe-binding",
+        "sealSha256": null,
+        "indexSha256": "dd1f2b8a2276c562b585af3afbfd123624f3c14d4ac513cbe150b2716712c28c",
+        "derivedBinding": "history/context-stop/seal-safe.json",
+        "originalPrivateSealSha256": "a7cf45fda9984abbc6d10e65a63a379160cd6850446422386738f7bbf733a61e"
+      },
+      {
+        "destination": "history/cache-stop",
+        "recipe": "derived-safe-binding",
+        "sealSha256": null,
+        "indexSha256": "2cf99690e8339530b8c2f253d8dbbb6ee3d0baa6c4dab05a68eccec75aa841dc",
+        "derivedBinding": "history/cache-stop/seal-safe.json",
+        "originalPrivateSealSha256": "b766814091d5ba4899c15588ac9c2442dcb33aa5f878b00bd1b938c23dd45437"
+      },
+      {
+        "destination": "joint/current",
+        "recipe": "JSON.stringify(files)",
+        "sealSha256": "405294e9263db67332570367a9826c85abae0f44da3a2a7804dfb0814645fe72",
+        "indexSha256": "7612c3a98fdfb2b105053224fd39319c4f566d8b1c7812128ae7d4846633962a"
+      }
+    ],
+    "selfExclusions": [
+      "publication-file-index.json",
+      "publication-seal.json",
+      "verification-results.json"
+    ]
+  },
+  "standaloneVerifierModes": [
+    "historical PASS",
+    "current-source PASS"
+  ],
+  "nativePngDecoder": {
+    "method": "System.Drawing Bitmap LockBits + Marshal.Copy, all ARGB32 bytes",
+    "count": 36,
+    "files": [
+      {
+        "path": "schedule/layering-stop/stop-publish-hit-wrong-edit-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/layering-stop/stop-publish-list-collapsed-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/layering-stop/stop-publish-list-expanded-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-publish-expanded-1600-03.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-publish-collapsed-1600-03.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-publish-expanded-390-03.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-publish-expanded-2400-03.png",
+        "width": 2400,
+        "height": 1400,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/publication-sql-stop/current-dialog-above-publish-1600-03.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/range-pointer-stop/publish-before-1600-02.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/range-pointer-stop/publish-success-1600-02.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/range-pointer-stop/employee-published-details-390-01.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-stop/employee-published-details-390-01.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-stop/priority-before-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-stop/priority-pending-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-stop/priority-success-1600-01.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-pass/manager-current-1600-light-18-reviewed.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-pass/manager-current-2400-dark-18.png",
+        "width": 2400,
+        "height": 1300,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-pass/manager-current-390-dark-18.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-pass/matched-current-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-pass/matched-current-2400-dark.png",
+        "width": 2400,
+        "height": 1300,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/manager-pass/matched-current-390-light.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/isolated-final/current-v4-detail-day-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/isolated-final/current-v5-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/isolated-final/current-v5-2400-dark.png",
+        "width": 2400,
+        "height": 1400,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/isolated-final/current-v5-390-light.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/isolated-final/historical-390-light.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/isolated-final/historical-v2-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/isolated-final/historical-v2-2400-dark.png",
+        "width": 2400,
+        "height": 1400,
+        "fullyDecoded": true
+      },
+      {
+        "path": "schedule/isolated-final/historical-v2-detail-1600-light.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "joint/current/team-desktop-dark.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "joint/current/team-desktop-light.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "joint/current/team-nonempty-history.png",
+        "width": 1600,
+        "height": 1100,
+        "fullyDecoded": true
+      },
+      {
+        "path": "joint/current/team-phone-dark.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "joint/current/team-phone-light.png",
+        "width": 390,
+        "height": 844,
+        "fullyDecoded": true
+      },
+      {
+        "path": "joint/current/team-wide-dark.png",
+        "width": 2400,
+        "height": 1400,
+        "fullyDecoded": true
+      },
+      {
+        "path": "joint/current/team-wide-light.png",
+        "width": 2400,
+        "height": 1400,
+        "fullyDecoded": true
+      }
+    ]
+  },
+  "reportPrefixes": [
+    {
+      "path": "docs/design/rollout-1692/1738.md",
+      "blob": "f7468f2a77b642aaf3c0755722da3b4e3550cb7f",
+      "bytes": 47036,
+      "sha256": "ea047177db1d75277778afadaa972d0260f182df00e33e9823a88833c7ab4d9d",
+      "prefixBlob": "ca2f076eb9fa7f446caf3cd0519a396067c0fd00",
+      "prefixBytes": 41046,
+      "prefixPreserved": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1739.md",
+      "blob": "37b3de104864745cda2723e982d4121a07fdb20d",
+      "bytes": 25249,
+      "sha256": "4e11bbc1d18432f242c19d4d4d7a0868bfe5fcf05fae8d65c2a246465b225faa",
+      "prefixBlob": "8c75920f7ce3c1a1ee773aefbfb49d51719319a0",
+      "prefixBytes": 19259,
+      "prefixPreserved": true
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/README.md",
+      "blob": "3625caa02e5060c940d2e4e4a65d464adc2bfff3",
+      "bytes": 11357,
+      "sha256": "fb17083ef46297641ad02ec84bd178c6bafd9fd2de75908bf078ef315ad70ebd",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/append-link-results.json",
+      "blob": "575642e8a58108dc3661307ceeb85801248cb2f6",
+      "bytes": 5897,
+      "sha256": "412e8630fb7e16e7eea5bb3eb0612ab325439cbaa4abaef9bcb537d2c177f605",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/archive-index.json",
+      "blob": "d5dc7324127b4abb2e333cdeaf8c1d94e67026f2",
+      "bytes": 10935,
+      "sha256": "d9b82ac1d7a9bd4d3bafab97aa977e07dead132f2fb42caaa98094fe8825ff91",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/HANDOFF.md",
+      "blob": "0b462a65c6fe5d782bb10c69ba3b2e83ab62878b",
+      "bytes": 7387,
+      "sha256": "c73e6508756cb2442a7cf4527b2b817bce8312c36d20163b33e7880718fea149",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/bridge-cleanup.json",
+      "blob": "48885ee0efe559b7b36e9661aa7b85474c16df3b",
+      "bytes": 670,
+      "sha256": "33665b6c6347fe018478e0ab6f978809823aed196f5dad5d9669fbef558ca684",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/bridges.json",
+      "blob": "de6a5f719328c0e6f8c3948018f9ffd983428311",
+      "bytes": 541,
+      "sha256": "a48d8921f17d035a1c9b64141900ec1980e62806796e82a8c21f735ad6c2ec4c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/cache-observation-first.json",
+      "blob": "dcf76cd78eb663303cf07f4c7aa605357e2f6f59",
+      "bytes": 250,
+      "sha256": "8446d21744ea57b95182c8151bfd3d8a27683fba9a85975805b458f7b1c9812f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/cache-observation.json",
+      "blob": "dcf76cd78eb663303cf07f4c7aa605357e2f6f59",
+      "bytes": 250,
+      "sha256": "8446d21744ea57b95182c8151bfd3d8a27683fba9a85975805b458f7b1c9812f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/cache-repro-01.json",
+      "blob": "adb81d70d06ba40992b56adb632c44bd768e59df",
+      "bytes": 3807,
+      "sha256": "2fff4a69e1db132a42651f5adff2d0e5508e848948d3d66814d5046385c337af",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/cache-repro-01.log",
+      "blob": "d35a4312a5b29016e29b5235a0de230eef9523e5",
+      "bytes": 664,
+      "sha256": "0ac0869b9876997e00d86b57ebd47f71b557a0c54a54a2c41d6101b0ecee8b21",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/commands-and-attempts.md",
+      "blob": "2bef76c63c3061fb6024d20ec3d007c3ebf29665",
+      "bytes": 5566,
+      "sha256": "b30d9856a4bb55654c5045d1b823de66dcba3da873687e695debcb415ee81e46",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/directory-public.test.tsx",
+      "blob": "9635db941512c7b6b9f0822fc4f4e2ed281bee66",
+      "bytes": 12991,
+      "sha256": "ed2d7d842caceb47bf19601255f4a1a82c7b818d9bf068965df7f3606ebe58e5",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/finding.json",
+      "blob": "9a9da832e3faa9cea41ac5e15f2f6d9203b8f81a",
+      "bytes": 3255,
+      "sha256": "bd6e3eb578f06cf5b7aa93a98a6854f317812f9af78ed95491477e05f8085f81",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/history-public.test.tsx",
+      "blob": "80e8f1c6818f0ae68fa95edd5f3a120557e10242",
+      "bytes": 4233,
+      "sha256": "9d418029f6d7512fda65baccdfddb15a45f277cbcb9457917c3465eb868821eb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/pins.json",
+      "blob": "42993c520e8bc3959a815ce1aa98f88ec8748551",
+      "bytes": 1855,
+      "sha256": "c3a4aa398e170f25fc1d86939cf46fa260fe353b381d88d811f0e424d10989c6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/pnpm-version.log",
+      "blob": "66df3b7ab2d11466aa49935b4011e1fe37364f4b",
+      "bytes": 8,
+      "sha256": "af24c4404052eb57d108af369192a87f56f1b93ef88bd1a4901c4e1aefef8c8e",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/preservation.json",
+      "blob": "ee65be5e14dfef5d08e6ecedc236948c5741c557",
+      "bytes": 658,
+      "sha256": "076b89910007b5c4f5eeff49ea4a2eee0734427fc6306f1f9f42e431f673e2af",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-01-sandbox-lock-failure.log",
+      "blob": "bfc5e524ebedffb31896457f72e04c4d0c56b7fe",
+      "bytes": 1240,
+      "sha256": "f654678e05aa1114b46b560778bd744883bee40a1e3b14d70e3b0d3e362b1f5b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-01.json",
+      "blob": "da7493609a2328d95b44a0dfb7a7122a41d1546b",
+      "bytes": 12997,
+      "sha256": "2939ad98dcd36c64536051611832d0935c83d4dc3d65601adf03a545b457bec0",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-01.log",
+      "blob": "9d5194593125370d87ff1a64bb9a6f310f57abf6",
+      "bytes": 659,
+      "sha256": "6be43536cd96bb77caedc4d1b4b6de414720c2e70ae0fef2c193be37083eb8b9",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-02.json",
+      "blob": "d1194c0453c316dc25c124f7dbc03a5421b6eed7",
+      "bytes": 18970,
+      "sha256": "1f12864b97d6197d47cd6e481f1bc4040b321c24573b96408a5eee0a420053d8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-02.log",
+      "blob": "355e8f738fc019e009618a147e62c85bef17842b",
+      "bytes": 659,
+      "sha256": "c17b73d48e8a1519695277c8576accec268160905f47a108e364626d1fbbf8f4",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-03.json",
+      "blob": "aff48d08e5bcb5365ec86c5c001b31e6b74b4fa8",
+      "bytes": 18651,
+      "sha256": "91fbedc7196aac38685eda92ad39802a869aa731ab038c0b1af18f56e7290362",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-03.log",
+      "blob": "f3eea859a3908c1802c435915df0f8fd9078d59a",
+      "bytes": 659,
+      "sha256": "5c2704a03f7a6d70c302214681bab2094fffa580825c29b08d9cc89658939a30",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-04.json",
+      "blob": "a15d8d0c04713fe115216c89e83c4d3e22659f04",
+      "bytes": 8621,
+      "sha256": "04452444403b7d5bb448c89b9c859bd417e00a27849f8070a4a41128917b58aa",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-04.log",
+      "blob": "5e95bbf724f671188e58902eeb514a29a8ea0f05",
+      "bytes": 506,
+      "sha256": "07e8d542cabd910e9af8952adea34f91f719a36252d0f5efcec60fddee2f216a",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-cache-01.json",
+      "blob": "101a74a2e89d6f2f7cd4ddebf4c4314cc1f2ce6a",
+      "bytes": 22823,
+      "sha256": "b1a58ba08334b354e16a65f8b042f93908c4759fcaf63e3a6399db1d2e589884",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-cache-01.log",
+      "blob": "0295c6999c36e970b8dc9c197756259c5908f630",
+      "bytes": 665,
+      "sha256": "7d7140fb12b2021d296242f046b2c01d5342534a7e1d873a111e3450e7058e46",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-cache-02.json",
+      "blob": "08dbf3852903d7de93b959b701362843db1bac90",
+      "bytes": 9412,
+      "sha256": "cc9a4b2b2143c423f08f2bafe8d6ae56732b27c0b09b02bf148859e354bdaead",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/public-cache-02.log",
+      "blob": "68fd19d1f5d769bf453db76f4000e5000069e33e",
+      "bytes": 665,
+      "sha256": "ea779c589c4d4258a62091a3f78ab42473bd2d733ae3313403bd5cf3ffd85ba0",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/release.json",
+      "blob": "8b29d3e2d026c85984590645ab64b1c92e65fa35",
+      "bytes": 1225,
+      "sha256": "6140e5dab5d81d07c39f987541004eb22b71f381449a1ea7973cf752c6775c43",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/results-summary.json",
+      "blob": "b14e36a59780bc55ca09858a3a6c5ae188ae3ba1",
+      "bytes": 29635,
+      "sha256": "06dbf6cfd39e6e1c1940fc0ea5a213de1408745f1f7b80184a460a0a905b4496",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/safe-allowlist.json",
+      "blob": "061d7e32bf9519e896828150e33630e66eb0cf3a",
+      "bytes": 9768,
+      "sha256": "2cf99690e8339530b8c2f253d8dbbb6ee3d0baa6c4dab05a68eccec75aa841dc",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/seal-safe.json",
+      "blob": "94d69b43220fabd13de2b2d597367944ebd8e534",
+      "bytes": 601,
+      "sha256": "a5fbfabf7c95d3bd65036e323ba5b7ba083bfe0cc03fe865e05a48b78ccd14ab",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/cache-stop/source-review.json",
+      "blob": "2ead08e05bda9f72d57b30db7df3a9458d39c4e8",
+      "bytes": 4740,
+      "sha256": "b330e22aa311d9411211c6769fe7674dcf0ad9ed04b58482b571f2029f496f8d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/bridge.json",
+      "blob": "8322d68c660783d3cc6bd6b93afc83aaee226059",
+      "bytes": 266,
+      "sha256": "dd1415c37fee29563b3f4bbbb3e4893b220f35e8e5248353b9e13bf1088ca0ac",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/commands.md",
+      "blob": "c737b2e6c3ad494ac00c3a985eb6441636163e84",
+      "bytes": 3944,
+      "sha256": "040ee8b8a8e482ffcaff2eacc1904d90d809f6deb01c31e62c26c043d0b8e77b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/context-retry-results.json",
+      "blob": "b936742aefdee70a3db9cee8931aad71092816e2",
+      "bytes": 4930,
+      "sha256": "18f151d042fb671aff5529ef8281fcb397cd7502ce05f190e4e38ecf2679c188",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/context-retry.log",
+      "blob": "e3578cf6860cbdc6ce3fc86a90920f163e72840c",
+      "bytes": 6160,
+      "sha256": "4c7f61a31833e504db1b8f959bd43fbe5255b022dd9a714619f7c9a740db21f9",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/context-retry.test.tsx",
+      "blob": "1adf4e12b587c178fb9056ff412d177f5053ee89",
+      "bytes": 5142,
+      "sha256": "76ca4aa5157bdd8e8b4182dc1eca3f6ca3858fb108f5c9d1452a50ff3783dce0",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/findings.json",
+      "blob": "73e3cae87442ffabc9367accfa4d901e9661abd5",
+      "bytes": 8221,
+      "sha256": "5a372f8d0cf0ef627ef6f0e03c31394a63dc8f763c0c74a72b4736280c2ab5c9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/handoff.md",
+      "blob": "fb9d432ad5d321f66911741f79857dfed04f0471",
+      "bytes": 3299,
+      "sha256": "5033c338992db0994291ea2530b15a560f92856094e517c5978f95d2d905e0f8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/historical-next-qualification.json",
+      "blob": "f44623d1651f775f07b052afecc55e63c1eca0a5",
+      "bytes": 18123,
+      "sha256": "4d46cc685c3d4cf730dad8310e21bf0a75cdd832183b9acbc8e93f0dbf9a9e84",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/incoming-delta.txt",
+      "blob": "5f68fe1d606aff0dd9e721fe0e78f108445bbd66",
+      "bytes": 7069,
+      "sha256": "99adc2d593430fec363c9d18c5dafa3f5257d46ae8be9494f0c27a0cbe1e0ca1",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/predicted-resolved-tree.txt",
+      "blob": "4e561293b2bc48ff2d2384154b3909e3604b71f7",
+      "bytes": 41,
+      "sha256": "201c3296d4fdd65a4b9601600ce487d9cc3fa91c2e8650722ada7dfb12f1eb6c",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/preservation.json",
+      "blob": "667ac5ab32273a51919bcef055c1fd2227102ae0",
+      "bytes": 2354,
+      "sha256": "e76f8068cf6ab73a7e9a40928a0cc2027f3aca9721a65ca4624b445d5403c097",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/release.json",
+      "blob": "41dcb2ab713b40cb0802bc240f00bd033b69945e",
+      "bytes": 1015,
+      "sha256": "7775b98f9e1e10ee8ca8cb4d9f631754699b281e69987a6e7c0a52b750c3ebd6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/safe-allowlist.json",
+      "blob": "8edd62bde75852184a088fc7b7a29c3e5a1a93d6",
+      "bytes": 2076,
+      "sha256": "dd1f2b8a2276c562b585af3afbfd123624f3c14d4ac513cbe150b2716712c28c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/history/context-stop/seal-safe.json",
+      "blob": "17e7f2903f6d90b71a245bd82c9ee6708e997e1c",
+      "bytes": 601,
+      "sha256": "f5d7201cce77a07702ea1c06b0ec1d52ef37dde81a107cd33e9ec2ff93ce65a0",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/intake-audit/git-pin-audit.json",
+      "blob": "c3c79116c40782b6c5c7b632655d34d6c02c0183",
+      "bytes": 121509,
+      "sha256": "b44233d079c6daecf9ba2ee79d8116118e4a1a3d2a871f313b04ac99e956c355",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/intake-audit/intake-note.txt",
+      "blob": "6fb597819563529cc52cb8e7d2ba10103dc61e38",
+      "bytes": 14019,
+      "sha256": "8e0bc8625226734a73378cca7d68472560b8e00483016e1c8c4118c3c11d3958",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/intake-audit/output-receipts.json",
+      "blob": "40613ecb6015f6b0ac70e27529a22585188cd1cc",
+      "bytes": 1307,
+      "sha256": "d7f2abfda847bb87bbcd702a9df10784e6a59fa9b500a16e12f0dd0a08695e30",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/intake-audit/safe-audit.json",
+      "blob": "fcb8ab7c633eccbdd8d1e0ee1112f4e2f7effb79",
+      "bytes": 113703,
+      "sha256": "6393b89850c2aaf1a93071d574284f3d457056f37cc41a01c34d78a9062ec8de",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/intake-audit/source-config-audit.json",
+      "blob": "ad6334b92a863a7b3d7d1294cdda9e78322b97aa",
+      "bytes": 26458,
+      "sha256": "c464fc095c1f591f187bd209e0821d8e02ae61980c5327060edd597411a9f234",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/HANDOFF.md",
+      "blob": "0768bf4e0c27817caa7d326e5b931ddaa015a43b",
+      "bytes": 12132,
+      "sha256": "73ece781837fc271329101a63fdad26f923f4204a02b6c49bf19bd3c3fb9619c",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/bridge-cleanup.json",
+      "blob": "c3ba7e905b49b43ba68643ba786c46e3a5010373",
+      "bytes": 925,
+      "sha256": "0d1b8c27eea4e0db9769cbb1edd08d62cf742a6f8bebc6044c8bf5e7e311bae7",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/bridges.json",
+      "blob": "31d445ee5a2dff82ca2ad763142c35af4e18e57e",
+      "bytes": 1095,
+      "sha256": "4056e6001cf70d0047ee7af217bbda623ab8f819eb42cb9bf9772bf9a8062180",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/browser-cleanup.json",
+      "blob": "2dcbdfca54be0c52f568a2e5fbf82157f9548e8a",
+      "bytes": 400,
+      "sha256": "fbaefda16e29e179b848838850749c67c4535120bab4b5199957a4e730ee296e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/commands-and-attempts.md",
+      "blob": "dcd7bd629bee393b078d97e6f562b1923dd1ae7f",
+      "bytes": 5919,
+      "sha256": "73687d139b43e7db91c81d6c6a52d0bab87a9960621c33b1ad137706b46b84a7",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/decoded-images.json",
+      "blob": "821c605e61142d912efc6b79854492fa2a908732",
+      "bytes": 6927,
+      "sha256": "b8304767fbbd3ca0795ed94e7843df99b36842e46339a4fd9fdd09dfc1bfc20a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/direct-history-public.test.tsx",
+      "blob": "80e8f1c6818f0ae68fa95edd5f3a120557e10242",
+      "bytes": 4233,
+      "sha256": "9d418029f6d7512fda65baccdfddb15a45f277cbcb9457917c3465eb868821eb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/directory-public.test.tsx",
+      "blob": "055355f773192ac1ddbdbb2b71484f45251804b4",
+      "bytes": 13356,
+      "sha256": "1df0c9e3202f8799a522d2b80592e376bd494bcf0f71c6cc85fc6aa87baa313c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/fixture-cleanup-safe.log",
+      "blob": "5b91192d2b83de29ec8c8ad342bf88c7e8646d0b",
+      "bytes": 96,
+      "sha256": "864c0b1676d604906fd25e29c4b57fb8115ecf1f1a7d6678c9a7a8a3f5979fd2",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/fixture-prepare-safe.log",
+      "blob": "b74eda3b27b53d4bae0f2f42b6d73c3795fdcd78",
+      "bytes": 138,
+      "sha256": "dfe0b7fdab9fe79f2d381415129aac8077b0ab8616b1bb73faf4b5a1cbfae09e",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/history-public.test.tsx",
+      "blob": "702d5a9a88fa85dadd500a57dd7dd4e9cd3665bd",
+      "bytes": 9849,
+      "sha256": "5a224b8951dd79a53ad0711f85e710670e8bb62b9fe9af73d57d4e781c8fbfc6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/inherited-root-checks.json",
+      "blob": "71f85a55e0ff96820e3b41b5ad0fca55b8b9f75c",
+      "bytes": 17931,
+      "sha256": "57e80729fdbcbcb2947e59536645c6ef0fd95608cdbb8164e23682475f57ec52",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/inherited-safe57.json",
+      "blob": "be7f48122fff086a5123866d593748efe9e8d26d",
+      "bytes": 868,
+      "sha256": "218cd117b2a0beda3e8ce6dd8402544c82e2598e089e5a9606eb33b98d43c434",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/next-scheduling-safe.json",
+      "blob": "e4f2551dd09c14dc138c41921c170b8bde86a31c",
+      "bytes": 2231,
+      "sha256": "8e62bc6665bf793ab0946cd15cf1edbac80b61612df949e7a30ebf452c13c911",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/next-team-final-safe.json",
+      "blob": "b77fa13ed004a0d79b507a7400a416d4b17550ba",
+      "bytes": 5587,
+      "sha256": "17c31163f758bab34dbde5bc070201c504cd145e4031d2d70d002c46440b7806",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/next-team-safe.json",
+      "blob": "db68f074243ed71311f95176a0c430c784be123a",
+      "bytes": 5804,
+      "sha256": "1cd688715aa664c0dcd7a8ef14b68ada7fd00dc4c72e67f6a2e3b531a0540f9e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/pins.json",
+      "blob": "278c7954a6acfc552325e5da61349093c247ae83",
+      "bytes": 1855,
+      "sha256": "16c10a77ef37b4ff00e3510b4a3b4d392ac6e419c5c57768fc8d96f414f0903e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/pnpm-version-sandbox.log",
+      "blob": "a40bbc545a5405a760276ba56731b95f7a3f6451",
+      "bytes": 1324,
+      "sha256": "519b8ecd8fc57e7fbd34f2b3d9f3f2a49be05c3d909303d6ec3b08e5658742a7",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/pnpm-version.log",
+      "blob": "66df3b7ab2d11466aa49935b4011e1fe37364f4b",
+      "bytes": 8,
+      "sha256": "af24c4404052eb57d108af369192a87f56f1b93ef88bd1a4901c4e1aefef8c8e",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/preservation.json",
+      "blob": "2ef5af7082219d62016dabfa82e44289fcd8592d",
+      "bytes": 658,
+      "sha256": "e1766039939824f5804eed7548b67094193642fe50ca789965789db9de65c44f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/process-cleanup.json",
+      "blob": "88707bbdeda1a30c80defb80805a28f30c9cdf0a",
+      "bytes": 197,
+      "sha256": "94f2dd2feeb8ac32aa2774f48fdda724424880ce414f2a523ba868275f79a493",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/public-01.json",
+      "blob": "2ca8a6beca1114f6e1179113351fd314729181e6",
+      "bytes": 11696,
+      "sha256": "cac3e22cffbf7e82d2d73626285ab6d1861971a15d2dde101d27f74afa67bb95",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/public-01.log",
+      "blob": "706bddaae1493b61591f0980971857a1beb8c4fb",
+      "bytes": 506,
+      "sha256": "37d4388ef54a17ed8c0059b6ae168a69340dab71ea29a463e2417de280e82455",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/release.json",
+      "blob": "20fa545163db8357a8aeb27a773160bf13178f45",
+      "bytes": 607,
+      "sha256": "538c46a87a7083aa1a06f3af5e4a5e35cc26ffac85a6e1e35a7db5761e2cba0d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/results-summary.json",
+      "blob": "0e07a45cec2f5868a15b79503512121ccd1d42fd",
+      "bytes": 7591,
+      "sha256": "0e599bd8a6f5de682ea89a57b04feaab1924b8bd7a36d2c7701336a1f6ac0445",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/runtime-action-map.json",
+      "blob": "7b032d3540b00191155e5363540166679a1a193f",
+      "bytes": 1695,
+      "sha256": "0789d1ed1f119e48d8489129afffce2bcf31c3101ce75974b1c468fed28a7219",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/runtime-readback-after.json",
+      "blob": "95a8f2a05a100448c805678a925b110cb91d4751",
+      "bytes": 632,
+      "sha256": "f4899d59740f12072e0e39729c46496a08432cdfc65029381158b31a76e5d1b9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/runtime-readback-before.json",
+      "blob": "95a8f2a05a100448c805678a925b110cb91d4751",
+      "bytes": 632,
+      "sha256": "f4899d59740f12072e0e39729c46496a08432cdfc65029381158b31a76e5d1b9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/runtime-readback-final.json",
+      "blob": "381f5e3dd3532094f860919d19f9d4f2f4daf567",
+      "bytes": 898,
+      "sha256": "b0c93406c1b0efb5e7704f2f7816b8c3ae4f3834784ddbe8efe515f84f4bafb5",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/safe-allowlist.json",
+      "blob": "5c9d42e7a97a4a6d71b8604483dca0fd30a9652b",
+      "bytes": 9508,
+      "sha256": "7612c3a98fdfb2b105053224fd39319c4f566d8b1c7812128ae7d4846633962a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/scheduling-native-target.json",
+      "blob": "a7b444479c3802d2988631f22dbd6c4a15eec3d0",
+      "bytes": 277,
+      "sha256": "eb072e1e72e848912aad6f6d65fdd0343a1f9041094c3bed305fb3b852282709",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/scheduling-supporting-retry.json",
+      "blob": "0acd9f591b8f08afe1eeb649cf891d0d7d73e118",
+      "bytes": 650,
+      "sha256": "58dbdd24c8d88e9adf75b11cc1cd7680c3859e3b9e7c743a038a4d5da8263530",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/seal.json",
+      "blob": "734700a1e0f33c6e8e1dd9eee03d837119a4ba95",
+      "bytes": 921,
+      "sha256": "9fdc3036aafe04df97098e2478f9e4eea43ec32d9f4f7caca26af292c17b29bc",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/service-cleanup.json",
+      "blob": "59adfc784dc2f44ffdc86f0c95873f02c29f64d2",
+      "bytes": 223,
+      "sha256": "261f11ecef2a1fe96144bee1d5148a7b0a37dd62a38baad6618f2ba8c41dc62a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/source-and-provenance.json",
+      "blob": "ce3fd911204e7fbc277a849ca29605c9b147664a",
+      "bytes": 3563,
+      "sha256": "0f79e9830fc2eba091f805773ecd83be0c36c8578def91e9b5524c933aff9c34",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/supporting-public.test.tsx",
+      "blob": "aa20e7f2a0461cc2853461b0fc28f4b2e4d41478",
+      "bytes": 19130,
+      "sha256": "7dc8988c224ffa64ec678247fe9fb6aeb8f0175232d1c2023641727bd4b47122",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-admin-role.json",
+      "blob": "495a9e2cb05f271f69d617917cf3e649121c01b9",
+      "bytes": 224,
+      "sha256": "951fb80d5116c5cda53fd2d0788f1933a9cd78058539ae5b18ca71b263f93c54",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-context-retry-attempts.json",
+      "blob": "790d207adb692345385c574eef91b85f67155c8a",
+      "bytes": 626,
+      "sha256": "329e5e57b2d27471eed20966da5cfcfa91ae0d5bf8be9a0717a1b08f5946f0b8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-context-runtime-attempt.json",
+      "blob": "d3bae3dcd16f852c6160acdf4fd5af88b5d3fb24",
+      "bytes": 304,
+      "sha256": "2a12f613ea5dd07b2dd1ce6fb993c92b6e6b88517899f235574515e4d9e7c5ab",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-context-runtime-retry-unsettled.json",
+      "blob": "3b5ad4008d0e472fa1db7836645504af4debee8a",
+      "bytes": 334,
+      "sha256": "03648593dc99a91ac04130e0176285bdc8cd01ced93e27ccb6869fffe3c7ce39",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-context-runtime-retry.json",
+      "blob": "05d4615efdbe70aac280b12a27fdf177953afca0",
+      "bytes": 366,
+      "sha256": "a4880ccdae7a28ea8ca1a61ddef546830c3160bcae26f4396b50310ed72dcf5f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-current-images.json",
+      "blob": "82c7d4d4d67baea5ec75722dc3e33ddf861f178e",
+      "bytes": 2513,
+      "sha256": "08df68d5d5b6203582d17ccae302c76b11e1fb6e81feb2a3607ffbcbd3ac37ea",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-desktop-dark.png",
+      "blob": "5b55b36a018c8e1878d0ed117498fba63399fc0c",
+      "bytes": 125138,
+      "sha256": "8b863efba0748585a22377268a8314bc0958e88b15bcd50afdf7505d2cc861a5",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-desktop-light.png",
+      "blob": "3615e4afaea12de369e47201e51291abf6d6b912",
+      "bytes": 125753,
+      "sha256": "7ab6874ff24c73ae02a07b5f5c05bc26772efc48f89cb35afdb682030714de3b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-history-failure-retry.json",
+      "blob": "b271501e4d9d9cec738d04b5604ca7dd9257cad8",
+      "bytes": 203,
+      "sha256": "c96c97f154655db9f7ddf4d974839a1a416ffa38393ea1ec52d6a322b58396f8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-initial-read.json",
+      "blob": "2643463ce751e5e4a76181697ac027ec38df39c1",
+      "bytes": 522,
+      "sha256": "ba9193c7212d6ca6dd7cee4c53ba4277c0cf6241944a382f93b0543709d2c638",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-native-target-attempt.json",
+      "blob": "b1806c97f0e1db54fd824e269b96055d4718905c",
+      "bytes": 325,
+      "sha256": "12ecadfe219b3b326a98dca1ea2a8ff47a0886346381cbe743c150b9faa4fc55",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-native-target.json",
+      "blob": "0f06fe63bc8af8f8074e00909fff6aece78eced3",
+      "bytes": 475,
+      "sha256": "8ac830dd6012e508b0913dbf8a9cf37d0bc43565aa3f70d0b15695ae8a321f13",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-nonempty-canonical-history.json",
+      "blob": "dc182d536f68be70187b3c00ec811545515f2766",
+      "bytes": 438,
+      "sha256": "229ce518bddde4300f17fa099e195407171701bc19ae6c247c92ef010148b94a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-nonempty-history.png",
+      "blob": "d2ea7c10946abb783d7a7f117bfbeb8e2333a48c",
+      "bytes": 96289,
+      "sha256": "6689c0f3acf9d8798de0f7e730cea1c2b35d15ea9bb2df59b016d21e78e1be86",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-nonempty-recovery.json",
+      "blob": "f33589af210d994e7866f6144ca7c0a06b989a64",
+      "bytes": 212,
+      "sha256": "1c67cf0c273655e08ebeed9a76436fbd097567dc08015190683c38a0b6f10dc6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-phone-dark.png",
+      "blob": "c92cda6322d15b858b3077e9e9821f61a6a5a9ff",
+      "bytes": 42046,
+      "sha256": "9ac992e0ef5179fa7a52e684462531349007b1cf8ad99ef3c06abf75bd0ec750",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-phone-light.png",
+      "blob": "9020878e947844a32e0fc1659a307e52a17ec102",
+      "bytes": 42960,
+      "sha256": "80dcf236d9728d4991154969d01560b6830e9a94d7a26303cd846d48942e8761",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-preferences.json",
+      "blob": "24eba219e6a0b94f8edd00158771f8d4afbee822",
+      "bytes": 80,
+      "sha256": "cc0aa4a7f2e486f9aa3fbc9554d7ea98e1ec95546f79e503957f37719a2864b6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-restricted-role.json",
+      "blob": "e6b52aba95b154df566bcc5a18177aaf6004a2c3",
+      "bytes": 213,
+      "sha256": "6b37fb5a0fe4df6d022d7fe1c98b933123ce5c8f60eaa93bfe6b7e1051f3985e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-wide-dark.png",
+      "blob": "357684bd49f9dc6e552c5dcf1b397783fbcf9e28",
+      "bytes": 134009,
+      "sha256": "c6e3635c5eeaf5d36dafac2b3c2e3858f5923ebba338ebe1cdc4d65e66e5b19d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/joint/current/team-wide-light.png",
+      "blob": "fff94fc6189c8f2073367fe7765e5f7f3007c126",
+      "bytes": 135472,
+      "sha256": "861a80da59e3b8a800aa86f61dc987a3e627cef6da6d17a4da965530d3e0fb3d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/payload-index.json",
+      "blob": "a01566ae7a23be7fdb8c2bfc0acdb486ffc1a7f4",
+      "bytes": 243820,
+      "sha256": "7df7f7192eaf4887e4641b05d45c48b9eeb3b0f02a8b03636f72edf173f93be8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/publication-attempts.json",
+      "blob": "efe3c75952acaee1bc25442d8f88b7674e5ac7e7",
+      "bytes": 1802,
+      "sha256": "3be03a6e07b56a62697f2ecefd0b1f017e79a17cb8633416fa9b2b012811e364",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/publication-file-index.json",
+      "blob": "a609e96bdae87c370b6ceb3814a62111917c1055",
+      "bytes": 205600,
+      "sha256": "8b4b4e271ddc54f1f13ca82dca19919ca33535bf1c30b46906b13f08797a32dd",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/publication-seal.json",
+      "blob": "a003d992b865081afb95b2b9f04de679caf098f7",
+      "bytes": 953,
+      "sha256": "3febf60a12f9bbbf05ffaa63a0204bc54325b22cb90cf54eed1ed36d4cd7263e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/report-append-receipt.json",
+      "blob": "b01129ebc2b327bf49a484a2c811b6846ae404be",
+      "bytes": 2663,
+      "sha256": "793c9fa7d476b31305fe03f64f134809ca91d2db033f42aec4ae2327f0b70aaf",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/comparison-setup-stop/HANDOFF.md",
+      "blob": "ed0abee8d3027a2816938e9dfa51a8e3f32465e1",
+      "bytes": 2694,
+      "sha256": "846a4c57ab8d3b82ef0b41002122d30ada54679d5d04dc0867217ecbed2ac117",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/comparison-setup-stop/blocker.json",
+      "blob": "b28b70ea817403157bf8c758b4b56d50c0f92672",
+      "bytes": 1539,
+      "sha256": "6631c03a87c7f0e66e39c74ce43ceaa92498c442d625987362c912f292757150",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/comparison-setup-stop/cleanup.json",
+      "blob": "80c8687ffb85c0c7d8a984f8c2c99d775528b13e",
+      "bytes": 553,
+      "sha256": "ca6cc0fa9633024501468e3f72708847a6b0a3261fe46ee7d79bf6f5e474ce8a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/comparison-setup-stop/counts-limits.json",
+      "blob": "565a3f9fb8ab51a3b0f8d6b10219b5de145ae0f7",
+      "bytes": 1265,
+      "sha256": "6dd0b73c6f3cd437df79eb948330b93dda04a82dbeb9e7d8d9acb9aa8cf7543d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/comparison-setup-stop/inherited-evidence-integrity.json",
+      "blob": "8ad5ec90a3816b446265a32d8938700ddc513f96",
+      "bytes": 536,
+      "sha256": "987063ad86397d3df400c8445aed592a6c781e6af3e289f9c661a23f43854e15",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/comparison-setup-stop/provenance.json",
+      "blob": "745a72a98ad31d3fdfd89d0411710c805b79f26c",
+      "bytes": 1299,
+      "sha256": "6ce4bfdddb0362cc2bc9412cddcd810e159b8ea3bbdff85c8e0ffb30803dc203",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/comparison-setup-stop/public-allowlist.json",
+      "blob": "a895632c8f8f08013cc5a85e5871cd102a74267a",
+      "bytes": 1185,
+      "sha256": "c0ead6386b456f1634c1fee2b3221eba8df762a030c561df492838a0ac50b373",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/comparison-setup-stop/source-config-pins.json",
+      "blob": "f0a2f0d67af3be8c34f0af3b2bfcfd0cc1d4e8a8",
+      "bytes": 3600,
+      "sha256": "06955ee59378341b510078988451f27b08e5cd5d509c30bc1d0efac36ecf0571",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/STOP.md",
+      "blob": "48b5e8a74d45a8755f09a77882f033be4634d064",
+      "bytes": 7444,
+      "sha256": "49c3c3d48174bddc2b850b24a7ca7c89a48dbd49d705b457c0bcd8fd0912c26d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt03-04-harness.test.tsx",
+      "blob": "b686407c06f63b5ab58efe78838df9dd2bf3dc2a",
+      "bytes": 7549,
+      "sha256": "89e07c03c08327cd8a8fc152e8631644b68fa7d77e9bd32800126248885e7914",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt03-popup-text-command.json",
+      "blob": "da321ab0a57547ef6402cb8a5697bd86ca0d754e",
+      "bytes": 6343,
+      "sha256": "2fc1e96c21fce066ce5c6932833e0f1b426106c91b2d2895de0710ea3657a2f9",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt03-popup-text-coverage-failure.json",
+      "blob": "0acc3a9b7692d7022feb46cb26c053337ce1ebba",
+      "bytes": 1106,
+      "sha256": "a2f07f02143447099f1d5d321611accd2c52c155c422bc4f3a85f3b1142535fa",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt03-popup-text-healthy-empty.json",
+      "blob": "6f83178d32e4e15a6f0e9b51df1ffb998326c7b7",
+      "bytes": 1061,
+      "sha256": "b53130a06d7bdaf72022edc395eefb60e8696f0271d06a2348de8ba5756ea6dc",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt03-popup-text-healthy-gap.json",
+      "blob": "e9dff1c1ac18c1cae98c0c7061c2c6e6ce215859",
+      "bytes": 1539,
+      "sha256": "d15a1684841ccbc74535adb2205f09f87f47100b6b9c10a8cbd57c42b38f4628",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt03-popup-text-vitest.json",
+      "blob": "1f5fd16b6919ac605f4591a22c858700531f5aa0",
+      "bytes": 2051,
+      "sha256": "c6a19f23fd80e33c6e50d9b3d99c71342949d7d1cf1a3824dd43f52cb5348739",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt04-repeat-failure-command.json",
+      "blob": "e0e05086cc4b6e0ffcf58829302a6b1077c18656",
+      "bytes": 6424,
+      "sha256": "6930892c43c1881becdda25b3d1b82e2bdd2883cf461de4d49c3411c6be4bed0",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt04-repeat-failure-coverage-failure.json",
+      "blob": "0acc3a9b7692d7022feb46cb26c053337ce1ebba",
+      "bytes": 1106,
+      "sha256": "a2f07f02143447099f1d5d321611accd2c52c155c422bc4f3a85f3b1142535fa",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt04-repeat-failure-vitest.json",
+      "blob": "5555ae024fc4086ffe4d4529def4c32b431a42cc",
+      "bytes": 1995,
+      "sha256": "cca6eac04a9e74904fabf73bbed80fa9f55e25bbcb971991f9c09b04f3bc1657",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt06-premerge-settled-command.json",
+      "blob": "7222ae23ca1213e170adfc8aa9beda21035f9434",
+      "bytes": 6676,
+      "sha256": "5f6c406b6738ad76580b0687ea29e7a4543edc9aad7343b03b8a0eb5b551210a",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt06-premerge-settled-coverage-failure.json",
+      "blob": "2a8f6546d30a1385bed595ca50ad247676173a33",
+      "bytes": 964,
+      "sha256": "4bbab033c89fb22b2cf10714173986995e7432d93b80687eb27cfe87e1c0f88a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt06-premerge-settled-healthy-empty.json",
+      "blob": "a31ee934ba69446305da8ecf3c31c47ec8e34722",
+      "bytes": 919,
+      "sha256": "c8cb71f8525cf02ce8f8c9e0a6373b65f61f129b06caca6d91b5f9c0bab4696c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt06-premerge-settled-healthy-gap.json",
+      "blob": "65cc615091918b3e306aba7eb06332904e774bc1",
+      "bytes": 1437,
+      "sha256": "f95ddaa744e36930cef222c04d64a9299be5c2c7504f9fe6d2d1cc7dd8ad1d5d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/attempt06-premerge-settled-vitest.json",
+      "blob": "5f29bff73403929cabb35444c74cb6a9ccf58fdc",
+      "bytes": 2051,
+      "sha256": "9735bc10d24deb8a3cc229214b727d4bd196e0030cf2d36abe261bc377ce48ba",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/cleanup.json",
+      "blob": "9339bface556d3540f0df8bb1fe6d4289d436760",
+      "bytes": 1564,
+      "sha256": "961619bccfcac030e5cc8900ed9840ac5367290786e024a63b9b07fe785f68e5",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/dependency-check.json",
+      "blob": "9cff875ebbaa8c695868ecd72ce4c28afc8d4bf9",
+      "bytes": 514,
+      "sha256": "d932a70d187b3cbfff709b379ae4d671d3378885d9aa9a1422b5819ed70ed669",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/dependency-summary.json",
+      "blob": "be08b970858b132edb23415714f60a83aa979a94",
+      "bytes": 707,
+      "sha256": "452396734a3d298ea77756d7cc6663db7f4225f945023a2474523432029386d7",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/failed-attempts.md",
+      "blob": "3742a27599c347659ff4c40414be41942e14d321",
+      "bytes": 1830,
+      "sha256": "be3f27ee54354838f35ffa2d24e8695e3c5ecc99e2baaf8f18e70adbfc5fbd08",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/merge-audit.json",
+      "blob": "caece94acc60d71836c5a7a985a2533952f051fd",
+      "bytes": 11568,
+      "sha256": "e9beffeb71697102d3b76a770028b27ce9fa34c199fb5d6104ee4e91ff57b307",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/pins.json",
+      "blob": "4cb887a8280b60a0b511d7a48624acc8f459566f",
+      "bytes": 25818,
+      "sha256": "d3c27e17063417da5b2a7c2b51192d145574f0fe42f6112ec886ff4287642ca4",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/premerge-shift-scheduler.tsx",
+      "blob": "4591e5db4368b5866ede1c3c57b308a30b795846",
+      "bytes": 11459,
+      "sha256": "950c021f3965e8758c7180400d9bcdbeadd844f5341596d7054aad6d83e7464d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/public-allowlist.json",
+      "blob": "333f8d4556a7cdf53e436b75d297287f158a1b7f",
+      "bytes": 6862,
+      "sha256": "81a0790454796e72f400c3c5d5b50e9548ede10562bef176e782d53e699c1b8d",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/public-probe.test.tsx",
+      "blob": "08cf83a14f9418ce3fbf013675a3343c5a6f0111",
+      "bytes": 8236,
+      "sha256": "7cde4332f15f7113bbd3505e87705c203996b0461be6738268b4ebc39924e6e9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/source-boundaries.json",
+      "blob": "4e27cd22a1a7ea22d1d2979b325803d8495b7140",
+      "bytes": 4312,
+      "sha256": "15df85b5f5e7955059794406a3dff0266ce4944deafaf40cdf02837d8b7a2eea",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/test-accounting.json",
+      "blob": "9cdb656f33de6c6ec371022d34859741690c3abe",
+      "bytes": 6983,
+      "sha256": "6ddf03a1d4df5b518d961b4f96fdec8b6e03d947bab63a3ee9bc3cf6f14d5494",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/coverage-stop/whitespace.json",
+      "blob": "0ff693583c880e57713bee2e1ac19ab945923283",
+      "bytes": 1760,
+      "sha256": "84b1c6d8512ec613a8b088ae187a0de1ece1d055361e956f5fc64a3ef72dc694",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/HANDOFF.md",
+      "blob": "5d79a23ee5598c843e7a4ce4b9608254a16cfb1c",
+      "bytes": 7375,
+      "sha256": "87ed0896c8278473d77cc2e8d9778347539486c527d0aa35bd97f033451932bb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/browser-close-01.json",
+      "blob": "1c8d798ae53f90f7b640db40cdb4436aeb83c4fc",
+      "bytes": 47,
+      "sha256": "cf7da34ef75e159ebac94acaab0d0996c3ec084fd66b12350697316bedae5c9f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/browser-close-02.json",
+      "blob": "1c8d798ae53f90f7b640db40cdb4436aeb83c4fc",
+      "bytes": 47,
+      "sha256": "cf7da34ef75e159ebac94acaab0d0996c3ec084fd66b12350697316bedae5c9f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/browser-close-04.json",
+      "blob": "1c8d798ae53f90f7b640db40cdb4436aeb83c4fc",
+      "bytes": 47,
+      "sha256": "cf7da34ef75e159ebac94acaab0d0996c3ec084fd66b12350697316bedae5c9f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/browser-close-05.json",
+      "blob": "1c8d798ae53f90f7b640db40cdb4436aeb83c4fc",
+      "bytes": 47,
+      "sha256": "cf7da34ef75e159ebac94acaab0d0996c3ec084fd66b12350697316bedae5c9f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/browser-helper-provenance.json",
+      "blob": "caa69ee530ddf00e62e813ba3995e271ba7dc38d",
+      "bytes": 897,
+      "sha256": "d3186f0857b73ed6e5996d734f9422c58a1936a86eb351b4387341be5501a1ed",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/clarified-ack-scope-01.json",
+      "blob": "1257e60a8b1617ca17e168a4ed5e5795d88dae38",
+      "bytes": 467,
+      "sha256": "126771f5fdb484b445ead00cf42e1c19cacb7367aa3ff2d5935cdbae40ed5f3b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/cleanup-final.json",
+      "blob": "905d389bcfdd440d0d176bfac9f143ef5aacdab9",
+      "bytes": 434,
+      "sha256": "699b5c73bd2982b0043997e8618769b4abd4350defdb0442612582c29bf69574",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/commands-01.txt",
+      "blob": "be2d1988d6d6aef9560fe885a92437cf682acaa8",
+      "bytes": 6231,
+      "sha256": "cae38aacb854809a41e1972dd4083b7a04f95a070eba1fff09222dc99232b9d8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/comparison-images.json",
+      "blob": "49f5581500c58e222ca833a8f6c939d55414b44b",
+      "bytes": 2522,
+      "sha256": "2fbd7b5dde55c80cc01055299ac8e1c4ccb61c89db2ffee6af493f75a08a69d5",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/compliance-config-01.json",
+      "blob": "98edc7f3ecf8c1c9d388122de09983a45d4a55fb",
+      "bytes": 194,
+      "sha256": "f44a5952cf436bd5adcef41c588393e4874914422a98ddc42b206438797cb05d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/compliance-current-02.json",
+      "blob": "cbfb9037f06d8bb9c84cefd39ed49a99d91e3425",
+      "bytes": 227,
+      "sha256": "3d3939656b3b825daa6e459ba9e30ef4efc4c5ccb2ec3403f02218d8e2532592",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/compliance-current-stale-01.json",
+      "blob": "7501b70a5e638c273eda83e8017ef5a3d767cab9",
+      "bytes": 629,
+      "sha256": "922605c3aa1facc5168e6b7dd3ad147041a31ba5293749f95504ab3a9271fc7d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/compliance-reachable-01.json",
+      "blob": "23199a4a6c3aada43ccd9271f24963daf4241822",
+      "bytes": 247,
+      "sha256": "6288a0a2460568377228fb78444e321efd5b2a1f15bbf3e17be9b67cf72a039e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/compliance-stale-settled-02.json",
+      "blob": "462ea761793450df72e036120e58c6aa653a6c0e",
+      "bytes": 138,
+      "sha256": "56adcacbd41e9a93f3e84938fb7a51574a4c5c22e3d108b119985594ec5c876b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/counts-and-limits.json",
+      "blob": "4391fd61b0f7def4b0665921db74a254bef11458",
+      "bytes": 1677,
+      "sha256": "6bf14b1cf2933c77a21dfe7df584cfa235fd122f9c8d2ede6b778b3d632bf960",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/coverage-config-01.json",
+      "blob": "9f65c55d55fcb1df171a0b9c68b1e47778b4bcda",
+      "bytes": 160,
+      "sha256": "357707d3c5b01426c2df172969d2ccac5147fc5887fb3237f0dcde0e0c5c6957",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/coverage-publish-refusal-01.json",
+      "blob": "c615a4ff41daeb65eebae22949cc847ef2a882e6",
+      "bytes": 356,
+      "sha256": "39ac145ab8b6ace304c15e1f4aa9f78710ee1a16dd64d5d0c237ab58caac2e35",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/current-captures-05.json",
+      "blob": "c95258d5dd7df47aefd62117ca3264d7c5fbfdfb",
+      "bytes": 2302,
+      "sha256": "b25124e103e0680cf98ebab7867eb9a2e5e8cfcfdae625888db1364ef23c5c59",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/current-v4-detail-day-1600-light.png",
+      "blob": "ac7606a044cd76445c231096fdcd6d9063ba095f",
+      "bytes": 104057,
+      "sha256": "63135c0878b004a7d4a047c153cd252c3ae62e2fb7b460f26ec71ff4cd545b99",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/current-v5-1600-light.png",
+      "blob": "b21e87d5364220481b307f7dea7e68b925392468",
+      "bytes": 112317,
+      "sha256": "00c377146a4043bd7fa774dfe674757c05fdbe9bdd573723e8c1950a6039a21b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/current-v5-2400-dark.png",
+      "blob": "4b8414440c3f6dfbcd3d0aa562cb3b3c8f6e322b",
+      "bytes": 118596,
+      "sha256": "7521ec5d7aeebba27cb9fed11892cc5d19bd9492e89f715682eb426efc6fb739",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/current-v5-390-light.png",
+      "blob": "0459e8ad8f0ddd52a4fef242c95c1f284c26ee08",
+      "bytes": 51106,
+      "sha256": "49df704a07a895e5d57358f26f4c5bc92e3018d3c4f957db5efde190ce8c34df",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/failed-attempts.txt",
+      "blob": "872ad9502ff8421deb81e1fe432b8c66440d4613",
+      "bytes": 6968,
+      "sha256": "fbd9d621e7daf8b467cd03c993dd8df5417c4b888570148525d7cd296e838e4c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/final-next-safe-01.json",
+      "blob": "7fc214449de302720e71b4c5d14bd9bd86e1ca09",
+      "bytes": 1556,
+      "sha256": "3e322a3fe7f19f310a62c0bdefe11d9b746ba6504d2485377fef23d9db6c708d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/final-next-safe-02.json",
+      "blob": "baf02bbc4da2b1f1014cbc34463b1f01e689dbcb",
+      "bytes": 141,
+      "sha256": "8b93a6b27ad2277b39dbdaa41a480c01138eaa1f2aaf6290b70be4852a19c39f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/harness-source-pins.json",
+      "blob": "3fbc167f5d6c8c624f2fcba0b90462358c82bbc0",
+      "bytes": 4176,
+      "sha256": "8747891fd2189f8d8952aecf8ea35ea118e48cfe75391f97ed599b8ab513f6bb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/historical-390-light.png",
+      "blob": "a101198af61798d9afa1ac09037ce60366a58b6a",
+      "bytes": 50426,
+      "sha256": "09eb5e5bce1c01c5cb0fd0869618c1d40541aeb24555a97fefd86790a7dd45bf",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/historical-source-pins.json",
+      "blob": "776b8abc59f9afbba27eca44b1fa695001151dcd",
+      "bytes": 457,
+      "sha256": "11ad204bb5084281d445bac95d06fa223967c6adbcef72ae32b035ec00f894ee",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/historical-v2-1600-light.png",
+      "blob": "9fa61be213296d04c8cc5bb3ec0430bb12ad8b7b",
+      "bytes": 112956,
+      "sha256": "0eb26b27b61f7ddbd5ffb08449211cbb2ec0acfae4e0513d1a8efeb7df8a34da",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/historical-v2-2400-dark.png",
+      "blob": "be7ad241a51e9898b989ae15ddd94c418cae0a32",
+      "bytes": 127839,
+      "sha256": "a0cb6071d88eb4e00b53e690edf151599ff2e1ccfe17c8fc637c8b99b3d59bad",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/historical-v2-detail-1600-light.png",
+      "blob": "c23501f2ae38ac3606aca54dfbfc86be36bbd014",
+      "bytes": 117440,
+      "sha256": "2a37409b24ec28aac14ef9832a887712f7fd411a176a38a0a0f824c72609f2fe",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/matched-detail-04.json",
+      "blob": "98c6ed31179ee80459ff0ca4411c290039269853",
+      "bytes": 343,
+      "sha256": "325a5bf688b2655eb385662fa2d824380914c918bccc8382a3e968030b4d16b8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/pins-initial.json",
+      "blob": "bc1fd07eed9d8c2a67c075f6bf9716d3adfb0700",
+      "bytes": 2451,
+      "sha256": "ae20b67da27a0dd478e376e835bf799efe0fab8fe14ff7bc0074fec6c234643b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/preservation-verdict-01.json",
+      "blob": "cd3567210cffc00359f844085694fc373fe96871",
+      "bytes": 1975,
+      "sha256": "8a67b10559c2cd48179fd17ac6a3878ab15d2099a59d724b1bf5901df919496a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/public-allowlist.json",
+      "blob": "a79f8376f95a15ed9d4257edc754b5e82ebf465c",
+      "bytes": 9319,
+      "sha256": "096bc040ebbee1647ac9c55445a14835537c1c2c92539b628480e6dc780311cc",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/raw-to-safe-provenance.json",
+      "blob": "ae2b288e75ae7f82862f77db7a65e049d0cbd57f",
+      "bytes": 1383,
+      "sha256": "90a9cce117c06451d0e81a196bef346c09bd3d22e2197c5e7cf7e3edb9b3dc1e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/scheduling-readback-01.json",
+      "blob": "b8d28ea9f9b36a17312e380925aa1acad15b913d",
+      "bytes": 5364,
+      "sha256": "7068c1a7aaf52730a222d368ea0886eb38243e81fd293f31da5432fc3eb7a299",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/scheduling-readback-02.json",
+      "blob": "d0a21c5d437b986ef8581f990d9a2a5b6c9605c6",
+      "bytes": 5737,
+      "sha256": "f0dd527b8ca244dcfcec955a5f359c6e8f331e5473cb7e0a3e9e9dd45561389e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/scheduling-readback-05.json",
+      "blob": "b8d28ea9f9b36a17312e380925aa1acad15b913d",
+      "bytes": 5364,
+      "sha256": "7068c1a7aaf52730a222d368ea0886eb38243e81fd293f31da5432fc3eb7a299",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/scheduling-readback-06.json",
+      "blob": "b8d28ea9f9b36a17312e380925aa1acad15b913d",
+      "bytes": 5364,
+      "sha256": "7068c1a7aaf52730a222d368ea0886eb38243e81fd293f31da5432fc3eb7a299",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/scheduling-readback-07.json",
+      "blob": "b8d28ea9f9b36a17312e380925aa1acad15b913d",
+      "bytes": 5364,
+      "sha256": "7068c1a7aaf52730a222d368ea0886eb38243e81fd293f31da5432fc3eb7a299",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/scheduling-readback-08.json",
+      "blob": "e053672a9efd837b4c44e702d7d7965334076cc1",
+      "bytes": 5416,
+      "sha256": "f0ba4a98c4699b89a56ab8a1d7750987378c74a07d4178eb8dcdc507f440d8db",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/scheduling-readback-09.json",
+      "blob": "e053672a9efd837b4c44e702d7d7965334076cc1",
+      "bytes": 5416,
+      "sha256": "f0ba4a98c4699b89a56ab8a1d7750987378c74a07d4178eb8dcdc507f440d8db",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/scheduling-seed-01.json",
+      "blob": "2158bbb4bf817ca1549beaaf56ea389abba32a71",
+      "bytes": 5360,
+      "sha256": "ac3b55e41187b984b85eef0e06ef779df0481fac184133fc92da6adf0c0e2c29",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/sidebar-settled-01.json",
+      "blob": "c0caeec7f39f89f4b5bee036abc26728eaa11118",
+      "bytes": 132,
+      "sha256": "ad376d8b44e9541cd5cb6ea82b8ef2f597e7d568b60f82909a50055bdc006322",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/sidebar-settled-02.json",
+      "blob": "be8435337c4db48f7ae3f05e8e60e021acf6ecaa",
+      "bytes": 225,
+      "sha256": "f0a38397e101e15d4be63274658846c0341f4343346dfebc5c0b6adbab805720",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/source-configuration-pins.json",
+      "blob": "6a5494e0f81a1bad139721f50359d207bc5d1497",
+      "bytes": 4395,
+      "sha256": "c954ba9c9be3ecabdd84591e5ea6ac3245aefc653130ab38b4f285a032e09fec",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/source-preservation-final.json",
+      "blob": "57795bca8df69a9ff33b7634594db8f16bbbeded",
+      "bytes": 2749,
+      "sha256": "8f09914af485bd32db8900556f04f12674ed4c8ea51273fa5aa38cc4935f286b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/stop-next-1.json",
+      "blob": "24cc3af87d6a2471a30474990125fc4423f7aa99",
+      "bytes": 131,
+      "sha256": "b50d901c16b34856970e8f4eb3ebc7b2f2b3a8fe26522c3b4747466567acebb9",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/stop-next-2.json",
+      "blob": "60356c8a9461e870c5e39f2d3dcfe139ee78a092",
+      "bytes": 131,
+      "sha256": "3b5393ffca6236d5639e375db036bd5f9852e27629016df0cae83487845b55f3",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/stop-next-4.json",
+      "blob": "695c73b29d21adce1a8d87bd858926d7bafe00d0",
+      "bytes": 131,
+      "sha256": "eb50d65036ec9bb3ebd9f9768ebf6353558daba3db475660a8f909aeecdf7d8f",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/stop-next-5.json",
+      "blob": "dda0b33bdf4534c8c59d98ae36b0b0b5e88bf7e8",
+      "bytes": 132,
+      "sha256": "60c209637f3454af1244937bcadf940782f42cf62c399573a2890c0fb96dba97",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/supporting-retry-01.json",
+      "blob": "3f9b5214876aa5380945e37d36ea093ea687d928",
+      "bytes": 3296,
+      "sha256": "02d370ff13c607a3724e457f7b1cf2a8000d69699f4cf1c1c2e58d134e61cdfd",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/supporting-retry-02.json",
+      "blob": "bae070c18e1c5450d1efda23d5dc9b8a0b471a5b",
+      "bytes": 3423,
+      "sha256": "a1ede0dea563b9c14d0a15b27c16ca1d5c304535683c58e88709b4d2e5fcb5f8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/temporary-draft-cleanup.json",
+      "blob": "2558dd4a777dd9a10ca2ba595f09797edd74f351",
+      "bytes": 145,
+      "sha256": "28b902ed4b760bdadc59b064c010d0edddb24d9ba50673a0c36ff640eccbad16",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/write-refusal-01.json",
+      "blob": "15909b601c829d20f78bbc4c76bd75c082194d58",
+      "bytes": 210,
+      "sha256": "7edcdda861cdb2b9ce1a9b5b4a72e5d0d3fe0fabe92a43bd70e88f59d9803f32",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/isolated-final/write-retry-duplicate-01.json",
+      "blob": "c7bed7974579738e4b1a4a8bf49e561f1c4a212b",
+      "bytes": 881,
+      "sha256": "8739252ccd93fe511bba732dd17463f8dca52e6231c5c167aeab735791f02ba7",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/STOP-publish-occlusion-01.json",
+      "blob": "64f782240373c5f12536f95c9ccf575f91f665a8",
+      "bytes": 2489,
+      "sha256": "ce5d77779b6918952a1566e3f469d3b3a786229e100c8895c83a243cbdae1468",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/STOP.md",
+      "blob": "4f6e2fbec82112075520862ac936e606db10bbd6",
+      "bytes": 4433,
+      "sha256": "20bbf4e9d263da6231cb3f940dd4032037e58a0fa4740973c696d3d169fc98a6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/cleanup-final-01.json",
+      "blob": "b004e2ff51b4ed6c61d284330730da822933a8f6",
+      "bytes": 1469,
+      "sha256": "4abc4ca92f97771030f9757de6b5f48d99cb573e7774723ad27a0fdd01457d0e",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/cleanup-next-01.json",
+      "blob": "434c56f2c8e501296e50ec1fab7ac473a41e969d",
+      "bytes": 178,
+      "sha256": "f286d1f8e6d9841f2ccfd8ba7cadf922625c001b68398550517fd80e20d587d3",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/commands-01.json",
+      "blob": "1a73cacfc8dff1be0530e177f8894b2035b763ad",
+      "bytes": 3430,
+      "sha256": "ea11c575e732c82c132a6e4505254e3c32ade03b076a69705d26a0515afbfa7b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/edit-server-response-01.json",
+      "blob": "1fcd46afbcbecdc2602cef05807d9b9f9680ccca",
+      "bytes": 215,
+      "sha256": "2198ef897a1ed88cf7790f8b3ca99d1b6200b330ac4e740ad7c01d57ea46abd3",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/failure-history-01.json",
+      "blob": "c3bdb28d2381a9b01a12c31341e491a472e639b1",
+      "bytes": 1962,
+      "sha256": "94c0f0372c44f92c381eff3345b2c805122e3eb695893f391d458b0457c3ef82",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/old-stop-payload-preservation-01.json",
+      "blob": "149a6fadc30791eb45164c112f4ed19c9ef8601d",
+      "bytes": 4509,
+      "sha256": "7be08a248e21b17786a3d77c838a546931e8570a231f009c7e07fe8e88928b28",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/pending-create-01.mjs",
+      "blob": "3510738135aec6f385772b85d3977525a12223ea",
+      "bytes": 3236,
+      "sha256": "bee249eebd7c8881c6ce0a358eb7f676481acc6a518e055e01cf2f52291997c5",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/pending-create-result-01.json",
+      "blob": "6e3f3c46bdb073162cd532429961f1a68f2056b0",
+      "bytes": 491,
+      "sha256": "bd6216b465a38bd72544b93697e2bcd87eb9c0759de354d4512a37f7bc7630c4",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/pins-final-01.json",
+      "blob": "5606cdf622f627e12755631adf7ab930c2cec6fb",
+      "bytes": 53578,
+      "sha256": "bc64fa5fdfc5a1f3a136ee53f7acfd8a7bd1cd4d1cd483fc67691c6bb7ae546a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/postgres-test-results-01.json",
+      "blob": "82bfcdb3c35ece9ace623efe69b112b1f0483071",
+      "bytes": 12706,
+      "sha256": "cf73bb906c067a926cdbd9ede838bf93ffb824e305a39233a1efb97f3ff90107",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/public-allowlist.json",
+      "blob": "0a2048e33e48e8d54e8a54f0a510eab5c3696cd9",
+      "bytes": 5089,
+      "sha256": "cacc6533ac36136538a665341139d21c612d2267d1643a7f33c6f8d529f7acf3",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/public-assembly-06.test.tsx",
+      "blob": "20a32d3e84c27dc14d3a6538284206ea8f3bd84a",
+      "bytes": 15863,
+      "sha256": "c0e674995c1cadaf368b8e86d3df02581b77a4d06856a25f668f8aac268d3eb8",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/public-test-results-01.json",
+      "blob": "e2bb6d5c59de75ce034308715f8ca1cdac003054",
+      "bytes": 5471,
+      "sha256": "a9c8a6939e792de1a1e9dfee0cbba2a0ddf9aa607d2ce9d6678e3ef48637294a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/raw-to-safe-provenance-01.json",
+      "blob": "a3764caa87e403ffa4bca6cf7b650719b9866ad0",
+      "bytes": 7547,
+      "sha256": "77842f2ede34a10ede7d3dfeb3ba41a3018d085047e04dbabd6c6ba52589602a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/run-index-01.json",
+      "blob": "7c67965fd9b803d5e2396449f2afbd2efe47b669",
+      "bytes": 7112,
+      "sha256": "a118645539dc0a2978b402d48aa47ba1411532345381a6d653ba2eb80f3ceea9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/runtime-outcomes-01.json",
+      "blob": "917680b74f5fdd5b45f0cb399b9e514fa5809d74",
+      "bytes": 2838,
+      "sha256": "dc069beef08828656811493e482b20dd1af6797f318756bd6941fad174eb462f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/runtime-read-recovery-safe-01.json",
+      "blob": "d697b29693b8cedfa631d40f95b2fb333b917b2e",
+      "bytes": 1688,
+      "sha256": "3569f7d3e3a6d5e25e0cbca4505e8778fcc9066a547145b935bf2093025836b0",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/runtime-recovery-03.mjs",
+      "blob": "750cb74a26e19e21312100865df685c7ef89bcb8",
+      "bytes": 4968,
+      "sha256": "742db6392d0232dc4aa902150aaf1eb645fcf7218ba50ad1c157828015fa419d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/runtime-source-provenance-01.json",
+      "blob": "2ffe2d249ab2559e2a7d9d377ea3b9c9f8dd51be",
+      "bytes": 1729,
+      "sha256": "4222b05b3a7fbf6aea23e429907dd8f4a92f06b29487decbdd7462f52cc3b2a9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/scoped-planned-readback-01.json",
+      "blob": "508089ee699136fe63363458fee7ccc3b92b05bb",
+      "bytes": 3187,
+      "sha256": "9f9d9bc32038e3b67f0ee124eca4d243576c28834a8577b8763cf4c123813f5e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/source-boundaries-01.json",
+      "blob": "ac46fdfa4e3b99cc6fa63024996d7f0892cbd476",
+      "bytes": 2499,
+      "sha256": "ba37277f7c417c85f1699fa20086fa77ec3ffd73952f0373e538defdd5bea0ba",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/source-preservation-01.json",
+      "blob": "1fef755a7dceb70645abdf01567b1340edded4cd",
+      "bytes": 1568,
+      "sha256": "2b146c04ed08f665513fd0baeae3da9b0e9110e4810444e05efd71c617567e8c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/stop-publish-hit-wrong-edit-1600-01.png",
+      "blob": "c52df4d0a34578fd3b25036de6ae9881841c3a0a",
+      "bytes": 122093,
+      "sha256": "b474fcc7e102ad46317269d5ed00626da2868ce2590761739804b122da6ab031",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/stop-publish-list-collapsed-1600-01.png",
+      "blob": "e828184a2bbbc863ddcad099ce4b7cc7727c4999",
+      "bytes": 90287,
+      "sha256": "39a9cc98b52e380261a5a866610b9bf6c43ad491b9652aff3c1a7711da4ce78c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/stop-publish-list-expanded-1600-01.png",
+      "blob": "4b746e53a92f55d41060f7d70dc82ef4932812a9",
+      "bytes": 89175,
+      "sha256": "c105b76a16fa9c3938b5e0cee4f0ede10da87ee43ad751602150896617dbcfe4",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/stop-publish-occlusion-01.mjs",
+      "blob": "7316f96aa0da5dc1768704f2b42be9661dd7ef14",
+      "bytes": 5523,
+      "sha256": "c712a7bf480ed9da34e0c24651c0f5612c7a7e7ef9198d7d9d34079002411165",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/layering-stop/test-accounting-01.json",
+      "blob": "3b6ceaec7a3f6148aa0188d2467782156fe16b29",
+      "bytes": 868,
+      "sha256": "d189d831904aacad75b205467344bff3f0233391c46c443d2d551c242e9eb120",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/HANDOFF.md",
+      "blob": "9d8f4510f8a8a800805038d91ce466aa2a99ce06",
+      "bytes": 5328,
+      "sha256": "7d09aae60bc4c236f4133ea4bb13fb69758f51e322d8aae2bd42c9e6d33d2f8d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/acceptance-limits-01.json",
+      "blob": "90c0599122bb8886d4d8b06039454166be0fc9e4",
+      "bytes": 2629,
+      "sha256": "f30e0cb5d77a436eb67f2225064239d434fa37ebf24ad78848a0a71f5410941a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/admin-read-01.json",
+      "blob": "7e758747a4f149cf83810fff2a5fa97d241723ce",
+      "bytes": 437,
+      "sha256": "858b42cf8673e08ebb37b620e251be859891654accdec491e0d797703401737f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/admin-read-02.json",
+      "blob": "ebcfbb2cc9c4ce377f1ead7d108983b0565fcbca",
+      "bytes": 589,
+      "sha256": "c0e4fad380c8f4579b96e9975be24382f377a72713494eaa6b023738d3cae0d7",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/bridge-provenance-01.json",
+      "blob": "38a55b132f00375475f0b069ecaf96949a635485",
+      "bytes": 226,
+      "sha256": "abe0df88fefa93afea18c2408f4641f20547881458357f3b80c3d8ea7a25679e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/browser-close-01.json",
+      "blob": "786f7f0830ea28d09e165030fd5ef427fc4ad2fd",
+      "bytes": 245,
+      "sha256": "12d436f3c19032220f8a8810fa72ce848bed5bdbf3162f6b7d837732ce83007d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/capture-current-01.json",
+      "blob": "5862e82f5e6e98a493d31d3606680b4ead53c331",
+      "bytes": 2879,
+      "sha256": "2cbada2dce20f2cefb7b14a147d56a91c18667227116aff9db7b8c931c98fd31",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/cleanup-browser-native-01.json",
+      "blob": "9174143be24b8b6c8a90dc948b4c29aea1657944",
+      "bytes": 135,
+      "sha256": "27dd3d85856c6ede4bffb0bd7bbdc80f0a624f5d0284aa884543a372198774c4",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/cleanup-final-01.json",
+      "blob": "5ff144d0a32d05594235bce773584b34439d90c4",
+      "bytes": 534,
+      "sha256": "03695e318cd2bd341505e69026862fa840bd015c05a8f83a4118dfb3bf742a57",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/cleanup-processes-01.json",
+      "blob": "809e2c770678bc3e8d38d7b07db1774101539348",
+      "bytes": 302,
+      "sha256": "1ac6e384e2a094d3bba7066d128d7f20548fe0a3bfe758d88b7100cd7d4df6bb",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/commands-01.txt",
+      "blob": "5dc3b538a5d51ee0b772137c6f9f4a2259479f6b",
+      "bytes": 6814,
+      "sha256": "93f125cf4799a1cd6e84103dcee78f89b650d4067736bfa314ab399d7e0cfa5c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/counts-02.json",
+      "blob": "3dcdedef534ebcaa7a9617af8c47da6fbe8ed211",
+      "bytes": 1606,
+      "sha256": "ecaed70600c1d14ea8132a664434b335def4a1a6e858a7f130756c08fa0aeff2",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/final-next-01.json",
+      "blob": "812b4416fa85301bfff6463a6d7ae53ee3f034bf",
+      "bytes": 2698,
+      "sha256": "f149927000909c4b3a58baac804e58e3163711bbf7087c681f2e070338b5ec1b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/harness-source-pins-01.json",
+      "blob": "4195b75fde548812c789da3401d52841fa958805",
+      "bytes": 6105,
+      "sha256": "2dbaea3ecca0a34f540f0b546a3e538fa87fa41cbf683efad4b10d363d3b19de",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/helper-provenance-01.json",
+      "blob": "6d25084d6b2bc301d94301dd7e1f5b81dec40b6c",
+      "bytes": 4536,
+      "sha256": "d2224e52e6d652f993c74448c7184b10c95df2219b978a6e7c0be1e4372aa957",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/inherited-checks-01.json",
+      "blob": "0775c0f98f48d564281ce2aa57669efe6ca34a4a",
+      "bytes": 1783,
+      "sha256": "a3a035ab342caf01c688b12924889e9c07eea627f0c0f8bfb9c5bc7b753ace25",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-create-01.json",
+      "blob": "fb08c8fc4ac28d6b1aa3e6fde8d4b657fe7011d6",
+      "bytes": 564,
+      "sha256": "d467208f5c006b51ea63f158732a7324201fd6d288c0987dda1790f0e6028f4a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-create-readback-01.json",
+      "blob": "6c1d372ea4a431b4b5850be187c0a65ec5b4e77b",
+      "bytes": 946,
+      "sha256": "7a254c731debb7b14dc5af167c2fbd5b44644db20a350303e1687233dc92959c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-current-1600-light-18-reviewed.png",
+      "blob": "94b17f12ca737de5fac9ccc2aa0881f5ed97df73",
+      "bytes": 126433,
+      "sha256": "871c9c2b734ef3795372c15cf798b4fc0ff968e9b1a082aa3094e3a720f625fe",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-current-2400-dark-18.png",
+      "blob": "a551280cb5f592e7b6feaa0e66a7b345c0b18d25",
+      "bytes": 127175,
+      "sha256": "ee4f45dd803fdc112840cdb12385fc291b5c05e1a747b374b8e49ab5bf045c8b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-current-390-dark-18.png",
+      "blob": "dfbb28ecd0fc0f389e998eed008f4c561c17c679",
+      "bytes": 42550,
+      "sha256": "da787bb05d023305637011138e2d01a727d92697d418276e1d27ac2564da12c9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-edit-01.json",
+      "blob": "8c45bf952c8d60cb86c6049f8827d9e8b039b6b0",
+      "bytes": 166,
+      "sha256": "9e2198b7e0c64e9a8f2031987b14ebf561ad33998fca63b5839473939f4661ed",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-edit-02.json",
+      "blob": "b9eb05a9a162f269298ad201ba7a3d15c36a8c4c",
+      "bytes": 533,
+      "sha256": "9a3b90b68268c1b9ee4b6c7245419d5456e540c3a29e365b7af48e2c796b4b78",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-finish-01.json",
+      "blob": "c6b0dbc03572ec2d7834cff75dec31db7fdfd0ef",
+      "bytes": 453,
+      "sha256": "c3229e297373a783985e00581745aff5d2a795568239188361bb320299e16245",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-flow-01.json",
+      "blob": "a442c28dd140896f1b0cea1bc31792205e727b7e",
+      "bytes": 363,
+      "sha256": "f546f3e290c03604984cac2a43a15d070e20cbe2805269296b131f9f5cf308a6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-flow-02.json",
+      "blob": "2ff22bb1d36150ea578c274094b51eef9cd72823",
+      "bytes": 920,
+      "sha256": "0e4a00a6128e1d44b0637428d57d426be231b3ac6601ee99f21f039742b378cb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-priority-01.json",
+      "blob": "56655ae30eca057e12c9e401b8b07c7965c2a8cc",
+      "bytes": 6385,
+      "sha256": "7ddb245744869645bedeaa5967c5eeaa39db6f41e004b08bfc079d2ab1adeba0",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-shell-01.json",
+      "blob": "128fa35e881c6ef68f7afbdf83b55836f4e670c7",
+      "bytes": 145,
+      "sha256": "1f26819876169787fdbf2ae6a97736f40ff1302866c8cb72e5c3f014954a0f2b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/manager-shell-02.json",
+      "blob": "1ed374c64621675b292c7b1287ead18c7473c59a",
+      "bytes": 2997,
+      "sha256": "ce5c496fe7b4079d77fe9edd199f98cb50ff4e3fc987952e6185246059993b29",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/matched-current-1600-light.png",
+      "blob": "86cfb0043991d9068d6770b3a0925985f4c80b1d",
+      "bytes": 102386,
+      "sha256": "b231cc63341341e1f5fd995c1f409374c007dfdd61c47142bf5bd369dc46c00c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/matched-current-2400-dark.png",
+      "blob": "94f112f5b47472879b1ec3d9e213522534a8588d",
+      "bytes": 106362,
+      "sha256": "c6361a18ac78e7be99c5b8a0b93a838f557e058ee725277712ef10c371c54d8e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/matched-current-390-light.png",
+      "blob": "b6a1a2171096162c818d9f1cdb3d3d13791c7ffc",
+      "bytes": 43310,
+      "sha256": "a20bc60a8ea09ef2be8847da713730b93fc92b7f036c47bdd81be1fca8b2f4c2",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/native-react-target-03-public.json",
+      "blob": "98d1a0d056c830e62a85f978bde0529b44db095e",
+      "bytes": 466,
+      "sha256": "d8534f6e0c449fdec9f715fedbd504ee0e0df0efae7d8d9db73b17d42b2f4030",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/native-result-03.json",
+      "blob": "89699a36731debcedba4672b91e6375e69ae19d0",
+      "bytes": 470,
+      "sha256": "25f367e6c458f1c1d238beac333d72d31f601df0f393b4bdbf924dc3032638e9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/native-target-03.json",
+      "blob": "cf3ffa8e7554e05cdfef7b1a5c81d3b578e15332",
+      "bytes": 1189,
+      "sha256": "7365de926bfbbdfa76beccd2914f28fa1826d6b34421837d9fb4bbe3ac302690",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/native-target-04.json",
+      "blob": "02ce8d2055b623244a7a571465b0b79c40b92969",
+      "bytes": 1187,
+      "sha256": "49dcd9314166f9f6a43623af6ad8c0858e35c65e36d53cc64e50134e96ac5df3",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/pins-initial-01.json",
+      "blob": "bc683c6c15ac849a3098ff7d85e8a986bcf10a74",
+      "bytes": 8849,
+      "sha256": "56dd008e8bbf5a14e56ec640c06f8b75856f83f847c52104c1ee9e1c8efee4a4",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/public-allowlist.json",
+      "blob": "035d9b22b7d5c2165ebf3b365df62d0e6802c4fa",
+      "bytes": 8160,
+      "sha256": "0c8bb5a2ebcc28b466712d54d2cc7c1dd2e9b4f982ae9c84199a3774123da0e9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/raw-to-safe-provenance-01.json",
+      "blob": "900c0b0ae98272b6ef6557b55424c2f10958aab8",
+      "bytes": 2163,
+      "sha256": "5775c76af3cc5d1e7c2917cef971607b073c86dc99e052c293cc3f79fa83a08b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/readback-final-verdict-01.json",
+      "blob": "0626d2a03aa21f2ecaf79cda2dfc5e768b5e6380",
+      "bytes": 670,
+      "sha256": "0e5ee39fd4aa8834e83bfe07a0ac03164eea36b5e4f386383b3af1ec841b59dc",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/roles-01.json",
+      "blob": "d43ba6cad2026551c446612f53a3cc542db70ad9",
+      "bytes": 243,
+      "sha256": "f2396e2eceb66bc9f07aa2cf4a447e11b39d927b30793a3ce96431a527115371",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/roles-02.json",
+      "blob": "4834e9a36cee409c35f4be49fc3fc3ef8d2274f3",
+      "bytes": 240,
+      "sha256": "370113fe7ba4f3052ceb6b818f5ec3bf82e2dd048a804b0e2d07f413ecdf7ba1",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/roles-03.json",
+      "blob": "5e18628fc2036641136c1d06c3dd55da77ab78a7",
+      "bytes": 231,
+      "sha256": "eb112df41bb632ca200a26097c2db848f46e93b91814ea87364e52271d4d7150",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/roles-04.json",
+      "blob": "c54d64bc8789ef0274f901b4b35d631156c47b97",
+      "bytes": 6451,
+      "sha256": "aecaa34a862df513eb726b6a2253e6624a45d10237927c981ceedb37eccdc274",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/scheduling-readback-01.json",
+      "blob": "8c7c56e6ce918d189aee50d18b22e5ebf2ad6bc0",
+      "bytes": 5741,
+      "sha256": "a240e4246296a52f24388fa6a3d668ecb5d7e325dbbb5a71f2ac738c39129d1b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/scheduling-readback-02.json",
+      "blob": "88bc5c13a0afd9373f76537d4115c47ea7c45f3d",
+      "bytes": 5749,
+      "sha256": "32ee7f57f8e586dddc84dd51df4bf59af8754353c182eae66a63597991fb0cda",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/scheduling-readback-03.json",
+      "blob": "0637b129ee533e0acfa72439430832dbde9bd8b7",
+      "bytes": 5364,
+      "sha256": "f51c19c44c657eb53cb8f04a747fcfad4d92df0d06975235cc21847adf33c2b3",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/scheduling-readback-04.json",
+      "blob": "0637b129ee533e0acfa72439430832dbde9bd8b7",
+      "bytes": 5364,
+      "sha256": "f51c19c44c657eb53cb8f04a747fcfad4d92df0d06975235cc21847adf33c2b3",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/scheduling-seed-01.json",
+      "blob": "7ef32136ac13c0fcfc316c69d246dc3abbb9fc43",
+      "bytes": 5360,
+      "sha256": "ab6f3c9e7be5ae840cef1a6358be59a0aeabfd0ec67d7c0d77195fc296bf5a22",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/source-config-pins-01.json",
+      "blob": "fda8a7ecc62327f25854162c68cf73890cf54316",
+      "bytes": 2765,
+      "sha256": "3032d3e0cae3eba58c67354f04687a4ebe2468d49db7069f6c4751733b94fc96",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-pass/source-preservation-final-01.json",
+      "blob": "4fe99a3e7385d7ec41ebba2363550d4e3604c40d",
+      "bytes": 2210,
+      "sha256": "997d1fd7eaf8955a10cfb3d4a1ed639ee8b74c577ad888f819dd4f5c0807d2e0",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/STOP.md",
+      "blob": "1571e438f9e62a23d3441b76f279a87897d7c995",
+      "bytes": 5493,
+      "sha256": "fd9dcb1fd4d33fe6135f79b7942479b37b28825db62a8d72e03cb5dbdce94ec9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/acceptance-limits-01.json",
+      "blob": "9ed9c61f05f5e67360315529689777aa610deb79",
+      "bytes": 1342,
+      "sha256": "02cb315cb05de5870d8c300f93827d3264e33637441a958b12d2d61ad2304a17",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/blocker-source-pins-01.json",
+      "blob": "10717f57701039126ab4bbecc24c24c36a3f6060",
+      "bytes": 2486,
+      "sha256": "54874a3b3155c6bf5374e0a18453ff23925f1b4ff90d63f1dc4414bfab9a191a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/bridge-provenance-01.json",
+      "blob": "432ebe6f2d0ca9adac72db3986ae83fa5888a734",
+      "bytes": 217,
+      "sha256": "134c68e01abc51c881c63cf6ecad2fb45e82f3ef3bb3e74d5d17bc65c0420d5b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/browser-close-01.json",
+      "blob": "786f7f0830ea28d09e165030fd5ef427fc4ad2fd",
+      "bytes": 245,
+      "sha256": "12d436f3c19032220f8a8810fa72ce848bed5bdbf3162f6b7d837732ce83007d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/browser-tree-cleanup-01.json",
+      "blob": "08c4002767fb6bd8e682aed423f0b86cf808854a",
+      "bytes": 126,
+      "sha256": "002fd6a69a7fd4227e5733fcda93303203bc47c3f20f0370dc77b669dfdeee3e",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/cleanup-final-01.json",
+      "blob": "5546163b14f1da9e67fc963c88033ec823acadee",
+      "bytes": 534,
+      "sha256": "57ed56720e83bbe5dafcb005c57a829480ec2f66ec330ff89ee5eec50e25b700",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/cleanup-processes-01.json",
+      "blob": "5f3cd57261c82b185d89e868cef11bbe82d8c662",
+      "bytes": 302,
+      "sha256": "f2b335d962455ec8806e1c5b97337bedc7a0919d8bdb35e0c3ae94aa60e62695",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/commands-01.txt",
+      "blob": "93367f2b9a3ecc54c69242962f0bb6f86f97ec5e",
+      "bytes": 2992,
+      "sha256": "d09166449a96b05e9398e62c93b150719c18590b384f0172c4c9ef0793e1e700",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/counts-01.json",
+      "blob": "ca6059a2fcce5ab7978614af0b18609f19691486",
+      "bytes": 1212,
+      "sha256": "1be5b7ed41552e0eba80a60de99d5d024e90b18268ad7f30c9ac096cd25789f0",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/findings-01.json",
+      "blob": "f91826334a173d84264e2a6871f2f7d1ed666dc0",
+      "bytes": 2127,
+      "sha256": "bfdb4f37cf341929ed7ef7388b602d7395122044903ffbe46c898c29e74096b9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/harness-source-pins-01.json",
+      "blob": "5c86d6742a47312db45b1011b39bfafedd165b92",
+      "bytes": 2620,
+      "sha256": "4402675fb8a40dd9e096dd02f5a585eae6be9c05c7ef8e78379de510573d613b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/helper-provenance-01.json",
+      "blob": "854b01e69bd41e94196c6cd2fb1719741aa3ac8a",
+      "bytes": 4556,
+      "sha256": "e739efb7eaec141b93cc56caf4d823cdcfcbd6a1c5ef3585d37e6094141675f8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/inherited-checks-01.json",
+      "blob": "800a08cd27760af9b6b16fcfb6785b416e7ff671",
+      "bytes": 930,
+      "sha256": "ef6141fe010883832ecbc5042e7d8738b6a6179e3f83291a321be75bf1fde41f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/manager-login-safe-01.json",
+      "blob": "02fa5e506497eda30e43d268cf2ecd95da1879ac",
+      "bytes": 622,
+      "sha256": "6da8322006949777705a14572726194449a183346da16b762680d2949b7b4edc",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/manager-priority-01.json",
+      "blob": "095a14deee027776edcbffd277a3bbe321639fc4",
+      "bytes": 4591,
+      "sha256": "9dbc52732cdbb0e99c69fd1e2b58496c85614e1af7590948efaae7e0712db453",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/manager-priority-02.json",
+      "blob": "b8ebd56bfecb289daf39ef6f04319e56abdd9a33",
+      "bytes": 4767,
+      "sha256": "e29dea72e9226186f415d0fae28b8665ffd472d307006538342629e0ee94e448",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/pins-initial-01.json",
+      "blob": "09f9afee2e85a39ebfd8f0d7740149bc0ed2044c",
+      "bytes": 8682,
+      "sha256": "bd1c5614869f65f11225fa051911be20d189edc723bfa7998e41b45c454d8275",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/public-allowlist.json",
+      "blob": "a2e670367c456c6fde66561c6e34347d7b62725b",
+      "bytes": 3872,
+      "sha256": "254e53b27994ee14e301f035ba5288d45c9a941c8c07d841d30f5bccf09938ea",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/raw-to-safe-provenance-01.json",
+      "blob": "ec839b7ce5bfafbc4a2b178611370f2df75fbe05",
+      "bytes": 2455,
+      "sha256": "ce520ff7926b547157f40bb68a8e65cbeb83c59e0fd90387bb6f2813fc6728a2",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/readback-verdict-01.json",
+      "blob": "f186af4c5080dce41de3b3a3caac5c6364a08feb",
+      "bytes": 308,
+      "sha256": "dbf3d152f63e0168ce966488c7de0a4764e46d05e3f7d9d45083e536bd45d14a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/scheduling-readback-01.json",
+      "blob": "36d6b82e72447e3d0263873376dca07c28de17a1",
+      "bytes": 5364,
+      "sha256": "b976c8c0cb4babe9563d5ca814daad9c8c61fa0449c9fd48f4dc3582b0d1b4e3",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/scheduling-seed-01.json",
+      "blob": "9f54622e60a696d71f257dc7da45eab9a60cee63",
+      "bytes": 5360,
+      "sha256": "cf799320a3da9913338750c786349c6a5c179ed2258579fa069270138d91c014",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-repeat-stop/source-preservation-final-01.json",
+      "blob": "01f01696801098745c0e4a802aa3d6c13586c69e",
+      "bytes": 2003,
+      "sha256": "b644c4d525df9cf0f37ffa6d602d8f69d2702edb15482ef08e1602752a895ccc",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/STOP.md",
+      "blob": "00e3c663f32f982aba3b3d9ad95a4835a7395701",
+      "bytes": 6474,
+      "sha256": "dde64901b07e2a60ac68a9f89130bb34c7d265cced1570c4e6f506ae7f619b3d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/acceptance-limits-01.json",
+      "blob": "329207fd4365071e848d99cab89b18c2f57ff4f0",
+      "bytes": 2080,
+      "sha256": "8dd747dfdbd5f9447c9d5e7787cec084a248c79d24b93669ab38e6b9200e9788",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/bridge-provenance-01.json",
+      "blob": "8a4223f920c5bc773cdad73ddecae415d6fdf2ad",
+      "bytes": 219,
+      "sha256": "7182420ba2bbce6821089d9476f23c48bcadca83d92e8a4adadea010d747545c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/cleanup-final-01.json",
+      "blob": "3041541af8d606e686c92beaaae1f73a8a0221c1",
+      "bytes": 534,
+      "sha256": "685116ca656f18aef702b79c81fc70e2267fa977ff7905d5d7468821ff0e1af3",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/cleanup-processes-01.json",
+      "blob": "c4a403dac4d168bb27cac6ca6aaaafcca99cd8f5",
+      "bytes": 302,
+      "sha256": "23657297fbabfc20ecbf6ce2af7515f6c1e24ddd4ed84eb8624f74b6e57ec231",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/commands-01.txt",
+      "blob": "7526023782a71daa902d79cddbe777c0b44061f7",
+      "bytes": 4692,
+      "sha256": "4666fc1340dbf1b10fda2039d15a4563f95b629aa361ceec411fb607eead4188",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/counts-01.json",
+      "blob": "b89dba585ebfa49043c8fbaf04d8b155802c8747",
+      "bytes": 1155,
+      "sha256": "4a580549b1fe5dc71d155420c8c9e35667ea50c766ad6a8d6ca11dcc65232932",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/employee-published-details-390-01.png",
+      "blob": "b3902b6f83e9e6ec97a2c28a0408376f7786d2a6",
+      "bytes": 23489,
+      "sha256": "e4634b6d78403c77feb7cffa4fe2d255a4df24c8e4b0cf0d207dc24fd9d3fce1",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/employee-retry-02.json",
+      "blob": "f5a8ccafe7e1f37de71686304e034664e1819983",
+      "bytes": 806,
+      "sha256": "b8cb72aa12419760f0347651df1d6497eb3b4afa605e996a988fef79d88eaecb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/employee-visibility-01.json",
+      "blob": "44923e0f9f2b3845cddea7eb2633bcbea8f56afc",
+      "bytes": 1359,
+      "sha256": "25d3ca2a96d3de7114c430d205383e643daeef682401a8cccd05c9bb03fd9783",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/findings-01.json",
+      "blob": "9b248ee90f87923ccf470a076c9ae9f7bdf2174f",
+      "bytes": 4835,
+      "sha256": "806009611b3c8f63b3b2e9bedc49f8c22a53f6bc05e1b8274fba3fa3c126fbf7",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/harness-source-pins-01.json",
+      "blob": "6747ee5d4f052d7784de9faf9cce1d40dc494e25",
+      "bytes": 4119,
+      "sha256": "c82d4c2db237a78e1b6a3fcac45b0a95eae482ddb22ddc8475a8d1370784519e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/helper-provenance-01.json",
+      "blob": "2f5977fe5137df50c9b12ab0e15e6718d2778616",
+      "bytes": 4216,
+      "sha256": "60a5c249b5ea8e32b349315f886a29ffd061d7f0f0a9784870d08c862423ed37",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/inherited-checks-01.json",
+      "blob": "0c4c7a0daa5e98d4c665d22846a56a62127bafeb",
+      "bytes": 2870,
+      "sha256": "4f9b33258199d5c9da7316cd339a5f185c2e32fa28fe40aba61ad028f9734b86",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/manager-route-01.json",
+      "blob": "f684f41f8ae4d93cf7c42ffb11c9143d7dcb5daf",
+      "bytes": 1474,
+      "sha256": "1849329b32e67d797c2301febcd182e551d6e676d2bf79964951b00f031167e4",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/next-observe-01.json",
+      "blob": "a78423330a5ce23a44f557287c5052826d680ed0",
+      "bytes": 21129,
+      "sha256": "566f3f52cf6dab17d97ddb1368ad4c4563815fbf41c816440f2b7999982c5b98",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/pins-initial-01.json",
+      "blob": "8b8d8bd7a6a96e6ff177abc55300c8c81891f4e6",
+      "bytes": 8513,
+      "sha256": "d1c7beac929680da86e5e798627758ee1c0249958c04264f87959fb10268b214",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/priority-04.json",
+      "blob": "91828899e015afa4e34eb36073c4c594febc985c",
+      "bytes": 3823,
+      "sha256": "781a57ccd1f4323274260dfc53058076282de3b46354a4e831741ac0528db563",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/priority-before-1600-01.png",
+      "blob": "9cb263c4d893603d7cbd40e3400bcaef16bb289a",
+      "bytes": 92780,
+      "sha256": "67243888657365220636b3e333944a4e1584826857926a76878b3b2b8c212f89",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/priority-pending-1600-01.png",
+      "blob": "e3dcf3ec2e6173894479532ec7d64aab7e988f56",
+      "bytes": 93979,
+      "sha256": "3f0f0d7b933b8c6734cbe9197c7ad19aa64e0c5c7428ea1e6bb0f88feda22c58",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/priority-success-1600-01.png",
+      "blob": "bd48e086c338d45f1825c48d63995bb2382fc1cc",
+      "bytes": 93841,
+      "sha256": "973f7ee12a540314532585a6880c03dcf215dfb537039ebac1b77455463d9b90",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/public-allowlist.json",
+      "blob": "5c9999a8c538bcb1e5e4ffb954ebc64d0354a226",
+      "bytes": 4851,
+      "sha256": "7ab334bcd53117c15e4321c00778028668347e0bc3b5271d9f6b0b5aabbc4f6b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/publication-readback-verdict-01.json",
+      "blob": "8c3637b8746bfe23e9ff5f79c0677ee97653ca9a",
+      "bytes": 1188,
+      "sha256": "ae2cd5309882356f7ee1dd4203942b16455ddf352ad75cf17e589deb028e9afb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/raw-to-safe-provenance-01.json",
+      "blob": "1428627de33dd78c9780e64aa3cdec7ad35e8006",
+      "bytes": 3513,
+      "sha256": "fc73b7c6afad392db4bc71ac2e9c0bf19fc3b1cf65b37c1d8ee9cd0c9526ad99",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/roles-navigation-01.json",
+      "blob": "9a11880bf3de72aafce4779dfee10caa140c1020",
+      "bytes": 862,
+      "sha256": "57419198da3820216529cea4f7fd8772aecd641d570f80790ef57e404597fdf7",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/route-preservation-01.json",
+      "blob": "177af50b36b72611b2c058e26e14d692f020a3c9",
+      "bytes": 627,
+      "sha256": "b5e49c8cc0e30899f3c57a849daa19b9d70099f842fbfb5e55f24c33c9dec488",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/scheduling-readback-01.json",
+      "blob": "96c1b6b38c90ae023a3f371dbd8e9106d81ab92d",
+      "bytes": 5416,
+      "sha256": "348c1040f2cf021d75cfed3bdb8aa9c9cce8f5d223c4fc3fa3a42372cbdd1e81",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/scheduling-readback-02.json",
+      "blob": "96c1b6b38c90ae023a3f371dbd8e9106d81ab92d",
+      "bytes": 5416,
+      "sha256": "348c1040f2cf021d75cfed3bdb8aa9c9cce8f5d223c4fc3fa3a42372cbdd1e81",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/scheduling-seed-01.json",
+      "blob": "d386aeaba1794f5ac78e4c1145bbd2f241d142dd",
+      "bytes": 5360,
+      "sha256": "2478b02934d33a218eabe8312dfe5555702d284d0c0508d1f4b528d433ec0605",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/manager-stop/source-preservation-final-01.json",
+      "blob": "9b512568c18a4a12699f945faad28d5376d0e042",
+      "bytes": 1794,
+      "sha256": "aadf2656e606f4790fe16943dc9f4aa9dc8565ec7cdca667b0f54fa24197e837",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/STOP.md",
+      "blob": "550a3228ae6477fd5d44b57645eb7979b4b9e56c",
+      "bytes": 4309,
+      "sha256": "9c7a03d17ac775afa7ae4dfcce01fb1546f0412389132a9cbc62f55f6e321e8c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/bridge-provenance-01.json",
+      "blob": "4611e5d14dcf77c206b79d7240da5af704899244",
+      "bytes": 537,
+      "sha256": "df10ace6214cf5d58cd3c78af1571267febb0030705eab6209f24f8da9d2e7c5",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/browser-acceptance-01.json",
+      "blob": "2b983a10f2973cdb586279679f0a66824c6e1838",
+      "bytes": 4325,
+      "sha256": "e73336d2943ee7f45d814d5f5e123eef2a1b3cd7546ead211eb607214f6f467e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/browser-close-01.json",
+      "blob": "786f7f0830ea28d09e165030fd5ef427fc4ad2fd",
+      "bytes": 245,
+      "sha256": "12d436f3c19032220f8a8810fa72ce848bed5bdbf3162f6b7d837732ce83007d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/cleanup-final-01.json",
+      "blob": "2fa273ddeb17ce4cb2003286920db4eda6b4710e",
+      "bytes": 479,
+      "sha256": "2220e31a1bbad371a7d3a7a3bc0704aa06b11603d95d10c035a939a79bb0a216",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/cleanup-processes-01.json",
+      "blob": "673963ffcf02dad7d5e1b3351bdc903e705baa1d",
+      "bytes": 242,
+      "sha256": "c11c161c37aa09b499360bcd93f94e73193b21a54309f329638b968af6dbba67",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/commands-01.txt",
+      "blob": "0209b2868e3bbf8c577bd2084517a0f213fb342b",
+      "bytes": 3215,
+      "sha256": "80d16a91a4231bb4559ccd803e5e423c50c2572ca54fa766857f26c55f9341d5",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/counts-01.json",
+      "blob": "3fbab455ccd8117ffca053dbd581b89ad1c8186e",
+      "bytes": 1909,
+      "sha256": "e76a07cebf7f19390da1fcd2e19b9695c61ecfc75862cf87f9671158aecf2351",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/current-dialog-above-publish-1600-03.png",
+      "blob": "fca8b2de223f65091b00cbf1508c95d4abf458c6",
+      "bytes": 126572,
+      "sha256": "57c55d34d7f7063ddc4b153ebb40e1ae7f7b314d2fe06a7d1325ceb747ea885f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/current-publish-collapsed-1600-03.png",
+      "blob": "77af136ef5ab8a006685c94eb2be4e0ce44a8229",
+      "bytes": 87439,
+      "sha256": "64172d8efab058b1ce29ed0877a6407496cd64477886cc791c0353a0999ce30f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/current-publish-expanded-1600-03.png",
+      "blob": "96eb7ad92f4c492c097a3ad037b49a4567752478",
+      "bytes": 86953,
+      "sha256": "55a41620bb7084c78b52381d58f648136d8104e7e51bcbd1696e3d72fa00faee",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/current-publish-expanded-2400-03.png",
+      "blob": "bd98cef36887a5acf97992e1faadc62fccc2d74b",
+      "bytes": 90879,
+      "sha256": "73623f46ab47d39850fbf9d9a3d73fd37e2e258170fedd70a8a7013136d40abd",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/current-publish-expanded-390-03.png",
+      "blob": "79bdf2d09e9eb2490f80a230b105f40c014d84e1",
+      "bytes": 44526,
+      "sha256": "2edf409fc2d939b888408393c0eccd06c2792a1d32fcf0236482f0eaefda0cd1",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/helper-provenance-01.json",
+      "blob": "fdd74f52af3e63965039c9df04edba4e0d239dd4",
+      "bytes": 3193,
+      "sha256": "ed355781d4aad765bd5706a9d095892f4648855a3d10c764c9c08bc9ac3f7b3c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/pins-initial-01.json",
+      "blob": "f852e96efafb91fe5193aee78869b438cfc0e6e7",
+      "bytes": 222139,
+      "sha256": "688146956e2ea137d5c9a87d6c33d989012db0e9fbb86631c226dd0d6067c5ae",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/pointer-publish-attempt-01.json",
+      "blob": "cff897f5408812555b6eb54a032386cd76ab7d3f",
+      "bytes": 3804,
+      "sha256": "4009aab164272a6117d6b7d5bfe2513c140c9b985229286db507f8a02e793e44",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/pointer-publish-attempt-02.json",
+      "blob": "b08e8a354331de46f3af7c84261bfaf11d99e9aa",
+      "bytes": 4250,
+      "sha256": "54b3947acab1c8bfc6ca2a2846eb4fe4c09a892f623f8134021a5c4971118386",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/pointer-publish-attempt-03.json",
+      "blob": "4532e811b205c5022216e219e304328065234a68",
+      "bytes": 5310,
+      "sha256": "663120f7f3e3e047e1d8da3ae65afc5840cc58d4befbb7d3a21674247bdb5902",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/public-allowlist.json",
+      "blob": "2d26fc87bc86181ce597e760098ad7bfbb2acc30",
+      "bytes": 5067,
+      "sha256": "ecf51efccc9138aa84adc21048a34a7878a2079d37f354e0534db39a7f9d89f6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/publish-log-safe-metadata-01.json",
+      "blob": "916ab6b08c3bbafafbfebdfb5b19587c023300c5",
+      "bytes": 493,
+      "sha256": "8669c647a5316715cfc4a3fbf98ef40eaedacfdad4d6dd00ae3431a64992c0f8",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/publish-visible-refusal-05.json",
+      "blob": "d32b3f553d7de2705ff07c7a900ecddee3310bac",
+      "bytes": 338,
+      "sha256": "909e4609e5f0f90a1e7e6b712a97c18bb4cd1379eec5fe2e987fb8c744a7959a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/raw-to-safe-provenance-01.json",
+      "blob": "a1c8fec8487eb31a8b940dd131bda7bc598fd7da",
+      "bytes": 2930,
+      "sha256": "6c7547f74c11e137afe605a0c9339727138ffbeb0fa42f68ada87ae49445c7bb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/route-inventory-01.json",
+      "blob": "50dbb4f9f0462fc5724dcd5f21fdc1d398560da5",
+      "bytes": 35838,
+      "sha256": "d0ada8b82c3975d92da1856b796afedb4ceeadbe990f42d2ab25aaf813d93dce",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/scheduling-readback-01.json",
+      "blob": "bcb3fa53322c1a09632b97fa73520d11528233fe",
+      "bytes": 2522,
+      "sha256": "20321b522521f270c58051f4ca2af717da1ac144eb293046b87a8f37e221f5be",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/scheduling-readback-02.json",
+      "blob": "bcb3fa53322c1a09632b97fa73520d11528233fe",
+      "bytes": 2522,
+      "sha256": "20321b522521f270c58051f4ca2af717da1ac144eb293046b87a8f37e221f5be",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/scheduling-readback-command-01.json",
+      "blob": "9633e5335cc5f10f1aad979a6fb3e53df4ccaf89",
+      "bytes": 253,
+      "sha256": "f52e643984f13c8ce46d940782fadf636e2a6bc57334519dc91a5f0566421060",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/scheduling-readback-command-02.json",
+      "blob": "08ae55f610b8cd6a374bf9088069f7e25f89e29b",
+      "bytes": 253,
+      "sha256": "b5df08107068d9e5b6a77ae44617282346608c5d9397aaa66ec2e9193687b2d2",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/scheduling-seed-01.json",
+      "blob": "854b7fc25c4ae61342e0b8f27acab43612bae9ab",
+      "bytes": 2518,
+      "sha256": "b5ee516c7d880402e6d676a98357ba0309cc731b701570f428a6bfebe57beeee",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/scheduling-seed-command-01.json",
+      "blob": "4b496e593e2ccf841e52c16492c97617c1d6e6a3",
+      "bytes": 249,
+      "sha256": "51635e1a46443afdd0a0d58dde840c932de0b1f055a0966f4ecd13a35f28f77c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/publication-sql-stop/source-preservation-final-01.json",
+      "blob": "87f4ed8fdea6acf7c1f0bac10df27981ea237021",
+      "bytes": 2552,
+      "sha256": "62e4ceb98772c72a959c88c64d152d7f0a318002550b9e258b7d1a0ad8e9ed7d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/STOP.md",
+      "blob": "3aedefaa52632ca973fa00de972bd7bfb5273df3",
+      "bytes": 4433,
+      "sha256": "88aa9fbb24b343d0d2663448c9672bd600ec20cd469673287a02fc182c65cb1d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/bridge-provenance-01.json",
+      "blob": "69aab19bfe50dca92be96160289d170209b8b819",
+      "bytes": 534,
+      "sha256": "8982a58c145e53a29bb5a698a1e684566691b8f23e97ac3cc6f663b0c50e000f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/browser-acceptance-01.json",
+      "blob": "1c7b3aed0b5edb9ee4275bc43a5cbc98c7fd1a30",
+      "bytes": 5133,
+      "sha256": "ab561506bc18b7d1f935fc6f9a633d373d4ba5ab9c655213c9dea622fdbdc4f3",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/browser-close-01.json",
+      "blob": "786f7f0830ea28d09e165030fd5ef427fc4ad2fd",
+      "bytes": 245,
+      "sha256": "12d436f3c19032220f8a8810fa72ce848bed5bdbf3162f6b7d837732ce83007d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/cleanup-final-01.json",
+      "blob": "068d46ed4a4a63ab7cc74fc8ca5e4d3bb60e91fd",
+      "bytes": 534,
+      "sha256": "326e0f2de9ce7f9d9414ec867d679e862111b84c63033ebff83bed5191c97658",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/cleanup-processes-01.json",
+      "blob": "cd4a1267763eea94046a6d35d4850d439d8b239e",
+      "bytes": 302,
+      "sha256": "6151a9316ac0d1c780776ee1a8c9cefd12535295acac9e8942757ea928f52493",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/commands-01.txt",
+      "blob": "247baf094c50087039ffc2aa9c50a9a0ad293cc3",
+      "bytes": 3899,
+      "sha256": "2de3726c22ffddf69f8377a81dc83cbeac72afb1831adb9dd82b8f8488bc447b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/counts-01.json",
+      "blob": "daa1c66f23b51b17c1925866d192801fae0b2c37",
+      "bytes": 1668,
+      "sha256": "f2abf81977a27fe008a705c30b1b4aac52ff173b31ef46c4a9dfdab00b8dcc47",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/employee-admitted-01.json",
+      "blob": "f8df85fe0d64c8c16791d7ff81bb607b5fe4e291",
+      "bytes": 3000,
+      "sha256": "4c2d648d8967860b97ecce1598a08e98cd86526d43cfc0d2d713ca7f208cfe7c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/employee-phone-01.json",
+      "blob": "8f95b76998a47e526c38927e997e93342605949e",
+      "bytes": 1994,
+      "sha256": "9a141b0a761ebb47b74d9170c2a26abd9b4af203f924db83e6b20f8be9f5277b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/employee-published-details-390-01.png",
+      "blob": "b3902b6f83e9e6ec97a2c28a0408376f7786d2a6",
+      "bytes": 23489,
+      "sha256": "e4634b6d78403c77feb7cffa4fe2d255a4df24c8e4b0cf0d207dc24fd9d3fce1",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/employee-visibility-01.json",
+      "blob": "c58ddc47fb88f07a064db7dbb9cef1edeee9c7d4",
+      "bytes": 1359,
+      "sha256": "1bbcb035a34248680a31a17fdb1c5cec6333a05df93d8875d0dee418d4a99a3f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/findings-01.json",
+      "blob": "c6f1a10b21d0c979467e9f8bccdaf08c478eb734",
+      "bytes": 1740,
+      "sha256": "8c667b37c92d880cc385a92276b1cf4b14988a45cb7211fa0efa95deb707b049",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/harness-source-pins-01.json",
+      "blob": "0f9ff14f63a09cbfb2073d7fe78eea9e1fc88bed",
+      "bytes": 2861,
+      "sha256": "f626f8b921e84d1d72bd574dcc07db169ef5f34a3cfc6bf4f399a6313b9a6460",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/helper-provenance-01.json",
+      "blob": "b4f39021704f4fca9cd3337329035b6ad04b6525",
+      "bytes": 3240,
+      "sha256": "365dd01eaa3062abcf04dd636de353c19bb064aab86f8f1baa63ad6f211f1d1d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/inherited-checks-01.json",
+      "blob": "eb0369dd65fcebafa47a8945444dfc23c5179cd6",
+      "bytes": 6655,
+      "sha256": "fa5e8f24edc17b997bcb1461c7a25cd5145b1df64ca77c6139f210ee70d3524c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/pins-initial-01.json",
+      "blob": "fd98fa33881f10608c5dcc8660ba9d67fae3cd8b",
+      "bytes": 23251,
+      "sha256": "bdaeb1090e13d0fff11347f5528bacca8079bcca8a62e941ddc1e0e87f5a3d36",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/public-allowlist.json",
+      "blob": "3338c641c9d816c1af7f89d6efed5297843b09c5",
+      "bytes": 5126,
+      "sha256": "2042511e9bdfac279064ee380147fe6f9dabc09314133a5a908bdbfc82693fc9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/publication-readback-verdict-01.json",
+      "blob": "346108676b71dd09399ea1f1c9faafda8181957e",
+      "bytes": 1194,
+      "sha256": "aade3655a617d348d712b4557c293d8a33e00ea458378fa7b1283ab03f6af31e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/publication-settled-01.json",
+      "blob": "49bd7507fcc130398c0bd948ba537610f9d4794f",
+      "bytes": 8464,
+      "sha256": "d1ea5bcc3682b6f8d6a7568a3535aa1f775f424b6be2043c96cd52d31b48c383",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/publish-01.json",
+      "blob": "04f42929220b90b71185f4be9001903735796027",
+      "bytes": 363,
+      "sha256": "588d9d7f9e0e6a1f4632e4b2286bc83fb58349813f754ab5606eb2a91af125b7",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/publish-02.json",
+      "blob": "409ac3431591618b94d7bd3258d5bc2813d169e9",
+      "bytes": 4105,
+      "sha256": "21ce42d56ca5f3f775c18a6dfeb4db6643dd3e10b83052e9b6019958dbcbf430",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/publish-before-1600-02.png",
+      "blob": "9a4ec47b6659e907b7f6a37abee6565a78a55d19",
+      "bytes": 97900,
+      "sha256": "2866e8d5ef53d3e312aa86eb2b740b19ffd6c52abf55e4a86dd651502e084ff4",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/publish-success-1600-02.png",
+      "blob": "eafa7aa36d01c2daab9371f0976fc593226120f1",
+      "bytes": 126285,
+      "sha256": "61721b253d3ffbd6a36ae7d53f1b5e88ccc5f5334e338951232f589ef91169e6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/raw-to-safe-provenance-01.json",
+      "blob": "04b072fd122b336939deb1d512110a38c11c6148",
+      "bytes": 3571,
+      "sha256": "90a673ab0715377d85f6976fb55b2a28b61df07ae486b74996fc11df1a2e5ae6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/route-inventory-01.json",
+      "blob": "c188b7f8c8caacacb885eaf9966843801421b280",
+      "bytes": 35838,
+      "sha256": "fdea7fd60124586aa6db269dcfb4d2d68b8b40500a2bf4b84d91dd2fe1e4bd24",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/scheduling-readback-01.json",
+      "blob": "a6c3bc29dbe552b584c7d9861cf1fe7262d51ddd",
+      "bytes": 5416,
+      "sha256": "3eeb5ad8329a6e235104f709e5a1a62ed91fd4d2f8dd47787408860e7ff8e377",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/scheduling-readback-command-01.json",
+      "blob": "9e0a8b3ecb4b7cfe98f01fdb5cc01994b5d764e2",
+      "bytes": 257,
+      "sha256": "12729c969437bff9912256c794014a3ec77534c256766b28e17a6b4267cbacbc",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/scheduling-seed-01.json",
+      "blob": "0a6406752d99c98fa017d67b6c37fe1d4d231609",
+      "bytes": 5360,
+      "sha256": "dce0321e7c8ddb5748dcf3ae097d31f7a4a2bb8118d61d9cf91409601ed56b7f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/scheduling-seed-command-01.json",
+      "blob": "92beddbb50a10acdbbde5f36efc70257e6ad366a",
+      "bytes": 253,
+      "sha256": "45e61f6ad9afb2e75c108638b8554afc5e46736b322bd10aca276443bbff0af9",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/schedule/range-pointer-stop/source-preservation-final-01.json",
+      "blob": "a8a16bf3b860bc8de89e9cbebb05ad248818b030",
+      "bytes": 1601,
+      "sha256": "fe57b086d4d99ebef7d6f7749574717e76767e5d5a7a0d07c2810590ec5b2836",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/source-config-index.json",
+      "blob": "55bbe2ca3c742c4ec8a2432565fca6483764bbfc",
+      "bytes": 4271,
+      "sha256": "badbad0cda474ab64753edf6c6dce809ba09eb34c6ff043af9ff46bc8e1f9681",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/source-config-pins.json",
+      "blob": "265ce5a80bd8aef02da30169d9b049b4be7fc832",
+      "bytes": 10198,
+      "sha256": "caf48c79701c7a07464414188cd1f5ec93e02616e45b92c599bca7d80906b442",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/context-and-trigger-green-01.json",
+      "blob": "271f92d0b520b6a81adfb297b8159ce52bace2e5",
+      "bytes": 1356,
+      "sha256": "1eccaad4efd500b1315ecec3cf83bc5c06c21e0f6b222cd538981cc20b3e4f0c",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/doctor-final-02.log",
+      "blob": "87c6c99e79dc64f83923552ef619e2a3c34a2def",
+      "bytes": 2598,
+      "sha256": "1caf4c49a19113e67869311fd921bd5be091f1ffbd05d9e2d13659990d838c50",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/explicit-final-01.log",
+      "blob": "c226881513a20b2ab9c094c51811907547c01a5f",
+      "bytes": 42,
+      "sha256": "180ed8b0729a4219f52b55e040891463268cc2381f45f3608acb6b405807ef7a",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/green-01.json",
+      "blob": "705fb952698e1d8d6b254aecb6ee2e447d836e11",
+      "bytes": 1366,
+      "sha256": "a5607e1e75de412061868949ea160bb4fe7b293941b84cb04855fb1f0772eca8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/history-green-02.json",
+      "blob": "4b16a8d70c18d931589b7704cb05c5fecf05c647",
+      "bytes": 1055,
+      "sha256": "6cf050635516be5253982f00b8c938273b40f36780b03f573f1e6c2b8bc6c5f5",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/history-red-01.json",
+      "blob": "85a4ae6823d396f78b38aa66dade44d3fd7d6f08",
+      "bytes": 17753,
+      "sha256": "2d2711cb186c498fdffd208e26674522361e848cdcbea487be831cda7a77cb57",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/lint-final-01.log",
+      "blob": "da31d8eaaa573f2ccf04bb4500c83d28731e355a",
+      "bytes": 42,
+      "sha256": "2defa361cefdb04043feb978f0775d8aab546ef8054c102a507e56a0909e1965",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/merge-audit.json",
+      "blob": "0ecbbfc393a1b7e5501c4d9392133ec219b1b2d7",
+      "bytes": 876,
+      "sha256": "9c2fee7eb140763a630fd405c385a8107b9b46a465e4bf431c89f8d37d5c6e9b",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/native-red-01.json",
+      "blob": "ad31d0fd09d923004c180d0fe67c9c5f883295af",
+      "bytes": 1926,
+      "sha256": "5f89032c7a87179845fda4bbdf4c384a0e01ea689844819fff32e93c297b77be",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/ordinary-final-01.log",
+      "blob": "e48a25adc26a58683d78824b17cd8c9c6dd3ffd8",
+      "bytes": 53378,
+      "sha256": "6f845b8ea80f21bdbae036cd4546d9e0e67e6613591a52acc9e50def953b0801",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/postgres-final-01.json",
+      "blob": "5f3790c088ebaa74adc87ce375638b869069022e",
+      "bytes": 3125,
+      "sha256": "5e1f96ef0175691dd05cc5b8b58c85cfa2a751141281577d2c35ed01bd0b17c8",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/red-01.json",
+      "blob": "f5a2c5286967b5052e5a8f86fe5eebb74b908db5",
+      "bytes": 4944,
+      "sha256": "f672700fe3fbf544233b3e85a95a1b28e2c2f80cbf41f99b9e2a57f5b23c6eb4",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/types-final-02.log",
+      "blob": "d0ba972c6e97609a8976bdf2f96178bc121b8a0a",
+      "bytes": 289,
+      "sha256": "80a6369094c4e192cbfb532326483de2951762042cfc9d56bde7e8f6c19b83e3",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-context/units-final-02.json",
+      "blob": "c9c05188f0c74dcd9874bd3fb79d2e2529370241",
+      "bytes": 38322,
+      "sha256": "d0164c99662147ecee76600ff89567d050db8ac292918d4bbe493c31c65483e0",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/doctor-final-01.log",
+      "blob": "81c450463b9140c12fa6a5010274199a4b830721",
+      "bytes": 2590,
+      "sha256": "9d337739fd0d7a713f612081514641e66801078463c86d9237b16bf06ab0cd02",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/explicit-final-01.log",
+      "blob": "bf02269722aea3690b86c9c72d2efde9183a3e04",
+      "bytes": 42,
+      "sha256": "04f7d6d2ed194302c32c2e166660986ad26a4e6635f5940f26b6a1fa43c80752",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/focused-01.json",
+      "blob": "fb151d10250214e78c2533fd9de2d1b49e8b30fc",
+      "bytes": 13782,
+      "sha256": "3b80eb4114b4ca1182832ad1357a99d1e2cfa501d982b99be3ea3c29cb1e2013",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/green-01.json",
+      "blob": "a812a51b216d2d2b465cad99d457cad71078d02c",
+      "bytes": 3370,
+      "sha256": "d1c75a17341ef65ef391e0aaa374efecb7be1734ce921e53d90d526a61d2cad6",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/lint-final-01.log",
+      "blob": "4e6f422ebb0aa1a18ffb5441066b2a79d497b882",
+      "bytes": 42,
+      "sha256": "0f941b4890ab88e7e2ecefdce61c5c07886c48a00102631bc54a09c266db8977",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/merge-audit.json",
+      "blob": "54c864e5e31a64cde853a358b55b6cf051e10582",
+      "bytes": 779,
+      "sha256": "c78235fde7b4f1edf7ab1b2b4e20f5be1d5ca0460a37be44f4b00972595c8555",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/ordinary-final-01.log",
+      "blob": "b47e17ac32050ad88801258971b82a744bc2860b",
+      "bytes": 47786,
+      "sha256": "bef5f79f627b05d485ae60cd0315d670d7ae2d99a369ac5f33907ad4175800c0",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/red-01.json",
+      "blob": "edda2557b3f4cc5e650b1868695fbef38f379a89",
+      "bytes": 3796,
+      "sha256": "e2ee705b7070b1ed5f5b1e03b2d1fafb72016a25d2fd71a5f01c57f5a7e85263",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/types-final-01.log",
+      "blob": "d0ba972c6e97609a8976bdf2f96178bc121b8a0a",
+      "bytes": 289,
+      "sha256": "80a6369094c4e192cbfb532326483de2951762042cfc9d56bde7e8f6c19b83e3",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/history-opening/units-final-01.json",
+      "blob": "2cc69234ad118c027d32609a66b9bcab2604a430",
+      "bytes": 41474,
+      "sha256": "a95cfaa2e04ce841fae1d8d7aa3d68292dd9982af576b7b2694137b3de4d01b4",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/combined-units-final-02.json",
+      "blob": "40375870de9e1261f7c22c13676020404dca988f",
+      "bytes": 137778,
+      "sha256": "c2fed28f3cf2bb473c5f04938ddd6e31b4ddae6c73d534b59a368f702e025109",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/combined-units-final-02.ps1",
+      "blob": "c920be40de4fbc6f24a872773cdef128b9ca861d",
+      "bytes": 3917,
+      "sha256": "1e49259cf97d49c7f132c6ba16686aa2992621201ce879c13036cf0b5351a65a",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/compatibility-selection.json",
+      "blob": "a99548d16f65674c3f5d2d249660ed5027c41947",
+      "bytes": 4002,
+      "sha256": "83dea76a091703fa8508015cd0b0faaee17c44b9fd06bbd84e20bb054ca30dbb",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/doctor-combined-final-02.log",
+      "blob": "323c48d0932af3e55526e2346c543a4303c586ea",
+      "bytes": 2597,
+      "sha256": "19fd2eacf000ece6b01be950752c29b1f3a22d1a624d50d78dfe6f1966fd801d",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/explicit-combined-final-02.log",
+      "blob": "c9e74d7f41e15e41cf2cba375c4be92d2a60cf83",
+      "bytes": 43,
+      "sha256": "14d9df74ac58d28034340084f4de2cb7746fe12dbea1d43afdea885eeec9f896",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/green-02.json",
+      "blob": "ce2952c70ac37b494fc718f4136bc4c9401ada10",
+      "bytes": 4623,
+      "sha256": "52940354a1d1dd16758afda4df121b67aa36398f25d8c89691bc6ffcdf23a4ec",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/inherited-postgres.json",
+      "blob": "2ccb9cfa88859160d5a346199a91fa588e52de4c",
+      "bytes": 387,
+      "sha256": "ff883521f933f4ea098cca66714c84557d496e287b212a4dc48e6b5592794a6d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/lint-combined-final-02.log",
+      "blob": "63f13457e728cd607475e09693581ad10a88ad95",
+      "bytes": 42,
+      "sha256": "3493d0060bee66658fd3d9b82e96492186530c9be3e37e4e5505d147ee702fbc",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/merge-audit.json",
+      "blob": "ecdc281150f2b785e9717c79eb3343118f328509",
+      "bytes": 613,
+      "sha256": "644a07b6920fdcc6fd496a4bd636df4d22641dc04bdc8d5f36219dd5fe94c77d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/ordinary-combined-final-02.log",
+      "blob": "eb36c849a1bccf410e73193e28315ceaf512de01",
+      "bytes": 75640,
+      "sha256": "1f5be15f63a4143c38ecb360e7bf135b07de10cb4a2755f0da83b178e87c1585",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/red-01.json",
+      "blob": "4e3dc7aad7769a76a2b6823cfe955853cf688c93",
+      "bytes": 45811,
+      "sha256": "7d952000d40e8152c664ce32983ccbab246baad1788bc77e4b43a4aa23152a3f",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/static/supporting-retry/types-final-02.log",
+      "blob": "d0ba972c6e97609a8976bdf2f96178bc121b8a0a",
+      "bytes": 289,
+      "sha256": "80a6369094c4e192cbfb532326483de2951762042cfc9d56bde7e8f6c19b83e3",
+      "variant": "lf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/syntax-results.json",
+      "blob": "8dda1fb700f391464c323ea9bc8bc57694a7abb1",
+      "bytes": 3877,
+      "sha256": "129485df1e6b86fa7213ad772811af8592a722919b1939061ed1040816d28c7e",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/verification-results.json",
+      "blob": "7cf93e016d946fdf5cd28fa35fc090fb6b809221",
+      "bytes": 38819,
+      "sha256": "c0433c2ba346191ee212a058f8a88cfe8c3189577fbb1e5143623e3163f0721d",
+      "variant": "raw"
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/root-scheduling-and-history-recovery/verify-evidence.mjs",
+      "blob": "fa917693f3ee0d0277b4d47dab7b719f48c630f8",
+      "bytes": 11783,
+      "sha256": "4dedeb9c4c93a5794da444a266c8408e47ed348377076f5133870648d85703dc",
+      "variant": "raw"
+    }
+  ],
+  "filesDigest": "bdc634043966a01bfd287332614779a19d72f64ec11ab65f2345154994d5588a",
+  "limitations": [
+    "392 units/60 files and nonadditive independent 33/4 remain distinct from inherited 12 PostgreSQL/3 (mixed 404/63).",
+    "Formatting boundaries, historical partial comparisons, readback/stale-ack qualifications and preserved failed/rejected attempts remain explicit.",
+    "Full production generation, remote catalogs/providers, physical devices/true zoom, broad roster and exhaustive live authority/transition matrices remain unpassed."
+  ],
+  "verifiedCommit1738": null,
+  "verifiedCommit1739": null
+}

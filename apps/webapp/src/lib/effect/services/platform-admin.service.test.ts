@@ -77,10 +77,10 @@ describe("PlatformAdminService listUsers privacy guardrails", () => {
 
 		expect(listUsersSource).toContain("organizationId");
 		expect(listUsersSource).toContain("EXISTS");
-		// biome-ignore lint/suspicious/noTemplateCurlyInString: its ok
+		// oxlint-disable-next-line eslint/no-template-curly-in-string -- its ok
 		expect(listUsersSource).toContain('"member"."user_id" = ${user.id}');
 		expect(listUsersSource).toContain(
-			// biome-ignore lint/suspicious/noTemplateCurlyInString: its ok
+			// oxlint-disable-next-line eslint/no-template-curly-in-string -- its ok
 			'"member"."organization_id" = ${organizationId}',
 		);
 		expect(listUsersSource).not.toContain("inArray(user.id");

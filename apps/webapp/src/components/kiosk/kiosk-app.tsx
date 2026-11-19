@@ -130,7 +130,7 @@ export function KioskApp() {
 	}
 
 	return (
-		<main className="flex min-h-svh flex-col bg-background p-4 text-foreground sm:p-8">
+		<main className="flex min-h-svh flex-col bg-muted/30 p-4 text-foreground sm:p-8 [padding-bottom:max(1rem,env(safe-area-inset-bottom))] [padding-left:max(1rem,env(safe-area-inset-left))] [padding-right:max(1rem,env(safe-area-inset-right))] [padding-top:max(1rem,env(safe-area-inset-top))] [&_button]:touch-manipulation [&_button]:whitespace-normal">
 			{screen.state === "loading" ? <KioskLoading /> : null}
 			{screen.state === "pairing" ? (
 				<KioskPairingForm

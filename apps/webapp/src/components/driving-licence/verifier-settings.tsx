@@ -505,7 +505,7 @@ export function VerifierSettings() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
+				<CardTitle as="h2">
 					{t(
 						"settings.drivingLicence.verifiers.title",
 						"Driving licence verifiers",
@@ -570,7 +570,7 @@ export function VerifierResponsibility() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
+				<CardTitle as="h2">
 					{t(
 						"settings.drivingLicence.verifiers.myTitle",
 						"Your verifier responsibility",

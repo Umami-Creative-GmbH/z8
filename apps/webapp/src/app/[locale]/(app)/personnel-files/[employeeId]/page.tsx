@@ -1,10 +1,11 @@
-import { IconArrowLeft } from "@tabler/icons-react";
+import { randomUUID } from "node:crypto";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DocumentRequestsSection } from "@/components/personnel-file/document-requests-section";
+import { EmployeeFileLoadingHeading } from "@/components/personnel-file/employee-file-loading-heading";
+import { EmployeeFileWorkspace } from "@/components/personnel-file/employee-file-workspace";
 import { EmployeeSickLeaveCard } from "@/components/personnel-file/employee-sick-leave-card";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
-import { Badge } from "@/components/ui/badge";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
@@ -13,8 +14,6 @@ import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-acc
 import { isDocumentCategory } from "@/lib/personnel-file/document.types";
 import { personnelFilePanelCapabilityFor } from "@/lib/personnel-file/panel";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
-import { Link } from "@/navigation";
-import { getTranslate } from "@/tolgee/server";
 
 interface PersonnelFilePageProps {
 	params: Promise<{ employeeId: string }>;
@@ -29,8 +28,7 @@ interface PersonnelFilePageProps {
  * documents of the employee.
  */
 async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageProps) {
-	const [t, current, { employeeId }, { category }] = await Promise.all([
-		getTranslate(),
+	const [current, { employeeId }, { category }] = await Promise.all([
 		loadCurrentPersonnelFileAccess(),
 		params,
 		searchParams,
@@ -43,25 +41,15 @@ async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageP
 	if (!capability || !employee) notFound();
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<header className="space-y-2">
-				<Link
-					href="/personnel-files"
-					className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-				>
-					<IconArrowLeft aria-hidden="true" className="size-4" />
-					{t("settings.personnelFiles.area.back", "Personnel files")}
-				</Link>
-				<div className="flex flex-wrap items-center gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">{employee.name}</h1>
-					{employee.isActive ? null : (
-						<Badge variant="secondary">
-							{t("settings.personnelFiles.area.former", "Former employee")}
-						</Badge>
-					)}
-				</div>
-			</header>
+		<EmployeeFileWorkspace
+			key={`${current.access.userId}:${current.access.organizationId}:${employeeId}:${capability.categories.join(",")}`}
+			readId={randomUUID()}
+			userId={current.access.userId}
+			organizationId={current.access.organizationId}
+			employee={employee}
+		>
 			<PersonnelFilePanel
+				key={isDocumentCategory(category) ? category : "all"}
 				capability={capability}
 				initialCategory={
 					isDocumentCategory(category) && capability.categories.includes(category) ? category : null
@@ -71,23 +59,26 @@ async function PersonnelFileContent({ params, searchParams }: PersonnelFilePageP
 			{capability.categories.includes("sick_note") ? (
 				<EmployeeSickLeaveCard employeeId={capability.employeeId} />
 			) : null}
-		</div>
+		</EmployeeFileWorkspace>
 	);
 }
 
 function PersonnelFileLoading() {
 	return (
-		<LoadingRegion
-			label={{
-				labelKey: "settings.personnelFiles.area.loadingFile",
-				labelDefault: "Loading the personnel file",
-			}}
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
-			role="status"
-		>
-			<Skeleton aria-hidden="true" className="h-8 w-48" />
-			<Skeleton aria-hidden="true" className="h-64 w-full" />
-		</LoadingRegion>
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
+			<EmployeeFileLoadingHeading />
+			<LoadingRegion
+				label={{
+					labelKey: "settings.personnelFiles.area.loadingFile",
+					labelDefault: "Loading the personnel file",
+				}}
+				className="flex flex-1 flex-col gap-6"
+				role="status"
+			>
+				<Skeleton aria-hidden="true" className="h-8 w-48" />
+				<Skeleton aria-hidden="true" className="h-64 w-full" />
+			</LoadingRegion>
+		</div>
 	);
 }
 

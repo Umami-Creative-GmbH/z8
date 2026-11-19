@@ -1,0 +1,47 @@
+{
+  "tsx": {
+    "parser": "Existing Next-owned @babel/parser; no dependency change",
+    "files": [
+      "command-probe.test.tsx",
+      "heading-probe.test.tsx"
+    ],
+    "parsed": 2
+  },
+  "moduleSyntax": {
+    "executedArchivedClone": false,
+    "checks": [
+      {
+        "path": "build-public-probes.mjs",
+        "exit": 0
+      },
+      {
+        "path": "run-public-probes.mjs",
+        "exit": 0
+      },
+      {
+        "path": "repeat-minimal-probe.mjs",
+        "exit": 0
+      },
+      {
+        "path": "clean-and-seal.mjs",
+        "exit": 0
+      },
+      {
+        "path": "seal-evidence.mjs",
+        "exit": 0
+      }
+    ]
+  },
+  "json": {
+    "policy": "Every JSON on exact allowlist parsed after sealing"
+  },
+  "png": {
+    "files": 0,
+    "crcInflateUnfilterPixelInspection": "Not applicable: no images created or consumed in this blocked run"
+  },
+  "powershell": {
+    "artifactFiles": 0,
+    "syntaxChecks": "No PowerShell artifact or async browser command body produced"
+  },
+  "archiveValidationBoundary": "Historical verifiers and private failure images were not executed or inspected."
+}

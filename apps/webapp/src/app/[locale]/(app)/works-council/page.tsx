@@ -114,7 +114,7 @@ function WorksCouncilPageLoading() {
 			}}
 			aria-labelledby="works-council-loading-label"
 			aria-live="polite"
-			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="page-frame flex flex-1 flex-col gap-6"
 			data-testid="works-council-loading"
 			role="status"
 		>

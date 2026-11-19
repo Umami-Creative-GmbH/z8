@@ -1,0 +1,16 @@
+[
+  {
+    "ProcessId": 100572,
+    "ParentProcessId": 76644,
+    "CreationDate": "2026-11-16T02:07:38.319293+01:00",
+    "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe",
+    "CommandLine": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\apps\\webapp\\node_modules\\next\\dist\\bin\\next dev --turbopack --hostname localhost --port 55845"
+  },
+  {
+    "ProcessId": 110624,
+    "ParentProcessId": 100572,
+    "CreationDate": "2026-11-16T02:07:38.605886+01:00",
+    "ExecutablePath": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe",
+    "CommandLine": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe X:\\t3-code\\worktrees\\z8\\t3-65663d62-4b7f54e41e3ad2a0\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\lib\\start-server.js"
+  }
+]

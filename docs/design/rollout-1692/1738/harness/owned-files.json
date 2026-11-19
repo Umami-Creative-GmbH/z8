@@ -1,0 +1,19 @@
+[
+  "src/app/[locale]/(app)/scheduling/page.tsx",
+  "src/app/[locale]/(app)/scheduling/page.test.tsx",
+  "src/app/[locale]/(app)/scheduling/loading.tsx",
+  "src/components/scheduling/scheduler/employee-shift-schedule.tsx",
+  "src/components/scheduling/scheduler/employee-shift-schedule.test.tsx",
+  "src/components/scheduling/scheduler/shift-scheduler.tsx",
+  "src/components/scheduling/scheduler/shift-scheduler.test.tsx",
+  "src/components/scheduling/scheduler/template-sidebar.tsx",
+  "src/components/scheduling/scheduler/template-sidebar.test.tsx",
+  "src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+  "src/components/scheduling/scheduler/schedule-read-failure.tsx",
+  "src/components/scheduling/scheduler/schedule-shift-list.tsx",
+  "src/components/scheduling/shifts/shift-dialog.tsx",
+  "src/components/scheduling/shifts/use-shift-dialog-form.ts",
+  "src/lib/navigation/route-metadata.ts",
+  "src/lib/navigation/route-metadata.test.ts",
+  "src/components/scheduling/shifts/shift-dialog-sections.tsx"
+]

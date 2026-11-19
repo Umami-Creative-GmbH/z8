@@ -16,8 +16,8 @@ export function BillingAlerts({ accessResult, canceled, isTrialing, success }: B
 	return (
 		<>
 			{success ? (
-				<Alert className="border-green-500 bg-green-50 dark:bg-green-950">
-					<IconCheck className="size-4 text-green-600" />
+				<Alert className="border-primary/40">
+					<IconCheck aria-hidden="true" className="size-4 text-primary" />
 					<AlertTitle>{t("billing.alerts.successTitle", "Success!")}</AlertTitle>
 					<AlertDescription>
 						{t(
@@ -41,7 +41,7 @@ export function BillingAlerts({ accessResult, canceled, isTrialing, success }: B
 
 			{!accessResult.canAccess ? (
 				<Alert variant="destructive">
-					<IconAlertTriangle className="size-4" />
+					<IconAlertTriangle aria-hidden="true" className="size-4" />
 					<AlertTitle>
 						{t("billing.alerts.subscriptionRequired", "Subscription Required")}
 					</AlertTitle>

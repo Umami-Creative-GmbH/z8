@@ -1,0 +1,17 @@
+Passed: real Better Auth sign-in and organization activation
+Passed: desktop-light fits viewport and saved font
+Passed: phone-light fits viewport and saved font
+Passed: wide-dark-large fits viewport and saved font
+Passed: phone-dark-large fits viewport and saved font
+Passed: one heading and stored organization context
+Passed: three original capability descriptions
+Passed: native keyboard focus returns to continuation
+Passed: held initialization disables continuation
+Passed: failed transport leaves seeded step intact
+Passed: retry runs permitted initialization and reads summary
+Passed: summary retry does not repeat initialization
+Passed: failed continuation stays on welcome and is retryable
+Passed: actual permitted continuation reaches original profile route
+Passed: PostgreSQL reads durable step and initialization timestamp
+Passed: real Better Auth sign-in and organization activation
+Passed: member keeps actual org/profile continuation

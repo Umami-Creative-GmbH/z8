@@ -11,16 +11,7 @@ import {
 	DataTableToolbar,
 } from "@/components/data-table-server";
 import type { DataTablePaginationTable } from "@/components/data-table-server/data-table-pagination";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FilterConfig } from "@/lib/data-table/types";
@@ -51,8 +42,8 @@ export function HolidayListHeading({
 }) {
 	const { t } = useTranslate();
 	return (
-		<div className="flex justify-between items-center">
-			<h3 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h3>
+		<div className="flex flex-wrap justify-between items-center gap-2">
+			<h2 className="text-lg font-medium">{t("settings.holidays.list.title", "Holidays")}</h2>
 			{canManage && onAddClick ? <AddHolidayButton onClick={onAddClick} /> : null}
 		</div>
 	);
@@ -325,44 +316,33 @@ export function HolidayBulkDeleteDialog({
 	onOpenChange,
 	count,
 	isDeleting,
+	error,
 	onConfirm,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	count: number;
 	isDeleting: boolean;
+	error?: string | null;
 	onConfirm: () => void;
 }) {
 	const { t } = useTranslate();
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("settings.holidays.bulkDelete.title", "Delete Multiple Holidays")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t(
-							"settings.holidays.bulkDelete.description",
-							"Are you sure you want to delete {count} holidays? This action cannot be undone.",
-							{ count },
-						)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel disabled={isDeleting}>
-						{t("common.cancel", "Cancel")}
-					</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={onConfirm}
-						disabled={isDeleting}
-						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-					>
-						{isDeleting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-						{t("settings.holidays.bulkDelete.confirm", "Delete {count} Holidays", { count })}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+		<DeleteConfirmDialog
+			open={open}
+			onOpenChange={onOpenChange}
+			title={t("settings.holidays.bulkDelete.title", "Delete Multiple Holidays")}
+			description={t(
+				"settings.holidays.bulkDelete.description",
+				"Are you sure you want to delete {count} holidays? This action cannot be undone.",
+				{ count },
+			)}
+			confirmLabel={t("settings.holidays.bulkDelete.confirm", "Delete {count} Holidays", {
+				count,
+			})}
+			isDeleting={isDeleting}
+			error={error}
+			onConfirm={onConfirm}
+		/>
 	);
 }

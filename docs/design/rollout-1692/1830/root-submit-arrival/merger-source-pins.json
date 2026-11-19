@@ -1,0 +1,155 @@
+[
+  {
+    "artifact": "before.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "sha256": "8273a2925911a2be2bd0b502da4c2ac1207d7ecbfe78c149fbacdf02b940ccc1",
+    "match": {
+      "commit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "blob": "0b5a7e5e49f340d890728f963a659ef33c745701"
+    }
+  },
+  {
+    "artifact": "before.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/actions.ts",
+    "sha256": "6c5fba4af8af1f3d850edeaf0f03519c939ec6dafb160f5b3b58dcb40800bda1",
+    "match": {
+      "commit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "blob": "fe285c2828eb892f9fb4a8f651e2a246579ee5ab"
+    }
+  },
+  {
+    "artifact": "before.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "before.json",
+    "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+    "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+    "match": {
+      "commit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86"
+    }
+  },
+  {
+    "artifact": "before.json",
+    "path": "apps/webapp/src/lib/validations/onboarding.ts",
+    "sha256": "d84c95afcfb6fdab7b6e95505a8e0bb7745be5ac90a307d67ebacdf5f0bca2ad",
+    "match": {
+      "commit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "blob": "4b56c5e111ac1c2e871af05261117f2baba3888c"
+    }
+  },
+  {
+    "artifact": "after.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "sha256": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "4ee6d2cdecaabef8c381555aa61b2e54e75e27f1"
+    }
+  },
+  {
+    "artifact": "after.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/actions.ts",
+    "sha256": "6c5fba4af8af1f3d850edeaf0f03519c939ec6dafb160f5b3b58dcb40800bda1",
+    "match": {
+      "commit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "blob": "fe285c2828eb892f9fb4a8f651e2a246579ee5ab"
+    }
+  },
+  {
+    "artifact": "after.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+    "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+    "match": {
+      "commit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179"
+    }
+  },
+  {
+    "artifact": "after.json",
+    "path": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+    "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+    "match": {
+      "commit": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86"
+    }
+  },
+  {
+    "artifact": "after.json",
+    "path": "apps/webapp/src/lib/validations/onboarding.ts",
+    "sha256": "e02f2606635fd058415c5cfe108d044e16342956bcf40ecf2f11e8f7d5f932e3",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "23deb6c1767ddf4846e6ddc997b73781e71c434c"
+    }
+  },
+  {
+    "artifact": "actions.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "sha256": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "4ee6d2cdecaabef8c381555aa61b2e54e75e27f1"
+    }
+  },
+  {
+    "artifact": "actions.json",
+    "path": "apps/webapp/src/lib/validations/onboarding.ts",
+    "sha256": "e02f2606635fd058415c5cfe108d044e16342956bcf40ecf2f11e8f7d5f932e3",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "23deb6c1767ddf4846e6ddc997b73781e71c434c"
+    }
+  },
+  {
+    "artifact": "scope.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "sha256": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "4ee6d2cdecaabef8c381555aa61b2e54e75e27f1"
+    }
+  },
+  {
+    "artifact": "quality.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+    "sha256": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "4ee6d2cdecaabef8c381555aa61b2e54e75e27f1"
+    }
+  },
+  {
+    "artifact": "quality.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+    "sha256": "6574ed644a92bce32d118bf7747ba30764a1249c30ad897f7bd2e5d7ddecd14d",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "0f41db1e9128c36fb8e74220047a9a1f44f20536"
+    }
+  },
+  {
+    "artifact": "quality.json",
+    "path": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+    "sha256": "e483dd66b4402046b0e777da105b9512403569ae4db2ce7eb3edbca61f505665",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "012228518cd1814452828a808d90408ddb545819"
+    }
+  },
+  {
+    "artifact": "quality.json",
+    "path": "apps/webapp/src/lib/validations/onboarding.ts",
+    "sha256": "e02f2606635fd058415c5cfe108d044e16342956bcf40ecf2f11e8f7d5f932e3",
+    "match": {
+      "commit": "9a59259b148cf22d16a265a15b54bce488004f74",
+      "blob": "23deb6c1767ddf4846e6ddc997b73781e71c434c"
+    }
+  }
+]

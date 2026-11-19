@@ -1,0 +1,32 @@
+{
+  "stage": "restricted-officer",
+  "checks": [
+    "Created then narrowed certificate-only officer via existing public settings UI with real scoped grant readback.",
+    {
+      "name": "Certificate officer sees scoped count/category links only; self and unsupported destinations excluded",
+      "visible": 2,
+      "expected": 2
+    }
+  ],
+  "captures": [
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-2f159aee-10fac1c1d358d617\\docs\\design\\rollout-1692\\1728\\after-failed-restricted-officer.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Personnel Files",
+        "Personnel Files"
+      ]
+    }
+  ],
+  "errors": [],
+  "source": [],
+  "head": "2ed32a1b6dbda2433dbfebc1f10d14a5450b950d",
+  "failure": "The expression evaluated to a falsy value:\n\n  assert.ok(!await mp.$('main [data-slot=card]'))\n"
+}

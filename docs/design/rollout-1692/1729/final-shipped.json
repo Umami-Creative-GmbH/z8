@@ -1,0 +1,142 @@
+{
+  "stage": "final-shipped",
+  "checks": [],
+  "captures": [
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\final-shipped-desktop-light.png",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\final-shipped-wide-dark.png",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\final-shipped-phone-light.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    },
+    {
+      "path": "X:\\t3-code\\worktrees\\z8\\t3-c42af28b-eda920ca028710b9\\docs\\design\\rollout-1692\\1729\\final-shipped-phone-dark-large.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Person 2"
+      ]
+    }
+  ],
+  "errors": [],
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "fixture": {
+    "actor": "small-admin",
+    "organizationId": "perf-small-5b90dc2f199e",
+    "employeeId": "6e71ae07-24f0-4276-a9a3-9c1ca5c0a092"
+  },
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+      "sha256": "d679a9d7c7348d070879dabacce672d4c905197b7683ecdd6af74fd65f9417b1",
+      "canonicalSha256": "d679a9d7c7348d070879dabacce672d4c905197b7683ecdd6af74fd65f9417b1"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+      "sha256": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991",
+      "canonicalSha256": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+      "sha256": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600",
+      "canonicalSha256": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "f566fdc3898ea7f89fb98f15ad537bbf3bb2f3b35f5d306ab82cfd6b2b64f3ee",
+      "canonicalSha256": "f566fdc3898ea7f89fb98f15ad537bbf3bb2f3b35f5d306ab82cfd6b2b64f3ee"
+    }
+  ],
+  "sourceComplete": {
+    "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+    "dirty": "M apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx\n M apps/webapp/src/components/personnel-file/delete-document-dialog.tsx\n M apps/webapp/src/components/personnel-file/document-list.tsx\n M apps/webapp/src/components/personnel-file/document-requests-section.tsx\n M apps/webapp/src/components/personnel-file/employee-sick-leave-card.tsx\n M apps/webapp/src/components/personnel-file/personnel-file-panel.tsx\n M apps/webapp/src/lib/navigation/route-metadata.test.ts\n M apps/webapp/src/lib/navigation/route-metadata.ts\n?? apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx\n?? apps/webapp/src/components/personnel-file/employee-file-loading-heading.tsx\n?? apps/webapp/src/components/personnel-file/employee-file-workspace.test.tsx\n?? apps/webapp/src/components/personnel-file/employee-file-workspace.tsx\n?? apps/webapp/src/components/personnel-file/personnel-file-panel.test.tsx\n?? docs/design/rollout-1692/1729.md\n?? docs/design/rollout-1692/1729/",
+    "files": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx",
+        "sha256": "d679a9d7c7348d070879dabacce672d4c905197b7683ecdd6af74fd65f9417b1",
+        "canonicalSha256": "d679a9d7c7348d070879dabacce672d4c905197b7683ecdd6af74fd65f9417b1"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-file-workspace.tsx",
+        "sha256": "fc724de2d5112f6f119ec44ea266f13a85d84c644907717bbcfeb9514a52d7e1",
+        "canonicalSha256": "fc724de2d5112f6f119ec44ea266f13a85d84c644907717bbcfeb9514a52d7e1"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-file-loading-heading.tsx",
+        "sha256": "13fba15f519cb36902e8e55f338499d643e78bc589dfdff4b8593690d1ce181e",
+        "canonicalSha256": "13fba15f519cb36902e8e55f338499d643e78bc589dfdff4b8593690d1ce181e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/personnel-file-panel.tsx",
+        "sha256": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991",
+        "canonicalSha256": "c30dad55e286ef7ff083ae880981e9a4c76fc45f5d3cbf99ea141853e9d5a991"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-list.tsx",
+        "sha256": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600",
+        "canonicalSha256": "06030570cd5683b294ff4d98c038c1264ce5273e15e48e234a838628f8bea600"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/delete-document-dialog.tsx",
+        "sha256": "04d6fe6497c167183c2f76fafb29686d965be1a68f0670e382668be7a156fc80",
+        "canonicalSha256": "04d6fe6497c167183c2f76fafb29686d965be1a68f0670e382668be7a156fc80"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-section.tsx",
+        "sha256": "86bbea5d4313dd54040a8b227476f32b19f9b15a023f0867e08c83f75ea1d0ae",
+        "canonicalSha256": "86bbea5d4313dd54040a8b227476f32b19f9b15a023f0867e08c83f75ea1d0ae"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/employee-sick-leave-card.tsx",
+        "sha256": "a8b442234467e29118ea5dfeb52781f4ca4f6af820b7e9184867571fafc9b252",
+        "canonicalSha256": "a8b442234467e29118ea5dfeb52781f4ca4f6af820b7e9184867571fafc9b252"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "sha256": "f566fdc3898ea7f89fb98f15ad537bbf3bb2f3b35f5d306ab82cfd6b2b64f3ee",
+        "canonicalSha256": "f566fdc3898ea7f89fb98f15ad537bbf3bb2f3b35f5d306ab82cfd6b2b64f3ee"
+      }
+    ]
+  }
+}

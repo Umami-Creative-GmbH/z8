@@ -83,6 +83,26 @@ async function correct(
 }
 
 describe("Assignment page", () => {
+	it("identifies the holder and permitted operations before supporting history", () => {
+		detail({
+			...partialAssignment,
+			canCorrect: true,
+			canCloseException: true,
+		});
+		const history = screen.getByRole("heading", { name: "Handover history" });
+		for (const element of [
+			screen.getByRole("link", { name: "Alex Current" }),
+			screen.getByRole("button", { name: "Record receipt" }),
+			screen.getByRole("button", { name: "Close return" }),
+			screen.getByRole("button", { name: "Correct a record" }),
+		]) {
+			expect(
+				element.compareDocumentPosition(history) &
+					Node.DOCUMENT_POSITION_FOLLOWING,
+			).toBeTruthy();
+		}
+		expect(screen.getByText(/As of .*Europe\/Berlin/)).toBeTruthy();
+	});
 	it("heads the page with the item and its status, and leads back to the list it came from", () => {
 		detail(
 			{ ...heldAssignment, serialNumber: "C02XK1" },
@@ -202,6 +222,7 @@ describe("Handover history", () => {
 					kind: "lost",
 					quantity: 1,
 					receivedQuantity: 0,
+					receivableQuantity: 1,
 					reason: "Missing",
 					actorId: "admin",
 					actorName: "Sam Admin",
@@ -268,6 +289,7 @@ describe("Handover history", () => {
 			kind: "lost" as const,
 			quantity: 2,
 			receivedQuantity: 0,
+			receivableQuantity: 2,
 			reason: "Missing after move",
 			actorId: "owner",
 			actorName: "Pat Owner",
@@ -279,6 +301,7 @@ describe("Handover history", () => {
 			trackingMode: "quantity",
 			quantity: 3,
 			outstandingQuantity: 1,
+			receivableQuantity: 1,
 			lostQuantity: 2,
 			exceptions: [loss],
 			transfers: [
@@ -350,6 +373,7 @@ describe("Handover history", () => {
 			kind: "waived" as const,
 			quantity: 1,
 			receivedQuantity: 0,
+			receivableQuantity: 1,
 			reason: "Permission to keep",
 			actorId: "owner",
 			actorName: "Pat Owner",
@@ -389,7 +413,8 @@ describe("Handover history", () => {
 			exceptionId: waiver.id,
 			quantity: 1,
 		});
-		expect(api.toast.error).toHaveBeenCalled();
+		expect(await panel.findByRole("alert")).toBeTruthy();
+		expect(api.toast.error).not.toHaveBeenCalled();
 	});
 });
 
@@ -436,8 +461,8 @@ describe("Corrections", () => {
 			condition: "worn",
 			reason: "Signed agreement lists worn condition",
 		});
-		expect(api.toast.error).toHaveBeenCalledWith(
-			expect.stringContaining("Reload equipment"),
+		expect((await panel.findByRole("alert")).textContent).toContain(
+			"Reload equipment",
 		);
 		expect(panel.getByLabelText(/^Amendment reason/)).toHaveProperty(
 			"value",
@@ -487,6 +512,7 @@ describe("Corrections", () => {
 					kind: "lost",
 					quantity: 1,
 					receivedQuantity: 0,
+					receivableQuantity: 1,
 					reason: "Missing",
 					actorId: "admin",
 					actorName: "Sam Admin",
@@ -528,6 +554,7 @@ describe("Corrections", () => {
 						kind: "lost",
 						quantity: 1,
 						receivedQuantity: 0,
+						receivableQuantity: 1,
 						reason: "Missing",
 						actorId: "admin",
 						actorName: "Sam Admin",

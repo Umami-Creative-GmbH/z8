@@ -1,0 +1,609 @@
+{
+  "phase": "current",
+  "source": {
+    "head": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+    "pins": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+        "raw": "b642e250d5a5a794b1efa0c2ee47fc59877ef1ccdb61525d0174442f61961125",
+        "lf": "b4704d05f25ddab4d5c4b4916c445e3df7bd14aa38bbc524130e7a353151a5cb"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+        "raw": "df4aef7a8010c93cf0e98fb92245b6699fc293c7205c424a6ca656be7045b1ee",
+        "lf": "93d836f470f7784d1396eb9fbcd79006ddd58af621acba5c8f00433fb5f8158b"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+        "raw": "0c1e51b4ce91c19aea533d13b6c40219e68d0aaf0379757d2e9bce5791f55f78",
+        "lf": "d0305022a3022e321ce1abcc4f90bacc849b929c2095d396d80d1dfc08c5445e"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+        "raw": "d45edc7023e21bf75b53748de693831dde789980913dba2e455f1f80913d1286",
+        "lf": "91f240c17ed0865fbf066e7c805f1c8448178f150c7144da01d9a5a9275cdebd"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+        "raw": "43b5c357cc8d0dc9163ac917b1de6969acf85391fb7b022b1b28ad4dafdc8768",
+        "lf": "94fe2bb25e27968327f22fdc016215392e1f26dfff9dacf83bb3375d24f8dcbe"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+        "raw": "8f6cb4e20f508ec92e52b814b710931a73b34dc195257535e0a996ed14d2b207",
+        "lf": "6a189dc6e744f7ee28b3752d2d28e29cc3a15b4de89bf29d3b8079d601990269"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+        "raw": "2484d3ef5b8b96acb7105ea4763f5bceaba11ae0c4614885d3fb7f5defe992b8",
+        "lf": "e0ceeff89c1919e2e933d94b5755c60deeb3cc069518cf5ab87d85d5fdfc13c4"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+        "raw": "dba29a2a17356f38e59fba8f8f617a0c6c94a3bc40639e2402638acadd9f835e",
+        "lf": "abcd121fad74d2cb015d185bfce43f7b9112edd910c8ad88ed8b5a9b105284bf"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+        "raw": "59c65f0ef1068e590631fd48f8af6bdb9075ad2e7e48a0310b1bc5895fac0a50",
+        "lf": "f979e6658a3756c1da2bc5a12983e6b72dda42947526ca75121dc49edbf39169"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts",
+        "raw": "2656d090cf08a66cf5f122f17e6f738d74a6b3df4d402a887d8e75c27c014b38",
+        "lf": "14739c3a5db6f0848dda4760396cb15722fcc8c525ee22fe6f0b8c43671576ca"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "raw": "ed95ad623ff4739ccb1ce2c25bc069c5c3dc0beba48e1c8ea32967b061b5f33d",
+        "lf": "9bfd0a989ca673cc73ac019ef2e239779dfeb95a44d6cad132ba20683993c46b"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "raw": "8209c9e04bb3a8e1ad7e1bee9e8f6fe258286e49fd15ad66440d4b44485671aa",
+        "lf": "8feaa418f83e13fe882164d601b0c9e284cb212f0c5cdea79605c31bd77ea4ce"
+      },
+      {
+        "path": "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts",
+        "raw": "4278b66a976ae5f60e31909863a071b2522eb283510a3cf4b900eb474ce4f2b4",
+        "lf": "65fe67e2be6cce4e82aa91204972e2a25597866ed93569935f6a0c4cf0c28fee"
+      },
+      {
+        "path": "apps/webapp/src/components/personnel-file/officer-grant-settings.tsx",
+        "raw": "854830ecd7e733ce4713c4e2c23173986aa2803b35d042d8ae5dd84f6425c7d1",
+        "lf": "d6d5d98dccee2abccd83ea7cecbd03af37775f3faf4612594ef23fbaba4d5838"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-request-actions.ts",
+        "raw": "5b8ca0664c4d2eb091154e8c2cc42c9ec05dba3901311dd39ac1de6474866ebb",
+        "lf": "c734cca3c99e04ef26076ecd3239d15d898c706f416b1f95a44b8d930747d41f"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+        "raw": "4528a9d85bff8f6756609407ed4c6df2967e610dc2a019d0d82c4bc6f0536dac",
+        "lf": "0e82435ceee14caf0cec8298bd18279914725ae31ed5604c8b0ba34cb3cc3a40"
+      }
+    ],
+    "digest": "cca768503a22e233bf5db7aec6e7ed7095d4dde46010f315ca49c4ce8e4c9fa6"
+  },
+  "checks": [
+    "actual Default/light owners persist after reload",
+    "desktop-light-16 horizontal document fit",
+    "desktop-light-16 no blocking dialog",
+    "desktop-light-16 exactly one visible route heading",
+    "desktop-collapsed-light-16 horizontal document fit",
+    "desktop-collapsed-light-16 no blocking dialog",
+    "desktop-collapsed-light-16 exactly one visible route heading",
+    "Ctrl+B preserves current route",
+    "phone-light-16 horizontal document fit",
+    "phone-light-16 no blocking dialog",
+    "phone-light-16 exactly one visible route heading",
+    "current route phone drawer first Escape restores toggle focus",
+    "actual Large/dark owners persist after reload",
+    "wide-dark-18 horizontal document fit",
+    "wide-dark-18 no blocking dialog",
+    "wide-dark-18 exactly one visible route heading",
+    "phone-dark-18 horizontal document fit",
+    "phone-dark-18 no blocking dialog",
+    "phone-dark-18 exactly one visible route heading"
+  ],
+  "captures": [
+    {
+      "file": "matched-current-02-desktop-light-16.png",
+      "sha256": "e984c3247c853298189765c4ab67faab7159977546093ac2d7972fdc30581de3",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 280,
+          "y": 145,
+          "width": 1296,
+          "height": 36,
+          "top": 145,
+          "right": 1576,
+          "bottom": 181,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 280,
+          "y": 145,
+          "width": 1296,
+          "height": 36,
+          "top": 145,
+          "right": 1576,
+          "bottom": 181,
+          "left": 280
+        },
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 256
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1000,
+          "top": 0,
+          "right": 256,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/document-requests",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Document requests"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "matched-current-02-desktop-collapsed-light-16.png",
+      "sha256": "451a6110fe0a8d4f3a1b0005bed2f994c755edc2b86937f0b32d9e7a569ff163",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 80,
+          "y": 173,
+          "width": 1298.671875,
+          "height": 36,
+          "top": 173,
+          "right": 1378.671875,
+          "bottom": 209,
+          "left": 80
+        },
+        "main": {
+          "x": 56,
+          "y": 0,
+          "width": 1544,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 56
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 56,
+          "height": 1000,
+          "top": 0,
+          "right": 56,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 80,
+          "y": 173,
+          "width": 1298.671875,
+          "height": 36,
+          "top": 173,
+          "right": 1378.671875,
+          "bottom": 209,
+          "left": 80
+        },
+        "main": {
+          "x": 56,
+          "y": 0,
+          "width": 1544,
+          "height": 1000,
+          "top": 0,
+          "right": 1600,
+          "bottom": 1000,
+          "left": 56
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 56,
+          "height": 1000,
+          "top": 0,
+          "right": 56,
+          "bottom": 1000,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/document-requests",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Document requests"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "matched-current-02-phone-light-16.png",
+      "sha256": "b9b8632c996f4bd97ae2487b09f270e979542dda2c5a8b5bdf9e80e2b4a74fec",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 16,
+          "y": 185,
+          "width": 358,
+          "height": 32,
+          "top": 185,
+          "right": 374,
+          "bottom": 217,
+          "left": 16
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 16,
+          "y": 185,
+          "width": 358,
+          "height": 32,
+          "top": 185,
+          "right": 374,
+          "bottom": 217,
+          "left": 16
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/document-requests",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Document requests"
+      ],
+      "theme": "light bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "matched-current-02-wide-dark-18.png",
+      "sha256": "dc2dddcf7e289b7387d0aa5dd9426d2f953c49b3daa6979b0a77aa2b2a65af76",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 315,
+          "y": 194.5,
+          "width": 1836.015625,
+          "height": 40.5,
+          "top": 194.5,
+          "right": 2151.015625,
+          "bottom": 235,
+          "left": 315
+        },
+        "main": {
+          "x": 288,
+          "y": 0,
+          "width": 2112,
+          "height": 1200,
+          "top": 0,
+          "right": 2400,
+          "bottom": 1200,
+          "left": 288
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 288,
+          "height": 1200,
+          "top": 0,
+          "right": 288,
+          "bottom": 1200,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 315,
+          "y": 194.5,
+          "width": 1836.015625,
+          "height": 40.5,
+          "top": 194.5,
+          "right": 2151.015625,
+          "bottom": 235,
+          "left": 315
+        },
+        "main": {
+          "x": 288,
+          "y": 0,
+          "width": 2112,
+          "height": 1200,
+          "top": 0,
+          "right": 2400,
+          "bottom": 1200,
+          "left": 288
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 288,
+          "height": 1200,
+          "top": 0,
+          "right": 288,
+          "bottom": 1200,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/document-requests",
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Document requests"
+      ],
+      "theme": "dark bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    },
+    {
+      "file": "matched-current-02-phone-dark-18.png",
+      "sha256": "a3a33a32dd7dda3102cbdec3dd306e146417ac0373cd8a7a26aa58492c1f1a19",
+      "screenshotViewportOnly": true,
+      "before": {
+        "h1": {
+          "x": 18,
+          "y": 194.5,
+          "width": 354,
+          "height": 35.984375,
+          "top": 194.5,
+          "right": 372,
+          "bottom": 230.484375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "after": {
+        "h1": {
+          "x": 18,
+          "y": 154,
+          "width": 354,
+          "height": 35.984375,
+          "top": 154,
+          "right": 372,
+          "bottom": 189.984375,
+          "left": 18
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "top": 0,
+          "right": 390,
+          "bottom": 844,
+          "left": 0
+        }
+      },
+      "path": "/en/personnel-files/document-requests",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "18px",
+      "fontStatus": "loaded",
+      "h1": [
+        "Document requests"
+      ],
+      "theme": "dark bprogress-busy",
+      "dialogs": 0,
+      "overlays": [
+        ":host {\n  all: initial;\n\n  /* the direction property is not reset by 'all' */\n  direction: ltr;\n}\n\n/*!\n * Bootstrap Reboot v4.4.1 (https://getbootstrap.com/)\n * Copyright 2011-2019 The Bootstrap Authors\n * Copyright 2011-2019 Twitter, Inc.\n * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md)\n */\n*,\n*::before,\n*::after {\n  box-sizing: border-box;\n}\n\n:host {\n  font-"
+      ]
+    }
+  ],
+  "errors": [],
+  "policy": "Fresh transient context and normal email sign-in each phase; notification permission denied fixture policy. Actual UI preference owners; no copied or restored cookies/storage.",
+  "qualification": "Current a4e2 source.",
+  "recordTitles": [
+    "R047 record 21",
+    "R047 record 18",
+    "R047 record 17",
+    "R047 record 14",
+    "R047 record 13",
+    "R047 record 10",
+    "R047 record 09",
+    "R047 record 06",
+    "R047 record 05",
+    "R047 record 02"
+  ],
+  "recordTitlesDigest": "e67936c9dda9af1cdb346021fce9f959177dd751e8a3aebc4f374fbb6bc4ec0e",
+  "drawerFocus": {
+    "tag": "BUTTON",
+    "label": "Toggle Sidebar",
+    "sidebarTrigger": true
+  },
+  "next": {
+    "available": [
+      "get_project_metadata",
+      "get_errors",
+      "get_page_metadata",
+      "get_logs",
+      "get_server_action_by_id",
+      "get_routes",
+      "get_request_insights",
+      "get_compilation_issues",
+      "compile_route"
+    ],
+    "observations": [
+      {
+        "name": "get_project_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"projectPath\":\"X:\\\\t3-code\\\\worktrees\\\\z8\\\\t3-36de3f4a-69b59b59b97cbc3d\\\\apps\\\\webapp\",\"devServerUrl\":\"http://localhost:50964\"}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_routes",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\n  \"appRouter\": [\n    \"/[locale]\",\n    \"/[locale]/absences\",\n    \"/[locale]/accept-invitation/[invitationId]\",\n    \"/[locale]/analytics\",\n    \"/[locale]/analytics/overtime-burn-down\",\n    \"/[locale]/analytics/team-performance\",\n    \"/[locale]/analytics/vacation-trends\",\n    \"/[locale]/analytics/work-hours\",\n    \"/[locale]/approvals\",\n    \"/[locale]/approvals/deputy-decisions/[absenceId]\",\n    \"/[locale]/approvals/inbox\",\n    \"/[locale]/approvals/review/[organizationId]/[kind]/[id]\",\n    \"/[locale]/billing/suspended\",\n    \"/[locale]/calendar\",\n    \"/[locale]/calendar/[employeeId]\",\n    \"/[locale]/compliance\",\n    \"/[locale]/driving-licence\",\n    \"/[locale]/driving-licence/checks/[employee]\",\n    \"/[locale]/equipment\",\n    \"/[locale]/equipment/assignments/[assignmentId]\",\n    \"/[locale]/equipment/employees/[employeeId]\",\n    \"/[locale]/forgot-password\",\n    \"/[locale]/init\",\n    \"/[locale]/join/[code]\",\n    \"/[locale]/kiosk\",\n    \"/[locale]/licenses\",\n    \"/[locale]/mfa\",\n    \"/[locale]/my-documents\",\n    \"/[locale]/my-equipment\",\n    \"/[locale]/my-requests\",\n    \"/[locale]/notifications\",\n    \"/[locale]/onboarding/complete\",\n    \"/[locale]/onboarding/notifications\",\n    \"/[locale]/onboarding/organization\",\n    \"/[locale]/onboarding/profile\",\n    \"/[locale]/onboarding/vacation-policy\",\n    \"/[locale]/onboarding/welcome\",\n    \"/[locale]/onboarding/wellness\",\n    \"/[locale]/onboarding/work-schedule\",\n    \"/[locale]/onboarding/work-templates\",\n    \"/[locale]/organization\",\n    \"/[locale]/payroll\",\n    \"/[locale]/payroll/work-balances\",\n    \"/[locale]/payroll/work-balances/[employeeId]\",\n    \"/[locale]/personnel-files\",\n    \"/[locale]/personnel-files/[employeeId]\",\n    \"/[locale]/personnel-files/document-requests\",\n    \"/[locale]/personnel-files/due-for-deletion\",\n    \"/[locale]/personnel-files/payslip-batches\",\n    \"/[locale]/personnel-files/payslip-batches/[batchId]\",\n    \"/[locale]/personnel-files/sick-leave\",\n    \"/[locale]/platform-admin\",\n    \"/[locale]/platform-admin/analytics\",\n    \"/[locale]/platform-admin/billing\",\n    \"/[locale]/platform-admin/diagnostics\",\n    \"/[locale]/platform-admin/organizations\",\n    \"/[locale]/platform-admin/settings\",\n    \"/[locale]/platform-admin/system-email-templates\",\n    \"/[locale]/platform-admin/users\",\n    \"/[locale]/platform-admin/worker-queue\",\n    \"/[locale]/reports\",\n    \"/[locale]/reports/projects\",\n    \"/[locale]/reports/vehicles\",\n    \"/[locale]/reset-password\",\n    \"/[locale]/scheduling\",\n    \"/[locale]/settings\",\n    \"/[locale]/settings/approval-escalation\",\n    \"/[locale]/settings/approval-policies\",\n    \"/[locale]/settings/audit-export\",\n    \"/[locale]/settings/audit-log\",\n    \"/[locale]/settings/avv\",\n    \"/[locale]/settings/billable-time\",\n    \"/[locale]/settings/billable-time/accounting\",\n    \"/[locale]/settings/billable-time/cost-rates\",\n    \"/[locale]/settings/billable-time/hand-off\",\n    \"/[locale]/settings/billable-time/rates\",\n    \"/[locale]/settings/billing\",\n    \"/[locale]/settings/calendar\",\n    \"/[locale]/settings/change-policies\",\n    \"/[locale]/settings/clocking\",\n    \"/[locale]/settings/clockodo-import\",\n    \"/[locale]/settings/closed-months\",\n    \"/[locale]/settings/compliance\",\n    \"/[locale]/settings/compliance/works-council\",\n    \"/[locale]/settings/coverage-rules\",\n    \"/[locale]/settings/custom-fields\",\n    \"/[locale]/settings/customers\",\n    \"/[locale]/settings/demo\",\n    \"/[locale]/settings/discord\",\n    \"/[locale]/settings/driving-licence\",\n    \"/[locale]/settings/email-templates\",\n    \"/[locale]/settings/employees\",\n    \"/[locale]/settings/employees/[employeeId]\",\n    \"/[locale]/settings/employees/new\",\n    \"/[locale]/settings/enterprise\",\n    \"/[locale]/settings/enterprise/api-keys\",\n    \"/[locale]/settings/enterprise/api-keys/[keyId]\",\n    \"/[locale]/settings/enterprise/audit-log\",\n    \"/[locale]/settings/enterprise/branding\",\n    \"/[locale]/settings/enterprise/domains\",\n    \"/[locale]/settings/enterprise/email\",\n    \"/[locale]/settings/enterprise/identity-setup\",\n    \"/[locale]/settings/enterprise/sso\",\n    \"/[locale]/settings/equipment\",\n    \"/[locale]/settings/export\",\n    \"/[locale]/settings/export-operations\",\n    \"/[locale]/settings/export/history/[organizationId]\",\n    \"/[locale]/settings/holidays\",\n    \"/[locale]/settings/implementation-checklist\",\n    \"/[locale]/settings/import\",\n    \"/[locale]/settings/import/[batchId]\",\n    \"/[locale]/settings/kiosks\",\n    \"/[locale]/settings/locations\",\n    \"/[locale]/settings/locations/[locationId]\",\n    \"/[locale]/settings/my-data\",\n    \"/[locale]/settings/notification-channels\",\n    \"/[locale]/settings/notifications\",\n    \"/[locale]/settings/organization\",\n    \"/[locale]/settings/organizations\",\n    \"/[locale]/settings/payroll-access\",\n    \"/[locale]/settings/payroll-export\",\n    \"/[locale]/settings/payroll-readiness\",\n    \"/[locale]/settings/permissions\",\n    \"/[locale]/settings/personnel-files\",\n    \"/[locale]/settings/position-capture\",\n    \"/[locale]/settings/position-stamps\",\n    \"/[locale]/settings/profile\",\n    \"/[locale]/settings/projects\",\n    \"/[locale]/settings/report-share-links\",\n    \"/[locale]/settings/roles\",\n    \"/[locale]/settings/scheduled-exports\",\n    \"/[locale]/settings/security\",\n    \"/[locale]/settings/shifts\",\n    \"/[locale]/settings/skills\",\n    \"/[locale]/settings/slack\",\n    \"/[locale]/settings/statistics\",\n    \"/[locale]/settings/surcharges\",\n    \"/[locale]/settings/teams\",\n    \"/[locale]/settings/teams-notifications\",\n    \"/[locale]/settings/teams/[teamId]\",\n    \"/[locale]/settings/telegram\",\n    \"/[locale]/settings/travel-expenses\",\n    \"/[locale]/settings/vacation\",\n    \"/[locale]/settings/vacation/employees\",\n    \"/[locale]/settings/vacation/employees/[employeeId]\",\n    \"/[locale]/settings/vehicle-use\",\n    \"/[locale]/settings/vehicles\",\n    \"/[locale]/settings/webhooks\",\n    \"/[locale]/settings/wellness\",\n    \"/[locale]/settings/work-categories\",\n    \"/[locale]/settings/work-diagnostics\",\n    \"/[locale]/settings/work-policies\",\n    \"/[locale]/setup\",\n    \"/[locale]/share/[token]\",\n    \"/[locale]/sign-in\",\n    \"/[locale]/sign-up\",\n    \"/[locale]/team\",\n    \"/[locale]/team/absences\",\n    \"/[locale]/team/driving\",\n    \"/[locale]/team/period-submissions\",\n    \"/[locale]/team/presence\",\n    \"/[locale]/team/presence/[locationId]\",\n    \"/[locale]/time-tracking\",\n    \"/[locale]/today\",\n    \"/[locale]/travel-expenses\",\n    \"/[locale]/travel-expenses/[claimId]\",\n    \"/[locale]/travel-expenses/finance\",\n    \"/[locale]/travel-expenses/reports/[reportId]\",\n    \"/[locale]/verify-2fa\",\n    \"/[locale]/verify-email\",\n    \"/[locale]/verify-email-pending\",\n    \"/[locale]/works-council\",\n    \"/[locale]/works-council/export\",\n    \"/api/analytics/export\",\n    \"/api/app-version\",\n    \"/api/approvals/inbox\",\n    \"/api/approvals/inbox/[id]\",\n    \"/api/approvals/inbox/[id]/approve\",\n    \"/api/approvals/inbox/[id]/reject\",\n    \"/api/approvals/inbox/bulk-approve\",\n    \"/api/approvals/inbox/bulk-reject\",\n    \"/api/approvals/inbox/counts\",\n    \"/api/audit-export/public-key\",\n    \"/api/audit-export/verify\",\n    \"/api/auth/[...all]\",\n    \"/api/auth/app-exchange\",\n    \"/api/auth/app-login\",\n    \"/api/auth/app-sign-in\",\n    \"/api/auth/callback/social-org/[provider]\",\n    \"/api/auth/context\",\n    \"/api/auth/desktop-login\",\n    \"/api/auth/providers\",\n    \"/api/auth/session-expired\",\n    \"/api/auth/social-org/[provider]\",\n    \"/api/auth/verify-turnstile\",\n    \"/api/billing/checkout\",\n    \"/api/billing/portal\",\n    \"/api/billing/subscription\",\n    \"/api/billing/webhook\",\n    \"/api/calendar/conflicts\",\n    \"/api/calendar/connections\",\n    \"/api/calendar/connections/[id]\",\n    \"/api/calendar/events\",\n    \"/api/calendar/ics-feeds\",\n    \"/api/calendar/ics-feeds/[id]\",\n    \"/api/calendar/ics-feeds/[id]/regenerate\",\n    \"/api/calendar/ics/[secret]\",\n    \"/api/calendar/oauth/[provider]\",\n    \"/api/calendar/oauth/callback/[provider]\",\n    \"/api/cron/[jobName]\",\n    \"/api/cron/status/[executionId]\",\n    \"/api/dashboard/layout\",\n    \"/api/dashboard/widgets/[widget]\",\n    \"/api/desktop/context\",\n    \"/api/desktop/open\",\n    \"/api/desktop/organizations\",\n    \"/api/desktop/vehicle-use-warnings\",\n    \"/api/discord/interactions/[token]\",\n    \"/api/discord/link\",\n    \"/api/discord/setup\",\n    \"/api/driving-licence/evidence\",\n    \"/api/driving-licence/operational-employees\",\n    \"/api/driving-licence/status\",\n    \"/api/health\",\n    \"/api/jobs/[jobId]/status\",\n    \"/api/kiosk/board\",\n    \"/api/kiosk/clock\",\n    \"/api/kiosk/clock/outcome\",\n    \"/api/kiosk/commands\",\n    \"/api/kiosk/commands/[operationId]\",\n    \"/api/kiosk/employee-status\",\n    \"/api/kiosk/employees\",\n    \"/api/kiosk/fob\",\n    \"/api/kiosk/fob/registration\",\n    \"/api/kiosk/pair\",\n    \"/api/kiosk/session\",\n    \"/api/location/countries\",\n    \"/api/location/regions\",\n    \"/api/location/states\",\n    \"/api/mcp\",\n    \"/api/notifications\",\n    \"/api/notifications/count\",\n    \"/api/notifications/preferences\",\n    \"/api/notifications/push/native-token\",\n    \"/api/notifications/push/subscribe\",\n    \"/api/notifications/push/subscriptions\",\n    \"/api/notifications/push/unsubscribe\",\n    \"/api/notifications/push/vapid-key\",\n    \"/api/org-admin/holiday-categories\",\n    \"/api/org-admin/holiday-categories/[id]\",\n    \"/api/org-admin/holiday-presets\",\n    \"/api/org-admin/holiday-presets/[id]\",\n    \"/api/org-admin/holidays\",\n    \"/api/org-admin/holidays/[id]\",\n    \"/api/org-admin/holidays/import\",\n    \"/api/org-admin/holidays/preview\",\n    \"/api/organization-mfa/policy\",\n    \"/api/organization/vehicles/[vehicleId]/photos/[photoId]\",\n    \"/api/organizations/list\",\n    \"/api/organizations/sso\",\n    \"/api/organizations/switch\",\n    \"/api/payroll/comparisons/[resultId]\",\n    \"/api/personnel-files/documents/[documentId]\",\n    \"/api/personnel-files/employees/[employeeId]/zip\",\n    \"/api/platform-admin/billing\",\n    \"/api/session/organization-status\",\n    \"/api/settings/employees/read/[dataset]\",\n    \"/api/settings/skills\",\n    \"/api/setup/authorize\",\n    \"/api/slack/commands\",\n    \"/api/slack/events\",\n    \"/api/slack/interactions\",\n    \"/api/slack/link\",\n    \"/api/slack/oauth/authorize\",\n    \"/api/slack/oauth/callback\",\n    \"/api/slack/setup\",\n    \"/api/teams/messages\",\n    \"/api/teams/setup\",\n    \"/api/telegram/link\",\n    \"/api/telegram/setup\",\n    \"/api/telegram/webhook/[token]\",\n    \"/api/time-clock\",\n    \"/api/time-clock/status\",\n    \"/api/time-entries\",\n    \"/api/time-entries/[entryId]\",\n    \"/api/time-entries/clock-out-on-behalf\",\n    \"/api/time-entries/commands\",\n    \"/api/time-entries/commands/[operationId]\",\n    \"/api/time-entries/corrections\",\n    \"/api/time-entries/diagnostics\",\n    \"/api/time-entries/diagnostics/proposals\",\n    \"/api/time-entries/diagnostics/repair\",\n    \"/api/time-entries/offline-context\",\n    \"/api/time-entries/status\",\n    \"/api/time-entries/verify\",\n    \"/api/travel-expenses/[claimId]\",\n    \"/api/travel-expenses/[claimId]/receipts/[attachmentId]\",\n    \"/api/travel-expenses/exports/[batchId]\",\n    \"/api/travel-expenses/reports/[reportId]/receipts/[receiptId]\",\n    \"/api/tus/[[...path]]\",\n    \"/api/upload/personnel-file\",\n    \"/api/upload/personnel-file/payslip-batch\",\n    \"/api/upload/process\",\n    \"/api/upload/travel-expense/process\",\n    \"/api/upload/travel-expense/report-receipt\",\n    \"/api/user/onboarding-status\",\n    \"/api/v1/[...path]\",\n    \"/api/v1/absences\",\n    \"/api/v1/customers\",\n    \"/api/v1/customers/custom-fields\",\n    \"/api/v1/employees\",\n    \"/api/v1/employees/custom-fields\",\n    \"/api/v1/openapi.json\",\n    \"/api/v1/projects\",\n    \"/api/v1/projects/custom-fields\",\n    \"/api/v1/work-periods\",\n    \"/api/wellness/water-action\",\n    \"/api/wellness/water-reminder\"\n  ]\n}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_page_metadata",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"sessions\":[{\"url\":\"/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/personnel-files/document-requests/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_compilation_issues",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"issues\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      },
+      {
+        "name": "get_errors",
+        "response": {
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+              }
+            ]
+          },
+          "jsonrpc": "2.0",
+          "id": 1
+        }
+      }
+    ]
+  },
+  "status": "passed"
+}

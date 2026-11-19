@@ -1,0 +1,19 @@
+{
+  "head": "df015190f4420fda9f933f59200bcf4c5fd03bbe",
+  "mode": "owned Next dev Turbopack, connected native browser; tools/list verified",
+  "checks": [
+    {
+      "name": "get_compilation_issues",
+      "data": {
+        "issues": []
+      }
+    },
+    {
+      "name": "get_errors",
+      "data": {
+        "configErrors": [],
+        "sessionErrors": []
+      }
+    }
+  ]
+}

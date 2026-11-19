@@ -1,0 +1,18 @@
+[08:28:56 UTC] [32mINFO[39m: [36mAudit: travel_expense.legacy_draft_converted[39m
+    [35mcomponent[39m: "AuditLog"
+    [35mtrace_id[39m: "51073744b7dbe0f18bbc5db656cc528a"
+    [35mspan_id[39m: "ff4dc883882f4d26"
+    [35mtrace_flags[39m: "01"
+    [35maction[39m: "travel_expense.legacy_draft_converted"
+    [35mactorId[39m: "perf-small-2-db07f1111235"
+    [35memployeeId[39m: "dbb5eeaa-61b1-469e-803f-029cf7552a6a"
+    [35mtargetId[39m: "0dc2fdea-451c-40e1-bfbb-193cb6214cf4"
+    [35mtargetType[39m: "approval"
+    [35morganizationId[39m: "perf-small-db07f1111235"
+    [35mmetadata[39m: {
+      "model": "report",
+      "legacyClaimId": "955341ef-3f2a-4074-8e64-d1f8ae1faa9a"
+    }
+ POST /en/travel-expenses/955341ef-3f2a-4074-8e64-d1f8ae1faa9a 200 in 521ms (next.js: 42ms, proxy.ts: 3ms, generate-params: 1.0ms, application-code: 475ms)
+  └─ ƒ convertLegacyTravelExpenseDraftAction("955341ef-3f2a-4074-8e64-d1f8ae1faa9a") in 230ms src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts
+ GET /api/travel-expenses/955341ef-3f2a-4074-8e64-d1f8ae1faa9a 200 in 206ms (next.js: 101ms, proxy.ts: 8ms, application-code: 97ms)

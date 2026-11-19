@@ -16,7 +16,7 @@ function keys(
  * Absent source keys keep the predecessor's component default-value fallback.
  */
 export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
-	...keys("auth", ["auth.terms.service", "auth.terms.privacy"]),
+	...keys("auth", ["auth.terms.service", "auth.terms.privacy", "auth.signIn"]),
 	// The complete catalog's only colliding primary leaf is won by teamsBot.
 	// Keep the explicit dependency even though common's shared subtree includes it.
 	...keys("teamsBot", ["common.more"]),
@@ -55,6 +55,11 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"drivingLicence.operational.search",
 		"drivingLicence.operational.searchHelp",
 		"drivingLicence.operational.noEmployees",
+		"drivingLicence.operational.loadingEmployees",
+		"drivingLicence.operational.refreshEmployees",
+		"drivingLicence.operational.rosterUnavailable",
+		"table.searchPlaceholder",
+		"table.clearFilters",
 		"drivingLicence.delivery.uncertain",
 		"drivingLicence.class.validThrough",
 		"drivingLicence.class.overdue",
@@ -71,7 +76,14 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"drivingLicence.settingsSummary",
 		"drivingLicence.myTitle",
 	]),
+	// The dashboard widgets reuse these calendar and clock labels.
+	...keys("calendar", ["absences.requestAbsence"]),
 	...keys("timeTracking", [
+		"timeTracking.summary.noRequiredToday",
+		"timeTracking.onBreak",
+		"timeTracking.clockedIn",
+		"timeTracking.notClockedIn",
+		"timeTracking.statusUnavailable",
 		"timeTracking.errors",
 		"timeTracking.quickBreak",
 		// Vehicle use is asked in the header clock on every app route.
@@ -179,7 +191,6 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 	]),
 	...keys("settings/rules", [
 		"settings.changePolicies.tab.policies",
-		"settings.approvalEscalation.attention.approvalType",
 		"settings.approvalEscalation.navDescription",
 		"settings.approvalEscalation.title",
 		"settings.approvalPolicies.description",
@@ -242,6 +253,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.myData.description",
 		"settings.myData.title",
 		// Consolidated settings pages (titles and descriptions only, not their tab copy).
+		"settings.navigation.approval.title",
 		"settings.navigation.audit.description",
 		"settings.navigation.audit.title",
 		"settings.navigation.chat-integrations.description",

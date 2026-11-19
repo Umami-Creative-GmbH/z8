@@ -1,0 +1,179 @@
+{
+  "head": "13b4c571e0716837b589438c3686eccc12f94de5",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+      "canonicalSha256": "342353ed99a17d622167bcd75bdb64d4fa931db8db3654a6c666aea96884eb56"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+      "canonicalSha256": "f5039da4a2ef72543c9366d98f9f6d1a43cc0c3c72d73d6870e77b060072eb1f"
+    }
+  ],
+  "checks": [
+    "Personal non-admin arrival retains the enabled reminder and moderate preset",
+    "Actual keyboard goal reaches the existing twenty-glass limit",
+    "Failed real transport retains goal and writes no personal settings",
+    "Pending pointer retry sends one command and locks personal controls",
+    "Actual non-admin Save persists unchanged personal preset and goal",
+    "Save retains notifications progression and one successful command",
+    "Actual Skip preserves saved personal settings despite edited draft",
+    "Disabled reminder Save remains supported by the existing owner",
+    "No browser exceptions"
+  ],
+  "captures": [
+    {
+      "file": "ready-desktop.png",
+      "path": "/en/onboarding/wellness",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Stay Hydrated"
+      ],
+      "busy": "false",
+      "goal": "20",
+      "sha256": "9edb92b2f9aaeab2d0ea548b2b0fd0af154aba41c2f8d72bb50cb36fa5fda448",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+          "canonicalSha256": "342353ed99a17d622167bcd75bdb64d4fa931db8db3654a6c666aea96884eb56"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+          "canonicalSha256": "f5039da4a2ef72543c9366d98f9f6d1a43cc0c3c72d73d6870e77b060072eb1f"
+        }
+      ]
+    },
+    {
+      "file": "ready-phone.png",
+      "path": "/en/onboarding/wellness",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "headings": [
+        "Stay Hydrated"
+      ],
+      "busy": "false",
+      "goal": "20",
+      "sha256": "9391343f7ca3d4038732fb0acbf30cff4f060d15955f50e1d4257b5dc6489f9b",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+          "canonicalSha256": "342353ed99a17d622167bcd75bdb64d4fa931db8db3654a6c666aea96884eb56"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+          "canonicalSha256": "f5039da4a2ef72543c9366d98f9f6d1a43cc0c3c72d73d6870e77b060072eb1f"
+        }
+      ]
+    },
+    {
+      "file": "pending-desktop.png",
+      "path": "/en/onboarding/wellness",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "headings": [
+        "Stay Hydrated"
+      ],
+      "busy": "true",
+      "goal": "20",
+      "sha256": "76d3cf1c66cd3771aea1e8a04323aa4b574bc136be7307bd8cf3275f351c382e",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+          "canonicalSha256": "342353ed99a17d622167bcd75bdb64d4fa931db8db3654a6c666aea96884eb56"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+          "canonicalSha256": "f5039da4a2ef72543c9366d98f9f6d1a43cc0c3c72d73d6870e77b060072eb1f"
+        }
+      ]
+    },
+    {
+      "file": "pending-phone.png",
+      "path": "/en/onboarding/wellness",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "headings": [
+        "Stay Hydrated"
+      ],
+      "busy": "true",
+      "goal": "20",
+      "sha256": "3593cad09d12c7661879d2a5a6e0c21d4f5bf5bd775addbd6f6f70f5edd0aa10",
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page-client.tsx",
+          "canonicalSha256": "342353ed99a17d622167bcd75bdb64d4fa931db8db3654a6c666aea96884eb56"
+        },
+        {
+          "path": "apps/webapp/src/app/[locale]/onboarding/wellness/page.test.tsx",
+          "canonicalSha256": "f5039da4a2ef72543c9366d98f9f6d1a43cc0c3c72d73d6870e77b060072eb1f"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "commands": {
+    "aborted": 1,
+    "held": 1,
+    "saveResponses": [
+      200,
+      200
+    ],
+    "skipResponses": [
+      200
+    ]
+  },
+  "qualification": "Current-source normal personal-preference continuity for a non-admin fixture actor, using actual generated Next actions and original held/aborted transport. Immediate pre-validation Activity race remains assembled-page proof. Current ready/pending captures are not historical before/after. Normal ephemeral sign-in, no cookie/state transfer or persistence.",
+  "actions": {
+    "configureWellnessOnboarding": "40e3215ecf97f4c0a894262a5dcbb7d96e3420a20e",
+    "skipWellnessSetup": "00fb418f486ce32197fc67a40bf9d013e26bfc794b"
+  },
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

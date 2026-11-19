@@ -90,6 +90,8 @@ const translations: Record<string, string> = {
 	"settings.permissions.badge.permissionCount": "{count} Berechtigungen",
 	"settings.permissions.noPermissions": "Keine Berechtigungen",
 	"settings.permissions.actions.edit": "Bearbeiten",
+	"settings.permissions.scope.team": "Teambezogen",
+	"settings.permissions.roles.employee": "Beschäftigte",
 };
 
 const employees = [
@@ -120,7 +122,7 @@ describe("permissions page sections", () => {
 					employees={employees}
 					onEdit={vi.fn()}
 					getSummary={(employeeId) =>
-						employeeId === "employee-2" ? { count: 2, scope: "Team" } : null
+						employeeId === "employee-2" ? { count: 2, scope: "team" } : null
 					}
 				/>
 			</>,
@@ -132,7 +134,53 @@ describe("permissions page sections", () => {
 		expect(screen.getByText("Alle Berechtigungen")).not.toBeNull();
 		expect(screen.getByText("2 Berechtigungen")).not.toBeNull();
 		expect(screen.getByText("Bearbeiten")).not.toBeNull();
+		expect(screen.getByText("Teambezogen")).not.toBeNull();
+		expect(screen.getByText("Beschäftigte")).not.toBeNull();
 		expect(screen.queryByText("Employee Permissions")).toBeNull();
 		expect(screen.queryByText("Admin access required")).toBeNull();
+		expect(screen.queryByText("Team-specific")).toBeNull();
+	});
+
+	it("names the employee on the edit action and offers no edit for admins", () => {
+		const onEdit = vi.fn();
+		render(
+			<PermissionsTableCard
+				loading={false}
+				searchQuery=""
+				onSearchChange={vi.fn()}
+				onRefresh={vi.fn()}
+				employees={employees}
+				onEdit={onEdit}
+				getSummary={() => null}
+			/>,
+		);
+
+		const edit = screen.getByRole("button", { name: "Edit permissions for Grace Hopper" });
+		edit.click();
+		expect(onEdit).toHaveBeenCalledWith(employees[1]);
+		expect(screen.queryByRole("button", { name: "Edit permissions for Ada Lovelace" })).toBeNull();
+	});
+
+	it("shows a load failure with retry instead of an empty list", () => {
+		const onRefresh = vi.fn();
+		render(
+			<PermissionsTableCard
+				loading={false}
+				loadFailed
+				searchQuery=""
+				onSearchChange={vi.fn()}
+				onRefresh={onRefresh}
+				employees={[]}
+				onEdit={vi.fn()}
+				getSummary={() => null}
+			/>,
+		);
+
+		expect(screen.getByRole("alert").textContent).toContain(
+			"Employee permissions could not be loaded.",
+		);
+		expect(screen.queryByText("No employees found")).toBeNull();
+		screen.getByRole("button", { name: "Try again" }).click();
+		expect(onRefresh).toHaveBeenCalledOnce();
 	});
 });

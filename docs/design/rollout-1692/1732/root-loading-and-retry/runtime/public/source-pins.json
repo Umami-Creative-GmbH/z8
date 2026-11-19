@@ -1,0 +1,234 @@
+{
+  "head": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "tree": "d4d9a22387f9a94816a4eec207c1e4b4b8f31574",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+      "raw": "7857a9d62ed925a1c99ea89454207f529bc4565d84e10059014d46b0002da4d7",
+      "lf": "a0afd4f39bdf92af4fa8759058cac979319677c615a6ebe37ac6f2209bdf7f41"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/actions.ts",
+      "raw": "3d053dba30e8373845adfd5306a8e7d36f0629fd09429a33dc9a7dec6f138a91",
+      "lf": "1f80fef82021f1d82a452bcdf3b4c63d0616e7e6569b29c34436a5ff71dc1127"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "raw": "87d20755e790f501c4bf78e103aa6866a87f984959ed6968ba533b636b300e2f",
+      "lf": "5c77a2c9f2729ad7810d258da3b0036a8971762b2a5e5020fee66a4c0758a64e"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "raw": "6d7dbc20a0615ee44bdddd91209ae5978f0e6c1b622aeb0f6c87c592dc7666bd",
+      "lf": "c9a93d7e453d0a65fd733bbd402feb60eb7b0cea55b19a44b6eded122fc04f43"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-heading.tsx",
+      "raw": "323d3c6c7a6326e95fbdbc8130d5823b56ee10610abd7bc8423a725372b453c1",
+      "lf": "4b74ad1d3ed2d13ae103af148d81f799a6dbdfc10a95c43d6bbd371dbcedbb18"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-loading.test.tsx",
+      "raw": "11341cec70dea878b930241a3616fb29eab87b5a3ca0d37ffbc66717be4fba4f",
+      "lf": "69eed381bd288128d8e9d48070824b4168c763bdb7bd88cf820c8e731ee8447c"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/payslip-batches-scope.tsx",
+      "raw": "7c86a17453c9bbd4ba5f062d06e202e46de9912cc1f0320e49078cac2b7dc629",
+      "lf": "5824bfc83b88a064fbb5882342b95208adae635ae41911f28bd063aef9a441b8"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "raw": "cca2112f55a8be84b77e0f092f668fcfa702e1d2006cda2e1b3fc7b7cb239562",
+      "lf": "b955e74a8dd5f9559e2d65091ca6b0a1b4359eb87de283418654ab55f9f7c23d"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "raw": "7e6fe0997cdd79be2ec2427ab99772add4b52fa7cb06f67dc3d7c961b0de7259",
+      "lf": "d327a20ea0830a7a6c395ffea924c13c7f584f7992162bff523d2913e0222c62"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "raw": "f83fe17abc6569039ae56446075da6389b380b221277714f55f2d1c80cd4b4b7",
+      "lf": "f0f78689b3f93846ba0f1f858f921f0d3239b343f3059814ce93d4b4053111af"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.tsx",
+      "raw": "733f8286ecf61463fda27ac3bf1a19eeb0e7aacd051a5b42e508bd76e8f24378",
+      "lf": "b354b4a9155f420d130451c64611de913d3be9ba8c8711ae19a946a273ff9b12"
+    },
+    {
+      "path": "apps/webapp/src/components/providers/organization-context-provider.tsx",
+      "raw": "54bd36073563882365a14b3a0e0c2ddb5339aa7ac0cf57c0af49ec74026a71d8",
+      "lf": "7ba30e7da4f1a05edb4215c3664897bce4b78013d0a9f3f17c8021af0b4c6789"
+    }
+  ],
+  "rawAndCrLfToLfHashes": true,
+  "allStartRestoredAndEndRawPinsEqual": true,
+  "configCount": 36,
+  "configPins": [
+    {
+      "path": ".npmrc",
+      "sha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03"
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "sha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2"
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "sha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446"
+    },
+    {
+      "path": "apps/desktop/tsconfig.node.json",
+      "sha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982"
+    },
+    {
+      "path": "apps/desktop/vitest.config.ts",
+      "sha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291"
+    },
+    {
+      "path": "apps/docs/next.config.mjs",
+      "sha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6"
+    },
+    {
+      "path": "apps/docs/package.json",
+      "sha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f"
+    },
+    {
+      "path": "apps/docs/tsconfig.json",
+      "sha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d"
+    },
+    {
+      "path": "apps/marketing/biome.jsonc",
+      "sha256": "2e9f25762a0f614245768779d41720c5dadfaf34c55b1941fe47a4e4f3d2365e"
+    },
+    {
+      "path": "apps/marketing/next.config.ts",
+      "sha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0"
+    },
+    {
+      "path": "apps/marketing/package.json",
+      "sha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283"
+    },
+    {
+      "path": "apps/marketing/tsconfig.json",
+      "sha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574"
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "sha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a"
+    },
+    {
+      "path": "apps/mobile/tsconfig.json",
+      "sha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1"
+    },
+    {
+      "path": "apps/webapp/biome.jsonc",
+      "sha256": "020adb15c73e5eb1eb430629a806fe997c21f45a1ea317886027016a8c701c24"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "sha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223"
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "sha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e"
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "sha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7"
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "sha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc"
+    },
+    {
+      "path": "docker/targets/db-seed/package.json",
+      "sha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd"
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-lock.yaml",
+      "sha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6"
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-workspace.yaml",
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734"
+    },
+    {
+      "path": "docker/targets/migration/package.json",
+      "sha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138"
+    },
+    {
+      "path": "docker/targets/migration/pnpm-lock.yaml",
+      "sha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1"
+    },
+    {
+      "path": "docker/targets/migration/pnpm-workspace.yaml",
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734"
+    },
+    {
+      "path": "docker/targets/worker/package.json",
+      "sha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e"
+    },
+    {
+      "path": "docker/targets/worker/pnpm-lock.yaml",
+      "sha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041"
+    },
+    {
+      "path": "docker/targets/worker/pnpm-workspace.yaml",
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734"
+    },
+    {
+      "path": "docs/design/rollout-1692/1831/root-authority-and-loading/vitest.config.ts",
+      "sha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1834/root-loading-heading/vitest.config.ts",
+      "sha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    }
+  ],
+  "dependencyParents": [
+    {
+      "path": "node_modules",
+      "physical": true
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true
+    }
+  ],
+  "outerLinks": 158,
+  "lock": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+  "configurationAndDependencySnapshotUnchanged": true
+}

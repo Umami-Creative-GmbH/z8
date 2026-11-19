@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Henüz hiçbir üretim kaydı içe aktarılmadı.",
         "openReview": "İncelemeyi aç",
-        "scanningDescription": "{reviewBatchId} inceleme grubu taranıyor. Kayıtları onaylamadan ve işleme almadan önce gözden geçirin.",
+        "scanningDescriptionWithoutId": "İnceleme taraması çalışıyor. Kayıtlar içe aktarılmadan önce onları inceleyin ve onaylayın.",
         "startedTitle": "İçe aktarma inceleme taraması başlatıldı",
         "starting": "Clockin içe aktarma inceleme taraması başlatılıyor…",
         "startSuccess": "İçe aktarma inceleme taraması başlatıldı. Kayıtlar işleme alınmadan önce inceleme gereklidir."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "{batchId} inceleme grubu taranıyor.",
         "description": "Clockodo kayıtları üretime aktarılmadan önce inceleme gereklidir.",
         "openReview": "İncelemeyi aç",
+        "scanning": "İnceleme taraması çalışıyor. İncelemede kabul edene kadar hiçbir kayıt içe aktarılmaz.",
         "successTitle": "İçe aktarma inceleme taraması başlatıldı"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Kimlik Bilgileri",
         "import": "İnceleme",
         "preview": "Önizleme",
+        "progressLabel": "İçe aktarma adımları",
         "projectMapping": "Proje Eşleme",
         "selection": "Seçim",
         "userMapping": "Kullanıcı Eşleştirme"
       },
       "userMapping": {
         "action": "Eylem",
+        "actionFor": "{name} için eylem",
         "autoMatched": "{count} otomatik eşleşti",
         "clockodoUser": "Clockodo Kullanıcısı",
         "continue": "Devam Et",
@@ -248,14 +250,21 @@
       "linkError": "Bağlantı kodu oluşturulamadı",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Bağlantı kodu kopyalandı",
+        "codeExpired": "Süresi doldu — yeni bir kod oluşturun",
+        "copyCode": "Bağlantı kodunu kopyala",
+        "copyFailed": "Bağlantı kodu kopyalanamadı. Kodu seçin ve manuel olarak kopyalayın.",
         "description": "Kişisel bildirimleri almak için Telegram hesabınızı bağlayın.",
+        "expiresIn": "{minutes, plural, other {# dakika içinde sona erer} }",
         "generateCode": "Bağlantı Kodu Oluştur",
         "instructions": "Bu komutu Telegram'daki bota gönderin:",
         "linkedStatus": "Telegram hesabınız bağlandı",
+        "regenerateCode": "Yeni kod oluştur",
         "title": "Telegram Hesabı"
       },
       "notConfigured": "Telegram bu kuruluş için yapılandırılmamış. Yöneticinizle iletişime geçin.",
       "saved": "Telegram ayarları kaydedildi",
+      "saveError": "Telegram ayarları kaydedilemedi. Tekrar deneyin.",
       "status": {
         "active": "Aktif"
       },

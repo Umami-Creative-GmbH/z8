@@ -1,0 +1,570 @@
+{
+  "status": "Merged locally; root correction required before readiness",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "d234402863343a306a87d6faed7d195a76a6eeec",
+  "incoming": "2e2e5a2aba220c7868e9f4f15c81b6f4c8d8f427",
+  "merge": "877b12279ec992cf282e0ba775ac4849579aef86",
+  "parents": [
+    "d234402863343a306a87d6faed7d195a76a6eeec",
+    "2e2e5a2aba220c7868e9f4f15c81b6f4c8d8f427"
+  ],
+  "tree": "2697765e1d92a8b41e0706f8526ed36cd1320c78",
+  "independentTreeMatches": true,
+  "clean": true,
+  "tests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 15,
+        "cases": 53,
+        "passed": 53,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 29,
+        "cases": 191,
+        "passed": 191,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 11,
+        "overlapCases": 46
+      },
+      {
+        "name": "admission",
+        "files": 7,
+        "cases": 53,
+        "passed": 53,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      }
+    ],
+    "uniqueFiles": 40,
+    "uniqueCases": 251,
+    "method": "File path plus fullName multisets; parameterized test multiplicity retained. Repeated tests do not add coverage.",
+    "ignoredReproduction": {
+      "excludedFromPassingCoverage": true,
+      "files": 1,
+      "total": 3,
+      "passed": 1,
+      "failed": 2,
+      "cases": [
+        {
+          "fullName": "does not follow old SSO after keyed organization unmount",
+          "status": "failed",
+          "failureMessages": [
+            "AssertionError: expected 'https://idp.test/old-A' to be 'https://z8.test/en/mfa?organizationId…' // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1826-audit/late-continuation.test.tsx:20:24\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        },
+        {
+          "fullName": "does not follow successful TOTP after ordinary keyed organization unmount",
+          "status": "passed",
+          "failureMessages": []
+        },
+        {
+          "fullName": "does not revive old successful TOTP on cached A to B to A arrival",
+          "status": "failed",
+          "failureMessages": [
+            "AssertionError: expected '/init?organizationId=A' to be 'https://z8.test/en/mfa?organizationId…' // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1826-audit/late-continuation.test.tsx:34:82\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+          ]
+        }
+      ]
+    }
+  },
+  "types": {
+    "passed": true,
+    "scope": "next typegen; full application/workflow-contract/smoke; fresh on merge"
+  },
+  "biome": {
+    "changedFiles": 7,
+    "rawDefault": {
+      "passed": false,
+      "formatOnlyFiles": 7
+    },
+    "crlfAwareDefault": {
+      "passed": true
+    },
+    "explicitWebapp": {
+      "passed": false,
+      "formatOnlyFiles": 6
+    },
+    "explicitLintImport": {
+      "passed": true
+    },
+    "noFixesApplied": true
+  },
+  "doctor": {
+    "files": 7,
+    "errors": 0,
+    "warnings": 2,
+    "review": [
+      "False positive reports TanStack onSubmit although native submit explicitly prevents default/stops propagation; assembled Enter and native re-entry pass.",
+      "Existing multi-method owner exceeds300lines after native forms/disclosures; maintainability advisory retained."
+    ],
+    "score": null
+  },
+  "preservation": {
+    "priorVerifiedAncestors": 31,
+    "priorRolloutPathsUnchanged": 1401,
+    "unaffectedPriorPathsUnchanged": 11621,
+    "all36IncomingChangedPathsMatch": true,
+    "noDeletion": true,
+    "sourcePaths": [
+      "apps/webapp/src/app/[locale]/mfa/page.tsx",
+      "apps/webapp/src/components/organization-mfa/requirements.test.tsx",
+      "apps/webapp/src/components/organization-mfa/requirements.tsx",
+      "apps/webapp/src/components/organization-mfa/sign-out.test.tsx",
+      "apps/webapp/src/components/organization-mfa/sign-out.tsx",
+      "apps/webapp/src/components/organization-mfa/verification.test.tsx",
+      "apps/webapp/src/components/organization-mfa/verification.tsx"
+    ],
+    "allOtherSourcesUnchanged": true,
+    "staticInventory": {
+      "sourcePageTemplates": 172,
+      "persistentPages": 153,
+      "aliases": 19,
+      "aliasesUnchanged": 19
+    },
+    "archives": "Archive/static source inspection only; no fresh runtime or alias-behavior pass.",
+    "criticalUnchangedSourcesMatchBaseline1ab2a066": true
+  },
+  "artifacts": {
+    "jsons": 11,
+    "scripts": 3,
+    "pngs": 14,
+    "links": 25,
+    "sourcePinChecks": 59,
+    "pairs": [
+      {
+        "before": "before-desktop-light.png",
+        "after": "after-desktop-light.png"
+      },
+      {
+        "before": "before-phone-light.png",
+        "after": "after-phone-light.png"
+      },
+      {
+        "before": "before-wide-dark-large.png",
+        "after": "after-wide-dark-large.png"
+      },
+      {
+        "before": "before-phone-dark-large.png",
+        "after": "after-phone-dark-large.png"
+      }
+    ],
+    "eofWithoutLF": [
+      "docs/design/rollout-1692/1826/actions-runtime.json",
+      "docs/design/rollout-1692/1826/after-runtime.json",
+      "docs/design/rollout-1692/1826/before-runtime.json",
+      "docs/design/rollout-1692/1826/doctor.json",
+      "docs/design/rollout-1692/1826/evidence-verification.json",
+      "docs/design/rollout-1692/1826/next-runtime.json",
+      "docs/design/rollout-1692/1826/quality.json",
+      "docs/design/rollout-1692/1826/scope-runtime.json"
+    ]
+  },
+  "sourceReview": {
+    "preserved": [
+      "request-specific getRequestSession server guard and own approved memberships/policies",
+      "user-scoped credential and two-factor reads; no generated schema edits",
+      "selected organization, all requirement links, deadline/grace/enforced labels, sanitized callback and downstream /init admission",
+      "TOTP trustDevice:false; passkey sign-in; configured social providers; password-only first enrollment and credential-only backup recovery",
+      "unchanged TwoFactorSetup/PasskeyManagement and their first verification, five-minute replacement freshness, recovery revocation, last-factor/no-new-grace and no administrator/support bypass",
+      "TanStack native forms, associated description/errors, first-error focus, shared duplicate guard, refused input retention, no verification claim from password alone",
+      "sign-out pending/failure/retry, wrapping organization/account navigation, standalone shell and root preference owners"
+    ],
+    "qualifications": [
+      "Enrollment alone is not proof; first successful server-verified TOTP at enrollment can establish proof. All proof/recovery owners remain byte-identical.",
+      "Two continuation bugs are reproduced at assembled React seams; the passing original tests do not cover them.",
+      "Social/SSO/device/WebAuthn external ceremonies are not exercised."
+    ]
+  },
+  "blockers": [
+    {
+      "severity": "P1",
+      "file": "apps/webapp/src/components/organization-mfa/verification.tsx",
+      "line": 311,
+      "summary": "Late organization SSO redirects after keyed scope unmount",
+      "reproduction": "Start held SSO in A; rerender keyed B; resolve A with successful URL. Location becomes old A IdP URL. Expected B remains current.",
+      "cause": "Direct window.location.href assignment ignores mounted lifetime and request identity."
+    },
+    {
+      "severity": "P1",
+      "file": "apps/webapp/src/components/organization-mfa/verification.tsx",
+      "line": 127,
+      "summary": "Cached arrival revives old successful verification",
+      "reproduction": "Start held TOTP in Activity A; hide A for B; show cached A; resolve old successful TOTP. Location becomes /init?organizationId=A without a new arrival action.",
+      "cause": "The active ref returns to true on Activity effect reconnection; an older continuation has no captured generation. Ordinary keyed-unmount TOTP control passes."
+    }
+  ],
+  "findings": [
+    "All four matched before/after pairs and six operational images visually reviewed after full decoding. No QR/manual secret/real OTP/backup-code/cookie value is visible. The 000000 value is an intentional refused synthetic placeholder, not a live OTP.",
+    "The before capture set uses HEAD1ab2a066/localAIebfb7d8e; after uses the same source HEAD with dirty application files and localAI006aff632. Final four source hashes match the merge with LF/CRLF tolerance; this does not make runtime fresh.",
+    "Six operational verification hashes reconstruct exactly from final source by removing its TFormDescription import and hidden description. Preserve raw earlier hashes; those images are before the accessibility correction.",
+    "The operational invalid-authenticator screenshot says Verify your password before the authenticator code. It proves the real password prerequisite refusal; no otherwise-admitted cryptographic invalid-TOTP rejection is proved by that screenshot.",
+    "Live scope evidence uses refused invalid verification, not successful late proof. Ignored successful-response reproductions reveal the two continuation blockers.",
+    "Native artifact contains usable component-tree lines, distinct from DOM and Next probes, but has no independent source hash/HEAD; provenance is report-attested. Accessibility likewise has no independent source pin.",
+    "Axe4.12.1 40passes/0violations/0incomplete applies to the primary settled view with closed disclosures. Expanded provider/enrollment/recovery branches are outside the scan.",
+    "Next591da6b and PG2/15 are recorded after feature local integration merge, inherited only. Four application source hashes agree with final captures; auth/session/MFA/shared form/init sources match baseline1ab2a066.",
+    "Actual root default16px/savedLarge18px; system font stack recorded. Desktop inputs14px/wideLarge15.75px; phone16px/phoneLarge18px. Heading24→30 desktop and27→33.75 wideLarge; phone24/27 unchanged. Full-page PNG heights differ from CSS viewport and are recorded exactly.",
+    "Floating developer/Pets controls overlap part of the code input region on Large phone captures. This is retained tooling evidence, not proof of physical-device or exact pointer accessibility in that region.",
+    "Eight incoming JSON files lack LF and are preserved. git diff --check passes; no tracked normalization or raw-evidence edits by merger."
+  ],
+  "limitations": [
+    "No fresh browser, Next/native React, PostgreSQL, service/provider request, full production build or deployment by merger.",
+    "No successful late-proof runtime is passed; parent must correct and verify the lifetime findings.",
+    "External providers/SSO/WebAuthn ceremonies, every recovery permutation/role/provider combination, live five-minute wait remain outside runtime evidence.",
+    "Remote Tolgee/catalog sync, exhaustive long translations/all-locales, physical devices/store wrappers/safe areas, true browser zoom, global transitions and broader session hydration remain unpassed.",
+    "Normal/default and explicit webapp formatting qualifications remain as recorded."
+  ],
+  "commands": {
+    "exact": [
+      {
+        "name": "exact",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/organization-mfa",
+          "src/components/settings/auth/use-two-factor-setup-controller.test.ts",
+          "src/components/settings/auth/two-factor-enrollment-response.test.ts",
+          "src/lib/organization-mfa",
+          "src/lib/auth/callback-url.test.ts",
+          "src/tolgee/extracted-key-defaults.test.ts",
+          "src/components/ui/page-header.test.tsx",
+          "src/components/ui/tanstack-form.test.tsx",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1826-audit/exact.json"
+        ],
+        "startedAt": "2026-11-15T09:53:36.951Z",
+        "finishedAt": "2026-11-15T09:53:43.007Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1826-audit/exact.log"
+      }
+    ],
+    "compatibility": [
+      {
+        "name": "compatibility",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/app/[locale]/init/page-client.test.tsx",
+          "src/lib/auth/request-session.test.ts",
+          "src/lib/auth/use-auth-page-session.test.tsx",
+          "src/lib/auth/load-auth-page-client.test.ts",
+          "src/lib/auth/organization-session-revocation.test.ts",
+          "src/lib/auth/organization-sso-approval-update-guard.test.ts",
+          "src/lib/auth/auth-mutation-coordination.test.ts",
+          "src/components/settings/auth/session-management.test.tsx",
+          "src/components/settings/auth/social-accounts.test.tsx",
+          "src/components/settings/auth/password-change-form.test.tsx",
+          "src/components/settings/auth/use-two-factor-setup-controller.test.ts",
+          "src/components/settings/auth/two-factor-enrollment-response.test.ts",
+          "src/components/ui/tanstack-form.test.tsx",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/ui/alert-dialog.test.tsx",
+          "src/components/ui/loading-region.test.tsx",
+          "src/components/ui/page-header.test.tsx",
+          "src/lib/auth/callback-url.test.ts",
+          "src/lib/organization-mfa",
+          "src/tolgee/route-boundary.test.tsx",
+          "src/tolgee/route-boundary.ssr.test.tsx",
+          "src/tolgee/route-boundary.hydration.test.tsx",
+          "src/components/font-size-preference.test.tsx",
+          "src/components/theme-provider.test.tsx",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1826-audit/compatibility.json"
+        ],
+        "startedAt": "2026-11-15T09:53:48.738Z",
+        "finishedAt": "2026-11-15T09:54:05.864Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1826-audit/compatibility.log"
+      }
+    ],
+    "admission": [
+      {
+        "name": "admission",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/app/api/organizations/switch/route.test.ts",
+          "src/app/api/organizations/sso/route.test.ts",
+          "src/app/api/organizations/nonactive-sso-access.test.ts",
+          "src/app/api/session/organization-status/route.test.ts",
+          "src/lib/auth-helpers.test.ts",
+          "src/lib/enterprise-identity/session-sso.test.ts",
+          "src/lib/enterprise-identity/session-sso-store.test.ts",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1826-audit/admission.json"
+        ],
+        "startedAt": "2026-11-15T10:00:44.669Z",
+        "finishedAt": "2026-11-15T10:00:46.833Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1826-audit/admission.log"
+      }
+    ],
+    "types": [
+      {
+        "name": "types",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "typecheck"
+        ],
+        "startedAt": "2026-11-15T09:55:26.291Z",
+        "finishedAt": "2026-11-15T09:56:04.336Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1826-audit/types.log"
+      }
+    ],
+    "biome": [
+      {
+        "name": "biome-default",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--error-on-warnings",
+          "src/app/[locale]/mfa/page.tsx",
+          "src/components/organization-mfa/requirements.test.tsx",
+          "src/components/organization-mfa/requirements.tsx",
+          "src/components/organization-mfa/sign-out.test.tsx",
+          "src/components/organization-mfa/sign-out.tsx",
+          "src/components/organization-mfa/verification.test.tsx",
+          "src/components/organization-mfa/verification.tsx"
+        ],
+        "startedAt": "2026-11-15T09:56:15.549Z",
+        "finishedAt": "2026-11-15T09:56:15.730Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1826-audit/biome-default.log"
+      },
+      {
+        "name": "biome-current-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "--error-on-warnings",
+          "src/app/[locale]/mfa/page.tsx",
+          "src/components/organization-mfa/requirements.test.tsx",
+          "src/components/organization-mfa/requirements.tsx",
+          "src/components/organization-mfa/sign-out.test.tsx",
+          "src/components/organization-mfa/sign-out.tsx",
+          "src/components/organization-mfa/verification.test.tsx",
+          "src/components/organization-mfa/verification.tsx"
+        ],
+        "startedAt": "2026-11-15T09:56:15.731Z",
+        "finishedAt": "2026-11-15T09:56:16.020Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1826-audit/biome-current-crlf.log"
+      },
+      {
+        "name": "biome-explicit-webapp",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "--error-on-warnings",
+          "src/app/[locale]/mfa/page.tsx",
+          "src/components/organization-mfa/requirements.test.tsx",
+          "src/components/organization-mfa/requirements.tsx",
+          "src/components/organization-mfa/sign-out.test.tsx",
+          "src/components/organization-mfa/sign-out.tsx",
+          "src/components/organization-mfa/verification.test.tsx",
+          "src/components/organization-mfa/verification.tsx"
+        ],
+        "startedAt": "2026-11-15T09:56:16.020Z",
+        "finishedAt": "2026-11-15T09:56:16.622Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1826-audit/biome-explicit-webapp.log"
+      },
+      {
+        "name": "biome-explicit-lint-import",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--formatter-enabled=false",
+          "--error-on-warnings",
+          "src/app/[locale]/mfa/page.tsx",
+          "src/components/organization-mfa/requirements.test.tsx",
+          "src/components/organization-mfa/requirements.tsx",
+          "src/components/organization-mfa/sign-out.test.tsx",
+          "src/components/organization-mfa/sign-out.tsx",
+          "src/components/organization-mfa/verification.test.tsx",
+          "src/components/organization-mfa/verification.tsx"
+        ],
+        "startedAt": "2026-11-15T09:56:16.623Z",
+        "finishedAt": "2026-11-15T09:56:16.903Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1826-audit/biome-explicit-lint-import.log"
+      }
+    ],
+    "doctor": [
+      {
+        "name": "doctor",
+        "command": [
+          "pnpm",
+          "exec",
+          "react-doctor",
+          "--project",
+          "webapp",
+          "--scope",
+          "changed",
+          "--base",
+          "d234402863343a306a87d6faed7d195a76a6eeec",
+          "--verbose",
+          "--no-score",
+          "--no-supply-chain",
+          "--no-telemetry",
+          "--json",
+          "--json-out",
+          ".tmp/merge1826-audit/doctor.json"
+        ],
+        "startedAt": "2026-11-15T09:56:27.239Z",
+        "finishedAt": "2026-11-15T09:56:47.033Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1826-audit/doctor.log"
+      }
+    ],
+    "merge": [
+      {
+        "command": [
+          "git",
+          "merge-tree",
+          "--write-tree",
+          "d234402863343a306a87d6faed7d195a76a6eeec",
+          "2e2e5a2aba220c7868e9f4f15c81b6f4c8d8f427"
+        ],
+        "exitCode": 0,
+        "tree": "2697765e1d92a8b41e0706f8526ed36cd1320c78"
+      },
+      {
+        "command": [
+          "git",
+          "merge",
+          "--no-ff",
+          "2e2e5a2aba220c7868e9f4f15c81b6f4c8d8f427",
+          "-m",
+          "Merge organization MFA refresh (#1826)"
+        ],
+        "exitCode": 0,
+        "commit": "877b12279ec992cf282e0ba775ac4849579aef86",
+        "parents": [
+          "d234402863343a306a87d6faed7d195a76a6eeec",
+          "2e2e5a2aba220c7868e9f4f15c81b6f4c8d8f427"
+        ]
+      }
+    ],
+    "extra": [
+      {
+        "command": [
+          "pnpm",
+          "node",
+          ".tmp/merge1826-audit/audit.mjs"
+        ],
+        "exitCode": 0,
+        "scope": "source/JSON/script/link/pin/PNG/static inspection only"
+      },
+      {
+        "command": [
+          "pnpm",
+          "node",
+          ".tmp/merge1826-audit/test-summary.mjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "pnpm",
+          "node",
+          ".tmp/merge1826-audit/check-archives.mjs"
+        ],
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--config",
+          "../../.tmp/merge1826-audit/repro.config.ts",
+          "--project",
+          "unit",
+          "--maxWorkers=1",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1826-audit/late-continuation.json"
+        ],
+        "exitCode": 1,
+        "scope": "Ignored minimal reproduction;2red/1green; excluded from passing coverage"
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check",
+          "d234402863343a306a87d6faed7d195a76a6eeec",
+          "HEAD"
+        ],
+        "exitCode": 0
+      }
+    ]
+  },
+  "harnessNotes": [
+    "Initial non-escalated merge-tree could not write shared Git objects; authorized escalation succeeded.",
+    "Initial sandboxed pnpm engine lock access failed; authorized existing-install escalation succeeded.",
+    "Ignored reproduction config initially had an unresolved module import; corrected dependency aliases before3tests ran.",
+    "Ignored audit initially rejected ledger BOM and an expected added-file historical absence; corrected validator, all checks then passed."
+  ],
+  "ownership": {
+    "trackedSourceOrEvidenceEditsByMerger": 0,
+    "rootRetains": "Source corrections, permanent regression, reports/ledger/README; no push/PR/tracker/devmerge/deployment by merger.",
+    "packageProcessesRemaining": 0,
+    "release": "RELEASE exclusive root checkout mutation and package-process ownership to root."
+  }
+}

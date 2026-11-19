@@ -176,11 +176,12 @@ function addMinutesByLocalDay(
 	}
 }
 
+/** A duration in the app's one style, "8h 00m", as on time tracking and the dashboard. */
 export function formatTimeHours(minutes: number): string {
 	const safeMinutes = Math.max(0, Math.round(minutes));
 	const hours = Math.floor(safeMinutes / 60);
 	const mins = safeMinutes % 60;
-	return `${hours}:${String(mins).padStart(2, "0")}h`;
+	return `${hours}h ${String(mins).padStart(2, "0")}m`;
 }
 
 export function formatSignedMinutes(minutes: number): string {

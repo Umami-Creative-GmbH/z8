@@ -12,16 +12,7 @@ import {
 } from "@tabler/icons-react";
 import type { useTranslate } from "@tolgee/react";
 import { DataTableSkeleton } from "@/components/data-table-server";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -234,6 +225,7 @@ export function DeleteAbsenceCategoryDialog({
 	category,
 	locale,
 	isPending,
+	error,
 	onClose,
 	onConfirm,
 	t,
@@ -241,6 +233,7 @@ export function DeleteAbsenceCategoryDialog({
 	category: AbsenceCategoryForSettings | null;
 	locale: string;
 	isPending: boolean;
+	error: string | null;
 	onClose: () => void;
 	onConfirm: (categoryId: string) => void;
 	t: Translate;
@@ -248,39 +241,23 @@ export function DeleteAbsenceCategoryDialog({
 	const categoryName = category ? getAbsenceCategoryDisplayName(category, locale, t) : undefined;
 
 	return (
-		<AlertDialog open={!!category} onOpenChange={(open) => !open && onClose()}>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("settings.absenceCategories.deleteTitle", "Delete Absence Category")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t(
-							"settings.absenceCategories.deleteDescription",
-							'Are you sure you want to delete "{name}"? Categories used by existing absences cannot be deleted and should be deactivated instead.',
-							{ name: categoryName },
-						)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel disabled={isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={() => {
-							if (category) {
-								onConfirm(category.id);
-							}
-						}}
-						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						disabled={isPending}
-					>
-						{isPending ? (
-							<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-						) : null}
-						{t("common.delete", "Delete")}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+		<DeleteConfirmDialog
+			open={!!category}
+			onOpenChange={(open) => {
+				if (!open) onClose();
+			}}
+			title={t("settings.absenceCategories.deleteTitle", "Delete Absence Category")}
+			description={t(
+				"settings.absenceCategories.deleteDescription",
+				'Are you sure you want to delete "{name}"? Categories used by existing absences cannot be deleted and should be deactivated instead.',
+				{ name: categoryName },
+			)}
+			isDeleting={isPending}
+			error={error}
+			onConfirm={() => {
+				if (category && !isPending) onConfirm(category.id);
+			}}
+		/>
 	);
 }
 

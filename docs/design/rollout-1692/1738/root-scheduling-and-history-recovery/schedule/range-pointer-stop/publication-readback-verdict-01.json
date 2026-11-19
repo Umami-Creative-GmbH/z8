@@ -1,0 +1,40 @@
+{
+  "candidate": "7e5cb41a2c3557399e2f3b0093890b822c8877f4",
+  "verdict": "SCOPED_PERSISTED_PUBLICATION_PASS",
+  "selectedPublished": [
+    {
+      "note": "Independent open overnight draft",
+      "publishedAt": "2026-11-17T02:46:37.610Z",
+      "publishedByOwnAdmin": true
+    },
+    {
+      "note": "Independent assigned publish draft",
+      "publishedAt": "2026-11-17T02:46:37.610Z",
+      "publishedByOwnAdmin": true
+    }
+  ],
+  "selectedCount": 2,
+  "alreadyPublishedUnchanged": 2,
+  "beforeRangeDraftUnchanged": true,
+  "endExclusiveDraftUnchanged": true,
+  "foreignOrganizationAllSixRowsUnchanged": true,
+  "recordedWorkCountsAndDigestsUnchanged": true,
+  "recordedWorkCounts": {
+    "small": {
+      "time_entries": 4176,
+      "work_periods": 2088
+    },
+    "large": {
+      "time_entries": 104400,
+      "work_periods": 52200
+    }
+  },
+  "scope": "canonical verifySuiteDatabase/integrationAdminPool; own disposable fixture; no auth/member/grant mutation",
+  "uiRangeBlocker": {
+    "displayedWeek": "2026-11-16 through2026-11-22",
+    "beforeDisplayedPublishCount": 4,
+    "actualPublished": 2,
+    "remainingDisplayedPublishCount": 2,
+    "outOfRangeDraftsDisplayed": true
+  }
+}

@@ -4,11 +4,21 @@ import { IconAlertTriangle, IconChevronRight } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { DataTable, DataTableToolbar } from "@/components/data-table-server";
+import {
+	DataTable,
+	DataTablePagination,
+	DataTableToolbar,
+} from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { ProjectSummary } from "@/lib/reports/project-types";
 import { cn } from "@/lib/utils";
@@ -23,7 +33,8 @@ interface ProjectPortfolioTableProps {
 const STATUS_COLORS: Record<string, string> = {
 	planned: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
 	active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-	paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+	paused:
+		"bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
 	completed: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
 	archived: "bg-gray-100 text-gray-500 dark:bg-gray-900 dark:text-gray-500",
 };
@@ -36,11 +47,10 @@ function getBudgetProgressColor(percent: number | null) {
 	return "bg-green-500";
 }
 
-export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
+function usePortfolioColumns({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
 	const { t } = useTranslate();
 	const format = useBillableFigureFormat();
 	const hoursFormat = useProjectHoursFormat();
-	const [search, setSearch] = useState("");
 
 	const formatDeadlineStatus = (daysUntilDeadline: number | null) => {
 		if (daysUntilDeadline === null) return null;
@@ -89,19 +99,6 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 		};
 		return statusLabels[status] || status;
 	};
-
-	// Filter projects by search
-	const filteredProjects = (() => {
-		if (!search) return projects;
-		const searchLower = search.toLowerCase();
-		return projects.filter(
-			(project) =>
-				project.name.toLowerCase().includes(searchLower) ||
-				project.description?.toLowerCase().includes(searchLower) ||
-				project.customer?.name.toLowerCase().includes(searchLower) ||
-				project.status.toLowerCase().includes(searchLower),
-		);
-	})();
 
 	// Billable Time columns, only for viewers who get the figures (#902).
 	const showBillable = projects.some((project) => project.billable);
@@ -202,7 +199,10 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			accessorKey: "status",
 			header: t("reports.projects.table.status", "Status"),
 			cell: ({ row }) => (
-				<Badge variant="secondary" className={cn(STATUS_COLORS[row.original.status])}>
+				<Badge
+					variant="secondary"
+					className={cn(STATUS_COLORS[row.original.status])}
+				>
 					{getStatusLabel(row.original.status)}
 				</Badge>
 			),
@@ -211,7 +211,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			accessorKey: "totalHours",
 			header: () => <div className="text-right">{t("reports.projects.table.hours", "Hours")}</div>,
 			cell: ({ row }) => (
-				<div className="text-right tabular-nums">{hoursFormat.hours(row.original.totalHours)}</div>
+				<div className="text-right tabular-nums">
+					{hoursFormat.hours(row.original.totalHours)}
+				</div>
 			),
 		},
 		...billableColumns,
@@ -235,7 +237,10 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 						</div>
 						<Progress
 							value={Math.min(project.percentBudgetUsed ?? 0, 100)}
-							className={cn("h-2", getBudgetProgressColor(project.percentBudgetUsed))}
+							className={cn(
+								"h-2",
+								getBudgetProgressColor(project.percentBudgetUsed),
+							)}
 						/>
 						{project.forecastSeverity !== "none" && (
 							<Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">
@@ -256,7 +261,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 				}
 				return (
 					<div className="flex flex-col gap-1">
-						<span className="text-sm">{project.deadline.toLocaleDateString()}</span>
+						<span className="text-sm">
+							{project.deadline.toLocaleDateString()}
+						</span>
 						{formatDeadlineStatus(project.daysUntilDeadline)}
 					</div>
 				);
@@ -266,7 +273,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			accessorKey: "uniqueEmployees",
 			header: () => <div className="text-right">{t("reports.projects.table.team", "Team")}</div>,
 			cell: ({ row }) => (
-				<div className="text-right tabular-nums">{row.original.uniqueEmployees}</div>
+				<div className="text-right tabular-nums">
+					{row.original.uniqueEmployees}
+				</div>
 			),
 		},
 		{
@@ -276,8 +285,11 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					variant="ghost"
 					size="sm"
 					onClick={() => onProjectSelect(row.original.id)}
-					className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-					aria-label={t("reports.projects.table.viewProject", "View project details")}
+					className="sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity motion-reduce:transition-none"
+					aria-label={t(
+						"reports.projects.table.viewProject",
+						"View project details",
+					)}
 				>
 					<IconChevronRight className="size-4" />
 				</Button>
@@ -285,10 +297,32 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 		},
 	];
 
+	return columns;
+}
+
+export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
+	const { t } = useTranslate();
+	const [search, setSearch] = useState("");
+	const columns = usePortfolioColumns({ projects, onProjectSelect });
+	// Filter projects by search
+	const filteredProjects = (() => {
+		if (!search) return projects;
+		const searchLower = search.toLowerCase();
+		return projects.filter(
+			(project) =>
+				project.name.toLowerCase().includes(searchLower) ||
+				project.description?.toLowerCase().includes(searchLower) ||
+				project.customer?.name.toLowerCase().includes(searchLower) ||
+				project.status.toLowerCase().includes(searchLower),
+		);
+	})();
+
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("reports.projects.table.portfolioTitle", "Project Portfolio")}</CardTitle>
+				<CardTitle>
+					{t("reports.projects.table.portfolioTitle", "Project Portfolio")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"reports.projects.table.portfolioDescription",
@@ -306,7 +340,11 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					)}
 				/>
 
-				<DataTable mobileLayout="stacked"
+				<DataTable
+					mobileLayout="scroll"
+					pinLastColumn
+					rowClassName="group"
+					getRowId={(row) => row.id}
 					columns={columns}
 					data={filteredProjects}
 					emptyMessage={
@@ -317,7 +355,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 								)
 							: t("reports.projects.table.noProjectsFound", "No projects found")
 					}
-				/>
+				>
+					{(table) => <DataTablePagination table={table} />}
+				</DataTable>
 			</CardContent>
 		</Card>
 	);

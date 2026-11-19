@@ -85,13 +85,47 @@ it("keeps commit available for accepted rows while showing unresolved source err
 	const button = screen.getByRole("button", { name: "Commit accepted rows" });
 	expect(button.hasAttribute("disabled")).toBe(false);
 	expect(screen.getByText("Unknown personnel number")).toBeTruthy();
-	await userEvent.setup().click(button);
+	const user = userEvent.setup();
+	await user.click(button);
+	// Committing asks first: the count, what it creates, and that it cannot be undone.
+	const dialog = await screen.findByRole("alertdialog");
+	expect(dialog.textContent).toContain("accepted row");
+	expect(dialog.textContent).toContain("An import cannot be undone");
+	expect(remote.commit).not.toHaveBeenCalled();
+	await user.click(screen.getByRole("button", { name: "Import rows" }));
 	await waitFor(() =>
 		expect(remote.commit).toHaveBeenCalledWith({
 			batchId: "batch",
 		}),
 	);
 	expect(remote.refresh).toHaveBeenCalled();
+	await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+});
+
+it("keeps the commit confirmation open with the failure inline", async () => {
+	remote.commit.mockResolvedValue({ success: false, error: "The commit could not be queued" });
+	render(
+		<CsvWorkReview
+			batchId="batch"
+			view={{
+				batch: { status: "needs_review", selectedScope: { fileName: "work.csv" }, errorMessage: null },
+				summary: { total: 1, accepted: 1, imported: 0, skipped: 0, rejected: 0, unresolved: 1 },
+				people: [],
+				vehicles: [],
+				rows: [],
+			}}
+		/>,
+	);
+	const user = userEvent.setup();
+	await user.click(screen.getByRole("button", { name: "Commit accepted rows" }));
+	await user.click(await screen.findByRole("button", { name: "Import rows" }));
+
+	const dialog = await screen.findByRole("alertdialog");
+	await waitFor(() => expect(dialog.querySelector("[role=alert]")?.textContent).toBeTruthy());
+	expect(remote.commit).toHaveBeenCalledOnce();
+	expect(remote.refresh).not.toHaveBeenCalled();
+	await user.click(screen.getByRole("button", { name: "Cancel" }));
+	expect(remote.commit).toHaveBeenCalledOnce();
 });
 
 it("lets an admin map an unknown personnel number and reject an unresolved row", async () => {

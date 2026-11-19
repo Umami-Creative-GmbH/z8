@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { CustomFieldsSettings } from "@/components/settings/custom-fields/custom-fields-settings";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
@@ -24,19 +25,15 @@ async function CustomFieldsSettingsPageContent() {
 	const fields = await listCustomFieldDefinitions(db, organizationId, entities);
 
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.customFields.title", "Custom fields")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.customFields.description",
-							"Your own fields on employees, projects and customers",
-						)}
-					</p>
-				</div>
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
+				<PageHeader
+					title={t("settings.customFields.title", "Custom fields")}
+					description={t(
+						"settings.customFields.description",
+						"Your own fields on employees, projects and customers",
+					)}
+				/>
 				<CustomFieldsSettings entities={entities} initialFields={fields} />
 			</div>
 		</div>
@@ -45,10 +42,10 @@ async function CustomFieldsSettingsPageContent() {
 
 function CustomFieldsSettingsPageLoading() {
 	return (
-		<div className="p-4 sm:p-6">
-			<div className="mx-auto min-w-0 max-w-3xl space-y-6">
+		<div className="page-frame">
+			<div className="page-measure min-w-0 space-y-6">
 				<div className="space-y-2">
-					<Skeleton className="h-8 w-56" />
+					<Skeleton className="h-9 w-56 max-w-full" />
 					<Skeleton className="h-5 w-full max-w-xl" />
 				</div>
 				<Skeleton className="h-9 w-72" />

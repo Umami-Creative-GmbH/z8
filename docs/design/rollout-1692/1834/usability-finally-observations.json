@@ -1,0 +1,13 @@
+{
+  "observations": [],
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+      "sha256": "b4e728a2356abb3e9c55b0ab30ab99796fcf50902dfc571b593ba2533fc6c56d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+      "sha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+    }
+  ]
+}

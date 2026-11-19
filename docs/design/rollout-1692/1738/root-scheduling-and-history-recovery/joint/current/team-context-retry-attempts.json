@@ -1,0 +1,8 @@
+{
+  "initialSelectorFailure": "Expected alert instead of scope status",
+  "controllerFailure": "Scalar variables rebound between REPL cells; request interceptor retained abort mode. Repeated activations therefore continued fault injection. Not product failure.",
+  "uncountedAttempts": true,
+  "correctedController": "one object state, complete hold/release/finally in one cell",
+  "acceptedReceipt": "team-context-runtime-retry.json",
+  "privacy": "One failed diagnostic expanded body textContent including script text in tool output. Excluded from all public payloads; no raw body/log/credential/auth state is published."
+}

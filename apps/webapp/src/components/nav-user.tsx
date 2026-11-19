@@ -55,9 +55,12 @@ export function NavUser({
 		setDropdownOpen(false);
 		setIsLoggingOut(true);
 		const showLogoutError = () => {
-			toast.error(t("user.log-out-failed", "Could not log out. Please try again."), {
-				id: "logout-failed",
-			});
+			toast.error(
+				t("user.log-out-failed", "Could not log out. Please try again."),
+				{
+					id: "logout-failed",
+				},
+			);
 		};
 		try {
 			await signOut({
@@ -88,7 +91,11 @@ export function NavUser({
 		return (
 			<SidebarMenu>
 				<SidebarMenuItem>
-					<SidebarMenuButton size="lg" disabled>
+					<SidebarMenuButton
+						size="lg"
+						disabled
+						aria-label={t("user.loadingAccount", "Loading account")}
+					>
 						<Skeleton className="size-8 rounded-lg" />
 						<div className="grid flex-1 gap-1.5 text-left text-sm leading-tight">
 							<Skeleton className="h-4 w-24" />
@@ -107,6 +114,8 @@ export function NavUser({
 					<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
 						<DropdownMenuTrigger asChild>
 							<SidebarMenuButton
+								aria-label={`${t("user.account", "Account")}: ${user.name}`}
+								tooltip={user.name}
 								className="data-[popup-open]:bg-sidebar-accent data-[popup-open]:text-sidebar-accent-foreground"
 								size="lg"
 							>
@@ -120,7 +129,9 @@ export function NavUser({
 								/>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-medium">{user.name}</span>
-									<span className="truncate text-muted-foreground text-xs">{user.email}</span>
+									<span className="truncate text-muted-foreground text-xs">
+										{user.email}
+									</span>
 								</div>
 								<IconDotsVertical className="ml-auto size-4" />
 							</SidebarMenuButton>
@@ -143,7 +154,9 @@ export function NavUser({
 									/>
 									<div className="grid flex-1 text-left text-sm leading-tight">
 										<span className="truncate font-medium">{user.name}</span>
-										<span className="truncate text-muted-foreground text-xs">{user.email}</span>
+										<span className="truncate text-muted-foreground text-xs">
+											{user.email}
+										</span>
 									</div>
 								</div>
 							</DropdownMenuLabel>
@@ -176,7 +189,9 @@ export function NavUser({
 							<div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
 							<div className="relative flex flex-col items-center justify-center gap-4 rounded-lg border bg-card/95 px-12 py-8 shadow-2xl backdrop-blur-sm">
 								<IconLoader2 className="size-8 animate-spin text-primary" />
-								<span className="font-medium text-sm">{t("user.logging-out", "Logging out...")}</span>
+								<span className="font-medium text-sm">
+									{t("user.logging-out", "Logging out...")}
+								</span>
 							</div>
 						</div>,
 						document.body,

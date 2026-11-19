@@ -1,0 +1,15 @@
+{
+  "checks": [],
+  "error": "TimeoutError: Navigation timeout of 120000 ms exceeded",
+  "errors": [
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering.",
+    "The server could not finish this Suspense boundary, likely due to an error during server rendering. Switched to client rendering."
+  ]
+}

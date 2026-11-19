@@ -75,8 +75,10 @@
         "title": "Analysetrender",
         "viewFull": "Se fullstendig analyse"
       },
+      "scope": "Plattformomfattende rapportering",
       "sectionDescription": "Oppdatert fra gjeldende plattformdata for valgt periode og intervall.",
       "sectionTitle": "Analysetrender",
+      "seriesValues": "Vis serieverdier",
       "title": "Plattformanalyse",
       "values": {
         "notAvailable": "Ikke tilgjengelig"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Plattformtilgang kunne ikke bekreftes.",
       "analytics": {
         "title": "Analysetrender"
       },
-      "description": "Plattformstatistikk og hurtighandlinger",
+      "analyticsUnavailable": "Plattformanalyse er utilgjengelig. Prøv igjen.",
+      "confirmingAccess": "Bekrefter plattformtilgang",
+      "groups": {
+        "access": "Tilgangsstyring",
+        "billing": "Fakturering og abonnementer",
+        "operations": "Plattformdrift"
+      },
+      "loadingAnalytics": "Laster inn plattformanalyse",
+      "loadingMetrics": "Laster inn plattformmålinger",
       "metrics": {
         "bannedUsers": "Utestengte brukere",
         "bannedUsersDescription": "Utestengt fra tilgang",
@@ -295,6 +306,9 @@
         "totalUsers": "Totalt antall brukere",
         "totalUsersDescription": "Registrerte plattformkontoer"
       },
+      "metricsUnavailable": "Plattformmålinger er utilgjengelige. Prøv igjen.",
+      "platformDescription": "Gå gjennom kontoer, arbeidsområder og aktivitet på tvers av plattformen, og åpne deretter et administrasjonsområde.",
+      "platformTitle": "Plattformoversikt",
       "quickActions": {
         "billing": {
           "description": "Inntektsstatistikk og abonnementsstatus",
@@ -318,7 +332,7 @@
           "title": "Brukeradministrasjon"
         }
       },
-      "title": "Oversikt"
+      "refreshAccess": "Oppdater oversikten for å bekrefte plattformtilgang før du fortsetter."
     },
     "settings": {
       "actions": {

@@ -53,7 +53,12 @@ interface ShiftTemplateSubareaFieldProps {
 	locations: ShiftTemplateLocations;
 	requireScopedSubareaSelection: boolean;
 	getSubareaDisplay: (subareaId: string) => string;
+	/** The field's validation message, shown inline. */
+	error?: string;
 }
+
+const SUBAREA_TRIGGER_ID = "shift-template-subarea";
+const SUBAREA_ERROR_ID = "shift-template-subarea-error";
 
 export function ShiftTemplateSubareaField({
 	value,
@@ -61,17 +66,21 @@ export function ShiftTemplateSubareaField({
 	locations,
 	requireScopedSubareaSelection,
 	getSubareaDisplay,
+	error,
 }: ShiftTemplateSubareaFieldProps) {
 	const { t } = useTranslate();
 
 	return (
 		<div className="space-y-2">
-			<Label className="flex items-center gap-2">
+			<Label htmlFor={SUBAREA_TRIGGER_ID} className="flex items-center gap-2">
 				<IconMapPin className="size-4" aria-hidden="true" />
 				{t("settings.shiftTemplates.form.defaultSubarea", "Default Subarea")}
-				<span className="text-xs text-muted-foreground">
-					({t("common.optional", "Optional")})
-				</span>
+				{/* A scoped manager's templates must name one of their subareas. */}
+				{requireScopedSubareaSelection ? null : (
+					<span className="text-xs text-muted-foreground">
+						({t("common.optional", "Optional")})
+					</span>
+				)}
 			</Label>
 			<Select
 				value={value}
@@ -79,7 +88,11 @@ export function ShiftTemplateSubareaField({
 					onChange(nextValue === "none" ? "" : nextValue)
 				}
 			>
-				<SelectTrigger>
+				<SelectTrigger
+					id={SUBAREA_TRIGGER_ID}
+					aria-invalid={error ? true : undefined}
+					aria-describedby={error ? SUBAREA_ERROR_ID : undefined}
+				>
 					<SelectValue
 						placeholder={t(
 							"settings.shiftTemplates.form.selectSubarea",
@@ -123,6 +136,11 @@ export function ShiftTemplateSubareaField({
 					)}
 				</SelectContent>
 			</Select>
+			{error ? (
+				<p id={SUBAREA_ERROR_ID} role="alert" className="text-sm text-destructive">
+					{error}
+				</p>
+			) : null}
 			<p className="text-xs text-muted-foreground">
 				{t(
 					"settings.shiftTemplates.form.subareaHelp",

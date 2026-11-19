@@ -1,0 +1,41 @@
+{
+  "checks": [],
+  "errors": [],
+  "failures": [
+    "Waiting failed: 30000ms exceeded"
+  ],
+  "snapshots": [
+    {
+      "name": "runtime-harness-failure",
+      "observation": {
+        "url": "/en/sign-in",
+        "text": "z8\n\nLogin to your account\nEmail\nPassword\nLogin\nForgot your password?\nOr continue with\nLogin with Passkey\nDon't have an account? Sign up\nVersion 006aff6",
+        "headings": [
+          "Login to your account"
+        ],
+        "viewport": {
+          "width": 1600,
+          "height": 1000
+        },
+        "scrollWidth": 1600,
+        "font": "16px",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontsReady": "loaded",
+        "dark": false,
+        "active": "<body><div hidden=\"\"><!--$--><!--/$--></div><!--&--><!--$--><!--$--><!--/$--><!--&--><!--$--><div class=\"relative min-h-svh overflow-x-hidden bg-background\"><img alt=\"\" decoding=\"async\" data-nimg=\"fill\" class=\"absolute inset-0 size-full object-cover\" sizes=\"(min-aspect-ratio: 2560/1440) 100vw, 178vh\" srcset=\"/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fvimal-s-J69ERsG93hI-unsplash.1kyhxaq-92c3s.webp&amp;w=640&amp;q=75&amp;dpl=006aff63207b4c4eedfc4e3544fcc61fc2dbccbf 640w, /_next/image?url=%2F_ne"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "006aff63207b4c4eedfc4e3544fcc61fc2dbccbf",
+      "hashes": {
+        "apps/webapp/src/components/equipment/equipment-personal.tsx": "4ae346f19d9362ae7bfcf29fcea81c5e6c310b8fad06d06555c8b99a9339fbdd",
+        "apps/webapp/src/components/equipment/equipment-personal-header.tsx": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1",
+        "apps/webapp/src/components/equipment/equipment-personal-loading.tsx": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db",
+        "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3",
+        "apps/webapp/src/lib/navigation/route-metadata.ts": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+      }
+    }
+  ]
+}

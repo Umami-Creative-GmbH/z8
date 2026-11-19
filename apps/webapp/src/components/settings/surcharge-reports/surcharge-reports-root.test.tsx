@@ -5,7 +5,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SurchargeReports } from "./surcharge-reports-root";
 
 const getSurchargeCalculationsForPeriodMock = vi.fn();
-const translateMock = vi.fn((_key: string, fallback?: string) => fallback ?? _key);
+const translateMock = vi.fn(
+	(_key: string, fallback?: string, params?: { count?: number }) => {
+		const text = fallback ?? _key;
+		// Resolve the "{count, plural, one {# x} other {# xs}}" form the summary strip uses.
+		const plural = /^\{count, plural, one \{([^}]*)\} other \{([^}]*)\}\}$/.exec(text);
+		if (plural && params?.count !== undefined) {
+			return (params.count === 1 ? plural[1] : plural[2]).replace("#", String(params.count));
+		}
+		return text;
+	},
+);
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: translateMock }),
@@ -14,6 +24,32 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("@/app/[locale]/(app)/settings/surcharges/actions", () => ({
 	getSurchargeCalculationsForPeriod: (...args: unknown[]) =>
 		getSurchargeCalculationsForPeriodMock(...args),
+}));
+
+const employeeSelectPropsMock = vi.fn();
+
+vi.mock("@/components/employee-select", () => ({
+	EmployeeSingleSelect: (props: {
+		value: string | null;
+		onChange: (value: string | null) => void;
+		label: string;
+		placeholder: string;
+		includeFormerEmployees?: boolean;
+	}) => {
+		employeeSelectPropsMock(props);
+		return (
+			<label>
+				{props.label}
+				<select
+					value={props.value ?? ""}
+					onChange={(event) => props.onChange(event.target.value || null)}
+				>
+					<option value="">{props.placeholder}</option>
+					<option value="employee-2">Picker option employee-2</option>
+				</select>
+			</label>
+		);
+	},
 }));
 
 const calculation = {
@@ -91,6 +127,7 @@ describe("SurchargeReports", () => {
 	beforeEach(() => {
 		getSurchargeCalculationsForPeriodMock.mockReset();
 		translateMock.mockClear();
+		employeeSelectPropsMock.mockClear();
 	});
 
 	it("loads calculations and renders summary totals", async () => {
@@ -293,7 +330,7 @@ describe("SurchargeReports", () => {
 		getSurchargeCalculationsForPeriodMock.mockClear();
 
 		const form = screen.getByTestId("surcharge-report-filters");
-		fireEvent.change(within(form).getByLabelText("Employee ID"), {
+		fireEvent.change(within(form).getByLabelText("Employee"), {
 			target: { value: "employee-2" },
 		});
 
@@ -305,6 +342,39 @@ describe("SurchargeReports", () => {
 		await waitFor(() => {
 			expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(1);
 		});
+		expect(getSurchargeCalculationsForPeriodMock.mock.calls[0]?.[0].employeeId).toBe("employee-2");
+	});
+
+	it("filters by a picked employee and offers all employees again", async () => {
+		getSurchargeCalculationsForPeriodMock.mockResolvedValue({ success: true, data: [] });
+
+		render(<SurchargeReports organizationId="org-1" />);
+
+		await screen.findByText("No surcharge calculations found");
+		const lastProps = () => employeeSelectPropsMock.mock.lastCall?.[0];
+		expect(lastProps()).toMatchObject({
+			value: null,
+			placeholder: "All employees",
+			includeFormerEmployees: true,
+		});
+		expect(screen.queryByRole("button", { name: "Show all employees" })).toBeNull();
+
+		const form = screen.getByTestId("surcharge-report-filters");
+		fireEvent.change(within(form).getByLabelText("Employee"), {
+			target: { value: "employee-2" },
+		});
+		expect(lastProps()?.value).toBe("employee-2");
+
+		fireEvent.click(screen.getByRole("button", { name: "Show all employees" }));
+		expect(lastProps()?.value).toBeNull();
+
+		getSurchargeCalculationsForPeriodMock.mockClear();
+		fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+
+		await waitFor(() => {
+			expect(getSurchargeCalculationsForPeriodMock).toHaveBeenCalledTimes(1);
+		});
+		expect(getSurchargeCalculationsForPeriodMock.mock.calls[0]?.[0].employeeId).toBeUndefined();
 	});
 
 	it("ignores stale responses from earlier requests", async () => {

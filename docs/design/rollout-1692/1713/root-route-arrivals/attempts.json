@@ -1,0 +1,159 @@
+[
+  {
+    "directory": "after-arrival",
+    "label": "Unmanaged Person2 is absent from manager roster; invalid harness target",
+    "sourceCommit": "ad7f28deb0f41067a8e4b18984c80476a3a2f56b",
+    "sourceHash": "b5f51fec52ecc8a60ba2a3c0bb3b163f47d1a625cf8f9bbe65f2b62c92038b5d",
+    "checks": [
+      {
+        "name": "real manager picker is available",
+        "passed": true
+      },
+      {
+        "name": "one Calendar heading",
+        "passed": true
+      }
+    ],
+    "errors": [],
+    "failure": {
+      "name": "TimeoutError",
+      "message": "Pointer-receiving fixture target did not become available."
+    }
+  },
+  {
+    "directory": "after-arrival-accepted",
+    "label": "Grid bounding box requested before target was available",
+    "sourceCommit": "ad7f28deb0f41067a8e4b18984c80476a3a2f56b",
+    "sourceHash": "b5f51fec52ecc8a60ba2a3c0bb3b163f47d1a625cf8f9bbe65f2b62c92038b5d",
+    "checks": [
+      {
+        "name": "real manager picker is available",
+        "passed": true
+      },
+      {
+        "name": "one Calendar heading",
+        "passed": true
+      },
+      {
+        "name": "picker route and rendered target agree",
+        "passed": true,
+        "details": {
+          "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+          "heading": "Fixture Person 5",
+          "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+          "scopeInstance": 2,
+          "timeOrigin": 1794728790132.7,
+          "dialogOpen": false,
+          "width": 1600,
+          "documentWidth": 1600,
+          "font": "16px",
+          "dark": false,
+          "h1": [
+            "Calendar",
+            "Calendar"
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "failure": {
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'boundingBox')"
+    }
+  },
+  {
+    "directory": "after-arrival-visible",
+    "label": "Native range grid locator never became visible; browser panel-reset acceptance unpassed",
+    "sourceCommit": "ad7f28deb0f41067a8e4b18984c80476a3a2f56b",
+    "sourceHash": "b5f51fec52ecc8a60ba2a3c0bb3b163f47d1a625cf8f9bbe65f2b62c92038b5d",
+    "checks": [
+      {
+        "name": "real manager picker is available",
+        "passed": true
+      },
+      {
+        "name": "one Calendar heading",
+        "passed": true
+      },
+      {
+        "name": "picker route and rendered target agree",
+        "passed": true,
+        "details": {
+          "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+          "heading": "Fixture Person 5",
+          "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+          "scopeInstance": 2,
+          "timeOrigin": 1794728943317.2,
+          "dialogOpen": false,
+          "width": 1600,
+          "documentWidth": 1600,
+          "font": "16px",
+          "dark": false,
+          "h1": [
+            "Calendar"
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "failure": {
+      "name": "TimeoutError",
+      "message": "Visible fixture target did not become available."
+    }
+  },
+  {
+    "directory": "after-navigation",
+    "label": "Prop-only partial fix did not cover cached instance; real Back remained incorrect",
+    "sourceCommit": "ad7f28deb0f41067a8e4b18984c80476a3a2f56b",
+    "sourceHash": "b5f51fec52ecc8a60ba2a3c0bb3b163f47d1a625cf8f9bbe65f2b62c92038b5d",
+    "checks": [
+      {
+        "name": "real manager picker is available",
+        "passed": true
+      },
+      {
+        "name": "one Calendar heading",
+        "passed": true
+      },
+      {
+        "name": "picker route and rendered target agree",
+        "passed": true,
+        "details": {
+          "path": "/en/calendar/5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+          "heading": "Fixture Person 5",
+          "employeeId": "5a4cc2ae-7c49-4049-a5ba-83335273ac47",
+          "scopeInstance": 2,
+          "timeOrigin": 1794729130505.5,
+          "dialogOpen": false,
+          "width": 1600,
+          "documentWidth": 1600,
+          "font": "16px",
+          "dark": false,
+          "h1": [
+            "Calendar"
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "failure": {
+      "name": "TimeoutError",
+      "message": "Waiting failed: 30000ms exceeded"
+    }
+  },
+  {
+    "label": "Root Preview",
+    "failure": "Preview automation snapshot timed out after 15000ms.",
+    "occurrences": 2,
+    "tabClosed": true
+  },
+  {
+    "label": "Root native React inspection",
+    "failure": "Command reached daemon but no response came back; OS error10060. Not retried.",
+    "sessionClosed": true
+  },
+  {
+    "label": "Admin-roster probe",
+    "classification": "Actual auth/context HTTP200/admin. Admin fixture has no managed roster; direct target admission is independent. Manager owns the picker roster3,5,7. No application/auth change."
+  }
+]

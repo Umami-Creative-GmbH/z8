@@ -1,0 +1,55 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/payslip-batch-workspace.test.tsx (1 test | 1 failed) 1017ms
+   × retries the authorized preview after a read failure 1016ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/payslip-batch-workspace.test.tsx > retries the authorized preview after a read failure
+TestingLibraryElementError: Unable to find role="button" and name "Retry"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <p
+      class="text-sm text-destructive"
+      role="alert"
+    >
+      The payslip batch could not be loaded.
+    </p>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <p
+      class="text-sm text-destructive"
+      role="alert"
+    >
+      The payslip batch could not be loaded.
+    </p>
+  </div>
+</body>
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/personnel-file/payslip-batch-workspace.test.tsx:32:31
+     30|  boundary.get.mockResolvedValueOnce({ success: false, error: "Unavaila…
+     31|  mount();
+     32|  fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
+       |                               ^
+     33|  await screen.findByText("No files yet.");
+     34|  expect(boundary.get).toHaveBeenCalledTimes(2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  20:11:11
+   Duration  1.99s (tests 53%, import 20%, environment 19%, transform 7%, setup 1%)
+

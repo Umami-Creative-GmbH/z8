@@ -1,0 +1,16 @@
+{
+    "axeVersion":  "4.12.1",
+    "incomplete":  [
+
+                   ],
+    "scope":  "Loaded main in native Chrome, current-month small-admin. Narrow audit only; not screen-reader or exhaustive contrast certification.",
+    "counts":  {
+                   "inapplicable":  86,
+                   "incomplete":  0,
+                   "passes":  2,
+                   "violations":  0
+               },
+    "violations":  [
+
+                   ]
+}

@@ -1,0 +1,58 @@
+{
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "sourceOverlayExecuted": false,
+  "ownNativeUnauthenticatedTabClosed": true,
+  "visible": {
+    "path": "/en/scheduling",
+    "h1": [
+      "Shift Schedule"
+    ],
+    "summary": "Shift list (4)",
+    "alerts": [],
+    "notifications": "denied"
+  },
+  "probes": [
+    {
+      "name": "tools/list",
+      "status": 200,
+      "tools": [
+        "get_project_metadata",
+        "get_errors",
+        "get_page_metadata",
+        "get_logs",
+        "get_server_action_by_id",
+        "get_routes",
+        "get_request_insights",
+        "get_compilation_issues",
+        "compile_route"
+      ]
+    },
+    {
+      "name": "get_compilation_issues",
+      "status": 200,
+      "isError": false,
+      "rawSha256": "aac0f7a2744358459dad4238edbb68a877fd6b80dac57ecbcaa704f643865e26",
+      "contents": [
+        "{\"issues\":[]}"
+      ]
+    },
+    {
+      "name": "get_errors",
+      "status": 200,
+      "isError": false,
+      "rawSha256": "3fd21d2dd5a8080c6a6394afee2ce695c1f654931f6bb0c0439270607f683a74",
+      "contents": [
+        "{\"configErrors\":[],\"sessionErrors\":[]}"
+      ]
+    },
+    {
+      "name": "get_page_metadata",
+      "status": 200,
+      "isError": false,
+      "rawSha256": "97da09e7ddbb9d1f7ae1207a1474939bc91e9487bb92ba88e2fb99b12bdd61a0",
+      "contents": [
+        "{\"sessions\":[{\"url\":\"/en/scheduling?date=2026-11-16\",\"routerType\":\"app\",\"segments\":[{\"path\":\"app/[locale]/(app)/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/scheduling/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"app/[locale]/layout.tsx\",\"type\":\"layout\",\"isBoundary\":false,\"isBuiltin\":false},{\"path\":\"global-error.js\",\"type\":\"boundary:global-error\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"not-found.js\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":true},{\"path\":\"app/[locale]/(app)/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/scheduling/loading.tsx\",\"type\":\"boundary:loading\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/error.tsx\",\"type\":\"boundary:error\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/not-found.tsx\",\"type\":\"boundary:not-found\",\"isBoundary\":true,\"isBuiltin\":false},{\"path\":\"app/[locale]/(app)/scheduling/page.tsx\",\"type\":\"page\",\"isBoundary\":false,\"isBuiltin\":false}]}]}"
+      ]
+    }
+  ]
+}

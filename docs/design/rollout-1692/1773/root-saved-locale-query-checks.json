@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "issue": 1773,
+  "node": "R148",
+  "status": "provisional-shared-query-correction",
+  "verifiedCommit": null,
+  "correctionCommit": "a32e8bed036005fcd5a29ede1f452f3ceee067f1",
+  "integrationCommit": "de08f6169485e8f1dbb9f4ce2d08a3faa82f5168",
+  "appTree": "0ada8178304098b103daa1284f9158cdf59384d8",
+  "base": "016807ebc4d602aba4a0efc217e04cba0a38a8d9",
+  "problem": {
+    "runtimeObservation": "Frozen56120 request /de/settings/webhooks with saved locale en reached English destination and lost repeated query values. Raw36/37 result remains historical.",
+    "policy": "Saved database language intentionally overrides request language; only query loss is corrected.",
+    "assembledRed": {
+      "normalRepositoryUnitCommand": true,
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "expected": "TEST_REDIRECT:/en/settings/webhooks?tab=keys&keep=one&keep=two",
+      "actual": "TEST_REDIRECT:/en/settings/webhooks"
+    },
+    "diagnosisSha256": "8fa67a8d368eb715092c4153d7b0a8be1f58ea0f5d5b37af77cd2c1ebe116749"
+  },
+  "changes": [
+    "Proxy derives a separate search header from the actual request URL, overwriting client input including an empty query.",
+    "Next private request-override protocol carries search while retaining intl override values/cookies/response properties. Search is not a normal public response header.",
+    "Authenticated saved-locale redirect appends search only there; PATHNAME and existing auth/SSO/billing callback/recovery semantics remain pathname-only.",
+    "Real next-intl middleware runs in the permanent assembled proxy/layout test. Unit-project Vite inlining resolves its extensionless Next subpath imports on Windows.",
+    "Webhook alias, canonical admission/auth/providers, preferences, domain and delivery owners are unchanged."
+  ],
+  "checks": {
+    "unit": {
+      "instances": 380,
+      "distinctPhysicalFileFullNames": 380,
+      "files": 30,
+      "passed": 380,
+      "failed": 0,
+      "skipped": 0,
+      "newQueryCases": 8,
+      "protectedToday203Included": true
+    },
+    "focused": {
+      "newProxyLayoutCases": 8,
+      "existingAppLayoutGates": 20,
+      "existingProxyCases": 47,
+      "totalProxyAndLayout": 75,
+      "includedIn380": true
+    },
+    "types": "Static Next typegen and all3complete TypeScript projects exit0",
+    "lintImportExplicitFormatting": "Fiveownedfiles pass",
+    "ordinaryFormatting": "Fiveformat errors, no warnings; nonpassing",
+    "doctor": {
+      "version": "0.9.22",
+      "files": 5,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true
+    },
+    "whitespace": "git diff --check passes",
+    "newPostgres": false,
+    "newRuntime": false
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/proxy.ts",
+      "workingSha256": "64f718ffb923e0b39a472f00af757cca3779f23c758702497ccef5ac65c0116e",
+      "gitBlob": "5c75b8b03e36a9665872ce299f7181dcd7c9c1c3",
+      "gitBytesSha256": "08065ae18e137bd8306f67667635c1f3a5d9f1812798a4d629dcb1043eade98f"
+    },
+    {
+      "path": "apps/webapp/src/proxy.saved-locale-query.test.tsx",
+      "workingSha256": "f06c6661d70697f13d36df456dd8c5a2e4d50c6c3da651211c24b0c0b6a18283",
+      "gitBlob": "d18ec20f7890c1afa261db34b46909025e9ecc30",
+      "gitBytesSha256": "cb3f02cd497bce5dd3f0b320e6c22b53b0a7b938caf968611926651cd21c9a69"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/app-layout-content.tsx",
+      "workingSha256": "b916b99fa625d18e6a459c0adc05b187590e5239aa1eaaca3c53f94961d7b9eb",
+      "gitBlob": "57f9927a2208fca15ba0b1fb594a282bd85dd24b",
+      "gitBytesSha256": "d436e32b7a1de81308499e1c893718dc78f31cf23e503a5e9926b7c513219f62"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/app-layout-content.test.tsx",
+      "workingSha256": "e059e3465470503b9c6a6e9e82d76c2041bd8b370544549cc59835f7b5031060",
+      "gitBlob": "b9f315ba08a4ed4cd694097fae4e676e4be030ef",
+      "gitBytesSha256": "b81cbf58a440c5f8667665d8c3e50a7cfdbd5833dcb3ca612598050084eaa560"
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "workingSha256": "f869813593c3b53b46f79536e48874f69696b4293b9895d0c9ab997eec069c0c",
+      "gitBlob": "d2d43ed96849d68ead31443f5b453ef8bc1ebaae",
+      "gitBytesSha256": "6c4a217f0ca6c95bc0d1ca88389b8a7fb56e047f84247a43b7cf55e5c0085a87"
+    }
+  ],
+  "harnessQualifications": [
+    "First3attempts collected0cases due unrelated externalized Next subpath/client-navigation or incomplete external adapter.",
+    "Ignored loader proof then normal repository unit command reproduces actual query loss. Unit-project next-intl inline resolution is now committed with the regression.",
+    "First control execution expected a rewrite for an already-prefixed path; the actual middleware supplies none. Only that harness expectation changed.",
+    "Unchanged proxy auth-route tests log refused local Redis connections/fail-open readiness; all final cases pass, no runtime fixture or external service started.",
+    "Ordinary formatting remains nonpassing; explicit5 lint/import/format passes."
+  ],
+  "remaining": [
+    "Fresh independent shared proxy/layout/security review.",
+    "Actual saved-en/request-de and saved-de/request-de alias redirects with repeated query values; no new live alias pass claimed.",
+    "Owner webhook, manager/runtime/native/axe and broader R096 acceptance limits remain separate.",
+    "No original runtime/STOP/source seals are rewritten; readiness stays null."
+  ]
+}

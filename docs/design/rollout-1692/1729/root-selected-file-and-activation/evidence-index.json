@@ -1,0 +1,1166 @@
+{
+  "schemaVersion": 1,
+  "digest": "af79125c8b8d836242f0060647dc71962fa62e4ea26a4935edbfba5886a2458b",
+  "files": [
+    {
+      "path": "checks/biome-all14-format.log",
+      "bytes": 46405,
+      "sha256": "81ed6c35d4381e7e626f70ea30656e9d6436aeae5f5dcb890b3dc20316cf8d59",
+      "role": "Raw root check",
+      "attemptClass": "format-failure",
+      "source": ".tmp/1729-root-checks/biome-all14-format.log"
+    },
+    {
+      "path": "checks/biome-all14-lint.log",
+      "bytes": 716,
+      "sha256": "4d5cca087a2a33c5907ef0af17a1d62ae9b3595e25ab68434d6096a08d1d68cd",
+      "role": "Raw root check",
+      "attemptClass": "passing-with-warning",
+      "source": ".tmp/1729-root-checks/biome-all14-lint.log"
+    },
+    {
+      "path": "checks/biome-root-final.log",
+      "bytes": 43,
+      "sha256": "7ae9ce7fdc33d88574ac7e3ad4311ada87f0e6a9a99a994b2fc58eda3a76c75b",
+      "role": "Raw root check",
+      "attemptClass": "passing-six-correction-files",
+      "source": ".tmp/1729-root-checks/biome-root-final.log"
+    },
+    {
+      "path": "checks/biome-root.log",
+      "bytes": 44,
+      "sha256": "9a01480b082a98b6576bb41c2d6d8032cdc80af580cfe8bf6c46664c11aacc2a",
+      "role": "Raw root check",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/1729-root-checks/biome-root.log"
+    },
+    {
+      "path": "checks/delete-default-prevented.json",
+      "bytes": 2272,
+      "sha256": "b33796f7db36a80da9bc26536cc63628a3b005f85901c27826f13c81bf448086",
+      "role": "Raw root check",
+      "attemptClass": "passing-final-focused",
+      "source": ".tmp/1729-root-checks/delete-default-prevented.json"
+    },
+    {
+      "path": "checks/delete-default-prevented.log",
+      "bytes": 507,
+      "sha256": "21f6a144b63b31e011a46ef98c7e84e04118f822a4d2e6208756a8c622c63681",
+      "role": "Raw root check",
+      "attemptClass": "passing-final-focused",
+      "source": ".tmp/1729-root-checks/delete-default-prevented.log"
+    },
+    {
+      "path": "checks/delete-format-final.log",
+      "bytes": 44,
+      "sha256": "9552d12747ed18092c11dbab6d36f5c9cda396e7c42485e5829a828ba8f3177e",
+      "role": "Raw root check",
+      "attemptClass": "passing-focused-format",
+      "source": ".tmp/1729-root-checks/delete-format-final.log"
+    },
+    {
+      "path": "checks/delete-format.log",
+      "bytes": 42,
+      "sha256": "2035deae62b81a1655370231e9a25fe2e0ad61b8b339bc170a24495fd1d243b8",
+      "role": "Raw root check",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/1729-root-checks/delete-format.log"
+    },
+    {
+      "path": "checks/doctor-final.log",
+      "bytes": 2822,
+      "sha256": "8cba1b684deb983e86750bdbb33ea9fa7ce2cfe143c84758454a90543d120470",
+      "role": "Raw root check",
+      "attemptClass": "reviewed-warning",
+      "source": ".tmp/1729-root-checks/doctor-final.log"
+    },
+    {
+      "path": "checks/doctor.log",
+      "bytes": 2633,
+      "sha256": "d637b984d640dd19efb9d9614d4c50c847533a452a4a2b79acc8d12a41365e42",
+      "role": "Raw root check",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/1729-root-checks/doctor.log"
+    },
+    {
+      "path": "checks/format-owned.log",
+      "bytes": 43,
+      "sha256": "4da1a0e9ad6d2702ca5b88182cd3e668859a4b0f49bda8f8f3160b48c12fa90e",
+      "role": "Raw root check",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/1729-root-checks/format-owned.log"
+    },
+    {
+      "path": "checks/quality-all14.json",
+      "bytes": 1245,
+      "sha256": "dbb36ed8720dd92080e6666b74a3ca9720cd134b5c9c2ab93b597bf0e42de233",
+      "role": "Raw root check",
+      "attemptClass": "mixed-results",
+      "source": ".tmp/1729-root-checks/quality-all14.json"
+    },
+    {
+      "path": "checks/typecheck-final-02.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e",
+      "role": "Raw root check",
+      "attemptClass": "passing-production-source",
+      "source": ".tmp/1729-root-checks/typecheck-final-02.log"
+    },
+    {
+      "path": "checks/typecheck-final.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e",
+      "role": "Raw root check",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/1729-root-checks/typecheck-final.log"
+    },
+    {
+      "path": "checks/typecheck.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e",
+      "role": "Raw root check",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/1729-root-checks/typecheck.log"
+    },
+    {
+      "path": "checks/unit-final-02.json",
+      "bytes": 69123,
+      "sha256": "922ba38f9d58521afc4d4007a1417d0f090e1005d2ebb73810ac0cf3c3d7f11a",
+      "role": "Raw root check",
+      "attemptClass": "passing-final-unit",
+      "source": ".tmp/1729-root-checks/unit-final-02.json"
+    },
+    {
+      "path": "checks/unit-final-02.log",
+      "bytes": 496,
+      "sha256": "64be9e875e1a425a8f616d91d1f2de3874d8a954720a4a41ad4f6b948adc98e2",
+      "role": "Raw root check",
+      "attemptClass": "passing-final-unit",
+      "source": ".tmp/1729-root-checks/unit-final-02.log"
+    },
+    {
+      "path": "checks/unit-final.json",
+      "bytes": 68195,
+      "sha256": "de801b5457e797a96dadcb732cff1e531afb16ebab7ca29569f96efb5ad6e0b5",
+      "role": "Raw root check",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/1729-root-checks/unit-final.json"
+    },
+    {
+      "path": "checks/unit-final.log",
+      "bytes": 493,
+      "sha256": "4eef7506f51780d78fe45431be8e2da44aa6dda4350793c4790e1bced2c1829c",
+      "role": "Raw root check",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/1729-root-checks/unit-final.log"
+    },
+    {
+      "path": "controls/activation/delete-activation-01-source.tsx",
+      "bytes": 2959,
+      "sha256": "7ca0c93365556b474c25c3d9788b44a7af5cc2599e4ec34287dccb452ca1f3dd",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "support",
+      "source": ".tmp/1729-root-checks/acceptance/delete-activation-01-source.tsx"
+    },
+    {
+      "path": "controls/activation/delete-activation-01.json",
+      "bytes": 4128,
+      "sha256": "8f58cf3ff26400c44ba75bd36cd8eb1ddab34e92dd38e77dfbff624dd8629256",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "pre-correction-failure",
+      "source": ".tmp/1729-root-checks/acceptance/delete-activation-01.json"
+    },
+    {
+      "path": "controls/activation/delete-activation-01.log",
+      "bytes": 1258,
+      "sha256": "bc9b5c683e2e7319329e1852af2f96174f90e589e8dc6974f6c17b541f984fd7",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "pre-correction-failure",
+      "source": ".tmp/1729-root-checks/acceptance/delete-activation-01.log"
+    },
+    {
+      "path": "controls/activation/delete-activation-02.json",
+      "bytes": 4129,
+      "sha256": "df44cb8029ec425ad853deb01b9f18e922dddc2101e231475c83c6dc25bf57be",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "pre-correction-failure",
+      "source": ".tmp/1729-root-checks/acceptance/delete-activation-02.json"
+    },
+    {
+      "path": "controls/activation/delete-activation-02.log",
+      "bytes": 1290,
+      "sha256": "8a5b34e9648d67c2b84c1c716d079ab126b5062e646a2cd3fa0f888398d4d9a3",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "pre-correction-failure",
+      "source": ".tmp/1729-root-checks/acceptance/delete-activation-02.log"
+    },
+    {
+      "path": "controls/activation/delete-activation-handoff.json",
+      "bytes": 70667,
+      "sha256": "4462cb3fa389289264845514ab51dbbcb5a2fcd9cfe0f4f34db8fb171dd8106e",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "pre-correction-failure",
+      "source": ".tmp/1729-root-checks/acceptance/delete-activation-handoff.json"
+    },
+    {
+      "path": "controls/activation/delete-activation.config.ts",
+      "bytes": 734,
+      "sha256": "421e0f5edb4712ab93ae10aa17186ebe0d17c2ecc7537f005727eee91125693e",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "support",
+      "source": ".tmp/1729-root-checks/acceptance/delete-activation.config.ts"
+    },
+    {
+      "path": "controls/activation/delete-activation.public.test.tsx",
+      "bytes": 3079,
+      "sha256": "673d03081cdaae6a40afa94f4902141564012ad8ddff5a249aaf8ec39f515f7a",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "support",
+      "source": ".tmp/1729-root-checks/acceptance/delete-activation.public.test.tsx"
+    },
+    {
+      "path": "controls/activation/HANDOFF-delete-activation.md",
+      "bytes": 2444,
+      "sha256": "42bb31eceba66e514f1d2afc33b678444e5163e77465d7e845724fef2e351d6d",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "support",
+      "source": ".tmp/1729-root-checks/acceptance/HANDOFF-delete-activation.md"
+    },
+    {
+      "path": "controls/activation/seal-delete-activation.ps1",
+      "bytes": 5568,
+      "sha256": "0bc2c5e988f38b47380a91f79d12360a7f5ab0e45a1c4a41255ac7aa652c3a40",
+      "role": "Released pre-correction independent activation proof",
+      "attemptClass": "support",
+      "source": ".tmp/1729-root-checks/acceptance/seal-delete-activation.ps1"
+    },
+    {
+      "path": "controls/arrival-green.json",
+      "bytes": 6974,
+      "sha256": "f6418e1be5a4201db1c18eea1b62fdc6d318bcfebce310f6e1c357b53b5e73d5",
+      "role": "Raw root check",
+      "attemptClass": "passing-permanent-arrival",
+      "source": ".tmp/1729-root-checks/arrival-green.json"
+    },
+    {
+      "path": "controls/arrival-green.log",
+      "bytes": 496,
+      "sha256": "34be8cb4475bcfa7a7f13934ceee3bd01f4f45c9de6d57d684933fb3fb56f1ab",
+      "role": "Raw root check",
+      "attemptClass": "passing-permanent-arrival",
+      "source": ".tmp/1729-root-checks/arrival-green.log"
+    },
+    {
+      "path": "controls/arrival-red-escalated.log",
+      "bytes": 652,
+      "sha256": "f300661d300818e8ff55e98fe2a7a3dd0cec0df73178c65fe6277dcb0ae8149c",
+      "role": "Raw root check",
+      "attemptClass": "failing-control",
+      "source": ".tmp/1729-root-checks/arrival-red-escalated.log"
+    },
+    {
+      "path": "controls/arrival-red.json",
+      "bytes": 18358,
+      "sha256": "9bb2c8e0297d93f36abced910fb303ca3388c9be6695a0915d1718765873ee90",
+      "role": "Raw root check",
+      "attemptClass": "failing-control",
+      "source": ".tmp/1729-root-checks/arrival-red.json"
+    },
+    {
+      "path": "controls/arrival-red.log",
+      "bytes": 1240,
+      "sha256": "a0ce1b90090f53b6fc2343ded07378b723b0510ba6b014bfd062364055546e2c",
+      "role": "Raw root check",
+      "attemptClass": "engine-refusal",
+      "source": ".tmp/1729-root-checks/arrival-red.log"
+    },
+    {
+      "path": "controls/delete-green-03.json",
+      "bytes": 2270,
+      "sha256": "ce6179b1d1c1c6dec7ad6b24d3572351919e1db5f97ae4a4cb0606e4effd1cc9",
+      "role": "Raw root check",
+      "attemptClass": "passing-focused",
+      "source": ".tmp/1729-root-checks/delete-green-03.json"
+    },
+    {
+      "path": "controls/delete-green-03.log",
+      "bytes": 498,
+      "sha256": "75535a90f8c06aeb0d8877588e01393a72b2f2a3b36090ee80976d958cdcd519",
+      "role": "Raw root check",
+      "attemptClass": "passing-focused",
+      "source": ".tmp/1729-root-checks/delete-green-03.log"
+    },
+    {
+      "path": "controls/delete-green-final.json",
+      "bytes": 14473,
+      "sha256": "b99bf75b9a11fd44335204f276d9d454c70f86bb565663b29c90475d0aa29112",
+      "role": "Raw root check",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/1729-root-checks/delete-green-final.json"
+    },
+    {
+      "path": "controls/delete-green-final.log",
+      "bytes": 659,
+      "sha256": "e0e7ba862a43b6467e24a632214a7ecfdfb5d44c2aa76ccc7ed084e95718b782",
+      "role": "Raw root check",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/1729-root-checks/delete-green-final.log"
+    },
+    {
+      "path": "controls/delete-green.json",
+      "bytes": 14351,
+      "sha256": "4f8bb8f8698d6df03f9418b53c517e294b17bb725ddfaa115bb8b7366008f5cf",
+      "role": "Raw root check",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/1729-root-checks/delete-green.json"
+    },
+    {
+      "path": "controls/delete-green.log",
+      "bytes": 653,
+      "sha256": "586e70f8d98e579181522a14b01c6d33601e1dd91fc80af5fce3dc33bfc0b99d",
+      "role": "Raw root check",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/1729-root-checks/delete-green.log"
+    },
+    {
+      "path": "controls/delete-red.json",
+      "bytes": 6776,
+      "sha256": "ba09fcf89059f20c07e3327610f8622c8dfbada9faa3699d67f9c66cf626f306",
+      "role": "Raw root check",
+      "attemptClass": "failing-control",
+      "source": ".tmp/1729-root-checks/delete-red.json"
+    },
+    {
+      "path": "controls/delete-red.log",
+      "bytes": 651,
+      "sha256": "344761c79f3ac8d59fe8ea4bad7eaefe45d5a9d348ad6b6d65145ad9c32a46c3",
+      "role": "Raw root check",
+      "attemptClass": "failing-control",
+      "source": ".tmp/1729-root-checks/delete-red.log"
+    },
+    {
+      "path": "controls/employee-arrival.public.test.tsx",
+      "bytes": 4250,
+      "sha256": "8206e173dafb19dbcfebacd4342e53ff70fc0217ba06bf1fb15c279447013128",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "support",
+      "source": ".tmp/merge1729-audit/employee-arrival.public.test.tsx"
+    },
+    {
+      "path": "controls/incoming-selected-workspace.tsx",
+      "bytes": 2107,
+      "sha256": "fc724de2d5112f6f119ec44ea266f13a85d84c644907717bbcfeb9514a52d7e1",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "support",
+      "source": ".tmp/merge1729-audit/incoming-selected-workspace.tsx"
+    },
+    {
+      "path": "controls/premerge-selected-route.tsx",
+      "bytes": 3835,
+      "sha256": "3a35295b57b69024f11fa766bc5d2743169239388b1f33659a761ec655061639",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "support",
+      "source": ".tmp/merge1729-audit/premerge-selected-route.tsx"
+    },
+    {
+      "path": "controls/preserved-directory-snapshot.ts",
+      "bytes": 2112,
+      "sha256": "ba3df0aace8e8258de44b170c1663e5e078bc2926172d462f5c692b860f1af9f",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "support",
+      "source": ".tmp/merge1729-audit/preserved-directory-snapshot.ts"
+    },
+    {
+      "path": "controls/public-probe-attempt1.config.ts",
+      "bytes": 382,
+      "sha256": "79e2bcb88e4e74eab196d1bcbae24db536bfa5900cc487d646ab4fcf21212522",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-attempt1.config.ts"
+    },
+    {
+      "path": "controls/public-probe-attempt2.config.ts",
+      "bytes": 503,
+      "sha256": "b7269e345a3dc31800d2b15e6304c005958dd9a55b657558978f75088f1a3b54",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-attempt2.config.ts"
+    },
+    {
+      "path": "controls/public-probe-attempt3.config.ts",
+      "bytes": 749,
+      "sha256": "0ff1c8940d4388822a3b77c1035a4874cb75cd8d2646e210619fc06e69dbaede",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-attempt3.config.ts"
+    },
+    {
+      "path": "controls/public-probe-engine-denial.log",
+      "bytes": 1262,
+      "sha256": "1c2d69d60e043ff1889c9fe5cc858a99e2b7e2a024d8524aba80945888c0ff49",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "engine-refusal",
+      "source": ".tmp/merge1729-audit/public-probe-engine-denial.log"
+    },
+    {
+      "path": "controls/public-probe-module-resolution.json",
+      "bytes": 844,
+      "sha256": "b1f52efb4aa4c3f564f286e66fb57d4522c8bda45b569cd9fad7769abe49d9c4",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-module-resolution.json"
+    },
+    {
+      "path": "controls/public-probe-module-resolution.log",
+      "bytes": 1394,
+      "sha256": "e7786df3a2eda61fcc2d816e7cbf7a3bd5d4053810fb98b6aeb814c489a77396",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-module-resolution.log"
+    },
+    {
+      "path": "controls/public-probe-no-tests.json",
+      "bytes": 483,
+      "sha256": "34fb8b70fd08ad5d6457f482a135a9f257b604b4785a5a3fa6b85682537ae31f",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-no-tests.json"
+    },
+    {
+      "path": "controls/public-probe-no-tests.log",
+      "bytes": 831,
+      "sha256": "fdbc3b4584bcb70d04496a2b41f5af826add557cc331ea5480fbb25b1e23f67f",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-no-tests.log"
+    },
+    {
+      "path": "controls/public-probe-translation-harness.json",
+      "bytes": 12927,
+      "sha256": "4a9abf1b50b6102e8821da418eddaad945937b7a84ed11c62ade7e7af06507f5",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-translation-harness.json"
+    },
+    {
+      "path": "controls/public-probe-translation-harness.log",
+      "bytes": 1394,
+      "sha256": "e7786df3a2eda61fcc2d816e7cbf7a3bd5d4053810fb98b6aeb814c489a77396",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failed-harness-attempt",
+      "source": ".tmp/merge1729-audit/public-probe-translation-harness.log"
+    },
+    {
+      "path": "controls/public-probe.config.ts",
+      "bytes": 776,
+      "sha256": "ee55f9ec686e40a1cba863049768f9936f3c784bc7e4648207c2f3e7607c6c55",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "support",
+      "source": ".tmp/merge1729-audit/public-probe.config.ts"
+    },
+    {
+      "path": "controls/selected-public-probe.json",
+      "bytes": 7542,
+      "sha256": "65d738dae826340f0ed9f2d52a95ff1df01f520bdc562cfdbf514f4bf6fbea17",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failing-control",
+      "source": ".tmp/merge1729-audit/public-probe.json"
+    },
+    {
+      "path": "controls/selected-public-probe.log",
+      "bytes": 1394,
+      "sha256": "e7786df3a2eda61fcc2d816e7cbf7a3bd5d4053810fb98b6aeb814c489a77396",
+      "role": "Assembled merger source blocker; selected workspace absent premerge",
+      "attemptClass": "failing-control",
+      "source": ".tmp/merge1729-audit/public-probe.log"
+    },
+    {
+      "path": "runtime/artifact-hashes.json",
+      "bytes": 11741,
+      "sha256": "bf985f940650d4ad1fc5c2bbf59e98ead463ed8b0be73ce52c0a1e1e2a330cf7",
+      "role": "Released public runtime allowlist seal",
+      "attemptClass": "support",
+      "source": ".tmp/1729-root-checks/runtime/artifact-hashes.json"
+    },
+    {
+      "path": "runtime/attempt-01-pnpm-engine-lock.txt",
+      "bytes": 247,
+      "sha256": "c2b7e24e97616cdb439b337d59da558d8daf7e2946162f11bdc3fdccd926a69c",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/attempt-01-pnpm-engine-lock.txt"
+    },
+    {
+      "path": "runtime/binary-empty-after-reasoned-delete.png",
+      "bytes": 95736,
+      "sha256": "f1bb22a9ec7af4fc485a9f387e74880adcd00b54582f99491ff982d89193e2cb",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/binary-empty-after-reasoned-delete.png"
+    },
+    {
+      "path": "runtime/binary.json",
+      "bytes": 7651,
+      "sha256": "d65748b0dd691165bb8f3d7992bd25a0863e6856f0d3786fb5b1ba14f43c0ffa",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/binary.json"
+    },
+    {
+      "path": "runtime/binary.mjs",
+      "bytes": 8371,
+      "sha256": "9fb238be6190df1d590f6b245559ef7743901fa4817b4cafbc3ac113df6a71d4",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/binary.mjs"
+    },
+    {
+      "path": "runtime/cleanup-audit.ps1",
+      "bytes": 2944,
+      "sha256": "052674840fbe5eac9ec8ad1fc5f6695ce5cd8f9e396d8e855accbdb63a52b72b",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/cleanup-audit.ps1"
+    },
+    {
+      "path": "runtime/cleanup.json",
+      "bytes": 343,
+      "sha256": "340f48b41635a6f242a6ca8339ddb412eaf569bc8acfa22f6f72dad8cc243954",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/cleanup.json"
+    },
+    {
+      "path": "runtime/common.mjs",
+      "bytes": 6545,
+      "sha256": "37a9741df0bb9cddd6d5fa3307b9ce9738a8baafd7adcd3f697afb564b1cf390",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/common.mjs"
+    },
+    {
+      "path": "runtime/compare.mjs",
+      "bytes": 3459,
+      "sha256": "2f9054403a2bff204fee4b46283927d2b079239e676efe16689085116c1a2a50",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/compare.mjs"
+    },
+    {
+      "path": "runtime/desktop-collapsed-saved18.png",
+      "bytes": 109358,
+      "sha256": "381508d92f7566fe9acfe8c22713d232cbc46dfcc94f00b0fa89065c4c3779e5",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/desktop-collapsed-saved18.png"
+    },
+    {
+      "path": "runtime/desktop-expanded-saved18.png",
+      "bytes": 134508,
+      "sha256": "ef7d8d1638d93e39e3082cd3138a08acba679936115f5bf5c06441330c3d5443",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/desktop-expanded-saved18.png"
+    },
+    {
+      "path": "runtime/dev.mjs",
+      "bytes": 4128,
+      "sha256": "50ddb17161d57e611769a3e0db4c2e557bb5a286d4b16bae07bbfd0a7699263a",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/dev.mjs"
+    },
+    {
+      "path": "runtime/HANDOFF-runtime.md",
+      "bytes": 4898,
+      "sha256": "5cd51db5895eda1cf92c866292a8219ecfa724c4b2f9fe4222b56a8ec4dbb8f3",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/HANDOFF-runtime.md"
+    },
+    {
+      "path": "runtime/journey-01-failure-public-feature.png",
+      "bytes": 171522,
+      "sha256": "8233431574b7f57af17267315c50b9c8e07753f988dbcb42f1beca39d296d869",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-01-failure-public-feature.png"
+    },
+    {
+      "path": "runtime/journey-01-source.mjs",
+      "bytes": 13977,
+      "sha256": "5dce8b2f70c8d11c8b742bcb344e71b0104e71b61dc0d001ec4e6f5b46728365",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-01-source.mjs"
+    },
+    {
+      "path": "runtime/journey-01.json",
+      "bytes": 7369,
+      "sha256": "39e02ec79b4ae70476fc1f31bfb25374638aa2b36b230127504fb71be7233453",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-01.json"
+    },
+    {
+      "path": "runtime/journey-02-failure-selected-route.png",
+      "bytes": 118499,
+      "sha256": "e633b83ddc81a0f5445bf2a4d4877b8e683de9905cd0a6c16e440373767f5f05",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-02-failure-selected-route.png"
+    },
+    {
+      "path": "runtime/journey-02-source.mjs",
+      "bytes": 14172,
+      "sha256": "5f2a3bd13c4e05d7e2bd4d7adf9b53c39345b19fdba3eefb21e9b2042883eadd",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-02-source.mjs"
+    },
+    {
+      "path": "runtime/journey-02.json",
+      "bytes": 9804,
+      "sha256": "a7004636b3e2d66b5256dd6c2a68ec040b794c38fdb72f3ebfa260e95c8174fa",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-02.json"
+    },
+    {
+      "path": "runtime/journey-03-actual-pending.png",
+      "bytes": 94655,
+      "sha256": "563c2741c602a7780b7bbbae4f6aaa9c0b7803257b1b26df849ba742abadebbd",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-03-actual-pending.png"
+    },
+    {
+      "path": "runtime/journey-03-actual-reader-failed.png",
+      "bytes": 97600,
+      "sha256": "4cbd59686227155a56040188250bbe8164668dcf9d4299f5698bec3ef59539d5",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-03-actual-reader-failed.png"
+    },
+    {
+      "path": "runtime/journey-03-current-desktop.png",
+      "bytes": 117215,
+      "sha256": "48a68e5ee88baf052a4f50fef0203751227fcc834c7b07662e26932832309b56",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-03-current-desktop.png"
+    },
+    {
+      "path": "runtime/journey-03-current-phone.png",
+      "bytes": 49920,
+      "sha256": "cac4b0f935986309306b454ebec330e14bbb6386e22552e65840dee424d74c14",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-03-current-phone.png"
+    },
+    {
+      "path": "runtime/journey-03-current-wide-dark.png",
+      "bytes": 122214,
+      "sha256": "3e7727ea943affc41ae885088282e3477a9f10496a5fa719d5c7c4a828a7ac97",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-03-current-wide-dark.png"
+    },
+    {
+      "path": "runtime/journey-03-failure-reader-failure.png",
+      "bytes": 115713,
+      "sha256": "9018f608bbac1397bae3f9118ac6cdc6bdf4a125a1ad30ecaec81ea20f27f3c8",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-03-failure-reader-failure.png"
+    },
+    {
+      "path": "runtime/journey-03-source.mjs",
+      "bytes": 14381,
+      "sha256": "daf9139545d04830cf413f311f0e7c8aa64afbe7f557bdb54df4d1f972199630",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-03-source.mjs"
+    },
+    {
+      "path": "runtime/journey-03.json",
+      "bytes": 22397,
+      "sha256": "2244eb8a5d0013ef4ea5d73422a446134dd0f493fa486f300994f670a8aa0401",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-03.json"
+    },
+    {
+      "path": "runtime/journey-04-actual-pending.png",
+      "bytes": 94673,
+      "sha256": "b30b984b053c0421f7a3f771bbcd35b74a9aaa0daa13933ad3b9ff1008d17ecb",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-actual-pending.png"
+    },
+    {
+      "path": "runtime/journey-04-actual-reader-failed.png",
+      "bytes": 97614,
+      "sha256": "442107bd03e87baae1568b472354220a98c906254316d2fe4fabd6c93a949e30",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-actual-reader-failed.png"
+    },
+    {
+      "path": "runtime/journey-04-current-desktop.png",
+      "bytes": 112606,
+      "sha256": "42a12007461c414c56992fb560ab74db64b15ee539d1f3e3e6e45782381ecde3",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-current-desktop.png"
+    },
+    {
+      "path": "runtime/journey-04-current-phone.png",
+      "bytes": 48300,
+      "sha256": "e578001458a5474ead38d58e6d620e3a48bd6cf4f77cc3ef83b87940c8617ead",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-current-phone.png"
+    },
+    {
+      "path": "runtime/journey-04-current-wide-dark.png",
+      "bytes": 120412,
+      "sha256": "336f0f6cea9d61c9ffc017619c52b06ffaf050d0f0bdaf88c15687e31e6a07bc",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-current-wide-dark.png"
+    },
+    {
+      "path": "runtime/journey-04-failure-settled-late-save.png",
+      "bytes": 114717,
+      "sha256": "91ad5bdfb8c1ef458a1148c65978c0b5f76ecb6a1a2e50b6c53aa699f2e647f9",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-failure-settled-late-save.png"
+    },
+    {
+      "path": "runtime/journey-04-officer-category-denial.png",
+      "bytes": 91949,
+      "sha256": "76a3cd8aec0a82934d46fa2465a3aac000c05da02286a962a783a57da70fac5f",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-officer-category-denial.png"
+    },
+    {
+      "path": "runtime/journey-04-retained-after-refetch-failure.png",
+      "bytes": 123586,
+      "sha256": "54ba242a3cc4aaf59360343290472f02f312540b88dc557d0c69014705a3e30a",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-retained-after-refetch-failure.png"
+    },
+    {
+      "path": "runtime/journey-04-source.mjs",
+      "bytes": 14141,
+      "sha256": "46ccb03f061bc4c1392b4dda06486934254e7135ffde358b77d7bece82731c2d",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04-source.mjs"
+    },
+    {
+      "path": "runtime/journey-04.json",
+      "bytes": 35723,
+      "sha256": "f4203c902f340e7b6fee9eddada2a141af458b2b45c32e429e585f7d25dc718e",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "retained-attempt-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-04.json"
+    },
+    {
+      "path": "runtime/journey-05-officer-category-denial.png",
+      "bytes": 93317,
+      "sha256": "b9c2ad36e7b08e990194e4643a2a55711fafdcab1b891408b9f1a61b58de5ae4",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-05-officer-category-denial.png"
+    },
+    {
+      "path": "runtime/journey-05-revoked-save-refused-retained-exact-draft.png",
+      "bytes": 107534,
+      "sha256": "91ac241bd74722d956259b0e992463c4196e8b6a820dba46d346e8acc8a3b052",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-05-revoked-save-refused-retained-exact-draft.png"
+    },
+    {
+      "path": "runtime/journey-05.json",
+      "bytes": 38591,
+      "sha256": "2dccad4cb4f815190ea40e44abe1fe336c8d1fd0d15c2f9b1c9458e021fe9bb7",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey-05.json"
+    },
+    {
+      "path": "runtime/journey.mjs",
+      "bytes": 14141,
+      "sha256": "46ccb03f061bc4c1392b4dda06486934254e7135ffde358b77d7bece82731c2d",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/journey.mjs"
+    },
+    {
+      "path": "runtime/matched-before-desktop.png",
+      "bytes": 121501,
+      "sha256": "05c83eb1c06672df79b13ecf7143e4531d45108cc56d15b6d3652f4a562ce05c",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/matched-before-desktop.png"
+    },
+    {
+      "path": "runtime/matched-before-phone.png",
+      "bytes": 34189,
+      "sha256": "109a60c4e6614077817d4a6929a570eca07de466648dc672af8e12d25f678f94",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/matched-before-phone.png"
+    },
+    {
+      "path": "runtime/matched-before-wide-dark.png",
+      "bytes": 120507,
+      "sha256": "b23d3a97c530173210953321c30a106d012adf61dcdc07bedaf2f785c46846a4",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/matched-before-wide-dark.png"
+    },
+    {
+      "path": "runtime/matched-before.json",
+      "bytes": 35205,
+      "sha256": "20ac7d0a4407a92323b65b7db7885f65e62e69328bc003cc8af17569a9ba77b6",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/matched-before.json"
+    },
+    {
+      "path": "runtime/matched-current-desktop.png",
+      "bytes": 115607,
+      "sha256": "8cc019d4d7086c306a716e30a023d5ecd093c5a4cef31c7174e2aac151be2d3f",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/matched-current-desktop.png"
+    },
+    {
+      "path": "runtime/matched-current-phone.png",
+      "bytes": 48250,
+      "sha256": "d830c26b083e75b7efeaac2bd9242a56021dcdd7bca4847b52fde9d67a1af386",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/matched-current-phone.png"
+    },
+    {
+      "path": "runtime/matched-current-wide-dark.png",
+      "bytes": 120253,
+      "sha256": "de51b22f02a2848c93d805c1f07a7678a3f2e7bfd73725e5f8b31840b0368c9e",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/matched-current-wide-dark.png"
+    },
+    {
+      "path": "runtime/matched-current.json",
+      "bytes": 35420,
+      "sha256": "8464443203adfa1cee0681e777401a7d994c8630a56f6d28c153ea652cbf758b",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/matched-current.json"
+    },
+    {
+      "path": "runtime/native.json",
+      "bytes": 31378,
+      "sha256": "e69cc4a68ac5bf662a932d8182b159623372d4f8507d66e973d7957b06c69582",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/native.json"
+    },
+    {
+      "path": "runtime/native.mjs",
+      "bytes": 3207,
+      "sha256": "559f64904b6a8a179d95492626df9fbdfb99212a104d65bfdcac74f00528f60a",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/native.mjs"
+    },
+    {
+      "path": "runtime/next-stop-after-overlay.json",
+      "bytes": 398,
+      "sha256": "63ac680fc48a94098388ed1857314a4da0781900a1e9879536b9405b13c09eeb",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/next-stop-after-overlay.json"
+    },
+    {
+      "path": "runtime/next-stop-before-overlay.json",
+      "bytes": 428,
+      "sha256": "50ab695304eb3b79f5c466c6a091cea9eaf6a0fda5ca1360edb90262baf951f5",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/next-stop-before-overlay.json"
+    },
+    {
+      "path": "runtime/next-stop-final.json",
+      "bytes": 461,
+      "sha256": "0e70f14824db65820c5ba367f88ad0b6f2014d9e72eb16d89e2a8d24994affff",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/next-stop-final.json"
+    },
+    {
+      "path": "runtime/overlay-applied.json",
+      "bytes": 9379,
+      "sha256": "b2f49aded3c5c980a14f0863fedcb7d09f06ab37c5f7ae7131c3911fca783cc1",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/overlay-applied.json"
+    },
+    {
+      "path": "runtime/overlay-restored.json",
+      "bytes": 3487,
+      "sha256": "9abca489a17d165dba5dccdb393449304a9cb1995d7a619a0d2fb49500f6b967",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/overlay-restored.json"
+    },
+    {
+      "path": "runtime/overlay.mjs",
+      "bytes": 2466,
+      "sha256": "6eb3d2223106df18dea29848b3e386abb725ad34a9446a1105cf31c963eca947",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/overlay.mjs"
+    },
+    {
+      "path": "runtime/phone-small-admin-saved18-dark.png",
+      "bytes": 45224,
+      "sha256": "ab1ac02ab381b5f0a300a1e3635ed439542fd640c32e5f1b9980b3b23c992ef5",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/phone-small-admin-saved18-dark.png"
+    },
+    {
+      "path": "runtime/phone-small-admin-saved18-light.png",
+      "bytes": 47129,
+      "sha256": "344ef756567b8e0a5cc2bfd341d1e9533d97c55eb0429adca72f5daaa1f39170",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/phone-small-admin-saved18-light.png"
+    },
+    {
+      "path": "runtime/phone-small-employee-saved18-dark.png",
+      "bytes": 44511,
+      "sha256": "a1911412e800cff9fd91576bd47739b39abe499c5d6958f3759d8deb5460dc5b",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/phone-small-employee-saved18-dark.png"
+    },
+    {
+      "path": "runtime/phone-small-employee-saved18-light.png",
+      "bytes": 45707,
+      "sha256": "2ededa558c4a2ce186926225f1cb444cb74b6ae0c8f5345ea47c920afdb730e2",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/phone-small-employee-saved18-light.png"
+    },
+    {
+      "path": "runtime/phones.json",
+      "bytes": 30755,
+      "sha256": "b4dd9435343d2c04f93e460fb58a31735e76e1bc79bddda78f81d58d8b3dc0d3",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/phones.json"
+    },
+    {
+      "path": "runtime/phones.mjs",
+      "bytes": 5068,
+      "sha256": "eee014fde6d7b92c211148626bd056e0f4580cc06bac9ae01b83dc01507d07b6",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/phones.mjs"
+    },
+    {
+      "path": "runtime/postgres-command.json",
+      "bytes": 5297,
+      "sha256": "45a44586778accb8208bd66937ff1a92fbf7f38444c7eb5a70d49016ed5a7e37",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/postgres-command.json"
+    },
+    {
+      "path": "runtime/postgres.json",
+      "bytes": 68248,
+      "sha256": "4a8737fb3e48db68898d457b6bed05439308f8e8333fd5bff1c54e5b34e6e7c3",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/postgres.json"
+    },
+    {
+      "path": "runtime/postgres.mjs",
+      "bytes": 1441,
+      "sha256": "dd2b57d4275aa0f823af5d5bf3b0efb9c8a844b8c99b18210e6d94615fffa117",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/postgres.mjs"
+    },
+    {
+      "path": "runtime/restored-smoke.json",
+      "bytes": 26252,
+      "sha256": "121f55a19c29f5dae955909c7c36b5eda38d8aef51528002bab178455ad4a637",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/restored-smoke.json"
+    },
+    {
+      "path": "runtime/restored-smoke.mjs",
+      "bytes": 1949,
+      "sha256": "2a717269432a793fcfc35857ae21730e55f42f08fe9ca0a66e620b5ab97d3676",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/restored-smoke.mjs"
+    },
+    {
+      "path": "runtime/roles.mjs",
+      "bytes": 9773,
+      "sha256": "0571f08adc81b2000e7de0e5ffefb213ba4526e1a9862c39ba29bb5264efd0a3",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/roles.mjs"
+    },
+    {
+      "path": "runtime/seal.mjs",
+      "bytes": 12056,
+      "sha256": "5c6a06f69627b537d7e65bc5c8ad053f43c1e8375afbb80e72c9778266d7d2c1",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/seal.mjs"
+    },
+    {
+      "path": "runtime/setup.mjs",
+      "bytes": 2913,
+      "sha256": "7591b4c2dae159aa70e5f7f279eec0b3f10bf6c47f4a3b28ff210ab1605a0962",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/setup.mjs"
+    },
+    {
+      "path": "runtime/source-start.json",
+      "bytes": 41383,
+      "sha256": "473962504548f6c2163001655a4ed5b721e496d2eb9726d17e0d9a4f68dcd363",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/source-start.json"
+    },
+    {
+      "path": "runtime/stop-next.ps1",
+      "bytes": 2968,
+      "sha256": "538761e515b18150fbd2592440e731acc05f94400955ea592d3db567db8a3e02",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/stop-next.ps1"
+    },
+    {
+      "path": "runtime/verification-manifest.json",
+      "bytes": 31887,
+      "sha256": "42932dae354a8f270c5abe8f4badc70cc4052253a5a73b96f861476a8e857323",
+      "role": "Released explicit runtime public allowlist",
+      "attemptClass": "accepted-or-support-see-contract",
+      "source": ".tmp/1729-root-checks/runtime/verification-manifest.json"
+    },
+    {
+      "path": "support/merger/archive-whitespace-findings.log",
+      "bytes": 9027,
+      "sha256": "fcc5c603ebeee6bd0e5b9aad9c818461f5a9abe3219ab0c5e1e289d202c1c284",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/archive-whitespace-findings.log"
+    },
+    {
+      "path": "support/merger/artifact-audit.json",
+      "bytes": 11673,
+      "sha256": "397102ea4cf251092bccdde6fead234077b1f3c282513372c7ce64f7b5a84f6a",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/artifact-audit.json"
+    },
+    {
+      "path": "support/merger/cleanup.json",
+      "bytes": 399,
+      "sha256": "aa08a7fa2f4842ec182d2943d53e26ead9e316bd1ffa44fb46f2d3e6e75111e7",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/cleanup.json"
+    },
+    {
+      "path": "support/merger/handoff.json",
+      "bytes": 5324,
+      "sha256": "6cbc022cfa8778a54f1df95484977b4e32d4ebe7a76d50f6b0f165f54e0dac1d",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/handoff.json"
+    },
+    {
+      "path": "support/merger/HANDOFF.md",
+      "bytes": 3086,
+      "sha256": "67a043b589143d3ecb661e4c15ebe7fe6d6e937a444400d9fb07f6972d34b67e",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/HANDOFF.md"
+    },
+    {
+      "path": "support/merger/png-full-decode.json",
+      "bytes": 10538,
+      "sha256": "77c5af9fd5dd81e89657197b1315f222c4321b586cc6f6391453fc0576d2e756",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/png-full-decode.json"
+    },
+    {
+      "path": "support/merger/png-full-decode.log",
+      "bytes": 51,
+      "sha256": "0c88d240728b795b51fbb440570359b6115ec6f2b3272a033d0c760525b7ed7d",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/png-full-decode.log"
+    },
+    {
+      "path": "support/merger/preservation.json",
+      "bytes": 10862,
+      "sha256": "08598c858ab74d8f55ba0fe736fb868de58e6e9f69965495ced115b09ac8d6f5",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/preservation.json"
+    },
+    {
+      "path": "support/merger/source-classification.json",
+      "bytes": 1308,
+      "sha256": "3da42e5a4a91cff5842d750fe793d514ef4f5a32c2382ed9cf8f34a440efd728",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/source-classification.json"
+    },
+    {
+      "path": "support/merger/unit-compatibility.json",
+      "bytes": 59586,
+      "sha256": "0884b9bdef2f93b829e4c9b4da0a2dd802911093b345ef6a226426c0e163134f",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/unit-compatibility.json"
+    },
+    {
+      "path": "support/merger/unit-compatibility.log",
+      "bytes": 500,
+      "sha256": "7f391e7f22a68ca35a8d5430ae3c5aef8d22f998afeee031fd972dc0c42b72ca",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/unit-compatibility.log"
+    },
+    {
+      "path": "support/merger/unit-unique-cases.json",
+      "bytes": 50303,
+      "sha256": "07e745e2a89892210f8509bee80a0be2220aae7842e6efa0e1930da40eac0631",
+      "role": "Released compact merger and preservation audit",
+      "attemptClass": "historical-nonadditive",
+      "source": ".tmp/merge1729-audit/unit-unique-cases.json"
+    }
+  ]
+}

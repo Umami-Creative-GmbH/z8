@@ -1,0 +1,1 @@
+{"exit":1,"stage":"before test or fixture","diagnosis":"Inherited generated licenses are ignored and have no HEAD Git blob. Preserve its byte hash with gitBlob null; no product change."}

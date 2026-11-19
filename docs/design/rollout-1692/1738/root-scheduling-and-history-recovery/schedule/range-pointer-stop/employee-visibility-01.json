@@ -1,0 +1,46 @@
+{
+  "candidate": "7e5cb41a2c3557399e2f3b0093890b822c8877f4",
+  "verdict": "EMPLOYEE_PUBLISHED_RESULT_VISIBLE",
+  "normalFreshEmployeeFormLogin": true,
+  "authStateSavedCopiedRestored": false,
+  "foreignPersonFocusQueryIgnored": true,
+  "heading": "My Schedule",
+  "notifications": "denied",
+  "ownPublishedShiftsInWeek": 2,
+  "newlyPublishedOwnAssignedShiftDetails": "Shift details\n\nIndependent morning\n\nDATE\nThursday, November 19, 2026\nTIME\n09:00 – 17:00\nLOCATION\nIndependent scheduling office · Independent reception\nNOTES\nIndependent assigned publish draft\nClose\nClose",
+  "noPlannerMutations": true,
+  "noDraftsOrAdjacentBoundaryDrafts": true,
+  "firstEscapeClosesDetails": true,
+  "image": {
+    "h1": [
+      {
+        "text": "My Schedule",
+        "box": {
+          "x": 16,
+          "y": 96,
+          "width": 358,
+          "height": 32,
+          "right": 374,
+          "bottom": 128
+        }
+      }
+    ],
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844,
+      "right": 390,
+      "bottom": 844
+    },
+    "sidebar": null,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "fontSize": "16px",
+    "dark": false
+  },
+  "limits": "Employee UI scope only; manager/restricted/live org and permission-loss matrices stopped after reproduced blocker."
+}

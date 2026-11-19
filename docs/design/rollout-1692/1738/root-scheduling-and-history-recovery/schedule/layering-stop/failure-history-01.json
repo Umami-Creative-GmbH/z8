@@ -1,0 +1,26 @@
+{
+  "preparation": [
+    "prepare01 git ls-tree exceeded default maxBuffer; no preservation receipt emitted",
+    "prepare02 treated ignored generated license as tracked; no acceptance emitted",
+    "prepare03 receipt corrected both mechanics; initial priorUnchanged=false includes intended later metadata, qualified by current source-preservation receipt",
+    "initial custom configs attempted external test discovery/module resolution; no package or production configuration changed; deleted no peer resource",
+    "initial own seed helper used top-level await under CJS; no seed code ran; corrected temporary app bridge used canonical guarded helper",
+    "one Powershell string transformer parse failed; no action ran",
+    "normal login post-submit init navigation destroyed wait context; admitted later readback confirms login",
+    "RPC first focus probe returned undefined; sanitizer failed; bounded read failure cleared in finally",
+    "second read probe read previous alert before refetch; selector timeout; holds released",
+    "third read probe passed qualified read assertions",
+    "native optional skills get react unavailable; coreguide contains React commands",
+    "temporary direct Puppeteer connect initially applied800x600 viewport; later STOP fixed1600x1100 controls explicit",
+    "first edit submit click sent no action before timeout; no product cause claimed",
+    "early Publish click attempts sent0requests; bounded real hit-test establishes current source occlusion rather than successful publish"
+  ],
+  "unitCases": {
+    "attempt05": "5pass1harness failure: draw role prop was not passed",
+    "attempt06": "7pass1harness failure: Save Changes label did not match actual Update Shift",
+    "attempt07": "8pass"
+  },
+  "confirmedProductFailure": "Expanded Shift list covers enabled fixed Publish; actual pointer opens unrelated record, zero publish requests",
+  "noPrivateFailureImagesInspected": true,
+  "noSourceRepair": true
+}

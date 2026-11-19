@@ -1,0 +1,1 @@
+Saved MCP diagnostics privately; inspect and redact before publication. Keep a browser connected for get_errors.

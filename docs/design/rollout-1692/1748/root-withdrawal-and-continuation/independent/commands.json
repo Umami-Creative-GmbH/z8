@@ -1,0 +1,634 @@
+[
+  {
+    "label": "priority-original",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/test/review1748-original-conversion.test.tsx",
+      "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "--maxWorkers=1",
+      "--reporter=json",
+      "--outputFile",
+      "../../.tmp/review1748-both/priority-original.json"
+    ],
+    "exit": 0,
+    "seconds": 11.567,
+    "logBytes": 495,
+    "logSha256": "eaee0d592162909868cb010d75d4ec23a92a09e2def2bfa6e4f3281b3365cb2d"
+  },
+  {
+    "label": "priority-detail",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/test/review1748-original-detail.test.tsx",
+      "--maxWorkers=1",
+      "--reporter=json",
+      "--outputFile",
+      "../../.tmp/review1748-both/priority-detail.json"
+    ],
+    "exit": 0,
+    "seconds": 3.229,
+    "logBytes": 493,
+    "logSha256": "3a5c4af8dc57279106f84930499ecdb5a2b596eea5368226b4d569183415bb09"
+  },
+  {
+    "label": "priority-objections",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/test/review1748-assembled-objections.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "--maxWorkers=1",
+      "--bail=1",
+      "--reporter=json",
+      "--outputFile",
+      "../../.tmp/review1748-both/priority-objections.json"
+    ],
+    "exit": 1,
+    "seconds": 5.453,
+    "logBytes": 497,
+    "logSha256": "d43371869ed9d2831631c811175fec2f53462359c98b7890a6ef0551ecbba1a9"
+  },
+  {
+    "label": "priority-objections-settled",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/test/review1748-assembled-objections.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "--maxWorkers=1",
+      "--bail=1",
+      "--reporter=json",
+      "--outputFile",
+      "../../.tmp/review1748-both/priority-objections-settled.json"
+    ],
+    "exit": 1,
+    "seconds": 4.194,
+    "logBytes": 505,
+    "logSha256": "f2f56686efc7d3c91182d95f7afdb8ff2f09ca7411b59d0d0d2ebe89e69bbf84"
+  },
+  {
+    "label": "priority-objections-waited",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/test/review1748-assembled-objections.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "--maxWorkers=1",
+      "--bail=1",
+      "--reporter=json",
+      "--outputFile",
+      "../../.tmp/review1748-both/priority-objections-waited.json"
+    ],
+    "exit": 1,
+    "seconds": 4.973,
+    "logBytes": 504,
+    "logSha256": "1bc66a95220f8b7e8174f4227caa0beb8488f147f6f673ace110f27644c04c91"
+  },
+  {
+    "label": "priority-objections-controlled",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/test/review1748-assembled-objections.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "--maxWorkers=1",
+      "--bail=1",
+      "--reporter=json",
+      "--outputFile",
+      "../../.tmp/review1748-both/priority-objections-controlled.json"
+    ],
+    "exit": 0,
+    "seconds": 5.798,
+    "logBytes": 508,
+    "logSha256": "eef0a124d93ff2836c84951768b3dd62c5415ef68835c31b0bd2a85008ae8f5f"
+  },
+  {
+    "label": "actual-consumers",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/test/review1748-actual-consumers.test.tsx",
+      "--maxWorkers=1",
+      "--bail=1",
+      "--reporter=json",
+      "--outputFile",
+      "../../.tmp/review1748-both/actual-consumers.json"
+    ],
+    "exit": 0,
+    "seconds": 1.862,
+    "logBytes": 494,
+    "logSha256": "c6a03842547315b8f87a9ee8b62ea477223750d4dacae8bcad7135132bb192a9"
+  },
+  {
+    "label": "integration",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "run",
+      "test:integration",
+      "src/lib/travel-expenses/claim-read.integration.test.ts",
+      "src/lib/travel-expenses/legacy-draft-conversion.integration.test.ts",
+      "src/lib/travel-expenses/finance-settlement.integration.test.ts",
+      "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+      "--maxWorkers=1",
+      "--reporter=json",
+      "--outputFile",
+      "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\.tmp\\review1748-both\\integration.json"
+    ],
+    "exit": 0,
+    "seconds": 40.21,
+    "logBytes": 63560,
+    "logSha256": "f8394ed4a8b0ca372f9ac597c7f29b59c5ea63d204cf6c650022677778d48bff"
+  },
+  {
+    "label": "compatibility",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/proxy.public-origin.test.ts",
+      "src/proxy.saved-locale-query.test.tsx",
+      "src/proxy.share.test.ts",
+      "src/proxy.test.ts",
+      "src/components/site-header.test.tsx",
+      "src/tolgee/extracted-key-defaults.test.ts",
+      "src/components/dashboard/manager-today-widget.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "src/components/travel-expenses/travel-expense-list.test.tsx",
+      "src/components/travel-expenses/travel-expense-management.test.tsx",
+      "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+      "src/components/webhooks/webhook-endpoint-card.test.tsx",
+      "src/components/webhooks/webhook-form-dialog.test.tsx",
+      "src/components/webhooks/webhook-lifetime.test.tsx",
+      "src/components/webhooks/webhooks-edit-refusal.test.tsx",
+      "src/components/webhooks/webhooks-refusal.test.tsx",
+      "src/components/webhooks/webhooks-server-arrival.test.tsx",
+      "src/lib/navigation/locale-redirect.test.ts",
+      "src/lib/navigation/route-metadata.test.ts",
+      "src/app/[locale]/(app)/app-layout-content.test.tsx",
+      "src/components/travel-expenses/finance/settlement-panel.test.tsx",
+      "src/components/webhooks/webhook-delivery-logs-dialog/index.test.tsx",
+      "src/lib/manager-daily-briefing/__tests__/get-manager-daily-briefing.test.ts",
+      "src/lib/manager-daily-briefing/__tests__/logic.test.ts",
+      "src/lib/travel-expenses/__tests__/attachment-validation.test.ts",
+      "src/lib/travel-expenses/__tests__/claim-validation.test.ts",
+      "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+      "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+      "src/app/[locale]/(app)/today/today-approvals-panel.test.tsx",
+      "src/app/[locale]/(app)/today/today-briefing.test.tsx",
+      "src/app/[locale]/(app)/today/today-decision-arrival.test.tsx",
+      "src/app/[locale]/(app)/today/today-population-arrival.test.tsx",
+      "src/app/[locale]/(app)/today/today-producer-provenance.test.tsx",
+      "src/app/[locale]/(app)/today/today-provider-arrival.test.tsx",
+      "src/app/[locale]/(app)/today/today-workspace.test.tsx",
+      "src/app/api/approvals/inbox/[id]/approve/route.test.ts",
+      "src/app/api/approvals/inbox/[id]/reject/route.test.ts",
+      "src/app/[locale]/(app)/settings/enterprise/api-keys/actions.test.ts",
+      "src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+      "src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx",
+      "--maxWorkers=1",
+      "--bail=1",
+      "--reporter=json",
+      "--outputFile",
+      "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\.tmp\\review1748-both\\compatibility.json"
+    ],
+    "exit": 0,
+    "seconds": 87.749,
+    "logBytes": 3844,
+    "logSha256": "f6bc4d9dea7a65ea428b653d17219a79d105f9a025667f632adfac45cf801e30"
+  },
+  {
+    "label": "typegen",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "next",
+      "typegen"
+    ],
+    "exit": 0,
+    "seconds": 0.649,
+    "logBytes": 59,
+    "logSha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+  },
+  {
+    "label": "lint",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=biome.jsonc",
+      "--formatter-enabled=false",
+      "src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "src/components/site-header.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "src/lib/navigation/route-metadata.test.ts",
+      "src/lib/navigation/route-metadata.ts"
+    ],
+    "exit": 0,
+    "seconds": 0.723,
+    "logBytes": 44,
+    "logSha256": "bf23302970f71286aa0aee1631965dcf915bfdd3c3df2414a68c2636c9ca0d0f"
+  },
+  {
+    "label": "explicit100crlf",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=biome.jsonc",
+      "--line-width=100",
+      "--line-ending=crlf",
+      "src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "src/components/site-header.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "src/lib/navigation/route-metadata.test.ts",
+      "src/lib/navigation/route-metadata.ts"
+    ],
+    "exit": 1,
+    "seconds": 1.146,
+    "logBytes": 14182,
+    "logSha256": "657736b589d310a8b6183234b60c94c770cd752d3595e2fc6e48007e26703508"
+  },
+  {
+    "label": "owned-explicit100crlf",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=biome.jsonc",
+      "--line-width=100",
+      "--line-ending=crlf",
+      "src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx"
+    ],
+    "exit": 0,
+    "seconds": 0.415,
+    "logBytes": 42,
+    "logSha256": "ea8da84394d5ebdf969f7e609674657186a865817df5f1fb6313a14101b57d1e"
+  },
+  {
+    "label": "owned-ordinary",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "biome",
+      "check",
+      "--config-path=biome.jsonc",
+      "src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx"
+    ],
+    "exit": 1,
+    "seconds": 0.696,
+    "logBytes": 19638,
+    "logSha256": "96263d9bacecd02a30124a9abd08712a7e758222c0ed3eaab1063b7c07634060"
+  },
+  {
+    "label": "doctor-version",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "exec",
+      "react-doctor",
+      "--version"
+    ],
+    "exit": 0,
+    "seconds": 1.833,
+    "logBytes": 7,
+    "logSha256": "b092840e628fef3f3d89757723ea756d4f778c61175f24d99276ace077105eca"
+  },
+  {
+    "label": "doctor",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "exec",
+      "react-doctor",
+      "apps/webapp",
+      "--scope",
+      "files",
+      "--base",
+      "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+      "--include-untracked",
+      "--no-score",
+      "--no-supply-chain",
+      "--no-parallel",
+      "--max-duration",
+      "90",
+      "--verbose",
+      "--json",
+      "--json-out",
+      "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\.tmp\\review1748-both\\doctor.json"
+    ],
+    "exit": 0,
+    "seconds": 7.647,
+    "logBytes": 0,
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "label": "workflow-types",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "tsc",
+      "--project",
+      "tsconfig.workflow-contracts.json",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "exit": 0,
+    "seconds": 14.037,
+    "logBytes": 0,
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "label": "smoke-types",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "tsc",
+      "--project",
+      "tsconfig.smoke.json",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "exit": 0,
+    "seconds": 1.38,
+    "logBytes": 0,
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "label": "main-types",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "tsc",
+      "--project",
+      "tsconfig.typecheck.json",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "exit": 1,
+    "seconds": 26.918,
+    "logBytes": 145,
+    "logSha256": "86ee5b0fa2e18d754caedc8a79c364d2d5638ce8711fa13dfd8a41920ca5c8e1"
+  },
+  {
+    "label": "static-syntax",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "node",
+      ".tmp/review1748-both/syntax.cjs"
+    ],
+    "exit": 1,
+    "seconds": 0.124,
+    "logBytes": 1043,
+    "logSha256": "c4c793d73bf4810b39f1bdad1e3a8ef81b17833e3705a4f307387d1eb63942ce"
+  },
+  {
+    "label": "static-syntax-babel",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "node",
+      ".tmp/review1748-both/syntax.cjs"
+    ],
+    "exit": 0,
+    "seconds": 0.18,
+    "logBytes": 29,
+    "logSha256": "1bc211a486d91798ff38f9c99a071ecb099dec562326137b130113b40e92e94e"
+  },
+  {
+    "label": "real-refresh",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "--dir",
+      "apps/webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--project",
+      "unit",
+      "src/test/review1748-real-refresh.test.tsx",
+      "--maxWorkers=1",
+      "--bail=1",
+      "--reporter=json",
+      "--outputFile",
+      "../../.tmp/review1748-both/real-refresh.json"
+    ],
+    "exit": 0,
+    "seconds": 4.073,
+    "logBytes": 490,
+    "logSha256": "3079c9864c418fb5eea92f8a4531cb3a1cd0e174c501694e9f59e3ac2287fae7"
+  },
+  {
+    "label": "static-syntax-final",
+    "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false"
+    },
+    "argv": [
+      "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+      "--config.verify-deps-before-run=false",
+      "node",
+      ".tmp/review1748-both/syntax.cjs"
+    ],
+    "exit": 0,
+    "seconds": 0.167,
+    "logBytes": 29,
+    "logSha256": "9208528b54c4e84a59bac6198a61ac656640b9d736eb170be834dc62a6d154bc"
+  }
+]

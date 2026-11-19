@@ -1,0 +1,76 @@
+{
+  "attempts": [
+    {
+      "name": "Node REPL baseline",
+      "result": "git ENOBUFS then missing variable after exception; increased buffer and explicit declarations completed baseline before runtime",
+      "productFinding": false
+    },
+    {
+      "name": "First node_repl browser tooling",
+      "result": "tool timeout/kernel reset; separate fresh native controller subsequently used; no restored auth state",
+      "productFinding": false
+    },
+    {
+      "name": "Seed attempt1",
+      "result": "canonical legacy helper import hit server-only dependency before writes; bounded private log retained, first raw exception file overwritten by attempt2",
+      "preservationQualification": "First raw exception bytes are no longer separately available; not reconstructed."
+    },
+    {
+      "name": "Seed attempt2",
+      "result": "server condition hit Next shared-runtime TypeError before writes; raw private exception retained"
+    },
+    {
+      "name": "Seed attempt3",
+      "result": "canonical schema/integrationDbModule seam completed exactly two business drafts, attachments and real objects; no authority writes"
+    },
+    {
+      "name": "MCP parser",
+      "result": "first parser expected SSE data prefix and failed on event prefix; actual data-line parser succeeded; controller private error log and safe failure receipt retained"
+    },
+    {
+      "name": "First draft React probe",
+      "result": "strict network-idle wait timed out before observation; not a React proof; subsequent second fresh draft probe supplied actual names"
+    },
+    {
+      "name": "First conversion wait",
+      "result": "public action executed and navigated; strict network-idle wait timed out; actual subsequent arrival/readback/link-click/reload receipts are authoritative"
+    },
+    {
+      "name": "Second draft names attempt1",
+      "result": "elementType wrapper-only traversal observed panel but omitted lazy resolved detail name; receipt retained as false; corrected resolved fiber.type names obtained before conversion"
+    },
+    {
+      "name": "Held-response protocol attempt1",
+      "result": "real executed conversion and held response verified. Back click performed. Pre-release combined wait timed out and omitted separate URL capture. Response released unmodified, network completed without cancel; final list/no revival observed. Successful retirement ordering unproved.",
+      "retry": false,
+      "extraDrafts": 0
+    },
+    {
+      "name": "Readback predicate attempt1",
+      "result": "wrong amount/currency keys and JS Date-v-string returned false; source schema and actual key/type inspection resolved harness error. Correct actual original columns and SQL date text passed, no product mutation"
+    },
+    {
+      "name": "Cleanup attempt1",
+      "result": "guard refused comparison of ISO string and auto-parsed DateTime; no processes stopped in this attempt; normalized UTC ticks identity guard used"
+    },
+    {
+      "name": "Cleanup attempt2",
+      "result": "owned child exited naturally between process existence check and Stop-Process; partial own cleanup only; final attempt tolerated exited children then independent inventory verified0"
+    },
+    {
+      "name": "Main axe",
+      "result": "unavailable on root/app and readily searched global tool directories; no installation or bypass; unpassed"
+    },
+    {
+      "name": "Capture limits",
+      "result": "current main-region images only; dev overlays/header loading remain. Post-retirement list capture crops leftmost title pixels. No zoom/device/full layout claim."
+    },
+    {
+      "name": "Initial seal primary-page predicate",
+      "result": "Incorrect receipt key yielded null/unpassed; actual react/open/retirement/connected-diagnostics receipts all say primaryStable:true with one page. Corrected using existing observations; initial seal payload copies preserved privately.",
+      "productFinding": false
+    }
+  ],
+  "firstConfirmedProductP1": 0,
+  "rawPreservationQualification": "One first seed exception file was overwritten by the second attempt; disclosed above. Remaining private logs retained and excluded from SAFE. SAFE attempt outcomes below reproduce observed tool results, not reconstructed raw exceptions."
+}

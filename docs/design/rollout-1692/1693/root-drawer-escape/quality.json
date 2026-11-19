@@ -1,0 +1,43 @@
+{
+  "implementationBase": "984a8988eb396ad12539aa6a9688daba7c057685",
+  "productionScope": "One disabled prop on the existing SidebarMenuButton Tooltip root; no shared Tooltip/Sheet/Dialog primitive, global key handler, server/domain/date/payload/permission change.",
+  "regression": {
+    "before": "One failed, six skipped: named mobile navigation focus followed by one native user-event Escape leaves drawer open.",
+    "after": "Ten actual unit suites /97 tests passed; focused mobile Escape and desktop icon-rail/focus preservation included.",
+    "initialExtraTestFailure": "The added desktop check initially queried role=tooltip; installed Base UI uses a rendered text label without that role. The test was corrected to query the public label; no product role change."
+  },
+  "commands": [
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/ui/sidebar.test.tsx -t 'one Escape'",
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/ui/sidebar.test.tsx src/components/ui/sidebar-hydration.test.tsx src/components/ui/tooltip.test.tsx src/components/ui/sheet.test.tsx src/components/ui/dialog.test.tsx src/components/ui/alert-dialog.test.tsx src/components/nav-main.test.tsx src/components/app-sidebar.test.tsx src/components/nav-user.test.tsx src/components/approvals/approval-action-dialog.test.tsx",
+    "pnpm --filter webapp typecheck",
+    "pnpm --filter webapp exec biome check --line-ending=crlf src/components/ui/sidebar.tsx src/components/ui/sidebar.test.tsx",
+    "pnpm exec react-doctor apps/webapp --verbose --scope changed --base 984a8988eb396ad12539aa6a9688daba7c057685 --include-untracked --no-supply-chain --no-telemetry --max-duration 90"
+  ],
+  "results": {
+    "unitSuites": 10,
+    "unitTests": 97,
+    "typecheck": "All application/workflow-contract/smoke projects passed",
+    "biome": "Two files, zero findings after wrapping one new assertion",
+    "doctor": "Two files, zero findings; score disabled",
+    "phoneComparisons": 3,
+    "desktopTooltipAndFocus": "Passed",
+    "pageErrors": 0,
+    "next": {
+      "get_compilation_issues": {
+        "issues": []
+      },
+      "get_errors": {
+        "configErrors": [],
+        "sessionErrors": []
+      }
+    }
+  },
+  "boundary": "Real historical Calendar consumer at 78d8c4af9764d159ca8dc12e772af3c835b77b3c; shared Sidebar/Sheet/Tooltip matched current integration before correction. Only Sidebar production source differs between these runs. Four earlier shared-error handlers remain overlaid equally; no fabricated app response/state. This is a shared-shell consumer-source comparison, not final-current Calendar/page/domain acceptance.",
+  "cleanup": "Browsers closed. Identity-verified owned private Next process tree stopped. Three label-verified disposable fixture containers removed; private manifests retained outside Git. No source/cache/other worker data removed.",
+  "limits": [
+    "No final-current Calendar/Approvals/Inbox route acceptance or physical-device/true-zoom certification follows from historical consumer source.",
+    "Native React introspection not rerun; earlier root native commands were unavailable. DOM/keyboard/MCP checks are distinct.",
+    "Historical Next transition, dialog-session hydration and held-Retry clipping observations remain separately qualified.",
+    "Original provider/domain/catalog/full static-generation obligations remain open."
+  ]
+}

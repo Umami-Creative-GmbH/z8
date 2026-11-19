@@ -1,0 +1,195 @@
+{
+  "attempts": [
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs admin-arrival.js",
+      "completedAt": "2026-11-18T04:22:28.041Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-admin-arrival.js-1794975748041.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs capture.js",
+      "completedAt": "2026-11-18T04:26:30.683Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-capture.js-1794975990683.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs close.js",
+      "completedAt": "2026-11-18T04:27:00.693Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-close.js-1794976020693.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs controller-status.js",
+      "completedAt": "2026-11-18T04:19:23.406Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-controller-status.js-1794975563406.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs diagnostics.js",
+      "completedAt": "2026-11-18T04:25:41.065Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-diagnostics.js-1794975941065.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs empty-control.js",
+      "completedAt": "2026-11-18T04:24:39.576Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-empty-control.js-1794975879576.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs f1.js",
+      "completedAt": "2026-11-18T04:20:42.239Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-f1.js-1794975642239.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs f2.js",
+      "completedAt": "2026-11-18T04:21:26.184Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-f2.js-1794975686184.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs f5.js",
+      "completedAt": "2026-11-18T04:24:24.929Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-f5.js-1794975864929.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs f6.js",
+      "completedAt": "2026-11-18T04:22:44.109Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-f6.js-1794975764109.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs f7.js",
+      "completedAt": "2026-11-18T04:23:18.785Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-f7.js-1794975798785.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs final-database.js",
+      "completedAt": "2026-11-18T04:26:35.582Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-final-database.js-1794975995582.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs finance-arrival.js",
+      "completedAt": "2026-11-18T04:23:35.828Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-finance-arrival.js-1794975815828.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs grant.js",
+      "completedAt": "2026-11-18T04:23:07.657Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-grant.js-1794975787657.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs no-match-control.js",
+      "completedAt": "2026-11-18T04:27:00.627Z",
+      "exit": 1,
+      "harnessOk": false,
+      "error": "TargetCloseError",
+      "receiptFile": "attempt-no-match-control.js-1794976020627.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs no-match-v2.js",
+      "completedAt": "2026-11-18T04:26:00.536Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-no-match-v2.js-1794975960536.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs prepare-arrival.js",
+      "completedAt": "2026-11-18T04:20:30.623Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-prepare-arrival.js-1794975630623.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs revocation-readback.js",
+      "completedAt": "2026-11-18T04:24:30.669Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-revocation-readback.js-1794975870669.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs revoke-v2.js",
+      "completedAt": "2026-11-18T04:23:55.063Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-revoke-v2.js-1794975835063.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs setup-v2.js",
+      "completedAt": "2026-11-18T04:20:04.964Z",
+      "exit": 0,
+      "harnessOk": true,
+      "error": null,
+      "receiptFile": "attempt-setup-v2.js-1794975604964.json",
+      "privateRawPayloadNotAdmitted": true
+    },
+    {
+      "command": "node .tmp/1747-focused-runtime-20261118c/call.mjs setup.js",
+      "completedAt": "2026-11-18T04:18:41.843Z",
+      "exit": 1,
+      "harnessOk": false,
+      "error": "TimeoutError",
+      "receiptFile": "attempt-setup.js-1794975521843.json",
+      "privateRawPayloadNotAdmitted": true
+    }
+  ],
+  "count": 21,
+  "qualification": "Attempt counts are not product coverage. setup.js launch timeout and original no-match-control.js TargetCloseError are tooling/harness failures. Original no-match attempt remained pending until owned context closure; corrected-label independent control passed. No overwritten exceptions."
+}

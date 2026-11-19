@@ -1,0 +1,86 @@
+{
+  "draft": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "096790641866a4c37689d58a7fb245d6fabce682dbeb0159f7531ed02dbe782b"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "39bd54572476f4fdd0369a3cd699529690155df4ab9b2e5ed4e6e6562b1bc357"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "submitted": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "1f082f942555b690322402d0a39434ebfbb8fffd17f90d81a38bb85e7d540451"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "4c6341837825f6c1ec3bfdff3b9a4fc83c60ceca71f4c0094c459073e51f7b6d"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "approved": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "6c3bd457b1c8ba729f8f72ab593bf95b4010099cbf2801d3d94f034d64fb691b"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "51325bfadfd0a5570a12e75c1fb770405344db83e6452e778db4c745d37417d9"
+    },
+    "travel_expense_decision_log": {
+      "count": 1,
+      "sha256": "daf55c5beb91910634791083a2fae04149eba0487f359fe991fff729954cdcfb"
+    }
+  },
+  "unavailable": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "d56e63df1cbd8ef7b89fde813d1047614192b9f8c76fe7151555e0cb1527e629"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "323e3e06b8493c264e336f43e1c7480200ecb4a6b5f138246e709c8e579c3b96"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "same-org-sentinel": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "79dde0097c3a08e6c9002194cd2d6e80a6123e8aaf6cb31b71d47f99c83a8dcd"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "50797174219795f54965f85f842a0030b3012648058c57ca297ed03ec6d3e62d"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "foreign-sentinel": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "5ae8be97a19d0add42429f98ab88d89a517bfb46fcd5fdb8c22ef4be2b336ffc"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "fd217d479d0262f1c533fe050c1fbb5557606378d15acc0c8e5f194d64cbcef1"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  }
+}

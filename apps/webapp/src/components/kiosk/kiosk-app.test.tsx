@@ -29,7 +29,10 @@ const kiosk: KioskDeviceInfo = {
 	offlineMode: false,
 };
 
-type Route = (request: { url: string; init: RequestInit | undefined }) => Response;
+type Route = (request: {
+	url: string;
+	init: RequestInit | undefined;
+}) => Response;
 
 function stubFetch(route: Route) {
 	const calls: { url: string; init: RequestInit | undefined }[] = [];
@@ -89,6 +92,15 @@ describe("KioskApp", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Pair this device" }));
 
 		expect(await screen.findByText(/invalid or has expired/)).toBeTruthy();
+		const input = screen.getByLabelText("Pairing code") as HTMLInputElement;
+		expect(input.value).toBe("ZZZZZ-ZZZZZ");
+		expect(document.activeElement).toBe(input);
+		const described = input
+			.getAttribute("aria-describedby")
+			?.split(" ")
+			.map((id) => document.getElementById(id)?.textContent)
+			.join(" ");
+		expect(described).toContain("invalid or has expired");
 		expect(window.localStorage.getItem(KIOSK_TOKEN_STORAGE_KEY)).toBeNull();
 	});
 

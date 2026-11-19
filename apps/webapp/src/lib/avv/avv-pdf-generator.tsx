@@ -95,7 +95,7 @@ export async function exportAvvToPDF(
 		day: "numeric",
 	});
 
-	// biome-ignore lint/correctness/noComponentHookFactories: one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
+	// one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
 	const AvvDocument = () => (
 		<Document>
 			{/* Page 1 */}

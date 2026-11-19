@@ -1,16 +1,20 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { ActionFailureError } from "./action-data";
 import { CustomDomainSummary } from "./custom-domain-summary";
 import { DomainManagement } from "./domain-management";
 import { SsoProviderListCard } from "./sso-provider-list-card";
+import { SocialOAuthManagement } from "./social-oauth-management";
 import { SSOProviderManagement } from "./sso-provider-management";
 
-const { deleteDomainActionMock, deleteSSOProviderActionMock } = vi.hoisted(() => ({
-	deleteDomainActionMock: vi.fn(),
-	deleteSSOProviderActionMock: vi.fn(),
-}));
+const { deleteDomainActionMock, deleteSSOProviderActionMock, deleteSocialOAuthConfigActionMock } =
+	vi.hoisted(() => ({
+		deleteDomainActionMock: vi.fn(),
+		deleteSSOProviderActionMock: vi.fn(),
+		deleteSocialOAuthConfigActionMock: vi.fn(),
+	}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -34,6 +38,7 @@ vi.mock("@/components/settings/enterprise/action-data", async (importOriginal) =
 vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	deleteDomainAction: deleteDomainActionMock,
 	deleteSSOProviderAction: deleteSSOProviderActionMock,
+	deleteSocialOAuthConfigAction: deleteSocialOAuthConfigActionMock,
 	regenerateVerificationTokenAction: vi.fn(),
 	requestSSODomainVerificationAction: vi.fn(),
 	storeTurnstileSecretAction: vi.fn(),
@@ -50,6 +55,7 @@ vi.mock("./domain-verification-dialog", () => ({
 	DomainVerificationDialog: () => null,
 }));
 vi.mock("./sso-provider-dialog", () => ({ SSOProviderDialog: () => null }));
+vi.mock("./social-oauth-dialog", () => ({ SocialOAuthDialog: () => null }));
 
 const domain = {
 	id: "domain_123",
@@ -131,7 +137,7 @@ describe("enterprise management deletion", () => {
 				'Are you sure you want to delete "login.acme.test"? This action cannot be undone. Users will no longer be able to sign in via this custom domain.',
 			),
 		).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+		fireEvent.click(screen.getByRole("button", { name: "Delete domain" }));
 
 		await waitFor(() =>
 			expect(deleteDomainActionMock).toHaveBeenCalledWith({ domainId: "domain_123" }),
@@ -155,11 +161,123 @@ describe("enterprise management deletion", () => {
 				"Are you sure you want to delete this SSO provider? Users will no longer be able to sign in using this identity provider.",
 			),
 		).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+		expect(
+			screen.getByRole("alertdialog", { name: "Delete SSO provider acme-okta?" }),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Delete provider" }));
 
 		await waitFor(() =>
 			expect(deleteSSOProviderActionMock).toHaveBeenCalledWith({ providerId: "provider_123" }),
 		);
 		await waitFor(() => expect(screen.queryByText("acme.test")).toBeNull());
+	});
+});
+
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	let reject!: (error: unknown) => void;
+	const promise = new Promise<T>((yes, no) => {
+		resolve = yes;
+		reject = no;
+	});
+	return { promise, resolve, reject };
+}
+
+const refusal = () =>
+	new ActionFailureError({ error: "Refused", code: "AuthorizationError" });
+
+const socialConfig = {
+	id: "social_123",
+	provider: "google",
+	clientId: "google-client",
+	isActive: true,
+} as unknown as Parameters<typeof SocialOAuthManagement>[0]["initialConfigs"][number];
+
+const removals = [
+	{
+		record: "custom domain",
+		mock: deleteDomainActionMock,
+		mount: () =>
+			render(
+				<DomainManagement
+					defaultUrls={{ canonical: "https://acme.z8.test" }}
+					initialDomains={[domain]}
+					organizationId="org_123"
+				/>,
+			),
+		open: "Delete custom domain login.acme.test",
+		confirm: "Delete domain",
+		dialog: "Delete Domain",
+		failure: "You do not have access to this setting.",
+		removed: () => screen.queryByText("login.acme.test"),
+	},
+	{
+		record: "SSO provider",
+		mock: deleteSSOProviderActionMock,
+		mount: () =>
+			render(
+				<SSOProviderManagement initialProviders={[provider]} callbackBaseUrl="https://acme.z8.test" />,
+			),
+		open: "Delete SSO provider acme-okta",
+		confirm: "Delete provider",
+		dialog: "Delete SSO provider acme-okta?",
+		failure: "You do not have access to this setting.",
+		removed: () => screen.queryByText("acme.test"),
+	},
+	{
+		record: "social sign-in",
+		mock: deleteSocialOAuthConfigActionMock,
+		mount: () =>
+			render(
+				<SocialOAuthManagement
+					initialConfigs={[socialConfig]}
+					callbackBaseUrl="https://acme.z8.test"
+				/>,
+			),
+		open: "Remove Google sign-in",
+		confirm: "Remove",
+		dialog: "Remove Google sign-in?",
+		failure: "You do not have access to this setting.",
+		removed: () => screen.queryByText("google-client"),
+	},
+];
+
+describe.each(removals)("$record removal confirmation", (removal) => {
+	it("stays open while pending, ignores duplicate presses and closes on success", async () => {
+		const pending = deferred<undefined>();
+		removal.mock.mockReset().mockReturnValue(pending.promise);
+		removal.mount();
+		fireEvent.click(screen.getByRole("button", { name: removal.open }));
+		const confirm = screen.getByRole("button", { name: removal.confirm, exact: true });
+		act(() => {
+			fireEvent.click(confirm);
+			fireEvent.click(confirm);
+		});
+		await waitFor(() => expect(removal.mock).toHaveBeenCalledTimes(1));
+
+		const dialog = screen.getByRole("alertdialog", { name: removal.dialog });
+		expect(dialog.getAttribute("aria-busy")).toBe("true");
+		expect(screen.getByRole("button", { name: "Cancel" }).hasAttribute("disabled")).toBe(true);
+		fireEvent.keyDown(dialog, { key: "Escape" });
+		expect(screen.getByRole("alertdialog", { name: removal.dialog })).toBeTruthy();
+
+		await act(async () => pending.resolve(undefined));
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+		await waitFor(() => expect(removal.removed()).toBeNull());
+	});
+
+	it("keeps the dialog open with an inline error when the removal fails", async () => {
+		removal.mock.mockReset().mockRejectedValue(refusal());
+		removal.mount();
+		fireEvent.click(screen.getByRole("button", { name: removal.open }));
+		fireEvent.click(screen.getByRole("button", { name: removal.confirm, exact: true }));
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toBe(removal.failure);
+		expect(screen.getByRole("alertdialog", { name: removal.dialog })).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Cancel" }).hasAttribute("disabled")).toBe(false);
+		expect(
+			screen.getByRole("button", { name: removal.confirm, exact: true }).hasAttribute("disabled"),
+		).toBe(false);
 	});
 });

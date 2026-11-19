@@ -1,28 +1,28 @@
 {
   "absences": {
-    "addAbsence": "Shto mungesë",
     "balance": {
       "carryoverDays": "Keni {count} ditë të bartura",
-      "carryoverExpiry": "që do të skadojnë më",
+      "carryoverDaysExpiring": "Keni {count} ditë të bartura. Ato skadojnë më {date}.",
       "carryoverFrom": "Të bartura nga {year}",
       "daysRemaining": "Ditë të mbetura",
-      "description": "Ditët tuaja të pushimit për vitin aktual",
       "outOfTotalDays": "nga {totalDays} ditë gjithsej",
       "pending": "Në pritje",
       "title": "Bilanci i pushimeve {year}",
       "used": "Të përdorura"
     },
     "calendar": {
+      "currentYear": "Këtë vit",
       "legend": {
         "approved": "Miratuar",
-        "halfDayAm": "Gjysmë dite (AM)",
-        "halfDayPm": "Gjysmë dite (PM)",
+        "halfDay": "Gjysmë dite",
         "holiday": "Pushim zyrtar",
         "pending": "Në pritje",
         "rejected": "Refuzuar"
       },
       "nextYear": "Viti i ardhshëm",
-      "previousYear": "Viti i kaluar"
+      "previousYear": "Viti i kaluar",
+      "requestAnotherAbsence": "Kërkoni një mungesë tjetër nga kjo ditë",
+      "selectDayDetailsHint": "Zgjidhni një ditë për të kërkuar një mungesë prej saj. Një ditë me mungesë të miratuar ose në pritje shfaq në vend të kësaj detajet e saj."
     },
     "change": {
       "afternoon": "Pasdite",
@@ -40,6 +40,7 @@
       "historyFailed": "Kërkesat për ndryshim nuk mund të ngarkoheshin.",
       "keepHours": "Ruaj orët dhe mbulimin e regjistruar",
       "morning": "Mëngjes",
+      "pendingCount": "{count} në pritje",
       "pendingExplanation": "Mungesa e regjistruar mbetet në fuqi derisa një miratues tjetër të pranojë kërkesën tuaj.",
       "reason": "Arsyeja",
       "reasonRequired": "Kërkohet një arsye",
@@ -321,10 +322,10 @@
       "pending": "Në pritje",
       "rejected": "Refuzuar"
     },
-    "subtitle": "Menaxhoni ditët tuaja të pushimit dhe lejes",
     "table": {
       "cancelAbsence": "Anulo mungesën",
       "cancelAbsenceTooltip": "Anulo mungesën",
+      "changePending": "Kërkesa për ndryshim në pritje",
       "end": "Përfundimi",
       "headers": {
         "actions": "Veprimet",
@@ -337,9 +338,7 @@
       "noRequests": "Nuk u gjet asnjë kërkesë për mungesë.",
       "noSearchResults": "Asnjë mungesë nuk përputhet me kërkimin tuaj.",
       "searchPlaceholder": "Kërko sipas llojit, statusit ose shënimeve...",
-      "start": "Fillimi",
-      "subtitle": "Kërkesat e fundit dhe të ardhshme për mungesë",
-      "title": "Kërkesat tuaja për mungesë"
+      "start": "Fillimi"
     },
     "title": "Mungesat",
     "toast": {
@@ -351,6 +350,10 @@
     "view": {
       "calendar": "Kalendari",
       "table": "Tabela"
+    },
+    "year": {
+      "loadFailed": "Nuk mund të ngarkohej viti {year}. Po shfaqet ende {loadedYear}.",
+      "loading": "Duke ngarkuar vitin {year}… Po shfaqet ende {loadedYear}."
     }
   },
   "calendar": {
@@ -372,6 +375,9 @@
       "edit": "Ndrysho",
       "label": "Veprimet e regjistrimit të orarit"
     },
+    "context": {
+      "timezone": "Zona kohore e kalendarit"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Regjistrimet e kohës janë të bllokuara",
       "category": "Kategoria",
@@ -387,13 +393,9 @@
     "delete": {
       "applied": "Fshirja e regjistrimit të orarit u zbatua",
       "auditNote": "Regjistrimet e kohës do të shënohen si të fshira për qëllime auditimi.",
-      "confirm": "Shndërro në pushim",
-      "description": "Kjo do ta fshijë përgjithmonë këtë periudhë pune. Hapësira do të shfaqet si pushim në kalendar.",
       "failed": "Dështoi fshirja e periudhës së punës",
       "reasonLabel": "Arsyeja e fshirjes",
-      "reasonRequired": "Arsyeja është e detyrueshme",
-      "success": "Periudha e punës u shndërrua në pushim",
-      "title": "Të shndërrohet në pushim?"
+      "reasonRequired": "Arsyeja është e detyrueshme"
     },
     "details": {
       "automaticClockOut": "Dalje e regjistruar automatikisht",
@@ -516,10 +518,7 @@
       "holiday": "Pushim",
       "missingRequiredWork": "Mungon puna e kërkuar",
       "requirementMetOrOver": "Kërkesa e përmbushur/tejkaluar",
-      "timeEntry": "Regjistrim kohe",
-      "title": "Legjenda",
       "underRequirement": "Nën kërkesën",
-      "workPeriod": "Periudhë pune",
       "workPeriodPending": "Në pritje të miratimit"
     },
     "loadEventsError": "Dështoi ngarkimi i ngjarjeve të kalendarit: {message}",
@@ -541,6 +540,8 @@
       "totalDescription": "Koha e regjistruar krahasuar me orët sipas rregullores",
       "weekSum": "Shuma"
     },
+    "nextMonth": "Muaji tjetër",
+    "previousMonth": "Muaji i kaluar",
     "requirements": {
       "dayLabel": "{date}: {required} të kërkuara, {actual} të regjistruara, {delta} diferencë, {status}",
       "includesRunningWork": "Përfshin punën në vijim",
@@ -597,10 +598,13 @@
     },
     "workPeriod": {
       "billable": "E faturueshme",
+      "breakEnforcementNote": "Vetë-rregulluar: zbatimi i pushimit",
       "editedBy": "(redaktuar nga {name} më {date})",
       "missingTask": "Mungon detyra",
       "missingTaskHint": "Mungon detyra: shtoni një detyrë",
-      "breakEnforcementNote": "Rregulluar automatikisht: zbatimi i pushimeve"
+      "runningTitle": "{name} - {duration} (në vazhdim)",
+      "stop": "Ndalo",
+      "stopFor": "Ndalo periudhën e punës në vazhdim për {name}"
     },
     "workStatus": {
       "overRequirement": "mbi kërkesën",

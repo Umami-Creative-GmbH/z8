@@ -1,0 +1,7 @@
+{
+  "operation": "stop",
+  "exactLabelOwnedContainers": 3,
+  "temporary": true,
+  "preservedData": true,
+  "reason": "Reduce Windows resource pressure while other workers stop their own processes; no shared or unrelated service touched."
+}

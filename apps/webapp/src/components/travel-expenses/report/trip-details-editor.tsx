@@ -21,7 +21,11 @@ import { fieldErrorMessage, type TripDetailsFieldName } from "./trip-details-for
 import { useTripDetailsDraft } from "./use-trip-details-draft";
 
 /** Autosaving editor of the travel details all expenses of a trip share. */
-export function TripDetailsEditor({
+export function TripDetailsEditor(props: Parameters<typeof TripDetailsEditorTask>[0]) {
+	return <TripDetailsEditorTask key={props.reportId} {...props} />;
+}
+
+function TripDetailsEditorTask({
 	reportId,
 	details,
 	onDetailsChange,

@@ -1,0 +1,25 @@
+{
+  "name": "public-settled",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "vitest",
+    "run",
+    "--config",
+    ".tmp/1736-merger/vitest.config.ts",
+    "--project",
+    "public-audit",
+    "--maxWorkers",
+    "1",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1736-merger/public-settled.json"
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "startedAt": "2026-11-16T02:17:16.8148639+01:00",
+  "finishedAt": "2026-11-16T02:17:24.5777295+01:00",
+  "exitCode": 1
+}

@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":4759075326389111361},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"missing\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"targetId\":\"C9EE7420CD8BA7B9ECB86092C35A6072\",\"title\":\"z8 - time app\",\"url\":\"http://localhost:50661/en/personnel-files\"},\"error\":null}\n",
+  "err": ""
+}

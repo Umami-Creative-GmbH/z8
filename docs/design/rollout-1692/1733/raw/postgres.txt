@@ -1,0 +1,3 @@
+$ bash ./scripts/run-approval-workflow-repository-integration.sh src/lib/personnel-file/payslip-batch.integration.test.ts
+<3>WSL (3367095 - Relay) ERROR: CreateProcessCommon:881: execvpe(/bin/bash) failed: No such file or directory
+[ELIFECYCLE] Command failed with exit code 1.

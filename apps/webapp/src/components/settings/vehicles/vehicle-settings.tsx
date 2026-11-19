@@ -3,7 +3,6 @@
 import {
 	IconArchive,
 	IconArchiveOff,
-	IconCar,
 	IconInfoCircle,
 	IconLoader2,
 	IconPencil,
@@ -29,7 +28,9 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { Card, CardContent } from "@/components/ui/card";
 import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { VehicleChangeInput } from "@/lib/organization/vehicles/vehicle-rules";
 import type { OrganizationVehicleView } from "@/lib/organization/vehicles/vehicles";
@@ -57,6 +58,12 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 	} | null>(null);
 	const [deletion, setDeletion] = useState<Deletion>(null);
 	const [pending, setPending] = useState(false);
+	const [rowPending, setRowPending] = useState<string | null>(null);
+	const [deletionError, setDeletionError] = useState<string | null>(null);
+	const requestDeletion = (next: Deletion) => {
+		setDeletionError(null);
+		setDeletion(next);
+	};
 
 	/** Applies a change; resolves the failed result, or null when it was accepted. */
 	async function apply(change: VehicleChangeInput) {
@@ -83,6 +90,13 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 		return false;
 	}
 
+	/** Archive/restore straight from a row: one change at a time, with the row's buttons busy. */
+	async function saveRow(change: Extract<VehicleChangeInput, { kind: "archive" | "restore" }>) {
+		if (rowPending !== null) return;
+		setRowPending(change.vehicleId);
+		await save(change).finally(() => setRowPending(null));
+	}
+
 	async function confirmDeletion() {
 		if (!deletion) return;
 		const { vehicle, used } = deletion;
@@ -97,17 +111,19 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 				setDeletion({ vehicle, used: true });
 				return;
 			}
-			if (failure === null) {
-				toast.success(
-					used
-						? t("settings.vehicles.archived", "Vehicle archived")
-						: t("settings.vehicles.deleted", "Vehicle deleted"),
-				);
-			} else {
-				toast.error(refusalMessage(failure));
+			if (failure !== null) {
+				// The dialog stays open with the reason so the change can be retried.
+				setDeletionError(refusalMessage(failure));
+				return;
 			}
+			toast.success(
+				used
+					? t("settings.vehicles.archived", "Vehicle archived")
+					: t("settings.vehicles.deleted", "Vehicle deleted"),
+			);
 			setDeletion(null);
 		};
+		setDeletionError(null);
 		// Promise#finally rather than try/finally: the React Compiler cannot
 		// compile try statements without a catch clause.
 		await run().finally(() => setPending(false));
@@ -129,94 +145,15 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 				</AlertDescription>
 			</Alert>
 
-			<Card>
-				<CardHeader className="flex flex-row flex-wrap items-start justify-between gap-4">
-					<div className="space-y-1.5">
-						<CardTitle className="flex items-center gap-2">
-							<IconCar className="size-5" aria-hidden="true" />
-							{t("settings.vehicles.listTitle", "Vehicles")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.vehicles.listDescription",
-								"Archived vehicles can no longer be picked but stay on the work they were recorded on.",
-							)}
-						</CardDescription>
-					</div>
-					<Button onClick={() => setDialog({ vehicle: null })}>
-						<IconPlus className="size-4" aria-hidden="true" />
-						{t("settings.vehicles.add", "Add vehicle")}
-					</Button>
-				</CardHeader>
-				<CardContent className="space-y-6">
-					{active.length === 0 ? (
-						<p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-							{t("settings.vehicles.empty", "No vehicles yet.")}
-						</p>
-					) : (
-						<VehicleList
-							label={t("settings.vehicles.activeList", "Active vehicles")}
-							vehicles={active}
-							actions={(vehicle) => (
-								<>
-									<Button
-										variant="outline"
-										size="sm"
-										aria-label={t("settings.vehicles.editNamed", "Edit {name}", {
-											name: vehicle.name,
-										})}
-										onClick={() => setDialog({ vehicle })}
-									>
-										<IconPencil className="size-4" aria-hidden="true" />
-										{t("settings.vehicles.edit", "Edit")}
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										aria-label={t("settings.vehicles.archiveNamed", "Archive {name}", {
-											name: vehicle.name,
-										})}
-										onClick={() => void save({ kind: "archive", vehicleId: vehicle.id })}
-									>
-										<IconArchive className="size-4" aria-hidden="true" />
-										{t("settings.vehicles.archive", "Archive")}
-									</Button>
-									<VehiclePhotosDialog vehicle={vehicle} />
-									<DeleteButton vehicle={vehicle} onDelete={setDeletion} />
-								</>
-							)}
-						/>
-					)}
-					{archived.length > 0 ? (
-						<div className="space-y-2">
-							<h3 className="font-medium text-sm">
-								{t("settings.vehicles.archivedTitle", "Archived")}
-							</h3>
-							<VehicleList
-								label={t("settings.vehicles.archivedList", "Archived vehicles")}
-								vehicles={archived}
-								actions={(vehicle) => (
-									<>
-										<Button
-											variant="outline"
-											size="sm"
-											aria-label={t("settings.vehicles.restoreNamed", "Restore {name}", {
-												name: vehicle.name,
-											})}
-											onClick={() => void save({ kind: "restore", vehicleId: vehicle.id })}
-										>
-											<IconArchiveOff className="size-4" aria-hidden="true" />
-											{t("settings.vehicles.restore", "Restore")}
-										</Button>
-										<VehiclePhotosDialog vehicle={vehicle} />
-										<DeleteButton vehicle={vehicle} onDelete={setDeletion} />
-									</>
-								)}
-							/>
-						</div>
-					) : null}
-				</CardContent>
-			</Card>
+			<VehiclesListCard
+				vehicleCount={vehicles.length}
+				onOpen={setDialog}
+				active={active}
+				archived={archived}
+				rowPending={rowPending}
+				saveRow={saveRow}
+				requestDeletion={requestDeletion}
+			/>
 
 			<VehicleDialog
 				open={dialog !== null}
@@ -258,13 +195,22 @@ export function VehicleSettings({ initialData }: VehicleSettingsProps) {
 									)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
+					{deletionError ? (
+						<p role="alert" className="text-sm text-destructive">
+							{deletionError}
+						</p>
+					) : null}
 					<AlertDialogFooter>
 						<AlertDialogCancel disabled={pending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						{deletion?.used && deletion.vehicle.archived ? null : (
 							<AlertDialogAction
+								className={deletion?.used ? undefined : buttonVariants({ variant: "destructive" })}
 								disabled={pending}
 								onClick={(event) => {
-									event.preventDefault();
+									// Base UI's Close ignores preventDefault; stop its handler so the
+									// dialog stays open until the deletion or archive settles.
+									keepAlertDialogOpen(event);
+									if (pending) return;
 									void confirmDeletion();
 								}}
 							>
@@ -330,7 +276,7 @@ function VehicleList({
 					>
 						<div className="min-w-0 space-y-1">
 							<p className="flex flex-wrap items-baseline gap-x-2">
-								<span className="font-medium text-sm">{vehicle.name}</span>
+								<span className="min-w-0 break-words font-medium text-sm">{vehicle.name}</span>
 								<span className="font-mono text-muted-foreground text-xs">
 									{vehicle.licencePlate}
 								</span>
@@ -353,5 +299,132 @@ function VehicleList({
 				);
 			})}
 		</ul>
+	);
+}
+
+function VehiclesListCard({
+	vehicleCount,
+	onOpen,
+	active,
+	archived,
+	rowPending,
+	saveRow,
+	requestDeletion,
+}: {
+	vehicleCount: number;
+	onOpen: (dialog: { vehicle: OrganizationVehicleView | null }) => void;
+	active: OrganizationVehicleView[];
+	archived: OrganizationVehicleView[];
+	rowPending: string | null;
+	saveRow: (change: Extract<VehicleChangeInput, { kind: "archive" | "restore" }>) => Promise<void>;
+	requestDeletion: (next: Deletion) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Card>
+			<CardContent className="space-y-6">
+				{/* The page heading and tab already say "Vehicles": the toolbar carries the count. */}
+				<div className="flex flex-wrap items-start justify-between gap-4">
+					<div className="min-w-0 space-y-1">
+						<p className="font-medium text-sm tabular-nums">
+							{t("settings.vehicles.count", "{count, plural, one {# vehicle} other {# vehicles}}", {
+								count: vehicleCount,
+							})}
+						</p>
+						<p className="text-muted-foreground text-sm">
+							{t(
+								"settings.vehicles.listDescription",
+								"Archived vehicles can no longer be picked but stay on the work they were recorded on.",
+							)}
+						</p>
+					</div>
+					<Button onClick={() => onOpen({ vehicle: null })}>
+						<IconPlus className="size-4" aria-hidden="true" />
+						{t("settings.vehicles.add", "Add vehicle")}
+					</Button>
+				</div>
+				{active.length === 0 ? (
+					<p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
+						{archived.length > 0
+							? t(
+									"settings.vehicles.noActive",
+									"No active vehicles. Add a vehicle or restore an archived one.",
+								)
+							: t("settings.vehicles.empty", "No vehicles yet.")}
+					</p>
+				) : (
+					<VehicleList
+						label={t("settings.vehicles.activeList", "Active vehicles")}
+						vehicles={active}
+						actions={(vehicle) => (
+							<>
+								<Button
+									variant="outline"
+									size="sm"
+									aria-label={t("settings.vehicles.editNamed", "Edit {name}", {
+										name: vehicle.name,
+									})}
+									onClick={() => onOpen({ vehicle })}
+								>
+									<IconPencil className="size-4" aria-hidden="true" />
+									{t("settings.vehicles.edit", "Edit")}
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									aria-label={t("settings.vehicles.archiveNamed", "Archive {name}", {
+										name: vehicle.name,
+									})}
+									disabled={rowPending !== null}
+									onClick={() => void saveRow({ kind: "archive", vehicleId: vehicle.id })}
+								>
+									{rowPending === vehicle.id ? (
+										<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+									) : (
+										<IconArchive className="size-4" aria-hidden="true" />
+									)}
+									{t("settings.vehicles.archive", "Archive")}
+								</Button>
+								<VehiclePhotosDialog vehicle={vehicle} />
+								<DeleteButton vehicle={vehicle} onDelete={requestDeletion} />
+							</>
+						)}
+					/>
+				)}
+				{archived.length > 0 ? (
+					<div className="space-y-2">
+						<h3 className="font-medium text-sm">
+							{t("settings.vehicles.archivedTitle", "Archived")}
+						</h3>
+						<VehicleList
+							label={t("settings.vehicles.archivedList", "Archived vehicles")}
+							vehicles={archived}
+							actions={(vehicle) => (
+								<>
+									<Button
+										variant="outline"
+										size="sm"
+										aria-label={t("settings.vehicles.restoreNamed", "Restore {name}", {
+											name: vehicle.name,
+										})}
+										disabled={rowPending !== null}
+										onClick={() => void saveRow({ kind: "restore", vehicleId: vehicle.id })}
+									>
+										{rowPending === vehicle.id ? (
+											<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+										) : (
+											<IconArchiveOff className="size-4" aria-hidden="true" />
+										)}
+										{t("settings.vehicles.restore", "Restore")}
+									</Button>
+									<VehiclePhotosDialog vehicle={vehicle} />
+									<DeleteButton vehicle={vehicle} onDelete={requestDeletion} />
+								</>
+							)}
+						/>
+					</div>
+				) : null}
+			</CardContent>
+		</Card>
 	);
 }

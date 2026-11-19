@@ -7,6 +7,7 @@ import {
 	IconGenderFemale,
 	IconGenderMale,
 	IconLoader2,
+	IconRefresh,
 	IconTrash,
 } from "@tabler/icons-react";
 import {
@@ -44,6 +45,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
 	Select,
 	SelectContent,
@@ -130,7 +132,7 @@ type ProfileFormApi = ReactFormExtendedApi<
 
 type TranslationFunction = ReturnType<typeof useTranslate>["t"];
 
-export function ProfileForm({ user }: ProfileFormProps) {
+function useProfileEditor({ user }: ProfileFormProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const queryClient = useQueryClient();
@@ -286,6 +288,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
 	// Load employee personal info
 	const profileLoadGeneration = useRef(0);
+	const hasLoadedEmployeeData = useRef(false);
+	// Only a failed first load blocks editing: saving empty personal fields would clear the stored ones.
+	const [initialLoadFailed, setInitialLoadFailed] = useState(false);
 
 	const runLoadEmployeeData = useCallback(async () => {
 		const generation = ++profileLoadGeneration.current;
@@ -313,18 +318,31 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			);
 		}
 		setCurrentEmployeeId(emp?.id ?? null);
+		hasLoadedEmployeeData.current = true;
+		setInitialLoadFailed(false);
 		setIsInitialLoading(false);
 	}, [form, user.firstName, user.helpImproveProduct, user.image, user.lastName]);
 
-	useViewRefresh(runLoadEmployeeData);
-	useEffect(() => {
+	const loadEmployeeDataReportingFailure = useCallback(() => {
 		void runLoadEmployeeData().catch(() => {
+			if (!hasLoadedEmployeeData.current) setInitialLoadFailed(true);
 			toast.error(t("settings.profile.loadFailed", "Failed to load profile"));
 		});
+	}, [runLoadEmployeeData, t]);
+
+	useViewRefresh(runLoadEmployeeData);
+	useEffect(() => {
+		loadEmployeeDataReportingFailure();
 		return () => {
 			profileLoadGeneration.current += 1;
 		};
-	}, [runLoadEmployeeData, t]);
+	}, [loadEmployeeDataReportingFailure]);
+
+	const retryInitialLoad = () => {
+		setInitialLoadFailed(false);
+		setIsInitialLoading(true);
+		loadEmployeeDataReportingFailure();
+	};
 
 	// Create ref for file input
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -374,15 +392,63 @@ export function ProfileForm({ user }: ProfileFormProps) {
 			);
 		},
 	});
+	return {
+		t,
+		isInitialLoading,
+		currentEmployeeId,
+		today,
+		presence,
+		form,
+		validateFirstName,
+		validateLastName,
+		avatarImage,
+		selectedGender,
+		selectedBirthday,
+		isSubmitting,
+		displayName,
+		uploadProgress,
+		isUploadingAvatar,
+		previewUrl,
+		initialLoadFailed,
+		retryInitialLoad,
+		inputRef,
+		handleFileInputChange,
+		removeAvatarMutation,
+	};
+}
+
+export function ProfileForm(props: ProfileFormProps) {
+	const { user } = props;
+	const {
+		t,
+		isInitialLoading,
+		currentEmployeeId,
+		today,
+		presence,
+		form,
+		validateFirstName,
+		validateLastName,
+		avatarImage,
+		selectedGender,
+		selectedBirthday,
+		isSubmitting,
+		displayName,
+		uploadProgress,
+		isUploadingAvatar,
+		previewUrl,
+		initialLoadFailed,
+		retryInitialLoad,
+		inputRef,
+		handleFileInputChange,
+		removeAvatarMutation,
+	} = useProfileEditor(props);
 
 	return (
 		<div className="space-y-6">
 			{/* Profile Information Section */}
 			<Card>
 				<CardHeader>
-					<CardTitle>
-						{t("settings.profile.information", "Profile Information")}
-					</CardTitle>
+					<CardTitle>{t("settings.profile.information", "Profile Information")}</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.profile.informationDescription",
@@ -393,6 +459,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
 				<CardContent>
 					{isInitialLoading ? (
 						<ProfileFormSkeleton />
+					) : initialLoadFailed ? (
+						<div className="flex flex-col items-start gap-3" role="alert">
+							<p className="text-sm">
+								{t(
+									"settings.profile.loadFailedDetail",
+									"Your profile could not be loaded, so it cannot be edited right now. Try again.",
+								)}
+							</p>
+							<Button type="button" variant="outline" onClick={retryInitialLoad}>
+								<IconRefresh className="size-4" aria-hidden="true" />
+								{t("common.retry", "Retry")}
+							</Button>
+						</div>
 					) : (
 						<ProfileEditor
 							avatarImage={avatarImage}
@@ -542,7 +621,12 @@ function ProfilePersonalInformation({
 			<h3 className="text-lg font-medium">
 				{t("settings.profile.personalInformation", "Personal Information")}
 			</h3>
-			<ProfileGenderField form={form} selectedGender={selectedGender} t={t} />
+			<ProfileGenderField
+				form={form}
+				isSubmitting={isSubmitting}
+				selectedGender={selectedGender}
+				t={t}
+			/>
 			<ProfilePronounsField form={form} isSubmitting={isSubmitting} t={t} />
 			<ProfileBirthdayField
 				form={form}
@@ -684,7 +768,7 @@ function ProfileAvatarAndNames({
 						onClick={removeAvatar}
 						disabled={isUploadingAvatar || isSubmitting || removeAvatarPending}
 						aria-label={t("settings.profile.removePicture", "Remove Picture")}
-						className="absolute right-0 top-0 rounded-full bg-destructive p-1.5 text-destructive-foreground shadow-lg ring-2 ring-background transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
+						className="absolute right-0 top-0 rounded-full bg-destructive p-1.5 text-white shadow-lg ring-2 ring-background transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
 					>
 						{removeAvatarPending ? (
 							<IconLoader2
@@ -784,10 +868,12 @@ function ProfileAvatarAndNames({
 
 function ProfileGenderField({
 	form,
+	isSubmitting,
 	selectedGender,
 	t,
 }: {
 	form: ProfileFormApi;
+	isSubmitting: boolean;
 	selectedGender: ProfileFormValues["gender"];
 	t: TranslationFunction;
 }) {
@@ -809,41 +895,69 @@ function ProfileGenderField({
 		},
 	] as const;
 
+	const groupRef = useRef<HTMLDivElement>(null);
+	const clearSelection = () => {
+		form.setFieldValue("gender", "");
+		// The clear button disappears with the selection; keep focus in the group.
+		requestAnimationFrame(() => {
+			groupRef.current?.querySelector<HTMLElement>('[role="radio"]')?.focus();
+		});
+	};
+
 	return (
 		<div className="space-y-2">
-			<Label id="gender-label">
-				{t("settings.profile.gender.label", "Gender")}
-			</Label>
-			<div
-				role="radiogroup"
+			<div className="flex min-h-8 items-center justify-between gap-3">
+				<Label id="gender-label">{t("settings.profile.gender.label", "Gender")}</Label>
+				{selectedGender ? (
+					<Button
+						type="button"
+						variant="link"
+						size="sm"
+						className="h-auto px-0"
+						onClick={clearSelection}
+						disabled={isSubmitting}
+					>
+						{t("settings.profile.gender.clear", "Clear selection")}
+					</Button>
+				) : null}
+			</div>
+			<RadioGroup
+				ref={groupRef}
 				aria-labelledby="gender-label"
+				value={selectedGender}
+				onValueChange={(value) => {
+					if (isGenderValue(value)) form.setFieldValue("gender", value);
+				}}
+				disabled={isSubmitting}
 				className="grid grid-cols-3 gap-3"
 			>
 				{options.map((option) => {
 					const Icon = option.icon;
 					return (
-						// biome-ignore lint/a11y/useSemanticElements: Preserve the existing styled radio-button interaction.
-						<button
+						<label
 							key={option.value}
-							type="button"
-							role="radio"
-							aria-checked={selectedGender === option.value}
-							onClick={() => form.setFieldValue("gender", option.value)}
-							className={cn(
-								"flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 transition-[border-color,background-color] hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-								selectedGender === option.value
-									? "border-primary bg-primary/5 text-primary"
-									: "border-border bg-background",
-							)}
+							className="relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-border bg-background p-4 transition-[border-color,background-color] hover:border-primary/50 has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-data-checked:border-primary has-data-checked:bg-primary/5 has-data-checked:text-primary has-data-disabled:cursor-not-allowed has-data-disabled:opacity-60"
 						>
+							<RadioGroupItem
+								value={option.value}
+								className="absolute top-2 right-2 focus-visible:ring-0"
+							/>
 							<Icon className="size-6" aria-hidden="true" />
 							<span className="text-sm font-medium">{option.label}</span>
-						</button>
+						</label>
 					);
 				})}
-			</div>
+			</RadioGroup>
 		</div>
 	);
+}
+
+const GENDER_VALUES = ["male", "female", "other"] as const;
+
+function isGenderValue(
+	value: string,
+): value is (typeof GENDER_VALUES)[number] {
+	return (GENDER_VALUES as readonly string[]).includes(value);
 }
 
 function ProfilePronounsField({
@@ -915,9 +1029,7 @@ function ProfilePronounsField({
 								<SelectItem value="she/her">she/her</SelectItem>
 								<SelectItem value="he/him">he/him</SelectItem>
 								<SelectItem value="they/them">they/them</SelectItem>
-								<SelectItem value={CUSTOM_PRONOUN_VALUE}>
-									{customLabel}
-								</SelectItem>
+								<SelectItem value={CUSTOM_PRONOUN_VALUE}>{customLabel}</SelectItem>
 							</SelectContent>
 						</Select>
 						<div className="space-y-2">
@@ -962,9 +1074,7 @@ function ProfileBirthdayField({
 }) {
 	return (
 		<div className="space-y-2">
-			<Label htmlFor="birthday">
-				{t("settings.profile.birthday.label", "Birthday")}
-			</Label>
+			<Label htmlFor="birthday">{t("settings.profile.birthday.label", "Birthday")}</Label>
 			<Popover>
 				<PopoverTrigger asChild>
 					<Button
@@ -979,12 +1089,7 @@ function ProfileBirthdayField({
 						{selectedBirthday ? (
 							formatBirthdayDate(selectedBirthday)
 						) : (
-							<span>
-								{t(
-									"settings.profile.birthday.placeholder",
-									"Pick your birthday",
-								)}
-							</span>
+							<span>{t("settings.profile.birthday.placeholder", "Pick your birthday")}</span>
 						)}
 					</Button>
 				</PopoverTrigger>

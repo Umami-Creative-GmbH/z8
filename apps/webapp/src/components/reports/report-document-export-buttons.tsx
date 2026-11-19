@@ -2,7 +2,7 @@
 
 import { IconDownload, IconFileSpreadsheet, IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useDisplayContext } from "@/hooks/use-display-context";
@@ -116,9 +116,26 @@ async function buildReportExportFile(format: ExportFormat, document: ReportDocum
 				};
 }
 
+function downloadReportFile(file: { data: BlobPart; mimeType: string; filename: string }) {
+	const blob = new Blob([file.data], { type: file.mimeType });
+	const url = URL.createObjectURL(blob);
+	const anchor = window.document.createElement("a");
+	anchor.href = url;
+	anchor.download = file.filename;
+	try {
+		window.document.body.appendChild(anchor);
+		anchor.click();
+	} finally {
+		anchor.remove();
+		URL.revokeObjectURL(url);
+	}
+}
+
 interface ReportDocumentExportButtonsProps {
 	/** Builds the document to export from the viewer's labels. */
 	buildDocument: (context: ProjectReportExportContext) => ReportDocument;
+	/** Stable identity of the report result or frozen snapshot. */
+	source?: object;
 	/** The formats offered (default: PDF, Excel and CSV). */
 	formats?: readonly ExportFormat[];
 }
@@ -130,35 +147,47 @@ interface ReportDocumentExportButtonsProps {
  */
 export function ReportDocumentExportButtons({
 	buildDocument,
+	source,
 	formats = ["pdf", "excel", "csv"],
 }: ReportDocumentExportButtonsProps) {
 	const { t } = useTranslate();
 	const displayContext = useDisplayContext();
 	const labels = useProjectReportExportLabels();
 	const [loading, setLoading] = useState<ExportFormat | null>(null);
+	const lifetime = useRef<object | null>(null);
+	const pending = useRef<object | null>(null);
+	const identity = source ?? buildDocument;
+	useLayoutEffect(() => {
+		lifetime.current = { identity };
+		pending.current = null;
+		return () => {
+			if (pending.current) setLoading(null);
+			lifetime.current = null;
+			pending.current = null;
+		};
+	}, [identity]);
 
 	const handleExport = async (format: ExportFormat) => {
+		const arrival = lifetime.current;
+		if (!arrival || pending.current) return;
+		const operation = {};
+		pending.current = operation;
+		const current = () => lifetime.current === arrival && pending.current === operation;
 		setLoading(format);
 		const generatedAt = formatInstant(systemClock.nowInstant(), displayContext, "dateTimeMedium");
 		await (async () => {
 			try {
 				const document = buildDocument({ labels, generatedAt });
 				const file = await buildReportExportFile(format, document);
-				const blob = new Blob([file.data as BlobPart], { type: file.mimeType });
-				const url = URL.createObjectURL(blob);
-				const anchor = window.document.createElement("a");
-				anchor.href = url;
-				anchor.download = file.filename;
-				window.document.body.appendChild(anchor);
-				anchor.click();
-				window.document.body.removeChild(anchor);
-				URL.revokeObjectURL(url);
+				if (!current()) return;
+				downloadReportFile({ ...file, data: file.data as BlobPart });
 				toast.success(t("reports.export.success", "Export successful"), {
 					description: t("reports.export.downloaded", "Downloaded {filename}", {
 						filename: file.filename,
 					}),
 				});
 			} catch (error) {
+				if (!current()) return;
 				console.error("Export failed:", error);
 				toast.error(t("reports.export.failed", "Export failed"), {
 					description:
@@ -171,7 +200,10 @@ export function ReportDocumentExportButtons({
 				});
 			}
 		})().finally(() => {
-			setLoading(null);
+			if (current()) {
+				pending.current = null;
+				setLoading(null);
+			}
 		});
 	};
 
@@ -179,7 +211,7 @@ export function ReportDocumentExportButtons({
 		<div className="flex flex-wrap gap-2">
 			{formats.includes("pdf") && (
 				<Button onClick={() => handleExport("pdf")} disabled={loading !== null} variant="outline">
-					<IconFileText className="mr-2 size-4" />
+					<IconFileText aria-hidden="true" className="mr-2 size-4" />
 					{loading === "pdf"
 						? t("reports.export.generating", "Generating...")
 						: t("reports.export.pdf", "Export PDF")}
@@ -187,7 +219,7 @@ export function ReportDocumentExportButtons({
 			)}
 			{formats.includes("excel") && (
 				<Button onClick={() => handleExport("excel")} disabled={loading !== null} variant="outline">
-					<IconFileSpreadsheet className="mr-2 size-4" />
+					<IconFileSpreadsheet aria-hidden="true" className="mr-2 size-4" />
 					{loading === "excel"
 						? t("reports.export.generating", "Generating...")
 						: t("reports.export.excel", "Export Excel")}
@@ -195,7 +227,7 @@ export function ReportDocumentExportButtons({
 			)}
 			{formats.includes("csv") && (
 				<Button onClick={() => handleExport("csv")} disabled={loading !== null} variant="outline">
-					<IconDownload className="mr-2 size-4" />
+					<IconDownload aria-hidden="true" className="mr-2 size-4" />
 					{loading === "csv"
 						? t("reports.export.generating", "Generating...")
 						: t("reports.export.csv", "Export CSV")}

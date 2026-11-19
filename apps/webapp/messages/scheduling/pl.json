@@ -6,9 +6,13 @@
       "gapCount": "{count} brak personelu",
       "gaps": "luki",
       "hideOverlay": "Ukryj nakładkę pokrycia",
+      "lastLoaded": "Ostatnio wczytana obsada",
+      "loading": "Wczytywanie obsady…",
       "metSlots": "{count} wystarczająca obsada",
       "overSlots": "{count} nadmiar personelu",
       "overstaffed": "Nadmiar personelu",
+      "readFailed": "Nie udało się wczytać obsady. Ponów próbę, aby sprawdzić personel.",
+      "refreshing": "Odświeżanie obsady…",
       "showOverlay": "Pokaż nakładkę celów pokrycia",
       "summary": "Podsumowanie pokrycia:",
       "toggleLabel": "Pokrycie",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Twoje opublikowane zmiany, tydzień po tygodniu",
       "employeeTitle": "Mój grafik",
-      "managerDescription": "Zarządzaj i planuj zmiany pracowników",
+      "planningDescription": "Planuj i publikuj zmiany. Zaplanowane zmiany nie rejestrują czasu pracy.",
       "title": "Harmonogram zmian"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Anuluj",
       "complianceAcknowledgmentRequired": "Wymagane potwierdzenie zgodności",
       "complianceWarnings": "{count, plural, one {Kontrole zgodności wykryły # ostrzeżenie; musisz je potwierdzić przed publikacją.} few {Kontrole zgodności wykryły # ostrzeżenia; musisz je potwierdzić przed publikacją.} other {Kontrole zgodności wykryły # ostrzeżeń; musisz je potwierdzić przed publikacją.} }",
+      "coverageLoading": "Trwa wczytywanie obsady",
+      "coverageRulesCheckedOnPublish": "Publikacja spowoduje zastosowanie bieżących reguł obsady.",
+      "coverageUnavailable": "Obsada jest niedostępna",
+      "coverageUnloaded": "Obsada nie została sprawdzona",
       "coverageWarning": "Niektóre bloki czasowe nie spełniają minimalnych wymagań kadrowych.",
       "maxHours": "Maks. liczba godzin: {count}",
       "notifyEmployees": "{count, plural, one {Opublikuj # zmianę w wersji roboczej i powiadom pracowników} few {Opublikuj # zmiany w wersji roboczej i powiadom pracowników} other {Opublikuj # zmian w wersji roboczej i powiadom pracowników} }",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Ostrzeżenia wykryte przed publikacją"
     },
     "scheduler": {
+      "assigned": "Przypisano",
       "complianceBanner": {
         "findingsDetected": "Wykryto {count} problem(ów) przed publikacją.",
         "maxHours": "Maks. liczba godzin: {count}",
@@ -59,18 +68,24 @@
         "employee": "Wyświetlanie zmian dla: {name}",
         "showAll": "Pokaż wszystkie zmiany"
       },
+      "loadFailed": "Nie udało się odświeżyć zmian. Wczytane zmiany zostały zachowane.",
       "loading": "Ładowanie harmonogramu...",
+      "open": "Otwarta zmiana",
       "publish": {
         "failed": "Nie udało się opublikować zmian",
         "published": "Opublikowano {count} zmian(y)"
       },
+      "retry": "Ponów",
+      "shiftList": "Lista zmian",
       "shiftUpdate": {
         "failed": "Nie udało się zaktualizować zmiany",
         "overlapDescription": "Ta zmiana nakłada się na {count} inną zmianę(-y)",
         "overlapWarning": "Zmiana zapisana z ostrzeżeniem o nakładaniu się",
         "skillOverrideReasonRequired": "Pracownikowi brakuje wymaganej umiejętności w tym dniu. Otwórz zmianę, aby podać powód.",
         "updated": "Zmiana zaktualizowana"
-      }
+      },
+      "supportFailed": "Nie udało się odświeżyć szablonów ani informacji o zgodności. Sprawdź ponownie przed publikacją.",
+      "templatesUnavailable": "Nie udało się wczytać szablonów zmian."
     },
     "shiftDetails": {
       "close": "Zamknij",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Przeciągnij szablon do kalendarza, aby utworzyć zmianę",
       "empty": "Brak dostępnych szablonów. Utwórz szablony w Ustawieniach, aby szybko dodawać zmiany.",
+      "selectHint": "Wybierz szablon, a następnie ustaw datę zmiany i przypisanie.",
       "title": "Szablony zmian"
     }
   }

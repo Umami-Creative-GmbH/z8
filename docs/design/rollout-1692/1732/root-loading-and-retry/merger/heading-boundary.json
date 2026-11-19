@@ -1,0 +1,11 @@
+{
+  "seam": "Actual exported route Suspense fallback together with actual SiteHeader. Peripheral header controls and translation/navigation/session boundary fakes only. No private component called and no real route read short-circuited.",
+  "base": "96e64b16a10c629cae6ec820b11862ac48511503",
+  "controlFiles": [
+    "site-header.tsx",
+    "route-metadata.ts",
+    "payslip-batches/page.tsx"
+  ],
+  "controlAdaptation": "One relative route-metadata import in copied SiteHeader; copied exports used by baseline test. No behavior alterations.",
+  "expected": "Exactly one safe h1 during unresolved route admission. No actor, organization, pay period or history disclosed."
+}

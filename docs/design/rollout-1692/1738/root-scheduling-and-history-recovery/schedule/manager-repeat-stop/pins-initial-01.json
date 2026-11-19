@@ -1,0 +1,349 @@
+{
+  "head": "a85fec346084fa576b77d34f7f654928d2d957b3",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "tree": "986d5901503eb708e9353a7cac16b98a8c8ac484",
+  "applicationTree": "22e5878ab8f5d205f7d7f625f0e80c8247cba52b",
+  "clean": true,
+  "latestVerified": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+  "verifiedCommit": null,
+  "tracked": 17286,
+  "allTrackedPinSha256": "b4d961b606efe5644d7c67a5ff6d824ef04b553616adb6a6fbbe1c62fce9fda9",
+  "anchors": [
+    {
+      "issue": 1693,
+      "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "ancestor": true
+    },
+    {
+      "issue": 1694,
+      "commit": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "ancestor": true
+    },
+    {
+      "issue": 1695,
+      "commit": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "ancestor": true
+    },
+    {
+      "issue": 1853,
+      "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    },
+    {
+      "issue": 1700,
+      "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "ancestor": true
+    },
+    {
+      "issue": 1701,
+      "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "ancestor": true
+    },
+    {
+      "issue": 1820,
+      "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "ancestor": true
+    },
+    {
+      "issue": 1702,
+      "commit": "416c04fc1b65f798422ddeecb8413249b064f715",
+      "ancestor": true
+    },
+    {
+      "issue": 1703,
+      "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "ancestor": true
+    },
+    {
+      "issue": 1704,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1705,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1706,
+      "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "ancestor": true
+    },
+    {
+      "issue": 1707,
+      "commit": "6fa8147fae492939056a76e83e327e520d921ae1",
+      "ancestor": true
+    },
+    {
+      "issue": 1708,
+      "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "ancestor": true
+    },
+    {
+      "issue": 1709,
+      "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "ancestor": true
+    },
+    {
+      "issue": 1710,
+      "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "ancestor": true
+    },
+    {
+      "issue": 1711,
+      "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "ancestor": true
+    },
+    {
+      "issue": 1712,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1713,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1714,
+      "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "ancestor": true
+    },
+    {
+      "issue": 1715,
+      "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "ancestor": true
+    },
+    {
+      "issue": 1716,
+      "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "ancestor": true
+    },
+    {
+      "issue": 1717,
+      "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "ancestor": true
+    },
+    {
+      "issue": 1718,
+      "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "ancestor": true
+    },
+    {
+      "issue": 1719,
+      "commit": "a9b472e5864f386d881604605d593cffc189d61a",
+      "ancestor": true
+    },
+    {
+      "issue": 1821,
+      "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1822,
+      "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "ancestor": true
+    },
+    {
+      "issue": 1823,
+      "commit": "65b74963b69e9536af5e862199fa43a8583473cc",
+      "ancestor": true
+    },
+    {
+      "issue": 1824,
+      "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "ancestor": true
+    },
+    {
+      "issue": 1825,
+      "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "ancestor": true
+    },
+    {
+      "issue": 1826,
+      "commit": "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "ancestor": true
+    },
+    {
+      "issue": 1720,
+      "commit": "ced095089163e69b232c2bce96a40cba800186d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1721,
+      "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "ancestor": true
+    },
+    {
+      "issue": 1722,
+      "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "ancestor": true
+    },
+    {
+      "issue": 1723,
+      "commit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "ancestor": true
+    },
+    {
+      "issue": 1827,
+      "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "ancestor": true
+    },
+    {
+      "issue": 1828,
+      "commit": "752c500833e751df9988a3b2434d240124b89a51",
+      "ancestor": true
+    },
+    {
+      "issue": 1829,
+      "commit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "ancestor": true
+    },
+    {
+      "issue": 1830,
+      "commit": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+      "ancestor": true
+    },
+    {
+      "issue": 1831,
+      "commit": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+      "ancestor": true
+    },
+    {
+      "issue": 1832,
+      "commit": "5646e7b320376d2605b80e231b6b828f4b35f670",
+      "ancestor": true
+    },
+    {
+      "issue": 1833,
+      "commit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+      "ancestor": true
+    },
+    {
+      "issue": 1834,
+      "commit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+      "ancestor": true
+    },
+    {
+      "issue": 1835,
+      "commit": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "ancestor": true
+    },
+    {
+      "issue": 1724,
+      "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "ancestor": true
+    },
+    {
+      "issue": 1725,
+      "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "ancestor": true
+    },
+    {
+      "issue": 1726,
+      "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "ancestor": true
+    },
+    {
+      "issue": 1727,
+      "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "ancestor": true
+    },
+    {
+      "issue": 1728,
+      "commit": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "ancestor": true
+    },
+    {
+      "issue": 1729,
+      "commit": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "ancestor": true
+    },
+    {
+      "issue": 1730,
+      "commit": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "ancestor": true
+    },
+    {
+      "issue": 1731,
+      "commit": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+      "ancestor": true
+    },
+    {
+      "issue": 1732,
+      "commit": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "ancestor": true
+    },
+    {
+      "issue": 1733,
+      "commit": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+      "ancestor": true
+    },
+    {
+      "issue": 1734,
+      "commit": "9f2bd756833e85a33a97db496487afbc992c69ae",
+      "ancestor": true
+    },
+    {
+      "issue": 1735,
+      "commit": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+      "ancestor": true
+    },
+    {
+      "issue": 1736,
+      "commit": "c9a56648c81206527d1935bfcb46e0a959a4157f",
+      "ancestor": true
+    },
+    {
+      "issue": 1737,
+      "commit": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "ancestor": true
+    },
+    {
+      "issue": 1745,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    }
+  ],
+  "baselineAncestor": true,
+  "archives": [
+    {
+      "namespace": "merge1738-audit",
+      "files": 26,
+      "seal": "026a64195a5f9ef69815c3836847834eb30a10a21cffa617e3965fc9a0063874"
+    },
+    {
+      "namespace": "1738-independent-checks",
+      "files": 28,
+      "seal": "a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9"
+    },
+    {
+      "namespace": "1738-publish-independent-checks",
+      "files": 29,
+      "seal": "54ebb36cfb1d79d5e2a27609973fbb68f37c073001cba683e43ad19b51664dae"
+    },
+    {
+      "namespace": "1738-publication-independent-checks",
+      "files": 30,
+      "seal": "e4ed0ede248c77399706e504078d3d9299a99c66f8bcaa53d6ad5118daaab2d1"
+    },
+    {
+      "namespace": "1738-range-hit-independent-checks",
+      "files": 29,
+      "seal": "84d6047e7b9193dc249b169fa290e8d582305a16bb5ed8dbaf1f9358557472f1"
+    }
+  ],
+  "dependencyLeaves": 158,
+  "dependencySha256": "051acf4f47910176a18bcf5fe0fc2e452beb068c74a0da938470e426b5e9141b",
+  "lock": {
+    "path": "pnpm-lock.yaml",
+    "bytes": 771361,
+    "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  "license": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "bytes": 28382,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf"
+  },
+  "pdfProofs": 202
+}

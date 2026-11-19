@@ -1,0 +1,23 @@
+[
+  { id: 'email', type: 'email', name: 'email' },
+  { id: 'password', type: 'password', name: 'password' },
+  {
+    id: 'cf-chl-widget-tzdm1_response',
+    type: 'hidden',
+    name: 'cf-turnstile-response'
+  }
+]
+Normal UI login completed
+file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46
+            this.#timeoutError = new TimeoutError(`Waiting failed: ${options.timeout}ms exceeded`);
+                                 ^
+
+TimeoutError: Waiting failed: 30000ms exceeded
+    at new WaitTask (file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)
+    at IsolatedWorld.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)
+    at CdpFrame.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:585:43)
+    at CdpFrame.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/util/decorators.js:101:27)
+    at CdpPage.waitForFunction (file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1547:37)
+    at file:///X:/t3-code/worktrees/z8/t3-9592eb70-1d830c19755b58c9/.tmp/1733/recovery.mjs:34:12
+
+Node.js v26.9.0

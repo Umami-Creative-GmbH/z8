@@ -1,0 +1,8 @@
+{
+  "baseline": "026a6c67730c325b264f9d4bad9c04d7ec32cb85",
+  "originalLfSha256": "06153983e4f486b48d75317f2ac9997f2dcd73e2fecca3f36fce983c1baf133b",
+  "formattedIntermediateLfSha256": "7f88225120caec2953ae6e6c053d4ccaedce3a75136c2f005fc82b93bbcdd540",
+  "finalLfSha256": "d291b3cf3326d9ea5b66384ea2e8cb8c171218c17eb0b4b83d5e4f5a948794f6",
+  "parserTreeEqualAfterFormattingRestore": true,
+  "changesOutsideScopeFunction": false
+}

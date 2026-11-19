@@ -1,0 +1,12 @@
+{
+  "oldPeriod": {
+    "status": 200,
+    "downloadCount": 0,
+    "meaning": "Real held Last Year export completed after Current Month selection and was discarded"
+  },
+  "currentPeriod": {
+    "status": 200,
+    "downloadCount": 1,
+    "meaning": "Real current-period retry downloaded normally"
+  }
+}

@@ -274,6 +274,7 @@
       "formatAccessCheck": "Kontrolli i qasjes në format",
       "nobodyEmployedInPeriod": "Asnjë person në qasjen tuaj të listëpagesave nuk ishte i punësuar në këtë periudhë.",
       "noConfiguredTarget": "Nuk ka destinacion të konfiguruar të eksportit të listëpagesës",
+      "notPayment": "Eksportimi përgatit të dhënat e listëpagesës. Ai nuk kryen pagesë.",
       "queued": "Eksportimi i listëpagesës u vu në radhë",
       "selectFormat": "Zgjidhni formatin",
       "target": "Destinacioni i eksportit të listëpagesës",
@@ -374,6 +375,7 @@
       "blockers": "Pengesat",
       "employees": "Punonjësit",
       "ready": "Gati",
+      "title": "Përmbledhja e gatishmërisë së listëpagesës",
       "workedHours": "Orët e punuara"
     },
     "title": "Listëpagesa",
@@ -383,6 +385,7 @@
       "title": "Listëpagesat janë përkohësisht të padisponueshme"
     },
     "workBalances": {
+      "accessChanged": "Kjo gjendje pune nuk është më e disponueshme në fushëveprimin e listëpagesës suaj.",
       "back": "Bilancet e punës",
       "backToPayroll": "Listëpagesa",
       "description": "Regjistroni dhe anuloni pagesat e orëve shtesë për punonjësit që mbulon qasja juaj e listëpagesave, përfshirë punonjësit e larguar.",
@@ -391,6 +394,13 @@
       "loading": "Po ngarkohen bilancet e punës",
       "loadingEmployee": "Po ngarkohet bilanci i punës",
       "open": "Bilancet e punës",
+      "openEmployee": "Hap gjendjen e punonjësit",
+      "projectionUnavailable": "Projeksioni i bilancit nuk është i disponueshëm. Regjistrimet e rregullimit mbeten më poshtë.",
+      "refresh": "Rifresko bilancin e punës",
+      "refreshing": "Duke rifreskuar bilancin e punës…",
+      "retry": "Riprovo bilancin e punës",
+      "scopeChanged": "Duke ngarkuar fushëveprimin aktual të listëpagesës…",
+      "stale": "Nuk mund të rifreskohej. Shfaqen regjistrimet e ngarkuara më parë; rifreskoni para se të bëni ndryshime.",
       "title": "Bilancet e punës"
     }
   }

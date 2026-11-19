@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Beispieldaten für Tests generieren oder vorhandene zeitbezogene Daten löschen",
+      "employeesLoadError": {
+        "description": "Demodaten werden für Ihre Mitarbeiter generiert, daher ist die Generierung nicht verfügbar, bis diese geladen sind.",
+        "retrying": "Wird erneut versucht…",
+        "title": "Mitarbeiter konnten nicht geladen werden"
+      },
       "errors": {
-        "generationFailed": "Generierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-        "noOrganization": "Keine Organisation ausgewählt"
+        "generationFailed": "Generierung fehlgeschlagen. Bitte versuchen Sie es erneut."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Alle Mitarbeiter ({count})",
+          "allCountUnavailable": "Alle Mitarbeiter",
           "label": "Mitarbeiter",
           "selectSpecific": "Bestimmte Mitarbeiter auswählen"
         }

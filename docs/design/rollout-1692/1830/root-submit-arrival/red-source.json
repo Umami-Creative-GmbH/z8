@@ -1,0 +1,30 @@
+{
+  "source": "25865312d95c68ec1eaed75363e953745f168802",
+  "path": "apps/webapp/src/app/[locale]/onboarding/profile/page-client.tsx",
+  "oldSha256": "ca93f4e939ed2efa5ae696e94ac0407aace335f68cb73f62cc40a6a0c58cbabc",
+  "fixedSha256": "22148590e30d3bb8e824a2c7e1dfbf48d86b73ba9f6290eae67c483a96dba8e4",
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "--maxWorkers",
+    "1",
+    "src/app/[locale]/onboarding/profile/page.test.tsx",
+    "-t",
+    "discards Save queued before",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1830-root-checks\\red-boundaries.json"
+  ],
+  "failed": [
+    "ProfilePage discards Save queued before organization and permits a fresh submission",
+    "ProfilePage discards Save queued before organization-return and permits a fresh submission",
+    "ProfilePage discards Save queued before session-reconnect and permits a fresh submission",
+    "ProfilePage discards Save queued before Activity-return and permits a fresh submission"
+  ]
+}

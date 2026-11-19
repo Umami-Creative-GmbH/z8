@@ -1,0 +1,54 @@
+{
+  "phase": "after",
+  "actor": "small-admin",
+  "organization": "Performance small",
+  "holder": "Fixture Person 2",
+  "observations": [
+    {
+      "name": "desktop-light",
+      "headings": [
+        "Fixture Person 2"
+      ],
+      "text": "Toggle Sidebar\n\nEquipment\n\n07:55\nUTC+01:00\nClock In\nToggle theme\nBack to equipment\nAuthorized equipment for this employee\nAs of Nov 15, 2026 (Europe/Berlin)\nFixture Person 2\n1 outstanding return\nIssue equipment\nOutstanding returns\n1\nOverdue\n0\nAssignments\n\n3 of 3 assignments\n\nOutstanding\n1\nOverdue\n0\nAll\nSearch assignments\nType\nAll types\nItem\n\tOutstanding\tReturn deadline\n\tStatus\t\nActions\n\n\nEQ-HELD\nFixture laptops\n\t\n0 / 1\n\t\nNov 1, 2026\n\t\nPhysically received\n\t\n\n\nFixture shirts\nQuantity · Fixture shirts\n\t\n2 / 3\n\t\nNo deadline\n\t\nOutstanding return\n\t\n\n\nFixture shirts\nQuantity · Fixture shirts\n\t\n0 / 3\n\t\nNo deadline\n\t\nPhysically received\n\t",
+      "width": 1600,
+      "viewport": 1600,
+      "rows": [
+        "EQ-HELDFixture laptops0 / 1Nov 1, 2026Physically received",
+        "Fixture shirtsQuantity · Fixture shirts2 / 3No deadlineOutstanding return",
+        "Fixture shirtsQuantity · Fixture shirts0 / 3No deadlinePhysically received"
+      ],
+      "dark": false
+    },
+    {
+      "name": "phone-light",
+      "headings": [
+        "Fixture Person 2"
+      ],
+      "text": "Toggle Sidebar\n\nEquipment\n\nMore actions\nBack to equipment\nAuthorized equipment for this employee\nAs of Nov 15, 2026 (Europe/Berlin)\nFixture Person 2\n1 outstanding return\nIssue equipment\nOutstanding returns\n1\nOverdue\n0\nAssignments\n\n3 of 3 assignments\n\nOutstanding\n1\nOverdue\n0\nAll\nSearch assignments\nType\nAll types\nItem\nOutstanding\nReturn deadline\nStatus\nActions\nEQ-HELD\nFixture laptops\n0 / 1\nNov 1, 2026\nPhysically received\nFixture shirts\nQuantity · Fixture shirts\n2 / 3\nNo deadline\nOutstanding return\nFixture shirts\nQuantity · Fixture shirts\n0 / 3\nNo deadline\nPhysically received",
+      "width": 390,
+      "viewport": 390,
+      "rows": [
+        "EQ-HELDFixture laptops0 / 1Nov 1, 2026Physically received",
+        "Fixture shirtsQuantity · Fixture shirts2 / 3No deadlineOutstanding return",
+        "Fixture shirtsQuantity · Fixture shirts0 / 3No deadlinePhysically received"
+      ],
+      "dark": false
+    },
+    {
+      "name": "wide-dark",
+      "headings": [
+        "Fixture Person 2"
+      ],
+      "text": "Toggle Sidebar\n\nEquipment\n\n07:55\nUTC+01:00\nClock In\nToggle theme\nBack to equipment\nAuthorized equipment for this employee\nAs of Nov 15, 2026 (Europe/Berlin)\nFixture Person 2\n1 outstanding return\nIssue equipment\nOutstanding returns\n1\nOverdue\n0\nAssignments\n\n3 of 3 assignments\n\nOutstanding\n1\nOverdue\n0\nAll\nSearch assignments\nType\nAll types\nItem\n\tOutstanding\tReturn deadline\n\tStatus\t\nActions\n\n\nEQ-HELD\nFixture laptops\n\t\n0 / 1\n\t\nNov 1, 2026\n\t\nPhysically received\n\t\n\n\nFixture shirts\nQuantity · Fixture shirts\n\t\n2 / 3\n\t\nNo deadline\n\t\nOutstanding return\n\t\n\n\nFixture shirts\nQuantity · Fixture shirts\n\t\n0 / 3\n\t\nNo deadline\n\t\nPhysically received\n\t",
+      "width": 1920,
+      "viewport": 1920,
+      "rows": [
+        "EQ-HELDFixture laptops0 / 1Nov 1, 2026Physically received",
+        "Fixture shirtsQuantity · Fixture shirts2 / 3No deadlineOutstanding return",
+        "Fixture shirtsQuantity · Fixture shirts0 / 3No deadlinePhysically received"
+      ],
+      "dark": true
+    }
+  ],
+  "errors": []
+}

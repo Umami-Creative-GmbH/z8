@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {join} from 'node:path';
+const dir=process.argv[2],runtime=JSON.parse(await readFile(join(dir,'runtime-private.json'),'utf8'));
+assert.equal(new URL(runtime.origin).hostname,'localhost');
+const result={head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),probes:[]};
+const call=async(method,params)=>{const response=await fetch(new URL('/_next/mcp',runtime.origin),{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,...(params?{params}:{})}),signal:AbortSignal.timeout(30000)});const raw=await response.text();return response.headers.get('content-type')?.includes('text/event-stream')?raw.split(/\r?\n/).filter(x=>x.startsWith('data: ')).map(x=>JSON.parse(x.slice(6))).find(x=>x.id===1):JSON.parse(raw);};
+result.discovery=await call('tools/list');
+for(const name of ['get_project_metadata','get_compilation_issues','get_errors','get_page_metadata','get_routes'])result.probes.push({name,result:await call('tools/call',{name,arguments:{}})});
+await writeFile('docs/design/rollout-1692/1727/'+(process.argv[3]??'next')+'.json',JSON.stringify(result,null,2)+'\n');console.log('Saved connected Next diagnostics, inspect exact responses.');

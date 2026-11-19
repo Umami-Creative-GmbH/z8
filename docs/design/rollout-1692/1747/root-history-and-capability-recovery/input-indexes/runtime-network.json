@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "bytes": 1236,
+      "sha256": "9371b207439740ee0666b1c396417b7cb1b6f32e659a596e2e81d6cd1b3b4b90"
+    },
+    {
+      "path": "RELEASE.json",
+      "bytes": 1234,
+      "sha256": "daa29508ae0f4c9961a8e879f1bfbbe09bbe911c5d7fdfe13e00af969ba43532"
+    },
+    {
+      "path": "REPORT.json",
+      "bytes": 2507,
+      "sha256": "1bbc1286b6485b6ab1dec5a31e5deb0eb413c53983869f53a49a39e88a5e6271"
+    },
+    {
+      "path": "SEAL-VERIFICATION.json",
+      "bytes": 372,
+      "sha256": "13066c0b3f139b84f2e457675f52daea0a78793f936dae0235c3702df9a54c41"
+    },
+    {
+      "path": "assertion-ledger.json",
+      "bytes": 15316,
+      "sha256": "acf69b60acd02d9cdf4f67d939cbb38137e68d5368ba19d3b51331794835bda5"
+    },
+    {
+      "path": "attempts.json",
+      "bytes": 11760,
+      "sha256": "971456623c71e7997152e3abc45d57fe49e04add21c691f424728fa1ec79cec2"
+    },
+    {
+      "path": "browser-cleanup-SAFE.json",
+      "bytes": 172,
+      "sha256": "90c580d74ab3349478246ff0e2aa6d2eeb3cae225aebb959aebf916c34380045"
+    },
+    {
+      "path": "captures.json",
+      "bytes": 2104,
+      "sha256": "38ca6f7f49583d4a20cd6c4f630451c3c34764c97b0b6cce1747113594ef31c8"
+    },
+    {
+      "path": "chronology-preservation-SAFE.json",
+      "bytes": 1038,
+      "sha256": "54d9245bf0cac46547e74afa0163eb4415f53a846e2dd6cb39cd267663a58ad7"
+    },
+    {
+      "path": "commands.json",
+      "bytes": 8777,
+      "sha256": "df5c7eca110046e230e238aa0c577e90e41c6cfe0d5d90c4f41ac2ed1246ff57"
+    },
+    {
+      "path": "creation-graphs-SAFE.json",
+      "bytes": 2784,
+      "sha256": "c2f4ec41e26fc5127e5821d6e46fee7f222212d7c060b966c487aebcbe7ae045"
+    },
+    {
+      "path": "database-after-seed-SAFE.json",
+      "bytes": 9506,
+      "sha256": "39440fe6b3adae815c3b3acbc2a1a566351ee436d333fda6b57c633e3b01f44c"
+    },
+    {
+      "path": "database-final-SAFE.json",
+      "bytes": 9506,
+      "sha256": "b20501bdc22b4df7562471f762b573b74765002e124140d6fdafae6365ab0b46"
+    },
+    {
+      "path": "database-initial-SAFE.json",
+      "bytes": 9506,
+      "sha256": "0325873cc7188c9f08d82152486e88c811ef3941ecb43965b41888f96954593c"
+    },
+    {
+      "path": "database-preservation-SAFE.json",
+      "bytes": 3023,
+      "sha256": "2e99ad164c825a322a35a1b1f724b0f5017d4e0d15b399a22f993a60fc540074"
+    },
+    {
+      "path": "deletion-SAFE.json",
+      "bytes": 412,
+      "sha256": "3cd6b458c2ee09ae842119b0692422c6925618938cd6579edaac3414092d489d"
+    },
+    {
+      "path": "desktop-1600-expanded-SAFE.json",
+      "bytes": 2661,
+      "sha256": "8b457eace44a2e0d8ea03f7fdde089a82e2e5ba9fd697d8e21a4f957be2e165b"
+    },
+    {
+      "path": "desktop-1600-expanded-corrected-SAFE.json",
+      "bytes": 2639,
+      "sha256": "0707815f89912930e5260270d1a2be020bb8a71f14465f1f6e58a1e59465f25f"
+    },
+    {
+      "path": "desktop-1600-expanded-corrected.png",
+      "bytes": 104523,
+      "sha256": "099a13825f0a0ce90acb29a1daba65c300d6b4deeab75b40cec6c5b31d5244dd"
+    },
+    {
+      "path": "desktop-1600-large-reloaded-v2-SAFE.json",
+      "bytes": 2639,
+      "sha256": "b85c19ce61e7cb0985bb8f3518f0998c6e1feb9dc89c21b05f568059533a563d"
+    },
+    {
+      "path": "desktop-1600-large-reloaded-v2.png",
+      "bytes": 103839,
+      "sha256": "75795fdc9a012df2378d5938d94502fabc9ead2c1e2e81a4edc8dedbc3267fb5"
+    },
+    {
+      "path": "filters-SAFE.json",
+      "bytes": 1730,
+      "sha256": "928aed7755b0c06a61df22457ea608b10d9ceb04d731ad4d67997040145e18ee"
+    },
+    {
+      "path": "final-listing-SAFE.json",
+      "bytes": 1165,
+      "sha256": "e0e180807a6fb8d632020e753cc2ede285a9e84f785751a4058f950ad630a10a"
+    },
+    {
+      "path": "harness-hashes.json",
+      "bytes": 6314,
+      "sha256": "8bfba8c1336d9d8674801b99b6b55f77fe3129d70c2362607b3bb1d5f84998b5"
+    },
+    {
+      "path": "keyboard-SAFE.json",
+      "bytes": 639,
+      "sha256": "4e0583a8a4a935f1ea04015f68b6d94e5deef3581d5fce185266515d6cf603b4"
+    },
+    {
+      "path": "manager-destination-SAFE.json",
+      "bytes": 409,
+      "sha256": "04e7858b109dd127543cb6dbf54d4b27c15bf46e08f6bce44f5b51ca8438c1c2"
+    },
+    {
+      "path": "manager-scope-SAFE.json",
+      "bytes": 748,
+      "sha256": "1ef11073fa5527245c7651df545b2e4e77e22a51607ee28eaa0614dece4012fa"
+    },
+    {
+      "path": "mcp-tools-SAFE.json",
+      "bytes": 5507,
+      "sha256": "cf299ac05978655f89f5dbf8da4a9c35e1451d5aadb211a6814627c47eb12f66"
+    },
+    {
+      "path": "native-commands.json",
+      "bytes": 10265,
+      "sha256": "cb0f900d8e719bd28e0fbece3fe09c97399de2e73e1af357b03159e64c6f66c3"
+    },
+    {
+      "path": "next-diagnostics-SAFE.json",
+      "bytes": 4644,
+      "sha256": "4db743fa5426b48af434c707074b9fbe9cecf16f631770b5d09a516a079564e6"
+    },
+    {
+      "path": "originals-after-SAFE.json",
+      "bytes": 2257,
+      "sha256": "340f06908c42fc119f31e2756fd75c807411757a8da9e9d0339b151dc2928287"
+    },
+    {
+      "path": "originals-before-SAFE.json",
+      "bytes": 2293,
+      "sha256": "eb80ad8d67bf7b3eee6d2e9358388e223dd374fdf6f04015ba3be49907dd2420"
+    },
+    {
+      "path": "ownership-before-SAFE.json",
+      "bytes": 204,
+      "sha256": "7c509a2ae881307768bdfee8f7f8f8964c257ba0f0e9afba38d9f4979650204c"
+    },
+    {
+      "path": "pending-held-SAFE.json",
+      "bytes": 353,
+      "sha256": "8984f3c95ab856b7d9e01ada813e6041110921d49d05678bd7f05b5c9e3ba9b3"
+    },
+    {
+      "path": "phone-390-large-v2-SAFE.json",
+      "bytes": 2144,
+      "sha256": "b5f82a0cf3763a652b55e4c97799414c888b22d02d4c42a0ff37c822c2d27265"
+    },
+    {
+      "path": "phone-390-large-v2.png",
+      "bytes": 46651,
+      "sha256": "58be82dee5849e448464bc197f6205ad346338e46178d5faee3942fca79f5399"
+    },
+    {
+      "path": "preferences-phone-v2-SAFE.json",
+      "bytes": 1612,
+      "sha256": "099ee9fdb52539d2ca758a81dbfcd5620e7ad7acd30cc1176f099a2c6febbb27"
+    },
+    {
+      "path": "preflight-SAFE.json",
+      "bytes": 1502,
+      "sha256": "aad0f768d520501897501d80e0475e76c08b5399e970651eae54c9242ee3528b"
+    },
+    {
+      "path": "preservation-final-SAFE.json",
+      "bytes": 1381,
+      "sha256": "a121f67fe0f5d2a91df7c9abab7961ede07b653876923c158caaf3949c876129"
+    },
+    {
+      "path": "process-cleanup-SAFE.json",
+      "bytes": 271,
+      "sha256": "85d2efe8c18a32ca265d89a81d766c526771500f61a54d4c478a407927e380da"
+    },
+    {
+      "path": "refresh-retry-SAFE.json",
+      "bytes": 373,
+      "sha256": "69190957f29222fde0684750bfd1d6e1aed8e63a9948273218ba2f59bf31c2cf"
+    },
+    {
+      "path": "resources-final-SAFE.json",
+      "bytes": 445,
+      "sha256": "c1eb918f81bb3dbbb09b47f6f27874ffc00739e67654e66af950f7e65312bb72"
+    },
+    {
+      "path": "retirement-completion-SAFE.json",
+      "bytes": 574,
+      "sha256": "7df2334a89cbe8646cad1db457ed82b106f158ab03b40085f0d2387399280c0b"
+    },
+    {
+      "path": "retirement-pre-release-SAFE.json",
+      "bytes": 329,
+      "sha256": "431249106330db1aab495f3184ab05483b0e29a31e870f6fdb6a914a37ae1e8c"
+    },
+    {
+      "path": "seed-SAFE.json",
+      "bytes": 249,
+      "sha256": "1426b0cdb07d3a92ce7f0985a44a8f9a8f4b96cf0606affe6bf0ab07945c28c0"
+    },
+    {
+      "path": "sign-in-pre-submit-SAFE.json",
+      "bytes": 125,
+      "sha256": "cdd0b0b1b4976372dc4278e9d88218079717d22b4dd708d2af32cb0c8187a025"
+    },
+    {
+      "path": "source-pins.json",
+      "bytes": 7877,
+      "sha256": "b8b581710234a37a7f8d28754c5877e9674ed784768f947a125af8bf807106b4"
+    },
+    {
+      "path": "transport-preflight-SAFE.json",
+      "bytes": 217,
+      "sha256": "f8f329df79b2f8a99e52710668f79effbf205416d5363854b573c7f012b61c1e"
+    },
+    {
+      "path": "wide-2400-dark-SAFE.json",
+      "bytes": 2658,
+      "sha256": "0f6c1da4df872913c53c283afa7ea469eac95e449e1c889e8158ee3aa88dca7c"
+    },
+    {
+      "path": "wide-2400-dark-corrected-SAFE.json",
+      "bytes": 2639,
+      "sha256": "7b3db74498af69d356b474f1740ce2cdbcf939de33ddc6129ed2e0edea0a2ef6"
+    },
+    {
+      "path": "wide-2400-dark-corrected.png",
+      "bytes": 116232,
+      "sha256": "85b11dbea13b2b060ecb0321fb9ec07a9c4ee80596bc16b6a0b9b8bd226b97c0"
+    }
+  ],
+  "totalFiles": 51,
+  "totalBytes": 517361,
+  "excludes": "Only this index itself is outside the payload index. No private files are admitted."
+}

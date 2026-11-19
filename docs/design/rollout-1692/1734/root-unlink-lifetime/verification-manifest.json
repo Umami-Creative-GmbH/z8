@@ -1,0 +1,73 @@
+{
+  "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "lastVerified": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+  "verifiedCommit": null,
+  "sourceChecks": {
+    "inheritedRootUnitCases": 509,
+    "inheritedRootUnitFiles": 70,
+    "defaultTimeoutMs": 5000,
+    "nextTypegen": true,
+    "typeProjects": 3,
+    "lintFiles": 9,
+    "doctorFiles": 9,
+    "doctorErrors": 0,
+    "doctorWarnings": 0,
+    "existing80CrlfExit": 0,
+    "new100CrlfExit": 0,
+    "full100Exit": 1,
+    "full100Files": 7,
+    "ordinaryExit": 1,
+    "ordinaryFiles": 3
+  },
+  "freshAccepted": {
+    "newPublic": [
+      9,
+      1
+    ],
+    "protected": [
+      40,
+      5
+    ],
+    "canonicalPostgres": [
+      65,
+      3
+    ],
+    "protectedPostgres": [
+      20,
+      1
+    ],
+    "distinctCases": 134,
+    "distinctPhysicalFiles": 10
+  },
+  "allFreshAttempts": {
+    "runs": 7,
+    "caseInstances": 198,
+    "passed": 197,
+    "failed": 1,
+    "fileExecutions": 18
+  },
+  "preservation": {
+    "trackedRawPaths": 13577,
+    "changed": 0,
+    "verifiedAncestors": 57,
+    "dependencyParents": 3,
+    "internalLeafLinks": 158,
+    "stopFiles": 30,
+    "licenses": 125,
+    "ownBridgesRemoved": 3,
+    "ownedRuntimeResources": 0
+  },
+  "publicationScope": "Read-only evidence validators only; root owns Git blob audit, readiness and verification advancement.",
+  "limits": [
+    "Inherited remount gap was duplicate mocked transport, never duplicate persistence or authorization bypass.",
+    "Identity-only reservation is one existing QueryClient WeakMap, actor/organization/document scoped; no payload persistence, default mutation retry, cross-tab/full-reload/server idempotency.",
+    "Real providers/components/reader hooks use auth/action transport fakes in permanent8 and independent9 public tests.",
+    "Transport hold/failure in browser journey is synthetic; no live auth-race guarantee.",
+    "Actual all-scope officer grant accepted; named-scope picker unpassed.",
+    "Historical comparison overlays two a904 consumers only; current shared shell/metadata/children/auth/domain remain. No historical h1 count inferred from current metadata.",
+    "11 screenshots are96px bottom crops; phone top/tail partial; shared dev/Pets/Rendering/clock overlays remain; historical desktop record width uncertified.",
+    "Native viewport is not truezoom/device/full accessibility.",
+    "No full generation/Tolgee/provider/device/wrapper/truezoom/exhaustiveABA/globalfourpath roster guard.",
+    "Current-source validation may drift after later source/config changes; default immutable archive pins remain historical."
+  ]
+}

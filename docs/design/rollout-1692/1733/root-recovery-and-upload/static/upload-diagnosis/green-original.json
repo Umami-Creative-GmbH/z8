@@ -1,0 +1,89 @@
+{
+  "phase": "green-original",
+  "secondName": "300.pdf",
+  "realClientHook": true,
+  "realBrowser": true,
+  "testServerModelsConsumedTemporaryObjects": true,
+  "fullApplicationOrCanonicalStorage": false,
+  "sourceSha256": "e42e0520b9757460129a5771e82f19867d556f738021067d1c56af0f8a2397d1",
+  "observed": {
+    "batch": "probe-batch-2",
+    "staged": 1,
+    "failed": 0,
+    "status": ""
+  },
+  "events": [
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/caller.js",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/favicon.ico",
+      "status": 404
+    },
+    {
+      "method": "POST",
+      "path": "/api/tus",
+      "status": 201
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/tus/upload-1",
+      "status": 204
+    },
+    {
+      "method": "POST",
+      "path": "/api/upload/personnel-file/payslip-batch",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/tus",
+      "status": 201
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/tus/upload-2",
+      "status": 204
+    },
+    {
+      "method": "POST",
+      "path": "/api/upload/personnel-file/payslip-batch",
+      "status": 200
+    }
+  ],
+  "stageAttempts": [
+    {
+      "batchId": "probe-batch-1",
+      "tusFileKey": "upload-1",
+      "fileName": "300.pdf"
+    },
+    {
+      "batchId": "probe-batch-2",
+      "tusFileKey": "upload-2",
+      "fileName": "300.pdf"
+    }
+  ],
+  "staged": [
+    {
+      "batchId": "probe-batch-1",
+      "fileName": "300.pdf",
+      "key": "upload-1"
+    },
+    {
+      "batchId": "probe-batch-2",
+      "fileName": "300.pdf",
+      "key": "upload-2"
+    }
+  ],
+  "browserClosed": true,
+  "listenerClosed": true,
+  "exit": 0
+}

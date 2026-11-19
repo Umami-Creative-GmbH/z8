@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Actif",
+      "contextRetry": "Actualisez le contexte de votre organisation pour continuer.",
+      "contextUnavailable": "Contexte de l'organisation indisponible",
+      "copyFailed": "Impossible de copier la clé. Réessayez.",
       "copyKey": "Copier la clé API",
       "copyPrefix": "Copier le préfixe",
       "create": "Créer une clé",
@@ -9,6 +12,7 @@
       "createdBy": "par {name}",
       "createDescription": "Créer une nouvelle clé API pour un accès par programmation. La clé ne sera affichée qu'une seule fois.",
       "createdOn": "Créé le {date}",
+      "createFailed": "Impossible de confirmer la création de la clé. Actualisez la liste avant de réessayer.",
       "createTitle": "Créer une clé API",
       "creatorDeparted": "Parti",
       "deleted": "Clé API supprimée",
@@ -24,6 +28,8 @@
         "creator": "Créé par",
         "creatorDeparted": "{name} (parti)",
         "ip": "Adresse IP",
+        "kind": "Clé API",
+        "loading": "Chargement de la clé API",
         "noRateLimit": "Désactivé",
         "noRequests": "Aucune requête au cours des 90 derniers jours.",
         "rateLimit": "Limite de débit",
@@ -80,13 +86,19 @@
         "scopes": "Autorisations",
         "scopesRequired": "Sélectionnez au moins une autorisation"
       },
+      "hideKey": "Masquer la clé",
       "keyCopied": "Clé API copiée dans le presse-papiers",
+      "keyHidden": "Clé masquée",
       "lastUsed": "Dernière utilisation",
+      "loading": "Chargement des clés API",
       "name": "Nom",
       "neverExpires": "N'expire jamais",
       "noPermissions": "Aucune autorisation",
       "prefix": "Préfixe de clé",
       "prefixCopied": "Préfixe de clé copié",
+      "retryHelp": "Actualisez cette liste pour confirmer les clés actuelles. Les enregistrements chargés précédemment sont conservés.",
+      "revealKey": "Afficher la clé",
+      "revokeUnknown": "Impossible de confirmer la révocation. Actualisez la liste avant de réessayer.",
       "scopeLabel": {
         "absencesRead": "Consulter les absences",
         "absencesReadHealth": "Consulter les détails de santé des absences",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Important :",
       "status": "Statut",
       "title": "Clés API",
+      "unavailable": "Clés API indisponibles",
+      "unavailableDescription": "Impossible de charger vos paramètres. Réessayez pour actualiser cette page.",
+      "unavailableTitle": "Accès développeur indisponible",
       "unknownCreator": "un ancien administrateur",
       "updated": "Clé API mise à jour",
+      "updateUnknown": "Impossible de confirmer la mise à jour. Actualisez cette clé avant de réessayer.",
       "usage": "{count} sur {max} clés utilisées"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "URL par défaut",
         "defaultUrlsDescription": "Ces URL gérées par la plateforme fonctionnent automatiquement sans configuration DNS personnalisée.",
         "deleteAria": "Supprimer le domaine personnalisé {domain}",
+        "deleteConfirm": "Supprimer le domaine",
         "deleted": "Domaine supprimé",
         "deleteDescription": "Êtes-vous sûr de vouloir supprimer « {domain} » ? Cette action est irréversible. Les utilisateurs ne pourront plus se connecter via ce domaine personnalisé.",
         "deleteFailed": "Échec de la suppression du domaine",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Laissez vide pour conserver la clé existante. Obtenez votre clé API sur resend.com",
         "create": "Créer une configuration",
         "delete": "Supprimer la configuration",
-        "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette configuration d'e-mail ?",
+        "deleteConfirmNamed": "Supprimer la configuration e-mail pour {fromEmail} ? Les e-mails de l'organisation utiliseront de nouveau l'expéditeur système par défaut.",
         "deleted": "Configuration d'e-mail supprimée",
         "deleteFailed": "Échec de la suppression",
+        "deleteTitle": "Supprimer la configuration e-mail ?",
         "description": "Configurez un fournisseur d'e-mail personnalisé pour votre organisation. Tous les e-mails de l'organisation utiliseront cette configuration au lieu de celle par défaut.",
         "fromEmail": "E-mail de l'expéditeur",
         "fromName": "Nom de l'expéditeur",
@@ -356,10 +374,9 @@
           "title": "Domaine"
         },
         "hero": {
-          "description": "Configurez le SSO, le SCIM et l'application pour l'organisation {organizationId} avec une activation protégée.",
-          "eyebrow": "Identité d'entreprise",
           "title": "Liste de contrôle des opérations"
         },
+        "progress": "{completed} étapes sur {total} terminées",
         "provider": {
           "action": {
             "save": "Enregistrer le fournisseur"
@@ -453,7 +470,6 @@
           },
           "description": "La vérification SCIM se met à jour après que votre fournisseur d'identité envoie un test d'utilisateur ou une modification de groupe.",
           "dialog": {
-            "cancel": "Annuler",
             "decommission": {
               "description": "Cette action met définitivement hors service le provisionnement SCIM et ne peut pas être annulée.",
               "title": "Décommissionner SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Échec de la suppression de la configuration OAuth",
         "description": "Configurez vos propres identifiants OAuth pour la connexion sociale. Cela permet à vos utilisateurs de se connecter en utilisant les applications OAuth de votre organisation au lieu des identifiants partagés.",
         "developerConsole": "Console développeur {provider}",
+        "editAria": "Modifier la connexion {provider}",
         "editDescription": "Mettez à jour vos identifiants OAuth.",
         "editTitle": "Modifier l'OAuth {provider}",
         "empty": "Aucun fournisseur OAuth social personnalisé configuré.",
@@ -616,9 +633,11 @@
         "keyId": "ID de clé",
         "pasteYourP8PrivateKeyContents": "Collez le contenu de votre clé privée .p8",
         "privateKey": "Clé privée (.p8)",
+        "removeAria": "Supprimer la connexion {provider}",
         "removed": "OAuth {provider} supprimé",
         "removeDialogDescription": "Êtes-vous sûr de vouloir supprimer cette configuration OAuth ? Les utilisateurs reviendront aux identifiants OAuth partagés (si disponibles).",
         "removeDialogTitle": "Supprimer le fournisseur OAuth social",
+        "removeDialogTitleNamed": "Supprimer la connexion {provider} ?",
         "teamId": "ID d'équipe",
         "title": "Fournisseurs de connexion sociale",
         "unverified": "Non vérifié",
@@ -629,8 +648,9 @@
         "addError": "Échec de l'ajout du fournisseur SSO",
         "addSuccess": "Fournisseur SSO ajouté avec succès",
         "addTitle": "Ajouter un fournisseur SSO",
+        "deleteConfirm": "Supprimer le fournisseur",
         "deleteDialogDescription": "Êtes-vous sûr de vouloir supprimer ce fournisseur SSO ? Les utilisateurs ne pourront plus se connecter en utilisant ce fournisseur d'identité.",
-        "deleteDialogTitle": "Supprimer le fournisseur SSO",
+        "deleteDialogTitleNamed": "Supprimer le fournisseur SSO {provider} ?",
         "deleteError": "Échec de la suppression du fournisseur SSO",
         "deleteProviderAria": "Supprimer le fournisseur SSO {provider}",
         "deleteSuccess": "Fournisseur SSO supprimé",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Les utilisateurs avec ce domaine d'e-mail pourront utiliser le SSO",
         "empty": "Aucun fournisseur SSO configuré pour le moment.",
         "emptyDescription": "Ajoutez un fournisseur OIDC pour activer l'authentification unique en entreprise.",
+        "generateToken": "Générer le jeton TXT",
         "guide": {
           "addDescription": "Suivez les instructions de configuration de votre fournisseur, puis connectez-le à votre organisation.",
           "afterSave": "Après l'enregistrement, vérifiez votre domaine de messagerie à l'aide de l'enregistrement DNS TXT dans Z8. Testez la connexion avec un utilisateur pilote tout en gardant votre session d'administrateur actuelle ouverte. Dans la configuration guidée, enregistrez le même ID de fournisseur et le même domaine de messagerie que ceux indiqués dans la liste des fournisseurs, puis consignez manuellement le résultat de connexion observé avant d'envisager l'option Exiger le SSO. L'enregistrement et la vérification DNS ne garantissent pas le succès de la connexion.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Un identifiant unique pour ce fournisseur (minuscules, sans espaces)",
         "providerIdInvalid": "L'ID du fournisseur doit contenir uniquement des lettres minuscules, des chiffres et des traits d'union",
         "title": "Fournisseurs d'identité",
-        "token": "Jeton",
         "tokenError": "Échec de la génération du jeton de vérification de domaine",
         "tokenGenerated": "Jeton de vérification généré",
         "txtToken": "Jeton TXT :",

@@ -1,0 +1,196 @@
+{
+  "schema": 1,
+  "issue": 1773,
+  "readiness": null,
+  "verifiedCommit": null,
+  "base": "2310f3bfb83a5e529f22753e8932a8245a3aca5d",
+  "reviewedCandidate": "3c8a3cc80134b9f9a7b56deaa9f5a8ffa81dc9d9",
+  "correctionCommit": "c26808b5655e59a37753278aee607d3a0d6781d1",
+  "integrationCommit": "f6ecee05c5f9e23c977a16a15ac6fbe3bffdaa6d",
+  "tree": "553232f5d18dd7a0a656ea7dda520b701a273748",
+  "appTree": "138aab92cde099756c13347827a90112763def68",
+  "independentFinding": {
+    "classification": "Incoming query seeding effect replaces authoritative refusal on Activity reconnect; no historical equivalent or live authorization bypass is established.",
+    "executedCases": 29,
+    "physicalFiles": 3,
+    "passed": 28,
+    "failed": 1,
+    "registeredButNotExecuted": 1,
+    "reportedFailure": "cacheStillRefused:false; other object fields abbreviated in the failure reporter",
+    "reproSHA256": "34f6c4a2549cf6c1cabf35a6582d0fd90f7cb810f6ec1a9e262bbcdedc87e041",
+    "publicPayloads": 22,
+    "manifestSHA256": "075643c3c5d0d5fd49cceddd10549f356e9b7b39c6b2bc7963e5d2107fcb4569",
+    "readOnlyIntake": "22 byte sizes, 22 hashes, manifest size and seal hash matched; 46 comparisons; no archived execution"
+  },
+  "rootRed": {
+    "adoptedCases": 20,
+    "passed": 18,
+    "failed": 2,
+    "findings": [
+      "Settled refusal is overwritten on Activity resume.",
+      "Previously unexecuted cache-to-observer interval test emits a late obsolete edit-refusal toast."
+    ],
+    "expandedCases": 27,
+    "expandedPassed": 18,
+    "expandedFailed": 9,
+    "qualifiedHarnessFailures": 2,
+    "productFailures": 7,
+    "note": "Two fresh-server positive controls asserted DOM before the Query observer committed; changed to findBy without weakening cache assertions. Do not count those two as product defects."
+  },
+  "correction": [
+    "A route-local helper consumes each serialized server array once per QueryClient and actor/organization/query namespace. Weak maps retain only arrival metadata, not list values or authority.",
+    "The initialData function also rejects a consumed snapshot after query removal; a current canonical read supplies recovery. Fresh successful server objects still reconcile, including empty lists and hidden arrivals. Failed server props do not seed successful data.",
+    "Both combined developer-access lists use the helper. A public API-key Activity refusal regression reproduced the analogous incoming seeding defect before its correction.",
+    "Webhook create/edit controllers consult the live query completion predicate before dispatch and every result/error path, including the cache-to-observer interval. Canonical command payloads and validation are unchanged."
+  ],
+  "fresh": {
+    "unit": {
+      "cases": 133,
+      "physicalFiles": 10,
+      "passed": 133,
+      "failed": 0,
+      "skipped": 0,
+      "uniqueFileFullNameLabels": 133,
+      "caseMultisetSHA256": "0094cb1a0ae17a738055735a43c0ac16d82147528a6036124d8d0be59ad72f58",
+      "prior119Included": true,
+      "newPublicCases": 14,
+      "publicSubset": {
+        "cases": 39,
+        "physicalFiles": 2,
+        "additive": false
+      }
+    },
+    "typegen": "passed",
+    "fullTypeProjects": 3,
+    "lintImport": {
+      "files": 6,
+      "result": "passed",
+      "warnings": 0
+    },
+    "explicit100CRLF": {
+      "files": 6,
+      "result": "passed"
+    },
+    "ordinary": {
+      "files": 6,
+      "result": "failed",
+      "errors": 6
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "2310f3bfb83a5e529f22753e8932a8245a3aca5d",
+      "files": 6,
+      "errors": 0,
+      "warnings": 2,
+      "complete": true,
+      "score": null,
+      "reviewedWarnings": [
+        "Unchanged API-key signing-value/privacy cleanup in layout effect.",
+        "Unchanged webhook-card signing-value/privacy cleanup in layout effect."
+      ],
+      "newHelperDiagnostics": 0,
+      "suppressions": 0
+    }
+  },
+  "sourcePins": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts",
+      "gitBlob": "3924097b5439f26d8bcc32638e9daf6621855bef",
+      "gitLfSHA256": "b42b436564023e6880a9df3a1d338afa38a8a19d20045a3b2cf93e45af34a76e"
+    },
+    {
+      "file": "apps/webapp/src/components/enterprise/api-key-page-client.tsx",
+      "gitBlob": "8d25c9fcb4b72dee4cdb6df65847b77331d83a5f",
+      "gitLfSHA256": "f979357110693e9c9dd6cb49f803d43595ce99455fe83a9b527d360d96a754eb"
+    },
+    {
+      "file": "apps/webapp/src/components/webhooks/webhook-endpoint-card.tsx",
+      "gitBlob": "ba1b9a87b7540524bcc2a2e38f562340d3a3b42c",
+      "gitLfSHA256": "710b97bc08f386a6c56a66ca665a18f591a655ab502d14b5f57b7a5761e1aecc"
+    },
+    {
+      "file": "apps/webapp/src/components/webhooks/webhook-form-controller.ts",
+      "gitBlob": "dd5758ad54c4bb0a61e897d8fc3ad3cae971672b",
+      "gitLfSHA256": "f2f4077b7416ff789b687160fa8f4705a6282a2dc1172df69645f91c37516a0e"
+    },
+    {
+      "file": "apps/webapp/src/components/webhooks/webhooks-edit-refusal.test.tsx",
+      "gitBlob": "971f767f13db17fe23dbe8c1a3ea7f91e7ad2a9b",
+      "gitLfSHA256": "9a01ffd724236f59cae6ea152bd55ff29c44f4e0a1d79918ab06b27d64d3e810"
+    },
+    {
+      "file": "apps/webapp/src/components/webhooks/webhooks-page-client.tsx",
+      "gitBlob": "98ee4abe2a0bfa17254a8889e97ef3a2b3295759",
+      "gitLfSHA256": "7f539ed6856f9b053f321afc748c68e063bc45371d265e433e4fccf6e497748b"
+    }
+  ],
+  "selection": [
+    "src/components/webhooks/webhooks-refusal.test.tsx",
+    "src/components/webhooks/webhooks-edit-refusal.test.tsx",
+    "src/components/webhooks/webhook-form-dialog.test.tsx",
+    "src/components/webhooks/webhook-lifetime.test.tsx",
+    "src/components/webhooks/webhook-endpoint-card.test.tsx",
+    "src/components/enterprise/api-key-lifetime.test.tsx",
+    "src/components/enterprise/api-key-page-client.test.tsx",
+    "src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx",
+    "src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+    "src/lib/navigation/route-metadata.test.ts"
+  ],
+  "preservation": {
+    "expectedNormalMergeTree": "553232f5d18dd7a0a656ea7dda520b701a273748",
+    "normalMergeExactTree": true,
+    "onlySixUIPathsChanged": [
+      "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts",
+      "apps/webapp/src/components/enterprise/api-key-page-client.tsx",
+      "apps/webapp/src/components/webhooks/webhook-endpoint-card.tsx",
+      "apps/webapp/src/components/webhooks/webhook-form-controller.ts",
+      "apps/webapp/src/components/webhooks/webhooks-edit-refusal.test.tsx",
+      "apps/webapp/src/components/webhooks/webhooks-page-client.tsx"
+    ],
+    "priorRootProofsUnchanged": [
+      "docs/design/rollout-1692/1773/root-webhook-refusal-checks.json",
+      "docs/design/rollout-1692/1773/root-endpoint-completion-checks.json"
+    ],
+    "canonicalAuthCredentialValidationSigningSSRFDeliveryAndDatabaseOwnersChanged": false,
+    "signInAndLocationPresenceSourceChanged": false,
+    "lockSHA256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "reportPrefix": {
+      "filesystemBytes": 25838,
+      "filesystemSHA256": "6b0e01bd533e7d4a1e80bebde74f1b51c523e23b620c2a226554f2ade3622ee9",
+      "gitLfBytes": 25610,
+      "gitLfSHA256": "2aa0e64b774c3d4c1c2a12dd74dbd4ea4f2e007a80e78162653989759bcdd5cb"
+    }
+  },
+  "attempts": [
+    "Initial adopted 20-case run reproduced both failures.",
+    "Expanded red run included two observer-timing harness failures; exact failed outputs remain private and distinct.",
+    "First implementation missed props.canComplete forwarding at the card render; 26 failures/one pass were caught and corrected before further acceptance.",
+    "First full type check rejected generic union inference in setQueryData. A typed result variable fixed inference without assertions; all three projects then passed.",
+    "Non-null assertions in the expanded public helper were replaced by explicit missing-view/form failures; final lint/import has no warnings."
+  ],
+  "commands": {
+    "unit": "pnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit --maxWorkers 1 src/components/webhooks/webhooks-refusal.test.tsx src/components/webhooks/webhooks-edit-refusal.test.tsx src/components/webhooks/webhook-form-dialog.test.tsx src/components/webhooks/webhook-lifetime.test.tsx src/components/webhooks/webhook-endpoint-card.test.tsx src/components/enterprise/api-key-lifetime.test.tsx src/components/enterprise/api-key-page-client.test.tsx 'src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx' 'src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx' src/lib/navigation/route-metadata.test.ts --reporter=json --outputFile=../../.tmp/1773-seed-root-checks/unit-typed-final.json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "explicit": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check --config-path=biome.jsonc --line-ending=crlf 'src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts' src/components/enterprise/api-key-page-client.tsx src/components/webhooks/webhooks-page-client.tsx src/components/webhooks/webhook-form-controller.ts src/components/webhooks/webhook-endpoint-card.tsx src/components/webhooks/webhooks-edit-refusal.test.tsx",
+    "lint": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check --formatter-enabled=false 'src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts' src/components/enterprise/api-key-page-client.tsx src/components/webhooks/webhooks-page-client.tsx src/components/webhooks/webhook-form-controller.ts src/components/webhooks/webhook-endpoint-card.tsx src/components/webhooks/webhooks-edit-refusal.test.tsx",
+    "ordinary": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check 'src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts' src/components/enterprise/api-key-page-client.tsx src/components/webhooks/webhooks-page-client.tsx src/components/webhooks/webhook-form-controller.ts src/components/webhooks/webhook-endpoint-card.tsx src/components/webhooks/webhooks-edit-refusal.test.tsx",
+    "doctor": "REACT_DOCTOR_PARALLEL=1 pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 2310f3bfb83a5e529f22753e8932a8245a3aca5d --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1773-seed-root-checks/doctor-final.json",
+    "environment": "Every pnpm call sets pnpm_config_verify_deps_before_run=false; installed pinned pnpm12.16.1, maxWorkers1, no borrowed dependency or owner repair."
+  },
+  "resources": {
+    "ownedLive": 0,
+    "next": false,
+    "browser": false,
+    "postgres": false,
+    "native": false,
+    "provider": false,
+    "clipboard": false,
+    "delivery": false
+  },
+  "limits": [
+    "Fresh independent correction recheck and authenticated R096 acceptance remain pending; verifiedCommit is null.",
+    "Worker553 unit/100 PostgreSQL and old captures remain inherited and unadded. No fresh root PostgreSQL, Next, browser or native run.",
+    "Serialized server-object identity records an arrival, not authority. Fresh canonical reads continue to own admission; synthetic seams do not prove live revocation, server cancellation or cross-instance idempotency.",
+    "Ordinary formatting, full generation/catalog/provider/native/device/zoom and exhaustive race/role matrices remain unpassed."
+  ]
+}

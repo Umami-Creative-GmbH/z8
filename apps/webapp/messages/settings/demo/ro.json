@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "ȘTERGE"
       },
       "description": "Generați date demonstrative pentru testare sau ștergeți datele existente legate de pontaj",
+      "employeesLoadError": {
+        "description": "Datele demonstrative sunt generate pentru angajații dvs., astfel că generarea nu este disponibilă până când aceștia nu sunt încărcați.",
+        "retrying": "Se reîncearcă…",
+        "title": "Angajații nu au putut fi încărcați"
+      },
       "errors": {
-        "generationFailed": "Generarea a eșuat. Vă rugăm să încercați din nou.",
-        "noOrganization": "Nicio organizație selectată"
+        "generationFailed": "Generarea a eșuat. Vă rugăm să încercați din nou."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Toți angajații ({count})",
+          "allCountUnavailable": "Toți angajații",
           "label": "Angajați",
           "selectSpecific": "Selectați anumiți angajați"
         }

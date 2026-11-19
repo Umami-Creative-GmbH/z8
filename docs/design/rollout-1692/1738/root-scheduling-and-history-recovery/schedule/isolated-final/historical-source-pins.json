@@ -1,0 +1,10 @@
+{
+  "cache": "stopped own .next moved to own ignored cache-current-01",
+  "tree": "f574ea9113d26cc5d4314d0f3fbcb7804bf65804",
+  "trackedClean": true,
+  "appTree": "8f8db3bcdee37016a3bb1b9d78eb4e865a2387eb",
+  "dependencies": "own offline copy install, same packages/lock across committed versions",
+  "branch": null,
+  "head": "83a3b30f648e74416d628c96509dcee4c765cdba",
+  "sourceSelection": "normal git switch --detach in own existing T3-bound checkout"
+}

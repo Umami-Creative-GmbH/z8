@@ -14,6 +14,7 @@ import {
 	useSickNoteDefaults,
 } from "./sick-note-files-field";
 import {
+	StagedSickNoteUploadCancelledError,
 	StagedSickNoteUploadError,
 	type UploadedSickNote,
 	useStagedSickNoteUploads,
@@ -43,9 +44,9 @@ interface WithSickNotes {
  * with a toast: a file could not be uploaded (nothing is sent), or the server
  * call itself failed (the uploads are deleted again).
  */
-export function useStagedSickNotes(dates: AbsenceDates) {
+export function useStagedSickNotes(dates: AbsenceDates, options: { lifetimeKey?: string } = {}) {
 	const { t } = useTranslate();
-	const uploads = useStagedSickNoteUploads();
+	const uploads = useStagedSickNoteUploads(options);
 	const defaults = useSickNoteDefaults(dates);
 
 	async function submit<Result extends WithSickNotes>(input: {
@@ -60,6 +61,7 @@ export function useStagedSickNotes(dates: AbsenceDates) {
 			try {
 				uploaded = await uploads.stage(resolveStagedSickNoteFiles(input.files, defaults));
 			} catch (error) {
+				if (error instanceof StagedSickNoteUploadCancelledError) return null;
 				toast.error(
 					t(
 						"absences.sickNotes.request.uploadFailed",

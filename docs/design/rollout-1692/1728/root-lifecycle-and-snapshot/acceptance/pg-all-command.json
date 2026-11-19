@@ -1,0 +1,36 @@
+{
+  "argv": [
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts",
+    "src/lib/personnel-file/officer-grants.integration.test.ts",
+    "src/lib/personnel-file/expiry-reminders.integration.test.ts",
+    "src/lib/personnel-file/personnel-file.integration.test.ts",
+    "src/lib/personnel-file/document-request-officer.integration.test.ts",
+    "src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts",
+    "src/app/[locale]/onboarding/work-templates/actions.integration.test.ts",
+    "src/lib/employee-lifecycle/current-roster.integration.test.ts",
+    "src/lib/employee-lifecycle/access.integration.test.ts",
+    "src/lib/personnel-file/payslip-batch.integration.test.ts",
+    "src/lib/personnel-file/sick-leave-overview.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1728-root-checks\\acceptance\\pg-all.json"
+  ],
+  "sourceHead": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+  "sourcePins": {
+    "apps/webapp/src/lib/personnel-file/access-store.ts": "d5487a599f8b57c7fd6d03d34887c006496b4f708ed582903a79d85601575728",
+    "apps/webapp/src/lib/personnel-file/managed-employee-lifecycle.integration.test.ts": "fe4412ad51b813be30dde721420225cf387efe4b1534aab1e955df31280c570b",
+    "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts": "9d48a89b93baa1ba92c4d1b38777a3e17c2fc7c190d562c5fdeac52e4d7c8ad7"
+  },
+  "start": "2026-11-16T06:39:16.997Z",
+  "end": "2026-11-16T06:39:45.876Z",
+  "exitCode": 0
+}

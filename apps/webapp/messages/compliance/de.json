@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Zugriffskontrollen fassen nur sensible Audit-Log-Ereignisse zusammen, die bereits heute erfasst werden.",
         "auditEvidence": "Audit-Nachweise nutzen die Live-Audit-Export-Konfiguration, Audit-Paket-Anfragen und aktuelle Verifizierungsergebnisse.",
+        "title": "Abdeckung",
         "workforceCompliance": "Die Compliance der Belegschaft basiert auf den Verstößen gegen Arbeitsrichtlinien der letzten 7 Tage und ausstehenden Ausnahmeanträgen."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Zuletzt aktualisiert: {time}"
+        "lastRefreshed": "Zuletzt aktualisiert: {time}",
+        "refreshMeaning": "Durch Aktualisieren werden erfasste Signale neu geladen; Ergebnisse werden dabei nicht nach einer neuen Richtlinie neu bewertet."
       },
       "links": {
         "inspectCompliance": "Compliance prüfen",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Compliance-Einstellungen öffnen",
         "reviewAuditExport": "Audit-Export überprüfen"
       },
+      "loading": "Compliance-Signale werden geladen",
       "overview": "Compliance-Übersicht",
       "recentEvents": {
         "empty": "Es wurden kürzlich keine kritischen Ereignisse erkannt.",
-        "title": "Kürzliche kritische Ereignisse"
+        "partial": "Aktuelle Ereignisse sind auf verfügbare Quellen beschränkt. Einige Signale konnten nicht geladen werden.",
+        "title": "Kürzliche kritische Ereignisse",
+        "unavailable": "Aktuelle Ereignisse konnten nicht bestätigt werden, da die Signalquellen nicht verfügbar sind."
       },
+      "scope": "Aktive Organisation",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Änderungen an sensiblen Kontrollen erfordern eine Überprüfung",
             "healthy": "Es wurden kürzlich keine Änderungen an sensiblen Kontrollen protokolliert",
             "warning": "Es wurden kürzlich Änderungen an Kontrollen erkannt"
-          }
+          },
+          "title": "Zugriffskontrollen"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Audit-Nachweise erfordern Aufmerksamkeit",
             "healthy": "Audit-Nachweissignale sehen gut aus",
             "warning": "Audit-Nachweise sind nur teilweise bereit"
-          }
+          },
+          "title": "Audit-Nachweise"
         },
+        "title": "Compliance-Bereiche",
         "unavailable": {
           "headline": "Signal vorübergehend nicht verfügbar"
         },
@@ -94,7 +103,8 @@
             "critical": "Verstöße gegen die Personalrichtlinien erfordern eine Überprüfung",
             "healthy": "Es wurden keine aktuellen Probleme bei den Personalrichtlinien erkannt",
             "warning": "Die Einhaltung der Personalrichtlinien weicht ab"
-          }
+          },
+          "title": "Personal-Compliance"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Ausnahme genehmigt",
       "approvedDescription": "Die Compliance-Ausnahme wurde genehmigt.",
       "approveFailed": "Genehmigung fehlgeschlagen",
+      "approveFor": "Ausnahme ({type}) für {name} genehmigen",
+      "loadError": "Ausstehende Ausnahmeanträge konnten nicht geladen werden.",
       "plannedDuration": "Geplant",
       "plannedDurationHelp": "Schätzen Sie, wie viel zusätzliche Zeit Sie über das Limit hinaus benötigen.",
       "reason": "Grund für die Ausnahme",
@@ -124,6 +136,7 @@
       "rejected": "Ausnahme abgelehnt",
       "rejectedDescription": "Die Compliance-Ausnahme wurde abgelehnt.",
       "rejectFailed": "Ablehnung fehlgeschlagen",
+      "rejectFor": "Ausnahme ({type}) für {name} ablehnen",
       "rejectionPlaceholder": "Grund für die Ablehnung dieser Ausnahme eingeben...",
       "rejectionReason": "Grund für die Ablehnung",
       "rejectTitle": "Ausnahmeantrag ablehnen",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Ihr Vorgesetzter wird benachrichtigt und kann Ihren Antrag genehmigen oder ablehnen.",
       "requestTitle": "Compliance-Ausnahme beantragen",
       "submit": "Antrag einreichen",
-      "type": "Ausnahmetyp"
+      "type": "Ausnahmetyp",
+      "types": {
+        "overtimeDaily": "Tägliche Überstunden",
+        "overtimeMonthly": "Monatliche Überstunden",
+        "overtimeWeekly": "Wöchentliche Überstunden",
+        "restPeriod": "Ruhezeit"
+      }
     },
     "hasApprovedException": "Sie haben eine genehmigte Ausnahme. Sie können fortfahren.",
     "moreAlerts": "mehr",

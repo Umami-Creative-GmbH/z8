@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "issue": 1746,
+  "status": "bounded-independent-pass",
+  "verifiedCommit": null,
+  "candidate": "6aa25d71d1058201437eba7dc9fe5d5f98768a45",
+  "tree": "286bf5a689c5d10e045db63de4ec6d59e8734817",
+  "appTree": "268193988ddf0ba1e566f2627f9d5422467e3a3a",
+  "criticalFindings": 0,
+  "scope": "Public actual-page/provider/read/builder/controller seams and disposable canonical PostgreSQL; live acceptance remains unpassed.",
+  "checks": {
+    "unit": {
+      "passed": 249,
+      "failed": 0,
+      "physicalFiles": 18,
+      "rootCompatibilityIncluded": 203,
+      "adaptedOriginalControls": 26,
+      "newIndependentlyAuthored": 20,
+      "semanticOverlapQualified": true,
+      "rerunsNonadditive": true
+    },
+    "postgres": {
+      "passed": 8,
+      "failed": 0,
+      "physicalFiles": 2,
+      "migrationVerifierPassed": true
+    },
+    "total": {
+      "distinctPhysicalFileFullNameOccurrence": 257,
+      "physicalFiles": 20,
+      "allPassed": true
+    },
+    "quality": {
+      "typegen": "pass",
+      "mainTypeScript": "qualified nonpass: missing ignored licenses.json, no source artifact copied/generated",
+      "workflowContracts": "pass",
+      "smokeTypes": "pass",
+      "lintImports": "nine files pass",
+      "explicit100ColumnCRLF": "nine files pass",
+      "ordinary": "nonpass:9format errors/0warnings in this run; prior root five warnings remain historical",
+      "doctor": {
+        "version": "0.9.22",
+        "files": 9,
+        "errors": 0,
+        "warnings": 0,
+        "complete": true
+      }
+    }
+  },
+  "coverage": [
+    "Original manager/admin/manager producing-identity counterexample with actual page/action/provider/builder; private-reason/action prohibition preserved.",
+    "Matching manager/admin admission and canonical filtering, missing/member refusal, actor/org refusal before building.",
+    "Held reads across provider employee/role return and pending session; context failure and actual Retry, mismatched refresh with failed Retry.",
+    "Population narrowing plus fresh partial results and whole-read error; retired private rows remain absent.",
+    "Twelve new unresolved response-body settlement outcomes across Activity/key/unmount/org return, with success/refusal/rejection.",
+    "Earlier pending/session/actor/client separation, query reset/clear, StrictMode and synchronous duplicate controls."
+  ],
+  "intake": {
+    "safeIndexSha256": "53d5a3befa9c8bb1ee470c50632bc7c2563aaa76ce19de8f806ead8ff0d124d1",
+    "handoffSha256": "d6a21b9b7e831ff56aff935f3525e996304912c7a5acc4b2ab5de8a3290b30a7",
+    "payloadFiles": 21,
+    "payloadBytes": 230405,
+    "jsonParsed": 12,
+    "independentIntakeAuditSha256": "02e8232f049f4b7503be67875bd79ebba1fe96f08c6f6e0e954c2a72121f8f33",
+    "sourcePinsCheckedAtRoot": 9,
+    "rootVerifiedAnchorAncestryChecked": 63,
+    "rootBaselineAncestryChecked": true
+  },
+  "preservation": {
+    "reviewReceiptTrackedFiles": 18500,
+    "reviewReceiptSourceAndIndexUnchanged": true,
+    "reviewReceiptBridgesRemoved": true,
+    "reportedOwnedProcesses": 0,
+    "reportedOwnedListeners": 0,
+    "reportedOwnedContainers": 0,
+    "rootLockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "qualification": "Full-tree and cleanup claims are sealed review receipts; SAFE intake did not rerun that inventory or resource probe. Root independently matches nine working/Git source pins and63anchors+baseline."
+  },
+  "harnessQualifications": [
+    "Import-only bridges failed before collection; physical hash-guarded bridges used own dependencies and were removed.",
+    "Loading-heading expectation corrected; combined refresh legitimately publishing matching manager context was corrected in the independent harness. Privacy predicates were retained.",
+    "Engine-lock wrapper version12.21 appeared only in failed discovery, never used for package/test/install; approved12.16.1 then used with environment and CLI dependency guard.",
+    "Initial buffer and sandbox cleanup query failures retained; successful read-only reruns separately recorded."
+  ],
+  "unpassed": [
+    "Authenticated current-source Today, browser/Next/native, matched layouts and preference/action readbacks.",
+    "Simultaneous live authority races, exhaustive account/org/Activity, production/catalog/provider/device/true-zoom/global matrices."
+  ],
+  "privateSafeIndex": "X:/t3-code/worktrees/z8/t3-02947498-32f3b3f2ff3fa169/.tmp/1746-independent-review-20261117/SAFE/SAFE-index.json"
+}

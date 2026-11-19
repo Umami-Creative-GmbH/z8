@@ -1,0 +1,27 @@
+{
+  "tool": "agent-browser 0.39.1 with react-devtools enabled",
+  "method": "Native React tree; current authenticated equipment consumer, synthetic small-admin",
+  "components": [
+    {
+      "name": "EquipmentOverview",
+      "present": true
+    },
+    {
+      "name": "EquipmentOverviewHeader",
+      "present": true
+    },
+    {
+      "name": "PageHeader",
+      "present": true
+    },
+    {
+      "name": "OverviewKpis",
+      "present": true
+    },
+    {
+      "name": "EquipmentAssignmentsCard",
+      "present": true
+    }
+  ],
+  "renderBenchmark": "Not captured; an attempted render interaction could not locate its target during a concurrent scope transition. No numeric performance claim."
+}

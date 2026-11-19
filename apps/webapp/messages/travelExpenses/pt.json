@@ -96,21 +96,27 @@
       "rejectTitle": "Rejeitar Reivindicação"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Confirmando a organização e o funcionário atuais…",
       "created": "Criado",
       "decisionRecorded": "Decisão registrada",
       "destination": "Destino",
       "history": "Histórico de decisões",
       "historyDescription": "Cada etapa desta solicitação, as mais antigas primeiro. Os horários são exibidos em UTC.",
       "intermediateApproval": "Aprovação registrada — aguardando aprovação adicional",
+      "legacyClaim": "Solicitação legada",
       "legacyReceiptIdentity": "Recibo legado: o checksum do conteúdo não foi registrado.",
       "loading": "Carregando solicitação…",
       "noReceipts": "Nenhum recibo registrado",
       "notRecorded": "Não registrado",
       "originalAmount": "Valor original",
       "receipts": "Recibos",
+      "receiptVersion": "Versão registrada",
       "refreshing": "Atualizando solicitação…",
+      "scopeUnavailable": "Atualize esta solicitação para confirmar seu acesso atual.",
       "submitted": "Enviado",
       "title": "Solicitação de despesas de viagem",
+      "unavailable": "Solicitação não encontrada ou o acesso não está mais disponível.",
       "unknownDates": "Contexto da data da viagem não registrado (solicitação legada)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Selecionar {name}",
         "selectAll": "Selecionar todas as despesas aguardando reembolso nesta página",
         "selected": "{count} selecionadas",
+        "selectionChanged": "Uma ou mais despesas selecionadas foram alteradas. Feche esta caixa de diálogo e revise as despesas atuais antes de iniciar outro pagamento.",
         "skipped": "Não incluídas ({count})",
         "submit": "Marcar {count} como reembolsadas",
         "title": "Marcar como reembolsada"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Nenhum responsável por despesas ativo que possa registrar reembolsos as tem sob seu escopo. Proprietários e administradores ainda podem registrá-las ou ampliar o escopo de um responsável.",
         "empty": "Um responsável por despesas cobre todas as despesas aprovadas que aguardam reembolso.",
+        "failed": "Não foi possível verificar a cobertura. Tente novamente.",
         "queueFilter": "Despesas aprovadas aguardando reembolso que nenhum responsável por despesas cobre.",
         "show": "Mostrar estas despesas",
         "showAll": "Mostrar todas as despesas aprovadas",
@@ -237,6 +245,7 @@
           "none": "Nenhum funcionário encontrado.",
           "search": "Pesquisar colaboradores…"
         },
+        "failed": "Não foi possível carregar as opções de filtro. Tente novamente.",
         "label": "Mostrar despesas",
         "notExported": "Ainda não exportado",
         "open": "Aberto",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Estes processamentos da folha contêm relatórios de despesas aguardando reembolso. Assim que a folha tiver pago um processamento, confirme-o para registrar os reembolsos.",
+        "failed": "Não foi possível carregar as confirmações da folha de pagamento. Tente novamente.",
         "reports": "{count, plural, one {# relatório de despesas para você confirmar, {amount}} other {# relatórios de despesas para você confirmar, {amount}}}",
         "title": "Processamentos da folha aguardando confirmação"
       },
       "queue": {
         "description": "Abra uma despesa para ver sua liquidação e registrar um reembolso.",
+        "failed": "Não foi possível carregar a fila financeira. Tente novamente.",
         "title": "Despesas aprovadas"
+      },
+      "scope": {
+        "failed": "Não foi possível confirmar seu acesso financeiro atual. Tente novamente.",
+        "loading": "Confirmando acesso financeiro…"
       },
       "title": "Finanças de despesas"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Quilometragem sem título"
     },
     "legacyDraft": {
+      "checking": "Verificando continuação do rascunho…",
       "continue": "Continuar como relatório",
       "converted": "Você continuou este rascunho como um relatório de despesas. Esta solicitação permanece aqui inalterada para referência.",
       "description": "Os rascunhos do formulário de solicitação anterior agora são finalizados como relatórios de despesas. Seu valor, datas, observações e comprovantes foram transferidos; tudo o que o novo formulário exigir e que não constava neste rascunho deve ser preenchido por você. A solicitação em si permanece inalterada.",
@@ -367,6 +383,7 @@
         "title": "Continuado a partir de um rascunho de solicitação anterior"
       },
       "openReport": "Abrir o relatório",
+      "readRefused": "A continuação do rascunho não está disponível para o leitor atual.",
       "receipt": {
         "mismatch": "o arquivo armazenado não corresponde mais ao que foi carregado",
         "unreadable": "o arquivo armazenado não pode ser lido no momento",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Não há valores pendentes para esta despesa.",
         "ownExpense": "Você não pode registrar pagamentos para suas próprias despesas.",
         "referenceRequired": "Insira a referência do pagamento, por exemplo, a referência da transferência bancária.",
+        "refresh": "Não foi possível atualizar o saldo. Os registros carregados anteriormente são exibidos; tente novamente antes de registrar um pagamento.",
         "refused": "Este pagamento não pode ser registrado para esta despesa.",
         "staleBalance": "O saldo foi alterado enquanto você inseria este pagamento. Verifique o saldo atualizado e registre-o novamente.",
         "tooLong": "Este texto é longo demais."
@@ -1149,7 +1167,13 @@
     },
     "title": "Despesas de Viagem",
     "workspace": {
-      "description": "Reúna despesas de viagem e avulsas, envie-as para revisão e acompanhe o seu reembolso."
+      "create": "Criar um relatório de despesas",
+      "description": "Reúna despesas de viagem e avulsas, envie-as para revisão e acompanhe o seu reembolso.",
+      "mileageDescription": "Registrar um deslocamento a trabalho fora de uma viagem.",
+      "otherWork": "Revisão e financeiro",
+      "receiptDescription": "Registre uma despesa com seu comprovante.",
+      "reconciling": "Carregando suas despesas para a organização atual…",
+      "tripDescription": "Reúna despesas com detalhes de viagem compartilhados."
     }
   }
 }

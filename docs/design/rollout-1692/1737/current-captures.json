@@ -1,0 +1,33 @@
+{
+  "phase": "current",
+  "at": "2026-11-16T00:09:18.228Z",
+  "head": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
+  "scope": "small-admin / Performance small / current year 2026 / canonical 147km seed; default font and expanded desktop sidebar; same transient normal-login browser",
+  "sources": {
+    "apps/webapp/src/components/reports/vehicles/vehicle-distance-report-container.tsx": "53816bc3ee16bd0b72aa7fcd2edef565f749a37e17558214d5242a215a1e2b4c",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-exports.tsx": "1203747de612847c7df4f4ce9c1446f91ac77b2f79a6096bdea03b4d22525e0a",
+    "apps/webapp/src/components/reports/vehicles/vehicle-report-period-picker.tsx": "2b8b4a2ede50dc11ac04aa76df6b881013c47409c5aa4644e09110b26c481bcc",
+    "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx": "d3ec9bc974917d5ef4c89272037cad0cd18bc96f96c6c8115e0866ffbe3e939f",
+    "apps/webapp/src/lib/navigation/route-metadata.ts": "c622b54f091fc7fe34731daa11d67ed5389e790e2c17a7bca638d969cfb0980b"
+  },
+  "captures": [
+    {
+      "label": "desktop",
+      "file": "current-desktop.png",
+      "at": "2026-11-16T00:09:16.023Z",
+      "observation": "\"{\\\"title\\\":\\\"z8 - time app\\\",\\\"url\\\":\\\"/en/reports/vehicles\\\",\\\"headings\\\":[{\\\"text\\\":\\\"Distance per Vehicle\\\",\\\"rect\\\":{\\\"x\\\":280,\\\"y\\\":89,\\\"width\\\":1296,\\\"height\\\":36,\\\"top\\\":89,\\\"right\\\":1576,\\\"bottom\\\":125,\\\"left\\\":280}}],\\\"viewport\\\":{\\\"width\\\":1600,\\\"height\\\":1000},\\\"documentWidth\\\":1600,\\\"font\\\":\\\"16px\\\",\\\"theme\\\":\\\"light bprogress-busy\\\",\\\"settled\\\":true,\\\"tableRows\\\":[\\\"Vehicle / employee\\\\tJanuary 2026\\\\tFebruary 2026\\\\tMarch 2026\\\\tApril 2026\\\\tMay 2026\\\\tJune 2026\\\\tJuly 2026\\\\tAugust 2026\\\\tSeptember 2026\\\\tOctober 2026\\\\tNovember 2026\\\\tDecember 2026\\\\tTotal\\\",\\\"Archived fixture van\\\\nFIX-1737\\\\nArchived\\\\n\\\\t101 km\\\\t17 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t118 km\\\",\\\"Person 0\\\\t101 km\\\\t17 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t118 km\\\",\\\"Own vehicle\\\\n\\\\t0 km\\\\t29 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t29 km\\\",\\\"Person 0\\\\t–\\\\t29 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t29 km\\\",\\\"Total\\\\t101 km\\\\t46 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t147 km\\\"],\\\"generate\\\":[{\\\"x\\\":1385.5,\\\"y\\\":244,\\\"width\\\":165.5,\\\"height\\\":40,\\\"top\\\":244,\\\"right\\\":1551,\\\"bottom\\\":284,\\\"left\\\":1385.5}]}\""
+    },
+    {
+      "label": "phone",
+      "file": "current-phone.png",
+      "at": "2026-11-16T00:09:16.677Z",
+      "observation": "\"{\\\"title\\\":\\\"z8 - time app\\\",\\\"url\\\":\\\"/en/reports/vehicles\\\",\\\"headings\\\":[{\\\"text\\\":\\\"Distance per Vehicle\\\",\\\"rect\\\":{\\\"x\\\":16,\\\"y\\\":81,\\\"width\\\":358,\\\"height\\\":32,\\\"top\\\":81,\\\"right\\\":374,\\\"bottom\\\":113,\\\"left\\\":16}}],\\\"viewport\\\":{\\\"width\\\":390,\\\"height\\\":844},\\\"documentWidth\\\":390,\\\"font\\\":\\\"16px\\\",\\\"theme\\\":\\\"light bprogress-busy\\\",\\\"settled\\\":true,\\\"tableRows\\\":[\\\"Vehicle / employee\\\\tJanuary 2026\\\\tFebruary 2026\\\\tMarch 2026\\\\tApril 2026\\\\tMay 2026\\\\tJune 2026\\\\tJuly 2026\\\\tAugust 2026\\\\tSeptember 2026\\\\tOctober 2026\\\\tNovember 2026\\\\tDecember 2026\\\\tTotal\\\",\\\"Archived fixture van\\\\nFIX-1737\\\\nArchived\\\\n\\\\t101 km\\\\t17 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t118 km\\\",\\\"Person 0\\\\t101 km\\\\t17 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t118 km\\\",\\\"Own vehicle\\\\n\\\\t0 km\\\\t29 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t29 km\\\",\\\"Person 0\\\\t–\\\\t29 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t29 km\\\",\\\"Total\\\\t101 km\\\\t46 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t147 km\\\"],\\\"generate\\\":[{\\\"x\\\":41,\\\"y\\\":352,\\\"width\\\":308,\\\"height\\\":40,\\\"top\\\":352,\\\"right\\\":349,\\\"bottom\\\":392,\\\"left\\\":41}]}\""
+    },
+    {
+      "label": "wide",
+      "file": "current-wide.png",
+      "at": "2026-11-16T00:09:18.228Z",
+      "observation": "\"{\\\"title\\\":\\\"z8 - time app\\\",\\\"url\\\":\\\"/en/reports/vehicles\\\",\\\"headings\\\":[{\\\"text\\\":\\\"Distance per Vehicle\\\",\\\"rect\\\":{\\\"x\\\":280,\\\"y\\\":89,\\\"width\\\":1616,\\\"height\\\":36,\\\"top\\\":89,\\\"right\\\":1896,\\\"bottom\\\":125,\\\"left\\\":280}}],\\\"viewport\\\":{\\\"width\\\":1920,\\\"height\\\":1080},\\\"documentWidth\\\":1920,\\\"font\\\":\\\"16px\\\",\\\"theme\\\":\\\"light bprogress-busy\\\",\\\"settled\\\":true,\\\"tableRows\\\":[\\\"Vehicle / employee\\\\tJanuary 2026\\\\tFebruary 2026\\\\tMarch 2026\\\\tApril 2026\\\\tMay 2026\\\\tJune 2026\\\\tJuly 2026\\\\tAugust 2026\\\\tSeptember 2026\\\\tOctober 2026\\\\tNovember 2026\\\\tDecember 2026\\\\tTotal\\\",\\\"Archived fixture van\\\\nFIX-1737\\\\nArchived\\\\n\\\\t101 km\\\\t17 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t118 km\\\",\\\"Person 0\\\\t101 km\\\\t17 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t118 km\\\",\\\"Own vehicle\\\\n\\\\t0 km\\\\t29 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t29 km\\\",\\\"Person 0\\\\t–\\\\t29 km\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t–\\\\t29 km\\\",\\\"Total\\\\t101 km\\\\t46 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t0 km\\\\t147 km\\\"],\\\"generate\\\":[{\\\"x\\\":1705.5,\\\"y\\\":244,\\\"width\\\":165.5,\\\"height\\\":40,\\\"top\\\":244,\\\"right\\\":1871,\\\"bottom\\\":284,\\\"left\\\":1705.5}]}\""
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "at": "2026-11-18T04:23:35.823Z",
+  "view": {
+    "path": "/en/travel-expenses/finance",
+    "h1": [
+      {
+        "text": "Travel Expenses",
+        "x": 337,
+        "y": 22,
+        "w": 835.34375,
+        "h": 20
+      },
+      {
+        "text": "Expense finance",
+        "x": 280,
+        "y": 137,
+        "w": 1296,
+        "h": 32
+      }
+    ],
+    "statuses": [],
+    "alerts": [],
+    "retry": false,
+    "empty": false,
+    "noMatch": false,
+    "rows": 1
+  },
+  "controls": [
+    {
+      "text": "Toggle Sidebar",
+      "disabled": false
+    },
+    {
+      "text": "05:23\nUTC+01:00",
+      "disabled": false
+    },
+    {
+      "text": "Clock In",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "disabled": false
+    },
+    {
+      "text": "Toggle theme",
+      "disabled": false
+    },
+    {
+      "text": "",
+      "disabled": false
+    },
+    {
+      "text": "Open",
+      "disabled": false
+    },
+    {
+      "text": "Reimbursed",
+      "disabled": false
+    },
+    {
+      "text": "All approved",
+      "disabled": false
+    },
+    {
+      "text": "All employees",
+      "disabled": false
+    },
+    {
+      "text": "All teams",
+      "disabled": false
+    },
+    {
+      "text": "All currencies",
+      "disabled": false
+    }
+  ],
+  "actualNavigation": true,
+  "qualification": "Observed read-only finance controls for UI-created all-scope grant, no export or reimbursement operation invoked"
+}

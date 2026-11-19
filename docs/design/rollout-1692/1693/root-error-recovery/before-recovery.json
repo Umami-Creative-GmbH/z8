@@ -1,0 +1,31 @@
+{
+  "phase": "before",
+  "sourceCommit": "78d8c4af9764d159ca8dc12e772af3c835b77b3c",
+  "patch": "Historical integration source unchanged",
+  "preparedDeploymentIdentifier": "20e380c98002a0ecf598f0185113b22a856215d3",
+  "frameworkVersion": "16.4.6",
+  "actor": "small-employee",
+  "organization": "Performance small",
+  "historyRecords": 3,
+  "fallback": {
+    "headings": [
+      "Approvals",
+      "Something went wrong"
+    ],
+    "workspaceShell": true,
+    "privateSqlInMain": false
+  },
+  "restoredRecords": 3,
+  "requestsAfterRetry": [],
+  "afterRetry": {
+    "rows": 0,
+    "errorVisible": true
+  },
+  "handlerHashes": {
+    "src/app/[locale]/error.tsx": "0606e93d24f3bbf243b30994234e59d89ca4cf0b3f08d502406e317af126699c",
+    "src/app/[locale]/(admin)/error.tsx": "db60f2a010b8008a34ab6e33233a7ffa685b20bdc80af2a7247db9d2eba9de5a",
+    "src/app/[locale]/(app)/error.tsx": "19fade9c5fb61c8f4aef9ce1705bc0bd46fe733fe307b7fb353775f8ba2f4d22",
+    "src/app/[locale]/(app)/settings/error.tsx": "71ed5b2b6e174e46574c88b6ac0cf11dcb9f178d29b6c4ca1e10463ced64bdb1"
+  },
+  "boundary": "Actual original authorized R010 reader and Next shared boundary. A fixture-only table rename causes the real failure; restoration precedes native Retry. No fabricated read/action response, no new route, no local R010 boundary removal. The archived consumer predates R010 refresh and is not final-current-route acceptance."
+}

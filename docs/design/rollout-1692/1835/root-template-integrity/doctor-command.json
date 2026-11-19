@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "react-doctor",
+    "apps/webapp",
+    "--scope",
+    "changed",
+    "--base",
+    "90a7e5bdb34099bf9452e9462109cdf86429d164",
+    "--verbose",
+    "--no-score",
+    "--no-parallel",
+    "--no-telemetry",
+    "--no-supply-chain",
+    "--max-duration",
+    "90",
+    "--json",
+    "--json-out",
+    "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1835-root-checks\\doctor.json"
+  ],
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "started": "2026-11-16T04:51:05.407Z",
+  "ended": "2026-11-16T04:51:28.104Z",
+  "exitCode": 0,
+  "sourceHead": "3782c6ad3af0eff2800f39253b9a601edf7def17",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/actions.ts": "0bbf6dabdda5df4ce12d822dd62729b678f676ac40f3cc99fced6dd936a68955",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/page-client.tsx": "9da7d43961645d4d30e6b779a77669db7377a944c0b365afae8ca074b5f81c16",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/page.test.tsx": "382aa71824fdaecab2bf6b5afadda5f01bae53caf1bd84060443f61ba4f70437",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/submission-arrival.test.tsx": "8a17b22c399da68bf95c03a6b7fce16d4d719636c046aabc77452b031ec62d07",
+    "apps/webapp/src/app/[locale]/onboarding/work-templates/atomicity.integration.test.ts": "15a3bb27a4d5ba7ab63b13b2c06c5705e06560e19b3df422876f8da582d8450f",
+    "apps/webapp/src/lib/onboarding/work-template-mutation.ts": "e63df58118269453859e5975ac20d7ad20a3701e5437cbbaf890f6be58720e5c",
+    "apps/webapp/src/lib/effect/services/onboarding.service.ts": "7af76c4768f036610e9105b966b72b7fe818410c4ff064608a92a82bcec3a8f9",
+    "apps/webapp/src/lib/user-preferences/user-settings-mutation.ts": "cea2b01dc366c892cbc742c3cb05a06710880ac399e82142f51b525f9b9487e5",
+    "apps/webapp/src/lib/effect/services/onboarding.service.test.ts": "56e578ab67c6cb1eec69619d0062ccf4d71bb1a31365a6319815c798f546b4c4"
+  }
+}

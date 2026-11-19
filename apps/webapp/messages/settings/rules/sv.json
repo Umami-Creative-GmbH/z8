@@ -23,6 +23,7 @@
       },
       "deleteDescription": "Är du säker på att du vill ta bort \"{name}\"? Kategorier som används för befintlig frånvaro kan inte tas bort och bör inaktiveras i stället.",
       "deleteFailed": "Det gick inte att ta bort kategorin",
+      "deleteInUse": "Den här kategorin används fortfarande. Inaktivera den i stället, eller ta bort det som är beroende av den först.",
       "deleteTitle": "Ta bort frånvarokategori",
       "drawsOnWorkBalance": "Dras från arbetssaldo",
       "editCategory": "Redigera \"{name}\"",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "Inget avdrag",
       "reactivate": "Återaktivera",
       "saveFailed": "Det gick inte att spara frånvarokategorin",
+      "saveInUse": "Den här kategorin används av befintliga frånvaror. Skapa en ny kategori för andra regler, eller inaktivera den här.",
       "searchPlaceholder": "Sök kategorier…",
       "statusUpdateFailed": "Det gick inte att uppdatera kategoristatusen",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Uppdatera kategori"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Frånvaro",
+        "absenceChange": "Frånvaroändring",
+        "complianceException": "Efterlevnadsundantag",
+        "manualTimeSubmission": "Manuell tidsinlämning",
+        "periodSubmission": "Periodinlämning",
+        "policyClockOut": "Policyutstämpling",
+        "shiftRequest": "Passförfrågan",
+        "timeCorrection": "Tidskorrigering",
+        "travelExpense": "Resekostnad"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Leverans",
+          "retirement": "Meddelandeuppdatering",
+          "transfer": "Överföring"
+        },
+        "outcome": {
+          "ambiguous": "Okänt resultat",
+          "delivered": "Levererad",
+          "deliveredAfterPurge": "Levererad efter rensning",
+          "destinationInvalid": "Ogiltig destination",
+          "gone": "Meddelandet är inte längre tillgängligt",
+          "notCovering": "Meddelandet är inte längre aktuellt",
+          "permanent": "Permanent fel",
+          "retryable": "Tillfälligt fel",
+          "unavailable": "Kanal otillgänglig"
+        }
+      },
       "attention": {
         "alertedAt": "Administratörer aviserades {date}",
         "approvalType": "Godkännande",
@@ -116,6 +147,18 @@
         "recheck": "Kontrollera igen",
         "resolved": "Löst",
         "retryDelivery": "Försök leverera igen",
+        "technical": {
+          "approvalRequestId": "ID för godkännandebegäran",
+          "approvalType": "Kod för godkännandetyp",
+          "assignmentId": "Tilldelnings-ID",
+          "attemptReference": "Försöksreferens",
+          "attentionId": "ID för uppmärksamhetsobjekt",
+          "copied": "{label} kopierades",
+          "copy": "Kopiera {label}",
+          "copyFailed": "Värdet kunde inte kopieras. Markera det och kopiera det manuellt.",
+          "title": "Tekniska detaljer",
+          "workflowId": "Arbetsflödes-ID"
+        },
         "title": "Kräver åtgärd",
         "transfer": "Överför…",
         "unknownApprover": "Inte registrerad"
@@ -155,6 +198,22 @@
         "disposed": "Avfärdad",
         "raised": "Utlöst",
         "resolved": "Löst"
+      },
+      "evidence": {
+        "actionableAt": "Åtgärdbar sedan",
+        "actionableEvidence": "Åtgärdbar sedan (källa)",
+        "attemptCount": "Gjorda försök",
+        "cause": "Orsak",
+        "code": "Felkod",
+        "deadline": "Tidsgräns",
+        "effect": "Meddelandeåtgärd",
+        "error": "Fel",
+        "outcome": "Utfall",
+        "policyRevision": "Policyrevidering",
+        "reason": "Orsakskod",
+        "recovered": "Återställd av",
+        "route": "Beslutsväg",
+        "workId": "Leveransjobb"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Det gick inte att läsa in eskaleringsinställningarna.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Ändrad av",
+        "empty": "Inga policyändringar har registrerats än.",
         "migration": "Migrering av inställningar",
         "policy": "Policy",
         "revision": "Revision",
@@ -217,8 +277,10 @@
       },
       "title": "Eskalering av godkännande",
       "toast": {
+        "conflict": "Detta har ändrats under tiden. Ladda om för att se aktuell status.",
         "deliveryRetried": "Nytt leveransförsök schemalagt",
         "disposed": "Uppmärksamhetsobjekt stängt",
+        "notFound": "Det här objektet finns inte längre. Ladda om för att se aktuell status.",
         "rechecked": "Kontrollerade {checked} objekt, {resolved} åtgärdade",
         "requestFailed": "Begäran misslyckades. Försök igen.",
         "reviewed": "Konflikter markerade som granskade",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Godkännandetyper",
       "approver": "Godkännare",
-      "approverEmployeeId": "Godkännarens anställnings-ID",
-      "approverEmployeeIdPlaceholder": "Exempel: employee_123…",
+      "approverEmployee": "Godkännande medarbetare",
       "approverType": {
         "directManager": "Närmaste chef",
         "managerManager": "Chefens chef",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Antal villkor",
       "createPolicy": "Skapa godkännandepolicy",
+      "createPolicySubmit": "Skapa policy",
+      "deactivateConfirm": {
+        "confirm": "Inaktivera",
+        "description": "Nya förfrågningar slutar matcha denna policy och dirigeras enligt nästa matchande aktiva policy eller standardgodkännandevägen. Du kan aktivera den igen genom att redigera den.",
+        "title": "Inaktivera ”{name}”?"
+      },
+      "deactivatePolicyNamed": "Inaktivera {name}",
       "defaultStageLabel": "Chefsgranskning",
       "description": "Konfigurera sekventiella godkännandekedjor för operativa arbetsflöden",
       "descriptionPlaceholder": "Exempel: Eskalerar känsliga arbetsflöden till drift…",
       "dialogDescription": "Definiera när en godkännandekedja tillämpas och vilka godkännare som hanterar varje sekventiellt steg.",
-      "editPolicy": "Redigera policy",
+      "editPolicyNamed": "Redigera {name}",
+      "editPolicyTitle": "Redigera godkännandepolicy",
       "empty": "Inga godkännandepolicyer har konfigurerats ännu. Skapa en policy för att definiera din första godkännandekedja.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Organisationsadministratör"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, one {Denna policy matchar även # äldre godkännandetyp som inte kan väljas här. Om du sparar lämnas {count, plural, one {den} other {dem}} utan ändring.} other {Denna policy matchar även # äldre godkännandetyper som inte kan väljas här. Om du sparar lämnas {count, plural, one {den} other {dem}} utan ändring.}}",
       "loadFailed": "Det gick inte att läsa in godkännandepolicyer.",
       "loading": "Läser in policyer…",
       "namePlaceholder": "Exempel: Frånvaroeskalering…",
       "noStages": "Inga godkännandesteg har konfigurerats ännu.",
+      "preservedConditions": "{count, plural, other {Denna policy har # ytterligare villkor som inte kan ändras här. Om du sparar lämnas {count, plural, one {det} other {dem}} utan ändring.} }",
       "preview": {
         "ariaLabel": "Förhandsgranskning av godkännandekedja",
-        "badge": "Förhandsgranskningsskal",
-        "description": "Se hur matchande förfrågningar kommer att gå igenom varje godkännandesteg innan du aktiverar en policy.",
-        "footer": "En fullständig förhandsgranskning med förfrågningskontext kommer att visa faktiska godkännare när policyvillkor och medarbetargrupper har kopplats till redigeraren.",
+        "chainDescription": "Hur en matchande förfrågan rör sig genom stegen som konfigurerats ovan.",
+        "chainTitle": "Förhandsgranskning av godkännandekedja",
+        "fallback": "Om ingen godkännare hittas: {fallback}",
+        "loadingEmployee": "Läser in medarbetare…",
+        "noEmployeeSelected": "Ingen medarbetare har valts än",
+        "noStages": "Lägg till ett steg för att se godkännandekedjan.",
         "stage": {
           "approved": "Godkänd",
-          "directManager": "Närmaste chef",
-          "operationsAdmin": "Driftadministratör",
           "requester": "Förfrågare"
-        },
-        "title": "Förhandsgranskning av kedjesammanfattning"
+        }
       },
       "priority": "Prioritet",
-      "removeStage": "Ta bort steg",
+      "removeStageNumber": "Ta bort steg {number}",
+      "savePolicySubmit": "Spara policy",
+      "selectApproverEmployee": "Välj medarbetare",
       "stageNumber": "Steg {number}",
       "stages": "Godkännandesteg",
       "stagesCount": "Antal steg",
@@ -322,14 +395,19 @@
       "title": "Godkännandepolicyer",
       "toast": {
         "created": "Godkännandepolicy skapad",
-        "saveFailed": "Det gick inte att spara godkännandepolicyn."
+        "deactivated": "”{name}” inaktiverad",
+        "reactivated": "”{name}” är aktiv igen",
+        "saveFailed": "Det gick inte att spara godkännandepolicyn.",
+        "updated": "Godkännandepolicy sparad"
       },
+      "unknownEmployee": "Okänd medarbetare ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Aktiva policyer kräver minst ett godkännandesteg.",
-        "specificEmployeeRequiresId": "Steg med specifik medarbetare kräver ett anställnings-ID för godkännaren."
+        "specificEmployeeRequired": "Välj godkännande medarbetare för varje specifikt medarbetarsteg."
       }
     },
     "changePolicies": {
+      "actionsFor": "Åtgärder för {name}",
       "allManagers": "Alla chefer",
       "approvalDaysDescription": "Utöver självbetjäning kan anställda begära ändringar inom detta tidsfönster (kräver godkännande). 0 = inget ytterligare tidsfönster.",
       "approvalDaysLabel": "Godkännandefönster (dagar)",
@@ -363,6 +441,7 @@
       "deleted": "Policyn har tagits bort",
       "deleteDescription": "Är du säker på att du vill ta bort den här policyn? Alla tilldelningar som använder denna policy kommer också att tas bort. Medarbetare som tidigare använt policyn kommer inte att ha några begränsningar förrän en ny policy tilldelas.",
       "deleteFailed": "Det gick inte att ta bort policyn",
+      "deleteNamedDescription": "Vill du ta bort ändringspolicyn \"{name}\"? Alla tilldelningar som använder denna policy tas också bort. Medarbetare som tidigare använde denna policy har inga begränsningar förrän en ny policy tilldelas.",
       "deleteTitle": "Ta bort ändringspolicy",
       "description": "Styr när medarbetare kan redigera tidsregistreringar och kräver chefs godkännande",
       "descriptionLabel": "Beskrivning",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "Standardpolicyn som tillämpas för alla anställda som inte har ett team- eller individuellt åsidosättande.",
       "policySummary": "Policysammanfattning:",
       "primaryOnly": "Endast primär",
+      "removeAssignmentFor": "Ta bort tilldelning för {name}",
       "removeAssignmentTitle": "Ta bort policytilldelning?",
       "removeEmployeeDescription": "Detta tar bort åsidosättandet för \"{name}\". De kommer att använda sitt team eller organisationsstandarden.",
       "removeOrgDescription": "Detta tar bort organisationsstandardpolicyn. Anställda kommer inte att ha några begränsningar såvida de inte har ett team- eller individuellt åsidosättande.",
+      "removeOrgNamedDescription": "Detta tar bort \"{policy}\" som organisationens standardpolicy. Medarbetare kommer inte att ha några begränsningar såvida de inte har ett undantag på team- eller individnivå.",
       "removeTeamDescription": "Detta tar bort policyn från teamet \"{team}\". De kommer att använda organisationsstandarden.",
       "sameDay": "Endast samma dag",
       "sameDayFree": "Ändringar samma dag är fria",
@@ -438,6 +519,13 @@
       "description": "Ange krav på minsta bemanning per plats och tid",
       "editRule": "Redigera bemanningsregel",
       "endTime": "Sluttid",
+      "errors": {
+        "endNotAfterStart": "Sluttiden måste vara efter starttiden samma dag.",
+        "invalidTime": "Ange en tid i 24-timmarsformatet HH:mm.",
+        "staffCountRange": "Ange ett heltal från 1 till 100.",
+        "subareaRequired": "Välj ett delområde."
+      },
+      "loadFailed": "Täckningsregler kunde inte läsas in.",
       "loading": "Laddar bemanningsregler...",
       "minimumStaffCount": "Minsta personalantal",
       "minimumStaffHint": "Det minsta antalet personal som krävs under detta tidsblock.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Bemanningsregel uppdaterad",
       "selectSubarea": "Välj ett delområde",
       "settingsFailed": "Kunde inte spara inställningarna",
+      "settingsLoadFailed": "Publiceringsinställningar kunde inte läsas in.",
       "settingsSaved": "Inställningar sparade",
       "startTime": "Starttid",
       "subarea": "Plats / Delområde",
@@ -493,6 +582,10 @@
         "colorSelection": "Färgval",
         "defaultSubarea": "Förvalt underområde",
         "endTime": "Sluttid",
+        "errors": {
+          "invalidTime": "Ange en tid i 24-timmarsformatet HH:mm.",
+          "subareaRequired": "Välj ett av dina delområden."
+        },
         "name": "Namn",
         "namePlaceholder": "t.ex. Morgonpass…",
         "noSubarea": "Inget förvalt underområde",
@@ -508,6 +601,7 @@
         "description": "Hantera dina passmallar",
         "title": "Mallar"
       },
+      "loadError": "Skiftmallar kunde inte läsas in.",
       "table": {
         "duration": "Varaktighet",
         "name": "Namn",
@@ -544,7 +638,7 @@
       "deleteModel": "Ta bort tilläggsmodell",
       "deleteModelDescription": "Detta inaktiverar modellen och alla dess tilldelningar. Denna åtgärd kan inte ångras.",
       "deleteModelTitle": "Ta bort tilläggsmodell?",
-      "deleteOrgAssignmentDescription": "Detta tar bort organisationens standard. Team och medarbetare utan specifika tilldelningar kommer inte att ha någon tilläggsmodell tillämpad.",
+      "deleteOrgAssignmentNamedDescription": "Detta tar bort \"{model}\" som organisationsstandard. Team och medarbetare utan specifika tilldelningar kommer inte ha någon tilläggsmodell tillämpad.",
       "deleteTeamAssignmentDescription": "Detta tar bort tilläggsmodellen från teamet \"{team}\". De kommer att använda organisationens standard.",
       "description": "Konfigurera tidstillägg för övertid, nattarbete, helger och helgdagar.",
       "descriptionLabel": "Beskrivning",
@@ -605,9 +699,11 @@
           "loadTitle": "Kunde inte läsa in beräkningar"
         },
         "filters": {
+          "allEmployees": "Alla medarbetare",
           "apply": "Tillämpa filter",
-          "employeeId": "Anställnings-ID",
+          "employee": "Medarbetare",
           "endDate": "Slutdatum",
+          "showAllEmployees": "Visa alla medarbetare",
           "startDate": "Startdatum"
         },
         "loading": "Läser in beräkningar…",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Visar de första 500 matchande beräkningarna. Begränsa datum- eller anställdfiltren för att förfina summorna.",
         "summary": {
           "baseHours": "Bastimmar",
+          "calculationCount": "{count, plural, one {# beräkning} other {# beräkningar}}",
           "calculations": "Beräkningar",
           "creditedHours": "Tillgodoräknade tilläggstimmar",
           "qualifyingHours": "Kvalificerande tilläggstimmar"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Ta bort från uppsättningar först",
       "categories": "Kategorier",
       "categoriesDescription": "Skapa och hantera arbetskategorier som kan delas mellan flera uppsättningar",
+      "categoriesLoadError": "Arbetskategorier kunde inte läsas in",
       "categoriesTitle": "Arbetskategorier",
       "categoryCreated": "Kategori skapad",
       "categoryCreateFailed": "Kunde inte skapa kategori",
@@ -709,6 +807,7 @@
       "categoryInUse": "Kan inte ta bort en kategori som används i {count} uppsättning(ar). Ta bort den från alla uppsättningar först.",
       "categoryName": "Namn",
       "categoryNamePlaceholder": "t.ex. Passivt resande",
+      "categoryNameTaken": "Det finns redan en kategori med detta namn.",
       "categoryUpdated": "Kategori uppdaterad",
       "categoryUpdateFailed": "Kunde inte uppdatera kategori",
       "chooseColor": "Välj färg",
@@ -722,22 +821,30 @@
       "createSetDescription": "Skapa en ny kategoriuppsättning och välj vilka kategorier som ska ingå",
       "defaultSet": "Standardkategoriuppsättning",
       "deleteAssignmentTitle": "Ta bort tilldelning?",
+      "deleteCategoryDescription": "Kategorin \"{name}\" kommer att raderas permanent.",
+      "deleteCategoryNamed": "Ta bort kategori {name}",
+      "deleteCategoryTitle": "Ta bort kategori?",
       "deleteEmployeeAssignment": "Detta tar bort åsidosättningen för \"{name}\". De kommer att använda standardinställningen för sitt team eller sin organisation.",
-      "deleteOrgAssignment": "Detta tar bort organisationens standardinställning. Medarbetare har inga arbetskategorier tillgängliga om de inte tilldelas individuellt.",
+      "deleteOrgAssignmentNamed": "Detta tar bort \"{set}\" som organisationsstandard. Medarbetare kommer inte att ha några tillgängliga arbetskategorier om de inte tilldelas individuellt.",
       "deleteSetDescription": "Detta raderar kategoriuppsättningen \"{name}\" och alla dess kategorier permanent. Alla tilldelningar som använder denna uppsättning tas också bort.",
+      "deleteSetNamed": "Ta bort kategoriuppsättning {name}",
       "deleteSetTitle": "Radera kategoriuppsättning?",
       "deleteTeamAssignment": "Detta tar bort kategoriuppsättningen från teamet \"{team}\". De kommer att använda organisationens standardinställning.",
       "description": "Definiera arbetskategorier med tidsfaktorer för beräkning av effektiv tid",
       "descriptionPlaceholder": "Valfri beskrivning",
       "editCategory": "Redigera kategori",
       "editCategoryDescription": "Uppdatera kategoriinformationen",
+      "editCategoryNamed": "Redigera kategori {name}",
       "editSet": "Redigera kategoriuppsättning",
       "editSetDescription": "Uppdatera informationen för kategoriuppsättningen och hantera dess kategorier",
+      "editSetNamed": "Redigera kategoriuppsättning {name}",
       "employeeLevel": "Åsidosättningar för medarbetare",
       "employeeLevelDescription": "Åsidosätt standardinställningar för team eller organisation för specifika medarbetare",
       "factor": "Faktor",
       "factorExplanation": "Faktorn bestämmer effektiv tid: 0.5 = 50 % (t.ex. passiv restid), 1.0 = 100 % (normalt arbete), 1.5 = 150 % (övertid)",
       "loadError": "Kunde inte läsa in kategoriuppsättningar",
+      "moveCategoryDown": "Flytta ned {name}",
+      "moveCategoryUp": "Flytta upp {name}",
       "noCategories": "Inga kategorier ännu",
       "noCategoriesAvailable": "Inga kategorier tillgängliga",
       "noCategoriesHint": "Skapa kategorier för att tilldela dem till uppsättningar",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "Inga team tillgängliga.",
       "orgLevel": "Organisationsstandard",
       "orgLevelDescription": "Standardkategoriuppsättning som tillämpas för alla medarbetare om den inte åsidosätts",
+      "removeAssignmentFor": "Ta bort tilldelning för {name}",
+      "removeCategoryFromSet": "Ta bort {name} från uppsättning",
       "selectCategories": "Välj kategorier",
-      "selectedCategories": "Valda kategorier (dra för att ändra ordning)",
+      "selectedCategoriesOrder": "Valda kategorier (använd pilarna för att ändra ordning)",
       "selectEmployee": "Medarbetare",
       "selectEmployeePlaceholder": "Välj en medarbetare",
       "selectSet": "Kategoriuppsättning",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Valfri beskrivning för denna kategoriuppsättning",
       "setName": "Namn",
       "setNamePlaceholder": "t.ex. Resekategorier",
+      "setNameTaken": "Det finns redan en kategoriuppsättning med detta namn.",
       "setUpdated": "Kategoriuppsättningen har uppdaterats",
       "setUpdateFailed": "Kunde inte uppdatera kategoriuppsättningen",
       "tab": {

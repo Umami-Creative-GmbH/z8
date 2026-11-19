@@ -23,6 +23,7 @@
       },
       "deleteDescription": "\"{name}\" öğesini silmek istediğinizden emin misiniz? Mevcut izinler tarafından kullanılan kategoriler silinemez, bunun yerine devre dışı bırakılmalıdır.",
       "deleteFailed": "Kategori silinemedi",
+      "deleteInUse": "Bu kategori hâlâ kullanımda. Bunun yerine devre dışı bırakın veya önce buna bağlı olanları kaldırın.",
       "deleteTitle": "İzin Kategorisini Sil",
       "drawsOnWorkBalance": "Çalışma bakiyesinden düşer",
       "editCategory": "\"{name}\" öğesini düzenle",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "Kesinti yok",
       "reactivate": "Yeniden etkinleştir",
       "saveFailed": "İzin kategorisi kaydedilemedi",
+      "saveInUse": "Bu kategori mevcut devamsızlıklar tarafından kullanılıyor. Farklı kurallar için yeni bir kategori oluşturun veya bunu devre dışı bırakın.",
       "searchPlaceholder": "Kategorileri ara…",
       "statusUpdateFailed": "Kategori durumu güncellenemedi",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Kategoriyi Güncelle"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Devamsızlık",
+        "absenceChange": "Devamsızlık değişikliği",
+        "complianceException": "Uyumluluk istisnası",
+        "manualTimeSubmission": "Manuel süre bildirimi",
+        "periodSubmission": "Dönem bildirimi",
+        "policyClockOut": "Politika çıkışı",
+        "shiftRequest": "Vardiya talebi",
+        "timeCorrection": "Zaman düzeltmesi",
+        "travelExpense": "Seyahat masrafı"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Teslimat",
+          "retirement": "Mesaj güncellemesi",
+          "transfer": "Aktarım"
+        },
+        "outcome": {
+          "ambiguous": "Sonuç bilinmiyor",
+          "delivered": "Teslim edildi",
+          "deliveredAfterPurge": "Temizleme sonrası teslim edildi",
+          "destinationInvalid": "Hedef geçersiz",
+          "gone": "Mesaj artık mevcut değil",
+          "notCovering": "Mesaj artık güncel değil",
+          "permanent": "Kalıcı hata",
+          "retryable": "Geçici hata",
+          "unavailable": "Kanal kullanılamıyor"
+        }
+      },
       "attention": {
         "alertedAt": "Yöneticiler {date} tarihinde uyarıldı",
         "approvalType": "Onay",
@@ -116,6 +147,18 @@
         "recheck": "Yeniden kontrol et",
         "resolved": "Çözüldü",
         "retryDelivery": "Teslimatı yeniden dene",
+        "technical": {
+          "approvalRequestId": "Onay talebi kimliği",
+          "approvalType": "Onay türü kodu",
+          "assignmentId": "Atama kimliği",
+          "attemptReference": "Deneme referansı",
+          "attentionId": "Dikkat öğesi kimliği",
+          "copied": "{label} kopyalandı",
+          "copy": "{label} kopyala",
+          "copyFailed": "Değer kopyalanamadı. Değeri seçin ve manuel olarak kopyalayın.",
+          "title": "Teknik ayrıntılar",
+          "workflowId": "İş akışı kimliği"
+        },
         "title": "Dikkat gerektiriyor",
         "transfer": "Aktar…",
         "unknownApprover": "Kaydedilmedi"
@@ -155,6 +198,22 @@
         "disposed": "Sonuçlandırıldı",
         "raised": "Oluşturuldu",
         "resolved": "Çözüldü"
+      },
+      "evidence": {
+        "actionableAt": "Şu tarihten beri işlem yapılabilir",
+        "actionableEvidence": "Şu tarihten beri işlem yapılabilir (kaynak)",
+        "attemptCount": "Yapılan denemeler",
+        "cause": "Neden",
+        "code": "Hata kodu",
+        "deadline": "Son tarih",
+        "effect": "Mesaj eylemi",
+        "error": "Hata",
+        "outcome": "Sonuç",
+        "policyRevision": "Politika revizyonu",
+        "reason": "Neden kodu",
+        "recovered": "Kurtaran",
+        "route": "Karar yolu",
+        "workId": "Teslimat işi"
       },
       "hoursValue": "{hours} sa.",
       "loadFailed": "Eskalasyon ayarları yüklenemedi.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Değiştiren",
+        "empty": "Henüz kaydedilmiş bir politika değişikliği yok.",
         "migration": "Ayar taşıma",
         "policy": "Politika",
         "revision": "Revizyon",
@@ -217,8 +277,10 @@
       },
       "title": "Onay Eskalasyonu",
       "toast": {
+        "conflict": "Bu esnada değişiklik yapıldı. Güncel durumu görmek için yeniden yükleyin.",
         "deliveryRetried": "Teslimat yeniden denemesi planlandı",
         "disposed": "Dikkat öğesi kapatıldı",
+        "notFound": "Bu öğe artık mevcut değil. Güncel durumu görmek için yeniden yükleyin.",
         "rechecked": "{checked} öge denetlendi, {resolved} çözüldü",
         "requestFailed": "İstek başarısız oldu. Tekrar deneyin.",
         "reviewed": "Çakışmalar incelendi olarak işaretlendi",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Onay türleri",
       "approver": "Onaylayan",
-      "approverEmployeeId": "Onaylayan Çalışan Kimliği",
-      "approverEmployeeIdPlaceholder": "Örnek: employee_123…",
+      "approverEmployee": "Onaylayan çalışan",
       "approverType": {
         "directManager": "Doğrudan yönetici",
         "managerManager": "Yöneticinin yöneticisi",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Koşul sayısı",
       "createPolicy": "Onay Politikası Oluştur",
+      "createPolicySubmit": "Politika oluştur",
+      "deactivateConfirm": {
+        "confirm": "Devre dışı bırak",
+        "description": "Yeni istekler artık bu politikayla eşleşmez ve bir sonraki eşleşen etkin politika ya da varsayılan onay rotası üzerinden yönlendirilir. Düzenleyerek politikayı yeniden etkinleştirebilirsiniz.",
+        "title": "“{name}” devre dışı bırakılsın mı?"
+      },
+      "deactivatePolicyNamed": "{name} öğesini devre dışı bırak",
       "defaultStageLabel": "Yönetici incelemesi",
       "description": "Operasyonel iş akışları için sıralı onay zincirlerini yapılandırın",
       "descriptionPlaceholder": "Örnek: Hassas iş akışlarını operasyon birimine iletir…",
       "dialogDescription": "Bir onay zincirinin ne zaman uygulanacağını ve her bir sıralı aşamayı hangi onaylayanların yöneteceğini tanımlayın.",
-      "editPolicy": "Politikayı düzenle",
+      "editPolicyNamed": "{name} öğesini düzenle",
+      "editPolicyTitle": "Onay politikasını düzenle",
       "empty": "Henüz yapılandırılmış onay politikası yok. İlk onay zincirinizi tanımlamak için bir politika oluşturun.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Kuruluş yöneticisi"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, other {Bu politika ayrıca burada seçilemeyen # eski onay türüyle de eşleşiyor. Kaydetmek, {count, plural, one {bunu} other {bunları}} değiştirmeden korur.} }",
       "loadFailed": "Onay politikaları yüklenemedi.",
       "loading": "Politikalar yükleniyor…",
       "namePlaceholder": "Örnek: İzin yükseltme…",
       "noStages": "Henüz yapılandırılmış onay aşaması yok.",
+      "preservedConditions": "{count, plural, other {Bu politikanın burada değiştirilemeyen # ek koşulu daha var. Kaydetmek, {count, plural, one {bunu} other {bunları}} değiştirmeden korur.} }",
       "preview": {
         "ariaLabel": "Onay zinciri önizlemesi",
-        "badge": "Önizleme kabuğu",
-        "description": "Bir politikayı etkinleştirmeden önce eşleşen taleplerin her bir onay aşamasından nasıl geçeceğini görün.",
-        "footer": "Tam talep bağlamı önizlemesi, politika koşulları ve çalışan grupları düzenleyiciye bağlandığında canlı onaylayanları çözümleyecektir.",
+        "chainDescription": "Eşleşen bir isteğin yukarıda yapılandırıldığı şekilde aşamalardan nasıl geçtiği.",
+        "chainTitle": "Onay zinciri önizlemesi",
+        "fallback": "Onaylayan bulunamazsa: {fallback}",
+        "loadingEmployee": "Çalışan yükleniyor…",
+        "noEmployeeSelected": "Henüz çalışan seçilmedi",
+        "noStages": "Onay zincirini görmek için bir aşama ekleyin.",
         "stage": {
           "approved": "Onaylandı",
-          "directManager": "Doğrudan yönetici",
-          "operationsAdmin": "Operasyon yöneticisi",
           "requester": "Talep Eden"
-        },
-        "title": "Onay zinciri özeti"
+        }
       },
       "priority": "Öncelik",
-      "removeStage": "Aşamayı kaldır",
+      "removeStageNumber": "{number}. aşamayı kaldır",
+      "savePolicySubmit": "Politikayı kaydet",
+      "selectApproverEmployee": "Çalışan seç",
       "stageNumber": "Aşama {number}",
       "stages": "Onay aşamaları",
       "stagesCount": "Aşama sayısı",
@@ -322,14 +395,19 @@
       "title": "Onay Politikaları",
       "toast": {
         "created": "Onay politikası oluşturuldu",
-        "saveFailed": "Onay politikası kaydedilemedi."
+        "deactivated": "“{name}” devre dışı bırakıldı",
+        "reactivated": "“{name}” yeniden etkin",
+        "saveFailed": "Onay politikası kaydedilemedi.",
+        "updated": "Onay politikası kaydedildi"
       },
+      "unknownEmployee": "Bilinmeyen çalışan ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Aktif politikalar en az bir onay aşaması gerektirir.",
-        "specificEmployeeRequiresId": "Belirli çalışan aşamaları, onaylayan bir çalışan kimliği gerektirir."
+        "specificEmployeeRequired": "Belirli her çalışan aşaması için onaylayan çalışanı seçin."
       }
     },
     "changePolicies": {
+      "actionsFor": "{name} için eylemler",
       "allManagers": "Tüm yöneticiler",
       "approvalDaysDescription": "Self-servis dışında, çalışanlar bu pencere içerisinde değişiklik talep edebilir (onay gerektirir). 0 = ek pencere yok.",
       "approvalDaysLabel": "Onay Penceresi (gün)",
@@ -363,6 +441,7 @@
       "deleted": "Politika silindi",
       "deleteDescription": "Bu politikayı silmek istediğinizden emin misiniz? Bu politikayı kullanan tüm atamalar da kaldırılacaktır. Daha önce bu politikayı kullanan çalışanlar, yeni bir politika atanana kadar herhangi bir kısıtlamaya tabi olmayacaktır.",
       "deleteFailed": "Politika silinemedi",
+      "deleteNamedDescription": "\"{name}\" değişiklik politikası silinsin mi? Bu politikayı kullanan tüm atamalar da kaldırılacaktır. Önceden bu politikayı kullanan çalışanlar, yeni bir politika atanana kadar hiçbir kısıtlamaya tabi olmayacaktır.",
       "deleteTitle": "Değişiklik Politikasını Sil",
       "description": "Çalışanların zaman girişlerini ne zaman düzenleyebileceklerini kontrol edin ve yönetici onayı zorunlu tutun",
       "descriptionLabel": "Açıklama",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "Ekip veya bireysel geçersiz kılma ayarı olmayan tüm çalışanlara uygulanan varsayılan politika.",
       "policySummary": "Politika Özeti:",
       "primaryOnly": "Sadece birincil",
+      "removeAssignmentFor": "{name} için atamayı kaldır",
       "removeAssignmentTitle": "Politika Atamasını Kaldır?",
       "removeEmployeeDescription": "Bu işlem, \"{name}\" için yapılan geçersiz kılmayı kaldıracaktır. Çalışan, ekip veya kuruluş varsayılanını kullanacaktır.",
       "removeOrgDescription": "Bu işlem, kuruluş varsayılan politikasını kaldıracaktır. Ekip veya bireysel geçersiz kılma ayarı olmadıkça çalışanların hiçbir kısıtlaması olmayacaktır.",
+      "removeOrgNamedDescription": "Bu işlem, \"{policy}\" politikasını kuruluşun varsayılan politikası olmaktan çıkaracaktır. Çalışanların bir ekip veya bireysel geçersiz kılma kuralı olmadığı sürece hiçbir kısıtlaması olmayacaktır.",
       "removeTeamDescription": "Bu işlem, politikayı \"{team}\" ekibinden kaldıracaktır. Ekip, kuruluş varsayılanını kullanacaktır.",
       "sameDay": "Sadece aynı gün",
       "sameDayFree": "Aynı gün yapılan düzenlemeler serbesttir",
@@ -438,6 +519,13 @@
       "description": "Konum ve zamana göre minimum personel gereksinimlerini belirleyin",
       "editRule": "Kapsam Kuralını Düzenle",
       "endTime": "Bitiş Saati",
+      "errors": {
+        "endNotAfterStart": "Bitiş saati, aynı gün içindeki başlangıç saatinden sonra olmalıdır.",
+        "invalidTime": "24 saatlik HH:mm biçiminde bir saat girin.",
+        "staffCountRange": "1 ile 100 arasında bir tam sayı girin.",
+        "subareaRequired": "Bir alt alan seçin."
+      },
+      "loadFailed": "Kapsama kuralları yüklenemedi.",
       "loading": "Kapsam kuralları yükleniyor...",
       "minimumStaffCount": "Minimum Personel Sayısı",
       "minimumStaffHint": "Bu zaman bloğu sırasında gereken minimum personel sayısı.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Kapsam kuralı güncellendi",
       "selectSubarea": "Bir alt alan seçin",
       "settingsFailed": "Ayarlar kaydedilemedi",
+      "settingsLoadFailed": "Yayınlama ayarları yüklenemedi.",
       "settingsSaved": "Ayarlar kaydedildi",
       "startTime": "Başlangıç Saati",
       "subarea": "Konum / Alt Alan",
@@ -493,6 +582,10 @@
         "colorSelection": "Renk seçimi",
         "defaultSubarea": "Varsayılan Alt Alan",
         "endTime": "Bitiş Saati",
+        "errors": {
+          "invalidTime": "24 saatlik HH:mm biçiminde bir saat girin.",
+          "subareaRequired": "Alt alanlarınızdan birini seçin."
+        },
         "name": "İsim",
         "namePlaceholder": "ör. Sabah Vardiyası…",
         "noSubarea": "Varsayılan alt alan yok",
@@ -508,6 +601,7 @@
         "description": "Vardiya şablonlarınızı yönetin",
         "title": "Şablonlar"
       },
+      "loadError": "Vardiya şablonları yüklenemedi.",
       "table": {
         "duration": "Süre",
         "name": "İsim",
@@ -544,7 +638,7 @@
       "deleteModel": "Ek ücret modelini sil",
       "deleteModelDescription": "Bu işlem modeli ve tüm atamalarını devre dışı bırakacaktır. Bu eylem geri alınamaz.",
       "deleteModelTitle": "Ek Ücret Modeli Silinsin mi?",
-      "deleteOrgAssignmentDescription": "Bu işlem kuruluş varsayılanını kaldıracaktır. Özel ataması olmayan ekip ve çalışanlara hiçbir ek ücret modeli uygulanmayacaktır.",
+      "deleteOrgAssignmentNamedDescription": "Bu işlem, \"{model}\" modelini kuruluş varsayılanı olmaktan çıkaracaktır. Belirli bir ataması olmayan ekiplere ve çalışanlara hiçbir ek ücret modeli uygulanmayacaktır.",
       "deleteTeamAssignmentDescription": "Bu işlem \"{team}\" ekibinden ek ücret modelini kaldıracaktır. Ekip, kuruluş varsayılanını kullanacaktır.",
       "description": "Fazla mesai, gece çalışması, hafta sonları ve tatiller için ek ücretleri yapılandırın.",
       "descriptionLabel": "Açıklama",
@@ -605,9 +699,11 @@
           "loadTitle": "Hesaplamalar yüklenemiyor"
         },
         "filters": {
+          "allEmployees": "Tüm çalışanlar",
           "apply": "Filtreleri uygula",
-          "employeeId": "Çalışan Kimliği",
+          "employee": "Çalışan",
           "endDate": "Bitiş tarihi",
+          "showAllEmployees": "Tüm çalışanları göster",
           "startDate": "Başlangıç tarihi"
         },
         "loading": "Hesaplamalar yükleniyor…",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Eşleşen ilk 500 hesaplama gösteriliyor. Toplamları daraltmak için tarih veya çalışan filtrelerini kullanın.",
         "summary": {
           "baseHours": "Temel saatler",
+          "calculationCount": "{count, plural, other {# hesaplama} }",
           "calculations": "Hesaplamalar",
           "creditedHours": "Kredilendirilen ek ücret saatleri",
           "qualifyingHours": "Hak kazanılan ek ücret saatleri"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Önce setlerden kaldırın",
       "categories": "Kategoriler",
       "categoriesDescription": "Birden fazla sette paylaşılabilen iş kategorileri oluşturun ve yönetin",
+      "categoriesLoadError": "Çalışma kategorileri yüklenemedi",
       "categoriesTitle": "İş Kategorileri",
       "categoryCreated": "Kategori oluşturuldu",
       "categoryCreateFailed": "Kategori oluşturulamadı",
@@ -709,6 +807,7 @@
       "categoryInUse": "{count} sette kullanılan bir kategori silinemez. Önce tüm setlerden kaldırın.",
       "categoryName": "İsim",
       "categoryNamePlaceholder": "ör. Pasif Seyahat",
+      "categoryNameTaken": "Bu ada sahip bir kategori zaten var.",
       "categoryUpdated": "Kategori güncellendi",
       "categoryUpdateFailed": "Kategori güncellenemedi",
       "chooseColor": "Renk seç",
@@ -722,22 +821,30 @@
       "createSetDescription": "Yeni bir kategori seti oluşturun ve hangi kategorilerin dahil edileceğini seçin",
       "defaultSet": "Varsayılan Kategori Seti",
       "deleteAssignmentTitle": "Atamayı Kaldır?",
+      "deleteCategoryDescription": "\"{name}\" kategorisi kalıcı olarak silinecektir.",
+      "deleteCategoryNamed": "{name} kategorisini sil",
+      "deleteCategoryTitle": "Kategori silinsin mi?",
       "deleteEmployeeAssignment": "Bu işlem \"{name}\" için olan geçersiz kılmayı kaldıracaktır. Kişi, ekip veya organizasyon varsayılanını kullanacaktır.",
-      "deleteOrgAssignment": "Bu işlem organizasyon varsayılanını kaldıracaktır. Çalışanlar, bireysel olarak atanmadıkları sürece iş kategorilerine sahip olmayacaktır.",
+      "deleteOrgAssignmentNamed": "Bu işlem, \"{set}\" kümesini kuruluş varsayılanı olmaktan çıkaracaktır. Bireysel olarak atanmadıkça çalışanlar için kullanılabilir çalışma kategorisi olmayacaktır.",
       "deleteSetDescription": "Bu işlem \"{name}\" kategori setini ve tüm kategorilerini kalıcı olarak silecektir. Bu seti kullanan tüm atamalar da kaldırılacaktır.",
+      "deleteSetNamed": "{name} kategori kümesini sil",
       "deleteSetTitle": "Kategori Setini Sil?",
       "deleteTeamAssignment": "Bu işlem kategori setini \"{team}\" ekibinden kaldıracaktır. Ekip, organizasyon varsayılanını kullanacaktır.",
       "description": "Etkili zaman hesaplaması için zaman faktörlü iş kategorileri tanımlayın",
       "descriptionPlaceholder": "İsteğe bağlı açıklama",
       "editCategory": "Kategoriyi Düzenle",
       "editCategoryDescription": "Kategori detaylarını güncelle",
+      "editCategoryNamed": "{name} kategorisini düzenle",
       "editSet": "Kategori Setini Düzenle",
       "editSetDescription": "Kategori seti detaylarını güncelleyin ve kategorilerini yönetin",
+      "editSetNamed": "{name} kategori kümesini düzenle",
       "employeeLevel": "Çalışan Geçersiz Kılmaları",
       "employeeLevelDescription": "Belirli çalışanlar için ekip veya organizasyon varsayılanlarını geçersiz kılın",
       "factor": "Faktör",
       "factorExplanation": "Faktör, etkili zamanı belirler: 0.5 = %50 (ör. pasif seyahat), 1.0 = %100 (normal çalışma), 1.5 = %150 (fazla mesai)",
       "loadError": "Kategori setleri yüklenemedi",
+      "moveCategoryDown": "{name} öğesini aşağı taşı",
+      "moveCategoryUp": "{name} öğesini yukarı taşı",
       "noCategories": "Henüz kategori yok",
       "noCategoriesAvailable": "Kullanılabilir kategori yok",
       "noCategoriesHint": "Setlere atamak için kategoriler oluşturun",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "Kullanılabilir ekip yok.",
       "orgLevel": "Organizasyon Varsayılanı",
       "orgLevelDescription": "Geçersiz kılınmadığı sürece tüm çalışanlara uygulanan varsayılan kategori seti",
+      "removeAssignmentFor": "{name} için atamayı kaldır",
+      "removeCategoryFromSet": "{name} öğesini kümeden kaldır",
       "selectCategories": "Kategorileri Seç",
-      "selectedCategories": "Seçili kategoriler (yeniden sıralamak için sürükleyin)",
+      "selectedCategoriesOrder": "Seçilen kategoriler (yeniden sıralamak için okları kullanın)",
       "selectEmployee": "Çalışan",
       "selectEmployeePlaceholder": "Bir çalışan seçin",
       "selectSet": "Kategori Kümesi",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Bu kategori kümesi için isteğe bağlı açıklama",
       "setName": "Ad",
       "setNamePlaceholder": "ör. Seyahat Kategorileri",
+      "setNameTaken": "Bu ada sahip bir kategori kümesi zaten var.",
       "setUpdated": "Kategori kümesi güncellendi",
       "setUpdateFailed": "Kategori kümesi güncellenemedi",
       "tab": {

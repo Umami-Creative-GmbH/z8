@@ -6,11 +6,12 @@ import {
 	IconDownload,
 	IconEye,
 	IconLoader2,
+	IconRefresh,
 	IconSearch,
 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import {
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	Select,
 	SelectContent,
@@ -196,6 +198,11 @@ function getActionBadgeVariant(
 		return "secondary";
 	}
 	return "outline";
+}
+
+function entityTypeLabel(entityType: string, t: Translate): string {
+	const known = ENTITY_TYPES.find((type) => type.value === entityType);
+	return known ? t(known.labelKey, known.fallback) : formatAction(entityType);
 }
 
 function formatAction(action: string): string {
@@ -414,6 +421,7 @@ function AuditLogViewerForOrganization({
 				loadError={loadError}
 				loading={loading}
 				logs={logs}
+				onRetry={() => void refetch()}
 				page={page}
 				setPage={setPage}
 				t={t}
@@ -429,6 +437,7 @@ function AuditLogResults({
 	loadError,
 	loading,
 	logs,
+	onRetry,
 	page,
 	setPage,
 	t,
@@ -439,6 +448,7 @@ function AuditLogResults({
 	loadError: string | null;
 	loading: boolean;
 	logs: AuditLogResult[];
+	onRetry: () => void;
 	page: number;
 	setPage: React.Dispatch<React.SetStateAction<number>>;
 	t: Translate;
@@ -451,23 +461,43 @@ function AuditLogResults({
 				<CardTitle>
 					{t("settings.auditLog.entriesTitle", "Audit Log Entries")}
 				</CardTitle>
-				<CardDescription>
-					{total > 0
-						? t("settings.auditLog.entriesFound", "{count} entries found", {
-								count: total,
-							})
-						: t("settings.auditLog.noEntries", "No entries found")}
-				</CardDescription>
+				{loading || loadError ? null : (
+					<CardDescription className="tabular-nums">
+						{total > 0
+							? t("settings.auditLog.entriesFound", "{count} entries found", {
+									count: total,
+								})
+							: t("settings.auditLog.noEntries", "No entries found")}
+					</CardDescription>
+				)}
 			</CardHeader>
 			<CardContent>
 				{loading ? (
-					<div className="flex items-center justify-center py-12">
-						<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-					</div>
+					<LoadingRegion
+						className="flex items-center justify-center py-12"
+						label={{
+							labelKey: "settings.auditLog.loading",
+							labelDefault: "Loading audit log entries",
+						}}
+					>
+						<IconLoader2
+							className="size-8 animate-spin text-muted-foreground"
+							aria-hidden="true"
+						/>
+					</LoadingRegion>
 				) : loadError ? (
-					<div className="text-center py-12 text-destructive">{loadError}</div>
+					<div
+						role="alert"
+						className="flex flex-col items-start gap-3 rounded-lg border border-destructive/30 p-4 text-sm"
+					>
+						<p className="text-destructive">{loadError}</p>
+						<Button type="button" variant="outline" size="sm" onClick={onRetry}>
+							<IconRefresh className="size-4" aria-hidden="true" />
+							{t("common.retry", "Retry")}
+						</Button>
+					</div>
 				) : logs.length === 0 ? (
-					<div className="text-center py-12 text-muted-foreground">
+					<div className="py-8 text-sm text-muted-foreground">
 						{t(
 							"settings.auditLog.noEntriesForFilters",
 							"No audit log entries found for the selected filters.",
@@ -518,20 +548,26 @@ function AuditLogResults({
 													{formatAction(log.action)}
 												</Badge>
 											</TableCell>
-											<TableCell>
-												<div className="text-sm">
+											<TableCell className="max-w-56">
+												<div className="truncate text-sm" title={log.performedByName ?? undefined}>
 													{log.performedByName ||
 														t("settings.auditLog.unknown", "Unknown")}
 												</div>
-												<div className="text-xs text-muted-foreground">
+												<div
+													className="truncate text-xs text-muted-foreground"
+													title={log.performedByEmail ?? undefined}
+												>
 													{log.performedByEmail}
 												</div>
 											</TableCell>
 											<TableCell>
-												<div className="text-sm capitalize">
-													{log.entityType}
+												<div className="text-sm">
+													{entityTypeLabel(log.entityType, t)}
 												</div>
-												<div className="text-xs text-muted-foreground font-mono truncate max-w-[120px]">
+												<div
+													className="text-xs text-muted-foreground font-mono truncate max-w-[120px]"
+													title={log.entityId ?? undefined}
+												>
 													{log.entityId}
 												</div>
 											</TableCell>
@@ -551,8 +587,11 @@ function AuditLogResults({
 							</TableBody>
 						</Table>
 						{totalPages > 1 && (
-							<div className="flex items-center justify-between mt-4">
-								<div className="text-sm text-muted-foreground">
+							<nav
+								aria-label={t("settings.auditLog.pagination", "Audit log pages")}
+								className="mt-4 flex flex-wrap items-center justify-between gap-2"
+							>
+								<div className="text-sm text-muted-foreground tabular-nums">
 									{t(
 										"settings.auditLog.pageOf",
 										"Page {page} of {totalPages}",
@@ -569,7 +608,7 @@ function AuditLogResults({
 										onClick={() => setPage((value) => Math.max(0, value - 1))}
 										disabled={page === 0}
 									>
-										<IconChevronLeft className="size-4 mr-1" />
+										<IconChevronLeft className="size-4" aria-hidden="true" />
 										{t("common.previous", "Previous")}
 									</Button>
 									<Button
@@ -581,10 +620,10 @@ function AuditLogResults({
 										disabled={page >= totalPages - 1}
 									>
 										{t("common.next", "Next")}
-										<IconChevronRight className="size-4 ml-1" />
+										<IconChevronRight className="size-4" aria-hidden="true" />
 									</Button>
 								</div>
-							</div>
+							</nav>
 						)}
 					</>
 				)}
@@ -624,6 +663,7 @@ function AuditLogFilters({
 	onStartDateChange: (value: string) => void;
 	t: Translate;
 }) {
+	const exportHelpId = useId();
 	return (
 		<Card>
 			<CardHeader>
@@ -638,8 +678,10 @@ function AuditLogFilters({
 			<CardContent>
 				<form onSubmit={onSearch} className="space-y-4">
 					<div className="flex flex-wrap gap-4">
-						<div className="flex-1 min-w-[200px]">
+						<div className="min-w-0 flex-[1_1_200px]">
 							<Input
+								type="search"
+								aria-label={t("settings.auditLog.search", "Search")}
 								placeholder={t(
 									"settings.auditLog.searchPlaceholder",
 									"Search actions, users, or metadata…",
@@ -650,7 +692,10 @@ function AuditLogFilters({
 							/>
 						</div>
 						<Select value={entityType} onValueChange={onEntityTypeChange}>
-							<SelectTrigger className="w-[180px]">
+							<SelectTrigger
+								className="w-full sm:w-[180px]"
+								aria-label={t("settings.auditLog.entityTypePlaceholder", "Entity Type")}
+							>
 								<SelectValue
 									placeholder={t(
 										"settings.auditLog.entityTypePlaceholder",
@@ -670,7 +715,13 @@ function AuditLogFilters({
 							value={actionCategory}
 							onValueChange={onActionCategoryChange}
 						>
-							<SelectTrigger className="w-[180px]">
+							<SelectTrigger
+								className="w-full sm:w-[180px]"
+								aria-label={t(
+									"settings.auditLog.actionCategoryPlaceholder",
+									"Action Category",
+								)}
+							>
 								<SelectValue
 									placeholder={t(
 										"settings.auditLog.actionCategoryPlaceholder",
@@ -717,7 +768,7 @@ function AuditLogFilters({
 							/>
 						</div>
 						<Button type="submit" variant="secondary">
-							<IconSearch className="size-4 mr-2" />
+							<IconSearch className="size-4" aria-hidden="true" />
 							{t("settings.auditLog.search", "Search")}
 						</Button>
 						<Button
@@ -725,15 +776,23 @@ function AuditLogFilters({
 							variant="outline"
 							onClick={() => void onExport()}
 							disabled={exporting}
+							aria-describedby={exportHelpId}
 						>
 							{exporting ? (
-								<IconLoader2 className="size-4 mr-2 animate-spin" />
+								<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 							) : (
-								<IconDownload className="size-4 mr-2" />
+								<IconDownload className="size-4" aria-hidden="true" />
 							)}
-							{t("settings.auditLog.export", "Export")}
+							{t("settings.auditLog.exportJson", "Export JSON")}
 						</Button>
 					</div>
+					{/* The export reads only the From–To period; say so, so nobody expects search or category filters in the file. */}
+					<p id={exportHelpId} className="text-xs text-muted-foreground">
+						{t(
+							"settings.auditLog.exportJsonHelp",
+							"Export JSON downloads every entry in the selected From–To period. Search, entity type and action category are not applied.",
+						)}
+					</p>
 				</form>
 			</CardContent>
 		</Card>
@@ -752,8 +811,14 @@ function AuditLogDetails({
 	return (
 		<ActionPanel>
 			<ActionPanelTrigger asChild>
-				<Button variant="ghost" size="sm">
-					<IconEye className="size-4" />
+				<Button
+					variant="ghost"
+					size="sm"
+					aria-label={t("settings.auditLog.viewDetailsAria", "View details for {action}", {
+						action: formatAction(log.action),
+					})}
+				>
+					<IconEye className="size-4" aria-hidden="true" />
 				</Button>
 			</ActionPanelTrigger>
 			<ActionPanelContent size="wide">
@@ -770,7 +835,7 @@ function AuditLogDetails({
 				</ActionPanelHeader>
 				<ActionPanelBody>
 					<div className="space-y-4">
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-4 sm:grid-cols-2 [&>div]:min-w-0 [&_p]:break-words">
 							<div>
 								<div className="text-sm font-medium">
 									{t("settings.auditLog.action", "Action")}
@@ -802,7 +867,7 @@ function AuditLogDetails({
 									{t("settings.auditLog.entity", "Entity")}
 								</div>
 								<p className="text-sm">
-									{log.entityType}: {log.entityId}
+									{entityTypeLabel(log.entityType, t)}: {log.entityId}
 								</p>
 							</div>
 							<div>

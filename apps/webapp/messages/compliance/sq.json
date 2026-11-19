@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Kontrollet e aksesit përmbledhin vetëm ngjarjet e ndjeshme të regjistrit të auditimit që janë regjistruar tashmë sot.",
         "auditEvidence": "Provat e auditimit përdorin konfigurimin e eksportit të auditimit të drejtpërdrejtë, kërkesat e paketës së auditimit dhe rezultatet e fundit të verifikimit.",
+        "title": "Mbulimi",
         "workforceCompliance": "Pajtueshmëria e fuqisë punëtore përdor shkeljet e politikave të punës gjatë 7 ditëve të fundit dhe kërkesat pezull për përjashtim."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Përditësuar së fundmi: {time}"
+        "lastRefreshed": "Përditësuar së fundmi: {time}",
+        "refreshMeaning": "Rifreskimi ringarkon sinjalet e regjistruara; nuk i rivlerëson gjetjet sipas një politike të re."
       },
       "links": {
         "inspectCompliance": "Inspekto pajtueshmërinë",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Hap cilësimet e përputhshmërisë",
         "reviewAuditExport": "Shqyrto eksportin e auditimit"
       },
+      "loading": "Po ngarkohen sinjalet e përputhshmërisë",
       "overview": "Përmbledhje e pajtueshmërisë",
       "recentEvents": {
         "empty": "Nuk u zbulua asnjë ngjarje kritike e kohëve të fundit.",
-        "title": "Ngjarjet kritike të fundit"
+        "partial": "Ngjarjet e fundit janë të kufizuara në burimet e disponueshme. Disa sinjale nuk mund të ngarkoheshin.",
+        "title": "Ngjarjet kritike të fundit",
+        "unavailable": "Ngjarjet e fundit nuk mund të konfirmoheshin sepse burimet e sinjaleve janë të padisponueshme."
       },
+      "scope": "Organizata aktive",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Ndryshimet e ndjeshme të kontrollit kërkojnë shqyrtim",
             "healthy": "Nuk është regjistruar asnjë ndryshim i ndjeshëm kontrolli kohët e fundit",
             "warning": "U zbuluan ndryshime të fundit të kontrollit"
-          }
+          },
+          "title": "Kontrollet e qasjes"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Dëshmitë e auditimit kërkojnë vëmendje",
             "healthy": "Sinjalet e dëshmive të auditimit duken në rregull",
             "warning": "Dëshmitë e auditimit janë vetëm pjesërisht gati"
-          }
+          },
+          "title": "Provat e auditimit"
         },
+        "title": "Seksionet e përputhshmërisë",
         "unavailable": {
           "headline": "Sinjali është përkohësisht i padisponueshëm"
         },
@@ -94,7 +103,8 @@
             "critical": "Shkeljet e politikave të fuqisë punëtore kërkojnë shqyrtim",
             "healthy": "Nuk u zbulua asnjë problem i fundit me politikat e fuqisë punëtore",
             "warning": "Përputhshmëria e fuqisë punëtore po devijon"
-          }
+          },
+          "title": "Përputhshmëria e fuqisë punëtore"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Përjashtimi u miratua",
       "approvedDescription": "Përjashtimi i përputhshmërisë është miratuar.",
       "approveFailed": "Miratimi dështoi",
+      "approveFor": "Mirato përjashtimin {type} për {name}",
+      "loadError": "Kërkesat e pezulluara për përjashtim nuk mund të ngarkoheshin.",
       "plannedDuration": "E planifikuar",
       "plannedDurationHelp": "Vlerësoni sa kohë shtesë parashikoni se do t'ju nevojitet përtej kufirit.",
       "reason": "Arsyeja e përjashtimit",
@@ -124,6 +136,7 @@
       "rejected": "Përjashtimi u refuzua",
       "rejectedDescription": "Përjashtimi i përputhshmërisë është refuzuar.",
       "rejectFailed": "Refuzimi dështoi",
+      "rejectFor": "Refuzo përjashtimin {type} për {name}",
       "rejectionPlaceholder": "Vendosni arsyen për refuzimin e këtij përjashtimi...",
       "rejectionReason": "Arsyeja e refuzimit",
       "rejectTitle": "Refuzo kërkesën për përjashtim",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Menaxheri juaj do të njoftohet dhe mund të miratojë ose refuzojë kërkesën tuaj.",
       "requestTitle": "Kërko përjashtim të përputhshmërisë",
       "submit": "Dërgo kërkesën",
-      "type": "Lloji i përjashtimit"
+      "type": "Lloji i përjashtimit",
+      "types": {
+        "overtimeDaily": "Orët shtesë ditore",
+        "overtimeMonthly": "Orët shtesë mujore",
+        "overtimeWeekly": "Orët shtesë javore",
+        "restPeriod": "Periudha e pushimit"
+      }
     },
     "hasApprovedException": "Keni një përjashtim të miratuar. Mund të vazhdoni.",
     "moreAlerts": "më shumë",

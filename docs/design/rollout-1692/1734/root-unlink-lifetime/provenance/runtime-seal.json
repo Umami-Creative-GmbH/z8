@@ -1,0 +1,13 @@
+{
+  "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "publicRoot": "public",
+  "publicFiles": 36,
+  "allowlistSha256": "0ff9b6d0d029d9a9abf5e72ebced6be4e008ac741609e1169077f94e1b47b44a",
+  "preservationSha256": "71bd78f9461d41e68ebd9d05879e9fd583192f5586981f0948202b4be674f06a",
+  "handoffSha256": "ec483fde353fe05c1a1bb4d33ab83a6faa251e9924eee335903d2eea432d6a71",
+  "privateRuntimeExcluded": true,
+  "validatorsPassed": true,
+  "zeroOwnedRuntimeResources": true,
+  "gitClean": true,
+  "release": "RELEASE ALL checkout/index/Git/package/runtime/process ownership to root."
+}

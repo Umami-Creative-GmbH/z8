@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "Dostęp do tej organizacji jest wstrzymany do czasu zaktualizowania danych rozliczeniowych.",
       "adminDescription": "Twój okres próbny zakończył się lub subskrypcja nie jest już ważna. Zaktualizuj dane rozliczeniowe, aby kontynuować korzystanie z Z8.",
       "goToBilling": "Przejdź do rozliczeń",
       "memberDescription": "Ta organizacja jest zawieszona. Skontaktuj się z administratorem organizacji, aby zaktualizować dane rozliczeniowe.",
@@ -165,6 +166,13 @@
     "teal": "Morski"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Coś poszło nie tak. Spróbuj ponownie.",
+      "formerEmployee": "Nie można wybrać byłych pracowników. Wybierz osobę z aktualnej listy.",
+      "invalidInput": "Sprawdź wprowadzone dane i spróbuj ponownie.",
+      "notAllowed": "Nie masz dostępu do tego ustawienia.",
+      "signInRequired": "Zaloguj się, aby kontynuować."
+    },
     "actions": "Akcje",
     "active": "Aktywne",
     "add": "Dodaj",
@@ -174,6 +182,7 @@
     "approve": "Zatwierdź",
     "assign": "Przypisz",
     "back": "Wstecz",
+    "backToDashboard": "Powrót do panelu",
     "brandLogo": "Logo {brand}",
     "breadcrumb": {
       "breadcrumb": "ścieżka nawigacyjna",
@@ -195,6 +204,7 @@
     "copy": "Kopiuj",
     "create": "Utwórz",
     "current": "Bieżący",
+    "date": "Data",
     "datePicker": {
       "clearDate": "Wyczyść datę",
       "placeholder": "Wybierz datę"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} min",
     "edit": "Edytuj",
     "employees": "Pracownicy",
-    "enabled": "Włączone",
     "error": "Błąd",
     "error-occurred": "Wystąpił błąd",
     "errors": {
       "monthClosed": "Miesiąc {month} jest zamknięty. Należy go otworzyć ponownie, zanim będzie można zmienić czas pracy lub nieobecności."
     },
     "fieldPresets": "Ustawienia wstępne {label}",
+    "filters": "Filtry",
     "focusInput": "Aktywuj pole",
     "gender": {
       "female": "Kobieta",
@@ -253,6 +263,7 @@
       "application": "Ładowanie aplikacji",
       "auditExportSettings": "Ładowanie ustawień eksportu audytu",
       "authentication": "Ładowanie uwierzytelniania",
+      "billableTimeSettings": "Ładowanie ustawień czasu rozliczeniowego",
       "changePolicySettings": "Ładowanie ustawień zasad zmian",
       "coverageRuleSettings": "Ładowanie ustawień reguł pokrycia",
       "customerSettings": "Ładowanie ustawień klienta",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Ładowanie ustawień danych demonstracyjnych",
       "deploymentDiagnostics": "Ładowanie diagnostyki wdrożenia",
       "employeeReports": "Ładowanie raportów pracowników",
+      "employees": "Ładowanie pracowników",
+      "employeeVacationAllowance": "Ładowanie wymiaru urlopu pracownika",
       "employeeVacationAllowances": "Ładowanie limitów urlopowych pracowników",
       "exportOperations": "Ładowanie operacji eksportu",
       "holidaySettings": "Ładowanie ustawień dni wolnych",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Wczytywanie harmonogramu zmian",
       "shiftTemplateSettings": "Wczytywanie ustawień szablonów zmian",
       "skillSettings": "Wczytywanie ustawień umiejętności",
+      "statistics": "Ładowanie statystyk",
       "surchargeSettings": "Wczytywanie ustawień dopłat",
       "team": "Wczytywanie zespołu",
       "todaySManagerBriefing": "Wczytywanie dzisiejszego briefingu menedżera",
@@ -315,8 +329,6 @@
     },
     "more": "więcej",
     "moreActions": "Więcej akcji",
-    "moveDown": "Przesuń w dół",
-    "moveUp": "Przesuń w górę",
     "name": "Nazwa",
     "navigation": {
       "retry": "Ponów ładowanie nawigacji",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Powiadomienia} other {Powiadomienia (# nieprzeczytanych)}}"
     },
+    "offline": "Offline",
     "open": "Otwórz",
     "openEnded": "Bezterminowo",
     "openMenu": "Otwórz menu",
@@ -389,6 +402,7 @@
     "removing": "Usuwanie...",
     "reset": "Resetuj",
     "retry": "Ponów",
+    "retrying": "Ponawianie próby…",
     "revoke": "Cofnij",
     "save": "Zapisz",
     "saveChanges": "Zapisz zmiany",
@@ -403,7 +417,9 @@
       "sidebar": "Pasek boczny",
       "toggleSidebar": "Przełącz pasek boczny"
     },
+    "signIn": "Zaloguj się",
     "skip": "Pomiń",
+    "skipToContent": "Przejdź do treści",
     "start": "Start",
     "status": "Status",
     "submitting": "Przesyłanie…",
@@ -422,6 +438,9 @@
     },
     "to": "do",
     "today": "Dzisiaj",
+    "tryAgain": "Spróbuj ponownie",
+    "unavailable": "Niedostępne",
+    "undo": "Cofnij",
     "unexpectedError": "Wystąpił nieoczekiwany błąd",
     "unknown": "Nieznany",
     "unknownEmployee": "Nieznany pracownik",
@@ -575,6 +594,7 @@
       "submit": "Zarejestruj kontrolę oryginału",
       "suspensionNotice": "Pomyślna ponowna kontrola nie przywraca automatycznie zawieszonych uprawnień. Wymagana jest nowa kontrola i wyraźna decyzja o ich przywróceniu.",
       "title": "Sprawdź oryginał prawa jazdy: {name}",
+      "transportError": "Nie udało się zapisać kontroli. Wprowadzone dane zostały zachowane; spróbuj ponownie po sprawdzeniu połączenia i odpowiedzialności.",
       "verifier": "Potwierdzam, że zapisane informacje i wyniki poszczególnych kategorii są zgodne z przeprowadzoną kontrolą."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "Nie udało się załadować wpisu prawa jazdy. Sprawdź swój bieżący zakres uprawnień weryfikatora.",
       "loading": "Ładowanie wpisu prawa jazdy…",
       "notIntended": "{name} nie jest wyznaczonym kierowcą. Weryfikacja jest wymagana tylko w przypadku wyznaczonych kierowców.",
+      "retained": "Zachowane dowody są dostępne do wglądu. Nowe kontrole są niedostępne dla byłych pracowników.",
       "title": "Weryfikacja prawa jazdy: {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Status",
         "team": "Zespół"
       },
+      "customOrder": "Posortowano według wybranej kolumny i kierunku.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Weryfikacja wymagana teraz",
+      "dueOrder": "Najpierw kontrole wymagalne teraz, następnie kolejny termin.",
       "empty": {
         "description": "Tutaj pojawiają się wyznaczeni kierowcy z Twojego zakresu weryfikacji. Jeśli kogoś brakuje, skontaktuj się z administratorem.",
         "title": "Brak osób do weryfikacji"
@@ -607,6 +630,8 @@
       "loadError": "Nie udało się załadować listy. Sprawdź swój bieżący zakres uprawnień weryfikatora.",
       "loading": "Ładowanie wyznaczonych kierowców…",
       "noMatches": "Żaden wyznaczony kierowca nie spełnia kryteriów wyszukiwania lub filtra.",
+      "refresh": "Odśwież listę roboczą kontroli",
+      "refreshing": "Aktualizowanie listy roboczej kontroli…",
       "search": "Szukaj według imienia i nazwiska",
       "status": {
         "active": "Aktywny",
@@ -682,6 +707,7 @@
       "failed": "Sprawdzona kategoria: wynik negatywny",
       "field": "Poprawione pole",
       "from": "Od daty (UTC)",
+      "fromHelp": "Okres rozpoczyna się o 00:00 UTC.",
       "globalSuspension": "Wszystkie upoważnienia do prowadzenia pojazdów zawieszone",
       "help": "Pierwotne potwierdzenia, uzupełnienia z datą i obowiązujące decyzje o upoważnieniu pozostają oddzielne. Wcześniejsze dowody potrzebne do zrozumienia wybranego okresu są oznaczone jako kontekst. Wszystkie poniższe godziny zdarzeń i granice okresów są podane w czasie UTC.",
       "impedimentReported": "Zgłoszono przeszkodę w prowadzeniu pojazdów",
@@ -716,6 +742,7 @@
       "suspended": "Uprawnienie zawieszone",
       "title": "Historia weryfikacji i uprawnień",
       "to": "Przed datą (UTC)",
+      "toHelp": "Okres kończy się przed 00:00 UTC tego dnia.",
       "unavailable": "Historia jest niedostępna. Sprawdź okres i swoje bieżące uprawnienia dostępu.",
       "value": "Poprawiona wartość",
       "verifierConfirmation": "Potwierdzenie weryfikatora zarejestrowane w czasie pierwotnej weryfikacji"
@@ -751,7 +778,6 @@
         "teamNotFound": "Ten zespół już nie istnieje."
       },
       "notRequired": "Niewymagane (wykluczone)",
-      "removed": "Usunięto przypisanie wyznaczonego kierowcy",
       "required": "Wymagane",
       "saved": "Zapisano wyznaczonych kierowców",
       "targetOrganization": "Cała organizacja",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Uprawnienia do prowadzenia pojazdów",
       "loading": "Ładowanie uprawnień do prowadzenia pojazdów…",
+      "loadingEmployees": "Ładowanie pracowników do planowania…",
       "noEmployees": "Brak pasujących pracowników.",
       "recordingHelp": "Zawsze możesz rejestrować czas pracy i faktyczne korzystanie z pojazdu. Wybór pojazdu nie nadaje uprawnień do prowadzenia pojazdów; sprawdzone kategorie nie określają przydatności do każdego pojazdu.",
       "refresh": "Odśwież status uprawnień do prowadzenia pojazdów",
+      "refreshEmployees": "Odśwież listę pracowników do planowania",
+      "rosterUnavailable": "Lista pracowników do planowania jest niedostępna. Sprawdź swój obecny dostęp do organizacji i spróbuj ponownie.",
       "search": "Znajdź pracownika",
       "searchHelp": "Wyświetlanych jest do 50 pracowników. Zawęź wyszukiwanie, aby znaleźć innego pracownika. Ten widok nie zawiera protokołów kontroli.",
       "title": "Status uprawnień do prowadzenia pojazdów do planowania",
       "unavailable": "Status uprawnień do prowadzenia pojazdów jest niedostępny."
     },
     "page": {
+      "reconciling": "Ładowanie dostępu do praw jazdy dla bieżącej organizacji…",
+      "scope": "Uprawnienia do prowadzenia pojazdów, kontrole oryginałów i planowanie w aktywnej organizacji. Każdy widok jest zgodny z Twoim bieżącym dostępem.",
       "title": "Prawo jazdy"
     },
     "policyTitle": "Zasady organizacji",
@@ -960,6 +991,13 @@
       "description": "Potrzebujesz profilu pracownika, aby {feature}. Utwórz organizację lub skontaktuj się z administratorem.",
       "emailBody": "Cześć,\n\nPotrzebuję skonfigurowanego profilu pracownika, aby uzyskać dostęp do funkcji platformy. Czy mógłbyś mi w tym pomóc?\n\nDziękuję!",
       "emailSubject": "Wymagana konfiguracja profilu pracownika",
+      "formerEmployee": {
+        "description": "Ponownie należysz do tej organizacji, ale Twoje wcześniejsze zatrudnienie zostało zakończone. Administrator musi Cię ponownie zatrudnić, zanim będziesz móc {feature}.",
+        "emailBody": "Cześć,nnPonownie należę do organizacji, ale moje wcześniejsze zatrudnienie zostało zakończone. Czy możesz mnie ponownie zatrudnić, aby umożliwić mi dostęp do funkcji platformy?nnDziękuję!",
+        "emailSubject": "Prośba o ponowne zatrudnienie",
+        "helpText": "Poproś administratora o ponowne zatrudnienie. Do tego czasu nie możesz korzystać z tej organizacji.",
+        "title": "Twoje zatrudnienie tutaj dobiegło końca"
+      },
       "helpText": "Jeśli otrzymałeś zaproszenie do organizacji, poproś administratora o skonfigurowanie Twojego profilu pracownika.",
       "title": "Wymagany profil pracownika"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Ładowanie kolejki procesów roboczych"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Zweryfikuj istniejące logowanie"
+    },
     "banner": {
       "action": "Przejrzyj wymagania i zweryfikuj",
       "requirement": "Ta organizacja wymaga zweryfikowanego uwierzytelnienia od {deadline}."
     },
     "code": {
       "label": "Kod z aplikacji uwierzytelniającej",
+      "required": "Wprowadź kod z aplikacji uwierzytelniającej",
       "verify": "Zweryfikuj aplikację uwierzytelniającą"
     },
     "continue": "Kontynuuj po weryfikacji",
@@ -1056,6 +1098,8 @@
       "title": "Zarejestruj lub zastąp aplikację uwierzytelniającą",
       "warning": "Dodanie lub zastąpienie składnika wymaga weryfikacji w ciągu pięciu minut. Zweryfikuj nowy składnik przed usunięciem starego. Unieważnienie ostatniego składnika jest dozwolone i może zablokować dostęp do wymienionych powyżej organizacji; nie zapewnia ono nowego okna rejestracji."
     },
+    "loading": "Ładowanie weryfikacji bezpieczeństwa",
+    "navigation": "Organizacja i konto",
     "organization": {
       "select": "Wybierz inną organizację"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Weryfikacja hasła nie powiodła się",
       "label": "Bieżące hasło",
+      "required": "Wprowadź bieżące hasło",
       "verified": "Hasło zostało zweryfikowane. Poniżej możesz zarejestrować swoją pierwszą aplikację uwierzytelniającą lub zweryfikować istniejącą aplikację albo kod zapasowy.",
       "verify": "Zweryfikuj hasło"
     },
@@ -1097,7 +1142,16 @@
       "description": "W celu odzyskania dostępu zweryfikuj powyżej swoje hasło, a następnie wprowadź jeden niewykorzystany kod zapasowy. Spowoduje to wyczyszczenie wcześniejszej weryfikacji lokalnej we wszystkich Twoich organizacjach.",
       "label": "Kod zapasowy",
       "lockout": "Jeśli jedyny administrator utraci wszystkie metody uwierzytelniania i odzyskiwania, organizacja pozostanie zablokowana. Nie ma możliwości obejścia przez administratora ani pomoc techniczną.",
-      "success": "Odzyskiwanie pozwala wyłącznie na rejestrację nowego elementu. Zweryfikuj aplikację uwierzytelniającą przed powrotem do organizacji."
+      "nextSteps": "Zweryfikuj ponownie swoje hasło przed weryfikacją aplikacji uwierzytelniającej.",
+      "open": "Odzyskaj za pomocą kodu zapasowego",
+      "required": "Wprowadź nieużyty kod zapasowy",
+      "success": "Odzyskiwanie pozwala wyłącznie na rejestrację nowego elementu. Zweryfikuj aplikację uwierzytelniającą przed powrotem do organizacji.",
+      "title": "Odzyskiwanie konta"
+    },
+    "requirements": {
+      "empty": "Dla tego konta nie określono żadnych wymagań organizacji.",
+      "selected": "Wybrana organizacja",
+      "title": "Wymagania organizacji"
     },
     "security": {
       "factorWarning": "Usunięcie składnika może zablokować dostęp do organizacji, które go wymagają. Najpierw zweryfikuj składnik zastępczy; usunięcie ostatniego składnika nie daje nowego okresu prolongaty.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Zasady uwierzytelniania w organizacji (właściciele/administratorzy)"
     },
     "signout": "Wyloguj się",
+    "signout.failed": "Wylogowanie nie powiodło się. Spróbuj ponownie.",
     "social": {
       "verify": "Zweryfikuj istniejące logowanie za pomocą: {provider}"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Administrator platformy",
     "reports": "Raporty",
     "scheduling": "Harmonogram",
+    "secondary-label": "Ustawienia i pomoc",
     "settings": "Ustawienia",
     "team": "Zespół",
     "teamAbsences": "Nieobecności zespołu",
     "teamDriving": "Szczegóły jazdy",
-    "team-label": "Zespół",
+    "team-organization-label": "Zespół i organizacja",
     "teamPeriodSubmissions": "Zgłoszenia okresów",
     "teamPresence": "Kto jest obecny",
     "time-tracking": "Rejestracja czasu pracy",
     "today": "Dzisiaj",
     "travel-expenses": "Wydatki podróżne",
+    "workplace-label": "Miejsce pracy",
     "worksCouncil": "Rada Zakładowa"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Twoja zmiana zakończyła się o {endTime} ({timezone}). Zarejestruj wyjście, jeśli zakończono pracę.",
         "title": "Nadal masz zarejestrowane wejście"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} ponownie należy do organizacji, ale wcześniejsze zatrudnienie tej osoby zostało zakończone. Nie ma ona dostępu, dopóki nie zostanie ponownie zatrudniona.",
+        "title": "Były pracownik wymaga ponownego zatrudnienia"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# pracownik jest nadal powiązany tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} few {# pracownicy są nadal powiązani tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} many {# pracowników jest nadal powiązanych tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} other {# pracownika jest nadal powiązanych tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.}}",
@@ -1735,6 +1796,7 @@
         "title": "Czas na nawodnienie!"
       }
     },
+    "countFailed": "Liczba nieprzeczytanych niedostępna",
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
     "empty": {
       "description": "Jesteś na bieżąco! Nowe powiadomienia pojawią się tutaj.",
@@ -1754,6 +1816,8 @@
       "read": "Przeczytane",
       "unread": "Nieprzeczytane"
     },
+    "loading": "Ładowanie powiadomień…",
+    "loadingCount": "Ładowanie liczby nieprzeczytanych…",
     "nativePush": {
       "attention": {
         "title": "Coś wymaga Twojej uwagi"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Zmiany otwarte wskutek dezaktywacji",
         "equipment_return_reminder": "Przypomnienia o zwrocie sprzętu",
         "forgotten_clock_out_reminder": "Zapomniana rejestracja wyjścia",
+        "former_employee_needs_rehire": "Byli pracownicy wymagający ponownego zatrudnienia",
         "former_employee_reports_without_manager": "Pracownicy bez aktualnego menedżera",
         "kiosk_command_refused": "Rejestracja w terminalu nie została zapisana",
         "kiosk_fob_registered": "Zarejestrowano brelok do kiosku",
@@ -1871,6 +1936,7 @@
       "placeholder": "Szukaj powiadomień..."
     },
     "selection": {
+      "actions": "Wybrane powiadomienia",
       "selectAll": "Zaznacz wszystkie widoczne",
       "selectAllAria": "Zaznacz wszystkie widoczne powiadomienia",
       "selectNamedAria": "Zaznacz {title}",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "Usunięto {count} powiadomień",
       "deleteFailed": "Nie udało się usunąć powiadomień",
+      "deletePartial": "Usunięto: {count}; niepowodzenia: {failed}. Ponów próbę dla pozostałych wybranych.",
       "markedRead": "Oznaczono {count} powiadomień jako przeczytane",
-      "markReadFailed": "Nie udało się oznaczyć powiadomień jako przeczytane"
+      "markReadFailed": "Nie udało się oznaczyć powiadomień jako przeczytane",
+      "readPartial": "Oznaczono jako przeczytane: {count}; niepowodzenia: {failed}. Ponów próbę dla pozostałych wybranych."
     },
     "unreadBadge": "{count} nieprzeczytanych",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "Widocznych: {count} · najnowsze {limit} powiadomień"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}godz.",
     "pm": "PM"
   },
-  "userAvatar": {
-    "alt": "Awatar użytkownika"
-  },
   "user": {
+    "account": "Konto",
     "font-size": "Rozmiar czcionki",
     "language": "Język",
+    "loadingAccount": "Ładowanie konta",
     "logging-out": "Wylogowywanie...",
     "log-out": "Wyloguj",
     "log-out-failed": "Nie udało się wylogować. Spróbuj ponownie.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Oparty na czasie",
     "theme-time-info": "Tryb oparty na czasie używa trybu {currentMode}. Przełączy się na {nextMode} o {time}.",
     "theme-toggle": "Przełącz motyw"
+  },
+  "userAvatar": {
+    "alt": "Awatar użytkownika"
   },
   "vacationBalance": {
     "conflictingPolicies": "Sprzeczne zasady urlopowe",

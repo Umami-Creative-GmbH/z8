@@ -89,7 +89,13 @@
       "slugLabel": "Slug da organização",
       "title": "Editar organização",
       "updateError": "Falha ao atualizar a organização",
-      "updateSuccess": "Organização atualizada com sucesso"
+      "updateSuccess": "Organização atualizada com sucesso",
+      "validation": {
+        "nameMax": "O nome não pode exceder 100 caracteres",
+        "nameMin": "O nome deve ter pelo menos 2 caracteres",
+        "slugMax": "O slug não pode exceder 50 caracteres",
+        "slugMin": "O slug deve ter pelo menos 2 caracteres"
+      }
     },
     "error": {
       "description": "O organograma não pôde ser carregado. Tente novamente.",
@@ -395,6 +401,7 @@
     "switchTo": "Mudar de organização",
     "teams": {
       "card": {
+        "actionsFor": "Ações para {name}",
         "deleteTeam": "Excluir Equipe",
         "editTeam": "Editar Equipe",
         "fallbackManager": "Gerente de fallback",
@@ -406,10 +413,10 @@
       "delete": "Excluir Equipe",
       "deleteDialogDescription": "Isso excluirá permanentemente a equipe \"{teamName}\".",
       "deleteDialogMembersWarning": "Aviso: Esta equipe possui {count} membro(s). Eles serão removidos da equipe.",
+      "deleteDialogNamedTitle": "Excluir a equipe {name}?",
       "deleteDialogTitle": "Tem certeza?",
       "deleteError": "Falha ao excluir equipe",
       "deleteSuccess": "Equipe excluída com sucesso",
-      "description": "Organize seus funcionários em equipes para uma melhor colaboração",
       "edit": {
         "description": "Atualizar nome e descrição da equipe",
         "descriptionLabel": "Descrição (Opcional)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Membro removido da equipe",
         "selectEmployee": "Selecione um funcionário para adicionar",
         "title": "{teamName} - Membros da equipe"
-      },
-      "title": "Equipes"
+      }
     },
     "timezone": {
       "balances-recalculating": "Os saldos de trabalho estão sendo recalculados para o novo fuso horário e permanecerão ocultos até que estejam prontos.",

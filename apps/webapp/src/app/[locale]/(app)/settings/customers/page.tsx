@@ -30,14 +30,17 @@ async function CustomerSettingsPageContent() {
 function CustomerSettingsPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex flex-1 flex-col gap-4"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.customerSettings",
 				labelDefault: "Loading customer settings",
 			}}
 		>
-			<Skeleton className="h-8 w-48" aria-hidden="true" />
+			<div className="space-y-2 pb-2">
+				<Skeleton className="h-8 w-48" aria-hidden="true" />
+				<Skeleton className="h-4 w-full max-w-md" aria-hidden="true" />
+			</div>
 			<Skeleton className="h-64 w-full" aria-hidden="true" />
 		</LoadingRegion>
 	);

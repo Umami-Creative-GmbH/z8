@@ -1,11 +1,24 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsenceWithDays } from "@/lib/absences/types";
-import { AbsenceEntriesTable } from "./absence-entries-table";
+import { AbsenceEntriesTable as Table } from "./absence-entries-table";
+import { OwnAbsenceActionsProvider } from "./own-absence-actions";
+
+/** The table inside the controller that owns its row actions and dialogs (#1863). */
+function AbsenceEntriesTable({
+	onUpdate,
+	...props
+}: ComponentProps<typeof Table> & { onUpdate?: () => void }) {
+	return (
+		<OwnAbsenceActionsProvider absences={props.absences} onUpdate={onUpdate}>
+			<Table {...props} />
+		</OwnAbsenceActionsProvider>
+	);
+}
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -49,11 +62,23 @@ vi.mock("./change-deputy-dialog", () => ({
 	),
 }));
 
+const ownChanges = vi.hoisted(() => ({
+	data: [] as Array<{ id: string; absenceId: string; status: string }>,
+}));
 vi.mock("./use-own-absence-changes", () => ({
-	useOwnAbsenceChanges: () => ({ data: [], isSuccess: true, refetch: vi.fn() }),
+	useOwnAbsenceChanges: () => ({
+		data: ownChanges.data,
+		isSuccess: true,
+		refetch: vi.fn(),
+	}),
+}));
+vi.mock("./absence-change-history", () => ({
+	AbsenceChangeHistory: () => <div>change history</div>,
 }));
 vi.mock("./absence-change-dialog", () => ({
-	AbsenceChangeDialog: ({ kind }: { kind: string }) => <div>{`requesting ${kind}`}</div>,
+	AbsenceChangeDialog: ({ kind }: { kind: string }) => (
+		<div>{`requesting ${kind}`}</div>
+	),
 }));
 
 vi.mock("./sick-notes/attach-sick-note-dialog", () => ({
@@ -100,6 +125,71 @@ function buildAbsence(overrides: Partial<AbsenceWithDays>): AbsenceWithDays {
 }
 
 describe("AbsenceEntriesTable", () => {
+	afterEach(() => {
+		ownChanges.data = [];
+	});
+
+	it("explains why change actions are unavailable while a change request is pending", () => {
+		ownChanges.data = [
+			{ id: "change-1", absenceId: "absence-1", status: "pending" },
+		];
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[buildAbsence({ status: "approved" })]}
+			/>,
+		);
+		expect(screen.getByText("Change request pending")).toBeTruthy();
+		// The request list itself shows above the views, not repeated here (#1862).
+		expect(screen.queryByText("change history")).toBeNull();
+		expect(
+			(
+				screen.getByRole("button", {
+					name: "Request change",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+	});
+
+	it("finds absences by the status label the person reads", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					buildAbsence({ id: "a", status: "approved", notes: "Approved one" }),
+					buildAbsence({ id: "p", status: "pending", notes: "Pending one" }),
+				]}
+			/>,
+		);
+		fireEvent.change(
+			screen.getByPlaceholderText("Search by type, status, or notes…"),
+			{ target: { value: "approv" } },
+		);
+		expect(screen.getByText("Approved one")).toBeTruthy();
+		expect(screen.queryByText("Pending one")).toBeNull();
+	});
+
+	it("makes the complete fetched history reachable beyond ten records", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={Array.from({ length: 12 }, (_, index) =>
+					buildAbsence({
+						id: `absence-${index + 1}`,
+						notes: `History record ${index + 1}`,
+					}),
+				)}
+			/>,
+		);
+		expect(screen.queryByText("History record 12")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Go to next page" }));
+		expect(screen.getByText("History record 12")).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Go to previous page" }),
+		);
+		expect(screen.getByText("History record 1")).toBeTruthy();
+	});
+
 	it("lets an employee request changes to a past manager-recorded approved absence", () => {
 		render(
 			<AbsenceEntriesTable
@@ -115,7 +205,9 @@ describe("AbsenceEntriesTable", () => {
 			/>,
 		);
 		expect(screen.getByRole("button", { name: "Request change" })).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Request cancellation" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Request cancellation" }),
+		).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Cancel absence" })).toBeNull();
 		fireEvent.click(screen.getByRole("button", { name: "Request change" }));
 		expect(screen.getByText("requesting change")).toBeTruthy();
@@ -127,7 +219,11 @@ describe("AbsenceEntriesTable", () => {
 				currentDate="2026-05-20"
 				absences={[
 					// A Monday-to-Friday range the client would have counted as 5.
-					buildAbsence({ startDate: "2026-10-12", endDate: "2026-10-16", absenceDays: 1, }),
+					buildAbsence({
+						startDate: "2026-10-12",
+						endDate: "2026-10-16",
+						absenceDays: 1,
+					}),
 				]}
 			/>,
 		);
@@ -139,7 +235,13 @@ describe("AbsenceEntriesTable", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
-				absences={[buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-21", }),]}
+				absences={[
+					buildAbsence({
+						id: "pending",
+						status: "pending",
+						startDate: "2026-05-21",
+					}),
+				]}
 			/>,
 		);
 
@@ -216,15 +318,24 @@ describe("AbsenceEntriesTable", () => {
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
 				absences={[
-					buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-20", }),
-					buildAbsence({ id: "approved-future", status: "approved", startDate: "2026-05-21", }),
+					buildAbsence({
+						id: "pending",
+						status: "pending",
+						startDate: "2026-05-20",
+					}),
+					buildAbsence({
+						id: "approved-future",
+						status: "approved",
+						startDate: "2026-05-21",
+					}),
 				]}
 			/>,
 		);
 
 		expect(screen.getAllByLabelText("Cancel absence")).toHaveLength(1);
-		expect(screen.getByRole("button", { name: "Request cancellation"
-	})).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Request cancellation" }),
+		).toBeTruthy();
 	});
 
 	it("hides cancel actions for approved absences starting today or earlier", () => {
@@ -232,9 +343,21 @@ describe("AbsenceEntriesTable", () => {
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
 				absences={[
-					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-20", }),
-					buildAbsence({ id: "approved-past", status: "approved", startDate: "2026-05-19", }),
-					buildAbsence({ id: "rejected-future", status: "rejected", startDate: "2026-05-21", }),
+					buildAbsence({
+						id: "approved-today",
+						status: "approved",
+						startDate: "2026-05-20",
+					}),
+					buildAbsence({
+						id: "approved-past",
+						status: "approved",
+						startDate: "2026-05-19",
+					}),
+					buildAbsence({
+						id: "rejected-future",
+						status: "rejected",
+						startDate: "2026-05-21",
+					}),
 				]}
 			/>,
 		);
@@ -247,7 +370,11 @@ describe("AbsenceEntriesTable", () => {
 			<AbsenceEntriesTable
 				currentDate="2026-05-21"
 				absences={[
-					buildAbsence({ id: "approved-today", status: "approved", startDate: "2026-05-21", }),
+					buildAbsence({
+						id: "approved-today",
+						status: "approved",
+						startDate: "2026-05-21",
+					}),
 				]}
 			/>,
 		);
@@ -262,13 +389,17 @@ describe("AbsenceEntriesTable", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
-				absences={[buildAbsence({ id: "absence-cancellable", status: "pending" })]}
+				absences={[
+					buildAbsence({ id: "absence-cancellable", status: "pending" }),
+				]}
 				onUpdate={onUpdate}
 			/>,
 		);
 
 		fireEvent.click(screen.getByLabelText("Cancel absence"));
-		fireEvent.click(screen.getByRole("button", { name: "Yes, cancel absence" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Yes, cancel absence" }),
+		);
 
 		await waitFor(() => {
 			expect(onUpdate).toHaveBeenCalledTimes(1);
@@ -281,13 +412,17 @@ describe("AbsenceEntriesTable", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
-				absences={[buildAbsence({ id: "absence-cancellable", status: "pending" })]}
+				absences={[
+					buildAbsence({ id: "absence-cancellable", status: "pending" }),
+				]}
 			/>,
 		);
 
 		fireEvent.focus(screen.getByLabelText("Cancel absence"));
 
-		expect((await screen.findAllByText("Cancel absence")).length).toBeGreaterThan(0);
+		expect(
+			(await screen.findAllByText("Cancel absence")).length,
+		).toBeGreaterThan(0);
 	});
 
 	describe("sick notes (#982)", () => {
@@ -320,7 +455,11 @@ describe("AbsenceEntriesTable", () => {
 				<AbsenceEntriesTable
 					currentDate="2026-05-20"
 					absences={[
-						buildAbsence({ id: "sick-pending", category: sickCategory, status: "pending", }),
+						buildAbsence({
+							id: "sick-pending",
+							category: sickCategory,
+							status: "pending",
+						}),
 						// Approved and already started: no cancel action, but notes still go on.
 						buildAbsence({
 							id: "sick-approved",
@@ -328,7 +467,11 @@ describe("AbsenceEntriesTable", () => {
 							status: "approved",
 							startDate: "2026-05-18",
 						}),
-						buildAbsence({ id: "sick-rejected", category: sickCategory, status: "rejected", }),
+						buildAbsence({
+							id: "sick-rejected",
+							category: sickCategory,
+							status: "rejected",
+						}),
 						buildAbsence({ id: "vacation", status: "pending" }),
 					]}
 				/>,
@@ -353,13 +496,17 @@ describe("AbsenceEntriesTable", () => {
 					]}
 				/>,
 			);
-			fireEvent.click(screen.getByRole("button", { name: "Sick note attached ({count})" }));
+			fireEvent.click(
+				screen.getByRole("button", { name: "Sick note attached ({count})" }),
+			);
 			expect(screen.getByText("sick notes of sick-own")).toBeTruthy();
 			// A note the viewer cannot open is a marker only.
-			expect(screen.getAllByText("Sick note attached ({count})")).toHaveLength(2);
-			expect(screen.getAllByRole("button", { name: "Sick note attached ({count})" })).toHaveLength(
-				1,
+			expect(screen.getAllByText("Sick note attached ({count})")).toHaveLength(
+				2,
 			);
+			expect(
+				screen.getAllByRole("button", { name: "Sick note attached ({count})" }),
+			).toHaveLength(1);
 		});
 	});
 
@@ -367,13 +514,16 @@ describe("AbsenceEntriesTable", () => {
 		render(
 			<AbsenceEntriesTable
 				currentDate="2026-05-20"
-				absences={[buildAbsence({ id: "absence-cancellable", status: "pending" })]}
+				absences={[
+					buildAbsence({ id: "absence-cancellable", status: "pending" }),
+				]}
 			/>,
 		);
 
-		expect(screen.getByPlaceholderText("Search by type, status, or notes…").className).toContain(
-			"bg-card",
-		);
+		expect(
+			screen.getByPlaceholderText("Search by type, status, or notes…")
+				.className,
+		).toContain("bg-card");
 	});
 
 	it("shows the deputy and offers to change it until the absence has ended (#1011)", () => {
@@ -420,21 +570,29 @@ describe("AbsenceEntriesTable", () => {
 						id: "linked",
 						startDate: "2026-05-18",
 						endDate: "2026-05-22",
-						deputy: { id: "employee-2", name: "Ben Example", canOpenProfile: true, },
+						deputy: {
+							id: "employee-2",
+							name: "Ben Example",
+							canOpenProfile: true,
+						},
 					}),
 					buildAbsence({
 						id: "plain",
 						startDate: "2026-06-18",
 						endDate: "2026-06-22",
-						deputy: { id: "employee-3", name: "Cleo Example", canOpenProfile: false, },
+						deputy: {
+							id: "employee-3",
+							name: "Cleo Example",
+							canOpenProfile: false,
+						},
 					}),
 				]}
 			/>,
 		);
 
-		expect(screen.getByRole("link", { name: "Ben Example" }).getAttribute("href")).toBe(
-			"/settings/employees/employee-2",
-		);
+		expect(
+			screen.getByRole("link", { name: "Ben Example" }).getAttribute("href"),
+		).toBe("/settings/employees/employee-2");
 		expect(screen.queryByRole("link", { name: "Cleo Example" })).toBeNull();
 		expect(screen.getByText("Cleo Example")).toBeTruthy();
 	});

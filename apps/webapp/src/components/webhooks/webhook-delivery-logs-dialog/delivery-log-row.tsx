@@ -1,10 +1,12 @@
 "use client";
 
+import { IconChevronRight } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useId } from "react";
+import { Temporal } from "temporal-polyfill";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import type { WebhookDelivery } from "@/lib/webhooks/types";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import { DeliveryStatusBadge } from "./delivery-status-badge";
@@ -15,53 +17,81 @@ interface DeliveryLogRowProps {
 	onOpenChange: () => void;
 }
 
+/** Delivery time in the organization's zone; `createdAt` is a UTC instant from the database boundary. */
+function formatDeliveryTime(createdAt: Date, timeZone: string, locale: string) {
+	return Temporal.Instant.fromEpochMilliseconds(createdAt.getTime()).toLocaleString(locale, {
+		timeZone,
+		month: "short",
+		day: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hourCycle: "h23",
+	});
+}
+
 export function DeliveryLogRow({ delivery, open, onOpenChange }: DeliveryLogRowProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const timezone = useOrganizationTimezone();
+	const detailsId = useId();
+	const time = formatDeliveryTime(delivery.createdAt, timezone, locale);
 
 	return (
-		<Collapsible open={open} onOpenChange={onOpenChange} asChild>
-			<CollapsibleTrigger asChild>
-				<TableRow className="cursor-pointer hover:bg-muted/50">
-					<TableCell className="font-mono text-xs">
-						{DateTime.fromJSDate(delivery.createdAt, { zone: "utc" })
-							.setZone(timezone)
-							.setLocale(locale)
-							.toFormat("MMM d, HH:mm:ss")}
-					</TableCell>
-					<TableCell className="font-mono text-xs">{delivery.eventType}</TableCell>
-					<TableCell>
-						<DeliveryStatusBadge status={delivery.status} />
-					</TableCell>
-					<TableCell>
-						{delivery.httpStatus ? (
-							<span
-								className={
-									delivery.httpStatus >= 200 && delivery.httpStatus < 300
-										? "text-green-600"
-										: "text-red-600"
-								}
-							>
-								{delivery.httpStatus}
-							</span>
-						) : (
-							"-"
-						)}
-					</TableCell>
-					<TableCell>{delivery.durationMs ? `${delivery.durationMs}ms` : "-"}</TableCell>
-					<TableCell>
-						{delivery.attemptNumber}/{delivery.maxAttempts}
-					</TableCell>
-				</TableRow>
-			</CollapsibleTrigger>
-			<CollapsibleContent asChild>
-				<TableRow className="bg-muted/30">
+		<>
+			<TableRow className="hover:bg-muted/50">
+				<TableCell className="font-mono text-xs">
+					<button
+						type="button"
+						aria-expanded={open}
+						aria-controls={detailsId}
+						aria-label={t("webhooks:webhooks.logs.toggle-details", "Details for {event} at {time}", {
+							event: delivery.eventType,
+							time,
+						})}
+						onClick={onOpenChange}
+						className="-mx-1 inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-left tabular-nums hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					>
+						<IconChevronRight
+							className={cn("size-3.5 shrink-0 transition-transform motion-reduce:transition-none", open && "rotate-90")}
+							aria-hidden="true"
+						/>
+						{time}
+					</button>
+				</TableCell>
+				<TableCell className="font-mono text-xs">{delivery.eventType}</TableCell>
+				<TableCell>
+					<DeliveryStatusBadge status={delivery.status} />
+				</TableCell>
+				<TableCell>
+					{delivery.httpStatus ? (
+						<span
+							className={
+								delivery.httpStatus >= 200 && delivery.httpStatus < 300
+									? "tabular-nums text-success"
+									: "tabular-nums text-destructive"
+							}
+						>
+							{delivery.httpStatus}
+						</span>
+					) : (
+						"-"
+					)}
+				</TableCell>
+				<TableCell className="tabular-nums">
+					{delivery.durationMs ? `${delivery.durationMs}ms` : "-"}
+				</TableCell>
+				<TableCell className="tabular-nums">
+					{delivery.attemptNumber}/{delivery.maxAttempts}
+				</TableCell>
+			</TableRow>
+			<TableRow id={detailsId} hidden={!open} className="bg-muted/30">
+				{open ? (
 					<TableCell colSpan={6} className="p-4">
 						<div className="space-y-3">
 							{delivery.errorMessage && (
 								<div>
-									<span className="text-sm font-medium text-red-600">
+									<span className="text-sm font-medium text-destructive">
 										{t("webhooks:webhooks.logs.error", "Error")}:
 									</span>
 									<p className="text-sm text-muted-foreground">{delivery.errorMessage}</p>
@@ -87,8 +117,8 @@ export function DeliveryLogRow({ delivery, open, onOpenChange }: DeliveryLogRowP
 							)}
 						</div>
 					</TableCell>
-				</TableRow>
-			</CollapsibleContent>
-		</Collapsible>
+				) : null}
+			</TableRow>
+		</>
 	);
 }

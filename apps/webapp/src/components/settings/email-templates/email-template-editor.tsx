@@ -118,6 +118,8 @@ export function EmailTemplateEditor({
 				<Input
 					ref={subjectRef}
 					id="email-template-subject"
+					name="subject"
+					autoComplete="off"
 					value={subject}
 					onChange={(event) => onSubjectChange(event.target.value)}
 					onFocus={onSubjectFocus}
@@ -185,11 +187,17 @@ export function EmailTemplateEditor({
 				</Label>
 				<Textarea
 					id="email-template-html-fallback"
+					name="htmlFallback"
 					value={html}
 					onChange={(event) => onHtmlChange(event.target.value)}
+					spellCheck={false}
+					aria-describedby="email-template-html-fallback-description"
 					className="min-h-24 font-mono text-xs"
 				/>
-				<p className="text-muted-foreground text-xs">
+				<p
+					id="email-template-html-fallback-description"
+					className="text-muted-foreground text-xs"
+				>
 					{t(
 						"settings.emailTemplates.editor.fallbackDescription",
 						"Used for validation and as a safe fallback if the visual editor cannot render.",
@@ -197,7 +205,7 @@ export function EmailTemplateEditor({
 				</p>
 			</div>
 
-			<input type="hidden" value={plainText} readOnly aria-hidden="true" />
+			<input type="hidden" value={plainText} readOnly />
 		</div>
 	);
 }

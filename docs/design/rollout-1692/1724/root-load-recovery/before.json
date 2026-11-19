@@ -1,0 +1,159 @@
+{
+  "phase": "before",
+  "classification": "Actual scoped read actions; one held request and one browser transport failure, no fabricated action result. Two manager-link edits are disposable fixture setup.",
+  "checks": [
+    {
+      "name": "held the manifest-identified getOrgExplorerPeople action for current-roster Person 199",
+      "passed": true
+    },
+    {
+      "name": "activated the actual header Refresh handler while the selected read remained held",
+      "passed": true,
+      "activation": "synthetic DOM click; modal prevents trusted header pointer input"
+    },
+    {
+      "name": "released an actual successful old read after mounted Refresh activation",
+      "passed": true,
+      "currentRosterCount": 200
+    },
+    {
+      "name": "baseline strands the selected person after Refresh despite successful read",
+      "passed": true
+    },
+    {
+      "name": "real failed branch read retains the roster and exposes Retry",
+      "passed": true
+    },
+    {
+      "name": "baseline cached Retry discards real success and removes recovery",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "before-selected-after-refresh.png",
+      "sha256": "7b74e500f1e30a5e42696e56c99b3d6aa67e7fce97d19fcf6d14c2e5292cd510",
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "head": "89c7f3816988b33496165e9ee63c839aede4a364",
+      "sources": {
+        "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.tsx": "73d94a1217232ac007ad429ea9d6874dfe2a9da96e998786d68e3085ab6a4a05",
+        "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f"
+      },
+      "css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "pathname": "/en/organization",
+      "query": "?employee=5608cd26-6180-44ec-b44d-43e6055d21e9"
+    },
+    {
+      "name": "before-branch-error.png",
+      "sha256": "3c5cc3b1bf9806911b39a707222ebe3975ed1edebcd02f7124aa4513be22eaf8",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "head": "89c7f3816988b33496165e9ee63c839aede4a364",
+      "sources": {
+        "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.tsx": "73d94a1217232ac007ad429ea9d6874dfe2a9da96e998786d68e3085ab6a4a05",
+        "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f"
+      },
+      "css": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "pathname": "/en/organization",
+      "query": ""
+    },
+    {
+      "name": "before-branch-after-retry.png",
+      "sha256": "aa2c39107b7c8251e7eec0b162e11d6ecaf79f4ccfb25143d134f5fdd4999089",
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "head": "89c7f3816988b33496165e9ee63c839aede4a364",
+      "sources": {
+        "apps/webapp/src/app/[locale]/(app)/organization/org-explorer-client.tsx": "73d94a1217232ac007ad429ea9d6874dfe2a9da96e998786d68e3085ab6a4a05",
+        "apps/webapp/src/app/[locale]/(app)/organization/use-org-explorer-people.ts": "30facf280a7f1a3f8f2b9166f183f3e06aa64bf963f7bef24977de4dc8daa44f"
+      },
+      "css": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "pathname": "/en/organization",
+      "query": ""
+    }
+  ],
+  "pageErrors": [],
+  "requests": [
+    {
+      "functionName": "getOrgExplorerPeople",
+      "filename": "apps/webapp/src/app/[locale]/(app)/organization/actions.ts",
+      "phase": "hold"
+    },
+    {
+      "functionName": "getOrgExplorerPeople",
+      "filename": "apps/webapp/src/app/[locale]/(app)/organization/actions.ts",
+      "phase": "normal"
+    },
+    {
+      "functionName": "getOrgExplorerPeople",
+      "filename": "apps/webapp/src/app/[locale]/(app)/organization/actions.ts",
+      "phase": "fail"
+    },
+    {
+      "functionName": "getOrgExplorerPeople",
+      "filename": "apps/webapp/src/app/[locale]/(app)/organization/actions.ts",
+      "phase": "normal"
+    }
+  ],
+  "cachedBranchRestored": true,
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

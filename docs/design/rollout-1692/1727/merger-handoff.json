@@ -1,0 +1,329 @@
+{
+  "status": "MERGED_CONDITIONAL_NOT_VERIFIED_PENDING_ROOT_HEADING_CORRECTIONS",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "11671b30d78f9bc12be6f991ed4638218cc75777",
+  "incoming": "67f5442ffe53990ea10b575a6fd5ab2389f9a5bf",
+  "merge": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "tree": "8b34cc59a098071a530e7530c855cd9d4551f87d",
+  "parents": [
+    "11671b30d78f9bc12be6f991ed4638218cc75777",
+    "67f5442ffe53990ea10b575a6fd5ab2389f9a5bf"
+  ],
+  "independentMergeTreeMatches": true,
+  "clean": true,
+  "exclusiveOwnership": "RELEASE",
+  "rootNext": "Root may take checkout/package ownership. Correct both R044 no-h1 loading/scope arrivals and the inherited R043 employee-heading expectation/title on a dedicated branch. Keep old employee identity hidden on mismatched scope and preserve both heading opt-ins. No readiness/verifiedCommit assignment by this merger.",
+  "tests": {
+    "runs": [
+      {
+        "name": "exact",
+        "file": "exact-unit.json",
+        "physicalFiles": 11,
+        "cases": 165,
+        "passed": 165,
+        "failed": 0,
+        "skipped": 0,
+        "overlapWithPriorRuns": 0,
+        "failures": []
+      },
+      {
+        "name": "compatibility",
+        "file": "compatibility-unit.json",
+        "physicalFiles": 115,
+        "cases": 1200,
+        "passed": 1199,
+        "failed": 1,
+        "skipped": 0,
+        "overlapWithPriorRuns": 165,
+        "failures": [
+          {
+            "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+            "fullName": "keeps the task heading during a pending directory read and adopts only this route",
+            "occurrence": 1,
+            "status": "failed",
+            "failure": [
+              "AssertionError: expected true to be false // Object.is equality"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "adversarial",
+        "file": "adversarial-unit.json",
+        "physicalFiles": 1,
+        "cases": 9,
+        "passed": 7,
+        "failed": 2,
+        "skipped": 0,
+        "overlapWithPriorRuns": 0,
+        "failures": [
+          {
+            "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+            "fullName": "retains the R044 task main heading during its actual server suspense fallback",
+            "occurrence": 1,
+            "status": "failed",
+            "failure": [
+              "AssertionError: expected [] to have a length of 1 but got +0"
+            ]
+          },
+          {
+            "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+            "fullName": "retains a safe task main heading while the R044 server arrival mismatches current actor scope",
+            "occurrence": 1,
+            "status": "failed",
+            "failure": [
+              "AssertionError: expected [] to have a length of 1 but got +0"
+            ]
+          }
+        ]
+      }
+    ],
+    "unique": {
+      "physicalFiles": 116,
+      "cases": 1209,
+      "passed": 1206,
+      "failed": 3,
+      "skipped": 0
+    },
+    "deduplication": "Normalized physical file path + fullName + occurrence multiplicity within that file. Exact/expanded and repeated adversarial runs overlap; no additive totals.",
+    "failures": [
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+        "fullName": "keeps the task heading during a pending directory read and adopts only this route",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected true to be false // Object.is equality"
+        ]
+      },
+      {
+        "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+        "fullName": "retains the R044 task main heading during its actual server suspense fallback",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected [] to have a length of 1 but got +0"
+        ]
+      },
+      {
+        "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+        "fullName": "retains a safe task main heading while the R044 server arrival mismatches current actor scope",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected [] to have a length of 1 but got +0"
+        ]
+      }
+    ]
+  },
+  "types": {
+    "passed": true,
+    "command": [
+      "pnpm",
+      "--filter",
+      "webapp",
+      "typecheck"
+    ],
+    "profiles": [
+      "next typegen",
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ],
+    "log": ".tmp/merge1727-audit/types.log"
+  },
+  "quality": {
+    "commands": ".tmp/merge1727-audit/quality-commands.json",
+    "profiles": [
+      {
+        "name": "biome-default",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-crlf",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-explicit",
+        "exitCode": 1
+      },
+      {
+        "name": "biome-lint-import",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-explicit-lint",
+        "exitCode": 0
+      },
+      {
+        "name": "doctor",
+        "exitCode": 0
+      },
+      {
+        "name": "biome-explicit-crlf",
+        "exitCode": 0
+      }
+    ],
+    "doctor": {
+      "files": 15,
+      "errors": 0,
+      "warnings": 1,
+      "sourceRevision": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+      "triage": "One R044 composition complexity advisory; no error, no suppression or config changes. Prior root warnings are outside this narrow added-source report."
+    },
+    "formatting": "Ordinary/default and ordinary CRLF plus explicit-config LF profiles report formatting-only diagnostics; explicit webapp CRLF and both formatter-disabled lint/import profiles pass15files. No broad formatting performed."
+  },
+  "artifacts": {
+    "decodedPNGs": 35,
+    "parsedJSON": 30,
+    "syntaxCheckedScripts": 12,
+    "sourcePins": 186,
+    "independentSourceFiles": 30,
+    "comparisonPairs": 4,
+    "reportLinks": 24,
+    "authoritativeOwners": 7,
+    "recordedBrowserOperations": 14,
+    "recordedBrowserRecovery": 8
+  },
+  "preservation": {
+    "unaffectedPaths": 12457,
+    "priorRolloutPaths": 2224,
+    "incomingRawPaths": 84,
+    "verifiedAncestors": 39,
+    "ownedPaths": [
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.integration.test.ts",
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/actions.ts",
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.test.tsx",
+      "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+      "apps/webapp/src/components/payroll/employee-balance-projection.tsx",
+      "apps/webapp/src/components/payroll/employee-balance-workspace.test.tsx",
+      "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+      "apps/webapp/src/components/settings/work-balance/balance-form-panel.tsx",
+      "apps/webapp/src/components/settings/work-balance/balance-form-surface.ts",
+      "apps/webapp/src/components/settings/work-balance/cancel-balance-adjustment-dialog.tsx",
+      "apps/webapp/src/components/settings/work-balance/record-overtime-payout-dialog.tsx",
+      "apps/webapp/src/components/settings/work-balance/set-opening-balance-dialog.tsx",
+      "apps/webapp/src/components/settings/work-balance/use-balance-form-request.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "independentTreeMatches": true,
+    "root1725And1726SourcePreserved": true
+  },
+  "root1726Archive": {
+    "command": [
+      "pnpm",
+      "node",
+      "docs/design/rollout-1692/1726/root-upload-recovery/verify-evidence.mjs",
+      "--current-source"
+    ],
+    "passed": true,
+    "decodedPNGs": 9,
+    "parsedJSON": 34,
+    "syntaxCheckedScripts": 3,
+    "nativeTarget": false,
+    "currentOwnedSource": true,
+    "log": ".tmp/merge1727-audit/root1726-archive.log",
+    "evidenceAge": "Historical root tests/runtime, fresh read-only archive/current-upload-source validation; no rerun/upgrade of its runtime counts."
+  },
+  "findings": [
+    {
+      "id": "R044-heading-loading",
+      "axis": "Spec",
+      "severity": "required reconciliation",
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+      "line": 36,
+      "problem": "The actual Suspense fallback renders a named status region and two aria-hidden skeletons, with zero h1s, while R044 opts out of the shell h1.",
+      "requirement": "Canonical shared spec: each persistent page has one semantic main heading; title ownership is staged atomically. F1/report also retains headings for pending arrivals.",
+      "evidence": {
+        "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+        "fullName": "retains the R044 task main heading during its actual server suspense fallback",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected [] to have a length of 1 but got +0"
+        ]
+      },
+      "suggestedRootCorrection": "Use a safe translated Work balance main heading in the loading composition; retain the named loading region and no old employee identity."
+    },
+    {
+      "id": "R044-heading-scope",
+      "axis": "Spec",
+      "severity": "required reconciliation",
+      "file": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+      "line": 63,
+      "problem": "The loading/current-actor/current-organization mismatch branch renders only a status paragraph and no h1. It correctly hides old identity but leaves the converted route without a task heading.",
+      "requirement": "Canonical shared spec: one semantic main heading and honest scoped arrivals; keep task context without disclosing the prior employee.",
+      "evidence": {
+        "file": ".tmp/merge1727-audit/adversarial.test.tsx",
+        "fullName": "retains a safe task main heading while the R044 server arrival mismatches current actor scope",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected [] to have a length of 1 but got +0"
+        ]
+      },
+      "suggestedRootCorrection": "Keep a generic translated Work balance h1 beside the scope-loading status while retaining all actor/org mismatch gates."
+    },
+    {
+      "id": "R043-inherited-heading-expectation",
+      "axis": "Integration compatibility",
+      "severity": "required reconciliation",
+      "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+      "line": 35,
+      "problem": "The prior directory test still expects the employee route to be shell-owned. R044 now legitimately adopts it. The test title also says only this route.",
+      "evidence": {
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.test.tsx",
+        "fullName": "keeps the task heading during a pending directory read and adopts only this route",
+        "occurrence": 1,
+        "status": "failed",
+        "failure": [
+          "AssertionError: expected true to be false // Object.is equality"
+        ]
+      },
+      "suggestedRootCorrection": "Reconcile the title/employee expectation while keeping directory=true, employee=true and deeper descendants=false. Root explicitly reserved this correction for its dedicated branch."
+    }
+  ],
+  "commands": {
+    "mergeTree": "git merge-tree --write-tree 11671b30d78f9bc12be6f991ed4638218cc75777 67f5442ffe53990ea10b575a6fd5ab2389f9a5bf",
+    "nativeMerge": "git merge --no-ff --no-commit 67f5442ffe53990ea10b575a6fd5ab2389f9a5bf",
+    "resolution": "Only actual route-metadata.test.ts conflict: payroll=true, directory=true, employee=true, deeper descendant=false; independent scratch index tree equals native tree.",
+    "testAndTypes": ".tmp/merge1727-audit/run-checks.ps1",
+    "testCommandRecords": ".tmp/merge1727-audit/check-commands.json",
+    "quality": ".tmp/merge1727-audit/run-quality.ps1",
+    "adversarial": "pnpm --filter webapp exec vitest run --config ../../.tmp/merge1727-audit/vitest.config.mts --project audit --maxWorkers 2 --reporter=json --outputFile=.tmp/merge1727-audit/adversarial-unit.json",
+    "artifacts": "pnpm node .tmp/merge1727-audit/verify-artifacts.mjs"
+  },
+  "inherited": {
+    "workerCodeCommit": "6f0d1079cb950c694699d71afd41628514bda495",
+    "workerIncludedIntegration": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+    "unit": {
+      "physicalFiles": 11,
+      "cases": 154
+    },
+    "postgres": {
+      "physicalFiles": 5,
+      "cases": 35
+    },
+    "browser": {
+      "operations": 14,
+      "recovery": 8
+    },
+    "native": "Actual EmployeeBalanceArrival tree/props pinned to worker source; no fresh merger native browser.",
+    "next": "Worker Next compilation/config/session probes empty at61659; no fresh merger Next server."
+  },
+  "attempts": [
+    "Initial Git object-database and pnpm store-lock access needed authorized escalation; no auto-review rejection.",
+    "Initial direct PowerShell script call was blocked by execution policy; process-local -ExecutionPolicy Bypass ran the owned audit script. No persistent policy change.",
+    "Scratch probes initially used Reason instead of actual cancellation label Why is it cancelled?, then exact summary text instead of its existing explanatory suffix. Corrected only scratch queries; failed attempts retained. Seven controls pass, final nine probes preserve two independently discovered heading failures.",
+    "Read-only artifact audit initially used configurationErrors instead of recorded Next configErrors; corrected only the scratch parser. Raw evidence never edited."
+  ],
+  "limits": [
+    "No subagents, per explicit grant; standards and spec axes reviewed directly.",
+    "No new runtime, PostgreSQL, browser, provider or physical-device work; raw worker runtime evidence is inherited.",
+    "Full production/static generation, remote Tolgee catalogs/all locales, providers, wrapper/devices, true zoom and global transitions remain unpassed.",
+    "Held-request browser org/account A→B→A remains unpassed, distinct from the passing component and inherited PostgreSQL seams.",
+    "Root1726 archive validator remains nativeTarget:false; both before/after Equipment AuthorizationError is historical and not globally clean."
+  ],
+  "unchanged": "No product source fixes beyond the authorized actual merge-conflict resolution. No report/ledger/README/raw edits, tracker/remote/push/PR/closure/dev merge/deploy. No services/PG/browser/provider launched. All package processes completed. No subagents."
+}

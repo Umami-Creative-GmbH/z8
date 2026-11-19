@@ -1,0 +1,90 @@
+{
+  "kind": "deterministic safe summary clone of raw Vitest JSON",
+  "rawSha256": "ff58fedd405b8dec0edc09c1e6dc8dc952ffa783646bd4dec8d98a0706f43c96",
+  "passed": 14,
+  "failed": 0,
+  "skipped": 0,
+  "physicalFiles": 2,
+  "files": [
+    {
+      "path": "apps/webapp/src/lib/reports/report-custom-fields.integration.test.ts",
+      "cases": [
+        {
+          "name": "employee report custom fields on PostgreSQL shows the fields the requester sees, in order, and leaves out archived and other organizations' fields",
+          "status": "passed"
+        },
+        {
+          "name": "employee report custom fields on PostgreSQL lists a visible field without a value as empty",
+          "status": "passed"
+        },
+        {
+          "name": "employee report custom fields on PostgreSQL reads a tracked value as of the period's last day",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/report-generator.integration.test.ts",
+      "cases": [
+        {
+          "name": "employee report on PostgreSQL shows the current organization-local contract type in the report header",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL excludes deleted and live work from work hours, home office hours and earnings",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL keeps the completed-work query budget constant as home office dates grow",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL pays a confirmed wage change from its date and ignores draft and pending terms",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL pays hourly work up to the 14th for an employee who is fixed from the 15th",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL reports no earnings for an employee under fixed terms only",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL splits a Berlin night shift at local midnight of the wage change, by the recorded offsets",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL retains the 23-hour Berlin DST day and clips home office at the month boundary",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL preserves report-local days and captured-offset wages when travel changes the closing offset",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL retains rounded stored durations and historical report work before tracking starts",
+          "status": "passed"
+        },
+        {
+          "name": "employee report on PostgreSQL rejects hourly work under terms without a wage",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "gate": "real canonical loopback disposable PostgreSQL gate and repository fixtures",
+  "limits": [
+    "Expected-hours schedule stubs remain in established integration suite",
+    "Custom-field permission identity is modeled by canonical fixture, not live revocation evidence"
+  ],
+  "parentUnitUnion": {
+    "parentCases": 293,
+    "parentFiles": 51,
+    "freshPostgresCases": 14,
+    "freshPostgresFiles": 2,
+    "totalCases": 307,
+    "totalFiles": 53,
+    "independentPublicCasesExcluded": true
+  }
+}

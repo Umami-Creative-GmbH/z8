@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "out": "{\"success\":true,\"data\":{\"lifecycle\":{\"effectiveLaunch\":{\"browserLaunched\":true,\"engine\":\"chrome\",\"launchHash\":4759075326389111361},\"launched\":false,\"relaunchedBrowser\":false,\"restartedBackground\":false,\"restoreStatus\":\"missing\",\"reused\":true,\"saveStatus\":\"not_attempted\"},\"targetId\":\"7C916604D1A0DA45BBF277E7C93FC648\",\"title\":\"z8 - time app\",\"url\":\"http://localhost:53965/en/sign-in\"},\"error\":null}\n",
+  "err": ""
+}

@@ -4,6 +4,18 @@ import { getManagerDailyBriefingFromSources } from "../get-manager-daily-briefin
 import type { BriefingApproval } from "../types";
 
 describe("getManagerDailyBriefingFromSources", () => {
+	it("reports a failed driving check separately from an empty operational queue", async () => {
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: DateTime.fromISO("2026-11-16T09:00:00Z"),
+			timezone: "Europe/Berlin",
+			sources: createSources({
+				getDrivingDetailsMissingCount: vi.fn().mockRejectedValue(new Error("offline")),
+			}),
+		});
+		expect(briefing.needsActionError).toBe("Driving details could not be checked.");
+	});
 	it("uses the supplied business timezone for the local briefing day and record window", async () => {
 		const sources = createSources();
 		const briefing = await getManagerDailyBriefingFromSources({
@@ -241,16 +253,14 @@ describe("getManagerDailyBriefingFromSources", () => {
 				{ id: "admin-1", name: "Alan Turing", teamName: null },
 				{ id: "emp-1", name: "Ada Lovelace", teamName: "Operations" },
 			]),
-			getApprovals: vi
-				.fn()
-				.mockResolvedValue([
-					createApproval({
-						id: "approval-own",
-						requesterId: "admin-1",
-						requesterName: "Alan Turing",
-					}),
-					createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
-				]),
+			getApprovals: vi.fn().mockResolvedValue([
+				createApproval({
+					id: "approval-own",
+					requesterId: "admin-1",
+					requesterName: "Alan Turing",
+				}),
+				createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			]),
 		});
 
 		const briefing = await getManagerDailyBriefingFromSources({

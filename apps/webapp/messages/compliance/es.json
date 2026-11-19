@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Los controles de acceso solo resumen los eventos confidenciales del registro de auditoría que ya se capturan actualmente.",
         "auditEvidence": "La evidencia de auditoría utiliza la configuración de exportación de auditoría en tiempo real, las solicitudes de paquetes de auditoría y los resultados de verificación recientes.",
+        "title": "Cobertura",
         "workforceCompliance": "El cumplimiento de la fuerza laboral utiliza las infracciones de la política de trabajo de los últimos 7 días y las solicitudes de excepción pendientes."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Última actualización: {time}"
+        "lastRefreshed": "Última actualización: {time}",
+        "refreshMeaning": "Actualizar vuelve a cargar las señales registradas; no reevalúa los hallazgos bajo una nueva política."
       },
       "links": {
         "inspectCompliance": "Inspeccionar cumplimiento",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Abrir configuración de cumplimiento",
         "reviewAuditExport": "Revisar exportación de auditoría"
       },
+      "loading": "Cargando señales de cumplimiento",
       "overview": "Resumen de cumplimiento",
       "recentEvents": {
         "empty": "No se detectaron eventos críticos recientes.",
-        "title": "Eventos críticos recientes"
+        "partial": "Los eventos recientes se limitan a las fuentes disponibles. No se pudieron cargar algunas señales.",
+        "title": "Eventos críticos recientes",
+        "unavailable": "No se pudieron confirmar los eventos recientes porque las fuentes de señales no están disponibles."
       },
+      "scope": "Organización activa",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Los cambios en controles sensibles requieren revisión",
             "healthy": "No se registraron cambios en controles sensibles recientemente",
             "warning": "Se detectaron cambios recientes en los controles"
-          }
+          },
+          "title": "Controles de acceso"
         },
         "auditEvidence": {
           "headline": {
             "critical": "La evidencia de auditoría requiere atención",
             "healthy": "Las señales de evidencia de auditoría parecen correctas",
             "warning": "La evidencia de auditoría solo está parcialmente lista"
-          }
+          },
+          "title": "Evidencia de auditoría"
         },
+        "title": "Secciones de cumplimiento",
         "unavailable": {
           "headline": "Señal temporalmente no disponible"
         },
@@ -94,7 +103,8 @@
             "critical": "Las infracciones de la política de personal requieren revisión",
             "healthy": "No se detectaron problemas recientes en la política de personal",
             "warning": "El cumplimiento de la fuerza laboral se está desviando"
-          }
+          },
+          "title": "Cumplimiento laboral"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Excepción aprobada",
       "approvedDescription": "La excepción de cumplimiento ha sido aprobada.",
       "approveFailed": "Error al aprobar",
+      "approveFor": "Aprobar excepción de {type} para {name}",
+      "loadError": "No se pudieron cargar las solicitudes de excepción pendientes.",
       "plannedDuration": "Planificado",
       "plannedDurationHelp": "Estime cuánto tiempo adicional espera necesitar más allá del límite.",
       "reason": "Motivo de la excepción",
@@ -124,6 +136,7 @@
       "rejected": "Excepción rechazada",
       "rejectedDescription": "La excepción de cumplimiento ha sido rechazada.",
       "rejectFailed": "Error al rechazar",
+      "rejectFor": "Rechazar excepción de {type} para {name}",
       "rejectionPlaceholder": "Ingrese el motivo para rechazar esta excepción...",
       "rejectionReason": "Motivo del rechazo",
       "rejectTitle": "Rechazar solicitud de excepción",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Su gerente será notificado y podrá aprobar o rechazar su solicitud.",
       "requestTitle": "Solicitar excepción de cumplimiento",
       "submit": "Enviar solicitud",
-      "type": "Tipo de excepción"
+      "type": "Tipo de excepción",
+      "types": {
+        "overtimeDaily": "Horas extra diarias",
+        "overtimeMonthly": "Horas extra mensuales",
+        "overtimeWeekly": "Horas extra semanales",
+        "restPeriod": "Período de descanso"
+      }
     },
     "hasApprovedException": "Tiene una excepción aprobada. Puede continuar.",
     "moreAlerts": "más",

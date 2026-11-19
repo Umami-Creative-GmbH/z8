@@ -13,16 +13,17 @@ import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
+export const instant = true;
+
 async function DashboardPageContent() {
 	// Fetch onboarding status and organizations in parallel to eliminate waterfall
 	// Dashboard auth and domain database lookups must execute per request.
 	await connection();
-	const [onboardingStatus, organizations, pendingInvitationId] =
-		await Promise.all([
-			getOnboardingStatus(),
-			getUserOrganizations(),
-			getPendingInvitationId(),
-		]);
+	const [onboardingStatus, organizations, pendingInvitationId] = await Promise.all([
+		getOnboardingStatus(),
+		getUserOrganizations(),
+		getPendingInvitationId(),
+	]);
 	const hasOrganizations = organizations.length > 0;
 
 	if (!hasOrganizations && pendingInvitationId) {
@@ -31,9 +32,7 @@ async function DashboardPageContent() {
 
 	// Redirect if onboarding not complete
 	if (onboardingStatus && !onboardingStatus.onboardingComplete) {
-		return redirectWithLocale(
-			getOnboardingStepPath(onboardingStatus.onboardingStep),
-		);
+		return redirectWithLocale(getOnboardingStepPath(onboardingStatus.onboardingStep));
 	}
 
 	if (!hasOrganizations) {
@@ -45,8 +44,11 @@ async function DashboardPageContent() {
 	}
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-2">
-			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+		<div
+			data-testid="dashboard-content"
+			className="@container/main page-frame flex flex-1 flex-col gap-4 md:gap-6"
+		>
+			<div className="contents">
 				<Suspense fallback={<SectionCardsSkeleton />}>
 					<ServerSectionCards />
 				</Suspense>
@@ -58,25 +60,22 @@ async function DashboardPageContent() {
 function DashboardPageLoading() {
 	return (
 		<LoadingRegion
+			data-testid="dashboard-shell"
 			label={{
 				labelKey: "common.loadingRegions.dashboard",
 				labelDefault: "Loading dashboard",
 			}}
-			className="@container/main flex flex-1 flex-col gap-2"
+			className="@container/main page-frame flex flex-1 flex-col gap-4 md:gap-6"
 			role="status"
 		>
-			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+			<div className="contents">
 				<SectionCardsSkeleton aria-hidden="true" />
 			</div>
 		</LoadingRegion>
 	);
 }
 
-export default function Page({
-	params,
-}: {
-	params: Promise<{ locale: string }>;
-}) {
+export default function Page({ params }: { params: Promise<{ locale: string }> }) {
 	return (
 		<RouteTranslationBoundary route="/" params={params}>
 			<Suspense fallback={<DashboardPageLoading />}>

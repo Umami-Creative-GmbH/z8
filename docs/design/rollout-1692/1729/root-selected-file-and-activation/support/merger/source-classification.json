@@ -1,0 +1,21 @@
+{
+  "publicBoundary": "Real workspace public props/children; organization/session mocks match existing arrival tests; real preserved directory control",
+  "premergeSelectedRoute": {
+    "blob": "e0b6dd30eecce2742bf1a33c570386cc12bf17c8",
+    "sha256": "3a35295b57b69024f11fa766bc5d2743169239388b1f33659a761ec655061639",
+    "workspaceAbsent": true,
+    "finding": "Premerge selected route had no client workspace guard. New workspace has no same-module premerge executable comparison. These failures are not demonstrated regressions or server authorization bypass."
+  },
+  "incomingWorkspace": {
+    "blob": "a575b685cf6e45826fddb24704550a74957cbc9e",
+    "sha256": "fc724de2d5112f6f119ec44ea266f13a85d84c644907717bbcfeb9514a52d7e1",
+    "mergedIdentical": true,
+    "finding": "New stateless equality guard refuses mismatch then returns children when original IDs return; no session-proof observation. Public red proves incomplete selected-route display/task lifetime acceptance."
+  },
+  "preservedDirectory": {
+    "snapshotBlob": "8a1a5bee5c60383ee9eb043c7770848b9c09cebf",
+    "unchanged": true,
+    "publicControlPassed": true
+  },
+  "inheritedOwners": "Unchanged metadata/request dialogs and no expectedRevision API remain separate; earliest-shell missing heading is SOURCE-only."
+}

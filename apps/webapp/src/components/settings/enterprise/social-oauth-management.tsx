@@ -8,20 +8,17 @@ import {
 	deleteSocialOAuthConfigAction,
 	type SocialOAuthConfigResponse,
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
-import { actionData } from "@/components/settings/enterprise/action-data";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { actionData, enterpriseErrorMessage } from "@/components/settings/enterprise/action-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardAction,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Apple } from "@/components/ui/svgs/apple";
 import { GithubDark } from "@/components/ui/svgs/githubDark";
 import { Google } from "@/components/ui/svgs/google";
@@ -37,6 +34,10 @@ import {
 } from "@/components/ui/table";
 import type { SocialOAuthProvider } from "@/db/schema";
 import { useServerDataState } from "@/hooks/use-server-data-state";
+import {
+	EnterpriseDeleteConfirmDialog,
+	useConfirmedRemoval,
+} from "./enterprise-delete-confirm-dialog";
 import { SocialOAuthDialog } from "./social-oauth-dialog";
 
 interface SocialOAuthManagementProps {
@@ -59,10 +60,7 @@ export function SocialOAuthManagement({
 	const [configs, setConfigs] = useServerDataState<SocialOAuthConfigResponse[]>(initialConfigs);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editConfig, setEditConfig] = useState<SocialOAuthConfigResponse | null>(null);
-	const [deleteDialog, setDeleteDialog] = useState<{
-		isOpen: boolean;
-		config: SocialOAuthConfigResponse | null;
-	}>({ isOpen: false, config: null });
+	const removal = useConfirmedRemoval<SocialOAuthConfigResponse>();
 
 	// Determine which providers are already configured
 	const configuredProviders = new Set(configs.map((c) => c.provider));
@@ -90,27 +88,23 @@ export function SocialOAuthManagement({
 		);
 	};
 
-	const handleDelete = async () => {
-		if (!deleteDialog.config) return;
-		const configToDelete = deleteDialog.config;
-
-		await actionData(deleteSocialOAuthConfigAction({ configId: configToDelete.id }))
-			.then(() => {
+	const handleDelete = () =>
+		removal.confirm(
+			async (configToDelete) => {
+				await actionData(deleteSocialOAuthConfigAction({ configId: configToDelete.id }));
 				setConfigs((prev) => prev.filter((c) => c.id !== configToDelete.id));
 				toast.success(
 					t("settings.enterprise.socialOAuth.removed", "{provider} OAuth removed", {
 						provider: PROVIDER_INFO[configToDelete.provider].name,
 					}),
 				);
-			})
-			.catch(() => {
-				toast.error(
-					t("settings.enterprise.socialOAuth.deleteError", "Failed to delete OAuth config"),
-				);
-			});
-
-		setDeleteDialog({ isOpen: false, config: null });
-	};
+			},
+			(error) =>
+				enterpriseErrorMessage(t, error, [
+					"settings.enterprise.socialOAuth.deleteError",
+					"Failed to delete OAuth config",
+				]),
+		);
 
 	const callbackUrl = `${callbackBaseUrl.replace(/\/$/, "")}/api/auth/callback/social-org/[provider]`;
 	const columns = [
@@ -128,37 +122,37 @@ export function SocialOAuthManagement({
 	];
 
 	return (
-		<>
+		<div className="space-y-6">
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between">
-					<div>
-						<CardTitle>
-							{t("settings.enterprise.socialOAuth.title", "Social Login Providers")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.enterprise.socialOAuth.description",
-								"Configure your own OAuth credentials for social login. This allows your users to sign in using your organization's OAuth apps instead of shared credentials.",
-							)}
-						</CardDescription>
-					</div>
+				<CardHeader>
+					<CardTitle>
+						{t("settings.enterprise.socialOAuth.title", "Social Login Providers")}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.enterprise.socialOAuth.description",
+							"Configure your own OAuth credentials for social login. This allows your users to sign in using your organization's OAuth apps instead of shared credentials.",
+						)}
+					</CardDescription>
 					{availableProviders.length > 0 && (
-						<Button onClick={() => setIsAddDialogOpen(true)}>
-							<IconPlus className="mr-2 size-4" />
-							{t("settings.enterprise.addProvider", "Add Provider")}
-						</Button>
+						<CardAction>
+							<Button onClick={() => setIsAddDialogOpen(true)}>
+								<IconPlus className="size-4" aria-hidden="true" />
+								{t("settings.enterprise.addProvider", "Add Provider")}
+							</Button>
+						</CardAction>
 					)}
 				</CardHeader>
 				<CardContent>
 					{configs.length === 0 ? (
-						<div className="text-center py-8 text-muted-foreground">
-							<p>
+						<div className="rounded-lg border border-dashed p-4 text-sm">
+							<p className="font-medium">
 								{t(
 									"settings.enterprise.socialOAuth.empty",
 									"No custom social OAuth providers configured.",
 								)}
 							</p>
-							<p className="text-sm">
+							<p className="text-muted-foreground">
 								{t(
 									"settings.enterprise.socialOAuth.emptyDescription",
 									"Add your own OAuth credentials to replace the shared credentials.",
@@ -183,13 +177,18 @@ export function SocialOAuthManagement({
 										<TableRow key={config.id}>
 											<TableCell className="font-medium">
 												<div className="flex items-center gap-2">
-													<provider.icon className="size-5" />
+													<provider.icon className="size-5 shrink-0" aria-hidden="true" />
 													{provider.name}
 												</div>
 											</TableCell>
 											<TableCell>
-												<code className="text-sm bg-muted px-1 py-0.5 rounded">
-													{config.clientId.slice(0, 16)}...
+												<code
+													className="text-sm bg-muted px-1 py-0.5 rounded"
+													title={config.clientId}
+												>
+													{config.clientId.length > 16
+														? `${config.clientId.slice(0, 16)}…`
+														: config.clientId}
 												</code>
 											</TableCell>
 											<TableCell>
@@ -212,16 +211,30 @@ export function SocialOAuthManagement({
 												/>
 											</TableCell>
 											<TableCell className="text-right">
-												<div className="flex justify-end gap-2">
-													<Button variant="outline" size="sm" onClick={() => setEditConfig(config)}>
-														<IconPencil className="size-4" />
+												<div className="flex flex-wrap justify-end gap-2">
+													<Button
+														variant="outline"
+														size="sm"
+														aria-label={t(
+															"settings.enterprise.socialOAuth.editAria",
+															"Edit {provider} sign-in",
+															{ provider: provider.name },
+														)}
+														onClick={() => setEditConfig(config)}
+													>
+														<IconPencil className="size-4" aria-hidden="true" />
 													</Button>
 													<Button
 														variant="outline"
 														size="sm"
-														onClick={() => setDeleteDialog({ isOpen: true, config })}
+														aria-label={t(
+															"settings.enterprise.socialOAuth.removeAria",
+															"Remove {provider} sign-in",
+															{ provider: provider.name },
+														)}
+														onClick={() => removal.request(config)}
 													>
-														<IconTrash className="size-4 text-destructive" />
+														<IconTrash className="size-4 text-destructive" aria-hidden="true" />
 													</Button>
 												</div>
 											</TableCell>
@@ -234,7 +247,7 @@ export function SocialOAuthManagement({
 				</CardContent>
 			</Card>
 
-			<div className="mt-6 p-4 bg-muted rounded-lg">
+			<section className="rounded-lg border p-4">
 				<h3 className="font-medium mb-2">
 					{t("settings.enterprise.socialOAuth.howItWorks", "How it Works")}
 				</h3>
@@ -247,7 +260,7 @@ export function SocialOAuthManagement({
 					</li>
 					<li>
 						{t("settings.enterprise.configureCallbackUrl", "Configure the callback URL:")}{" "}
-						<code className="bg-background px-1 rounded">{callbackUrl}</code>
+						<code className="break-all rounded bg-muted px-1">{callbackUrl}</code>
 					</li>
 					<li>
 						{t(
@@ -268,7 +281,7 @@ export function SocialOAuthManagement({
 						)}
 					</li>
 				</ol>
-			</div>
+			</section>
 
 			<SocialOAuthDialog
 				open={isAddDialogOpen}
@@ -286,36 +299,30 @@ export function SocialOAuthManagement({
 				/>
 			)}
 
-			<AlertDialog
-				open={deleteDialog.isOpen}
-				onOpenChange={(open) => setDeleteDialog({ isOpen: open, config: deleteDialog.config })}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
+			<EnterpriseDeleteConfirmDialog
+				open={removal.open}
+				onOpenChange={removal.onOpenChange}
+				title={
+					removal.target
+						? t(
+								"settings.enterprise.socialOAuth.removeDialogTitleNamed",
+								"Remove {provider} sign-in?",
+								{ provider: PROVIDER_INFO[removal.target.provider].name },
+							)
+						: t(
 								"settings.enterprise.socialOAuth.removeDialogTitle",
 								"Remove Social OAuth Provider",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.enterprise.socialOAuth.removeDialogDescription",
-								"Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDelete}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("common.remove", "Remove")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-		</>
+							)
+				}
+				description={t(
+					"settings.enterprise.socialOAuth.removeDialogDescription",
+					"Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
+				)}
+				confirmLabel={t("common.remove", "Remove")}
+				isPending={removal.isPending}
+				error={removal.error}
+				onConfirm={handleDelete}
+			/>
+		</div>
 	);
 }

@@ -1,0 +1,59 @@
+[
+  {
+    "conversion": {
+      "reportPath": "/en/travel-expenses/reports/0dc2fdea-451c-40e1-bfbb-193cb6214cf4",
+      "reportLoadedOriginalNotes": true
+    }
+  },
+  {
+    "conversionReadback": {
+      "href": "/en/travel-expenses/reports/0dc2fdea-451c-40e1-bfbb-193cb6214cf4",
+      "claimAndAttachmentsByteEquivalentJson": true
+    }
+  },
+  {
+    "transientTransport": {
+      "retainedFailure": true,
+      "retryRestored": true,
+      "forcedAt": "HTTP boundary only; canonical server unchanged"
+    }
+  },
+  {
+    "role": "small-restricted",
+    "status": {
+      "claim": 404,
+      "receipt": 404
+    }
+  },
+  {
+    "role": "large-employee",
+    "status": {
+      "claim": 404,
+      "receipt": 404
+    }
+  },
+  {
+    "approvedOwner": {
+      "recordReimbursementOffered": false
+    }
+  },
+  {
+    "approvedAdmin": {
+      "inputs": [
+        {
+          "name": "amount",
+          "type": "text",
+          "value": "120.50"
+        },
+        {
+          "name": "reference",
+          "type": "text",
+          "value": ""
+        }
+      ],
+      "buttons": [
+        "Record reimbursement"
+      ]
+    }
+  }
+]

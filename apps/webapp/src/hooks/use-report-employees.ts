@@ -1,8 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { CancelledError, type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useId, useMemo, useSyncExternalStore } from "react";
 import { getAccessibleEmployeesAction } from "@/app/[locale]/(app)/reports/actions";
 import type { SelectableEmployee } from "@/components/employee-select/types";
+import { authClient, useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
 import type { AccessibleEmployee } from "@/lib/reports/types";
 
@@ -14,6 +16,10 @@ export interface UseReportEmployeesResult {
 	employees: SelectableEmployee[];
 	/** Whether the data is currently loading */
 	isLoading: boolean;
+	/** Whether the current roster read is being retried or refreshed. */
+	isRefetching: boolean;
+	/** Retry only the still-current roster opening. */
+	refetch: () => Promise<void>;
 	/** Error if fetching failed */
 	error: Error | null;
 	/** Current employee (always first in the list if available) */
@@ -56,6 +62,55 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
 	};
 }
 
+type RosterKey = readonly unknown[];
+let nextOpeningId = 0;
+
+function createRosterOpening(
+	client: QueryClient,
+	prefix: RosterKey,
+	scope: string,
+	ready: boolean,
+) {
+	let key: RosterKey | null = null;
+
+	function retire() {
+		const retiredKey = key;
+		key = null;
+		if (retiredKey) {
+			// A server action may still settle. Only retire this observer's exact cache entry.
+			void client.cancelQueries({ queryKey: retiredKey, exact: true }).then(() => {
+				client.removeQueries({ queryKey: retiredKey, exact: true });
+			});
+		}
+	}
+
+	return {
+		getSnapshot: () => key,
+		subscribe(notify: () => void) {
+			if (!ready) return () => {};
+			key = [...prefix, ++nextOpeningId];
+			let previous = scope;
+			const unsubscribe = authClient.$store.atoms.session.subscribe((value) => {
+				const next = JSON.stringify([
+					value.data?.user.id,
+					value.data?.session.activeOrganizationId,
+				]);
+				if (next === previous) return;
+				previous = next;
+				retire();
+				if (next === scope) key = [...prefix, ++nextOpeningId];
+				notify();
+			});
+			return () => {
+				unsubscribe();
+				retire();
+			};
+		},
+	};
+}
+
+const getServerRosterOpening = () => null;
+
 /**
  * Hook to fetch employees accessible for report generation.
  *
@@ -70,22 +125,44 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
  * @param currentEmployeeId - The current user's employee ID (used for query key)
  */
 export function useReportEmployees(currentEmployeeId?: string): UseReportEmployeesResult {
-	const { data, isLoading, error } = useQuery({
-		queryKey: queryKeys.reports.employees(currentEmployeeId ?? ""),
-		queryFn: async () => {
+	const client = useQueryClient();
+	const session = useSession();
+	const actor = session.data?.user.id;
+	const organization = session.data?.session.activeOrganizationId;
+	const scope = JSON.stringify([actor, organization]);
+	const ready = !session.isPending && !!actor && !!organization && !!currentEmployeeId;
+	const openingId = useId();
+	const prefix = useMemo(
+		() => [...queryKeys.reports.employees(currentEmployeeId ?? ""), actor, organization, openingId],
+		[currentEmployeeId, actor, organization, openingId],
+	);
+	const opening = useMemo(
+		() => createRosterOpening(client, prefix, scope, ready),
+		[client, prefix, scope, ready],
+	);
+	const key = useSyncExternalStore(opening.subscribe, opening.getSnapshot, getServerRosterOpening);
+	const admitted = key !== null;
+	const { data, isLoading, isRefetching, error, refetch } = useQuery({
+		queryKey: key ?? [...prefix, "pending"],
+		queryFn: async ({ signal }) => {
+			if (signal.aborted || opening.getSnapshot() !== key)
+				throw new CancelledError({ silent: true });
 			const result = await getAccessibleEmployeesAction();
+			if (signal.aborted || opening.getSnapshot() !== key)
+				throw new CancelledError({ silent: true });
 			if (!result.success) {
 				throw new Error(result.error || "Failed to fetch accessible employees");
 			}
 			return result.data;
 		},
 		staleTime: 5 * 60 * 1000, // 5 minutes - employee lists don't change frequently
-		enabled: !!currentEmployeeId,
+		gcTime: 0, // An unobserved opening is retired, including the disabled placeholder.
+		enabled: admitted,
 	});
 
 	// Transform AccessibleEmployee[] to SelectableEmployee[]
 	const employees = (() => {
-		if (!data) return [];
+		if (!admitted || !data) return [];
 		return data.map(transformAccessibleEmployee);
 	})();
 
@@ -97,8 +174,13 @@ export function useReportEmployees(currentEmployeeId?: string): UseReportEmploye
 
 	return {
 		employees,
-		isLoading,
-		error: error instanceof Error ? error : null,
+		isLoading: !admitted || isLoading,
+		isRefetching: admitted && isRefetching,
+		refetch: async () => {
+			if (!admitted || opening.getSnapshot() !== key) return;
+			await refetch({ cancelRefetch: false });
+		},
+		error: admitted && error instanceof Error ? error : null,
 		currentEmployee,
 		canViewMultiple,
 	};

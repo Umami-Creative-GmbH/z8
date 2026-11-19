@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Godkjenn",
       "approveLabel": "Godkjenn {title}",
+      "decided": "Beslutning lagret. Oppdater for å laste inn gjeldende kø.",
       "description": "Forespørsler som venter på lederbeslutning.",
       "empty": "Ingen godkjenninger venter.",
       "openInbox": "Åpne innboks",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Ventende godkjenninger",
       "reject": "Avvis",
       "rejectLabel": "Avvis {title}",
+      "retry": "Prøv godkjenninger på nytt",
       "title": "Godkjenninger",
       "toast": {
         "approved": "Forespørsel godkjent",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "I dag",
-      "description": "Gå gjennom elementene som krever handling i dag, og gå deretter direkte til riktig arbeidsflyt.",
+      "accessUnavailable": "Denne briefingen er ikke tilgjengelig for gjeldende ansatt og organisasjon.",
+      "contextFailed": "Kunne ikke kontrollere din nåværende tilgang. Prøv igjen.",
+      "drivingUnavailable": "Kunne ikke kontrollere kjøredetaljer.",
+      "incomplete": "Noen kontroller er utilgjengelige. Se gjennom seksjonsfeil; disse resultatene er ufullstendige.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Arbeidsperioder for dine ansatte som mangler et kjøretøy eller en kilometeravlesning.",
           "title": "Kjøredetaljer mangler ({count})"
         }
       },
+      "loadFailed": "Kunne ikke laste inn briefingen. Prøv igjen.",
       "needsAction": {
         "description": "Start her for den mest hastende operative oppfølgingen.",
-        "empty": "Alt i orden. Ingen lederhandling er nødvendig akkurat nå.",
+        "noExceptions": "Ingen operativ oppfølging oppdaget i dette øyeblikksbildet. Dette bekrefter ikke ansattes tilstedeværelse.",
         "title": "Krever handling"
       },
+      "partial": "Delvis",
+      "refreshFailed": "Kunne ikke oppdatere. Tidligere resultater vises; prøv igjen før du utfører handlinger.",
+      "refreshing": "Oppdaterer briefing. Tidligere resultater forblir synlige.",
+      "retainedSection": "Tidligere resultater vises. Prøv på nytt for å se etter endringer.",
+      "retry": "Prøv briefing på nytt",
+      "retrySection": "Prøv {title} på nytt",
+      "scope": "Operativ oppfølging for de ansatte du kan ha tilsyn med i den aktive organisasjonen.",
       "sections": {
         "empty": "Ingen problemer oppdaget."
       },
@@ -41,10 +53,11 @@
         "info": "Info",
         "warning": "Advarsel"
       },
+      "snapshot": "Øyeblikksbilde oppdatert {time}. Bruk Oppdater data for å se etter endringer.",
       "summaryAriaLabel": "Dagens sammendrag",
       "supportingSectionsAriaLabel": "Støtteseksjoner",
       "title": "Daglig orientering for leder",
-      "updatedAt": "{date} - Oppdatert {time}"
+      "unavailable": "Utilgjengelig"
     }
   }
 }

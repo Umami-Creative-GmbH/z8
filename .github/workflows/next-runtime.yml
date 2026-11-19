@@ -1,0 +1,44 @@
+name: Next runtime
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [dev, main]
+    paths:
+      - "apps/*/package.json"
+      - "apps/webapp/next.config.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "patches/next@*.patch"
+      - "scripts/performance/next-stream-completion.test.mjs"
+      - "scripts/next-config.test.mjs"
+      - "apps/webapp/src/lib/performance-fixture-native-coverage.ts"
+      - ".github/workflows/next-runtime.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: next-runtime-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stream-completion:
+    name: Installed Next stream completion
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm --filter webapp... install --frozen-lockfile
+      # Exercises the installed CJS and ESM runtime, not just patch-file text.
+      - run: pnpm test:next-runtime

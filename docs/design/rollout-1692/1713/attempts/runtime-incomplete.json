@@ -1,0 +1,70 @@
+{
+  "checks": [
+    {
+      "name": "small-admin admitted with exactly one Calendar h1",
+      "passed": true
+    },
+    {
+      "name": "small-admin explicit calendar zone",
+      "passed": true
+    },
+    {
+      "name": "small-manager admitted with exactly one Calendar h1",
+      "passed": true
+    },
+    {
+      "name": "small-manager explicit calendar zone",
+      "passed": true
+    },
+    {
+      "name": "small-employee admitted with exactly one Calendar h1",
+      "passed": true
+    },
+    {
+      "name": "small-employee explicit calendar zone",
+      "passed": true
+    },
+    {
+      "name": "small-restricted admitted with exactly one Calendar h1",
+      "passed": true
+    },
+    {
+      "name": "small-restricted explicit calendar zone",
+      "passed": true
+    },
+    {
+      "name": "Year retains employee selection",
+      "passed": true
+    },
+    {
+      "name": "phone scope stays above period",
+      "passed": true
+    },
+    {
+      "name": "phone exposes four labeled filters",
+      "passed": true
+    },
+    {
+      "name": "phone filter uses real calendar reader",
+      "passed": true
+    },
+    {
+      "name": "phone filter Escape returns focus",
+      "passed": true
+    },
+    {
+      "name": "phone filter survives reopen",
+      "passed": true
+    },
+    {
+      "name": "phone Month contains local comparison scroller",
+      "passed": true
+    },
+    {
+      "name": "phone document fits",
+      "passed": true
+    }
+  ],
+  "error": "TimeoutError: Waiting failed: 30000ms exceeded",
+  "errors": []
+}

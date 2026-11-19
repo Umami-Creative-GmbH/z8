@@ -1,0 +1,134 @@
+{
+  "phase": "current",
+  "actor": "canonical same small-admin",
+  "fixtureAndRowsUnchanged": true,
+  "range": "2026-11-16/2026-11-23",
+  "comparison": "partial scheduling consumer only; current domain/action/hook/auth/shell owners retained",
+  "captures": [
+    {
+      "name": "matched-current-1600-light.png",
+      "geometry": {
+        "h1": [
+          {
+            "text": "Shift Schedule",
+            "box": {
+              "x": 280,
+              "y": 117,
+              "width": 1296,
+              "height": 36,
+              "right": 1576,
+              "bottom": 153
+            }
+          }
+        ],
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 1344,
+          "height": 1100,
+          "right": 1600,
+          "bottom": 1100
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1100,
+          "right": 256,
+          "bottom": 1100
+        },
+        "viewport": {
+          "width": 1600,
+          "height": 1100
+        },
+        "documentWidth": 1600,
+        "fontSize": "16px",
+        "dark": false
+      }
+    },
+    {
+      "name": "matched-current-390-light.png",
+      "geometry": {
+        "h1": [
+          {
+            "text": "Shift Schedule",
+            "box": {
+              "x": 16,
+              "y": 109,
+              "width": 358,
+              "height": 32,
+              "right": 374,
+              "bottom": 141
+            }
+          }
+        ],
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "right": 390,
+          "bottom": 844
+        },
+        "sidebar": null,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "documentWidth": 390,
+        "fontSize": "16px",
+        "dark": false
+      }
+    },
+    {
+      "name": "matched-current-2400-dark.png",
+      "geometry": {
+        "h1": [
+          {
+            "text": "Shift Schedule",
+            "box": {
+              "x": 280,
+              "y": 117,
+              "width": 2096,
+              "height": 36,
+              "right": 2376,
+              "bottom": 153
+            }
+          }
+        ],
+        "main": {
+          "x": 256,
+          "y": 0,
+          "width": 2144,
+          "height": 1300,
+          "right": 2400,
+          "bottom": 1300
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 256,
+          "height": 1300,
+          "right": 256,
+          "bottom": 1300
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1300
+        },
+        "documentWidth": 2400,
+        "fontSize": "16px",
+        "dark": true
+      }
+    }
+  ],
+  "state": {
+    "path": "/en/scheduling",
+    "h1": [
+      "Shift Schedule"
+    ],
+    "alerts": [],
+    "fontSize": "16px",
+    "sidebar": 256
+  }
+}

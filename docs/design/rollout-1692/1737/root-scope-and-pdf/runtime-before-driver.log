@@ -1,0 +1,1 @@
+{"phase":"before","status":"accepted-defect-reproduction","consumers":[{"name":"vehicle-reports","status":"accepted-defect-reproduction","failedTransport":1,"responseStatuses":[200],"captures":4}]}

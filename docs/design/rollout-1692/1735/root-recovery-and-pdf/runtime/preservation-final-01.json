@@ -1,0 +1,57 @@
+{
+  "candidate": "1d328a1b352fa6504d58b443367b6aabeda56fcb",
+  "tree": "e2419f58997932018c617f0babcea93a9a66d4d1",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "trackedStatus": "",
+  "verifiedCommit1735": null,
+  "lastVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "sourcePinsHash": "113f3d56f71fb2a4c2d8fe308dc75b9d30a731d70674e67c1b4872b29a2bc2c0",
+  "sourcePinsChecked": 123,
+  "immutableFilesHashVerified": 812,
+  "immutableRosterSealFiles": 105,
+  "immutableRosterDirectoryIncludingSeal": 106,
+  "immutableEarlierSealFiles": 33,
+  "protected1733Tracked": 385,
+  "protected1734Tracked": 203,
+  "verifiedAnchors": 58,
+  "topology": [
+    {
+      "parent": "node_modules",
+      "internalSymlinkLeaves": 5
+    },
+    {
+      "parent": "apps/webapp/node_modules",
+      "internalSymlinkLeaves": 153
+    }
+  ],
+  "packagesInstalledOrRepaired": 0,
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "inherited125LicensesSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+  "sourceConfigLedgerReadinessTrackerRemoteWrites": 0,
+  "temporaryHistoricalConsumerFiles": 9,
+  "restoredByteExact": true,
+  "temporaryTestBridgeCreated": false,
+  "compiledModulesRelocated": 2,
+  "canonicalPins": [
+    {
+      "path": "apps/webapp/src/lib/reports/report-generator.ts",
+      "gitBlob": "1aefefc86b8a6a09020aeda643ebee67ba0990dd",
+      "unchangedFromPriorIndependent": true
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/permissions.ts",
+      "gitBlob": "174fbef108da4ca079be434ad3de1cfa2ac80fd3",
+      "unchangedFromPriorIndependent": true
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/report-generator.integration.test.ts",
+      "gitBlob": "b58ed22fb32995f5dfeea01ea73a4b0d420c72ae",
+      "unchangedFromPriorIndependent": true
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/report-custom-fields.integration.test.ts",
+      "gitBlob": "100da55ebfbbcbe9801a31c1e48bf6aeab12d045",
+      "unchangedFromPriorIndependent": true
+    }
+  ]
+}

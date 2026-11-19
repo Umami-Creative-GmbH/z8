@@ -1,0 +1,128 @@
+{
+  "result": {
+    "desktop-light": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nYou're invited\nAccept this invitation to join Performance small.\nInvitation details\n\nReview the workspace and account details before you continue.\n\nWORKSPACE\nPerformance small\nINVITED EMAIL\nperf-large-2-6f068b73bdef@example.test\nROLE\nmember\nINVITED BY\nPerson 0\nAccept invitation\nVersion a8ec7c2",
+      "links": [],
+      "buttons": [
+        {
+          "text": "Accept invitation",
+          "disabled": false,
+          "type": "submit"
+        }
+      ],
+      "width": 1600,
+      "documentWidth": 1600
+    },
+    "phone-light": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nYou're invited\nAccept this invitation to join Performance small.\nInvitation details\n\nReview the workspace and account details before you continue.\n\nWORKSPACE\nPerformance small\nINVITED EMAIL\nperf-large-2-6f068b73bdef@example.test\nROLE\nmember\nINVITED BY\nPerson 0\nAccept invitation\nVersion a8ec7c2",
+      "links": [],
+      "buttons": [
+        {
+          "text": "Accept invitation",
+          "disabled": false,
+          "type": "submit"
+        }
+      ],
+      "width": 390,
+      "documentWidth": 390
+    },
+    "wide-dark": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nYou're invited\nAccept this invitation to join Performance small.\nInvitation details\n\nReview the workspace and account details before you continue.\n\nWORKSPACE\nPerformance small\nINVITED EMAIL\nperf-large-2-6f068b73bdef@example.test\nROLE\nmember\nINVITED BY\nPerson 0\nAccept invitation\nVersion a8ec7c2",
+      "links": [],
+      "buttons": [
+        {
+          "text": "Accept invitation",
+          "disabled": false,
+          "type": "submit"
+        }
+      ],
+      "width": 2400,
+      "documentWidth": 2400
+    },
+    "phone-signedout": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nYou're invited\nAccept this invitation to join Performance small.\nInvitation details\n\nReview the workspace and account details before you continue.\n\nWORKSPACE\nPerformance small\nINVITED EMAIL\nperf-large-2-6f068b73bdef@example.test\nROLE\nmember\nINVITED BY\nPerson 0\nWhat happens next\n\nSign in with the invited email address or create an account. You'll return here automatically and join the organization.\n\n1. Use the invited email\n\nUse the invited email address so the workspace can match this invitation automatically.\n\n2. Return here and join\n\nAfter authentication, we'll bring you back to this invitation and finish the workspace setup.\n\nCreate account with invited email\nSign in with invited email\nVersion a8ec7c2",
+      "links": [
+        {
+          "text": "Create account with invited email",
+          "href": "/en/sign-up?invitedEmail=perf-large-2-6f068b73bdef%40example.test&invitationId=bZ4xarOzWNmnCFpWgamuf5vHKPODGdgo&organizationName=Performance+small&callbackUrl=%2Faccept-invitation%2FbZ4xarOzWNmnCFpWgamuf5vHKPODGdgo"
+        },
+        {
+          "text": "Sign in with invited email",
+          "href": "/en/sign-in?callbackUrl=%2Faccept-invitation%2FbZ4xarOzWNmnCFpWgamuf5vHKPODGdgo"
+        }
+      ],
+      "buttons": [],
+      "width": 390,
+      "documentWidth": 390
+    },
+    "phone-mismatch": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nWrong account\nUse the invited email address to switch accounts and continue.\nInvitation details\n\nReview the workspace and account details before you continue.\n\nWORKSPACE\nPerformance small\nINVITED EMAIL\nperf-large-2-6f068b73bdef@example.test\nROLE\nmember\nINVITED BY\nPerson 0\nWrong account\nYou're signed in as a different email. Sign out and use the invited email address to accept this invitation.\nSign out and switch account\nVersion a8ec7c2",
+      "links": [],
+      "buttons": [
+        {
+          "text": "Sign out and switch account",
+          "disabled": false,
+          "type": "submit"
+        }
+      ],
+      "width": 390,
+      "documentWidth": 390
+    },
+    "expired": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nInvitation unavailable\nThis invitation can no longer be used. Ask your workspace admin to send a new one.\nInvitation details\n\nReview the workspace and account details before you continue.\n\nWORKSPACE\nPerformance small\nINVITED EMAIL\nperf-large-2-6f068b73bdef@example.test\nROLE\nmember\nINVITED BY\nPerson 0\nError\nThis invitation is invalid, expired, or no longer available.\nVersion a8ec7c2",
+      "links": [],
+      "buttons": [],
+      "width": 390,
+      "documentWidth": 390
+    },
+    "revoked": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nInvitation unavailable\nThis invitation can no longer be used. Ask your workspace admin to send a new one.\nInvitation details\n\nReview the workspace and account details before you continue.\n\nWORKSPACE\nPerformance small\nINVITED EMAIL\nperf-large-2-6f068b73bdef@example.test\nROLE\nmember\nINVITED BY\nPerson 0\nError\nThis invitation is invalid, expired, or no longer available.\nVersion a8ec7c2",
+      "links": [],
+      "buttons": [],
+      "width": 390,
+      "documentWidth": 390
+    },
+    "used": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nInvitation unavailable\nThis invitation can no longer be used. Ask your workspace admin to send a new one.\nInvitation details\n\nReview the workspace and account details before you continue.\n\nWORKSPACE\nPerformance small\nINVITED EMAIL\nperf-large-2-6f068b73bdef@example.test\nROLE\nmember\nINVITED BY\nPerson 0\nError\nThis invitation is invalid, expired, or no longer available.\nVersion a8ec7c2",
+      "links": [],
+      "buttons": [],
+      "width": 390,
+      "documentWidth": 390
+    },
+    "missing": {
+      "headings": [
+        "Accept invitation"
+      ],
+      "text": "z8\n\nAccept invitation\n\nWORKSPACE INVITATION\n\nInvitation unavailable\nThis invitation can no longer be used. Ask your workspace admin to send a new one.\nError\nThis invitation is invalid, expired, or no longer available.\nVersion a8ec7c2",
+      "links": [],
+      "buttons": [],
+      "width": 390,
+      "documentWidth": 390
+    }
+  },
+  "errors": []
+}

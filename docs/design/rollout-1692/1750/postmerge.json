@@ -1,0 +1,277 @@
+{
+  "source": "5d0456b2681ba564da3f06354c74443ee8045a45",
+  "reportSource": "7e466fae2668148a856b6dfb2fdaf605d7366029",
+  "verifiedIntegration": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+  "verifiedTree": "93b5ffee12a3421a999d8cc5e76190e515fd7c9b",
+  "ancestorPins": [
+    {
+      "pin": "87b431bd6116ab90aed9d822db835dc78107bffb",
+      "exit": 0
+    },
+    {
+      "pin": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "exit": 0
+    },
+    {
+      "pin": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "exit": 0
+    },
+    {
+      "pin": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "exit": 0
+    },
+    {
+      "pin": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "exit": 0
+    },
+    {
+      "pin": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "exit": 0
+    },
+    {
+      "pin": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+      "exit": 0
+    }
+  ],
+  "appManifestsAndLockUnchanged": true,
+  "queuedFinanceAncestorExit": 1,
+  "commands": [
+    {
+      "mode": "unit",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/components/travel-expenses/report",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/travel-expenses/__tests__/draft-saver.test.ts"
+      ],
+      "cwd": "WORKTREE_ROOT\\apps\\webapp",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "mode": "typegen",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "next",
+        "typegen"
+      ],
+      "cwd": "WORKTREE_ROOT\\apps\\webapp",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "mode": "app",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "tsc",
+        "--project",
+        "tsconfig.typecheck.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "cwd": "WORKTREE_ROOT\\apps\\webapp",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "mode": "workflow",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "tsc",
+        "--project",
+        "tsconfig.workflow-contracts.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "cwd": "WORKTREE_ROOT\\apps\\webapp",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "mode": "smoke",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "tsc",
+        "--project",
+        "tsconfig.smoke.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "cwd": "WORKTREE_ROOT\\apps\\webapp",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "mode": "explicit",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "biome",
+        "check",
+        "--line-width=100",
+        "--line-ending=crlf",
+        "src/app/[locale]/(app)/travel-expenses/reports/[reportId]/page.tsx",
+        "src/components/travel-expenses/report/legacy-conversion-notice.tsx",
+        "src/components/travel-expenses/report/mileage-item-editor.tsx",
+        "src/components/travel-expenses/report/per-diem-item-editor.tsx",
+        "src/components/travel-expenses/report/project-picker.tsx",
+        "src/components/travel-expenses/report/receipt-item-editor.tsx",
+        "src/components/travel-expenses/report/report-adjustments.tsx",
+        "src/components/travel-expenses/report/report-arrival-heading.tsx",
+        "src/components/travel-expenses/report/report-header.tsx",
+        "src/components/travel-expenses/report/report-read-scope.ts",
+        "src/components/travel-expenses/report/report-reopen.test.tsx",
+        "src/components/travel-expenses/report/report-reopen.tsx",
+        "src/components/travel-expenses/report/report-review-cycle.tsx",
+        "src/components/travel-expenses/report/report-submission.test.tsx",
+        "src/components/travel-expenses/report/report-workspace-scope.test.tsx",
+        "src/components/travel-expenses/report/report-workspace-scope.tsx",
+        "src/components/travel-expenses/report/submit-report-panel.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.tsx",
+        "src/components/travel-expenses/report/submitted-report.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.tsx",
+        "src/components/travel-expenses/report/trip-details-editor.tsx",
+        "src/components/travel-expenses/report/use-draft-saver.ts",
+        "src/components/travel-expenses/report/use-mileage-item-draft.ts",
+        "src/components/travel-expenses/report/use-per-diem-item-draft.ts",
+        "src/components/travel-expenses/report/use-report-project-issues.ts",
+        "src/components/travel-expenses/report/use-report-task.ts",
+        "src/components/travel-expenses/report/use-trip-details-draft.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "cwd": "WORKTREE_ROOT\\apps\\webapp",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "mode": "normal",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "biome",
+        "check",
+        "src/app/[locale]/(app)/travel-expenses/reports/[reportId]/page.tsx",
+        "src/components/travel-expenses/report/legacy-conversion-notice.tsx",
+        "src/components/travel-expenses/report/mileage-item-editor.tsx",
+        "src/components/travel-expenses/report/per-diem-item-editor.tsx",
+        "src/components/travel-expenses/report/project-picker.tsx",
+        "src/components/travel-expenses/report/receipt-item-editor.tsx",
+        "src/components/travel-expenses/report/report-adjustments.tsx",
+        "src/components/travel-expenses/report/report-arrival-heading.tsx",
+        "src/components/travel-expenses/report/report-header.tsx",
+        "src/components/travel-expenses/report/report-read-scope.ts",
+        "src/components/travel-expenses/report/report-reopen.test.tsx",
+        "src/components/travel-expenses/report/report-reopen.tsx",
+        "src/components/travel-expenses/report/report-review-cycle.tsx",
+        "src/components/travel-expenses/report/report-submission.test.tsx",
+        "src/components/travel-expenses/report/report-workspace-scope.test.tsx",
+        "src/components/travel-expenses/report/report-workspace-scope.tsx",
+        "src/components/travel-expenses/report/submit-report-panel.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.tsx",
+        "src/components/travel-expenses/report/submitted-report.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.tsx",
+        "src/components/travel-expenses/report/trip-details-editor.tsx",
+        "src/components/travel-expenses/report/use-draft-saver.ts",
+        "src/components/travel-expenses/report/use-mileage-item-draft.ts",
+        "src/components/travel-expenses/report/use-per-diem-item-draft.ts",
+        "src/components/travel-expenses/report/use-report-project-issues.ts",
+        "src/components/travel-expenses/report/use-report-task.ts",
+        "src/components/travel-expenses/report/use-trip-details-draft.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "cwd": "WORKTREE_ROOT\\apps\\webapp",
+      "exit": 1,
+      "error": null
+    },
+    {
+      "mode": "lint",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "biome",
+        "lint",
+        "src/app/[locale]/(app)/travel-expenses/reports/[reportId]/page.tsx",
+        "src/components/travel-expenses/report/legacy-conversion-notice.tsx",
+        "src/components/travel-expenses/report/mileage-item-editor.tsx",
+        "src/components/travel-expenses/report/per-diem-item-editor.tsx",
+        "src/components/travel-expenses/report/project-picker.tsx",
+        "src/components/travel-expenses/report/receipt-item-editor.tsx",
+        "src/components/travel-expenses/report/report-adjustments.tsx",
+        "src/components/travel-expenses/report/report-arrival-heading.tsx",
+        "src/components/travel-expenses/report/report-header.tsx",
+        "src/components/travel-expenses/report/report-read-scope.ts",
+        "src/components/travel-expenses/report/report-reopen.test.tsx",
+        "src/components/travel-expenses/report/report-reopen.tsx",
+        "src/components/travel-expenses/report/report-review-cycle.tsx",
+        "src/components/travel-expenses/report/report-submission.test.tsx",
+        "src/components/travel-expenses/report/report-workspace-scope.test.tsx",
+        "src/components/travel-expenses/report/report-workspace-scope.tsx",
+        "src/components/travel-expenses/report/submit-report-panel.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+        "src/components/travel-expenses/report/submitted-report-receipts.tsx",
+        "src/components/travel-expenses/report/submitted-report.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+        "src/components/travel-expenses/report/travel-expense-report-editor.tsx",
+        "src/components/travel-expenses/report/trip-details-editor.tsx",
+        "src/components/travel-expenses/report/use-draft-saver.ts",
+        "src/components/travel-expenses/report/use-mileage-item-draft.ts",
+        "src/components/travel-expenses/report/use-per-diem-item-draft.ts",
+        "src/components/travel-expenses/report/use-report-project-issues.ts",
+        "src/components/travel-expenses/report/use-report-task.ts",
+        "src/components/travel-expenses/report/use-trip-details-draft.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "cwd": "WORKTREE_ROOT\\apps\\webapp",
+      "exit": 0,
+      "error": null
+    },
+    {
+      "mode": "doctor",
+      "args": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "react-doctor",
+        "apps/webapp",
+        "--scope",
+        "changed",
+        "--base",
+        "8e3876c39725b7a8ef5218439766395401d64b80",
+        "--verbose"
+      ],
+      "cwd": "WORKTREE_ROOT",
+      "exit": 0,
+      "error": null
+    }
+  ],
+  "postgresqlRerun": false,
+  "browserRerun": false,
+  "boundary": "Exact verified evidence-only merge; relevant available automated checks rerun. Prior PG and native evidence retain original source/runtime boundaries; missing services were not recreated."
+}

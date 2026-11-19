@@ -1,0 +1,35 @@
+{
+  "base": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+  "scope": "small-admin / Performance small; exact eight consumer+hook source comparison under current shared infrastructure; current-month report from unmodified fixture; fresh default preferences",
+  "attempts": [
+    {
+      "phase": "before",
+      "status": "captured",
+      "sources": {
+        "apps/webapp/src/app/[locale]/(app)/reports/page.tsx": "5f624d88e48ad0b9990b87fca4afbcb1e2e833864aac8fb3f596b0572ce40073",
+        "apps/webapp/src/components/reports/reports-container.tsx": "218fd82a13898ae90a57f7486c854a9b3f6896fd3992817cdc51024b773161ea",
+        "apps/webapp/src/components/reports/report-filters.tsx": "2c300a1ec45c1a2eb03b620be646f98b5a81fe6b8d729700e3fb2c6ed9cdd0f3",
+        "apps/webapp/src/components/reports/report-employee-selector.tsx": "85c6678b6f1da647aee242001f346304badb6cb3841930ba8b8cee4d370ed439",
+        "apps/webapp/src/components/reports/report-summary-cards.tsx": "35774a51ee0728c062707d3996249d88f5d643623b877161bf722df74e7e8065",
+        "apps/webapp/src/components/reports/report-preview-table.tsx": "fa71a7a2f1f133383bfdc06e34c159a9581e946aeb41bfee9b03199e12d46314",
+        "apps/webapp/src/components/reports/export-buttons.tsx": "b427c73cf2220513bdaed97cc63564b54587ec44ddb3f439a4d1db4138b32770",
+        "apps/webapp/src/hooks/use-report-employees.ts": "fd062e1f28317f5aa8c4f7230364b7ea185039a6475619182873fed9218002b2"
+      }
+    },
+    {
+      "phase": "after",
+      "status": "captured",
+      "sources": {
+        "apps/webapp/src/app/[locale]/(app)/reports/page.tsx": "c6880f6d5a11f4c449111df1389176da27d5212d7899120826ab8b044cf523d3",
+        "apps/webapp/src/components/reports/reports-container.tsx": "810f690248c3a138592d2b47522e4f86cbeb70090b7053558429b61c56f74e78",
+        "apps/webapp/src/components/reports/report-filters.tsx": "99f24237535f992634c1e04e1212d9c009d31f3e2102b72089d915d2268050e5",
+        "apps/webapp/src/components/reports/report-employee-selector.tsx": "ba88234ed59f7739d6104337957f56d293e1ebbdf830dce126c5f24cb1ba249a",
+        "apps/webapp/src/components/reports/report-summary-cards.tsx": "5a29cae5188ce052420d860c05768787de707926b3152075a247d0e7f90161f0",
+        "apps/webapp/src/components/reports/report-preview-table.tsx": "f6605f946b768805c8bc0c198849d4a77551ef7d75b79ce0370c2030a88253d4",
+        "apps/webapp/src/components/reports/export-buttons.tsx": "457b3abef7c5654686cc8ab7ca4b7cf47d9fc5ab8018bc5c794fd5ec1ea836d1",
+        "apps/webapp/src/hooks/use-report-employees.ts": "2ea32472786a1f39487bd4900b59c4645691a8e5b7c9185fdcc33017797cbe35"
+      }
+    }
+  ],
+  "historical": "2025 Last Year via actual control, canonical report; three existing export buttons exercised. File verification recorded separately."
+}

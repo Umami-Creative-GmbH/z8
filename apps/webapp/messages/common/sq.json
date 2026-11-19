@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "Qasja në këtë organizatë është pezulluar derisa të përditësohet faturimi.",
       "adminDescription": "Periudha juaj provuese përfundoi ose abonimi nuk është më i vlefshëm. Përditësoni faturimin për të vazhduar përdorimin e Z8.",
       "goToBilling": "Shko te faturimi",
       "memberDescription": "Kjo organizatë është pezulluar. Kontaktoni një administrator të organizatës për të përditësuar faturimin.",
@@ -165,6 +166,13 @@
     "teal": "Bojë deti"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Diçka shkoi keq. Provoni përsëri.",
+      "formerEmployee": "Ish-punonjësit nuk mund të zgjidhen. Zgjidhni dikë nga lista aktuale.",
+      "invalidInput": "Kontrolloni të dhënat e shënuara dhe provoni përsëri.",
+      "notAllowed": "Nuk keni qasje në këtë cilësim.",
+      "signInRequired": "Identifikohuni për të vazhduar."
+    },
     "actions": "Veprimet",
     "active": "Aktiv",
     "add": "Shto",
@@ -174,6 +182,7 @@
     "approve": "Mirato",
     "assign": "Cakto",
     "back": "Kthehu",
+    "backToDashboard": "Kthehu te paneli",
     "brandLogo": "Logoja e {brand}",
     "breadcrumb": {
       "breadcrumb": "gjurmët e navigimit",
@@ -195,6 +204,7 @@
     "copy": "Kopjo",
     "create": "Krijo",
     "current": "Aktual",
+    "date": "Data",
     "datePicker": {
       "clearDate": "Pastro datën",
       "placeholder": "Zgjidhni një datë"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} min",
     "edit": "Ndrysho",
     "employees": "Punonjësit",
-    "enabled": "Aktivizuar",
     "error": "Gabim",
     "error-occurred": "Ndodhi një gabim",
     "errors": {
       "monthClosed": "{month} është i mbyllur. Ai duhet të rihapet përpara se të mund të ndryshohet puna ose mungesat e tij."
     },
     "fieldPresets": "Paracaktimet e {label}",
+    "filters": "Filtrat",
     "focusInput": "Fokuso fushën",
     "gender": {
       "female": "Femër",
@@ -253,6 +263,7 @@
       "application": "Po ngarkohet aplikacioni",
       "auditExportSettings": "Po ngarkohen cilësimet e eksportit të auditimit",
       "authentication": "Po ngarkohet autentikimi",
+      "billableTimeSettings": "Po ngarkohen cilësimet e orëve të faturueshme",
       "changePolicySettings": "Po ngarkohen cilësimet e politikës së ndryshimit",
       "coverageRuleSettings": "Po ngarkohen cilësimet e rregullave të mbulimit",
       "customerSettings": "Po ngarkohen cilësimet e klientit",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Po ngarkohen cilësimet e të dhënave demo",
       "deploymentDiagnostics": "Po ngarkohen diagnostikimet e vendosjes",
       "employeeReports": "Po ngarkohen raportet e punonjësve",
+      "employees": "Po ngarkohen punonjësit",
+      "employeeVacationAllowance": "Po ngarkohet kuota e pushimeve të punonjësit",
       "employeeVacationAllowances": "Po ngarkohen lejet e pushimeve të punonjësve",
       "exportOperations": "Po ngarkohen veprimet e eksportit",
       "holidaySettings": "Po ngarkohen cilësimet e festave",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Po ngarkohet orari i turneve",
       "shiftTemplateSettings": "Po ngarkohen cilësimet e shabllonit të turnit",
       "skillSettings": "Po ngarkohen cilësimet e aftësive",
+      "statistics": "Po ngarkohen statistikat",
       "surchargeSettings": "Po ngarkohen cilësimet e tarifave shtesë",
       "team": "Po ngarkohet ekipi",
       "todaySManagerBriefing": "Po ngarkohet përmbledhja e menaxherit për ditën e sotme",
@@ -315,8 +329,6 @@
     },
     "more": "më shumë",
     "moreActions": "Më shumë veprime",
-    "moveDown": "Lëviz poshtë",
-    "moveUp": "Lëviz lart",
     "name": "Emri",
     "navigation": {
       "retry": "Riprovo navigimin",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Njoftime} other {Njoftime (# të palexuara)}}"
     },
+    "offline": "Jashtë linje",
     "open": "Hap",
     "openEnded": "Pa afat",
     "openMenu": "Hap menynë",
@@ -389,6 +402,7 @@
     "removing": "Duke hequr...",
     "reset": "Rivendos",
     "retry": "Provo përsëri",
+    "retrying": "Po riprovohet…",
     "revoke": "Revoko",
     "save": "Ruaj",
     "saveChanges": "Ruaj ndryshimet",
@@ -403,7 +417,9 @@
       "sidebar": "Shiriti anësor",
       "toggleSidebar": "Aktivizo/Çaktivizo shiritin anësor"
     },
+    "signIn": "Hyr",
     "skip": "Kapërce",
+    "skipToContent": "Kalo te përmbajtja",
     "start": "Fillo",
     "status": "Statusi",
     "submitting": "Po dërgohet…",
@@ -422,6 +438,9 @@
     },
     "to": "deri",
     "today": "Sot",
+    "tryAgain": "Provo përsëri",
+    "unavailable": "E padisponueshme",
+    "undo": "Zhbëj",
     "unexpectedError": "Ndodhi një gabim i papritur",
     "unknown": "I panjohur",
     "unknownEmployee": "Punonjës i panjohur",
@@ -575,6 +594,7 @@
       "submit": "Regjistro kontrollin origjinal",
       "suspensionNotice": "Një rikontroll i suksesshëm nuk e rikthen automatikisht një autorizim të pezulluar. Kërkohet një kontroll i ri dhe një vendim i qartë rikthimi.",
       "title": "Inspekto lejen origjinale të {name}",
+      "transportError": "Verifikimi nuk mund të regjistrohej. Të dhënat tuaja u ruajtën; riprovoni pasi të keni kontrolluar lidhjen dhe përgjegjësinë tuaj.",
       "verifier": "Konfirmoj se faktet e regjistruara dhe rezultatet individuale të kategorive pasqyrojnë inspektimin tim."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "Regjistrimi i lejes së drejtimit nuk mund të ngarkohej. Kontrolloni përgjegjësinë tuaj aktuale si verifikues.",
       "loading": "Po ngarkohet regjistrimi i lejes së drejtimit…",
       "notIntended": "{name} nuk është shofer i synuar. Kontrolli kërkohet vetëm për shoferët e synuar.",
+      "retained": "Dëshmitë e ruajtura janë të disponueshme për shqyrtim. Verifikimet e reja nuk janë të disponueshme për ish-punonjësit.",
       "title": "Kontrolli i lejes së drejtimit për {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Statusi",
         "team": "Ekipi"
       },
+      "customOrder": "Renditur sipas kolonës dhe drejtimit të zgjedhur.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Kontrolli duhet bërë tani",
+      "dueOrder": "Së pari verifikimet me afat tani, pastaj afati i ardhshëm.",
       "empty": {
         "description": "Shoferët e synuar nën përgjegjësinë tuaj të verifikimit shfaqen këtu. Pyesni një administrator nëse mungon dikush.",
         "title": "Nuk ka ende njeri për t'u kontrolluar"
@@ -607,6 +630,8 @@
       "loadError": "Lista nuk mund të ngarkohej. Kontrolloni përgjegjësinë tuaj aktuale si verifikues.",
       "loading": "Po ngarkohen shoferët e synuar…",
       "noMatches": "Asnjë shofer i synuar nuk përputhet me kërkimin ose filtrin.",
+      "refresh": "Rifresko listën e punës së verifikimeve",
+      "refreshing": "Po përditësohet lista e punës së verifikimeve…",
       "search": "Kërko sipas emrit",
       "status": {
         "active": "Aktiv",
@@ -682,6 +707,7 @@
       "failed": "Kategoria e inspektuar e pasuksesshme",
       "field": "Fusha e korrigjuar",
       "from": "Nga data (UTC)",
+      "fromHelp": "Periudha fillon në orën 00:00 UTC.",
       "globalSuspension": "I gjithë autorizimi i drejtimit të automjetit është pezulluar",
       "help": "Konfirmimet origjinale, shtesat e datuara dhe vendimet efektive të autorizimit mbeten të ndara. Provat e mëparshme të nevojshme për të kuptuar periudhën e zgjedhur etiketohen si kontekst. Të gjitha oraret e ngjarjeve dhe kufijtë e periudhave më poshtë përdorin UTC.",
       "impedimentReported": "U raportua pengesë për drejtim automjeti",
@@ -716,6 +742,7 @@
       "suspended": "Autorizimi u pezullua",
       "title": "Historiku i kontrollit dhe autorizimit",
       "to": "Përpara datës (UTC)",
+      "toHelp": "Periudha përfundon para orës 00:00 UTC në këtë datë.",
       "unavailable": "Historiku nuk është i disponueshëm. Kontrolloni periudhën dhe qasjen tuaj aktuale.",
       "value": "Vlera e korrigjuar",
       "verifierConfirmation": "Konfirmimi i verifikuesit i regjistruar në kohën e kontrollit origjinal"
@@ -751,7 +778,6 @@
         "teamNotFound": "Ajo skuadër nuk ekziston më."
       },
       "notRequired": "Nuk kërkohet (e përjashtuar)",
-      "removed": "Caktimi si shofer i synuar u hoq",
       "required": "E detyrueshme",
       "saved": "Shoferët e synuar u ruajtën",
       "targetOrganization": "E gjithë organizata",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Autorizimi i drejtimit",
       "loading": "Po ngarkohet autorizimi i drejtimit…",
+      "loadingEmployees": "Po ngarkohen punonjësit për planifikim…",
       "noEmployees": "Nuk ka punonjës që përputhen.",
       "recordingHelp": "Mund të regjistroni gjithmonë kohën e punës dhe përdorimin aktual të mjetit. Zgjedhja e një automjeti nuk jep autorizim drejtimi; kategoritë e kontrolluara nuk përcaktojnë përshtatshmërinë për çdo automjet.",
       "refresh": "Rifresko statusin e drejtimit",
+      "refreshEmployees": "Rifresko punonjësit e planifikimit",
+      "rosterUnavailable": "Punonjësit e planifikimit nuk janë të disponueshëm. Kontrolloni qasjen tuaj aktuale në organizatë dhe riprovoni.",
       "search": "Gjej punonjësin",
       "searchHelp": "Shfaqen deri në 50 punonjës. Ngushtoni kërkimin për të gjetur një punonjës tjetër. Kjo pamje nuk përmban regjistrime inspektimi.",
       "title": "Statusi i drejtimit për planifikim",
       "unavailable": "Statusi i autorizimit të drejtimit nuk është i disponueshëm."
     },
     "page": {
+      "reconciling": "Po ngarkohet qasja te leja e drejtimit për organizatën aktuale…",
+      "scope": "Autorizimi i drejtimit, verifikimet origjinale dhe planifikimi në organizatën tuaj aktive. Çdo pamje ndjek qasjen tuaj aktuale.",
       "title": "Patentë shoferi"
     },
     "policyTitle": "Politika e organizatës",
@@ -960,6 +991,13 @@
       "description": "Ju nevojitet një profil punonjësi për {feature}. Ju lutemi krijoni një organizatë ose kontaktoni administratorin tuaj.",
       "emailBody": "Përshëndetje,nnMë nevojitet konfigurimi i një profili punonjësi për të hyrë në veçoritë e platformës. A mund të më ndihmoni me këtë?nnJu faleminderit!",
       "emailSubject": "Kërkohet konfigurimi i profilit të punonjësit",
+      "formerEmployee": {
+        "description": "Ju jeni përsëri anëtar i kësaj organizate, por punësimi juaj i mëparshëm ka përfunduar. Një administrator duhet t'ju ripunësojë përpara se të mund të {feature}.",
+        "emailBody": "Përshëndetje,nnJam përsëri anëtar i organizatës, por punësimi im i mëparshëm ka përfunduar. A mund të më ripunësoni që të kem qasje te veçoritë e platformës?nnFaleminderit!",
+        "emailSubject": "Kërkesë për ripunësim",
+        "helpText": "Kërkojini administratorit tuaj t'ju ripunësojë. Deri atëherë, nuk mund ta përdorni këtë organizatë.",
+        "title": "Punësimi juaj këtu ka përfunduar"
+      },
       "helpText": "Nëse jeni ftuar në një organizatë, kërkojini administratorit tuaj të konfigurojë profilin tuaj të punonjësit.",
       "title": "Kërkohet profili i punonjësit"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Duke ngarkuar radhën e punëtorëve"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Verifiko një hyrje ekzistuese"
+    },
     "banner": {
       "action": "Rishikoni kërkesat dhe verifikoni",
       "requirement": "Kjo organizatë kërkon autentifikim të verifikuar që nga {deadline}."
     },
     "code": {
       "label": "Kodi i autentifikuesit",
+      "required": "Futni një kod autentifikuesi",
       "verify": "Verifiko autentifikuesin"
     },
     "continue": "Vazhdo pas verifikimit",
@@ -1056,6 +1098,8 @@
       "title": "Regjistroni ose zëvendësoni një autentifikues",
       "warning": "Shtimi ose zëvendësimi i një faktori kërkon verifikim brenda pesë minutave. Verifikoni zëvendësimin përpara se të hiqni faktorin e vjetër. Revokimi i faktorit tuaj të fundit lejohet dhe mund të bllokojë qasjen në organizatat e listuara më sipër; ai nuk jep një periudhë të re regjistrimi."
     },
+    "loading": "Po ngarkohet verifikimi i sigurisë",
+    "navigation": "Organizata dhe llogaria",
     "organization": {
       "select": "Zgjidhni një organizatë tjetër"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Verifikimi i fjalëkalimit dështoi",
       "label": "Fjalëkalimi aktual",
+      "required": "Futni fjalëkalimin tuaj aktual",
       "verified": "Fjalëkalimi u verifikua. Mund të regjistroni autentifikuesin tuaj të parë, ose të verifikoni një autentifikues ekzistues apo kod rezervë më poshtë.",
       "verify": "Verifiko fjalëkalimin"
     },
@@ -1097,7 +1142,16 @@
       "description": "Për rikthim, verifikoni fjalëkalimin tuaj më lart dhe më pas vendosni një kod rezervë të papërdorur. Kjo fshin verifikimin e mëparshëm lokal në të gjitha organizatat tuaja.",
       "label": "Kodi rezervë",
       "lockout": "Nëse administratori i vetëm humb çdo rrugë autentifikimi dhe rikthimi, organizata mbetet e bllokuar. Nuk ka anashkalim nga administratori ose mbështetja teknike.",
-      "success": "Rikthimi lejon vetëm regjistrimin e zëvendësimit. Verifikoni një autentifikues përpara se të ktheheni te organizata juaj."
+      "nextSteps": "Verifikoni përsëri fjalëkalimin tuaj përpara se të verifikoni një autentifikues.",
+      "open": "Rikthehuni me një kod rezervë",
+      "required": "Futni një kod rezervë të papërdorur",
+      "success": "Rikthimi lejon vetëm regjistrimin e zëvendësimit. Verifikoni një autentifikues përpara se të ktheheni te organizata juaj.",
+      "title": "Rikthimi i llogarisë"
+    },
+    "requirements": {
+      "empty": "Nuk ka kërkesa të organizatës të listuara për këtë llogari.",
+      "selected": "Organizata e zgjedhur",
+      "title": "Kërkesat e organizatës"
     },
     "security": {
       "factorWarning": "Heqja e një faktori mund të bllokojë hyrjen në organizatat që e kërkojnë atë. Verifikoni një zëvendësues më parë; heqja e faktorit të fundit nuk jep periudhë të re faljeje.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Politika e autentifikimit të organizatës (pronarët/administratorët)"
     },
     "signout": "Dilni",
+    "signout.failed": "Dalja dështoi. Provo përsëri.",
     "social": {
       "verify": "Verifikoni hyrjen ekzistuese me {provider}"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Administratori i platformës",
     "reports": "Raportet",
     "scheduling": "Planifikimi",
+    "secondary-label": "Cilësimet dhe ndihma",
     "settings": "Cilësimet",
     "team": "Ekipi",
     "teamAbsences": "Mungesat e ekipit",
     "teamDriving": "Detajet e drejtimit",
-    "team-label": "Ekipi",
+    "team-organization-label": "Ekipi dhe organizata",
     "teamPeriodSubmissions": "Dorëzimet e periudhës",
     "teamPresence": "Kush është i pranishëm",
     "time-tracking": "Gjurmimi i kohës",
     "today": "Sot",
     "travel-expenses": "Shpenzimet e udhëtimit",
+    "workplace-label": "Vendi i punës",
     "worksCouncil": "Këshilli i Punës"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Turni juaj përfundoi në {endTime} ({timezone}). Regjistroni daljen nëse keni përfunduar punën.",
         "title": "Jeni ende i regjistruar në punë"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} është përsëri anëtar, por punësimi i mëparshëm ka përfunduar. Nuk ka qasje derisa ta ripunësoni.",
+        "title": "Një ish-punonjës ka nevojë për ripunësim"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# punonjës është ende i lidhur vetëm me një ish-menaxher: {names}. Caktoni një menaxher aktual.} other {# punonjës janë ende të lidhur vetëm me një ish-menaxher: {names}. Caktoni një menaxher aktual.}}",
@@ -1735,6 +1796,7 @@
         "title": "Koha për t'u hidratuar!"
       }
     },
+    "countFailed": "Numri i të palexuarave nuk është i disponueshëm",
     "description": "Shqyrtoni përditësimet, miratimet dhe sinjalizimet e sistemit në një linjë kohore.",
     "empty": {
       "description": "Jeni të përditësuar! Njoftimet e reja do të shfaqen këtu.",
@@ -1754,6 +1816,8 @@
       "read": "Të lexuara",
       "unread": "Të palexuara"
     },
+    "loading": "Po ngarkohen njoftimet…",
+    "loadingCount": "Po ngarkohet numri i të palexuarave…",
     "nativePush": {
       "attention": {
         "title": "Diçka kërkon vëmendjen tuaj"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Turne të hapura nga një çaktivizim",
         "equipment_return_reminder": "Kujtuesit e kthimit të pajisjeve",
         "forgotten_clock_out_reminder": "Dalje e harruar",
+        "former_employee_needs_rehire": "Ish-punonjës që kanë nevojë për ripunësim",
         "former_employee_reports_without_manager": "Punonjës pa një menaxher aktual",
         "kiosk_command_refused": "Regjistrimi i orarit në kioskë nuk u regjistrua",
         "kiosk_fob_registered": "Çipi i kioskës u regjistrua",
@@ -1871,6 +1936,7 @@
       "placeholder": "Kërko njoftime..."
     },
     "selection": {
+      "actions": "Njoftimet e zgjedhura",
       "selectAll": "Zgjidh të gjitha të dukshmet",
       "selectAllAria": "Zgjidh të gjitha njoftimet e dukshme",
       "selectNamedAria": "Zgjidh {title}",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "U fshinë {count} njoftime",
       "deleteFailed": "Fshirja e njoftimeve dështoi",
+      "deletePartial": "{count} u fshinë; {failed} dështuan. Riprovoni përzgjedhjen e mbetur.",
       "markedRead": "U shënuan {count} njoftime si të lexuara",
-      "markReadFailed": "Shënimi i njoftimeve si të lexuara dështoi"
+      "markReadFailed": "Shënimi i njoftimeve si të lexuara dështoi",
+      "readPartial": "{count} u shënuan si të lexuara; {failed} dështuan. Riprovoni përzgjedhjen e mbetur."
     },
     "unreadBadge": "{count} të palexuara",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} të dukshme · {limit} njoftimet më të fundit"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}h",
     "pm": "PM"
   },
-  "userAvatar": {
-    "alt": "Avatari i përdoruesit"
-  },
   "user": {
+    "account": "Llogaria",
     "font-size": "Madhësia e shkrimit",
     "language": "Gjuha",
+    "loadingAccount": "Po ngarkohet llogaria",
     "logging-out": "Duke dalë...",
     "log-out": "Dil",
     "log-out-failed": "Dalja nga llogaria dështoi. Ju lutemi provoni përsëri.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Bazuar në kohë",
     "theme-time-info": "Modaliteti i bazuar në kohë po përdor {currentMode}. Ndryshon në {nextMode} në orën {time}.",
     "theme-toggle": "Ndrysho temën"
+  },
+  "userAvatar": {
+    "alt": "Avatari i përdoruesit"
   },
   "vacationBalance": {
     "conflictingPolicies": "Përplasje politikash për pushimet",

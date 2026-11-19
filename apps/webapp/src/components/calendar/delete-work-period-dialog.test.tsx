@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/types";
@@ -68,7 +68,7 @@ describe("DeleteWorkPeriodDialog", () => {
 		vi.spyOn(globalThis.crypto, "randomUUID").mockImplementation(randomUUID);
 	});
 
-	it("renders deletion request copy and reason field", () => {
+	it("explains what deletion records before the approval outcome is known", () => {
 		render(
 			<DeleteWorkPeriodDialog
 				event={workPeriodEvent}
@@ -79,15 +79,38 @@ describe("DeleteWorkPeriodDialog", () => {
 		);
 
 		expect(
-			screen.getByRole("heading", { name: "Request deletion?" }),
+			screen.getByRole("heading", { name: "Delete entry" }),
 		).toBeTruthy();
 		expect(
 			screen.getByText(
-				"This will hide the time entry after manager approval. The audit history and time-entry chain will be preserved.",
+				"Time entries will be marked as deleted for audit purposes.",
 			),
 		).toBeTruthy();
 		expect(screen.getByLabelText("Reason for deletion")).toBeTruthy();
 		expect(screen.getByRole("button", { name: /Delete entry/i })).toBeTruthy();
+	});
+
+	it("does not submit a surrounding task when the portalled confirmation is submitted", async () => {
+		const user = userEvent.setup();
+		const surroundingSubmit = vi.fn((event: React.FormEvent) =>
+			event.preventDefault(),
+		);
+		render(
+			<form onSubmit={surroundingSubmit}>
+				<DeleteWorkPeriodDialog
+					event={workPeriodEvent}
+					open
+					onOpenChange={vi.fn()}
+					displayContext={displayContext}
+				/>
+			</form>,
+		);
+		await user.type(
+			screen.getByRole("textbox", { name: "Reason for deletion" }),
+			"Duplicate entry",
+		);
+		await user.click(screen.getByRole("button", { name: "Delete entry" }));
+		expect(surroundingSubmit).not.toHaveBeenCalled();
 	});
 
 	it("submits the deletion request with the entered reason", async () => {
@@ -246,7 +269,7 @@ describe("DeleteWorkPeriodDialog", () => {
 
 		await waitFor(() => {
 			expect(toastSuccess).toHaveBeenCalledWith(
-				"Deletion request submitted for manager approval",
+				"Change submitted for manager approval",
 			);
 		});
 	});
@@ -267,6 +290,54 @@ describe("DeleteWorkPeriodDialog", () => {
 		await user.click(screen.getByRole("button", { name: /Delete entry/i }));
 
 		expect(requestTimeEntryDeletion).not.toHaveBeenCalled();
-		expect(toastError).toHaveBeenCalledWith("Reason is required");
+		const reason = screen.getByRole("textbox", { name: "Reason for deletion" });
+		expect(reason.getAttribute("aria-invalid")).toBe("true");
+		expect(document.activeElement).toBe(reason);
+		expect(screen.getByRole("alert").textContent).toBe("Reason is required");
+	});
+
+	it("keeps evidence and reason through pending Escape and refusal, then allows retry", async () => {
+		let refuse!: (value: unknown) => void;
+		requestTimeEntryDeletion.mockReturnValueOnce(
+			new Promise((resolve) => {
+				refuse = resolve;
+			}),
+		);
+		const user = userEvent.setup();
+		const onOpenChange = vi.fn();
+		render(
+			<DeleteWorkPeriodDialog
+				event={workPeriodEvent}
+				open
+				onOpenChange={onOpenChange}
+				displayContext={displayContext}
+			/>,
+		);
+		await user.type(
+			screen.getByRole("textbox", { name: "Reason for deletion" }),
+			"Duplicate entry",
+		);
+		await user.click(screen.getByRole("button", { name: "Delete entry" }));
+		const pendingForm = screen
+			.getByRole("button", { name: "Delete entry" })
+			.closest("form");
+		if (!pendingForm) throw new Error("Deletion action must submit its form");
+		fireEvent.submit(pendingForm);
+		await user.keyboard("{Escape}");
+		expect(onOpenChange).not.toHaveBeenCalled();
+		await user.click(screen.getByRole("button", { name: "Delete entry" }));
+		expect(requestTimeEntryDeletion).toHaveBeenCalledTimes(1);
+		expect(screen.getByText("Front desk shift")).toBeTruthy();
+		refuse({ success: false, error: "This period is already under review" });
+		await screen.findByText("This period is already under review");
+		expect(
+			(
+				screen.getByRole("textbox", {
+					name: "Reason for deletion",
+				}) as HTMLTextAreaElement
+			).value,
+		).toBe("Duplicate entry");
+		await user.click(screen.getByRole("button", { name: "Delete entry" }));
+		await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
 	});
 });

@@ -1,0 +1,157 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-root-checks/recovery-compatible-confirmed.json",
+    "bytes": 11262,
+    "sha256": "4715245b9ae7b166e1145e85aa7a87db8d7b2fbe703ee09364d7e1452d58ef77"
+  },
+  "reported": {
+    "total": 29,
+    "passed": 29,
+    "failed": 0,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/components/reports/export-buttons.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "ExportButtons mounts without evaluating the Excel module",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons exports CSV content and cleans up without evaluating Excel",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons exports PDF content and cleans up without evaluating Excel",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons loads Excel on click, holds all controls, and cleans up repeated downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons restores controls after a rejected Excel import and permits retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons disables all controls while the Excel module is still loading",
+          "status": "passed"
+        },
+        {
+          "fullName": "ExportButtons restores controls after workbook generation rejects and permits retry without leaking URLs",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "does not reuse retired actor/organization options on A → B → A while the current roster read is held",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster success on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster refusal on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster rejection on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains current roster during same-arrival refetch and rerenders, but hides it while session is disabled",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "recovers failed organization settings through local Retry before enabling report generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps failed settings recoverable and prevents duplicate transport while Retry is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains the selected period across a failed settings refresh without permitting generation until Retry succeeds",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "employee report workspace cancels an export on Activity retirement and blocks duplicate pending downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace cancels an export on replacement retirement and blocks duplicate pending downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace cancels an export on unmount retirement and blocks duplicate pending downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace cancels an export on batched account retirement and blocks duplicate pending downloads",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace stages a period edit without replacing the applied preview or export scope",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace drops retained data on an authoritative refusal and offers Retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace prevents duplicate form commands and ignores a rejection after unmount",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace observes batched identity signals before React renders A again",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace keeps the generated report visible while retrying a failed replacement",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace discards a held read across organization A → B → A",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace discards a held read across account A → B → A",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace invalidates a held read on Activity hide and reconnects usable controls",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace suppresses held downloads after scope loss and does not replay them on return",
+          "status": "passed"
+        },
+        {
+          "fullName": "employee report workspace retains the exact employee, project and vehicle headings without adopting deeper descendants",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

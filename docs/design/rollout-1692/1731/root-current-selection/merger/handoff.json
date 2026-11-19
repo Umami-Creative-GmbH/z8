@@ -1,0 +1,232 @@
+{
+  "completedAt": "2026-11-16T11:42:46.568Z",
+  "head": "ae0755e8385206e84f98ac52b5d3a0fb7f030513",
+  "tree": "6889454bdba84c0e3a35184d6f89ba449ceece62",
+  "parents": [
+    "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+    "e9b0b6afe62da10ac7ced65cc48cc54ed40983cf"
+  ],
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "status": "clean",
+  "classification": "PROVISIONAL integration; confirmed new source presentation blocker. No verification advancement.",
+  "independentTree": {
+    "parents": [
+      "89fe7fd5b6c1cdd155f7b503fb5534a673a89d72",
+      "e9b0b6afe62da10ac7ced65cc48cc54ed40983cf"
+    ],
+    "predictedUnresolvedTree": "e01f1cbaa5caeed8120b4504b191cc0d7d821f5a",
+    "reconciled": [
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx"
+    ],
+    "expected": "6889454bdba84c0e3a35184d6f89ba449ceece62",
+    "actual": "6889454bdba84c0e3a35184d6f89ba449ceece62",
+    "equal": true,
+    "reason": "Preserve all root opt-ins and prior tests; add exact due route only; remove its staged negative; update incoming directory expectation and retain actual request route adoption."
+  },
+  "ancestry": {
+    "verifiedTickets": 54,
+    "baselineAncestor": true,
+    "suppliedVerified": "8e3876c39725b7a8ef5218439766395401d64b80",
+    "all54VerifiedLedgerAncestors": true,
+    "proof": "baseline.json plus exact normal merge parent preservation"
+  },
+  "preservation": {
+    "priorTrackedPaths": 15871,
+    "canonicalPriorPathsUnchanged": 15865,
+    "onlyChangedExistingPaths": [
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx",
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/retention-actions.ts",
+      "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/personnel-file/retention.integration.test.ts"
+    ],
+    "allEight1730CorrectionPathsUnchanged": true,
+    "all2011730PublicProofFilesRawUnchanged": true,
+    "priorLedgerReportsReadmesAndAllOtherEvidenceUnchanged": true
+  },
+  "fresh": {
+    "unit": {
+      "files": 51,
+      "cases": 345,
+      "pass": 345,
+      "fail": 0,
+      "skip": 0
+    },
+    "postgres": {
+      "files": 5,
+      "cases": 83,
+      "pass": 83,
+      "fail": 0,
+      "skip": 0
+    },
+    "probes": {
+      "files": 2,
+      "cases": 2,
+      "pass": 1,
+      "fail": 1,
+      "skip": 0
+    }
+  },
+  "inherited": {
+    "workerUnit": {
+      "files": 43,
+      "cases": 282,
+      "pass": 282,
+      "fail": 0,
+      "skip": 0
+    },
+    "workerPostgresInitial": {
+      "files": 3,
+      "cases": 39,
+      "pass": 39,
+      "fail": 0,
+      "skip": 0
+    },
+    "workerPostgresAccess": {
+      "files": 2,
+      "cases": 44,
+      "pass": 44,
+      "fail": 0,
+      "skip": 0
+    }
+  },
+  "sourceBlocker": {
+    "title": "Invisible stale selection consumes the 500-document cap after refresh",
+    "classification": "New presentation regression in incoming cap/selection handling; not an authorization bypass or purge-domain regression.",
+    "source": "apps/webapp/src/components/personnel-file/due-for-deletion-list.tsx",
+    "lines": [
+      148,
+      346,
+      516,
+      567,
+      602,
+      615
+    ],
+    "trigger": "Select all500 due IDs. Refresh the real QueryClient with a valid current result containing only one new due ID. The visible count becomes0, Clear is disabled, the new checkbox has aria-disabled=true/data-disabled, individual selection and due-select-all both remain false.",
+    "expected": "Freshly due records remain selectable when none of the former selected records are in the current result; stale invisible IDs must not consume all capacity or leave no Clear recovery.",
+    "control": "Exact published pre-merge89fe7fd5 component passes the same public scenario; only relative document-labels import rebased for ignored copied control.",
+    "reproduction": "selection-probes-repeat.json plus archived selection-current.test.tsx/selection-baseline.test.tsx/baseline-due-for-deletion-list.tsx; build-probes.mjs recreates ignored bridges and repeat-probes.mjs reruns the two cases.",
+    "action": "No product fix. Broader browser/runtime acceptance stopped; root owns correction."
+  },
+  "quality": {
+    "types": {
+      "exit": 0,
+      "projects": 3,
+      "nextTypegen": true
+    },
+    "biome": {
+      "implicitExit": 1,
+      "explicitCrlfExit": 1,
+      "explicitLintExit": 0,
+      "files": 9,
+      "explicitCrlfOnlyFailure": "Pre-existing app-formatter mismatch in route-metadata.test.ts; baseline blob+stdin formatter proof in format-boundary.json, old root formatting retained."
+    },
+    "doctor": {
+      "exit": 0,
+      "files": 9,
+      "errors": 0,
+      "warnings": 1,
+      "review": "Activity synchronous before-paint reset; retained without suppression."
+    },
+    "archive1730": {
+      "fixedSourceExit": 0,
+      "currentSourceExit": 1,
+      "currentSourceQualification": "Legitimate additive heading metadata/test drift; fixed pins kept. Default verifier revalidates190public artifacts/56fullPNG decodes without runtime harness execution."
+    },
+    "routeInventory": {
+      "persistent": 153,
+      "aliases": 19,
+      "templates": 172,
+      "unchangedAliases": 19,
+      "staticOnly": true
+    }
+  },
+  "runtime": {
+    "accepted": false,
+    "reason": "Confirmed source blocker before Next/auth/browser/native launch; worker runtime attempts entirely unpassed.",
+    "unpassed": [
+      "Normal transient development sign-in and current-route authenticated runtime",
+      "Actual browser select/confirm/purge/readback, role/grant/lifetime failure acceptance",
+      "Actual storage deletion (PG external-storage/session boundary fakes do not prove it)",
+      "Matched historical/current consumer captures; desktop/phone/wide/light/dark/18px/keyboard/mobile/focus",
+      "Actual native React target; connected Next route/compiler/error probes",
+      "Full production build/static generation, catalog/Tolgee, provider/customer/payment/device/store-shell/screen-reader/truezoom",
+      "Broad unresolved four-path current-roster guard remains unrun; no source guard relaxed."
+    ],
+    "historicalOverlaysApplied": 0
+  },
+  "dependencies": {
+    "approvedLockSha256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "allRecordedManifestConfigHashesUnchanged": true,
+    "physicalRootAppVirtualStorePreserved": true,
+    "all158LocalLeafLinksTargetsAndCreationIdentityUnchanged": true,
+    "installs": 0,
+    "upgrades": 0,
+    "repairs": 0,
+    "borrowedDependencyDirectories": 0,
+    "resolverOverlays": 0,
+    "qualification": "Topology/manifests only; no byte-pristine or exhaustive earlier dependency certification."
+  },
+  "cleanup": {
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "node",
+      "scripts/performance/fixture.mjs",
+      "cleanup",
+      ".tmp/merge1731-fixture"
+    ],
+    "exit": 0,
+    "removed": [
+      {
+        "name": "z8_perf_e5ddd6580e6a_postgres",
+        "remaining": false
+      },
+      {
+        "name": "z8_perf_e5ddd6580e6a_redis",
+        "remaining": false
+      },
+      {
+        "name": "z8_perf_e5ddd6580e6a_storage",
+        "remaining": false
+      }
+    ],
+    "containersRemaining": 0,
+    "fixtureAppPort": 52637,
+    "fixtureAppPortListening": false,
+    "sourceBridgesRemoved": [
+      "apps/webapp/src/components/personnel-file/.tmp/merge1731/selection-current.test.tsx",
+      "apps/webapp/src/components/personnel-file/.tmp/merge1731/baseline-due-for-deletion-list.tsx",
+      "apps/webapp/src/components/personnel-file/.tmp/merge1731/selection-baseline.test.tsx"
+    ],
+    "privateInputsPreserved": true,
+    "nextServersStarted": 0,
+    "browserSessionsStarted": 0,
+    "nativeSessionsStarted": 0,
+    "historicalOverlaysApplied": 0,
+    "ownedNextTreesRemaining": 0,
+    "ownedBrowserSessionsRemaining": 0,
+    "ownedNativeSessionsRemaining": 0,
+    "ownedRuntimeProcessesRemaining": 0,
+    "reason": "Confirmed source blocker before runtime launch. All test and audit command sessions are separately awaited to completion before final RELEASE. No process, browser, native, cache, runtime or historical source overlay was started or changed.",
+    "allCommandSessionsExited": true,
+    "ownedResourcesRemaining": 0
+  },
+  "prohibitedOperations": {
+    "trackerWrites": 0,
+    "ledgerReportReadmeEdits": 0,
+    "pushes": 0,
+    "pullRequests": 0,
+    "issueClosures": 0,
+    "devMerges": 0,
+    "deployments": 0,
+    "sqlAuthMembershipGrantMutations": 0,
+    "cookieSessionStorageCopiesSavesMintsRestores": 0,
+    "phaseCustomerProviderPaymentCalls": 0
+  },
+  "auditPath": ".tmp/merge1731-audit",
+  "release": "RELEASE checkout/index/package/runtime/process ownership to root. Zero owned processes/listeners/containers/browser/native resources remain."
+}

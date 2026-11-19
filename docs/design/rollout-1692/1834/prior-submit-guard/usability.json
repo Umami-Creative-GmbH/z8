@@ -1,0 +1,104 @@
+{
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page-client.tsx",
+      "sha256": "b4e728a2356abb3e9c55b0ab30ab99796fcf50902dfc571b593ba2533fc6c56d"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/onboarding/work-schedule/work-schedule-fields.tsx",
+      "sha256": "b34c85276a8378b77a32ccccf33d0ea38924458430085f5074d02b22575a3098"
+    }
+  ],
+  "nativeKeyboardInvalidFocus": true,
+  "invalidMutationRequests": 0,
+  "keyboardClassification": "Daily",
+  "actualSkipFailureRetention": true,
+  "actualSkipRetryDestination": "vacation-policy",
+  "contrast": [
+    {
+      "dark": false,
+      "font": "16px",
+      "texts": [
+        {
+          "tag": "H1",
+          "ratio": 19.114022259689076
+        },
+        {
+          "tag": "P",
+          "ratio": 4.77115358635208
+        },
+        {
+          "tag": "H2",
+          "ratio": 19.114022259689076
+        },
+        {
+          "tag": "P",
+          "ratio": 4.77115358635208
+        },
+        {
+          "tag": "LABEL",
+          "ratio": 19.114022259689076
+        },
+        {
+          "tag": "P",
+          "ratio": 4.77115358635208
+        },
+        {
+          "tag": "LABEL",
+          "ratio": 19.114022259689076
+        },
+        {
+          "tag": "P",
+          "ratio": 4.77115358635208
+        },
+        {
+          "tag": "P",
+          "ratio": 4.77115358635208
+        }
+      ]
+    },
+    {
+      "dark": true,
+      "font": "18px",
+      "texts": [
+        {
+          "tag": "H1",
+          "ratio": 17.487261507234752
+        },
+        {
+          "tag": "P",
+          "ratio": 5.665815788399514
+        },
+        {
+          "tag": "H2",
+          "ratio": 17.487261507234752
+        },
+        {
+          "tag": "P",
+          "ratio": 5.665815788399514
+        },
+        {
+          "tag": "LABEL",
+          "ratio": 17.487261507234752
+        },
+        {
+          "tag": "P",
+          "ratio": 5.665815788399514
+        },
+        {
+          "tag": "LABEL",
+          "ratio": 17.487261507234752
+        },
+        {
+          "tag": "P",
+          "ratio": 5.665815788399514
+        },
+        {
+          "tag": "P",
+          "ratio": 5.665815788399514
+        }
+      ]
+    }
+  ],
+  "qualification": "Local solid form text contrast only. Shared progress/footer over randomized background, exhaustive axe, true zoom, physical devices and all locales remain unpassed."
+}

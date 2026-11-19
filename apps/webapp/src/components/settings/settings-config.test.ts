@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+	canReachFeatureSwitches,
+	FEATURE_SWITCH_HREFS,
 	type FeatureFlagState,
 	filterSettingsByFeatureFlags,
 	getResolvedSettingsVisibility,
@@ -14,6 +16,26 @@ import {
 } from "@/lib/settings-access";
 import settingsGenericEn from "../../../messages/settings/generic/en.json";
 import settingsPeopleEn from "../../../messages/settings/people/en.json";
+
+describe("feature switch locations", () => {
+	it("points every feature-gated setting at its switch on the Organization page", () => {
+		for (const entry of SETTINGS_ENTRIES) {
+			if (!entry.requiredFeature) continue;
+			expect(FEATURE_SWITCH_HREFS[entry.requiredFeature], entry.id).toMatch(
+				/^\/settings\/organization#[a-z-]+-toggle$/,
+			);
+		}
+		expect(FEATURE_SWITCH_HREFS.shiftsEnabled).toBe("/settings/organization#shifts-toggle");
+	});
+
+	it("offers the switch link only to tiers that reach Organization settings", () => {
+		expect(canReachFeatureSwitches("orgAdmin")).toBe(true);
+		expect(canReachFeatureSwitches("manager")).toBe(false);
+		expect(canReachFeatureSwitches("member")).toBe(false);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/organization")).toBe(true);
+		expect(canResolvedTierAccessRoute("manager", "/settings/organization")).toBe(false);
+	});
+});
 
 describe("settings visibility tiers", () => {
 	it("offers equipment setup only to organization administrators", () => {
@@ -311,6 +333,8 @@ describe("settings visibility tiers", () => {
 				.map((entry) => entry.id),
 		).toEqual(["work-policies", "absences", "employee-allowances", "travel-expenses", "approval"]);
 		expect(entries.find((entry) => entry.id === "approval")).toMatchObject({
+			// A dedicated navigation title, not the escalation fact label.
+			titleKey: "settings.navigation.approval.title",
 			titleDefault: "Approval",
 			href: "/settings/approval-policies",
 			minimumTier: "orgAdmin",

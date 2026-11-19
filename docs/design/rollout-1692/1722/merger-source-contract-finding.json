@@ -1,0 +1,67 @@
+{
+  "classification": "Material pre-existing reader/writer contract mismatch; root/domain owner must investigate or explicitly retain before full R030/root acceptance. No R030 presentation regression asserted; no production fix made.",
+  "evidence": [
+    {
+      "file": "apps/webapp/src/lib/approvals/server/time-correction-approvals.ts",
+      "line": 837,
+      "detail": "insertTimeCorrectionSourceEntry writes pending type=correction rows with isSuperseded=true,supersededById=null (values at860-863)."
+    },
+    {
+      "file": "apps/webapp/src/lib/approvals/server/time-correction-submission.ts",
+      "line": 849,
+      "detail": "Existing production submission inserts endpoint via that writer; loop1525,metadata endpoint IDs1557/1563."
+    },
+    {
+      "file": "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts",
+      "line": 381,
+      "detail": "Verified endpoint evidence is filtered to type=correction AND isSuperseded=false, then scoped to organization/employee and work-period endpoints."
+    },
+    {
+      "file": "apps/webapp/src/lib/approvals/time-request-kind.ts",
+      "line": 244,
+      "detail": "A correction marker naming endpoint IDs requires matching verified relational evidence for each endpoint, otherwise unclassified."
+    },
+    {
+      "file": "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts",
+      "line": 298,
+      "detail": "Unclassified legacy/compatibility corrections are omitted. Canonical complete mode follows a separate strict context/display parser; authority and deduplication stay unchanged."
+    },
+    {
+      "file": "apps/webapp/src/lib/time-tracking/period-submissions/submission-blockers.ts",
+      "line": 142,
+      "detail": "Readiness reuses listing helper; unlisted corrections link to the timeline rather than promising My Requests."
+    }
+  ],
+  "challenge": {
+    "command": [
+      "pnpm",
+      "--filter",
+      "webapp",
+      "exec",
+      "vitest",
+      "run",
+      "--config",
+      "../../.tmp/merge1722-audit/source-contract.config.mjs",
+      "--maxWorkers=1",
+      "--reporter=json",
+      "--outputFile=X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1722-audit/source-contract.json"
+    ],
+    "suite": "source-contract.test.ts",
+    "scope": "Real production getSelfServiceRequests, classifier and contract normalization; predicate-honoring fake database, legacy authority. No PostgreSQL or live writer action.",
+    "failed": 1,
+    "passed": 1,
+    "red": "Pending own endpoint row matching the writer shape returns [] instead of pending cancel/view.",
+    "control": "The identical endpoint with isSuperseded=false is listed; foreign requester is still excluded.",
+    "harnessQualification": "Initial two-red runs were harness failures: app drizzle resolved separately from root audit mock. Explicit app-package alias fixes resolution; initial JSON/logs retained. Initial root-relative output file was moved into workspace/source-contract-first.json."
+  },
+  "unchangedDomainPaths": [
+    "apps/webapp/src/lib/self-service-requests/get-self-service-requests.ts",
+    "apps/webapp/src/lib/approvals/server/time-correction-cancellation.ts",
+    "apps/webapp/src/lib/approvals/server/time-correction-submission.ts",
+    "apps/webapp/src/lib/approvals/server/time-correction-approvals.ts",
+    "apps/webapp/src/lib/approvals/time-request-kind.ts",
+    "apps/webapp/src/app/[locale]/(app)/my-requests/actions.ts"
+  ],
+  "liveCauseQualification": "The static seam and assembled challenge plausibly explain the two live missing arrivals, but archived artifacts contain no exact source-row metadata/endpoint/rollout snapshot, and fixture is gone. No claim that exact archived failure predicate was observed in PostgreSQL. Successful current correction cancellation remains UNVERIFIED.",
+  "rootNextStep": "Root/domain owner should add a source integration regression seeded by actual submitTimeCorrection (edit/delete), inspect pending vs finalized evidence and cancellation replay/readiness under each authority, then correct the verified-evidence seam without admitting foreign, malformed, ordinary/manual/policy kinds. Separate successful live cancellation/readback still needed. No contract broadening to manufacture a pass."
+}

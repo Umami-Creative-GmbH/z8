@@ -63,7 +63,10 @@ vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
 // #615: the adjustment notices find no adjustment for these reports.
 vi.mock("@/app/[locale]/(app)/travel-expenses/adjustment-actions", () => ({
 	createTravelExpenseAdjustmentAction: vi.fn(),
-	getTravelExpenseReportAdjustments: async () => ({ success: false, error: "Expense report not found" }),
+	getTravelExpenseReportAdjustments: async () => ({
+		success: false,
+		error: "Expense report not found",
+	}),
 }));
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
@@ -74,6 +77,8 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => router,
 }));
 
+import { Temporal } from "temporal-polyfill";
+import { ReceiptItemEditor } from "./receipt-item-editor";
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
 
 const reportId = "6a000000-0000-4000-8000-000000000001";
@@ -141,6 +146,61 @@ beforeAll(() => {
 });
 beforeEach(() => {
 	reportActions.getMyTravelExpenseReport.mockResolvedValue(report());
+});
+
+it("does not deliver a retired receipt save into a later editor", async () => {
+	let complete!: (value: unknown) => void;
+	reportActions.saveReceiptItemDraftAction.mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				complete = resolve;
+			}),
+	);
+	const saved = vi.fn();
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const rendered = render(
+		<QueryClientProvider client={client}>
+			<ReceiptItemEditor
+				reportId={reportId}
+				item={item()}
+				receipts={[]}
+				reimbursementCurrency="EUR"
+				onReceiptsChanged={() => {}}
+				onSaved={saved}
+				maxReceiptBytes={1024}
+				now={Temporal.Instant.from("2026-11-16T00:00:00Z")}
+			/>
+		</QueryClientProvider>,
+	);
+	fireEvent.change(await description(), { target: { value: "Retired pending draft" } });
+	await waitFor(() => expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalled(), {
+		timeout: 2000,
+	});
+	rendered.unmount();
+	await act(async () =>
+		complete({ success: true, data: { status: "saved", item: item({ version: 4 }) } }),
+	);
+	expect(saved).not.toHaveBeenCalled();
+});
+
+it("retains same-scope edits on transport failure, but removes them on an explicit unavailable read", async () => {
+	const client = mount();
+	fireEvent.change(await description(), { target: { value: "Retain this exact note" } });
+	reportActions.getMyTravelExpenseReport.mockRejectedValueOnce(new Error("offline"));
+	await act(async () => {
+		await client.refetchQueries({ queryKey: ["travel-expenses", "reports", reportId] });
+	});
+	expect((await description()).value).toBe("Retain this exact note");
+	expect(screen.getByText("Unable to load this expense. Please retry.")).toBeTruthy();
+	reportActions.getMyTravelExpenseReport.mockResolvedValue({
+		success: false,
+		error: "Expense report not found",
+	});
+	await act(async () => {
+		await client.refetchQueries({ queryKey: ["travel-expenses", "reports", reportId] });
+	});
+	await waitFor(() => expect(screen.queryByRole("textbox", { name: "Description" })).toBeNull());
+	expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
 });
 afterEach(() => {
 	cleanup();

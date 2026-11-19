@@ -1,72 +1,36 @@
 import { Suspense } from "react";
-import { ApiKeyPageClient } from "@/components/enterprise/api-key-page-client";
-import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
-import { SettingsTabbedPage } from "@/components/settings/settings-tabbed-page";
-import { WebhooksPageClient } from "@/components/webhooks/webhooks-page-client";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { getWebhookEndpointsByOrganization } from "@/lib/webhooks";
-import { getTranslate } from "@/tolgee/server";
+import { getWebhookEndpointsByOrganization } from "@/lib/webhooks/webhook-service";
 import { listApiKeys } from "./actions";
+import { DeveloperAccessLoading } from "./loading-content";
+import { DeveloperAccessClient } from "./page-client";
 
 async function DeveloperSettingsContent() {
-	const [{ authContext, organizationId }, t] = await Promise.all([
+	const [{ authContext, organizationId, settingsAccess }] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
-		getTranslate(),
 	]);
 
 	// Fetch API keys for the organization
-	const [apiKeysResult, webhooks] = await Promise.all([
+	const [keys, endpoints] = await Promise.allSettled([
 		listApiKeys(),
 		getWebhookEndpointsByOrganization(organizationId),
 	]);
-	const apiKeys = apiKeysResult.success ? apiKeysResult.data : [];
-
+	const result = keys.status === "fulfilled" ? keys.value : null;
 	return (
-		<SettingsTabbedPage
-			key={organizationId}
-			title={t("settings.navigation.developerAccess.title", "Developer Access")}
-			defaultTab="keys"
-			tabs={[
-				{
-					value: "keys",
-					label: t("settings.apiKeys.title", "API Keys"),
-					description: t(
-						"settings.apiKeys.description",
-						"Create and manage API keys for programmatic access to your organization data.",
-					),
-					panel: (
-						<ApiKeyPageClient
-							organizationId={organizationId}
-							initialApiKeys={apiKeys}
-							currentUserId={authContext.user.id}
-						/>
-					),
-				},
-				{
-					value: "webhooks",
-					label: t("settings.webhooks.title", "Webhooks"),
-					description: t(
-						"settings.webhooks.description",
-						"Configure webhook endpoints to receive real-time event notifications",
-					),
-					panel: <WebhooksPageClient webhooks={webhooks} />,
-				},
-			]}
+		<DeveloperAccessClient
+			organizationId={organizationId}
+			currentUserId={authContext.user.id}
+			settingsAccess={settingsAccess}
+			initialKeysError={!result?.success}
+			initialApiKeys={result?.success ? result.data : []}
+			initialWebhooks={endpoints.status === "fulfilled" ? endpoints.value : []}
+			initialWebhooksError={endpoints.status === "rejected"}
 		/>
 	);
 }
 export default function DeveloperSettingsPage() {
 	return (
-		<Suspense
-			fallback={
-				<SettingsPageSkeleton
-					label={{
-						labelKey: "settings.loading",
-						labelDefault: "Loading settings",
-					}}
-				/>
-			}
-		>
+		<Suspense fallback={<DeveloperAccessLoading />}>
 			<DeveloperSettingsContent />
 		</Suspense>
 	);

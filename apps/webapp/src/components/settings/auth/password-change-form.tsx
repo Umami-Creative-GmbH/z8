@@ -129,7 +129,7 @@ export function PasswordChangeForm() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("profile.change-password", "Change Password")}</CardTitle>
+				<CardTitle as="h2">{t("profile.change-password", "Change Password")}</CardTitle>
 				<CardDescription>
 					{t(
 						"profile.change-password-description",
@@ -156,9 +156,13 @@ export function PasswordChangeForm() {
 								"Enter current password",
 							)}
 							required
+							aria-invalid={passwordErrors.currentPassword ? true : undefined}
+							aria-describedby={
+								passwordErrors.currentPassword ? "currentPassword-error" : undefined
+							}
 						/>
 						{passwordErrors.currentPassword ? (
-							<p className="text-destructive text-sm">
+							<p id="currentPassword-error" className="text-destructive text-sm">
 								{passwordErrors.currentPassword}
 							</p>
 						) : null}
@@ -181,10 +185,12 @@ export function PasswordChangeForm() {
 								"Enter new password",
 							)}
 							required
+							aria-invalid={passwordErrors.newPassword ? true : undefined}
+							aria-describedby={passwordErrors.newPassword ? "newPassword-error" : undefined}
 						/>
 						<PasswordStrengthIndicator password={passwordData.newPassword} />
 						{passwordErrors.newPassword ? (
-							<p className="text-destructive text-sm">
+							<p id="newPassword-error" className="text-destructive text-sm">
 								{passwordErrors.newPassword}
 							</p>
 						) : null}
@@ -207,9 +213,13 @@ export function PasswordChangeForm() {
 								"Confirm new password",
 							)}
 							required
+							aria-invalid={passwordErrors.confirmPassword ? true : undefined}
+							aria-describedby={
+								passwordErrors.confirmPassword ? "confirmPassword-error" : undefined
+							}
 						/>
 						{passwordErrors.confirmPassword ? (
-							<p className="text-destructive text-sm">
+							<p id="confirmPassword-error" className="text-destructive text-sm">
 								{passwordErrors.confirmPassword}
 							</p>
 						) : null}
@@ -231,7 +241,7 @@ export function PasswordChangeForm() {
 					<Button type="submit" disabled={isPasswordLoading}>
 						{isPasswordLoading ? (
 							<>
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 								{t("common.saving", "Saving...")}
 							</>
 						) : (

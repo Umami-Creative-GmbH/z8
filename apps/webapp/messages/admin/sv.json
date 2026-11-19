@@ -75,8 +75,10 @@
         "title": "Analystrender",
         "viewFull": "Visa fullständig analys"
       },
+      "scope": "Rapportering för hela plattformen",
       "sectionDescription": "Uppdaterad från aktuell plattformsdata för det valda intervallet och grupperingen.",
       "sectionTitle": "Analystrender",
+      "seriesValues": "Visa serievärden",
       "title": "Plattformsanalys",
       "values": {
         "notAvailable": "Inte tillgängligt"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Plattformsåtkomst kunde inte bekräftas.",
       "analytics": {
         "title": "Analystrender"
       },
-      "description": "Plattformsmätvärden och snabbåtgärder",
+      "analyticsUnavailable": "Plattformsanalys är inte tillgänglig. Försök igen.",
+      "confirmingAccess": "Bekräftar plattformsåtkomst",
+      "groups": {
+        "access": "Åtkomsthantering",
+        "billing": "Fakturering och prenumerationer",
+        "operations": "Plattformsdrift"
+      },
+      "loadingAnalytics": "Läser in plattformsanalys",
+      "loadingMetrics": "Läser in plattformsmätvärden",
       "metrics": {
         "bannedUsers": "Blockerade användare",
         "bannedUsersDescription": "Nekad åtkomst",
@@ -295,6 +306,9 @@
         "totalUsers": "Totalt antal användare",
         "totalUsersDescription": "Registrerade plattformskonton"
       },
+      "metricsUnavailable": "Plattformsmätvärden är inte tillgängliga. Försök igen.",
+      "platformDescription": "Granska konton, arbetsytor och aktivitet för hela plattformen och öppna sedan en administrationsarbetsyta.",
+      "platformTitle": "Plattformsöversikt",
       "quickActions": {
         "billing": {
           "description": "Intäktsmätvärden och prenumerationsstatus",
@@ -318,7 +332,7 @@
           "title": "Användarhantering"
         }
       },
-      "title": "Översikt"
+      "refreshAccess": "Uppdatera översikten för att bekräfta plattformsåtkomst innan du fortsätter."
     },
     "settings": {
       "actions": {

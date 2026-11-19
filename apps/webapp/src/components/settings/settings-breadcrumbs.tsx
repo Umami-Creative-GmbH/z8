@@ -3,6 +3,14 @@
 import { IconChevronRight, IconSettings } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Fragment } from "react";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Link, usePathname } from "@/navigation";
 import { SETTINGS_ENTRIES } from "./settings-config";
 
@@ -131,28 +139,55 @@ export function SettingsBreadcrumbs() {
 
 	const breadcrumbs = buildSettingsBreadcrumbs(pathname, t);
 
+	// The first crumb is the way back to every setting. The settings layout's
+	// header row places it beside the phone-sized settings menu and pads it.
 	return (
-		<nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4 px-6 pt-4">
-			<IconSettings className="size-4" />
-			{breadcrumbs.map((crumb, index) => {
-				const isLast = index === breadcrumbs.length - 1;
+		<Breadcrumb
+			aria-label={t("settings.breadcrumbs.label", "Settings breadcrumb")}
+			className="min-w-0 flex-1"
+		>
+			<BreadcrumbList className="gap-2 sm:gap-2">
+				{breadcrumbs.map((crumb, index) => {
+					const isFirst = index === 0;
+					const isLast = index === breadcrumbs.length - 1;
 
-				return (
-					<Fragment key={crumb.href}>
-						{index > 0 && <IconChevronRight className="size-4" />}
-						{isLast ? (
-							<span className="text-foreground font-medium">{crumb.label}</span>
-						) : (
-							<Link
-								href={crumb.href}
-								className="hover:text-foreground transition-colors"
-							>
-								{crumb.label}
-							</Link>
-						)}
-					</Fragment>
-				);
-			})}
-		</nav>
+					return (
+						<Fragment key={crumb.href}>
+							{index > 0 ? (
+								<BreadcrumbSeparator className="[&>svg]:size-4">
+									<IconChevronRight />
+								</BreadcrumbSeparator>
+							) : null}
+							<BreadcrumbItem className="min-w-0 max-w-full">
+								{isLast ? (
+									<BreadcrumbPage className="flex min-w-0 items-center gap-2 font-medium">
+										{isFirst ? (
+											<IconSettings className="size-4 shrink-0" aria-hidden="true" />
+										) : null}
+										<span className="truncate" title={crumb.label}>
+											{crumb.label}
+										</span>
+									</BreadcrumbPage>
+								) : (
+									<BreadcrumbLink asChild>
+										<Link
+											href={crumb.href}
+											className="flex min-w-0 items-center gap-2 rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+										>
+											{isFirst ? (
+												<IconSettings className="size-4 shrink-0" aria-hidden="true" />
+											) : null}
+											<span className="truncate" title={crumb.label}>
+												{crumb.label}
+											</span>
+										</Link>
+									</BreadcrumbLink>
+								)}
+							</BreadcrumbItem>
+						</Fragment>
+					);
+				})}
+			</BreadcrumbList>
+		</Breadcrumb>
 	);
 }

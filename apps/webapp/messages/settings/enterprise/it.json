@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Attivo",
+      "contextRetry": "Aggiorna il contesto dell'organizzazione per continuare.",
+      "contextUnavailable": "Contesto dell'organizzazione non disponibile",
+      "copyFailed": "Impossibile copiare la chiave. Riprova.",
       "copyKey": "Copia chiave API",
       "copyPrefix": "Copia prefisso",
       "create": "Crea chiave",
@@ -9,6 +12,7 @@
       "createdBy": "da {name}",
       "createDescription": "Crea una nuova chiave API per l'accesso programmatico. La chiave verrà mostrata una sola volta.",
       "createdOn": "Creata il {date}",
+      "createFailed": "Impossibile confermare la creazione della chiave. Aggiorna l'elenco prima di riprovare.",
       "createTitle": "Crea chiave API",
       "creatorDeparted": "Cessato",
       "deleted": "Chiave API eliminata",
@@ -24,6 +28,8 @@
         "creator": "Creata da",
         "creatorDeparted": "{name} (cessato)",
         "ip": "Indirizzo IP",
+        "kind": "Chiave API",
+        "loading": "Caricamento della chiave API",
         "noRateLimit": "Disattivato",
         "noRequests": "Nessuna richiesta negli ultimi 90 giorni.",
         "rateLimit": "Limite di frequenza",
@@ -80,13 +86,19 @@
         "scopes": "Autorizzazioni",
         "scopesRequired": "Seleziona almeno un'autorizzazione"
       },
+      "hideKey": "Nascondi chiave",
       "keyCopied": "Chiave API copiata negli appunti",
+      "keyHidden": "Chiave nascosta",
       "lastUsed": "Ultimo utilizzo",
+      "loading": "Caricamento delle chiavi API",
       "name": "Nome",
       "neverExpires": "Nessuna scadenza",
       "noPermissions": "Nessuna autorizzazione",
       "prefix": "Prefisso chiave",
       "prefixCopied": "Prefisso chiave copiato",
+      "retryHelp": "Aggiorna questo elenco per confermare le chiavi attuali. I record caricati in precedenza vengono conservati.",
+      "revealKey": "Mostra chiave",
+      "revokeUnknown": "Impossibile confermare la revoca. Aggiorna l'elenco prima di riprovare.",
       "scopeLabel": {
         "absencesRead": "Lettura assenze",
         "absencesReadHealth": "Lettura dettagli sanitari assenze",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Importante:",
       "status": "Stato",
       "title": "Chiavi API",
+      "unavailable": "Chiavi API non disponibili",
+      "unavailableDescription": "Impossibile caricare le impostazioni. Riprova ad aggiornare questa pagina.",
+      "unavailableTitle": "Accesso sviluppatori non disponibile",
       "unknownCreator": "un ex amministratore",
       "updated": "Chiave API aggiornata",
+      "updateUnknown": "Impossibile confermare l'aggiornamento. Aggiorna questa chiave prima di riprovare.",
       "usage": "{count} di {max} chiavi utilizzate"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "URL predefiniti",
         "defaultUrlsDescription": "Questi URL gestiti dalla piattaforma funzionano automaticamente senza configurazione DNS personalizzata.",
         "deleteAria": "Elimina dominio personalizzato {domain}",
+        "deleteConfirm": "Elimina dominio",
         "deleted": "Dominio eliminato",
         "deleteDescription": "Sei sicuro di voler eliminare \"{domain}\"? Questa azione non può essere annullata. Gli utenti non potranno più accedere tramite questo dominio personalizzato.",
         "deleteFailed": "Eliminazione del dominio non riuscita",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Lascia vuoto per mantenere la chiave esistente. Ottieni la tua chiave API da resend.com",
         "create": "Crea configurazione",
         "delete": "Elimina configurazione",
-        "deleteConfirm": "Sei sicuro di voler eliminare questa configurazione email?",
+        "deleteConfirmNamed": "Eliminare la configurazione email per {fromEmail}? Le email dell'organizzazione utilizzeranno nuovamente il mittente predefinito del sistema.",
         "deleted": "Configurazione email eliminata",
         "deleteFailed": "Eliminazione non riuscita",
+        "deleteTitle": "Eliminare la configurazione email?",
         "description": "Configura un provider email personalizzato per la tua organizzazione. Tutte le email dell'organizzazione utilizzeranno questa configurazione invece di quella predefinita di sistema.",
         "fromEmail": "Email mittente",
         "fromName": "Nome mittente",
@@ -356,10 +374,9 @@
           "title": "Dominio"
         },
         "hero": {
-          "description": "Configura SSO, SCIM e l'applicazione per l'organizzazione {organizationId} con attivazione protetta.",
-          "eyebrow": "Identità aziendale",
           "title": "Lista di controllo operativa"
         },
+        "progress": "{completed} di {total} passaggi completati",
         "provider": {
           "action": {
             "save": "Salva provider"
@@ -453,7 +470,6 @@
           },
           "description": "La verifica SCIM si aggiorna dopo che il tuo identity provider invia una modifica a un utente o gruppo di test.",
           "dialog": {
-            "cancel": "Annulla",
             "decommission": {
               "description": "Questa operazione dismette definitivamente il provisioning SCIM e non può essere annullata.",
               "title": "Dismetti SCIM"
@@ -602,6 +618,7 @@
         "deleteError": "Impossibile eliminare la configurazione OAuth",
         "description": "Configura le tue credenziali OAuth per il social login. Questo consente ai tuoi utenti di accedere utilizzando le app OAuth della tua organizzazione invece delle credenziali condivise.",
         "developerConsole": "Console sviluppatori di {provider}",
+        "editAria": "Modifica accesso con {provider}",
         "editDescription": "Aggiorna le tue credenziali OAuth.",
         "editTitle": "Modifica OAuth di {provider}",
         "empty": "Nessun provider OAuth social personalizzato configurato.",
@@ -616,9 +633,11 @@
         "keyId": "ID chiave",
         "pasteYourP8PrivateKeyContents": "Incolla il contenuto della chiave privata .p8",
         "privateKey": "Chiave privata (.p8)",
+        "removeAria": "Rimuovi accesso con {provider}",
         "removed": "OAuth di {provider} rimosso",
         "removeDialogDescription": "Sei sicuro di voler rimuovere questa configurazione OAuth? Gli utenti torneranno a utilizzare le credenziali OAuth condivise (se disponibili).",
         "removeDialogTitle": "Rimuovi provider OAuth social",
+        "removeDialogTitleNamed": "Rimuovere l'accesso con {provider}?",
         "teamId": "ID team",
         "title": "Provider di social login",
         "unverified": "Non verificato",
@@ -629,8 +648,9 @@
         "addError": "Impossibile aggiungere il provider SSO",
         "addSuccess": "Provider SSO aggiunto correttamente",
         "addTitle": "Aggiungi provider SSO",
+        "deleteConfirm": "Elimina provider",
         "deleteDialogDescription": "Sei sicuro di voler eliminare questo provider SSO? Gli utenti non potranno più accedere utilizzando questo provider di identità.",
-        "deleteDialogTitle": "Elimina provider SSO",
+        "deleteDialogTitleNamed": "Eliminare il provider SSO {provider}?",
         "deleteError": "Impossibile eliminare il provider SSO",
         "deleteProviderAria": "Elimina provider SSO {provider}",
         "deleteSuccess": "Provider SSO eliminato",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Gli utenti con questo dominio email potranno utilizzare il SSO",
         "empty": "Nessun provider SSO configurato al momento.",
         "emptyDescription": "Aggiungi un provider OIDC per abilitare il single sign-on aziendale.",
+        "generateToken": "Genera token TXT",
         "guide": {
           "addDescription": "Segui le istruzioni di configurazione del tuo provider, quindi collegalo alla tua organizzazione.",
           "afterSave": "Dopo il salvataggio, verifica il tuo dominio email con il record TXT del DNS in Z8. Esegui un accesso di prova con un utente previsto mantenendo aperta la sessione di amministratore corrente. Nella configurazione guidata, salva lo stesso ID provider e dominio email mostrati nell'elenco dei provider, quindi registra manualmente l'esito dell'accesso rilevato prima di valutare l'opzione Richiedi SSO. Il salvataggio e la verifica del DNS non garantiscono un accesso riuscito.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Un identificativo univoco per questo provider (minuscolo, senza spazi)",
         "providerIdInvalid": "L'ID provider deve contenere solo lettere minuscole, numeri e trattini",
         "title": "Identity Provider",
-        "token": "Token",
         "tokenError": "Generazione del token di verifica del dominio non riuscita",
         "tokenGenerated": "Token di verifica generato",
         "txtToken": "Token TXT:",

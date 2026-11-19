@@ -1,0 +1,120 @@
+{
+  "candidate": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "scope": "Own generated local fixture only; public development Turnstile and normal UI Better Auth sign-in/organization activation; no auth-state export, copy, restore, session mint, SQL auth/member/grant workaround or external provider action.",
+  "protectedOfficerDownload": {
+    "status": 200,
+    "mime": "image/png",
+    "bytes": 68,
+    "sha256": "3e252e893af38bfbf6b5ebb27056c2913e92d88325fb6df51cd8cca45553b46d",
+    "protectedRoute": true
+  },
+  "selfDownload": {
+    "selfDownloadStatus": 200,
+    "bytes": 68,
+    "sha256": "3e252e893af38bfbf6b5ebb27056c2913e92d88325fb6df51cd8cca45553b46d"
+  },
+  "firstEscape": {
+    "dialogs": 0,
+    "focusLabel": "Attach or link sick notes for Person 2, Nov 3, 2026",
+    "currentRow": "Person 2Nov 3, 20261 dayApprovedChild sick1 noteSynthetic independent linked noteAttach or link"
+  },
+  "actualLocalReadRetry": {
+    "visibleRetry": true,
+    "alert": [
+      "The sick notes could not be loaded."
+    ],
+    "directoryRows": 10
+  },
+  "crossViewPending": {
+    "path": "/en/personnel-files/7d1cd2f7-70c7-4001-b5c4-413f33282ef3",
+    "selectedPending": true,
+    "documentVisible": true
+  },
+  "retiredCompletion": {
+    "retiredSuccessToast": false,
+    "selectedDocumentHasLink": true,
+    "absenceCard": false
+  },
+  "heldTransport": {
+    "name": "unlink-cross-view",
+    "mode": "hold-unlink",
+    "exportedName": "unlinkSickNoteAction",
+    "actionId": "409ab4e1f260585f2bef418fc05dce6836d1daec7d",
+    "count": 1,
+    "held": 1,
+    "syntheticTransportBoundary": true,
+    "requestPayloadRecorded": false
+  },
+  "officerAdmission": {
+    "visibleRows": 11,
+    "ownEmployeeVisible": false,
+    "formerVisible": true,
+    "h1": [
+      "Sick leave"
+    ],
+    "notificationOverlays": 0
+  },
+  "revocationUi": {
+    "revocationUiReadback": true
+  },
+  "refusedDraft": {
+    "feedback": "synthetic-independent-note.png: Employee not found",
+    "draftTitle": "Synthetic revoked draft",
+    "visiblePanels": 2
+  },
+  "selfMarker": {
+    "selfMarkerVisible": true,
+    "row": "3. Nov. 2026\n\t\nSynthetic independent sick leave\nChild sick\nSick note attached (1)\n\t\n1 day\n\t\nApproved\n\t\n—\n\t\nRequest change\nRequest cancellation",
+    "buttons": [
+      {
+        "text": "Sick note attached (1)",
+        "label": null
+      },
+      {
+        "text": "Request change",
+        "label": "Request change"
+      },
+      {
+        "text": "Request cancellation",
+        "label": "Request cancellation"
+      }
+    ]
+  },
+  "foreignTarget": {
+    "foreignTargetUnavailable": true,
+    "visibleDocumentControls": 0
+  },
+  "selfOverviewRefusal": {
+    "h1": [
+      "Page not found"
+    ],
+    "visibleRecords": 0
+  },
+  "lateRead": {
+    "pass": true,
+    "syntheticBoundary": "First actual listAbsenceSickNotesAction transport held before server dispatch; subsequent requests untouched",
+    "events": [
+      {
+        "pending": {
+          "currentTargetDescription": true,
+          "staleTitle": false,
+          "busy": true
+        }
+      },
+      {
+        "settled": {
+          "newTargetEmpty": true,
+          "staleTitle": false,
+          "realActionRequests": 2
+        }
+      }
+    ]
+  },
+  "rawCommandJournalSha256": "81ce4ad1f16d426778e485ba12df00406685e50bb371d870a8a935251cc01137",
+  "limits": [
+    "Held/failed transports are synthetic network boundaries; actual app/server reads and mutations run normally after release.",
+    "One QueryClient is the pending reservation boundary; no cross-tab/full-reload mutex, server idempotency/cancellation, duplicate persisted-write or live auth-race claim.",
+    "Runtime officer grant used all-employee scope and sick-note category. Named-scope picker interaction was not certified; canonical PostgreSQL covers named/team/category authorization.",
+    "Public units cover pending/retained session, loading heading and Activity/identity lifetimes; browser admission/auth was not held to establish a live auth race."
+  ]
+}

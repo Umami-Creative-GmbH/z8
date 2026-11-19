@@ -1,0 +1,13 @@
+{
+  "checks": [
+    {
+      "comparison": "same employee/organization and seeded records, exact three consumer files, no mutations between captures",
+      "pairs": 4
+    },
+    {
+      "phoneCurrentRouteFirstEscape": true,
+      "focusReturn": true
+    }
+  ],
+  "errors": []
+}

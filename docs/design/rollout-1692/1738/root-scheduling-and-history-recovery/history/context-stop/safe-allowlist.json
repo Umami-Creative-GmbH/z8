@@ -1,0 +1,59 @@
+{
+  "purpose": "Exact reviewed public/synthetic evidence eligible for root to archive; ignored only, no publication performed.",
+  "files": [
+    {
+      "path": "commands.md",
+      "sha256": "040ee8b8a8e482ffcaff2eacc1904d90d809f6deb01c31e62c26c043d0b8e77b"
+    },
+    {
+      "path": "handoff.md",
+      "sha256": "5033c338992db0994291ea2530b15a560f92856094e517c5978f95d2d905e0f8"
+    },
+    {
+      "path": "findings.json",
+      "sha256": "5a372f8d0cf0ef627ef6f0e03c31394a63dc8f763c0c74a72b4736280c2ab5c9"
+    },
+    {
+      "path": "preservation.json",
+      "sha256": "e76f8068cf6ab73a7e9a40928a0cc2027f3aca9721a65ca4624b445d5403c097"
+    },
+    {
+      "path": "release.json",
+      "sha256": "7775b98f9e1e10ee8ca8cb4d9f631754699b281e69987a6e7c0a52b750c3ebd6"
+    },
+    {
+      "path": "context-retry.test.tsx",
+      "sha256": "76ca4aa5157bdd8e8b4182dc1eca3f6ca3858fb108f5c9d1452a50ff3783dce0"
+    },
+    {
+      "path": "context-retry-results.json",
+      "sha256": "18f151d042fb671aff5529ef8281fcb397cd7502ce05f190e4e38ecf2679c188"
+    },
+    {
+      "path": "context-retry.log",
+      "sha256": "e68920e29021ea5337262096e8039097eec2cacd90c28668d8ceca25d75673c5"
+    },
+    {
+      "path": "historical-next-qualification.json",
+      "sha256": "4d46cc685c3d4cf730dad8310e21bf0a75cdd832183b9acbc8e93f0dbf9a9e84"
+    },
+    {
+      "path": "predicted-resolved-tree.txt",
+      "sha256": "c590e2c84d0e28ff70793a75772604200657feb82bab8c309b207e266282031b"
+    },
+    {
+      "path": "incoming-delta.txt",
+      "sha256": "99adc2d593430fec363c9d18c5dafa3f5257d46ae8be9494f0c27a0cbe1e0ca1"
+    },
+    {
+      "path": "bridge.json",
+      "sha256": "dd1415c37fee29563b3f4bbbb3e4893b220f35e8e5248353b9e13bf1088ca0ac"
+    }
+  ],
+  "excluded": [
+    "baseline.json contains internal full source/config/dependency hash inventory",
+    "brief.md and preparation-stale.md are coordination inputs, not acceptance",
+    "predicted.index is inert private prediction-index evidence",
+    "all implementation/audit scripts and parent-tree.txt remain local ignored audit data"
+  ]
+}

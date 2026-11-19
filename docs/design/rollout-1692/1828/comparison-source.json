@@ -1,0 +1,8 @@
+{
+  "kind": "single consumer presentation overlay; rest of app current",
+  "historicalCommit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "relative": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+  "baselineSha256": "8c570eb2be3e83839a995a2a77ac8e934047d2fec17fabc4cb6bf8b8d479d440",
+  "restoredSha256": "e87fb164ff6872395f7ccc2a58c0cb3305a6ee4235594f714f65b9afda07ed8b",
+  "intendedCurrentSha256": "e87fb164ff6872395f7ccc2a58c0cb3305a6ee4235594f714f65b9afda07ed8b"
+}

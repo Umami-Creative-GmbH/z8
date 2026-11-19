@@ -1,0 +1,110 @@
+{
+  "kind": "archive-verifier-output-not-self-sealed",
+  "source": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+  "commands": [
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/1730/root-request-confirmations/verify-evidence.mjs",
+      "exit": 0,
+      "result": {
+        "status": "verified",
+        "source": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+        "currentSourceChecked": false,
+        "publicArtifacts": 190,
+        "decodedPngs": 56,
+        "unitCases": 335,
+        "physicalUnitFiles": 52,
+        "focusedRunsNonadditive": true,
+        "postgresCases": 99,
+        "physicalPostgresFiles": 6,
+        "distinctCases": 434,
+        "distinctPhysicalFiles": 58,
+        "functionalAssertions": 69,
+        "matchedAssertions": [
+          19,
+          14,
+          4
+        ],
+        "captureReferences": 54,
+        "ownedProcessesRemaining": 0,
+        "nativePermissionProbeFailures": 2,
+        "syntaxCheckedScripts": 33,
+        "syntaxParsedTsx": 6,
+        "syntaxParsedPowershell": 2,
+        "localProseLinks": 47,
+        "privateEvidenceRead": false,
+        "runtimeHarnessesExecuted": 0,
+        "testsRerun": false
+      }
+    },
+    {
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/1730/root-request-confirmations/verify-evidence.mjs --current-source",
+      "exit": 0,
+      "result": {
+        "status": "verified",
+        "source": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+        "currentSourceChecked": true,
+        "publicArtifacts": 190,
+        "decodedPngs": 56,
+        "unitCases": 335,
+        "physicalUnitFiles": 52,
+        "focusedRunsNonadditive": true,
+        "postgresCases": 99,
+        "physicalPostgresFiles": 6,
+        "distinctCases": 434,
+        "distinctPhysicalFiles": 58,
+        "functionalAssertions": 69,
+        "matchedAssertions": [
+          19,
+          14,
+          4
+        ],
+        "captureReferences": 54,
+        "ownedProcessesRemaining": 0,
+        "nativePermissionProbeFailures": 2,
+        "syntaxCheckedScripts": 33,
+        "syntaxParsedTsx": 6,
+        "syntaxParsedPowershell": 2,
+        "localProseLinks": 47,
+        "privateEvidenceRead": false,
+        "runtimeHarnessesExecuted": 0,
+        "testsRerun": false
+      }
+    }
+  ],
+  "retainedAttempts": [
+    {
+      "file": "verification-attempt-01.log",
+      "exit": 1,
+      "boundary": "Verifier syntax-parser setup failed because installed TypeScript7 CJS exports version only. Corrected to installed Babel parser via Next. Runtime/source/result contracts had passed before this setup failure; no product/runtime acceptance changed."
+    }
+  ],
+  "finalBoundedAudit": {
+    "controlSeals": 6,
+    "exactStaticRawCopies": 53,
+    "exactRuntimeRawCopies": 128,
+    "explicitPublicJsonClones": 3,
+    "appendedReportLinks": 20,
+    "excludedCaptureOpenedStattedOrHashed": false
+  },
+  "statistics": {
+    "indexedArtifacts": 190,
+    "indexedBytes": 8156099,
+    "indexedJson": 60,
+    "publishedPngs": 56,
+    "controlFiles": 7,
+    "verifierOutputFiles": 4,
+    "totalPublicFiles": 201,
+    "totalPublicBytes": 8277069
+  },
+  "seals": {
+    "source-pins.json": "64a50d91e061edda8b72a47c09429a2d986e8b0dda1423c4291c1d08c797a42a",
+    "verification-manifest.json": "b716482cfc8ca0f8564cd1d2bc8c603d626ebb6be6f5a35ff8adcb13ebe514c8",
+    "evidence-index.json": "74e1e58fb81d832d3f2136c66cb1c5a225d8f754fe56316a55ef3449ea5bde66",
+    "publication-exclusions.json": "8bc4a680e1265c367939179e26a379cd949c022f2a182589b50a50d544ce8917",
+    "README.md": "c6e8cd6c8a61f64a498adfa8d3cb1ac3540d3ef31e1a38d9051cfbf407d39492",
+    ".gitattributes": "705fd4d6451a31d36b3df7de96f83f30ac976c9b4a6d1e51671d8e2f33e2d0da"
+  },
+  "verifierSha256": "e987b2ce46ab5ba93bf2252f85ccf059644c64b39d3ba4a28a703865fa822af1",
+  "runtimePublicHashMapSha256": "b3388b1c81a6080c8853ecf1d5a9a1d7ddbfdea3731f190e6a2452f56698a922",
+  "scope": "No tests, PG/browser runtime, package installation, source/index/tracker/network mutation or private input inspection during publication. Reports remain qualified; no whole-branch readiness claim."
+}

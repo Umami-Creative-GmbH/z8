@@ -96,21 +96,27 @@
       "rejectTitle": "Rifiuta richiesta"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Conferma dell'organizzazione e del dipendente attuali in corso…",
       "created": "Creata",
       "decisionRecorded": "Decisione registrata",
       "destination": "Destinazione",
       "history": "Cronologia decisioni",
       "historyDescription": "Ogni passaggio di questa richiesta, a partire dal meno recente. Gli orari sono indicati in UTC.",
       "intermediateApproval": "Approvazione registrata — in attesa di ulteriore approvazione",
+      "legacyClaim": "Richiesta di rimborso legacy",
       "legacyReceiptIdentity": "Ricevuta legacy: il checksum del contenuto non è stato registrato.",
       "loading": "Caricamento richiesta…",
       "noReceipts": "Nessuna ricevuta registrata",
       "notRecorded": "Non registrato",
       "originalAmount": "Importo originale",
       "receipts": "Ricevute",
+      "receiptVersion": "Versione registrata",
       "refreshing": "Aggiornamento richiesta…",
+      "scopeUnavailable": "Aggiorna questa richiesta di rimborso per confermare il tuo accesso attuale.",
       "submitted": "Inviata",
       "title": "Richiesta di rimborso spese di viaggio",
+      "unavailable": "Richiesta di rimborso non trovata o accesso non più disponibile.",
       "unknownDates": "Contesto data viaggio non registrato (richiesta legacy)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Seleziona {name}",
         "selectAll": "Seleziona tutte le spese in attesa di rimborso in questa pagina",
         "selected": "{count} selezionati",
+        "selectionChanged": "Una o più spese selezionate sono cambiate. Chiudi questa finestra di dialogo e rivedi le spese attuali prima di avviare un altro pagamento.",
         "skipped": "Non inclusi ({count})",
         "submit": "Contrassegna {count} come rimborsati",
         "title": "Contrassegna come rimborsato"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Nessun responsabile delle note spese attivo autorizzato a registrare rimborsi include queste spese nel proprio ambito. I proprietari e gli amministratori possono comunque registrarle o ampliare l'ambito di un responsabile.",
         "empty": "Un responsabile delle note spese copre ogni spesa approvata in attesa di rimborso.",
+        "failed": "Impossibile verificare la copertura. Riprova.",
         "queueFilter": "Spese approvate in attesa di rimborso non coperte da alcun responsabile delle note spese.",
         "show": "Mostra queste spese",
         "showAll": "Mostra tutte le spese approvate",
@@ -237,6 +245,7 @@
           "none": "Nessun dipendente trovato.",
           "search": "Cerca dipendenti…"
         },
+        "failed": "Impossibile caricare le opzioni di filtro. Riprova.",
         "label": "Mostra spese",
         "notExported": "Non ancora esportato",
         "open": "Aperto",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Queste elaborazioni stipendi contengono note spese in attesa di rimborso. Una volta effettuato il pagamento dell'elaborazione, confermala per registrare i rimborsi.",
+        "failed": "Impossibile caricare le conferme delle buste paga. Riprova.",
         "reports": "{count, plural, one {# nota spese da confermare, {amount}} other {# note spese da confermare, {amount}}}",
         "title": "Elaborazioni stipendi in attesa di conferma"
       },
       "queue": {
         "description": "Apri una spesa per visualizzarne la liquidazione e registrare un rimborso.",
+        "failed": "Impossibile caricare la coda finanziaria. Riprova.",
         "title": "Spese approvate"
+      },
+      "scope": {
+        "failed": "Impossibile confermare il tuo accesso attuale all'area finanziaria. Riprova.",
+        "loading": "Conferma dell'accesso all'area finanziaria in corso…"
       },
       "title": "Contabilità spese"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Chilometraggio senza titolo"
     },
     "legacyDraft": {
+      "checking": "Verifica della ripresa della bozza in corso…",
       "continue": "Continua come nota spese",
       "converted": "Hai continuato questa bozza come nota spese. Questa richiesta rimarrà qui invariata per riferimento.",
       "description": "Le bozze del modulo di richiesta precedente vengono ora completate come note spese. L'importo, le date, le note e le ricevute sono stati trasferiti; gli eventuali dati richiesti dal nuovo modulo non presenti in questa bozza dovranno essere completati. La richiesta originale rimane invariata.",
@@ -367,6 +383,7 @@
         "title": "Continuata da una bozza di richiesta precedente"
       },
       "openReport": "Apri la nota spese",
+      "readRefused": "La ripresa della bozza non è disponibile per il lettore attuale.",
       "receipt": {
         "mismatch": "il file memorizzato non corrisponde più a quello caricato",
         "unreadable": "il file memorizzato non può essere letto in questo momento",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Nessun importo in sospeso per questa spesa.",
         "ownExpense": "Non puoi registrare pagamenti per le tue spese.",
         "referenceRequired": "Inserisci il riferimento del pagamento, ad es. il riferimento del bonifico bancario.",
+        "refresh": "Impossibile aggiornare il saldo. Sono mostrati i record caricati in precedenza; riprova prima di registrare un pagamento.",
         "refused": "Impossibile registrare questo pagamento per questa spesa.",
         "staleBalance": "Il saldo è cambiato durante l'inserimento di questo pagamento. Controlla il saldo aggiornato e registralo di nuovo.",
         "tooLong": "Questo testo è troppo lungo."
@@ -1149,7 +1167,13 @@
     },
     "title": "Spese di viaggio",
     "workspace": {
-      "description": "Raccogli le spese di viaggio e singole, inviale per la revisione e segui il loro rimborso."
+      "create": "Crea una nota spese",
+      "description": "Raccogli le spese di viaggio e singole, inviale per la revisione e segui il loro rimborso.",
+      "mileageDescription": "Registra un tragitto di lavoro al di fuori di una trasferta.",
+      "otherWork": "Rivedi e finanzia",
+      "receiptDescription": "Registra una spesa con la relativa ricevuta.",
+      "reconciling": "Caricamento delle spese per l'organizzazione corrente…",
+      "tripDescription": "Raccogli le spese con dettagli di viaggio condivisi."
     }
   }
 }

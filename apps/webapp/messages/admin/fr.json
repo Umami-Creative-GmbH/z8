@@ -75,8 +75,10 @@
         "title": "Tendances analytiques",
         "viewFull": "Voir l'analyse complète"
       },
+      "scope": "Rapports à l'échelle de la plateforme",
       "sectionDescription": "Mis à jour à partir des données actuelles de la plateforme pour la plage et le compartiment sélectionnés.",
       "sectionTitle": "Tendances analytiques",
+      "seriesValues": "Afficher les valeurs de la série",
       "title": "Analytique de la plateforme",
       "values": {
         "notAvailable": "Non disponible"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Impossible de confirmer l'accès à la plateforme.",
       "analytics": {
         "title": "Tendances analytiques"
       },
-      "description": "Métriques de la plateforme et actions rapides",
+      "analyticsUnavailable": "Les analyses de la plateforme sont indisponibles. Réessayez.",
+      "confirmingAccess": "Confirmation de l'accès à la plateforme",
+      "groups": {
+        "access": "Gestion des accès",
+        "billing": "Facturation et abonnements",
+        "operations": "Opérations de la plateforme"
+      },
+      "loadingAnalytics": "Chargement des analyses de la plateforme",
+      "loadingMetrics": "Chargement des indicateurs de la plateforme",
       "metrics": {
         "bannedUsers": "Utilisateurs bannis",
         "bannedUsersDescription": "Accès restreint",
@@ -295,6 +306,9 @@
         "totalUsers": "Nombre total d'utilisateurs",
         "totalUsersDescription": "Comptes enregistrés sur la plateforme"
       },
+      "metricsUnavailable": "Les indicateurs de la plateforme sont indisponibles. Réessayez.",
+      "platformDescription": "Consultez les comptes, les espaces de travail et l'activité à l'échelle de la plateforme, puis ouvrez un espace d'administration.",
+      "platformTitle": "Vue d'ensemble de la plateforme",
       "quickActions": {
         "billing": {
           "description": "Métriques de revenus et statut des abonnements",
@@ -318,7 +332,7 @@
           "title": "Gestion des utilisateurs"
         }
       },
-      "title": "Vue d'ensemble"
+      "refreshAccess": "Actualisez la vue d'ensemble pour confirmer l'accès à la plateforme avant de continuer."
     },
     "settings": {
       "actions": {

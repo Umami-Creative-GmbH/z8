@@ -41,10 +41,19 @@ function failure(error: unknown, fallback: string): { success: false; error: str
 export async function startPayslipBatchAction(input: {
 	payPeriod: { year: number; month: number };
 	visibility: "shared" | "hr_only";
+	/** Displayed scope comparison only; canonical access still decides the write. */
+	expectedScope?: { userId: string; organizationId: string };
 }): Promise<ServerActionResult<PayslipBatchView>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
 		if (current.status !== "resolved") return { success: false, error: NOT_FOUND };
+		if (
+			input?.expectedScope &&
+			(current.access.userId !== input.expectedScope.userId ||
+				current.access.organizationId !== input.expectedScope.organizationId)
+		) {
+			return { success: false, error: NOT_FOUND };
+		}
 		const result = await createPayslipBatch(db, current.access, {
 			payPeriod: input?.payPeriod,
 			visibility: input?.visibility,

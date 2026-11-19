@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Odobri",
       "approveLabel": "Odobri {title}",
+      "decided": "Odluka je spremljena. Osvježite za učitavanje trenutačnog reda čekanja.",
       "description": "Zahtjevi koji čekaju odluku voditelja.",
       "empty": "Nema odobrenja na čekanju.",
       "openInbox": "Otvori ulaznu poštu",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Odobrenja na čekanju",
       "reject": "Odbij",
       "rejectLabel": "Odbij {title}",
+      "retry": "Ponovno pokušaj odobrenja",
       "title": "Odobrenja",
       "toast": {
         "approved": "Zahtjev je odobren",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Danas",
-      "description": "Pregledajte stavke koje danas zahtijevaju radnju, a zatim prijeđite izravno na odgovarajući radni tijek.",
+      "accessUnavailable": "Ovaj sažetak nije dostupan za trenutačnog zaposlenika i organizaciju.",
+      "contextFailed": "Nije bilo moguće provjeriti vaš trenutačni pristup. Pokušajte ponovno.",
+      "drivingUnavailable": "Pojedinosti o vožnji nisu se mogle provjeriti.",
+      "incomplete": "Neke provjere nisu dostupne. Pregledajte pogreške odjeljka; ovi su rezultati nepotpuni.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Radna razdoblja vaših zaposlenika u kojima nedostaje vozilo ili stanje kilometraže.",
           "title": "Nedostaju podaci o vožnji ({count})"
         }
       },
+      "loadFailed": "Nije bilo moguće učitati sažetak. Pokušajte ponovno.",
       "needsAction": {
         "description": "Započnite ovdje za najhitnije operativno praćenje.",
-        "empty": "Sve je u redu. Trenutačno nije potrebna radnja voditelja.",
+        "noExceptions": "U ovom prikazu nisu otkrivene operativne daljnje radnje. Ovo ne potvrđuje prisutnost zaposlenika.",
         "title": "Zahtijeva radnju"
       },
+      "partial": "Djelomično",
+      "refreshFailed": "Osvježavanje nije uspjelo. Prikazani su prethodni rezultati; pokušajte ponovno prije poduzimanja radnje.",
+      "refreshing": "Osvježavanje sažetka. Prethodni rezultati ostaju vidljivi.",
+      "retainedSection": "Prikazani su prethodni rezultati. Pokušajte ponovno kako biste provjerili ima li promjena.",
+      "retry": "Ponovno pokušaj sažetak",
+      "retrySection": "Ponovno pokušaj: {title}",
+      "scope": "Operativno praćenje za zaposlenike koje možete nadzirati u aktivnoj organizaciji.",
       "sections": {
         "empty": "Nisu otkriveni problemi."
       },
@@ -41,10 +53,11 @@
         "info": "Informacija",
         "warning": "Upozorenje"
       },
+      "snapshot": "Stanje ažurirano {time}. Upotrijebite Osvježi podatke za provjeru promjena.",
       "summaryAriaLabel": "Sažetak za danas",
       "supportingSectionsAriaLabel": "Pomoćni odjeljci",
       "title": "Dnevni pregled za voditelja",
-      "updatedAt": "{date} - Ažurirano u {time}"
+      "unavailable": "Nedostupno"
     }
   }
 }

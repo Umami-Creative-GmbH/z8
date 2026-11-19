@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Anulo",
+      "cancelled": "Kërkesa u anulua",
       "cancelling": "Po anulohet…",
+      "cancelRequest": "Anulo kërkesën",
       "cancelRequestConfirmation": "Të anulohet kjo kërkesë?",
+      "cancelRequestDescription": "Është tërhequr nga shqyrtimi dhe nuk mund të rihapet. Për të kërkuar përsëri, dërgoni një kërkesë të re.",
       "cancelRequestError": "Kërkesa nuk mund të anulohej.",
       "fix": "Rregullo",
-      "notAvailable": "E padisponueshme",
+      "keepRequest": "Mbaj kërkesën",
       "view": "Shiko"
     },
     "all": {
-      "description": "Shqyrtoni kërkesat për mungesat, korrigjimet e orarit dhe shpenzimet.",
       "title": "Të gjitha kërkesat"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "Kërkesat do të shfaqen këtu pasi të dorëzohen ose të ngarkohen.",
+        "hint": "Provoni një term tjetër kërkimi, status ose lloj.",
         "title": "Asnjë kërkesë nuk përputhet me filtrat tuaj"
       },
       "none": {
         "description": "Kërkesat do të shfaqen këtu pasi të dorëzohen ose të ngarkohen.",
         "title": "Ende nuk ka kërkesa"
+      },
+      "unavailable": {
+        "description": "Riprovoni burimet e padisponueshme për të kontrolluar kërkesat tuaja.",
+        "title": "Nuk u ngarkua asnjë kërkesë"
       }
     },
     "featureName": "shikoni kërkesat tuaja",
     "filters": {
       "allStatuses": "Të gjitha statuset",
       "allTypes": "Të gjitha llojet",
-      "approvedRequests": "Kërkesat e miratuara",
-      "cancelledRequests": "Kërkesat e anuluara",
-      "description": "Filtroni çdo seksion kërkesash sipas tekstit, statusit ose llojit të kërkesës.",
-      "pendingRequests": "Kërkesat në pritje",
-      "rejectedRequests": "Kërkesat e refuzuara",
+      "resultCount": "Po shfaqen {visible} nga {total} kërkesa",
       "search": "Kërko",
-      "searchPlaceholder": "Kërko sipas titullit…",
+      "searchRequestsPlaceholder": "Titulli, datat, shuma ose arsyeja…",
       "status": "Statusi",
       "title": "Gjeni kërkesa",
       "type": "Lloji"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Kjo kërkesë nuk është më në pritje ose nuk mund të shfaqet këtu. Gatishmëria e periudhës po kontrollohet përsëri."
     },
+    "history": {
+      "request": "Kërkesë"
+    },
     "inReview": {
-      "description": "Kërkesat në pritje të miratimit ose përpunimit.",
       "title": "Në shqyrtim"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Kërkesë për shpenzime udhëtimi"
       }
     },
+    "scope": "Kërkesat tuaja për mungesë, korrigjim të orarit dhe shpenzime të mëparshme në organizatën aktive",
     "sourceError": {
       "absence": "Kërkesat për mungesë nuk mund të ngarkoheshin.",
       "timeCorrection": "Kërkesat për korrigjimin e orarit nuk mund të ngarkoheshin.",
       "title": "Disa kërkesa nuk mund të ngarkoheshin.",
       "travelExpense": "Kërkesat për shpenzimet e udhëtimit nuk mund të ngarkoheshin."
     },
-    "sourceTypes": {
-      "absence": "Mungesa",
-      "timeCorrection": "Orari",
-      "travelExpense": "Shpenzimi"
-    },
     "status": {
       "approved": "Miratuar",
       "cancelled": "Anuluar",
       "inReview": "Në shqyrtim",
-      "pending": "Në pritje",
       "rejected": "Refuzuar"
     },
-    "subtitle": "Ndiqni kërkesat në pritje, korrigjimet e kërkuara dhe vendimet e fundit në një vend të vetëm.",
     "summary": {
       "ariaLabel": "Përmbledhja e kërkesës",
-      "pending": "Në pritje",
       "recentDecisions": "Vendimet e fundit",
+      "recentWindow": "30 ditët e fundit",
       "requiredFixes": "Korrigjimet e nevojshme",
       "totalLoaded": "Gjithsej të ngarkuara"
     },
     "title": "Kërkesat e mia",
+    "types": {
+      "absence": "Mungesë",
+      "timeCorrection": "Korrigjim i orarit",
+      "travelExpense": "Shpenzime udhëtimi"
+    },
     "unavailableTitle": "Kërkesat nuk janë të disponueshme"
   }
 }

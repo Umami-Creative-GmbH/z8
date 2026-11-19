@@ -1,0 +1,362 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/complete/page.test.tsx (14 tests | 2 failed | 12 skipped) 2116ms
+   ❯ personal onboarding completion (14)
+     × does not revive an old account summary after an A to B to A round trip 1100ms
+     × keeps rejected finalization retryable and a summary refusal distinct 1015ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/complete/page.test.tsx > personal onboarding completion > does not revive an old account summary after an A to B to A round trip
+TestingLibraryElementError: Unable to find an element with the text: B. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="flex min-h-[50vh] items-center justify-center"
+    >
+      <div
+        class="text-center"
+      >
+        <div
+          class="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]"
+        />
+        <p
+          class="mt-4 text-muted-foreground"
+        >
+          Finalizing your setup...
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="flex min-h-[50vh] items-center justify-center"
+    >
+      <div
+        class="text-center"
+      >
+        <div
+          class="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]"
+        />
+        <p
+          class="mt-4 text-muted-foreground"
+        >
+          Finalizing your setup...
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/[locale]/onboarding/complete/page.test.tsx:244:16
+    242|   boundary.session.data!.user.id = "actor-b";
+    243|   view.rerender(<CompletePage />);
+    244|   await screen.findByText("B");
+       |                ^
+    245|   boundary.session.data!.user.id = "actor-a";
+    246|   view.rerender(<CompletePage />);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/complete/page.test.tsx > personal onboarding completion > keeps rejected finalization retryable and a summary refusal distinct
+TestingLibraryElementError: Unable to find role="alert"
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <nav
+      aria-label="Onboarding progress"
+      class="w-full py-8"
+    >
+      <div
+        class="mx-auto max-w-3xl"
+      >
+        <div
+          class="relative"
+        >
+          <div
+            aria-hidden="true"
+            class="absolute top-4 h-0.5 bg-muted sm:top-5"
+            style="left: 8.33333%; right: 8.33333%;"
+          />
+          <div
+            aria-hidden="true"
+            class="absolute top-4 h-0.5 bg-primary transition-[width] duration-500 sm:top-5"
+            data-testid="onboarding-progress-line"
+            style="left: 8.33333%; width: 83.3333%;"
+          />
+          <ol
+            class="relative grid"
+            style="grid-template-columns: repeat(6, minmax(0px, 1fr));"
+          >
+            <li
+              class="flex min-w-0 flex-col items-center"
+            >
+              <div
+                aria-hidden="true"
+                class="flex size-8 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color] duration-300 sm:size-10 border-primary bg-primary text-primary-foreground"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-4 sm:size-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 12l5 5l10 -10"
+                  />
+                </svg>
+              </div>
+              <span
+                class="sr-only w-full px-0.5 text-center text-xs font-medium break-words hyphens-auto transition-colors sm:not-sr-only sm:mt-2 lg:text-sm text-primary"
+              >
+                Welcome
+              </span>
+            </li>
+            <li
+              class="flex min-w-0 flex-col items-center"
+            >
+              <div
+                aria-hidden="true"
+                class="flex size-8 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color] duration-300 sm:size-10 border-primary bg-primary text-primary-foreground"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-4 sm:size-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 12l5 5l10 -10"
+                  />
+                </svg>
+              </div>
+              <span
+                class="sr-only w-full px-0.5 text-center text-xs font-medium break-words hyphens-auto transition-colors sm:not-sr-only sm:mt-2 lg:text-sm text-primary"
+              >
+                Organization
+              </span>
+            </li>
+            <li
+              class="flex min-w-0 flex-col items-center"
+            >
+              <div
+                aria-hidden="true"
+                class="flex size-8 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color] duration-300 sm:size-10 border-primary bg-primary text-primary-foreground"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-4 sm:size-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 12l5 5l10 -10"
+                  />
+                </svg>
+              </div>
+              <span
+                class="sr-only w-full px-0.5 text-center text-xs font-medium break-words hyphens-auto transition-colors sm:not-sr-only sm:mt-2 lg:text-sm text-primary"
+
+              >
+                Profile
+              </span>
+            </li>
+            <li
+              class="flex min-w-0 flex-col items-center"
+            >
+              <div
+                aria-hidden="true"
+                class="flex size-8 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color] duration-300 sm:size-10 border-primary bg-primary text-primary-foreground"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-4 sm:size-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin[3...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <nav
+      aria-label="Onboarding progress"
+      class="w-full py-8"
+    >
+      <div
+        class="mx-auto max-w-3xl"
+      >
+        <div
+          class="relative"
+        >
+          <div
+            aria-hidden="true"
+            class="absolute top-4 h-0.5 bg-muted sm:top-5"
+            style="left: 8.33333%; right: 8.33333%;"
+          />
+          <div
+            aria-hidden="true"
+            class="absolute top-4 h-0.5 bg-primary transition-[width] duration-500 sm:top-5"
+            data-testid="onboarding-progress-line"
+            style="left: 8.33333%; width: 83.3333%;"
+          />
+          <ol
+            class="relative grid"
+            style="grid-template-columns: repeat(6, minmax(0px, 1fr));"
+          >
+            <li
+              class="flex min-w-0 flex-col items-center"
+            >
+              <div
+                aria-hidden="true"
+                class="flex size-8 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color] duration-300 sm:size-10 border-primary bg-primary text-primary-foreground"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-4 sm:size-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 skipped (14)
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 12l5 5l10 -10"
+                  />
+                </svg>
+              </div>
+              <span
+                class="sr-only w-full px-0.5 text-center text-xs font-medium break-words hyphens-auto transition-colors sm:not-sr-only sm:mt-2 lg:text-sm text-primary"
+              >
+                Welcome
+              </span>
+            </li>
+            <li
+              class="flex min-w-0 flex-col items-center"
+            >
+              <div
+                aria-hidden="true"
+   Start at  13:46:32
+                class="flex size-8 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color] duration-300 sm:size-10 border-primary bg-primary text-primary-foreground"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-4 sm:size-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 12l5 5l10 -10"
+                  />
+                </svg>
+              </div>
+              <span
+                class="sr-only w-full px-0.5 text-center text-xs font-medium break-words hyphens-auto transition-colors sm:not-sr-only sm:mt-2 lg:text-sm text-primary"
+              >
+                Organization
+              </span>
+            </li>
+            <li
+              class="flex min-w-0 flex-col items-center"
+            >
+              <div
+                aria-hidden="true"
+                class="flex size-8 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color] duration-300 sm:size-10 border-primary bg-primary text-primary-foreground"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-4 sm:size-5"
+                  fill="none"
+   Duration  3.00s (tests 74%, environment 14%, import 7%, transform 2%, setup 1%)
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 12l5 5l10 -10"
+                  />
+                </svg>
+              </div>
+              <span
+                class="sr-only w-full px-0.5 text-center text-xs font-medium break-words hyphens-auto transition-colors sm:not-sr-only sm:mt-2 lg:text-sm text-primary"
+              >
+                Profile
+              </span>
+            </li>
+            <li
+              class="flex min-w-0 flex-col items-center"
+            >
+              <div
+                aria-hidden="true"
+                class="flex size-8 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color] duration-300 sm:size-10 border-primary bg-primary text-primary-foreground"
+              >
+                <svg
+                  class="tabler-icon tabler-icon-check size-4 sm:size-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin[3...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/[locale]/onboarding/complete/page.test.tsx:258:16
+    256|   boundary.summary.mockResolvedValueOnce({ success: false, error: "pri…
+    257|   render(<CompletePage />);
+    258|   await screen.findByRole("alert");
+       |                ^
+    259|   expect(screen.queryByText("private mutation details")).toBeNull();
+    260|   fireEvent.click(screen.getByRole("button", { name: "Retry completion…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-80078e87-
+  │ 0f3316408af2ec4b\apps\webapp
+

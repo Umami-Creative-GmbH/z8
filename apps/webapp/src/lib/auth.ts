@@ -128,16 +128,54 @@ function getAuthSecrets() {
 	return resolved.secrets;
 }
 
+/**
+ * OIDC origins of public identity providers whose hosts the provider owns and
+ * tenants cannot publish content on. The SSO plugin fetches discovery only
+ * from trusted origins, and every endpoint the discovery document names must
+ * be trusted too. Other IdPs (Okta, Auth0, Keycloak, ...) are operator opt-in
+ * through `SSO_TRUSTED_ORIGINS`.
+ */
+export const BUILT_IN_SSO_IDP_ORIGINS = [
+	// Microsoft Entra ID: discovery, authorize, token, keys and logout; userinfo is on Graph.
+	"https://login.microsoftonline.com",
+	"https://graph.microsoft.com",
+	// Google: discovery and authorize; token, userinfo and keys on googleapis.com.
+	"https://accounts.google.com",
+	"https://oauth2.googleapis.com",
+	"https://openidconnect.googleapis.com",
+	"https://www.googleapis.com",
+] as const;
+
+const AUTH_BASE_PATH = "/api/auth";
+
+/**
+ * Built-in IdP origins are trusted only where SSO discovery can run: direct
+ * server-side `auth.api` calls (Better Auth hands those to `trustedOrigins` as
+ * a request to the bare base path; provider registration is one) and the SSO
+ * plugin's own endpoints. Browser-facing sign-in, email and social routes keep
+ * them out of their redirect and origin checks.
+ */
+function isSSODiscoveryPath(pathname: string): boolean {
+	const path = pathname.replace(/\/+$/, "");
+	return (
+		path === AUTH_BASE_PATH ||
+		path.startsWith(`${AUTH_BASE_PATH}/sso/`) ||
+		path === `${AUTH_BASE_PATH}/sign-in/sso`
+	);
+}
+
 export async function getSSOTrustedOrigins(
 	_request: Request,
-	_pathname: string,
+	pathname: string,
 	dependencies: {
 		loadConfiguredOrigins: () => string[];
 	} = {
 		loadConfiguredOrigins: () => env.SSO_TRUSTED_ORIGINS?.split(",") ?? [],
 	},
 ): Promise<string[]> {
-	const origins = new Set<string>();
+	const origins = new Set<string>(
+		isSSODiscoveryPath(pathname) ? BUILT_IN_SSO_IDP_ORIGINS : [],
+	);
 
 	for (const configuredOrigin of dependencies.loadConfiguredOrigins()) {
 		const value = configuredOrigin.trim();

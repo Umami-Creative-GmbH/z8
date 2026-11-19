@@ -1,5 +1,8 @@
 {
   "settings": {
+    "approvalSettings": {
+      "pageDescription": "Podesite ko odobrava zahtjeve, kada se zakašnjela odobrenja eskaliraju i koje probleme s odobrenjima treba pratiti."
+    },
     "approvalTriage": {
       "correctionError": "Unesite cijeli broj od 0 do 60 minuta.",
       "correctionHelp": "Nula onemogućava brzu obradu malih ispravki, uključujući izmjene bez razlike. U suprotnom, unesite 1–60 minuta; svi potrebni dokazi i dalje moraju biti verifikovani.",
@@ -138,6 +141,7 @@
           "defaultTax": "Zadano: {treatment}",
           "description": "Povežite svakog kupca s njegovim postojećim kontaktom u računovodstvenom alatu prije prvog prijenosa i promijenite porezni tretman gdje je potrebno.",
           "edit": "Uredi",
+          "editAction": "Uredi računovodstvo za {name}",
           "empty": "Još nema kupaca",
           "inactive": "Neaktivno",
           "notLinked": "Nije povezano",
@@ -157,6 +161,8 @@
           "start": "Uvezi kupce"
         },
         "keyMissing": "API ključ nedostaje u skladištu tajni. Zamijenite vezu novim ključem.",
+        "loadFailed": "Postavke računovodstva se nisu mogle učitati.",
+        "loading": "Učitavanje postavki računovodstva",
         "netPrices": {
           "label": "Ovaj sevdesk nalog unosi cijene računa kao neto cijene",
           "required": "Z8 prosljeđuje neto cijene. Potvrdite da sevdesk unosi cijene kao neto cijene"
@@ -225,6 +231,7 @@
         "employeeTitle": "Stopa troška",
         "empty": "Još nema stope troška. Marža za rad ovog zaposlenika prikazuje se kao nepoznat trošak.",
         "history": "Historija",
+        "historyAction": "Historija stope troškova za {name}",
         "hourly": "Po satu",
         "inactive": "Neaktivno",
         "intro": "Stopa troška je ukupni interni trošak zaposlenika po satu u valuti {currency}, koji se koristi za maržu. Odvojena je od plate: promjena jednog nikada ne mijenja drugo.",
@@ -234,6 +241,7 @@
         "ratePerHour": "{rate}/h",
         "saved": "Stopa troška je sačuvana",
         "set": "Postavi stopu troška",
+        "setAction": "Postavi stopu troškova za {name}",
         "setRateHelp": "Nova stopa troška primjenjuje se od ovog datuma do sljedeće promjene. Nikada ne mijenja platu, obračun plata ili zaradu po satu.",
         "startsOn": "Počinje {date}",
         "today": "Danas",
@@ -378,11 +386,14 @@
           "empty": "Još nema prijenosa",
           "gone": "Izbrisano u alatu",
           "open": "Otvori",
+          "openAction": "Otvori primopredaju za {name}, {period}",
           "period": "Period",
           "status": "Status",
           "title": "Prijenosi",
           "total": "Neto ukupno"
         },
+        "loadFailed": "Primopredaje se nisu mogle učitati.",
+        "loading": "Učitavanje primopredaja",
         "marks": {
           "compare": "Uporedi",
           "compareItem": "Uporedi {item}",
@@ -495,6 +506,9 @@
         "customerRate": "Naplatna tarifa",
         "customerRateTitle": "Naplatna tarifa za {name}",
         "dateRequired": "Odaberite prvi dan primjene",
+        "deletedCustomer": "Izbrisani klijent",
+        "deletedEmployee": "Izbrisani zaposlenik",
+        "deletedProject": "Izbrisani projekat",
         "effectiveFrom": "Primjenjuje se od",
         "employee": "Zaposlenik",
         "employeeProjectRateFor": "Naplatna tarifa za {name} na ovom projektu",
@@ -511,10 +525,13 @@
         "endsFrom": "Više se ne primjenjuje od",
         "for": "Za",
         "history": "Historija",
+        "historyAction": "Historija stope za {name}",
         "hourlyRate": "Satnica",
         "inEffect": "Na snazi",
         "inEffectTodayHint": "Danas na snazi: {rate}",
         "intro": "Tarife su u {currency} po satu. Za svaki dio posla primjenjuje se najspecifičnija tarifa koja je na snazi na dan početka: zaposlenik na projektu, zatim projekat, zatim klijent, pa zaposlenik.",
+        "invalidDate": "Unesite važeći datum.",
+        "invalidRate": "Unesite pozitivnu satnicu s najviše dvije decimale.",
         "level": {
           "customer": "Klijent",
           "customerDescription": "Primjenjuje se na rad na projektima klijenta bez projektne tarife.",
@@ -542,6 +559,8 @@
         "setRate": "Postavi tarifu",
         "setRateHelp": "Nova tarifa se primjenjuje od ovog datuma do sljedeće promjene tarife. Raniji datumi ponovo obračunavaju cijenu rada koji još nije fakturisan.",
         "startsOn": "Počinje {date}",
+        "switchedOff": "Naplativo vrijeme je isključeno.",
+        "targetNotFound": "Zaposlenik, projekat ili klijent nije pronađen.",
         "today": "Danas",
         "unchanged": "Ta tarifa se već primjenjuje"
       },
@@ -550,6 +569,9 @@
     "billing": {
       "description": "Upravljajte svojom pretplatom, načinima plaćanja i računima",
       "title": "Naplata i pretplata"
+    },
+    "breadcrumbs": {
+      "label": "Navigacijska putanja postavki"
     },
     "closedMonths": {
       "automatic": {
@@ -587,6 +609,8 @@
       },
       "historyEmpty": "Nijedan mjesec još nije zatvoren.",
       "historyTitle": "Historija",
+      "loadErrorDescription": "Ponovo učitajte stranicu da biste pokušali ponovo.",
+      "loadErrorTitle": "Zatvoreni mjeseci se nisu mogli učitati",
       "locationNotFound": "Ova lokacija više ne postoji.",
       "monthsDescription": "Zatvaranje mjeseca zamrzava radne sate, atribuciju i odsustva za obračun plata. Bilješke ostaju dostupne za uređivanje.",
       "monthsTitle": "Mjeseci",
@@ -628,13 +652,19 @@
     },
     "compliance": {
       "description": "Pregledajte i upravljajte zahtjevima članova tima za izuzeće od usklađenosti",
+      "metadata": {
+        "description": "Konfigurišite postavke usklađenosti sa ArbZG i upravljajte zahtjevima za izuzetke",
+        "title": "Postavke usklađenosti | ArbZG"
+      },
       "title": "ArbZG usklađenost"
     },
     "customDomains": {
       "title": "Domena i brendiranje"
     },
     "customers": {
+      "accountingAction": "Računovodstvo za {name}",
       "column": {
+        "actions": "Radnje",
         "contactPerson": "Kontakt osoba",
         "email": "E-pošta",
         "name": "Naziv kompanije",
@@ -643,11 +673,13 @@
       "create": "Dodaj klijenta",
       "created": "Klijent je kreiran",
       "createFailed": "Kreiranje klijenta nije uspjelo",
-      "deleted": "Klijent je izbrisan",
+      "deleteAction": "Obriši {name}",
       "delete": {
+        "confirm": "Obriši {name}",
         "description": "Jeste li sigurni da želite izbrisati \"{name}\"? Projekti dodijeljeni ovom klijentu nastavit će funkcionisati, ali referenca na klijenta bit će uklonjena.",
         "title": "Izbriši klijenta"
       },
+      "deleted": "Klijent je izbrisan",
       "deleteFailed": "Brisanje klijenta nije uspjelo",
       "description": "Upravljajte kontaktima klijenata za dodjelu projekata",
       "dialog": {
@@ -658,6 +690,8 @@
         "editTitle": "Uredi klijenta",
         "save": "Sačuvaj promjene"
       },
+      "edit": "Uredi kupca",
+      "editAction": "Uredi {name}",
       "empty": {
         "description": "Dodajte svog prvog klijenta da biste ga dodijelili projektima.",
         "title": "Još nema klijenata"
@@ -680,6 +714,7 @@
         "description": "Ukupno {count} klijenata",
         "title": "Svi klijenti"
       },
+      "loadFailed": "Kupci se nisu mogli učitati. Provjerite svoju vezu i pokušajte ponovo.",
       "managerNoProjects": "Nema dostupnih projekata kojima upravljate. Kreirajte projekat ili upravljajte njime prije dodavanja klijenata.",
       "projectRequired": "Prvo odaberite projekat",
       "title": "Klijenti",
@@ -905,7 +940,7 @@
         "columnDate": "Datum",
         "columnSize": "Veličina",
         "columnStatus": "Status",
-        "deleteDialogDescription": "Jeste li sigurni da želite obrisati ovaj izvoz? Ova radnja se ne može poništiti.",
+        "deleteDialogDescriptionNamed": "Obrisati izvoz kreiran {date} u {time}? Ova radnja se ne može poništiti.",
         "deleteDialogTitle": "Obriši izvoz",
         "deleteError": "Brisanje izvoza nije uspjelo",
         "deleteSuccess": "Izvoz je obrisan",
@@ -914,7 +949,7 @@
         "downloadError": "Preuzimanje nije uspjelo",
         "downloadSuccess": "Preuzimanje je započeto",
         "emptyDescription": "Još nema izvoza",
-        "emptyHint": "Kreirajte svoj prvi izvoz pomoću obrasca iznad",
+        "emptyHintNewExportTab": "Kreirajte svoj prvi izvoz na kartici Novi izvoz.",
         "moreCategories": "+{count} više",
         "statusCompleted": "Završeno",
         "statusFailed": "Neuspjelo",
@@ -935,6 +970,7 @@
         "connectionFailed": "Povezivanje nije uspjelo",
         "connectionSuccess": "Povezivanje uspješno",
         "deleteDialogDescription": "Jeste li sigurni da želite izbrisati ovu konfiguraciju pohrane?",
+        "deleteDialogDescriptionNamed": "Obrisati konfiguraciju pohrane za bucket \"{bucket}\"?",
         "deleteDialogTitle": "Izbriši konfiguraciju",
         "deleteError": "Brisanje konfiguracije nije uspjelo",
         "deleteSuccess": "Konfiguracija je izbrisana",
@@ -962,7 +998,7 @@
         "verified": "Provjereno"
       },
       "storageNotConfigured": {
-        "description": "Konfigurišite S3 pohranu prije kreiranja izvoza",
+        "descriptionWithTab": "Konfigurišite S3 pohranu na kartici Postavke pohrane prije kreiranja izvoza.",
         "title": "Pohrana nije konfigurisana"
       },
       "tabs": {
@@ -980,6 +1016,7 @@
         "attribution": "Dodijelio/la {actor} u {time}",
         "editor": "Opseg verifikatora",
         "empty": "Nema dodijeljenih odgovornosti verifikatora",
+        "failed": "Nije moguće ažurirati niti pristupiti odgovornosti za provjeru vozačke dozvole. Provjerite svoje dozvole i odabire.",
         "formerEmployee": "Bivši zaposlenici se ne mogu dodati. Odaberite zaposlenike s trenutnog spiska.",
         "history": "Historija odgovornosti",
         "historyEntry": "Dodijelio {grantor} u {granted}; opozvao {revoker} u {revoked}",
@@ -990,6 +1027,7 @@
         "myUntil": "Vaša odgovornost prestaje nakon {date} ({timezone}).",
         "none": "Trenutno nemate odgovornost verifikatora vozačkih dozvola.",
         "noTeams": "Nema dostupnih timova",
+        "notEnabled": "Provjere vozačkih dozvola nisu uključene za ovu organizaciju.",
         "person": "Verifikator",
         "revoked": "Odgovornost verifikatora je opozvana",
         "revokeDescription": "Verifikator odmah gubi pristup provjerama u ovom opsegu. Za ponovno uspostavljanje odgovornosti potrebna je nova dodjela.",
@@ -1109,8 +1147,12 @@
       },
       "emailTemplates": "Šabloni e-pošte",
       "empty": "Nema dostupnih predložaka e-pošte za ovu organizaciju.",
-      "eyebrow": "Operativne komunikacije",
       "reset": "Šablon e-pošte je vraćen na sistemski šablon",
+      "resetDialog": {
+        "confirm": "Resetuj predložak",
+        "description": "Ovim se brišu prilagođeni naslov i sadržaj vaše organizacije za ovu e-poruku. E-poruke poslane nakon toga koriste sistemski predložak.",
+        "title": "Resetovati “{template}” na sistemski predložak?"
+      },
       "resetFailed": "Vraćanje šablona e-pošte nije uspjelo",
       "saved": "Šablon e-pošte je sačuvan",
       "saveFailed": "Čuvanje šablona e-pošte nije uspjelo",
@@ -1276,6 +1318,7 @@
       "savedPending": "Datum zaposlenja je spremljen. Radna salda se osvježavaju.",
       "savedRefreshFailed": "Datum zaposlenja je spremljen. Ponovo učitajte ovu stranicu da osvježite prikazane rezultate.",
       "saveFailed": "Nije moguće spremiti ovu ispravku. Generišite novi pregled i pokušajte ponovo.",
+      "stalePreview": "Pregledano zaposlenje ili konfiguracija su se promijenili. Generišite novi pregled.",
       "title": "Ispravite stvarni početak zaposlenja",
       "total": "Ukupno prije korištenja",
       "unknown": "Nije evidentirano",
@@ -1436,6 +1479,8 @@
       "employee": {
         "outstanding": "{count, plural, =0 {Nema preostalih povrata} one {# preostali povrat} other {# preostalih povrata}}",
         "overdue": "{count, plural, other {# u zakašnjenju}}",
+        "returns": "Povrati zaposlenika",
+        "scope": "Ovlaštena oprema za ovog zaposlenika",
         "title": "Oprema zaposlenika"
       },
       "errors": {
@@ -1689,8 +1734,11 @@
       },
       "openOverview": "Otvori pregled opreme",
       "overview": {
+        "asOf": "Na dan {date} ({timezone})",
         "description": "Ko zadužuje koju stavku, šta se mora vratiti i svaka zabilježena primopredaja.",
-        "failed": "Nije moguće učitati opremu. Ponovo učitajte stranicu da biste pokušali ponovo."
+        "failed": "Nije moguće učitati opremu. Ponovo učitajte stranicu da biste pokušali ponovo.",
+        "scope": "Vaši zapisi o ovlaštenoj opremi",
+        "summaryScope": "Povrati i spremnost u vašem djelokrugu"
       },
       "personal": {
         "closed": "Vraćeno i zatvoreno",
@@ -1701,6 +1749,7 @@
         "failed": "Vaša oprema se ne može učitati. Ponovo učitajte stranicu da biste pokušali ponovo.",
         "keep": "Ostaje vama",
         "quantity": "{count} izdato",
+        "remaining": "{count} za povrat",
         "title": "Moja oprema",
         "toggleHistory": "Prikaži historiju primopredaje",
         "toReturn": "Za povrat"
@@ -1831,11 +1880,9 @@
     },
     "error": {
       "actions": {
-        "backToSettings": "Nazad na postavke",
-        "tryAgain": "Pokušaj ponovo"
+        "backToSettings": "Nazad na postavke"
       },
       "description": "Došlo je do greške prilikom učitavanja stranice s postavkama. Ovo bi mogao biti privremeni problem.",
-      "errorId": "ID greške: {digest}",
       "title": "Nešto je pošlo po zlu"
     },
     "export": {
@@ -1941,9 +1988,16 @@
       "failed": "Nije uspjelo ažuriranje dodjele. Pokušajte ponovo.",
       "noEmployees": "Nema postavki specifičnih za zaposlenika",
       "noTeams": "Nema postavki specifičnih za tim",
+      "organizationDefaultRemoved": "Zadana postavka organizacije je uklonjena",
       "orgDescription": "Zadana postavka za sve zaposlenike, osim ako nije nadjačana",
       "remove": "Ukloni {target}",
+      "removedFor": "Nadjačavanje uklonjeno za {name}",
       "valueFor": "{setting} za {target}"
+    },
+    "featureOff": {
+      "askAdmin": "Zamolite administratora organizacije da ovo uključi.",
+      "status": "Isključeno za ovu organizaciju",
+      "turnOn": "Uključite u postavkama organizacije"
     },
     "group": {
       "account": "Račun",
@@ -2221,12 +2275,21 @@
       "title": "Kontrolna lista za implementaciju"
     },
     "import": {
+      "commitConfirm": {
+        "pending": "Pokretanje potvrđivanja…"
+      },
       "csv": {
         "acceptSelected": "Prihvati odabrane važeće redove",
         "applyMapping": "Primijeni mapiranje",
         "chooseSource": "Odaberite izvornu vrijednost",
         "chooseTarget": "Odaberite postojeći zapis",
         "commit": "Potvrdi prihvaćene redove",
+        "commitConfirm": {
+          "confirm": "Uvezi redove",
+          "description": "Uvoz kreira završeni rad za mapirane zaposlenike, s detaljima o vozilu koje redovi sadrže. Izvodi se u pozadini. Redovi koji se preklapaju s postojećim radom se ne uvoze: uvoz nikada ne prepisuje rad.",
+          "irreversible": "Uvoz se ne može poništiti. Da biste naknadno promijenili uvezeni rad, ispravite ga u praćenju vremena.",
+          "title": "{count, plural, one {Uvesti # prihvaćeni red?} few {Uvesti # prihvaćena reda?} other {Uvesti # prihvaćenih redova?}}"
+        },
         "committing": "Uvoz prihvaćenih redova…",
         "description": "Uvezite jedan završeni radni period po redu. Pauze prikažite kao razmake između redova. Ništa se ne bilježi dok ne pregledate i ne prihvatite.",
         "download": "Preuzmi CSV šablon",
@@ -2304,6 +2367,12 @@
           "unmappedProject": "Naplativo u Clockodou, ali Clockodo projekat nije mapiran na Z8 projekat."
         },
         "commitAccepted": "Potvrdi prihvaćene redove",
+        "commitConfirm": {
+          "confirm": "Potvrdi redove",
+          "description": "Potvrđivanje kreira zapise koje opisuju prihvaćeni redovi u ovoj organizaciji, kao što su evidencije vremena, odsustva, zaposlenici, kupci ili postavke, ili ih povezuje tamo gdje ste odabrali. Izvodi se u pozadini. Odbijeni redovi se ne uvoze.",
+          "irreversible": "Uvoz se ne može poništiti. Da biste naknadno promijenili potvrđene zapise, uredite ih tamo gdje se njima upravlja.",
+          "title": "{count, plural, one {Potvrditi # prihvaćeni red?} few {Potvrditi # prihvaćena reda?} other {Potvrditi # prihvaćenih redova?}}"
+        },
         "commitFailed": "Pokretanje potvrđivanja uvoza nije uspjelo",
         "commitQueued": "Stavljeno {count} prihvaćenih redova u red čekanja za potvrđivanje",
         "committing": "Potvrđivanje...",
@@ -2393,6 +2462,7 @@
         },
         "title": "Pregled uvoza"
       },
+      "sourceTabs": "Izvor uvoza",
       "supportedSources": "Uvezite rad iz CSV datoteka ili povežite podržane pružaoce usluga kao što su Clockodo i Clockin.",
       "title": "Uvoz podataka"
     },
@@ -2496,7 +2566,6 @@
       },
       "issueCodeConfirm": "Izdaj novi kod",
       "listDescription": "Svaki kiosk pripada jednoj lokaciji. Uparite uređaj tako što ćete na njemu otvoriti stranicu kioska i unijeti kod za uparivanje.",
-      "listTitle": "Kiosci",
       "loadFailed": "Nije uspjelo učitavanje kioska.",
       "neverSeen": "Nikada",
       "nfcFobReaderOn": "Čitač NFC privjesaka je uključen",
@@ -2591,6 +2660,9 @@
       "assignEmployeeDescription": "Dodijelite zaposlenika kao nadzornika za ovu lokaciju",
       "assignEmployeeToSubarea": "Dodijeli zaposlenika podoblasti",
       "assignEmployeeToSubareaDescription": "Dodijelite zaposlenika kao nadzornika za {subareaName}",
+      "assignmentRemovedFrom": "Uklonjeno {name} iz {place}",
+      "assignmentRestored": "Vraćeno {name}",
+      "assignmentRestoreFailed": "Dodjela se nije mogla vratiti",
       "backToList": "Nazad na lokacije",
       "create": "Kreiraj lokaciju",
       "created": "Lokacija je kreirana",
@@ -2598,10 +2670,14 @@
       "deleted": "Lokacija je obrisana",
       "deleteDescription": "Jeste li sigurni da želite obrisati ovu lokaciju? Ovo će također obrisati sve podoblasti i dodjele zaposlenika.",
       "deleteFailed": "Brisanje lokacije nije uspjelo",
+      "deleteNamedTitle": "Obrisati lokaciju {name}?",
       "deleteSubareaDescription": "Jeste li sigurni da želite obrisati ovu podoblast? Ovo će također ukloniti sve dodjele zaposlenika.",
+      "deleteSubareaNamedTitle": "Obrisati podpodručje {name}?",
       "deleteSubareaTitle": "Obriši podoblast",
       "deleteTitle": "Obriši lokaciju",
       "description": "Upravljajte lokacijama i podoblastima organizacije",
+      "detailLoadFailed": "Ova lokacija se nije mogla učitati",
+      "detailLoadFailedDescription": "Možda je obrisana ili je veza prekinuta. Pokušajte ponovo ili se vratite na listu lokacija.",
       "details": "Detalji lokacije",
       "dialog": {
         "create": "Kreiraj lokaciju",
@@ -2614,7 +2690,6 @@
       "employee": "Zaposlenik",
       "employeeAssigned": "Zaposlenik dodijeljen",
       "employeeAssignFailed": "Dodjela zaposlenika nije uspjela",
-      "employeeRemoved": "Zaposlenik uklonjen",
       "employeeRemoveFailed": "Uklanjanje zaposlenika nije uspjelo",
       "field": {
         "active": "Aktivno",
@@ -2635,7 +2710,10 @@
         "subareaName": "Naziv",
         "subareaNamePlaceholder": "npr. Kasa, Skladište, Bistro"
       },
+      "loadFailed": "Lokacije se nisu mogle učitati",
+      "loadFailedDescription": "Provjerite svoju vezu, pa pokušajte ponovo.",
       "name": "Naziv",
+      "nameRequired": "Naziv je obavezan",
       "noAvailableEmployees": "Svi zaposlenici su već dodijeljeni ovoj lokaciji",
       "noAvailableEmployeesSubarea": "Svi zaposlenici su već dodijeljeni ovoj podoblasti",
       "noLocations": "Još nema lokacija",
@@ -2671,6 +2749,9 @@
       "updated": "Lokacija je ažurirana",
       "updateFailed": "Ažuriranje lokacije nije uspjelo"
     },
+    "mobileNav": {
+      "open": "Meni postavki"
+    },
     "myData": {
       "aboutDownload": "Preuzmite ovdje dok ste prijavljeni. Datoteke se brišu nakon 7 dana.",
       "aboutEquipment": "Uključuje zadržana zaduženja opreme, stanja, bilješke, ispravke, fizičke prijeme i ishode poput gubitka ili otpisa, pri čemu se povrati evidentiraju zasebno.",
@@ -2683,7 +2764,9 @@
       "exportDescription": "ZIP datoteka sa svime što ova organizacija čuva o vama, u formatu JSON i CSV datoteka s objašnjenjem. Odnosi se samo na ovu organizaciju.",
       "exportTitle": "Izvoz ličnih podataka",
       "listLabel": "Vaši izvozi",
+      "loadFailed": "Vaši izvozi podataka nisu mogli biti učitani. Pokušajte ponovo.",
       "noEmployeeRecord": "Nemate evidenciju zaposlenika u ovoj organizaciji. Da biste dobili kopiju ličnih podataka koje ona čuva o vama, obratite se administratorima organizacije.",
+      "noExports": "Još niste zatražili izvoz. Zatražite ga da biste preuzeli kopiju svojih podataka.",
       "refusalDailyLimit": "Možete zatražiti jedan izvoz svojih podataka svakih 24 sata. Pokušajte ponovo kasnije.",
       "refusalInProgress": "Izvoz vaših podataka se već priprema. Bit ćete obaviješteni kada bude spreman.",
       "refusalStorage": "Pohrana datoteka još nije podešena za ovu organizaciju. Obratite se njenim administratorima.",
@@ -2697,7 +2780,14 @@
       "title": "Moji podaci",
       "unavailable": "Moji podaci nisu dostupni za vaš račun u ovoj organizaciji."
     },
+    "nav": {
+      "disabledEntry": "{title} (onemogućeno)",
+      "label": "Navigacija postavki"
+    },
     "navigation": {
+      "approval": {
+        "title": "Odobrenje"
+      },
       "audit": {
         "activity": "Aktivnost",
         "description": "Pregledajte aktivnost i konfigurišite potpisane izvoze revizije",
@@ -2757,7 +2847,8 @@
       "description": "Odaberite kako i kada želite primati obavještenja",
       "digestTime": "Vrijeme pregleda",
       "discord": {
-        "description": "Konfigurišite Discord obavještenja za svoju organizaciju."
+        "description": "Konfigurišite Discord obavještenja za svoju organizaciju.",
+        "setupInstructions": "Povezivanje Discorda s ove stranice još nije dostupno. Za povezivanje su potrebni token bota vaše Discord aplikacije, ID aplikacije i javni ključ."
       },
       "escalations": "Eskalacije",
       "escalationsDescription": "Eskalirajte neodgovorene zahtjeve za odobrenje nakon isteka podešenog vremena.",
@@ -2770,6 +2861,9 @@
       "saveFailed": "Čuvanje postavki obavještenja za {channelName} nije uspjelo",
       "saveSettings": "Sačuvaj postavke",
       "slack": {
+        "connect": "Poveži Slack",
+        "connectFailed": "Povezivanje sa Slackom nije moglo biti pokrenuto. Pokušajte ponovo.",
+        "connectUnavailable": "Slack nije dostupan na ovoj Z8 instalaciji.",
         "description": "Konfigurišite Slack obavještenja za svoju organizaciju."
       },
       "status": {
@@ -2783,11 +2877,12 @@
         "unknown": "Nepoznat status"
       },
       "teams": {
-        "description": "Konfigurišite Microsoft Teams obavještenja za svoju organizaciju."
+        "description": "Konfigurišite Microsoft Teams obavještenja za svoju organizaciju.",
+        "setupInstructions": "Da biste povezali Microsoft Teams, dodajte aplikaciju Z8 u svoj Microsoft 365 zakup. Z8 bot zatim šalje link za podešavanje koji administrator organizacije otvara kako bi povezao zakup s ovom organizacijom."
       },
       "timeout": "Istek vremena",
+      "timeoutInvalid": "Unesite cijeli broj sati od 1 do 168.",
       "timezone": "Vremenska zona",
-      "timezonePlaceholder": "Evropa/Berlin…",
       "title": "Postavke obavještenja"
     },
     "organizations": {
@@ -2830,6 +2925,7 @@
       "empty": "Nema konfigurisanih pristupnih ključeva",
       "emptyDescription": "Dodajte pristupni ključ kako biste omogućili autentifikaciju bez lozinke",
       "loadError": "Učitavanje pristupnih ključeva nije uspjelo",
+      "loading": "Učitavanje pristupnih ključeva",
       "title": "Pristupni ključevi",
       "unnamed": "Neimenovani pristupni ključ"
     },
@@ -2846,6 +2942,7 @@
       "editorDescription": "Odaberite službenika za obračun plata i definirajte ima li pristup svima ili određenom opsegu.",
       "editTitle": "Uredi službenika za obračun plata",
       "employees": "Zaposlenici",
+      "loading": "Učitavanje postavki referenta za obračun plata",
       "noGrants": "Još nije dodan nijedan službenik za obračun plata.",
       "noScope": "Nije dodijeljen opseg obračuna plata",
       "noTeams": "Nema dostupnih timova",
@@ -2872,7 +2969,6 @@
     },
     "positionCapture": {
       "assignmentFailed": "Dodjela nije sačuvana",
-      "assignmentRemoved": "Dodjela je uklonjena",
       "assignmentRemoveFailed": "Dodjela nije uklonjena",
       "assignmentSaved": "Dodjela je sačuvana",
       "assignmentsDescription": "Specifičnija dodjela ima prednost: vlastita dodjela zaposlenika ima prednost nad dodjelom primarnog tima, a timska nad cijelom organizacijom. Koristite „isključeno” da biste izuzeli tim ili zaposlenika.",
@@ -2883,6 +2979,7 @@
       "description": "Zabilježite lokacije pri događajima prijave/odjave zaposlenika, uz njihov pristanak",
       "enabled": "Bilježenje lokacija",
       "enabledDescription": "Isključivanjem ovoga zaustavlja se bilježenje za sve. Zabilježene lokacije ostaju sačuvane do datuma njihovog brisanja.",
+      "loadFailed": "Postavke bilježenja pozicije nisu mogle biti učitane",
       "noNotice": "Nijedno obavještenje još nije objavljeno. Čuvanjem izjave o svrsi objavljuje se verzija 1.",
       "noticeDescription": "Na šta zaposlenici pristaju: fiksni tekst platforme Z8 i vaša izjava o svrsi. Uređivanje svrhe ili duže zadržavanje lokacija objavljuje novu verziju; skraćivanje perioda čuvanja to ne čini.",
       "noticeTitle": "Obavještenje o lokaciji",
@@ -2907,6 +3004,7 @@
       "accessLogDescription": "Svaki put kada se nekome drugom prikažu vaše zabilježene lokacije, to će biti navedeno ovdje.",
       "accessLogEmpty": "Vaše lokacije nisu prikazane nikome drugom.",
       "accessLogExport": "Izvoz podataka",
+      "accessLogLoadFailed": "Lista onih koji su vidjeli vaše pozicije nije mogla biti učitana. Ponovo učitajte stranicu da biste pokušali ponovo.",
       "accessLogRemovedWorkPeriod": "Radni period koji više ne postoji",
       "accessLogTitle": "Ko je vidio vaše lokacije",
       "accessLogWorkPeriod": "Radni period na dan {date}",
@@ -2923,6 +3021,7 @@
       "consentUndecided": "Još se niste odlučili.",
       "consentWithdrawn": "Povukli ste svoj pristanak dana {date}.",
       "description": "Da li se vaša lokacija bilježi uz vaše registracije radnog vremena, te vaš pristanak",
+      "loadFailed": "Vaše postavke pečata pozicije nisu mogle biti učitane.",
       "noNotice": "Vaša organizacija nije objavila obavijest o lokaciji.",
       "noticeDescription": "Ovo je ono na šta pristajete. Nova verzija se objavljuje kada se svrha promijeni ili se lokacije čuvaju duže.",
       "noticeTitle": "Obavijest o lokaciji",
@@ -2954,6 +3053,7 @@
       "firstName": "Ime",
       "firstNamePlaceholder": "Ada…",
       "gender": {
+        "clear": "Poništi odabir",
         "female": "Ženski",
         "label": "Spol",
         "male": "Muški",
@@ -2966,6 +3066,7 @@
       "lastName": "Prezime",
       "lastNamePlaceholder": "Lovelace…",
       "loadFailed": "Učitavanje profila nije uspjelo",
+      "loadFailedDetail": "Vaš profil nije mogao biti učitan, pa se trenutno ne može uređivati. Pokušajte ponovo.",
       "personalInformation": "Lični podaci",
       "pronouns": "Zamjenice",
       "pronouns.custom": "Prilagođene zamjenice",
@@ -2989,7 +3090,9 @@
       "uploadProfilePicture": "Prenesi profilnu sliku"
     },
     "projects": {
+      "budgetUsed": "Iskorišteni budžet",
       "column": {
+        "actions": "Radnje",
         "budget": "Budžet",
         "customer": "Klijent",
         "deadline": "Krajnji rok",
@@ -3002,6 +3105,12 @@
       "created": "Projekat je kreiran",
       "createFailed": "Kreiranje projekta nije uspjelo",
       "customerDeleted": "{name} (obrisano)",
+      "deadline": {
+        "overdue": "{count, plural, one {# dan kašnjenja} other {# dana kašnjenja} }",
+        "remaining": "{count, plural, one {# dan preostao} few {# dana preostala} other {# dana preostalo}}",
+        "today": "Rok danas",
+        "tomorrow": "Rok sutra"
+      },
       "description": "Upravljajte projektima, budžetima, rokovima i raspodjelom vremena",
       "dialog": {
         "create": "Kreiraj projekat",
@@ -3011,6 +3120,8 @@
         "editTitle": "Uredi projekat",
         "save": "Sačuvaj promjene"
       },
+      "edit": "Uredi projekat",
+      "editAction": "Uredi {name}",
       "empty": {
         "description": "Kreirajte svoj prvi projekat kako biste započeli praćenje vremena na njemu.",
         "title": "Još nema projekata"
@@ -3061,6 +3172,7 @@
         "description": "Ukupno {count} projekata",
         "title": "Svi projekti"
       },
+      "loadFailed": "Projekti nisu mogli biti učitani. Provjerite svoju vezu i pokušajte ponovo.",
       "members": {
         "addManager": "Dodaj voditelja projekta",
         "assignEmployee": "Dodijeli zaposlenika",
@@ -3081,7 +3193,6 @@
         "noTeams": "Nema dodijeljenih timova",
         "remove": "Ukloni {name}",
         "removed": "{name} uklonjen",
-        "removeFailed": "Uklanjanje {name} nije uspjelo",
         "selectEmployee": "Odaberite zaposlenika",
         "selectTeam": "Odaberite tim",
         "teamAssigned": "Tim je dodijeljen",
@@ -3099,6 +3210,13 @@
         "saved": "Šablon {name} je sačuvan",
         "submit": "Sačuvaj kao šablon",
         "title": "Sačuvaj kao šablon"
+      },
+      "status": {
+        "active": "Aktivan",
+        "archived": "Arhiviran",
+        "completed": "Završen",
+        "paused": "Pauziran",
+        "planned": "Planiran"
       },
       "tabs": {
         "projects": "Projekti",
@@ -3118,6 +3236,16 @@
         "edit": "Uredi {name}",
         "editAction": "Uredi {name}",
         "empty": "Još nema zadataka. Zadaci omogućavaju ljudima da navedu na šta je na projektu utrošeno njihovo vrijeme.",
+        "errors": {
+          "booked": "Na ovaj zadatak je evidentirano vrijeme, pa se ne može obrisati.",
+          "descriptionTooLong": "Opis zadatka je predug.",
+          "duplicateName": "Zadatak s ovim nazivom već postoji u ovom projektu.",
+          "estimateInvalid": "Unesite procjenu kao pozitivan broj sati.",
+          "nameRequired": "Unesite naziv zadatka.",
+          "nameTooLong": "Naziv zadatka je predug.",
+          "notAllowed": "Nemate pristup za upravljanje zadacima ovog projekta.",
+          "notFound": "Ovaj zadatak više ne postoji."
+        },
         "estimate": "Procjena: {hours} h",
         "field": {
           "description": "Opis",
@@ -3167,7 +3295,6 @@
         "delete": "Izbriši",
         "deleteAction": "Izbriši {name}",
         "deleted": "{name} izbrisan",
-        "deleteFailed": "Brisanje {name} nije uspjelo",
         "deleteQuestion": "Izbrisati ovaj šablon?",
         "description": "Nacrti za nove projekte: zadaci, budžet, rok, menadžeri i članovi.",
         "dialogDescription": "Novi projekti kreirani iz ovog šablona kopiraju njegov sadržaj jednom.",
@@ -3215,6 +3342,7 @@
         },
         "listCount": "{count, plural, one {# šablon} other {# šablona} }",
         "listTitle": "Svi šabloni",
+        "loadFailed": "Šabloni projekata nisu mogli biti učitani. Provjerite svoju vezu i pokušajte ponovo.",
         "managers": {
           "empty": "Nema voditelja projekata",
           "picker": "Voditelj projekta za dodavanje",
@@ -3339,6 +3467,7 @@
         "mobile": "Mobilni uređaj",
         "tablet": "Tablet"
       },
+      "loadFailed": "Vaše aktivne sesije nisu mogle biti učitane. Pokušajte ponovo.",
       "none": "Nema aktivnih sesija",
       "othersRevoked": "Sve ostale sesije su uspješno opozvane",
       "revoke": "Opozovi",
@@ -3346,6 +3475,11 @@
       "revokeAllOthers": "Opozovi sve ostale sesije",
       "revoked": "Sesija je uspješno opozvana",
       "revokeFailed": "Opoziv sesije nije uspio",
+      "revokeOthersDescription": "{count, plural, one {Ovo vas odjavljuje na # drugom uređaju. Ovdje ostajete prijavljeni.} few {Ovo vas odjavljuje na # druga uređaja. Ovdje ostajete prijavljeni.} other {Ovo vas odjavljuje na # drugih uređaja. Ovdje ostajete prijavljeni.}}",
+      "revokeOthersTitle": "Opozvati sve ostale sesije?",
+      "revokeSession": "Opozovi sesiju: {session}",
+      "revokeSessionDescription": "Ovo odjavljuje {session}. Svako ko je koristi mora se ponovo prijaviti.",
+      "revokeSessionTitle": "Opozvati ovu sesiju?",
       "revoking": "Opozivanje…",
       "securityTip": "Ako vidite sesiju koju ne prepoznajete, odmah je opozovite i promijenite svoju lozinku.",
       "signedIn": "Prijavljen",
@@ -3356,7 +3490,7 @@
     "socialAccounts": {
       "connect": "Poveži",
       "connected": "Povezano",
-      "connectedAs": "Povezano kao {accountId}",
+      "connectedOn": "Povezano {date}",
       "connectFailed": "Povezivanje računa nije uspjelo",
       "connecting": "Povezivanje…",
       "connectProvider": "Povežite svoj {provider} račun",
@@ -3364,8 +3498,9 @@
       "disconnect": "Prekini vezu",
       "disconnectDescription": "Ovim ćete ukloniti vezu sa svojim računom na društvenoj mreži. Možete ga ponovo povezati u bilo kojem trenutku.",
       "disconnectFailed": "Prekidanje veze s računom nije uspjelo",
+      "disconnectProviderTitle": "Odspojiti {provider}?",
       "disconnectSuccess": "Veza s računom je uspješno prekinuta",
-      "disconnectTitle": "Prekinuti vezu s računom?",
+      "linkedForSignIn": "Povezano za prijavu",
       "loadFailed": "Učitavanje povezanih računa nije uspjelo",
       "title": "Računi na društvenim mrežama",
       "unexpectedError": "Došlo je do neočekivane greške"
@@ -3391,6 +3526,7 @@
       "description": "Pregledajte statistiku i metrike za vašu instancu",
       "lastUpdated": "Posljednje ažurirano",
       "loadError": "Učitavanje statistike nije uspjelo",
+      "loadErrorRetry": "Ponovo učitajte stranicu da pokušate ponovo.",
       "managerDescription": "Pregledajte analitiku samo za čitanje za timove kojima upravljate.",
       "sections": {
         "absenceBreakdown": "Analiza odsustava",
@@ -3542,6 +3678,7 @@
       "effectiveTo": "Važi do",
       "legacy": {
         "description": "Zadržano samo radi referencije. Ovi zapisi se nikada nisu koristili za izračun troškova i više se ne mogu uređivati; postavite datirane stope kilometraže iznad.",
+        "loadFailed": "Raniji zapisi pravila nisu se mogli učitati",
         "title": "Raniji zapisi pravila"
       },
       "mileage": {
@@ -3812,6 +3949,7 @@
       "archivedTitle": "Arhivirano",
       "archiveInstead": "Umjesto toga arhiviraj",
       "archiveNamed": "Arhiviraj {name}",
+      "count": "{count, plural, one {# vozilo} other {# vozila} }",
       "delete": "Izbriši",
       "deleteConfirm": "Izbriši vozilo",
       "deleted": "Vozilo izbrisano",
@@ -3843,12 +3981,12 @@
         "teamsDescription": "Svakom članu dodijeljenog tima ovo vozilo se prvo predlaže."
       },
       "listDescription": "Arhivirana vozila se više ne mogu odabrati, ali ostaju na radu na kojem su zabilježena.",
-      "listTitle": "Vozila",
       "loadFailed": "Nije moguće učitati vozila.",
       "logbookNotice": {
         "description": "Z8 bilježi koje je vozilo voženo tokom rada i stanja na njegovom kilometar-satu. To nije porezno usklađena evidencija vožnji (Fahrtenbuch): stanja se mogu ispraviti, a svrha putovanja ili poslovni partner se ne bilježe.",
         "title": "Nije porezna evidencija vožnji"
       },
+      "noActive": "Nema aktivnih vozila. Dodajte vozilo ili vratite arhivirano.",
       "noDrivers": "Nema dodijeljenih vozača",
       "photos": {
         "accessChanged": "Vaš pristup je promijenjen. Ponovo otvorite postavke vozila kako biste provjerili svoje dozvole.",
@@ -3910,7 +4048,6 @@
       "usedTitle": "{name} je evidentirano na radu"
     },
     "vehicleUse": {
-      "assignmentRemoved": "Dodjela je uklonjena",
       "assignmentSaved": "Dodjela je sačuvana",
       "assignmentsDescription": "Upitani zaposlenici mogu evidentirati korištenje vozila prilikom registracije radnog vremena. Od zaposlenika za koje se očekuje korištenje vozila to se traži svaki put, a njihov rad je označen sve dok detalji ne budu potpuni. Niko nikada nije spriječen da se registruje. Najspecifičnija dodjela ima prednost: lična dodjela zaposlenika nad dodjelom njegovog primarnog tima, a dodjela tima nad dodjelom cijele organizacije.",
       "enabled": "Evidentiraj korištenje vozila",
@@ -3925,7 +4062,7 @@
         "invalidTarget": "Odaberite na koga se dodjela odnosi.",
         "teamNotFound": "Taj tim više ne postoji."
       },
-      "loadFailed": "Postavke korištenja vozila nisu se mogle učitati. Ponovo učitajte stranicu.",
+      "loadFailedRetry": "Postavke korištenja vozila nisu se mogle učitati.",
       "mode": "Način rada",
       "modeAsked": "Upitan",
       "modeExpected": "Očekuje se korištenje vozila",
@@ -3958,6 +4095,13 @@
       "description": "Konfigurišite podsjetnike za vodu i praćenje hidratacije tokom vaših radnih sesija",
       "glasses": "čaša",
       "increaseDailyGoal": "Povećaj dnevni cilj",
+      "loadFailed": "Vaše postavke podsjetnika za vodu nisu se mogle učitati. Pokušajte ponovo.",
+      "presets": {
+        "active": "Aktivno",
+        "custom": "Prilagođeno",
+        "light": "Lagano",
+        "moderate": "Umjereno"
+      },
       "reminderFrequency": "Učestalost podsjetnika",
       "saved": "Wellness postavke su spremljene",
       "saveError": "Spremanje wellness postavki nije uspjelo",
@@ -4095,6 +4239,9 @@
         "hidden": "Skriveno"
       },
       "absenceVisibility": "Vidljivost odsustava",
+      "accessSectionTitle": "Pristup i pregled izvoza",
+      "addLocation": "Dodaj lokaciju",
+      "addTeam": "Dodaj tim",
       "description": "Konfigurišite pristup radničkog vijeća koji štiti privatnost i izvoze pregleda",
       "exportEnabled": "Omogući izvoze pregleda",
       "exportEnabledDescription": "Dozvolite ovlaštenim korisnicima radničkog vijeća generisanje paketa pregleda sa filtriranom privatnošću.",
@@ -4107,14 +4254,26 @@
       "identityVisibility": "Vidljivost identiteta",
       "minimumThreshold": "Minimalni prag agregacije",
       "minimumThresholdDescription": "Grupe ispod ove veličine se izostavljaju kako bi se smanjio rizik od ponovne identifikacije.",
+      "minimumThresholdInvalid": "Unesite cijeli broj od najmanje 5",
+      "noLocationFound": "Nije pronađena nijedna lokacija",
+      "noLocationsAvailable": "Nema više lokacija za dodavanje",
+      "noTeamFound": "Nije pronađen nijedan tim",
+      "noTeamsAvailable": "Nema više timova za dodavanje",
+      "removeScopeItem": "Ukloni {name}",
       "save": "Spremi postavke",
       "saved": "Postavke radničkog vijeća su spremljene",
       "saveError": "Spremanje postavki radničkog vijeća nije uspjelo",
+      "searchLocations": "Pretraži lokacije",
+      "searchTeams": "Pretraži timove",
+      "selectedLocations": "Odabrane lokacije",
+      "selectedTeams": "Odabrani timovi",
       "title": "Režim radničkog vijeća",
-      "visibleLocationIds": "Vidljivi ID-ovi lokacija",
-      "visibleLocationIdsDescription": "Opcionalni ID-ovi lokacija odvojeni zarezom. Ostavite prazno da uključite sve lokacije.",
-      "visibleTeamIds": "Vidljivi ID-ovi timova",
-      "visibleTeamIdsDescription": "Opcionalni ID-ovi timova odvojeni zarezom. Ostavite prazno da uključite sve timove."
+      "unknownLocation": "Nepoznata lokacija ({shortId})",
+      "unknownTeam": "Nepoznat tim ({shortId})",
+      "visibleLocations": "Vidljive lokacije",
+      "visibleLocationsDescription": "Ostavite prazno da uključite sve lokacije.",
+      "visibleTeams": "Vidljivi timovi",
+      "visibleTeamsDescription": "Ostavite prazno da uključite sve timove."
     }
   }
 }

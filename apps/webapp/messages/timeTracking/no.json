@@ -50,6 +50,7 @@
       "retry": "Prøv {choice} på nytt",
       "unavailable": "{choice} utilgjengelig"
     },
+    "clockedIn": "Stemplet inn",
     "clockedOutSuccess": "Du har stemplet ut!",
     "clockIn": "Stemple inn",
     "clockingIn": "Stempler inn…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Utstempling lagret på denne enheten, men ikke sendt. Se gjennom lagrede oppføringer.",
     "clockOutSuccess": "Stemplet ut",
     "clockStatus": {
+      "clockedOut": "Ikke stemplet inn",
       "loading": "Laster inn stemplingsstatus",
       "retry": "Prøv stemplingsstatus på nytt",
       "unavailable": "Stemplingsstatus utilgjengelig"
@@ -301,6 +303,8 @@
         "wrong": "PIN-koden er feil. Prøv igjen."
       },
       "queue": {
+        "awaiting": "Stemplinger som venter på bekreftelse: {count}",
+        "checking": "Kontrollerer innsendte handlinger: {count}",
         "dismiss": "Avvis",
         "reason": {
           "contact": "Kioskens siste tilkobling kunne ikke bekreftes.",
@@ -311,6 +315,7 @@
           "pin": "PIN-koden ble ikke godtatt.",
           "time": "Tidspunktet kunne ikke godtas."
         },
+        "recovery": "Kiosken sjekker automatisk igjen når den kan nå Z8. Ikke gjenta en handling med ukjent utfall.",
         "refused": "{name}: {action} kl. {time}, lagret i frakoblet modus, ble ikke godtatt. {reason}",
         "title": "Frakoblede stemplinger godtas ikke"
       },
@@ -335,6 +340,9 @@
         "description": "Denne kiosken kan ikke lenger brukes til stempling. Vennligst kontakt administratoren din.",
         "pairAgain": "Koble til med en ny kode",
         "title": "Kiosk tilbakekalt"
+      },
+      "scope": {
+        "zone": "Kiosktid: {zone}"
       },
       "state": {
         "clockedIn": "Stemplet inn siden {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Ingen kategori (100%)",
     "noProject": "Ingen prosjekt",
+    "notClockedIn": "Ikke stemplet inn",
     "notesPlaceholder": "Hva jobbet du med?",
     "notesSaved": "Notater lagret",
+    "onBreak": "På pause",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "En fraværsforespørsel for {dates} er uavklart.",
@@ -497,6 +507,14 @@
       "withdrawn": "Innsending trukket tilbake",
       "withdrawRefused": "Denne innsendingen er allerede avgjort og kan ikke lenger trekkes tilbake."
     },
+    "policy": {
+      "fixedDays": "Faste kontordager: {days}",
+      "flexible": "Fleksible kontorretningslinjer for denne perioden",
+      "homeOfficeLeft": "Hjemmekontordager igjen",
+      "officeRequired": "Kontordager som fortsatt kreves",
+      "requirementWarning": "Kontorkravet overstiger gjenværende arbeidsdager",
+      "unavailable": "Retningslinjer for arbeidsplassen er utilgjengelige."
+    },
     "project": "Prosjekt",
     "quickBreak": {
       "addBreak": "Legg til pause",
@@ -535,6 +553,7 @@
       "title": "Øktpåminnelser"
     },
     "startedAt": "Startet",
+    "statusUnavailable": "Stempelstatus er utilgjengelig. Oppdater for å prøve igjen.",
     "summary": {
       "dayOfRequired": "{date}: {worked} av {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} tillegg",
       "thisMonth": "Denne måneden",
       "thisWeek": "Denne uken",
+      "title": "Sammendrag av arbeidstid",
       "today": "I dag",
       "todayOfRequired": "{worked} av {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Nå: {worked} arbeidet av {required} påkrevd så langt. Da: {previousWorked} arbeidet av {previousRequired} påkrevd.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Oppdaterer total… Bruk Oppdater for å prøve igjen hvis den forblir utilgjengelig.",
       "vsLastMonth": "mot forrige måned",
       "vsLastWeek": "mot forrige uke"
     },
+    "systemNote": {
+      "breakEnforcement": "Automatisk justert: pålagt pause"
+    },
     "table": {
       "active": "Aktiv",
+      "allEntries": "Alle oppføringer",
       "approved": "Timeføring godkjent",
       "approveEntry": "Godkjenn oppføring",
       "approveFailed": "Kunne ikke godkjenne oppføring",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Kjøredetaljer mangler",
       "duration": "Varighet",
       "emptyState": "Ingen timeregistreringer funnet for denne uken.",
+      "entryCount": "{count, plural, one {# oppføring} other {# oppføringer}}",
+      "groupedByDay": "Gruppert etter dag",
+      "incompleteDay": "Inkluderer aktive eller ufullstendige oppføringer",
       "missingTask": "Mangler oppgave",
       "missingTaskHint": "Dette prosjektet krever en oppgave: legg til en i denne registreringen i kalenderen.",
+      "offsetContext": "Sluttidspunkter bruker hver oppførings registrerte lokale UTC-forskyvning. Dagoverskrifter følger kalendertidssonen din: {timezone}.",
       "recordedLocalTime": "Registrert lokal tid",
       "rowActions": "Handlinger for timeføring",
       "title": "Timeregistreringer",
@@ -586,62 +615,64 @@
       "search": "Søk etter oppgaver…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Ettermiddag",
+        "fullDay": "Hel dag",
+        "morning": "Formiddag"
+      },
       "dayPicker": "Dagvelger for tidslinje",
       "emptyDescription": "Det er ingen skift, fravær eller tidsregistreringer for den valgte dagen ennå.",
       "emptyTitle": "Ingen aktivitet registrert for denne dagen.",
+      "link": {
+        "reviewRequest": "Gjennomgå forespørsel",
+        "viewAbsence": "Se fravær"
+      },
+      "monthPicker": "Velg en kalenderdag",
       "nextDay": "Neste dag",
       "previousDay": "Forrige dag",
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Fraværsforespørsel"
+        },
+        "timeCorrection": {
+          "subtitle": "Korrigering av en tidsoppføring",
+          "title": "Forespørsel om tidskorrigering"
+        }
+      },
+      "shift": {
+        "title": "Planlagt vakt"
+      },
+      "status": {
+        "active": "Aktiv",
+        "approved": "Godkjent",
+        "cancelled": "Kansellert",
+        "draft": "Utkast",
+        "pending": "Avventer",
+        "published": "Publisert",
+        "rejected": "Avvist"
+      },
       "title": "Tidslinje for arbeidsdag",
       "today": "I dag",
       "unavailableDescription": "Stempling fungerer fortsatt. Prøv å oppdatere denne visningen senere.",
       "unavailableTitle": "Tidslinje utilgjengelig",
-      "workPeriod": {
-        "title": "Registrert arbeid"
-      },
-      "shift": {
-        "title": "Planlagt skift"
-      },
-      "status": {
-        "approved": "Godkjent",
-        "pending": "Venter",
-        "rejected": "Avvist",
-        "cancelled": "Kansellert",
-        "published": "Publisert",
-        "draft": "Utkast",
-        "active": "Aktiv"
-      },
-      "absence": {
-        "fullDay": "Hel dag",
-        "morning": "Formiddag",
-        "afternoon": "Ettermiddag"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Forespørsel om tidskorrigering",
-          "subtitle": "Korrigering av en tidsoppføring"
-        },
-        "absence": {
-          "title": "Fraværssøknad",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Vis fravær",
-        "reviewRequest": "Gå gjennom forespørsel"
-      },
       "warning": {
-        "pendingEdit": {
-          "title": "Ventende endringsforespørsel",
-          "description": "Denne arbeidsperioden har endringer som venter på godkjenning."
+        "autoAdjusted": {
+          "description": "Pause- eller samsvarsregler justerte denne arbeidsperioden.",
+          "title": "Automatisk justert oppføring"
         },
         "missingClockOut": {
-          "title": "Mangler utstempling",
-          "description": "Denne arbeidsperioden er fortsatt aktiv."
+          "description": "Denne arbeidsperioden er fortsatt aktiv.",
+          "title": "Mangler utstempling"
         },
-        "autoAdjusted": {
-          "title": "Automatisk justert oppføring",
-          "description": "Pause- eller samsvarsregler justerte denne arbeidsperioden."
+        "pendingEdit": {
+          "description": "Denne arbeidsperioden har endringer som venter på godkjenning.",
+          "title": "Ventende redigeringsforespørsel"
         }
+      },
+      "weekPicker": "Velg en ukedag",
+      "workPeriod": {
+        "title": "Registrert arbeid"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Vennligst kontroller kjøretøybruken"
       }
     },
-    "welcomeBack": "Velkommen tilbake, {name}",
     "workCategory": "Arbeidskategori",
     "workLocation": "Arbeidssted",
     "workLocationHome": "Hjemme",
     "workLocationOffice": "Kontor",
     "workLocationOther": "Annet",
-    "workLocationRemote": "Fjernarbeid",
-    "systemNote": {
-      "breakEnforcement": "Automatisk justert: pauseregler"
-    }
+    "workLocationRemote": "Fjernarbeid"
   },
   "wellness": {
     "water": {

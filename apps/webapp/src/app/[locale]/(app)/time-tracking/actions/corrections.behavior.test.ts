@@ -1475,6 +1475,36 @@ describe("time correction submission actions", () => {
 		expect(inserted.every((value) => value.isSuperseded === true)).toBe(true);
 	});
 
+	it.each([
+		{ role: "owner", managerId: null, expectedApprover: ids.employee },
+		{ role: "admin", managerId: null, expectedApprover: ids.employee },
+		{ role: "admin", managerId: ids.manager, expectedApprover: ids.manager },
+		{ role: "member", managerId: null, expectedApprover: null },
+		{ role: "member", managerId: ids.manager, expectedApprover: ids.manager },
+	])(
+		"selects the default approver for self-deletion with role $role and manager $managerId",
+		async ({ role, managerId, expectedApprover }) => {
+			configure({ kind: "default_created" });
+			state.getManager.mockResolvedValue(managerId);
+			state.txSelectForUpdate
+				.mockReset()
+				.mockResolvedValueOnce([employee])
+				.mockResolvedValueOnce([{ ...approvedMember, role }])
+				.mockResolvedValueOnce([])
+				.mockResolvedValueOnce([period])
+				.mockResolvedValueOnce(originals);
+
+			await modular.requestTimeEntryDeletion({
+				workPeriodId: ids.period,
+				submissionId,
+				reason: "Duplicate entry",
+			});
+
+			expect(state.executeSubmission).toHaveBeenCalledOnce();
+			expect(state.executeSubmission.mock.calls[0][0].defaultApproverId).toBe(expectedApprover);
+		},
+	);
+
 	it("preserves the monolithic billing guard result without entering a transaction", async () => {
 		configure({ kind: "default_created" });
 		state.requireBilling.mockResolvedValue({

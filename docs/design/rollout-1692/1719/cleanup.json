@@ -1,0 +1,8 @@
+{
+  "status": "complete",
+  "browser": "next-dev-loop-4626c8b4b738 closed; all Puppeteer finally blocks close own contexts",
+  "next": "Manifest + actual command verified owned PID44040; exact process tree stopped",
+  "services": "3 label-owned containers removed and independently absent on Docker readback",
+  "port": "localhost59056 closed",
+  "privateArtifacts": "Ignored/private manifests, raw trees and logs remain local; no secrets committed"
+}

@@ -1,0 +1,32 @@
+﻿{
+    "ownership":  "RELEASE root checkout/index/package/runtime/fixture ownership to parent",
+    "head":  "cecb713ab0c3d78d0ef960cb8ed7bac2b2f8f12d",
+    "tree":  "ac8447eb99fb6254651c65c76e00b1839148dddb",
+    "parents":  "ee0dcdc0923f725cfa06eafa83cc1f2039a95b97 5a96bbad942c4fd29deb31dbce77a08002d4011b",
+    "branch":  "ai/1692-app-wide-ui-refresh",
+    "clean":  true,
+    "status":  [
+
+               ],
+    "uniqueFiles":  180,
+    "uniqueCases":  1883,
+    "passed":  1881,
+    "failed":  2,
+    "blockers":  [
+                     "Activity-return stale summary can dispatch profile and navigate before fresh summary settles",
+                     "isPending=true with retained user/org leaves continuation enabled",
+                     "Explicit app configuration CRLF formatting differs in client and page test"
+                 ],
+    "sourceFixesMade":  false,
+    "reportsLedgerRawArchivesModified":  false,
+    "newRuntimePostgresNative":  false,
+    "processRelease":  "process-release.json",
+    "ownPackageRuntimeCount":  0,
+    "latestVerifiedProduct":  "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+    "mergedCommitIsVerified":  false,
+    "limits":  [
+                   "All browser/PG/native evidence remains inherited; root must verify corrected exact source",
+                   "Activity queued-return and pending-session failures are assembled public seam results, not physical race or server authority bypass proof",
+                   "Full production generation, catalogs, external providers, devices/true zoom and global route runtime remain unpassed"
+               ]
+}

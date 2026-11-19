@@ -1,0 +1,10 @@
+file:///X:/t3-code/worktrees/z8/t3-26f93436-9113146a88895020/.tmp/1735/runtime-more.mjs:31
+  const complete=new Promise((done,fail)=>{const timer=setTimeout(()=>fail(Error(`No completed ${format} download within60s`)),60000);const listener=event=>{if(event.state==='completed'){clearTimeout(timer);cdp.off('Browser.downloadProgress',listener);done(event.guid);}else if(event.state==='canceled'){clearTimeout(timer);fail(Error(`${format} download canceled`));}};cdp.on('Browser.downloadProgress',listener);});
+                                                                           ^
+
+Error: No completed CSV download within60s
+    at Timeout._onTimeout (file:///X:/t3-code/worktrees/z8/t3-26f93436-9113146a88895020/.tmp/1735/runtime-more.mjs:31:76)
+    at listOnTimeout (node:internal/timers:685:17)
+    at process.processTimers (node:internal/timers:618:7)
+
+Node.js v26.9.0

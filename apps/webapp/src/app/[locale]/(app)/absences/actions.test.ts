@@ -154,10 +154,31 @@ describe("absence action wrappers", () => {
 			"2027-01-01",
 			"2027-12-31",
 		);
+		// Holidays are calendar dates, read as UTC midnight of the year's first and last day.
 		expect(mockState.getHolidays).toHaveBeenCalledWith(
 			"emp-current",
 			new Date("2027-01-01T00:00:00.000Z"),
-			new Date("2027-12-31T23:59:59.999Z"),
+			new Date("2027-12-31T00:00:00.000Z"),
 		);
 	});
+
+	it.each(["Europe/Berlin", "America/Los_Angeles", "Pacific/Kiritimati"])(
+		"keeps the calendar year's dates for an organization in %s",
+		async (timezone) => {
+			mockState.findOrganization.mockResolvedValue({ timezone });
+
+			await actions.getAbsenceCalendarYearData(2027);
+
+			expect(mockState.getAbsenceEntries).toHaveBeenCalledWith(
+				"emp-current",
+				"2027-01-01",
+				"2027-12-31",
+			);
+			expect(mockState.getHolidays).toHaveBeenCalledWith(
+				"emp-current",
+				new Date("2027-01-01T00:00:00.000Z"),
+				new Date("2027-12-31T00:00:00.000Z"),
+			);
+		},
+	);
 });

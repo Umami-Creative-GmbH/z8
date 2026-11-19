@@ -19,6 +19,7 @@ on:
       - "docker/Dockerfile.migration"
       - "docker/Dockerfile.migration.dockerignore"
       - "docker/scripts/**"
+      - "scripts/build.mjs"
       - "docker/targets/**"
       - "packages/**"
       - "package.json"
@@ -26,6 +27,11 @@ on:
       - "pnpm-workspace.yaml"
       - "turbo.json"
   workflow_dispatch:
+    inputs:
+      persist_build_cache:
+        description: Run the bounded webapp build-cache persistence experiment
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -91,6 +97,22 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
+      # Mount persistence is a separate, opt-in experiment from the existing layer cache.
+      # Keep the Next filesystem-cache policy unchanged until reuse/time/RSS are measured.
+      - name: Restore webapp build mounts
+        if: matrix.repository == 'z8-webapp' && (inputs.persist_build_cache || vars.NEXT_BUILD_CACHE_ENABLED == 'true')
+        id: build_mounts
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/z8-build-mounts
+          key: webapp-mounts-v1-${{ matrix.arch }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'docker/Dockerfile.webapp', 'apps/webapp/next.config.ts', 'patches/**') }}-${{ github.sha }}
+          restore-keys: |
+            webapp-mounts-v1-${{ matrix.arch }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml', 'docker/Dockerfile.webapp', 'apps/webapp/next.config.ts', 'patches/**') }}-
+
+      - name: Import webapp build mounts
+        if: matrix.repository == 'z8-webapp' && (inputs.persist_build_cache || vars.NEXT_BUILD_CACHE_ENABLED == 'true')
+        run: node docker/scripts/cache-mounts.mjs restore "${{ runner.temp }}/z8-build-mounts" "${{ matrix.platform }}"
+
       - name: Login to GHCR
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
@@ -114,6 +136,18 @@ jobs:
             next_server_actions_encryption_key=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
           cache-from: type=gha,scope=${{ matrix.repository }}-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.repository }}-${{ matrix.arch }}
+
+      - name: Export webapp build mounts
+        if: matrix.repository == 'z8-webapp' && steps.build_mounts.outputs.cache-hit != 'true' && (inputs.persist_build_cache || vars.NEXT_BUILD_CACHE_ENABLED == 'true')
+        id: export_mounts
+        run: node docker/scripts/cache-mounts.mjs export "${{ runner.temp }}/z8-build-mounts" "${{ matrix.platform }}"
+
+      - name: Save bounded webapp build mounts
+        if: steps.export_mounts.outputs.cacheable == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/z8-build-mounts
+          key: ${{ steps.build_mounts.outputs.cache-primary-key }}
 
       - name: Export target artifact
         env:

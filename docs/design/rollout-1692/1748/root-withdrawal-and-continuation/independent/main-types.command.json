@@ -1,0 +1,24 @@
+{
+  "label": "main-types",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "tsc",
+    "--project",
+    "tsconfig.typecheck.json",
+    "--noEmit",
+    "--incremental",
+    "false"
+  ],
+  "exit": 1,
+  "seconds": 26.918,
+  "logBytes": 145,
+  "logSha256": "86ee5b0fa2e18d754caedc8a79c364d2d5638ce8711fa13dfd8a41920ca5c8e1"
+}

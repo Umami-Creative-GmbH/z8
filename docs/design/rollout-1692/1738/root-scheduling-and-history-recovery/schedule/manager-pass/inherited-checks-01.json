@@ -1,0 +1,56 @@
+{
+  "rootCorrection": {
+    "base": "a85fec346084fa576b77d34f7f654928d2d957b3",
+    "verifiedCommit": null,
+    "sourcePins": [
+      {
+        "path": "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+        "bytes": 2417,
+        "sha256": "dd2b2510c0a9de10bf2725ee6fd5834073daf65bf700c9cc531f7ae6e848e906",
+        "canonicalSha256": "6e23f9126a0f236136beb6fd07e3e69a2966dcdec14ba8275c7f92bca2274b21"
+      },
+      {
+        "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+        "bytes": 17044,
+        "sha256": "68b42fd50a556e60a8312cb83d9aacf7cc8989fd45e310f00e55cfb8f11c47cf",
+        "canonicalSha256": "81bf9323612739d8fc91de342d58a68d7b6ddd5443ae63de444c1d3790f24e38"
+      }
+    ],
+    "red": {
+      "cases": 1,
+      "failed": 1,
+      "unexpectedNavigation": "/sign-in",
+      "structuredAuthorizationRefusal": true,
+      "combinedTemplateRefusal": true
+    },
+    "fresh": {
+      "unitCases": 313,
+      "unitFiles": 48,
+      "failures": 0,
+      "skips": 0
+    },
+    "inherited": {
+      "pgCases": 6,
+      "pgFiles": 2,
+      "unchangedSource": true,
+      "mixedCases": 319,
+      "mixedFiles": 50
+    },
+    "types": "all3projects/typegen pass",
+    "lint": "2owned pass",
+    "format": {
+      "explicit100crlf": "2pass",
+      "ordinary": "2findings retained"
+    },
+    "doctor": "2changed files zero diagnostics score disabled",
+    "immutableSafeStop": {
+      "files": 23,
+      "seal": "bb2d4f9c27d0c4502b2280c4df0e70b7ed3fcfb47a58b76865b6acbbc1f03e17",
+      "allHashesMatch": true
+    },
+    "runtime": "pending fresh manager/remaining bounded check"
+  },
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "applicationMatchesIntegration": true,
+  "notRerun": true
+}

@@ -1,0 +1,326 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-26f93436-9113146a88895020/apps/webapp
+
+ ❯ |unit| src/app/[locale]/(app)/reports/page-ui.test.tsx (6 tests | 2 failed) 1180ms
+   ❯ employee report workspace (6)
+     × keeps the generated report visible while retrying a failed replacement 1098ms
+     × invalidates a held read on Activity hide and reconnects usable controls 25ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/reports/page-ui.test.tsx > employee report workspace > keeps the generated report visible while retrying a failed replacement
+TestingLibraryElementError: Found multiple elements with the text: 16h
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<div
+  class="text-2xl font-bold"
+>
+  16
+  h
+</div>
+
+Ignored nodes: comments, script, style
+<td
+  class="whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-right"
+  data-slot="table-cell"
+>
+  16
+  h
+</td>
+
+Ignored nodes: comments, script, style
+<td
+  class="whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] text-right"
+  data-slot="table-cell"
+>
+  16
+  h
+</td>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-6 px-4 lg:px-6"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="min-w-0 px-6 pt-6"
+          data-slot="card-content"
+        >
+          <form
+            class="flex flex-col gap-4"
+          >
+            <h2
+              class="font-semibold"
+            >
+              Generate an employee report
+            </h2>
+            <div
+              class="grid gap-4 md:grid-cols-2"
+            >
+              <fieldset
+                class="min-w-0 space-y-2"
+              >
+                <legend
+                  class="text-sm font-medium leading-none"
+                >
+                  Period
+                </legend>
+                <div
+                  class="flex flex-col gap-2 sm:flex-row sm:items-center"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Period"
+                    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full sm:w-[200px]"
+                    data-size="default"
+                    data-slot="select-trigger"
+                    id="base-ui-_r_2_"
+                    role="combobox"
+                    tabindex="0"
+                    type="button"
+                  >
+                    <span
+                      data-slot="select-value"
+                    >
+                      Current Month
+                    </span>
+                    <span
+                      aria-hidden="true"
+                    >
+                      <svg
+                        class="tabler-icon tabler-icon-chevron-down size-4 opacity-50"
+                        fill="none"
+                        height="24"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M6 9l6 6l6 -6"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                  <input
+                    aria-hidden="true"
+                    id="base-ui-_r_2_-hidden-input"
+                    style="clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: 0px; position: fixed; top: 0px; left: 0px;"
+                    tabindex="-1"
+                    value="current_month"
+                  />
+                  <div
+                    class="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground"
+                  >
+                    <svg
+                      class="tabler-icon tabler-icon-calendar mr-2 size-4"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+                      />
+                      <path
+                        d="M16 3v4"
+                      />
+                      <path
+                        d="M8 3v4"
+                      />
+                      <path
+                        d="M4 11h16"
+                      />
+                    </svg>
+                    Nov 1, 2026 - Nov 30, 2026
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+            <div
+              class="flex justify-end"
+            >
+              <button
+                class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] fo...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-6 px-4 lg:px-6"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="min-w-0 px-6 pt-6"
+          data-slot="card-content"
+        >
+          <form
+            class="flex flex-col gap-4"
+          >
+            <h2
+              class="font-semibold"
+            >
+              Generate an employee report
+            </h2>
+            <div
+              class="grid gap-4 md:grid-cols-2"
+            >
+              <fieldset
+                class="min-w-0 space-y-2"
+              >
+                <legend
+                  class="text-sm font-medium leading-none"
+                >
+                  Period
+                </legend>
+                <div
+                  class="flex flex-col gap-2 sm:flex-row sm:items-center"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Period"
+                    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full sm:w-[200px]"
+                    data-size="default"
+                    data-slot="select-trigger"
+                    id="base-ui-_r_2_"
+                    role="combobox"
+                    tabindex="0"
+                    type="button"
+                  >
+                    <span
+                      data-slot="select-value"
+                    >
+                      Current Month
+                    </span>
+                    <span
+                      aria-hidden="true"
+                    >
+                      <svg
+                        class="tabler-icon tabler-icon-chevron-down size-4 opacity-50"
+                        fill="none"
+                        height="24"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M6 9l6 6l6 -6"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                  <input
+                    aria-hidden="true"
+                    id="base-ui-_r_2_-hidden-input"
+                    style="clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: 0px; position: fixed; top: 0px; left: 0px;"
+                    tabindex="-1"
+                    value="current_month"
+                  />
+                  <div
+                    class="flex h-9 items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground"
+                  >
+                    <svg
+                      class="tabler-icon tabler-icon-calendar mr-2 size-4"
+                      fill="none"
+                      height="24"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      viewBox="0 0 24 24"
+                      width="24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+                      />
+                      <path
+                        d="M16 3v4"
+                      />
+                      <path
+                        d="M8 3v4"
+                      />
+                      <path
+                        d="M4 11h16"
+                      />
+                    </svg>
+                    Nov 1, 2026 - Nov 30, 2026
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+            <div
+              class="flex justify-end"
+            >
+              <button
+                class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] fo...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/[locale]/(app)/reports/page-ui.test.tsx:52:16
+     50|   expect(screen.getByText("No report generated yet")).toBeTruthy();
+     51|   await generate();
+     52|   await screen.findByText("16h");
+       |                ^
+     53|   const held = deferred<{ success: false; error: string }>(); mocks.ge…
+     54|   await generate();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  |unit| src/app/[locale]/(app)/reports/page-ui.test.tsx > employee report workspace > invalidates a held read on Activity hide and reconnects usable controls
+AssertionError: expected <dd …(1)></dd> to be null
+
+- Expected:
+null
+
++ Received:
+<dd
+  class="text-sm font-medium break-words"
+>
+  PN-7
+</dd>
+
+ ❯ src/app/[locale]/(app)/reports/page-ui.test.tsx:78:38
+     76|   const mounted = render(view()); await generate(); mounted.rerender(v…
+     77|   await act(async () => held.resolve({ success: true, data: report }));
+     78|   expect(screen.queryByText("PN-7")).toBeNull(); expect(mocks.success)…
+       |                                      ^
+     79|   expect(screen.getByRole("button", { name: "Generate Report" })).toHa…
+     80|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 15 passed (16)
+      Tests  2 failed | 47 passed (49)
+   Start at  22:02:11
+   Duration  17.73s (import 39%, environment 32%, tests 17%, transform 8%, setup 3%)
+

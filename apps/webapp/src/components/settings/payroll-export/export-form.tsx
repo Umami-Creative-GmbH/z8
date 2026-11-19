@@ -1,6 +1,6 @@
 "use client";
 
-import { IconDownload, IconLoader2 } from "@tabler/icons-react";
+import { IconAlertTriangle, IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
@@ -400,11 +400,11 @@ function FormatSection({
 }) {
 	return (
 		<div className="space-y-2">
-			<Label>
+			<Label htmlFor="payroll-export-format">
 				{t("settings.payrollExport.export.format", "Export Format")}
 			</Label>
 			<Select value={value} onValueChange={onChange}>
-				<SelectTrigger>
+				<SelectTrigger id="payroll-export-format">
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
@@ -427,10 +427,13 @@ function FormatSection({
 							variant="outline"
 							className={
 								hint.isMissingCredentials
-									? "border-amber-300 bg-amber-50 text-amber-700 text-xs"
-									: "border-slate-300 bg-slate-50 text-slate-700 text-xs"
+									? "whitespace-normal text-xs"
+									: "whitespace-normal text-muted-foreground text-xs"
 							}
 						>
+							{hint.isMissingCredentials ? (
+								<IconAlertTriangle className="size-3" aria-hidden="true" />
+							) : null}
 							{hint.label} - {hint.reason}
 						</Badge>
 					))}

@@ -1,0 +1,56 @@
+{
+  "kind": "Source-only harness pins; no private credentials, auth state, env manifests or operational input hashes",
+  "publicCopiesQualification": "Capture import made repository-root-relative; overlay copy freezes the eleven actually exercised consumer paths. Copies syntax-checked; runtime execution used the recorded .tmp sources.",
+  "sources": [
+    {
+      "path": ".tmp/1749/capture-isolated.mjs",
+      "purpose": "Actual matched before/after Chromium capture",
+      "sha256": "48fb9904ba3d175ec13587d4603b91da013a336369f607e43987387ba1426cd9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1749/verify-captures.mjs",
+      "purpose": "Public capture copy; repository-root helper import only",
+      "sha256": "6df1bd654e01aef64cc723b2e29c54da21e2dbc4ed11266f60a196bd296313eb"
+    },
+    {
+      "path": ".tmp/1749/overlay.mjs",
+      "purpose": "Actual historical source overlay and byte-exact restore",
+      "sha256": "6a6f304ec53536c9b0683789959ae062a0f31e7ea1ad7a642551705a264bccbf"
+    },
+    {
+      "path": "docs/design/rollout-1692/1749/consumer-overlay.mjs",
+      "purpose": "Public overlay copy with the same eleven recorded consumers frozen",
+      "sha256": "60c11806d7b105cca45ef175262ff73e2c52ca34b2ba7f08a93c4660c32d9132"
+    },
+    {
+      "path": ".tmp/1749/runtime.mjs",
+      "purpose": "Actual two completed Chromium downloads",
+      "sha256": "21db1cc9a71410fe5b3290f461829b2b3a53b29cfb4975c8fdd6498e80b296b7"
+    },
+    {
+      "path": ".tmp/1749/process-export.mts",
+      "purpose": "Actual canonical loopback fixture export processor",
+      "sha256": "0f99ed3b164834d68a887fccfee1b34c123610087303051afb31f2926d6eabf6"
+    },
+    {
+      "path": ".tmp/1749/readback.mjs",
+      "purpose": "Actual persisted synthetic settlement readback",
+      "sha256": "fc1fa6da33db0a0488caaa45ce860acd287b259ca20747ded7ef29e529604216"
+    },
+    {
+      "path": ".tmp/1749/run-pg.mjs",
+      "purpose": "Actual real PostgreSQL eight-suite runner",
+      "sha256": "40cbc0730192d8925c8b79b26fc37c34bd45c7102269d356a7e8b703c11184f7"
+    },
+    {
+      "path": ".tmp/1749/make-evidence.mjs",
+      "purpose": "Actual deduplicated check and image/source evidence verifier",
+      "sha256": "9303852bd0d5745096f24d75df50ce1cda84fbbc4acf429832ec150880a817fc"
+    },
+    {
+      "path": ".tmp/1749/stop-next.ps1",
+      "purpose": "Actual owned path/process/listener stop guard",
+      "sha256": "9d599537ff797b8e6c20de879eb0237aaf85caa7f7cf85720a3126bedad9bd2b"
+    }
+  ]
+}

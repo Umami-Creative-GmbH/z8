@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "checkedTextFiles": 123,
+  "scope": "Exact generated root fixture passwords and private environment credential values including encoded variants; not a global historical-secret claim."
+}

@@ -1,0 +1,14 @@
+{
+  "repo": "X:\\t3-code\\worktrees\\z8\\t3-fdc2d97a-f605ff250f82822d",
+  "origin": "http://localhost:56397",
+  "manifestPid": 112012,
+  "manifestProcessAbsent": true,
+  "portClosed": true,
+  "exactThreeServicesAbsent": [
+    "z8_perf_66366996cd05_postgres",
+    "z8_perf_66366996cd05_redis",
+    "z8_perf_66366996cd05_storage"
+  ],
+  "nativeBrowserClose": 0,
+  "qualification": "Initial cleanup passed manifest/path/port and all3 label guards and removed processes/services, then failed on null empty docker output while finalizing audit; this read-only followup verifies absence."
+}

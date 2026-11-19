@@ -1,0 +1,22 @@
+All pnpm calls used both pnpm_config_verify_deps_before_run=false and --config.verify-deps-before-run=false. Ordinary C: engine-store escalation only; no install/config/dependency repair.
+
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/prepare-02.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/fixture-helper-01.mjs prepare .tmp/1738-publish-independent-checks/fixture-01-private
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/prepare-runtime-02.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/run-fixture-tool-03.mjs seed 01
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/dev-01-private.mjs dev . .tmp/1738-publish-independent-checks/fixture-01-private
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/start-browser-01.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/rpc-03.mjs login <base64 public actor recipe> login-admin-02
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/rpc-03.mjs goto <base64 public scheduling path> planner-admitted-01
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/pointer-publish-01.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/pointer-publish-02.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/pointer-publish-03.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/run-fixture-tool-03.mjs readback 01
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/publish-visible-refusal-05.mjs
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/run-fixture-tool-03.mjs readback 02
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/rpc-03.mjs close <base64 empty public object> browser-close-01
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/fixture-helper-01.mjs cleanup .tmp/1738-publish-independent-checks/fixture-01-private
+pnpm --config.verify-deps-before-run=false node docs/design/rollout-1692/verify-route-inventory.mjs . HEAD .tmp/1738-publish-independent-checks/route-inventory-01.json
+pnpm --config.verify-deps-before-run=false node .tmp/1738-publish-independent-checks/seal-01.mjs
+
+Browser public RPC argument serialization was base64 UTF8 only to preserve JSON through Windows native argv; no credential was in argv. Owned runtime/fixture private JSON entered source helper private stdin only. Exact helper source and hashes are in helper-provenance-01.json; bridge adaptations/hash in bridge-provenance-01.json. Cleanup used exact saved PID/executable/path/creation/parent/command/listener checks, native Stop-Process, unique service label, and native Remove-Item of one hash-guarded bridge. No native browser session was started; installed core guide read only. No production app, Phase/provider/customer/payment/mail, Git write, tracker/write, push/PR/dev merge/deploy.

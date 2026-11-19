@@ -12,6 +12,7 @@ import {
 	effectiveEquipmentDeadline,
 	equipmentDepartureDeadline,
 } from "./deadlines";
+import { outstandingSql } from "./settlement";
 import { lockEquipmentOrganization } from "./setup";
 
 type Client = Pick<LifecycleClient, "execute">;
@@ -37,13 +38,13 @@ export async function readEquipmentDepartureReturns(
 		current_period: boolean;
 	}>(sql`
   SELECT a.id, coalesce(i.identifier, t.name) AS identifier, t.name AS type_name,
-   (a.quantity::bigint - a.received_quantity - a.lost_quantity - a.waived_quantity + a.exception_received_quantity)::integer AS outstanding,
+   ${outstandingSql("a")}::integer AS outstanding,
    a.explicit_deadline::text, a.departure_deadline::text,
    (a.deactivation_id IS NULL AND (a.employment_period_id IS NULL OR EXISTS (SELECT 1 FROM employee_employment_period p WHERE p.organization_id=a.organization_id AND p.employee_id=a.employee_id AND p.id=a.employment_period_id AND p.status='open'))) AS current_period
   FROM equipment_assignment a JOIN equipment_type t ON t.id=a.type_id AND t.organization_id=a.organization_id
   LEFT JOIN equipment_item i ON i.id=a.item_id AND i.organization_id=a.organization_id
   WHERE a.organization_id=${subject.organizationId} AND a.employee_id=${subject.employeeId}::uuid
-   AND a.return_required AND a.quantity::bigint > a.received_quantity::bigint + a.lost_quantity + a.waived_quantity - a.exception_received_quantity
+   AND ${outstandingSql("a")} > 0
   ORDER BY t.name, i.identifier, a.id
  `);
 	return result.rows.map((row) => ({
@@ -70,7 +71,7 @@ export async function countOutstandingEquipmentReturns(
 	const result = await tx.execute<{ count: number }>(sql`
   SELECT count(*)::integer AS count FROM equipment_assignment a
   WHERE a.organization_id=${organizationId}
-   AND a.return_required AND a.quantity::bigint > a.received_quantity::bigint + a.lost_quantity + a.waived_quantity - a.exception_received_quantity
+   AND ${outstandingSql("a")} > 0
  `);
 	return result.rows[0]?.count ?? 0;
 }

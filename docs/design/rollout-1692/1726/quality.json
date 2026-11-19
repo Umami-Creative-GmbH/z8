@@ -1,0 +1,89 @@
+{
+  "branch": "feat/payroll-work-balances",
+  "worktree": "X:/t3-code/worktrees/z8/t3-202a890c-7c1891a8b7266bba",
+  "initialLocalBase": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+  "implementationCommit": "ec3b60ca3ad2c14ba74e9baeb3051f8add60c8c7",
+  "latestLocalIntegration": "11ad20e2251742960e6ccf3db17b1227ca3f17da",
+  "mergeCommit": "ae5197ed88fe97e13d1b7b52974d339864188927",
+  "sourceIdentity": "Final-source snapshots and raw/canonical Git hashes are in artifacts.json. Final checks include the owned post-merge metadata formatting and file-description/reduced-motion changes; a later evidence/report commit does not alter those checked bytes.",
+  "environment": "Windows, Node26.9.0, Next16.4.6 Turbopack, React19.3.1, pnpm; pnpm_config_verify_deps_before_run=false; UTF-8 evidence; offline frozen dependencies installed with ignore-scripts. No Phase/customer/provider credentials.",
+  "unit": {
+    "command": "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 'src/app/[locale]/(app)/payroll/work-balances/page.test.tsx' src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx src/lib/work-balance/adjustments/opening-balance-csv.test.ts src/lib/navigation/route-metadata.test.ts src/components/ui/page-header.test.tsx src/components/site-header.test.tsx src/components/ui/dialog.test.tsx src/lib/payroll-access src/tolgee/extracted-key-defaults.test.ts 'src/app/[locale]/(app)/organization/org-explorer-client.test.tsx' src/components/notifications/notifications-inbox.test.tsx src/components/notifications/notifications-inbox.contract.test.tsx",
+    "suites": 13,
+    "tests": 130,
+    "passed": true,
+    "deduplication": "Actual final Vitest selection only. Earlier overlapping 9/83, 11/120, parser/default subsets and 37 metadata cases are not added. One initial incoming-notification filename did not exist; corrected to the actual two inbox suites before this final count."
+  },
+  "postgres": {
+    "command": "pnpm --filter webapp exec C:/Users/KaiHentschel/scoop/apps/git/current/usr/bin/bash.exe -c 'export PATH=\"/c/Users/KaiHentschel/scoop/apps/git/current/usr/bin:$PATH\"; exec bash scripts/run-approval-workflow-repository-integration.sh src/lib/work-balance/adjustments/opening-balance-upload.integration.test.ts src/lib/work-balance/adjustments/payroll-grant-adjustments.integration.test.ts'",
+    "suites": 2,
+    "tests": 18,
+    "passed": true,
+    "migrationRecoveryPassed": true,
+    "ownedTestContainerRemoved": true,
+    "scope": "Real public directory/authority and preview/commit/readback actions. Includes new current approved-membership/revocation/owner-without-grant assertion. Last run followed local integration merge and preceded only final field-help/spinner presentation; database/action/query/domain source unchanged. Earlier 2/17 is not additional coverage."
+  },
+  "types": {
+    "command": "pnpm --filter webapp typecheck",
+    "profiles": ["next typegen", "tsconfig.typecheck.json", "tsconfig.workflow-contracts.json", "tsconfig.smoke.json"],
+    "passed": true,
+    "setupFailure": "Initial missing generated ignored licenses.json was resolved using pnpm --filter webapp generate-licenses. All profiles reran after final file-help change."
+  },
+  "biome": {
+    "command": "pnpm --filter webapp exec biome check --config-path biome.jsonc --line-ending=crlf 'src/app/[locale]/(app)/payroll/work-balances/page.tsx' 'src/app/[locale]/(app)/payroll/work-balances/page.test.tsx' 'src/app/[locale]/(app)/payroll/work-balances/work-balances-view.tsx' src/components/settings/work-balance/opening-balance-upload-dialog.tsx src/components/settings/work-balance/opening-balance-upload-dialog.test.tsx src/components/settings/work-balance/opening-balance-upload-table.tsx src/lib/navigation/route-metadata.ts src/lib/work-balance/adjustments/payroll-grant-adjustments.integration.test.ts",
+    "files": 8,
+    "passed": true,
+    "profile": "Explicit repository webapp biome.jsonc, CRLF-aware. Initial merged metadata formatting failed this profile and was reconciled without removing any opt-ins. No default LF or repo-wide lint claim."
+  },
+  "doctor": {
+    "command": "pnpm exec react-doctor apps/webapp --scope changed --base 11ad20e2251742960e6ccf3db17b1227ca3f17da --include-untracked --verbose --no-supply-chain --no-telemetry --no-score --max-duration 90",
+    "files": 8,
+    "errors": 0,
+    "warnings": 3,
+    "exitCode": 0,
+    "triage": [
+      "no-high-complexity-react-function: upload task complexity remains a medium-confidence maintainability warning; no generic business controller introduced.",
+      "no-prevent-default: high-confidence false positive for the native form. Explicit preventDefault and stopPropagation precede synchronous busy guard.",
+      "tanstack-form-on-submit-requires-prevent-default: same handler; high-confidence false positive. Actual native duplicate-submit and real action/retry checks prove no default reload."
+    ],
+    "fixed": "Initial two compiler errors for try/finally removed via promise finalization.",
+    "limits": "No numeric health score, supply-chain certification, suppressions or blanket zero-findings claim."
+  },
+  "tdd": {
+    "red": ["Missing heading in actual Suspense fallback", "Unlocked file reading and duplicate selection", "Missing inline Retry after preview failure", "A-to-B pending upload remained mounted", "Dangling actual CSV control description reference"],
+    "green": "Assembled route/identity/form controls, native duplicate commits, retained failure and preview, current-scope lifetime, A-to-B-to-A late preview and changed-actor late commit suppression. Public PostgreSQL authority and atomicity are separate evidence."
+  },
+  "runtime": {
+    "commands": [
+      "pnpm performance:fixture prepare .tmp/1726-fixture",
+      "pnpm node docs/design/rollout-1692/1726/fixture.mjs .tmp/1726-fixture seed",
+      "pnpm --filter webapp i18n:metadata",
+      "pnpm node docs/design/rollout-1692/1726/start.mjs .tmp/1726-fixture",
+      "pnpm node docs/design/rollout-1692/1726/runtime.mjs .tmp/1726-fixture comparison",
+      "pnpm node docs/design/rollout-1692/1726/runtime.mjs .tmp/1726-fixture actions",
+      "pnpm node docs/design/rollout-1692/1726/runtime.mjs .tmp/1726-fixture scope",
+      "pnpm node docs/design/rollout-1692/1726/runtime.mjs .tmp/1726-fixture recovery",
+      "pnpm node docs/design/rollout-1692/1726/fixture.mjs .tmp/1726-fixture readback",
+      "pnpm node docs/design/rollout-1692/1726/verify-artifacts.mjs"
+    ],
+    "browser": "preview_status/open/navigate first; two same-step snapshot timeouts quoted before fallback, owned preview closed. Actual fallback uses Puppeteer; native React uses independent worktree-scoped agent-browser0.39.1.",
+    "nativeCommands": "pnpm exec agent-browser --session r043-5cc6984005cb --restore [open --enable react-devtools URL | state load .tmp/1726-fixture/native-state.json | snapshot -i | react tree --json | react inspect 2135 --json | react renders start | press Control+b | react renders stop --json | a11y --selector main --tags wcag2a,wcag2aa --json | close]",
+    "native": "Real JSON tree, inspection and render recording succeeded; generic Done and DOM are separate. Native permission prompt was actually dismissed. Actual Dark and Large UI saves survived reload with computed18px/dark.",
+    "next": "Final comparison browser connected: get_compilation_issues issues=[]; get_errors configErrors=[] and sessionErrors=[]; get_page_metadata populated. Historical warnings/failure attempts retained.",
+    "a11y": "Main light12passes/0violations; enlarged dark initially1 contrast violation across3 new labels, fixed12passes/0violations/0incomplete. No whole-shell or screen-reader certification.",
+    "preciseLimits": ["Existing shared desktop sidebar clips the directory left edge; matched before/after evidence retains this finding.", "Dev tooling overlays retained; CSS viewport is not true browser/OS zoom.", "A held outgoing preview dispatch/current-session authorization and actual settled B record are verified. Automatic no-reload external session detection and already-produced late RSC reads are not certified.", "Permission loss is checked at real server commit. Client state cannot cancel an already-authorized server transaction.", "Initial directory reader outage/retry, every optional/role/provider/language permutation and physical device behavior are not freshly certified.", "Full production static generation, remote Tolgee synchronization, provider/customer/payment lifecycle and global transition/production performance remain unpassed.", "Form file-help/reduced-motion final change is covered by fresh assembled tests/full types/Biome/Doctor and latest matched comparison; earlier actions/scope/recovery are narrower prior-source runtime evidence with unchanged action/domain state owners."]
+  },
+  "cleanup": {
+    "previewOwnedTabClosed": true,
+    "nativeOwnedBrowserClosed": true,
+    "nextPid": 100608,
+    "verifiedListenerPid": 89748,
+    "port": 53080,
+    "checkoutCommandAndParentageVerified": true,
+    "ownedNextTreeStopped": true,
+    "fixtureLabelVerifiedContainersRemoved": 3,
+    "privateManifestsRetainedIgnored": true,
+    "noGlobalKillOrLiveNextMove": true
+  },
+  "handoff": "Root fresh native merger determines readiness; native issue1726 remains OPEN. No push, child PR, issue closure, ledger/README/rootreport edit, dev merge or deploy. All source/evidence owned; root changes arrive only by local integration merge."
+}

@@ -1,0 +1,78 @@
+{
+  "archiveVerifierExit": 0,
+  "verifierSha256": "f8102e9628e7ed227a0cab70d38933bcbb678adc6f0446ce330cbd119abf5316",
+  "currentSourceModeExecuted": false,
+  "expectedDrift": "only authorized additive listing heading; archive bytes unchanged",
+  "pins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "d1bdb18e02d8f11f4320db296983f84c7db93b66692fbad7a707ee14c5dabea7"
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "618cf4fa30ae2590e8950551bb605e28c9ee18f46161b3aaa2aa8eea240749a9"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "2c23d22b368d26ffaafc5d9349c3dc6b7b7844c1a2ed2ec872d9c2b2bd4fa098"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "afb6b4335bd6bed8e2474f59f0584853fccfb0c501294789c82adb6d44d96659"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "0558860b7abf7f6053f69ab2650e607b3803d9ebfe10497a3cb5540190c30b0b"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "4ffb85cedc2834daf1753dbed0496dde9127495cd30d3ae05ba22c5ac84bdba4"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "17e86fc6bebf407018511528ab26650c7d989f537f451c9ab488c7fa590ad8b3"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "6597c5c3f20264fa981be1dfbe32bfbbd64c1c6fc3fdab7ede1bc2a3d32c2693"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "7cb60a6571ffac134b740f79b19b7fd9cbff9b2f8cf80cc1cde2e201fad31b3e"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "matchesFrozenSource": false,
+      "currentCanonicalSha256": "731c8cd6359af7eec20ba12a2d456e7c5d4cdc46e4efab7f573ae743ab7fdb6c"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "42683441abe49b9acae745ca4fb1ba8d2b6bc1070fcc74e5594dfa1458bc6307"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "664db4505f12cf9d652c7bd71aa31298324b7d6cd6cd25bbd7227af541e8655b"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "99d358bf17795fb682e00d7fbfc648e7bf669ad433be76fe871182f5d18e6d4f"
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/current-owner.ts",
+      "matchesFrozenSource": true,
+      "currentCanonicalSha256": "939ae2071718830a529e09ae3855a330d8d258e72ea6647c4db4250fde0bfc50"
+    }
+  ]
+}

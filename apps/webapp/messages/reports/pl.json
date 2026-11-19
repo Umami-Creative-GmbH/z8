@@ -13,9 +13,11 @@
       "yes": "Tak"
     },
     "description": "Generuj kompleksowe raporty dotyczące godzin pracy i nieobecności wraz z danymi o pracy zdalnej istotnymi dla celów podatkowych",
+    "employeeNumber": "Numer pracownika",
     "employeeSelector": {
       "error": "Nie można załadować członków zespołu",
       "label": "Pracownik",
+      "loading": "Wczytywanie członków zespołu",
       "placeholder": "Wybierz pracownika..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Ładowanie ustawień organizacji przed włączeniem ustawień wstępnych.",
       "period": "Okres",
-      "selectPeriod": "Wybierz okres"
+      "selectPeriod": "Wybierz okres",
+      "settingsError": "Ustawienia organizacji są niedostępne",
+      "settingsRequired": "Ustawienia organizacji są wymagane do korzystania z gotowych ustawień.",
+      "title": "Wygeneruj raport pracownika"
     },
     "generate": "Generuj raport",
     "generating": "Generowanie raportu…",
@@ -62,6 +67,7 @@
       "month": "Miesiąc",
       "noHomeOfficeDays": "W tym okresie nie odnotowano dni pracy zdalnej.",
       "overtime": "Nadgodziny",
+      "title": "Podgląd raportu",
       "total": "Suma",
       "totalHomeOfficeDays": "Łączna liczba dni pracy zdalnej",
       "totalHomeOfficeHours": "Łączna liczba godzin przepracowanych zdalnie",
@@ -266,6 +272,9 @@
         "noPermission": "Nie masz uprawnień do przeglądania raportów projektu.",
         "title": "Raporty projektu"
       },
+      "refreshFailed": "Nie udało się odświeżyć raportów projektów",
+      "scopeLoading": "Wczytywanie bieżącego zakresu raportu…",
+      "scopeUnavailable": "Nie udało się wczytać bieżącego zakresu raportu.",
       "status": {
         "active": "Aktywne",
         "archived": "Zarchiwizowane",
@@ -324,7 +333,6 @@
         "failedGenerate": "Nie udało się wygenerować raportu",
         "failedPortfolio": "Nie udało się wygenerować raportu portfela",
         "failedProject": "Nie udało się wygenerować raportu projektu",
-        "failedProjectReport": "Nie udało się wygenerować raportu projektu",
         "portfolioGenerated": "Raport portfela został wygenerowany",
         "projectGenerated": "Wygenerowano raport dla {name}",
         "unexpectedError": "Wystąpił nieoczekiwany błąd"
@@ -376,6 +384,8 @@
         "loading": "Ładowanie linków do udostępniania…",
         "revokedAutomatically": "Odwołano automatycznie w dniu {date}: twórca nie ma już wglądu we wszystkie zawarte w nim projekty",
         "revokedBy": "Odwołano przez: {name} w dniu {date}",
+        "scopeLoading": "Wczytywanie bieżącego zakresu linku udostępniania…",
+        "scopeUnavailable": "Nie udało się wczytać bieżącego zakresu linku udostępniania.",
         "someone": "ktoś",
         "title": "Linki do tego raportu",
         "views": "{count, plural, one {# wyświetlenie} many {# wyświetleń} other {# wyświetlenia} }",
@@ -398,7 +408,8 @@
         "description": "Link natychmiast przestanie działać, a jego migawka zostanie usunięta. Wpis oraz historia wyświetleń zostaną zachowane.",
         "done": "Link unieważniony",
         "failed": "Nie udało się unieważnić linku",
-        "title": "Unieważnić ten link?"
+        "titleDeletedReport": "Cofnąć link udostępniania dla usuniętego raportu: {period}?",
+        "titleNamed": "Cofnąć link udostępniania dla: {report}, {period}?"
       },
       "status": {
         "active": "Aktywny",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "zarchiwizowane",
       "archivedBadge": "Zarchiwizowane",
+      "comparison": "Miesięczny przebieg według pojazdu i pracownika",
       "empty": {
         "description": "W tym okresie nie zarejestrowano żadnej zakończonej pracy z przebytym dystansem.",
         "title": "Brak przejazdów w tym okresie"
@@ -457,6 +469,7 @@
         "period": "Okres"
       },
       "generate": "Wygeneruj raport",
+      "generated": "Wygenerowano: {time}",
       "generating": "Generowanie raportu…",
       "kilometres": "{distance} km",
       "noReportYet": "Nie wygenerowano jeszcze żadnego raportu",
@@ -465,7 +478,11 @@
         "description": "Kilometry przejechane w celach służbowych według pojazdu i pracownika, w ujęciu miesięcznym",
         "feature": "wyświetl raport przebiegu według pojazdów"
       },
+      "scope": "Pracownicy dostępni dla Ciebie w tej organizacji",
+      "scopeLoading": "Potwierdzanie bieżącej organizacji i pracownika…",
+      "scopeUnavailable": "Nie udało się wczytać bieżącego zakresu raportu pojazdów.",
       "selectPeriod": "Wybierz okres i wygeneruj raport.",
+      "staged": "Zmieniono okres. Wygeneruj raport, aby zaktualizować wyniki i pliki do pobrania.",
       "table": {
         "employee": "Pracownik",
         "licencePlate": "Numer rejestracyjny",
@@ -473,8 +490,7 @@
         "vehicle": "Pojazd",
         "vehicleAndEmployee": "Pojazd / pracownik"
       },
-      "title": "Przebieg według pojazdu",
-      "totalDriven": "Przejechano {distance}"
+      "title": "Przebieg według pojazdu"
     }
   }
 }

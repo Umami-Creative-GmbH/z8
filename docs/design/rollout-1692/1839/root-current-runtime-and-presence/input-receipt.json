@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "inputAllowlist": {
+    "path": ".tmp/1839-1744-current-runtime-20261117b/allowlist.json",
+    "bytes": 5305,
+    "sha256": "9855d09fb96212b64131ce08cef6f99335d38e1bb801279d857bb95ad2b9cc60"
+  },
+  "inputDeclared": {
+    "payloads": 31,
+    "bytes": 13046953,
+    "json": 25,
+    "png": 5,
+    "markdown": 1
+  },
+  "published": {
+    "payloads": 29,
+    "bytes": 1139397,
+    "json": 23,
+    "png": 5,
+    "markdown": 1
+  },
+  "excludedInventories": [
+    {
+      "path": "before.json",
+      "bytes": 5953778,
+      "sha256": "3832ac0892a33acfab21e4c312867e19563341b19b49969b422f78a1dd514ea0",
+      "treatment": "Hash-only provenance from the allowlist. Full inventory was neither read nor copied by this publisher."
+    },
+    {
+      "path": "after.json",
+      "bytes": 5953778,
+      "sha256": "3832ac0892a33acfab21e4c312867e19563341b19b49969b422f78a1dd514ea0",
+      "treatment": "Hash-only provenance from the allowlist. Full inventory was neither read nor copied by this publisher."
+    }
+  ],
+  "excludedBytes": 11907556,
+  "runtimeIdentity": {
+    "head": "bc4010825c1fd94d634b7f4774b6f895bfac26f4",
+    "appTree": "138aab92cde099756c13347827a90112763def68",
+    "tree": "c46bc8d4f045c8fff2d9a6f51c678784e0cb2f80",
+    "branch": "ai/1692-app-wide-ui-refresh",
+    "verifiedCommit": null,
+    "readiness": null
+  },
+  "inheritedInputObservations": {
+    "credentialScanPassed": true,
+    "imagesVisuallyReviewed": 5
+  },
+  "scope": "Only the allowlist and the 29 selected SAFE payloads were read. No raw logs, private profiles/auth/env/manifests, drivers, failed images or referenced unlisted artifacts were read or copied."
+}

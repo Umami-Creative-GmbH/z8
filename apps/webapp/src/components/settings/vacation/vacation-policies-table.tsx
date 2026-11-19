@@ -20,16 +20,8 @@ import {
 } from "@/app/[locale]/(app)/settings/vacation/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useAppLocale } from "@/components/providers/app-locale-provider";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,8 +35,12 @@ import {
 	actionErrorMessage,
 	type RefusalOverrides,
 } from "@/lib/organization-action/action-error-message";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query";
+import { useVacationPolicyHistoryContext } from "./use-vacation-policy-history-context";
 import { VacationPolicyForm } from "./vacation-policy-form";
+import { isPolicySuperseded, organizationToday } from "./vacation-policy-status";
 
 interface VacationPolicy {
 	id: string;
@@ -88,19 +84,16 @@ const getAccrualTypeLabel = (t: ReturnType<typeof useTranslate>["t"], type: stri
 	return labels[type] || type;
 };
 
-const formatDate = (dateStr: string) => {
-	const date = new Date(dateStr);
-	return date.toLocaleDateString(undefined, {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-	});
-};
-
-const isPolicySuperseded = (policy: VacationPolicy) => {
-	if (!policy.validUntil) return false;
-	const today = new Date().toISOString().split("T")[0];
-	return policy.validUntil < today;
+/**
+ * A policy's calendar day (YYYY-MM-DD) in the reader's locale. A plain date never passes through
+ * an instant, so it shows the stored day in every timezone.
+ */
+const formatDate = (dateStr: string, locale: string) => {
+	try {
+		return formatPlainDate(parsePlainDate(dateStr), locale, "dateMedium");
+	} catch {
+		return dateStr;
+	}
 };
 
 // eslint-disable-next-line react-doctor/no-giant-component, react-doctor/prefer-useReducer
@@ -109,12 +102,18 @@ export function VacationPoliciesTable({
 	canManagePolicies = true,
 }: VacationPoliciesTableProps) {
 	const { t } = useTranslate();
+	const locale = useAppLocale();
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [policyToDelete, setPolicyToDelete] = useState<VacationPolicy | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [editingPolicy, setEditingPolicy] = useState<VacationPolicy | null>(null);
 	const [createFormOpen, setCreateFormOpen] = useState(false);
+	// "Superseded" compares against the organization's calendar day (its timezone), not the
+	// viewer's or UTC's day; until the timezone is known no policy is marked superseded.
+	const historyContext = useVacationPolicyHistoryContext(organizationId);
+	const today = organizationToday(historyContext.data?.timezone);
 
 	// Fetch policies with React Query
 	const {
@@ -144,9 +143,9 @@ export function VacationPoliciesTable({
 					queryKey: queryKeys.vacationPolicies.list(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				setPolicyToDelete(null);
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the deletion can be retried.
+				setDeleteError(
 					actionErrorMessage(t, result, DELETE_REFUSALS, [
 						"vacation.policies.deleteFailed",
 						"Failed to delete policy",
@@ -155,17 +154,19 @@ export function VacationPoliciesTable({
 			}
 		},
 		onError: () => {
-			toast.error(t("vacation.policies.deleteFailed", "Failed to delete policy"));
+			setDeleteError(t("vacation.policies.deleteFailed", "Failed to delete policy"));
 		},
 	});
 
 	const handleDeleteClick = (policy: VacationPolicy) => {
 		setPolicyToDelete(policy);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (policyToDelete) {
+		if (policyToDelete && !deleteMutation.isPending) {
+			setDeleteError(null);
 			deleteMutation.mutate(policyToDelete.id);
 		}
 	};
@@ -203,7 +204,7 @@ export function VacationPoliciesTable({
 			accessorKey: "name",
 			header: t("vacation.policies.header.name", "Name"),
 			cell: ({ row }) => {
-				const isSuperseded = isPolicySuperseded(row.original);
+				const isSuperseded = isPolicySuperseded(row.original.validUntil, today);
 				return (
 					<span className={`font-medium ${isSuperseded ? "opacity-60" : ""}`}>
 						{row.original.name}
@@ -214,16 +215,24 @@ export function VacationPoliciesTable({
 		{
 			accessorKey: "startDate",
 			header: t("vacation.policies.header.start-date", "Start Date"),
-			cell: ({ row }) => formatDate(row.original.startDate),
+			cell: ({ row }) => (
+				<span className="tabular-nums whitespace-nowrap">
+					{formatDate(row.original.startDate, locale)}
+				</span>
+			),
 		},
 		{
 			accessorKey: "validUntil",
 			header: t("vacation.policies.header.valid-until", "Valid Until"),
 			cell: ({ row }) =>
 				row.original.validUntil ? (
-					formatDate(row.original.validUntil)
+					<span className="tabular-nums whitespace-nowrap">
+						{formatDate(row.original.validUntil, locale)}
+					</span>
 				) : (
-					<span className="text-muted-foreground">N/A</span>
+					<span className="text-muted-foreground">
+						{t("vacation.policies.no-end-date", "No end date")}
+					</span>
 				),
 		},
 		{
@@ -264,7 +273,7 @@ export function VacationPoliciesTable({
 			accessorKey: "status",
 			header: t("vacation.policies.header.status", "Status"),
 			cell: ({ row }) => {
-				const isSuperseded = isPolicySuperseded(row.original);
+				const isSuperseded = isPolicySuperseded(row.original.validUntil, today);
 				if (row.original.isCompanyDefault) {
 					return (
 						<Badge className="bg-primary">
@@ -290,9 +299,13 @@ export function VacationPoliciesTable({
 						cell: ({ row }: { row: { original: VacationPolicy } }) => (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button variant="ghost" size="icon" className="size-8">
-										<IconDots className="size-4" />
-										<span className="sr-only">{t("common.openMenu", "Open menu")}</span>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="size-8"
+										aria-label={`${t("common.openMenu", "Open menu")}: ${row.original.name}`}
+									>
+										<IconDots aria-hidden="true" className="size-4" />
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
@@ -388,41 +401,30 @@ export function VacationPoliciesTable({
 				/>
 			</div>
 
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("vacation.policies.delete-title", "Delete Vacation Policy")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{policyToDelete?.isCompanyDefault
-								? t(
-										"vacation.policies.delete-default-warning",
-										'Warning: "{name}" is the company default policy. You must set another policy as default before deleting this one.',
-										{ name: policyToDelete?.name },
-									)
-								: t(
-										"vacation.policies.delete-description-v2",
-										'Are you sure you want to delete "{name}"? This will also remove all assignments for this policy.',
-										{ name: policyToDelete?.name },
-									)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							disabled={deleteMutation.isPending}
-						>
-							{deleteMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				open={deleteDialogOpen}
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) setDeleteError(null);
+				}}
+				title={t("vacation.policies.delete-title", "Delete Vacation Policy")}
+				description={
+					policyToDelete?.isCompanyDefault
+						? t(
+								"vacation.policies.delete-default-warning",
+								'Warning: "{name}" is the company default policy. You must set another policy as default before deleting this one.',
+								{ name: policyToDelete?.name },
+							)
+						: t(
+								"vacation.policies.delete-description-v2",
+								'Are you sure you want to delete "{name}"? This will also remove all assignments for this policy.',
+								{ name: policyToDelete?.name },
+							)
+				}
+				isDeleting={deleteMutation.isPending}
+				error={deleteError}
+				onConfirm={handleDeleteConfirm}
+			/>
 
 			{canManagePolicies && editingPolicy && (
 				<VacationPolicyForm

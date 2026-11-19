@@ -1,0 +1,110 @@
+{
+  "artifacts": [
+    {
+      "path": "artifact-validation.json",
+      "bytes": 1331,
+      "sha256": "4bb265c14ec50e02c6a8357781feb06aed436eebfa709aa30394e1c5469278c9"
+    },
+    {
+      "path": "bounded-results.json",
+      "bytes": 2897,
+      "sha256": "031bba4ff8a1f9267d451e770237bbb59e14fc71b28ba3771495983728a72556"
+    },
+    {
+      "path": "browser-layout.json",
+      "bytes": 1094,
+      "sha256": "97880e4f3eace6a0ee4eb5d31e4b1c0c1dd90c5d6d34315573066f1dac74048b"
+    },
+    {
+      "path": "browser-manager.json",
+      "bytes": 109,
+      "sha256": "b1b8721de8608427e5e2dcab9b38aba21f48ccbd913f9c31bcee1d08bb569f01"
+    },
+    {
+      "path": "browser-primary.json",
+      "bytes": 1082,
+      "sha256": "7ed4ff93a252986fc3b92be784874f9e479775d7f881cc342cdcc76bf1901d2e"
+    },
+    {
+      "path": "browser-restricted.json",
+      "bytes": 126,
+      "sha256": "19ba11c361e2417bdd361a3041637decb180410a065d83175a8acf2c71b21fe8"
+    },
+    {
+      "path": "case-accounting.json",
+      "bytes": 9596,
+      "sha256": "7c6988e50d2d502105e228de04ca6f706b35d7ea1194dbed3595f3c22f2a3063"
+    },
+    {
+      "path": "cleanup-containers.json",
+      "bytes": 343,
+      "sha256": "a0f3077ed41adc2b73cfa8e3ec49443f96a387b5201bdc4457f9314b05180382"
+    },
+    {
+      "path": "cleanup-processes.json",
+      "bytes": 408,
+      "sha256": "33da7d72cc6dd72bbb347b2143a3b64ec5550fbde3f1028732941340346e1e0c"
+    },
+    {
+      "path": "desktop-light.png",
+      "bytes": 136134,
+      "sha256": "ece644465f00658d138d988570e1ebd23d43f125ad935ba6e33c72515d2e7457"
+    },
+    {
+      "path": "independent-arrival-review.test.tsx",
+      "bytes": 16592,
+      "sha256": "5dd04096f1532ea37ed9b8e40cd7f57274d1b2259d98ba53e0aecd839cf05f3a"
+    },
+    {
+      "path": "independent-final-tests.json",
+      "bytes": 4286,
+      "sha256": "af3f31ca265888fb8c4eaa681cda84688d7c2470635a22a6fa0d5f79154cc639"
+    },
+    {
+      "path": "native-current-target.json",
+      "bytes": 433,
+      "sha256": "80bcec0cd1f89749e7bef412ab8c0851961fdd74e0d67b35968d67f119a21f4d"
+    },
+    {
+      "path": "next-current.json",
+      "bytes": 4513,
+      "sha256": "b1f2d5747d8053402c55263382a363ba2fd3a42d7c4e6dc9f29021e0fd529f2e"
+    },
+    {
+      "path": "phone-axe.json",
+      "bytes": 518,
+      "sha256": "0e928eb0b2529cc462963fe92dc09b3a0258ca5ed8930e6a38a41037ebd4cf4c"
+    },
+    {
+      "path": "phone-dark-large.png",
+      "bytes": 46909,
+      "sha256": "46f947f17511f6feff191b77ee2eec8e2ec5ff2225d61a1fb72e610265fdda40"
+    },
+    {
+      "path": "phone-records-dark-large.png",
+      "bytes": 45539,
+      "sha256": "689c109ed4d4235593fd108df472a5f40e6d9a8cf7d956c866bc97cb2d87e195"
+    },
+    {
+      "path": "priority-tests.json",
+      "bytes": 11272,
+      "sha256": "b81fb9d7660d958f6f2a67f59f1d457e9229f72dd3f278311a1c4ff30105b954"
+    },
+    {
+      "path": "source-and-config-pins.json",
+      "bytes": 11619,
+      "sha256": "41abe7424622ced56843aeea99cfc2260b0ae019ac30b1265e48708bb2e6483f"
+    },
+    {
+      "path": "wide-dark-large-collapsed.png",
+      "bytes": 137689,
+      "sha256": "929b26a6b9e27cf9d5cc976a4af9ad3196a7235d92011ac59d4b2c0fa4f67d0a"
+    }
+  ],
+  "indexes": [
+    "safe-allowlist.json",
+    "SHA256SUMS"
+  ],
+  "policy": "SHA256SUMS covers every artifact and safe-allowlist.json; the checksum index does not hash itself. No other file is permitted in this sealed directory.",
+  "verifiedCommit": null
+}

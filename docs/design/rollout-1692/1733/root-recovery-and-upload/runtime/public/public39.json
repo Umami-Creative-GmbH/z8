@@ -1,0 +1,182 @@
+{
+  "passed": 39,
+  "failed": 0,
+  "physicalFiles": [
+    {
+      "file": "apps/webapp/src/components/personnel-file/independent1733final-command-probe.test.tsx",
+      "assertions": [
+        {
+          "fullName": "keeps an admitted matching session usable while its session refresh is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers the batch through local organization Retry after the real provider read fails",
+          "status": "passed"
+        },
+        {
+          "fullName": "preserves the start-page control through the same provider failure and Retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent confirm / success / settle-hidden guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent confirm / success / settle-resumed guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent confirm / refusal / settle-hidden guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent confirm / refusal / settle-resumed guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent confirm / rejection / settle-hidden guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent confirm / rejection / settle-resumed guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent edit / success / settle-hidden guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent edit / success / settle-resumed guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent edit / refusal / settle-hidden guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent edit / refusal / settle-resumed guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent edit / rejection / settle-hidden guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent edit / rejection / settle-resumed guards requests until current readback",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent confirm failed retired readback gates stale preview and uses local Retry",
+          "status": "passed"
+        },
+        {
+          "fullName": "independent edit failed retired readback gates stale preview and uses local Retry",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "file": "apps/webapp/src/components/personnel-file/independent1733final-heading-probe.test.tsx",
+      "assertions": [
+        {
+          "fullName": "renders one safe h1 from the actual detail Page fallback alongside SiteHeader",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "assertions": [
+        {
+          "fullName": "keeps one start pending through Activity until its result settles",
+          "status": "passed"
+        },
+        {
+          "fullName": "drops validation-queued work across an account switch and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "drops validation-queued work across an organization switch and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "hides stale arrivals and ignores a pending result across organization scope changes and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "hides stale arrivals and ignores a pending result across account scope changes and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "hides stale arrivals and ignores a pending result across loading scope changes and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "hides stale arrivals and ignores a pending result across error scope changes and return",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps invalid input, focuses its error, and never submits it",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps the draft through a same-scope refresh of calendar defaults",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not start a queued submission after Activity hides it during validation",
+          "status": "passed"
+        },
+        {
+          "fullName": "ignores late success effects after an Activity hide/show lifetime",
+          "status": "passed"
+        },
+        {
+          "fullName": "ignores late failure effects after an Activity hide/show lifetime",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains the pay period after a transport failure and allows an explicit retry",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-workspace.test.tsx",
+      "assertions": [
+        {
+          "fullName": "retries the authorized preview after a read failure",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not issue a preview command for an abandoned organization arrival",
+          "status": "passed"
+        },
+        {
+          "fullName": "freezes file edits until the confirmed command and readback settle",
+          "status": "passed"
+        },
+        {
+          "fullName": "requires resolving included unmatched files and preserves manual drop commands",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not publish an old preview after organization ABA",
+          "status": "passed"
+        },
+        {
+          "fullName": "discards late confirmation effects while cached Activity is hidden and revalidates on return",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not submit a queued match edit into a new Activity lifetime",
+          "status": "passed"
+        },
+        {
+          "fullName": "offers retry only for included failed files in a confirmed batch",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

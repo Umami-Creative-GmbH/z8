@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "İzin",
-      "all-caught-up": "Her şey güncel!",
-      "approved-recently": "Son zamanlarda {count} {request} onaylandı",
       "by": "{name} tarafından",
       "description": "Son onaylanan talepler",
       "description-count": "Son {count} onaylanan {request}",
@@ -123,11 +121,27 @@
       "title": "Son Onaylananlar",
       "view-all": "Tüm Onayları Görüntüle"
     },
+    "refresh": {
+      "activity": "Son etkinlik",
+      "attention": "Bugüne genel bakış",
+      "balanceRetry": "Bakiyeyi tekrar yüklemeyi denemek için yenileyin.",
+      "balanceUnavailable": "Bakiye kullanılamıyor",
+      "currentSession": "Geçerli oturum",
+      "dayUnavailable": "Bugünün toplamı kullanılamıyor. Tekrar denemek için yenileyin.",
+      "employee": "Çalışan",
+      "greeting": "İyi günler, {name}.",
+      "noAbsences": "Bugün için kayıtlı devamsızlık yok.",
+      "openTimeTracking": "Zaman takibine git",
+      "overview": "Çalışmalarınıza genel bakış",
+      "personalDay": "Çalışma gününüz",
+      "status": "Durum",
+      "summary": "Özet",
+      "team": "Ekip",
+      "todayTarget": "Bugün · {target} gerekli"
+    },
     "team-overview": {
       "avg-hours": "Ort. Saat",
       "current-employees": "Mevcut çalışanlar",
-      "current-employees-description": "Şu anda burada çalışan herkes",
-      "description": "Ekip istatistiklerine bir bakış",
       "employees-button": "Çalışanlar",
       "per-week": "/hafta",
       "teams": "Ekipler",
@@ -175,9 +189,6 @@
       "used": "{days} kullanıldı"
     },
     "whos-out": {
-      "everyone-in": "Bugün herkes ofiste",
-      "everyones-in": "Herkes burada!",
-      "full-team": "Tüm ekip müsait!",
       "member": "üye",
       "members": "üyeler",
       "members-out": "{count} ekip {member} izinli",

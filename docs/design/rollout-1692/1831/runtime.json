@@ -1,0 +1,159 @@
+{
+  "scope": "new owned disposable fixture; small-admin / Performance small and small-employee",
+  "checks": [
+    {
+      "name": "one persistent page title",
+      "actual": 1
+    },
+    {
+      "name": "font preference persists after reload",
+      "actual": "large"
+    },
+    {
+      "name": "dark preference persists after reload",
+      "actual": true
+    },
+    {
+      "name": "phone has no document overflow",
+      "actual": true
+    },
+    {
+      "name": "keyboard reaches annual allowance",
+      "actual": "vacation-policy-annual-days"
+    },
+    {
+      "name": "accrual Escape returns focus",
+      "actual": "vacation-policy-accrual-type"
+    },
+    {
+      "name": "persisted real UI-created default policy values",
+      "actual": {
+        "name": "Standard",
+        "default_annual_days": "25",
+        "accrual_type": "annual",
+        "allow_carryover": true,
+        "max_carryover_days": "5",
+        "carryover_expiry_months": 3,
+        "is_company_default": true
+      }
+    },
+    {
+      "name": "retry creates one monthly policy",
+      "actual": 1
+    },
+    {
+      "name": "monthly and carryover seven persisted",
+      "actual": [
+        "monthly",
+        "7"
+      ]
+    },
+    {
+      "name": "biweekly choice remains available and disabled carryover hides only its limit",
+      "actual": null
+    },
+    {
+      "name": "real skip refusal stays on policy page",
+      "actual": "/en/onboarding/vacation-policy"
+    },
+    {
+      "name": "skip refusal retains draft",
+      "actual": "Keep on skip refusal"
+    },
+    {
+      "name": "real successful skip inserts no policy",
+      "actual": 1
+    },
+    {
+      "name": "real save and skip step persisted",
+      "actual": "work_templates"
+    },
+    {
+      "name": "non-admin real admission redirects to notifications",
+      "actual": null
+    }
+  ],
+  "errors": [],
+  "captures": [
+    {
+      "name": "after-desktop",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "h1": [
+        "Set up vacation policy"
+      ],
+      "overflow": false
+    },
+    {
+      "name": "after-phone",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "h1": [
+        "Set up vacation policy"
+      ],
+      "overflow": false
+    },
+    {
+      "name": "after-phone-large-dark",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "h1": [
+        "Set up vacation policy"
+      ],
+      "overflow": false
+    },
+    {
+      "name": "after-wide-large-dark",
+      "viewport": {
+        "width": 2200,
+        "height": 1100
+      },
+      "h1": [
+        "Set up vacation policy"
+      ],
+      "overflow": false
+    },
+    {
+      "name": "after-skip-refusal",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "h1": [
+        "Set up vacation policy"
+      ],
+      "overflow": false
+    },
+    {
+      "name": "after-non-admin",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "h1": [
+        "Set up notifications"
+      ],
+      "overflow": false
+    }
+  ],
+  "source": {
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx": "d3542a8cd263ff7a09e816c0a7d9bbfed413fd34793bce441528ff1a70bcc202",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts": "076494fc4190b5df193ccbc8663e90b78f24d24de599e4443fecf1711d32640d",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.ts": "e0f25884a2b987dcf2ae7f7acddf1eb7961582c05c505ca62dbd04869be57748",
+    "apps/webapp/src/lib/effect/services/onboarding.service.ts": "d1f63d45e18f670bc47deb2c0a7a9613a71f527cba8872638183b889e1fd46cc",
+    "apps/webapp/next.config.ts": "c06caaf5f92e3d89ee7a4b44e991d7d4092bc75ef5ea54b9c4f232c0a7c92eba"
+  },
+  "defaultSaveOrigin": "First real UI attempt inserted Standard; subsequent attempts read it without deleting or rewriting retained vacation history.",
+  "limitations": [
+    "Held account/org A→B→A and Activity races are assembled-only, not live account switching.",
+    "Save/skip real refusal is disposable database failure, not proof of administrator mutation authorization. Existing save/skip server owner has no admin check and was intentionally unchanged.",
+    "Default-config borrowed-tree compiler runtime fails; all captures use the same pinned roots + compiler-disabled overlay.",
+    "No production generation, provider/device/true browser zoom/global transition certification."
+  ]
+}

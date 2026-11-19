@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
@@ -71,12 +72,11 @@ export function BillableCurrencyForm({
 	});
 
 	return (
-		<form
+		<ClientForm
 			noValidate
-			onSubmit={(event) => {
-				// TanStack Form owns validation and the async submission; native submission would navigate away.
-				// react-doctor-disable-next-line react-doctor/no-prevent-default
-				event.preventDefault();
+			onSubmit={() => {
+				// One save at a time: a second submit while saving is ignored.
+				if (form.state.isSubmitting) return;
 				void form.handleSubmit();
 			}}
 			className="space-y-4"
@@ -87,26 +87,31 @@ export function BillableCurrencyForm({
 						<TFormLabel>
 							{t("settings.billableTime.currency.label", "Billable currency")}
 						</TFormLabel>
-						<Select
-							value={field.state.value}
-							onValueChange={(value) => {
-								if (value) field.handleChange(value as BillableCurrency);
-							}}
-							disabled={disabled}
-						>
-							<TFormControl>
-								<SelectTrigger className="w-full sm:w-72">
-									<SelectValue />
-								</SelectTrigger>
-							</TFormControl>
-							<SelectContent>
-								{BILLABLE_CURRENCIES.map((currency) => (
-									<SelectItem key={currency} value={currency}>
-										{labelFor(currency)}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<form.Subscribe selector={(state) => state.isSubmitting}>
+							{(pending) => (
+								<Select
+									value={field.state.value}
+									onValueChange={(value) => {
+										if (value) field.handleChange(value as BillableCurrency);
+									}}
+									// The choice being saved stays fixed until the save settles.
+									disabled={disabled || pending}
+								>
+									<TFormControl>
+										<SelectTrigger className="w-full sm:w-72">
+											<SelectValue />
+										</SelectTrigger>
+									</TFormControl>
+									<SelectContent>
+										{BILLABLE_CURRENCIES.map((currency) => (
+											<SelectItem key={currency} value={currency}>
+												{labelFor(currency)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							)}
+						</form.Subscribe>
 						<TFormDescription>
 							{t(
 								"settings.billableTime.currency.help",
@@ -119,6 +124,6 @@ export function BillableCurrencyForm({
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(pending) => children({ pending })}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }

@@ -1,0 +1,12 @@
+{
+  "checkout": "X:\\t3-code\\worktrees\\z8\\t3-31887db0-778bd1ebf3b5c998",
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "fixtureKind": "disposable",
+  "serviceLabel": "z8-isolated-comparison-v2-1738-31887db0",
+  "organization": "manifest small synthetic organization",
+  "actor": "small-admin through earlier normal form login",
+  "loopbackOriginMatches": true,
+  "publicAckDialogOpen": true,
+  "originalDailyHours": 6,
+  "rejectionPreserved": true
+}

@@ -10,7 +10,11 @@ const { backMock } = vi.hoisted(() => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string, params?: Record<string, string | number>) => {
+		t: (
+			_key: string,
+			defaultValue?: string,
+			params?: Record<string, string | number>,
+		) => {
 			if (!defaultValue) {
 				return _key;
 			}
@@ -32,10 +36,31 @@ vi.mock("@/navigation", () => ({
 import { AppErrorState } from "./app-error-state";
 
 describe("AppErrorState", () => {
+	it("offers entry recovery on public failures without workspace navigation", () => {
+		render(
+			<AppErrorState
+				variant="error"
+				titleKey="errors.unexpected.title"
+				titleDefault="Something went wrong"
+				descriptionKey="errors.unexpected.description"
+				descriptionDefault="Please try again."
+			/>,
+		);
+		expect(
+			screen.getByRole("heading", { level: 1, name: "Something went wrong" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: /sign in/i }).getAttribute("href"),
+		).toBe("/sign-in");
+		expect(
+			screen.queryByRole("link", { name: /dashboard|settings/i }),
+		).toBeNull();
+	});
 	it("renders 404 actions and optional support details", () => {
 		render(
 			<AppErrorState
 				variant="not-found"
+				recovery="workspace"
 				titleKey="errors.notFound.title"
 				titleDefault="Page not found"
 				descriptionKey="errors.notFound.description"
@@ -45,9 +70,17 @@ describe("AppErrorState", () => {
 		);
 
 		expect(screen.getByText("Page not found")).toBeTruthy();
-		expect(screen.getByText("The page may have moved or the link may be outdated.")).toBeTruthy();
-		expect(screen.getByRole("link", { name: /go to dashboard/i }).getAttribute("href")).toBe("/");
-		expect(screen.getByRole("link", { name: /settings/i }).getAttribute("href")).toBe("/settings");
+		expect(
+			screen.getByText("The page may have moved or the link may be outdated."),
+		).toBeTruthy();
+		expect(
+			screen
+				.getByRole("link", { name: /go to dashboard/i })
+				.getAttribute("href"),
+		).toBe("/");
+		expect(
+			screen.getByRole("link", { name: /settings/i }).getAttribute("href"),
+		).toBe("/settings");
 		expect(screen.getByRole("button", { name: /back/i })).toBeTruthy();
 		expect(screen.getByText(/digest-123/i)).toBeTruthy();
 		expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();

@@ -1,7 +1,13 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { CalendarView } from "./calendar-view";
 
@@ -12,6 +18,7 @@ const {
 	mockIsManagerOrAbove,
 	onScheduleXWrapperRender,
 	push,
+	navigationCompletions,
 	refetch,
 	toastError,
 	toastSuccess,
@@ -22,6 +29,7 @@ const {
 	mockIsManagerOrAbove: vi.fn(() => true),
 	onScheduleXWrapperRender: vi.fn(),
 	push: vi.fn(),
+	navigationCompletions: [] as Array<() => void>,
 	refetch: vi.fn(),
 	toastError: vi.fn(),
 	toastSuccess: vi.fn(),
@@ -39,7 +47,7 @@ const {
 		calendarTimezone: null as string | null,
 		isLoading: false,
 		isFetching: false,
-		error: null,
+		error: null as Error | null,
 	},
 }));
 
@@ -75,7 +83,11 @@ vi.mock("@/hooks/use-organization", () => ({
 }));
 
 vi.mock("@/hooks/use-calendar-data", () => ({
-	useCalendarData: (options: { filters: unknown; month: number; year: number }) => {
+	useCalendarData: (options: {
+		filters: unknown;
+		month: number;
+		year: number;
+	}) => {
 		capturedCalendarQueries.push(options);
 		capturedCalendarFilters.push(options.filters);
 
@@ -87,7 +99,13 @@ vi.mock("@/hooks/use-calendar-data", () => ({
 }));
 
 vi.mock("@/components/work-balance/work-balance-card", () => ({
-	WorkBalanceCard: ({ compact, mobileCompact }: { compact?: boolean; mobileCompact?: boolean }) => (
+	WorkBalanceCard: ({
+		compact,
+		mobileCompact,
+	}: {
+		compact?: boolean;
+		mobileCompact?: boolean;
+	}) => (
 		<div
 			data-testid="work-balance-card"
 			data-compact={String(compact)}
@@ -104,7 +122,10 @@ vi.mock("./calendar-employee-selector", () => ({
 		onEmployeeChange: (employeeId: string | null) => void;
 		selectedEmployeeId: string | null;
 	}) => (
-		<div data-testid="employee-selector" data-selected-employee-id={selectedEmployeeId ?? ""}>
+		<div
+			data-testid="employee-selector"
+			data-selected-employee-id={selectedEmployeeId ?? ""}
+		>
 			<button type="button" onClick={() => onEmployeeChange("employee-2")}>
 				Select employee 2
 			</button>
@@ -122,9 +143,6 @@ vi.mock("./calendar-filters", () => ({
 	CalendarFiltersComponent: () => <div data-testid="calendar-filters" />,
 }));
 
-vi.mock("./calendar-legend", () => ({
-	CalendarLegend: () => <div data-testid="calendar-legend" />,
-}));
 
 vi.mock("./event-details-panel", () => ({
 	EventDetailsPanel: () => <div data-testid="event-details" />,
@@ -195,7 +213,10 @@ vi.mock("./schedule-x-wrapper", () => ({
 		onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
 		onEventClick?: (event: CalendarEvent) => void;
 		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
-		onRangeChange?: (range: { startDateKey: string; endDateKey: string }) => void;
+		onRangeChange?: (range: {
+			startDateKey: string;
+			endDateKey: string;
+		}) => void;
 		onViewModeChange: (mode: "week" | "month" | "year") => void;
 		timeZone?: string;
 		viewMode: string;
@@ -218,7 +239,10 @@ vi.mock("./schedule-x-wrapper", () => ({
 				data-time-zone={timeZone}
 				data-summary-loading={String(isSummaryLoading)}
 			>
-				<button type="button" onClick={() => onRunningPeriodClockOutRequest?.(runningWorkPeriod)}>
+				<button
+					type="button"
+					onClick={() => onRunningPeriodClockOutRequest?.(runningWorkPeriod)}
+				>
 					Request running stop
 				</button>
 				<button
@@ -227,10 +251,16 @@ vi.mock("./schedule-x-wrapper", () => ({
 				>
 					Request own running stop
 				</button>
-				<button type="button" onClick={() => onRunningPeriodClockOutRequest?.(completedWorkPeriod)}>
+				<button
+					type="button"
+					onClick={() => onRunningPeriodClockOutRequest?.(completedWorkPeriod)}
+				>
 					Request completed stop
 				</button>
-				<button type="button" onClick={() => onEventClick?.(completedWorkPeriod)}>
+				<button
+					type="button"
+					onClick={() => onEventClick?.(completedWorkPeriod)}
+				>
 					Select completed period
 				</button>
 				<button
@@ -319,6 +349,7 @@ vi.mock("./calendar-event-dialogs", () => ({
 		onConfirmClockOut,
 		pendingClockOut,
 		selectedEmployeeId,
+		selectedEmployeeName,
 		selectedEvent,
 		showDeleteDialog,
 		showSplitDialog,
@@ -327,20 +358,29 @@ vi.mock("./calendar-event-dialogs", () => ({
 		calendarTimezone: string;
 		currentEmployeeId?: string;
 		isClockOutPending: boolean;
-		manualEntryDefaults: { date: string; clockInTime: string; clockOutTime: string } | null;
+		manualEntryDefaults: {
+			date: string;
+			clockInTime: string;
+			clockOutTime: string;
+		} | null;
 		manualEntryOpen: boolean;
 		onConfirmClockOut: (choice?: { taskId?: string | null }) => void;
 		pendingClockOut: boolean;
 		selectedEmployeeId: string | null;
+		selectedEmployeeName: string | null;
 		selectedEvent: CalendarEvent | null;
 		showDeleteDialog: boolean;
 		showSplitDialog: boolean;
 		displayContext: { locale: string; timeFormat: string };
 	}) => (
-		<div data-testid="calendar-event-dialogs" data-calendar-timezone={calendarTimezone}>
+		<div
+			data-testid="calendar-event-dialogs"
+			data-calendar-timezone={calendarTimezone}
+		>
 			<div
 				data-testid="manual-entry-dialog"
 				data-open={String(manualEntryOpen)}
+				data-target-employee-name={selectedEmployeeName}
 				data-default-date={manualEntryDefaults?.date}
 				data-clock-in={manualEntryDefaults?.clockInTime}
 				data-clock-out={manualEntryDefaults?.clockOutTime}
@@ -355,10 +395,14 @@ vi.mock("./calendar-event-dialogs", () => ({
 				<>
 					<h2>Clock out employee?</h2>
 					<p>
-						This creates an auditable clock-out entry at the current server time. If anything needs
-						adjustment afterward, use corrections.
+						This creates an auditable clock-out entry at the current server
+						time. If anything needs adjustment afterward, use corrections.
 					</p>
-					<button type="button" disabled={isClockOutPending} onClick={() => onConfirmClockOut()}>
+					<button
+						type="button"
+						disabled={isClockOutPending}
+						onClick={() => onConfirmClockOut()}
+					>
 						Clock Out
 					</button>
 					<button
@@ -370,13 +414,15 @@ vi.mock("./calendar-event-dialogs", () => ({
 					</button>
 				</>
 			)}
-			{selectedEvent?.type === "work_period" && !showSplitDialog && !showDeleteDialog && (
-				<div
-					data-testid="work-period-edit"
-					data-display-locale={displayContext.locale}
-					data-display-time-format={displayContext.timeFormat}
-				/>
-			)}
+			{selectedEvent?.type === "work_period" &&
+				!showSplitDialog &&
+				!showDeleteDialog && (
+					<div
+						data-testid="work-period-edit"
+						data-display-locale={displayContext.locale}
+						data-display-time-format={displayContext.timeFormat}
+					/>
+				)}
 		</div>
 	),
 }));
@@ -475,6 +521,7 @@ describe("CalendarView", () => {
 		capturedCalendarFilters.length = 0;
 		capturedCalendarQueries.length = 0;
 		mockCalendarData.events = [];
+		mockCalendarData.error = null;
 		mockCalendarData.calendarTimezone = null;
 		mockCalendarData.isFetching = false;
 		mockIsManagerOrAbove.mockReturnValue(true);
@@ -482,7 +529,12 @@ describe("CalendarView", () => {
 		preferences.locale = "en-US";
 		preferences.weekStartDay = "monday";
 		onScheduleXWrapperRender.mockReset();
-		push.mockClear();
+		push.mockReset().mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					navigationCompletions.push(resolve);
+				}),
+		);
 		refetch.mockClear();
 		toastError.mockClear();
 		toastSuccess.mockClear();
@@ -490,10 +542,99 @@ describe("CalendarView", () => {
 		setMobileViewport(false);
 	});
 
-	it("defaults to week view on desktop", () => {
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+	afterEach(async () => {
+		await act(async () => {
+			for (const finish of navigationCompletions.splice(0)) finish();
+		});
+	});
 
-		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("week");
+	it.each([
+		{ organizationId: "org-1", initialSelectedEmployeeId: "employee-3" },
+		{ organizationId: "org-2", initialSelectedEmployeeId: "employee-2" },
+		{
+			organizationId: "org-1",
+			initialSelectedEmployeeId: "employee-2",
+			currentEmployeeId: "another-viewer",
+		},
+	])(
+		"clears the previous record panel on a same-date same-zone scope arrival: %o",
+		(next) => {
+			const initial = {
+				organizationId: "org-1",
+				currentEmployeeId: "employee-1",
+				initialSelectedEmployeeId: "employee-2",
+				initialDateKey: "2025-01-06",
+				initialTimezone: "Europe/Berlin",
+			};
+			const page = render(<CalendarView {...initial} />);
+			fireEvent.click(
+				screen.getByRole("button", { name: "Select completed period" }),
+			);
+			expect(screen.getByTestId("work-period-edit")).toBeTruthy();
+			page.rerender(<CalendarView {...initial} {...next} />);
+			expect(screen.queryByTestId("work-period-edit")).toBeNull();
+			expect(
+				screen
+					.getByTestId("employee-selector")
+					.getAttribute("data-selected-employee-id"),
+			).toBe(next.initialSelectedEmployeeId);
+		},
+	);
+
+	it("defaults to week view on desktop", () => {
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
+
+		expect(
+			screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode"),
+		).toBe("week");
+	});
+
+	it("does not label a selected colleague as My Calendar while management controls are unavailable", () => {
+		mockIsManagerOrAbove.mockReturnValue(false);
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+				initialEmployeeName="Ada Lovelace"
+			/>,
+		);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Ada Lovelace" }),
+		).toBeTruthy();
+		expect(screen.queryByText("My Calendar")).toBeNull();
+	});
+
+	it("retries a failed read beside retained records without resetting the view", () => {
+		mockCalendarData.error = new Error("Read unavailable");
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Month" }));
+		expect(screen.getByRole("alert")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		expect(refetch).toHaveBeenCalledTimes(1);
+		expect(screen.getByTestId("month-work-summary-view")).toBeTruthy();
+	});
+
+	it("keeps employee selection and its calendar zone available in year view", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialTimezone="America/New_York"
+			/>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Year" }));
+		expect(screen.getByText("America/New_York")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 2" }));
+		expect(push).toHaveBeenCalledWith("/calendar/employee-2");
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			fullYear: true,
+			filters: { employeeId: "employee-2" },
+		});
 	});
 
 	it("requests the complete visible week range", () => {
@@ -559,7 +700,9 @@ describe("CalendarView", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Report month-grid range" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Report month-grid range" }),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Month" }));
 		fireEvent.click(screen.getByRole("button", { name: "Week" }));
 
@@ -620,12 +763,16 @@ describe("CalendarView", () => {
 	it("starts from week view on mobile and switches to day after mount", async () => {
 		setMobileViewport(true);
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
 		expect(onScheduleXWrapperRender).toHaveBeenNthCalledWith(1, "week");
 
 		await waitFor(() => {
-			expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("day");
+			expect(
+				screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode"),
+			).toBe("day");
 		});
 	});
 
@@ -638,7 +785,9 @@ describe("CalendarView", () => {
 			configurable: true,
 			value: vi.fn().mockImplementation((query: string) => {
 				if (!hasRenderedScheduleX) {
-					throw new Error("matchMedia was read before the first calendar render");
+					throw new Error(
+						"matchMedia was read before the first calendar render",
+					);
 				}
 
 				return {
@@ -652,11 +801,15 @@ describe("CalendarView", () => {
 			}),
 		});
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
 		expect(onScheduleXWrapperRender).toHaveBeenNthCalledWith(1, "week");
 		await waitFor(() => {
-			expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("day");
+			expect(
+				screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode"),
+			).toBe("day");
 		});
 	});
 
@@ -669,7 +822,9 @@ describe("CalendarView", () => {
 			/>,
 		);
 
-		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-2" });
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-2",
+		});
 	});
 
 	it("resets the calendar month in one render when the initial date changes", async () => {
@@ -693,7 +848,10 @@ describe("CalendarView", () => {
 		);
 
 		await waitFor(() => {
-			expect(capturedCalendarQueries.at(-1)).toMatchObject({ year: 2026, month: 1 });
+			expect(capturedCalendarQueries.at(-1)).toMatchObject({
+				year: 2026,
+				month: 1,
+			});
 		});
 		expect(capturedCalendarQueries.length - queryCountBeforeRerender).toBe(1);
 	});
@@ -716,17 +874,121 @@ describe("CalendarView", () => {
 		);
 
 		await waitFor(() => {
-			expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-3" });
+			expect(capturedCalendarFilters.at(-1)).toMatchObject({
+				employeeId: "employee-3",
+			});
 		});
 	});
 
+	it("follows a same-date route back after acknowledging a picker choice and closes its record", () => {
+		const initial = {
+			organizationId: "org-1",
+			currentEmployeeId: "employee-1",
+			initialDateKey: "2025-01-06",
+			initialTimezone: "Europe/Berlin",
+		};
+		const page = render(<CalendarView {...initial} />);
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 2" }));
+		page.rerender(
+			<CalendarView
+				{...initial}
+				initialSelectedEmployeeId="employee-2"
+				initialEmployeeName="Ada Lovelace"
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Select completed period" }),
+		);
+		expect(screen.getByTestId("work-period-edit")).toBeTruthy();
+
+		page.rerender(<CalendarView {...initial} />);
+
+		expect(
+			screen
+				.getByTestId("employee-selector")
+				.getAttribute("data-selected-employee-id"),
+		).toBe("employee-1");
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-1",
+		});
+		expect(screen.queryByTestId("work-period-edit")).toBeNull();
+	});
+
+	it("restores the cached route after its navigation completes without a prop acknowledgement", async () => {
+		let finish!: () => void;
+		push.mockReturnValueOnce(
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			}),
+		);
+		const initial = {
+			organizationId: "org-1",
+			currentEmployeeId: "employee-1",
+			initialDateKey: "2025-01-06",
+			initialTimezone: "Europe/Berlin",
+		};
+		const page = render(<CalendarView {...initial} />);
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 2" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Select completed period" }),
+		);
+		expect(screen.getByTestId("work-period-edit")).toBeTruthy();
+		await act(async () => {
+			finish();
+		});
+		page.rerender(<CalendarView {...initial} />);
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-1",
+		});
+		expect(screen.queryByTestId("work-period-edit")).toBeNull();
+	});
+
 	it("selecting staff routes to their calendar and updates filters", () => {
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Select employee 2" }));
 
 		expect(push).toHaveBeenCalledWith("/calendar/employee-2");
-		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-2" });
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-2",
+		});
+	});
+
+	it("keeps a returned picker choice through an older arrival, then follows a new route after acknowledgement", () => {
+		const initial = {
+			organizationId: "org-1",
+			currentEmployeeId: "employee-1",
+			initialSelectedEmployeeId: "employee-2",
+			initialDateKey: "2025-01-06",
+			initialTimezone: "Europe/Berlin",
+		};
+		const page = render(<CalendarView {...initial} />);
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 3" }));
+		fireEvent.click(screen.getByRole("button", { name: "Select employee 2" }));
+		page.rerender(
+			<CalendarView {...initial} initialSelectedEmployeeId="employee-3" />,
+		);
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-2",
+		});
+
+		page.rerender(<CalendarView {...initial} />);
+		fireEvent.click(screen.getByRole("button", { name: "Select time range" }));
+		expect(
+			screen.getByTestId("manual-entry-dialog").getAttribute("data-open"),
+		).toBe("true");
+		page.rerender(
+			<CalendarView {...initial} initialSelectedEmployeeId="employee-3" />,
+		);
+
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-3",
+		});
+		expect(
+			screen.getByTestId("manual-entry-dialog").getAttribute("data-open"),
+		).toBe("false");
 	});
 
 	it("selecting current employee routes to own calendar and updates filters", () => {
@@ -741,7 +1003,9 @@ describe("CalendarView", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Select employee 1" }));
 
 		expect(push).toHaveBeenCalledWith("/calendar");
-		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-1" });
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-1",
+		});
 	});
 
 	it("keeps the latest employee selection when an older route update arrives late", async () => {
@@ -766,14 +1030,20 @@ describe("CalendarView", () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByTestId("employee-selector").getAttribute("data-selected-employee-id"),
+				screen
+					.getByTestId("employee-selector")
+					.getAttribute("data-selected-employee-id"),
 			).toBe("employee-3");
 		});
-		expect(capturedCalendarFilters.at(-1)).toMatchObject({ employeeId: "employee-3" });
+		expect(capturedCalendarFilters.at(-1)).toMatchObject({
+			employeeId: "employee-3",
+		});
 	});
 
 	it("renders desktop sidebar controls and mobile controls sheet trigger in non-year views", () => {
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
 		const desktopControls = screen.getByTestId("calendar-desktop-controls");
 		const mobileControls = screen.getByTestId("calendar-mobile-controls");
@@ -787,68 +1057,60 @@ describe("CalendarView", () => {
 
 		expect(controlsButton).toBeTruthy();
 		fireEvent.click(controlsButton);
+		// The filters carry the legend: each switch shows its entry colour.
 		expect(screen.getAllByTestId("calendar-filters")).toHaveLength(2);
-		expect(screen.getAllByTestId("calendar-legend")).toHaveLength(2);
 	});
 
-	it("renders a denser mobile work balance and compact mobile controls trigger", () => {
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
-
-		const mobileControls = screen.getByTestId("calendar-mobile-controls");
-		const mobileBalance = screen.getByTestId("calendar-mobile-work-balance");
-		const mobileControlsButton = screen.getByRole("button", {
-			name: /^(Filter & Legende|Filters & Legend)$/,
-		});
-
-		expect(mobileControls.className).toContain("space-y-2");
-		expect(mobileBalance.className).toContain("md:hidden");
-		expect(
-			mobileBalance
-				.querySelector("[data-testid='work-balance-card']")
-				?.getAttribute("data-compact"),
-		).toBe("true");
-		expect(
-			mobileBalance
-				.querySelector("[data-testid='work-balance-card']")
-				?.getAttribute("data-mobile-compact"),
-		).toBe("true");
-		expect(mobileControlsButton.className).toContain("h-8");
-		expect(mobileControlsButton.className).toContain("px-3");
+	it("uses one balance surface across responsive layouts", () => {
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
+		expect(screen.getAllByTestId("work-balance-card")).toHaveLength(1);
 	});
 
 	it("passes completed work periods but not running work periods to month view", () => {
 		mockCalendarData.events = [completedWorkPeriod, runningWorkPeriod];
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Month" }));
 
-		expect(screen.getByTestId("month-work-summary-view").getAttribute("data-event-ids")).toBe(
-			"work-completed",
-		);
+		expect(
+			screen
+				.getByTestId("month-work-summary-view")
+				.getAttribute("data-event-ids"),
+		).toBe("work-completed");
 	});
 
 	it("passes completed work periods but not running work periods to year view", () => {
 		mockCalendarData.events = [completedWorkPeriod, runningWorkPeriod];
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Year" }));
 
-		expect(screen.getByTestId("year-calendar-view").getAttribute("data-event-ids")).toBe(
-			"work-completed",
-		);
+		expect(
+			screen.getByTestId("year-calendar-view").getAttribute("data-event-ids"),
+		).toBe("work-completed");
 	});
 
 	it("renders the work summary month view outside Schedule-X when month mode is selected", () => {
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: "Month" }));
 
-		expect(screen.getByTestId("month-work-summary-view").getAttribute("data-view-mode")).toBe(
-			"month",
-		);
-		expect(screen.getAllByTestId("work-balance-card")).toHaveLength(2);
+		expect(
+			screen
+				.getByTestId("month-work-summary-view")
+				.getAttribute("data-view-mode"),
+		).toBe("month");
+		expect(screen.getAllByTestId("work-balance-card")).toHaveLength(1);
 		expect(screen.queryByTestId("schedule-x-wrapper")).toBeNull();
 
 		fireEvent.click(screen.getByRole("button", { name: "Refresh month" }));
@@ -869,7 +1131,10 @@ describe("CalendarView", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Month" }));
 		fireEvent.click(screen.getByRole("button", { name: "Next month" }));
 
-		expect(capturedCalendarQueries.at(-1)).toMatchObject({ year: 2026, month: 7 });
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			year: 2026,
+			month: 7,
+		});
 	});
 
 	it("opens manual entry dialog with normalized range for the selected employee", () => {
@@ -890,8 +1155,32 @@ describe("CalendarView", () => {
 		expect(dialog.getAttribute("data-default-date")).toBe("2026-05-29");
 		expect(dialog.getAttribute("data-clock-in")).toBe("04:15");
 		expect(dialog.getAttribute("data-clock-out")).toBe("06:45");
-		expect(dialog.getAttribute("data-employee-timezone")).toBe("America/New_York");
+		expect(dialog.getAttribute("data-employee-timezone")).toBe(
+			"America/New_York",
+		);
 		expect(dialog.getAttribute("data-target-employee-id")).toBe("employee-2");
+	});
+
+	it("shows authorized direct-arrival identity above the calendar", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialSelectedEmployeeId="employee-2"
+				initialEmployeeName="Ada Lovelace"
+				initialDateKey="2025-01-06"
+				initialTimezone="America/New_York"
+			/>,
+		);
+		expect(
+			screen.getByRole("heading", { level: 2, name: "Ada Lovelace" }),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Select time range" }));
+		expect(
+			screen
+				.getByTestId("manual-entry-dialog")
+				.getAttribute("data-target-employee-name"),
+		).toBe("Ada Lovelace");
 	});
 
 	it("omits the target employee after switching from another employee back to self", () => {
@@ -906,7 +1195,9 @@ describe("CalendarView", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Select employee 1" }));
 
 		expect(
-			screen.getByTestId("manual-entry-dialog").getAttribute("data-target-employee-id"),
+			screen
+				.getByTestId("manual-entry-dialog")
+				.getAttribute("data-target-employee-id"),
 		).toBeNull();
 	});
 
@@ -921,9 +1212,9 @@ describe("CalendarView", () => {
 			/>,
 		);
 
-		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-time-zone")).toBe(
-			"America/New_York",
-		);
+		expect(
+			screen.getByTestId("schedule-x-wrapper").getAttribute("data-time-zone"),
+		).toBe("America/New_York");
 	});
 
 	it("passes the selected employee calendar timezone through the event dialogs seam", () => {
@@ -938,7 +1229,9 @@ describe("CalendarView", () => {
 		);
 
 		expect(
-			screen.getByTestId("calendar-event-dialogs").getAttribute("data-calendar-timezone"),
+			screen
+				.getByTestId("calendar-event-dialogs")
+				.getAttribute("data-calendar-timezone"),
 		).toBe("America/New_York");
 	});
 
@@ -946,9 +1239,13 @@ describe("CalendarView", () => {
 		preferences.timeFormat = "12h";
 		preferences.locale = "fr-FR";
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Select completed period" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Select completed period" }),
+		);
 
 		const dialog = screen.getByTestId("work-period-edit");
 		expect(dialog.getAttribute("data-display-locale")).toBe("fr-FR");
@@ -958,22 +1255,30 @@ describe("CalendarView", () => {
 	it("passes background fetch state to Schedule-X summaries", () => {
 		mockCalendarData.isFetching = true;
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
-
-		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-summary-loading")).toBe(
-			"true",
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
 		);
+
+		expect(
+			screen
+				.getByTestId("schedule-x-wrapper")
+				.getAttribute("data-summary-loading"),
+		).toBe("true");
 	});
 
 	it("passes background fetch state to month summaries", () => {
 		mockCalendarData.isFetching = true;
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Month" }));
 
-		expect(screen.getByTestId("month-work-summary-view").getAttribute("data-summary-loading")).toBe(
-			"true",
-		);
+		expect(
+			screen
+				.getByTestId("month-work-summary-view")
+				.getAttribute("data-summary-loading"),
+		).toBe("true");
 	});
 
 	it("confirms employee clock-out, posts the work period and its closure identity, refetches, and shows success", async () => {
@@ -982,11 +1287,17 @@ describe("CalendarView", () => {
 		);
 		vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 200 }));
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request running stop" }),
+		);
 
-		expect(screen.getByRole("heading", { name: "Clock out employee?" })).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Clock out employee?" }),
+		).toBeTruthy();
 		expect(
 			screen.getByText(
 				"This creates an auditable clock-out entry at the current server time. If anything needs adjustment afterward, use corrections.",
@@ -996,19 +1307,24 @@ describe("CalendarView", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 
 		await waitFor(() => {
-			expect(fetch).toHaveBeenCalledWith("/api/time-entries/clock-out-on-behalf", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					workPeriodId: "work-running",
-					operationId: "5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10",
-				}),
-			});
+			expect(fetch).toHaveBeenCalledWith(
+				"/api/time-entries/clock-out-on-behalf",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						workPeriodId: "work-running",
+						operationId: "5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10",
+					}),
+				},
+			);
 		});
 		await waitFor(() => {
 			expect(refetch).toHaveBeenCalledTimes(1);
 		});
-		expect(toastSuccess).toHaveBeenCalledWith("Employee clocked out successfully");
+		expect(toastSuccess).toHaveBeenCalledWith(
+			"Employee clocked out successfully",
+		);
 	});
 
 	it("sends the task chosen for the on-behalf clock-out under its own closure identity (#874)", async () => {
@@ -1017,29 +1333,48 @@ describe("CalendarView", () => {
 			.mockReturnValueOnce("6c1e2d63-5d7a-4b64-8e3f-7a2a4c3b8d21");
 		vi.mocked(fetch)
 			.mockResolvedValueOnce(
-				new Response(JSON.stringify({ error: "Internal server error", outcome: "unknown" }), {
-					status: 500,
-					headers: { "Content-Type": "application/json" },
-				}),
+				new Response(
+					JSON.stringify({
+						error: "Internal server error",
+						outcome: "unknown",
+					}),
+					{
+						status: 500,
+						headers: { "Content-Type": "application/json" },
+					},
+				),
 			)
 			.mockResolvedValueOnce(new Response(null, { status: 201 }));
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request running stop" }),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 		await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1));
 		await waitFor(() =>
 			expect(
-				(screen.getByRole("button", { name: "Clock Out to task" }) as HTMLButtonElement).disabled,
+				(
+					screen.getByRole("button", {
+						name: "Clock Out to task",
+					}) as HTMLButtonElement
+				).disabled,
 			).toBe(false),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Clock Out to task" }));
 
 		await waitFor(() => expect(refetch).toHaveBeenCalledTimes(1));
-		const bodies = vi.mocked(fetch).mock.calls.map((call) => JSON.parse(call[1]?.body as string));
+		const bodies = vi
+			.mocked(fetch)
+			.mock.calls.map((call) => JSON.parse(call[1]?.body as string));
 		expect(bodies).toEqual([
-			{ workPeriodId: "work-running", operationId: "5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10" },
+			{
+				workPeriodId: "work-running",
+				operationId: "5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10",
+			},
 			{
 				workPeriodId: "work-running",
 				operationId: "6c1e2d63-5d7a-4b64-8e3f-7a2a4c3b8d21",
@@ -1049,22 +1384,33 @@ describe("CalendarView", () => {
 	});
 	it("shows the server error toast and does not refetch when employee clock-out fails", async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
-			new Response(JSON.stringify({ error: "Not allowed to clock out this employee" }), {
-				status: 403,
-				headers: { "Content-Type": "application/json" },
-			}),
+			new Response(
+				JSON.stringify({ error: "Not allowed to clock out this employee" }),
+				{
+					status: 403,
+					headers: { "Content-Type": "application/json" },
+				},
+			),
 		);
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request running stop" }),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 
 		await waitFor(() => {
-			expect(toastError).toHaveBeenCalledWith("Not allowed to clock out this employee");
+			expect(toastError).toHaveBeenCalledWith(
+				"Not allowed to clock out this employee",
+			);
 		});
 		expect(refetch).not.toHaveBeenCalled();
-		expect(screen.getByRole("heading", { name: "Clock out employee?" })).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Clock out employee?" }),
+		).toBeTruthy();
 	});
 
 	it("words an on-behalf clock-out refused for want of a task (#884)", async () => {
@@ -1080,9 +1426,13 @@ describe("CalendarView", () => {
 			),
 		);
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request running stop" }),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 
 		await waitFor(() => {
@@ -1090,24 +1440,36 @@ describe("CalendarView", () => {
 				"This project requires a task. Choose one and try again.",
 			);
 		});
-		expect(screen.getByRole("heading", { name: "Clock out employee?" })).toBeTruthy();
+		expect(
+			screen.getByRole("heading", { name: "Clock out employee?" }),
+		).toBeTruthy();
 	});
 
 	it("resends the same closure identity when retrying after a failed response", async () => {
 		vi.mocked(fetch)
 			.mockResolvedValueOnce(
-				new Response(JSON.stringify({ error: "Internal server error", outcome: "unknown" }), {
-					status: 500,
-					headers: { "Content-Type": "application/json" },
-				}),
+				new Response(
+					JSON.stringify({
+						error: "Internal server error",
+						outcome: "unknown",
+					}),
+					{
+						status: 500,
+						headers: { "Content-Type": "application/json" },
+					},
+				),
 			)
 			.mockRejectedValueOnce(new TypeError("Failed to fetch"))
 			.mockResolvedValueOnce(new Response(null, { status: 200 }))
 			.mockResolvedValueOnce(new Response(null, { status: 201 }));
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request running stop" }),
+		);
 		for (const attempt of [1, 2]) {
 			fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 			await waitFor(() => {
@@ -1115,7 +1477,11 @@ describe("CalendarView", () => {
 			});
 			await waitFor(() => {
 				expect(
-					(screen.getByRole("button", { name: "Clock Out" }) as HTMLButtonElement).disabled,
+					(
+						screen.getByRole("button", {
+							name: "Clock Out",
+						}) as HTMLButtonElement
+					).disabled,
 				).toBe(false);
 			});
 		}
@@ -1126,68 +1492,101 @@ describe("CalendarView", () => {
 
 		const identities = vi
 			.mocked(fetch)
-			.mock.calls.map((call) => JSON.parse(call[1]?.body as string).operationId);
+			.mock.calls.map(
+				(call) => JSON.parse(call[1]?.body as string).operationId,
+			);
 		expect(identities[0]).toMatch(/^[0-9a-f-]{36}$/);
 		expect(identities).toEqual([identities[0], identities[0], identities[0]]);
 
 		// A committed closure's identity is never reused for a later closure.
-		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request running stop" }),
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
 		await waitFor(() => {
 			expect(fetch).toHaveBeenCalledTimes(4);
 		});
-		expect(JSON.parse(vi.mocked(fetch).mock.calls[3]?.[1]?.body as string).operationId).not.toBe(
-			identities[0],
-		);
+		expect(
+			JSON.parse(vi.mocked(fetch).mock.calls[3]?.[1]?.body as string)
+				.operationId,
+		).not.toBe(identities[0]);
 	});
 
 	it("allows manager-or-above users to request clock-out for running work periods", () => {
 		mockCalendarData.events = [runningWorkPeriod];
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
-
-		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out")).toBe(
-			"true",
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
 		);
+
+		expect(
+			screen
+				.getByTestId("schedule-x-wrapper")
+				.getAttribute("data-can-clock-out"),
+		).toBe("true");
 	});
 
 	it("denies clock-out requests for the current employee's own running work period", () => {
 		mockCalendarData.events = [ownRunningWorkPeriod];
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
-
-		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out-own")).toBe(
-			"false",
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Request own running stop" }));
 
-		expect(screen.queryByRole("heading", { name: "Clock out employee?" })).toBeNull();
+		expect(
+			screen
+				.getByTestId("schedule-x-wrapper")
+				.getAttribute("data-can-clock-out-own"),
+		).toBe("false");
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request own running stop" }),
+		);
+
+		expect(
+			screen.queryByRole("heading", { name: "Clock out employee?" }),
+		).toBeNull();
 	});
 
 	it("denies running work period clock-out requests for non-manager users", () => {
 		mockIsManagerOrAbove.mockReturnValue(false);
 		mockCalendarData.events = [runningWorkPeriod];
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
-
-		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out")).toBe(
-			"false",
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
 
-		expect(screen.queryByRole("heading", { name: "Clock out employee?" })).toBeNull();
+		expect(
+			screen
+				.getByTestId("schedule-x-wrapper")
+				.getAttribute("data-can-clock-out"),
+		).toBe("false");
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request running stop" }),
+		);
+
+		expect(
+			screen.queryByRole("heading", { name: "Clock out employee?" }),
+		).toBeNull();
 	});
 
 	it("denies clock-out requests for non-running work periods", () => {
 		mockCalendarData.events = [completedWorkPeriod];
 
-		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+		render(
+			<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />,
+		);
 
 		expect(
-			screen.getByTestId("schedule-x-wrapper").getAttribute("data-can-clock-out-completed"),
+			screen
+				.getByTestId("schedule-x-wrapper")
+				.getAttribute("data-can-clock-out-completed"),
 		).toBe("false");
-		fireEvent.click(screen.getByRole("button", { name: "Request completed stop" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Request completed stop" }),
+		);
 
-		expect(screen.queryByRole("heading", { name: "Clock out employee?" })).toBeNull();
+		expect(
+			screen.queryByRole("heading", { name: "Clock out employee?" }),
+		).toBeNull();
 	});
 });

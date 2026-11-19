@@ -1,0 +1,123 @@
+{
+  "phase": "after-dark-large",
+  "base": "5646e7b320376d2605b80e231b6b828f4b35f670",
+  "fixture": "own disposable 1736 fixture; two synthetic projects, 6 hours, one task and customer; Berlin +60 entries; Nov 2026; small-admin",
+  "sources": [
+    {
+      "file": "apps/webapp/src/components/reports/projects/customer-billable-view.tsx",
+      "sha256": "f94daee16fd43e43ed616b389df821c400e13d295f3ffb03628d4733627a4f2e",
+      "gitBlob": "917abdf7c7c3dd34ee71d4dd5f6829632182b9e1"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/project-filters.tsx",
+      "sha256": "8dc376f2c3dcfd305c7b6f33a8b41ff7bceafb945178f256faf698fb2e4116d6",
+      "gitBlob": "2f885e613341ec875692667e8b67aaa59f1483b5"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+      "sha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+      "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/project-summary-cards.tsx",
+      "sha256": "eec943c9e53f624bea0fee7eb960bb475bee6648488353aecdb8d95623ed7e2c",
+      "gitBlob": "1643a0886f64f58cf443eced36d8558f7b5d6d3d"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/report-share-dialog.tsx",
+      "sha256": "2aa71226f8eb897d920897f11c12fe9d9649363ec1d1647165072783ced75b6c",
+      "gitBlob": "665022288a9bfaf6595486bd35f1424ab2a1390c"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+      "sha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+      "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/shared-report-view.tsx",
+      "sha256": "6f4405c8cc6c0990deb309e6efeef37250a40a09b40009a3e95c453a851dcd57",
+      "gitBlob": "34c747490faa1e32ab38744f717df46e4d4ca715"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/report-document-export-buttons.tsx",
+      "sha256": "4b346547903306ca89b860a84bfa4195c57b45132f3a0d518fa62bcee7d064d7",
+      "gitBlob": "d92cf1c1357e9bef2c01f02b566210db75e94be6"
+    },
+    {
+      "file": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+      "sha256": "16f6ba0781b664f69afb31f7ae2bf151d436fdb873c7b8df491692abdf23640b",
+      "gitBlob": "35251a12958abfc7297a45b3e37e67fcb9c42c22"
+    }
+  ],
+  "captures": [
+    {
+      "file": "after-dark-large-desktop.png",
+      "sha256": "0b3a32bd855d9413027a00542e5bdc9dfbc6008fb5bd18b3c8a20b879094314b",
+      "measurement": {
+        "documentWidth": 1600,
+        "headings": [
+          {
+            "text": "Project Reports",
+            "width": 1258,
+            "x": 315,
+            "y": 100
+          }
+        ],
+        "instant": "2026-11-15T23:38:34.039Z",
+        "rootFont": "18px",
+        "text": "Toggle Sidebar\n\nProject Reports\n\n00:38\nUTC+01:00\nClock In\nToggle theme\nProject Reports\nAnalyze project hours, budget usage, and team contributions\nPeriod\nCurrent Month\nNov 1, 2026 - Nov 30, 2026\nStatus\nAll Statuses\nGenerate Report\n\nNov 1 – 30, 2026 · All Statuses\n\nPortfolio Overview\nCustomers\nProject Details\nTotal Projects\n2\n\n2 active\n\nTotal Hours\n6.0 h\n\nAcross all projects\n\nActive Projects\n2\n\nCurrently in progress\n\nOver Budget\n1\n\nExceeded budget\n\nOverdue\n2\n\nPast deadline\n\nBillable time\nCompleted work only. Revenue uses the rates in effect on Nov 16, 2026, 00:35.\nBillable hours\n6.0 h\nNon-billable hours\n0.0 h\nRevenue\n€500.00\nCost\nCost unknown\nMargin\nCost unknown\nInvoiced hours\n0.0 h\nInvoiced revenue\n€0.00\nAt the rates of its invoice drafts\nUn-invoiced hours\n6.0 h\nUn-invoiced revenue\n€500.00\n1 work period unpriced (1.0 h), no rate in effect\n3 work periods have no cost rate\nProject Portfolio\nOverview of all projects with budget and time tracking metrics\nProject\tCustomer\tStatus\t\nHours\n\t\nBillable hours\n\t\nRevenue\n\t\nMargin\n\tBudget\tDeadline\t\nTeam\n\t\n\nR062 Delivery\nSynthetic report comparison\n\t\nR062 Synthetic customer\n\tActive\t\n5.0 h\n\t\n5.0 h\n\t\n€500.00\n\t\nCost unknown\n\t\n125%\n4 h\nx\n\t\n12.11.2026\n4d overdue\n\t\n1\n\t\n\n\nR062 Unpriced\nSynthetic report comparison\n\t\nR062 Synthetic customer\n\tActive\t\n1.0 h\n\t\n1.0 h\n\t\n€0.00\n\t\nCost unknown\n\t—\t\n12.11.2026\n4d overdue\n\t\n1\n\t\n2 row(s)\n\nRows per page\n\n10\nPage 1 of 1\nGo to first page\nGo to previous page\nGo to next page\nGo to last page\nProject Health Alerts\nBudget and deadline risks that need attention in this report period.\n\nR062 Delivery\n\nCritical\n125% budget used\n4d overdue\n\nProject is over budget.\n\nView details\n\nR062 Unpriced\n\nCritical\n4d overdue\n\nProject deadline has passed.\n\nView details\nAt or above 70%\n1\n\nBudget usage elevated\n\nAt or above 90%\n1\n\nNear budget limit\n\nOver budget\n1\n\nBudget exceeded\n\nForecast at risk\n0\n\nProjected to exceed plan",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          1600,
+          1000
+        ]
+      }
+    },
+    {
+      "file": "after-dark-large-phone.png",
+      "sha256": "513ae92507d54396257f082ed647e2844e5b7baa07ce711644321a196e32af5d",
+      "measurement": {
+        "documentWidth": 390,
+        "headings": [
+          {
+            "text": "Project Reports",
+            "width": 354,
+            "x": 18,
+            "y": 91
+          }
+        ],
+        "instant": "2026-11-15T23:38:36.140Z",
+        "rootFont": "18px",
+        "text": "Toggle Sidebar\n\nProject Reports\n\nMore actions\nProject Reports\nAnalyze project hours, budget usage, and team contributions\nPeriod\nCurrent Month\nNov 1, 2026 - Nov 30, 2026\nStatus\nAll Statuses\nGenerate Report\n\nNov 1 – 30, 2026 · All Statuses\n\nPortfolio Overview\nCustomers\nProject Details\nTotal Projects\n2\n\n2 active\n\nTotal Hours\n6.0 h\n\nAcross all projects\n\nActive Projects\n2\n\nCurrently in progress\n\nOver Budget\n1\n\nExceeded budget\n\nOverdue\n2\n\nPast deadline\n\nBillable time\nCompleted work only. Revenue uses the rates in effect on Nov 16, 2026, 00:35.\nBillable hours\n6.0 h\nNon-billable hours\n0.0 h\nRevenue\n€500.00\nCost\nCost unknown\nMargin\nCost unknown\nInvoiced hours\n0.0 h\nInvoiced revenue\n€0.00\nAt the rates of its invoice drafts\nUn-invoiced hours\n6.0 h\nUn-invoiced revenue\n€500.00\n1 work period unpriced (1.0 h), no rate in effect\n3 work periods have no cost rate\nProject Portfolio\nOverview of all projects with budget and time tracking metrics\nProject\tCustomer\tStatus\t\nHours\n\t\nBillable hours\n\t\nRevenue\n\t\nMargin\n\tBudget\tDeadline\t\nTeam\n\t\n\nR062 Delivery\nSynthetic report comparison\n\t\nR062 Synthetic customer\n\tActive\t\n5.0 h\n\t\n5.0 h\n\t\n€500.00\n\t\nCost unknown\n\t\n125%\n4 h\nx\n\t\n12.11.2026\n4d overdue\n\t\n1\n\t\n\n\nR062 Unpriced\nSynthetic report comparison\n\t\nR062 Synthetic customer\n\tActive\t\n1.0 h\n\t\n1.0 h\n\t\n€0.00\n\t\nCost unknown\n\t—\t\n12.11.2026\n4d overdue\n\t\n1\n\t\n2 row(s)\n\nRows per page\n\n10\nPage 1 of 1\nGo to first page\nGo to previous page\nGo to next page\nGo to last page\nProject Health Alerts\nBudget and deadline risks that need attention in this report period.\n\nR062 Delivery\n\nCritical\n125% budget used\n4d overdue\n\nProject is over budget.\n\nView details\n\nR062 Unpriced\n\nCritical\n4d overdue\n\nProject deadline has passed.\n\nView details\nAt or above 70%\n1\n\nBudget usage elevated\n\nAt or above 90%\n1\n\nNear budget limit\n\nOver budget\n1\n\nBudget exceeded\n\nForecast at risk\n0\n\nProjected to exceed plan",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          390,
+          844
+        ]
+      }
+    },
+    {
+      "file": "after-dark-large-wide.png",
+      "sha256": "bee13c2510b1775862e487971654223c400c8373dec94b06219cea9ae1705809",
+      "measurement": {
+        "documentWidth": 2560,
+        "headings": [
+          {
+            "text": "Project Reports",
+            "width": 2218,
+            "x": 315,
+            "y": 100
+          }
+        ],
+        "instant": "2026-11-15T23:38:38.638Z",
+        "rootFont": "18px",
+        "text": "Toggle Sidebar\n\nProject Reports\n\n00:38\nUTC+01:00\nClock In\nToggle theme\nProject Reports\nAnalyze project hours, budget usage, and team contributions\nPeriod\nCurrent Month\nNov 1, 2026 - Nov 30, 2026\nStatus\nAll Statuses\nGenerate Report\n\nNov 1 – 30, 2026 · All Statuses\n\nPortfolio Overview\nCustomers\nProject Details\nTotal Projects\n2\n\n2 active\n\nTotal Hours\n6.0 h\n\nAcross all projects\n\nActive Projects\n2\n\nCurrently in progress\n\nOver Budget\n1\n\nExceeded budget\n\nOverdue\n2\n\nPast deadline\n\nBillable time\nCompleted work only. Revenue uses the rates in effect on Nov 16, 2026, 00:35.\nBillable hours\n6.0 h\nNon-billable hours\n0.0 h\nRevenue\n€500.00\nCost\nCost unknown\nMargin\nCost unknown\nInvoiced hours\n0.0 h\nInvoiced revenue\n€0.00\nAt the rates of its invoice drafts\nUn-invoiced hours\n6.0 h\nUn-invoiced revenue\n€500.00\n1 work period unpriced (1.0 h), no rate in effect\n3 work periods have no cost rate\nProject Portfolio\nOverview of all projects with budget and time tracking metrics\nProject\tCustomer\tStatus\t\nHours\n\t\nBillable hours\n\t\nRevenue\n\t\nMargin\n\tBudget\tDeadline\t\nTeam\n\t\n\nR062 Delivery\nSynthetic report comparison\n\t\nR062 Synthetic customer\n\tActive\t\n5.0 h\n\t\n5.0 h\n\t\n€500.00\n\t\nCost unknown\n\t\n125%\n4 h\nx\n\t\n12.11.2026\n4d overdue\n\t\n1\n\t\n\n\nR062 Unpriced\nSynthetic report comparison\n\t\nR062 Synthetic customer\n\tActive\t\n1.0 h\n\t\n1.0 h\n\t\n€0.00\n\t\nCost unknown\n\t—\t\n12.11.2026\n4d overdue\n\t\n1\n\t\n2 row(s)\n\nRows per page\n\n10\nPage 1 of 1\nGo to first page\nGo to previous page\nGo to next page\nGo to last page\nProject Health Alerts\nBudget and deadline risks that need attention in this report period.\n\nR062 Delivery\n\nCritical\n125% budget used\n4d overdue\n\nProject is over budget.\n\nView details\n\nR062 Unpriced\n\nCritical\n4d overdue\n\nProject deadline has passed.\n\nView details\nAt or above 70%\n1\n\nBudget usage elevated\n\nAt or above 90%\n1\n\nNear budget limit\n\nOver budget\n1\n\nBudget exceeded\n\nForecast at risk\n0\n\nProjected to exceed plan",
+        "theme": "bprogress-busy dark",
+        "viewport": [
+          2560,
+          1440
+        ]
+      }
+    }
+  ]
+}

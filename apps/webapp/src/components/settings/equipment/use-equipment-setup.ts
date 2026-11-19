@@ -122,6 +122,7 @@ export function useEquipmentSetup(initialData: EquipmentSetupView) {
 		return result.data.record;
 	}
 
+	/** Archives a type or item; resolves true once it is archived and the setup reloaded. */
 	function archive(target: EquipmentArchiveTarget) {
 		const key = `${target.kind}:${target.id}:${target.expectedRevision}`;
 		let requestId = archiveRequests.current.get(key);
@@ -129,8 +130,8 @@ export function useEquipmentSetup(initialData: EquipmentSetupView) {
 			requestId = crypto.randomUUID();
 			archiveRequests.current.set(key, requestId);
 		}
-		const { name: _name, ...command } = target;
-		void submit({ ...command, requestId });
+		const { kind, id, expectedRevision } = target;
+		return submit({ kind, id, expectedRevision, requestId });
 	}
 
 	return { data, pending, submit, loadType, archive };

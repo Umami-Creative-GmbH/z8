@@ -1,0 +1,2403 @@
+src\app\[locale]\(app)\scheduling\loading.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     4    │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     5    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     6    │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     7    │ - ␍
+     8    │ - export·default·function·SchedulingPageLoading()·{␍
+     9    │ - → const·{·t·}·=·useTranslate();␍
+    10    │ - → return·(␍
+    11    │ - → → <LoadingRegion␍
+    12    │ - → → → label={{␍
+    13    │ - → → → → labelKey:·"common.loadingRegions.shiftSchedule",␍
+    14    │ - → → → → labelDefault:·"Loading·shift·schedule",␍
+    15    │ - → → → }}␍
+    16    │ - → → → className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6"␍
+    17    │ - → → >␍
+    18    │ - → → → <PageHeader·title={t("common.loadingRegions.shiftSchedule",·"Loading·shift·schedule")}·/>␍
+    19    │ - → → → <Skeleton·aria-hidden="true"·className="h-[32rem]·w-full"·/>␍
+    20    │ - → → </LoadingRegion>␍
+    21    │ - → );␍
+    22    │ - }␍
+        1 │ + "use·client";
+        2 │ + 
+        3 │ + import·{·useTranslate·}·from·"@tolgee/react";
+        4 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+        5 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        6 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+        7 │ + 
+        8 │ + export·default·function·SchedulingPageLoading()·{
+        9 │ + → const·{·t·}·=·useTranslate();
+       10 │ + → return·(
+       11 │ + → → <LoadingRegion
+       12 │ + → → → label={{
+       13 │ + → → → → labelKey:·"common.loadingRegions.shiftSchedule",
+       14 │ + → → → → labelDefault:·"Loading·shift·schedule",
+       15 │ + → → → }}
+       16 │ + → → → className="@container/main·flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6"
+       17 │ + → → >
+       18 │ + → → → <PageHeader
+       19 │ + → → → → title={t(
+       20 │ + → → → → → "common.loadingRegions.shiftSchedule",
+       21 │ + → → → → → "Loading·shift·schedule",
+       22 │ + → → → → )}
+       23 │ + → → → />
+       24 │ + → → → <Skeleton·aria-hidden="true"·className="h-[32rem]·w-full"·/>
+       25 │ + → → </LoadingRegion>
+       26 │ + → );
+       27 │ + }
+    23 28 │   
+  
+
+src\app\[locale]\(app)\scheduling\page.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·renderToStaticMarkup·}·from·"react-dom/server";␍
+      2     │ - import·{·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      3     │ - ␍
+      4     │ - const·mockState·=·vi.hoisted(()·=>·({␍
+      5     │ - → activeOrganizationIdForTimezone:·undefined·as·string·|·undefined,␍
+      6     │ - → employeeFindFirst:·vi.fn(),␍
+      7     │ - → getAuthContext:·vi.fn(),␍
+      8     │ - → getSession:·vi.fn(),␍
+      9     │ - → headers:·vi.fn(),␍
+     10     │ - → organizationFindFirst:·vi.fn(),␍
+     11     │ - → redirect:·vi.fn(),␍
+     12     │ - }));␍
+     13     │ - ␍
+     14     │ - vi.mock("next/headers",·()·=>·({·headers:·mockState.headers·}));␍
+     15     │ - vi.mock("next/navigation",·()·=>·({·redirect:·mockState.redirect·}));␍
+     16     │ - vi.mock("@/lib/auth",·()·=>·({␍
+     17     │ - → auth:·{·api:·{·getSession:·mockState.getSession·}·},␍
+     18     │ - }));␍
+     19     │ - vi.mock("@/lib/auth-helpers",·()·=>·({␍
+     20     │ - → getAuthContext:·mockState.getAuthContext,␍
+     21     │ - }));␍
+     22     │ - vi.mock("@/db",·()·=>·({␍
+     23     │ - → db:·{␍
+     24     │ - → → query:·{␍
+     25     │ - → → → employee:·{·findFirst:·mockState.employeeFindFirst·},␍
+     26     │ - → → → organization:·{·findFirst:·mockState.organizationFindFirst·},␍
+     27     │ - → → },␍
+     28     │ - → },␍
+     29     │ - }));␍
+     30     │ - vi.mock("@/components/scheduling/scheduler/shift-scheduler",·()·=>·({␍
+     31     │ - → ShiftScheduler:·"ShiftScheduler",␍
+     32     │ - }));␍
+     33     │ - vi.mock("@/components/ui/skeleton",·()·=>·({·Skeleton:·"Skeleton"·}));␍
+     34     │ - vi.mock("@/tolgee/server",·()·=>·({␍
+     35     │ - → getTranslate:·vi.fn(async·()·=>·(_key:·string,·fallback:·string)·=>·fallback),␍
+     36     │ - }));␍
+     37     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     38     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     39     │ - }));␍
+     40     │ - ␍
+     41     │ - const·{·default:·SchedulingPage·}·=·await·import("./page");␍
+     42     │ - ␍
+     43     │ - describe("SchedulingPageContent·organization·scope",·()·=>·{␍
+     44     │ - → it("keeps·one·safe·page·heading·while·authorization·and·data·load",·()·=>·{␍
+     45     │ - → → const·suspenseShell·=·SchedulingPage();␍
+     46     │ - → → const·html·=·renderToStaticMarkup(suspenseShell.props.fallback);␍
+     47     │ - → → expect(html.match(/<h1[·>]/g)).toHaveLength(1);␍
+     48     │ - → → expect(html).toContain("Loading·shift·schedule");␍
+     49     │ - → });␍
+     50     │ - → beforeEach(()·=>·{␍
+     51     │ - → → vi.clearAllMocks();␍
+     52     │ - → → mockState.activeOrganizationIdForTimezone·=·undefined;␍
+     53     │ - → → mockState.getAuthContext.mockResolvedValue({␍
+     54     │ - → → → user:·{·id:·"user-multi-org"·},␍
+     55     │ - → → → session:·{·activeOrganizationId:·"org-b"·},␍
+     56     │ - → → → employee:·{␍
+     57     │ - → → → → id:·"employee-b",␍
+     58     │ - → → → → organizationId:·"org-b",␍
+     59     │ - → → → → role:·"employee",␍
+     60     │ - → → → → teamId:·null,␍
+     61     │ - → → → },␍
+     62     │ - → → });␍
+     63     │ - → → mockState.getSession.mockResolvedValue({␍
+     64     │ - → → → user:·{·id:·"user-multi-org"·},␍
+     65     │ - → → });␍
+     66     │ - → → mockState.employeeFindFirst.mockResolvedValue({␍
+     67     │ - → → → id:·"employee-a",␍
+     68     │ - → → → organizationId:·"org-a",␍
+     69     │ - → → → role:·"manager",␍
+     70     │ - → → });␍
+     71     │ - → → mockState.organizationFindFirst.mockImplementation(async·({·where·}:·{·where:·unknown·})·=>·{␍
+     72     │ - → → → if·(typeof·where·===·"function")·{␍
+     73     │ - → → → → where(␍
+     74     │ - → → → → → {·id:·"organization.id"·},␍
+     75     │ - → → → → → {␍
+     76     │ - → → → → → → eq:·(_column:·unknown,·value:·string)·=>·{␍
+     77     │ - → → → → → → → mockState.activeOrganizationIdForTimezone·=·value;␍
+     78     │ - → → → → → → → return·true;␍
+     79     │ - → → → → → → },␍
+     80     │ - → → → → → },␍
+     81     │ - → → → → );␍
+     82     │ - → → → }␍
+     83     │ - → → → return·{·timezone:·"America/New_York"·};␍
+     84     │ - → → });␍
+     85     │ - → });␍
+     86     │ - ␍
+     87     │ - → it("uses·the·active·approved·employee·instead·of·the·first·user·employee",·async·()·=>·{␍
+     88     │ - → → const·suspenseShell·=·SchedulingPage();␍
+     89     │ - → → const·SchedulingPageContent·=·suspenseShell.props.children.type;␍
+     90     │ - → → const·page·=·await·SchedulingPageContent();␍
+     91     │ - → → const·scheduler·=·page.props.children.props.children[1];␍
+     92     │ - ␍
+     93     │ - → → expect(scheduler.type).toBe("ShiftScheduler");␍
+     94     │ - → → expect(scheduler.props).toMatchObject({␍
+     95     │ - → → → organizationId:·"org-b",␍
+     96     │ - → → → organizationTimezone:·"America/New_York",␍
+     97     │ - → → → employeeId:·"employee-b",␍
+     98     │ - → → → isManager:·false,␍
+     99     │ - → → });␍
+    100     │ - → → expect(mockState.activeOrganizationIdForTimezone).toBe("org-b");␍
+    101     │ - → → expect(mockState.getAuthContext).toHaveBeenCalledOnce();␍
+    102     │ - → → expect(mockState.getSession).not.toHaveBeenCalled();␍
+    103     │ - → → expect(mockState.headers).not.toHaveBeenCalled();␍
+    104     │ - → → expect(mockState.employeeFindFirst).not.toHaveBeenCalled();␍
+    105     │ - → });␍
+    106     │ - ␍
+    107     │ - → it("focuses·a·manager's·schedule·on·one·employee·and·date·from·the·URL",·async·()·=>·{␍
+    108     │ - → → mockState.getAuthContext.mockResolvedValue({␍
+    109     │ - → → → user:·{·id:·"user-manager"·},␍
+    110     │ - → → → session:·{·activeOrganizationId:·"org-b"·},␍
+    111     │ - → → → employee:·{␍
+    112     │ - → → → → id:·"manager-b",␍
+    113     │ - → → → → organizationId:·"org-b",␍
+    114     │ - → → → → role:·"manager",␍
+    115     │ - → → → → teamId:·null,␍
+    116     │ - → → → },␍
+    117     │ - → → });␍
+    118     │ - → → const·searchParams·=·Promise.resolve({␍
+    119     │ - → → → employeeId:·"11111111-1111-4111-8111-111111111111",␍
+    120     │ - → → → date:·"2026-10-01",␍
+    121     │ - → → });␍
+    122     │ - → → const·suspenseShell·=·SchedulingPage({·searchParams·});␍
+    123     │ - → → const·SchedulingPageContent·=·suspenseShell.props.children.type;␍
+    124     │ - → → const·page·=·await·SchedulingPageContent(suspenseShell.props.children.props);␍
+    125     │ - → → const·scheduler·=·page.props.children.props.children[1];␍
+    126     │ - ␍
+    127     │ - → → expect(scheduler.props).toMatchObject({␍
+    128     │ - → → → isManager:·true,␍
+    129     │ - → → → focusEmployeeId:·"11111111-1111-4111-8111-111111111111",␍
+    130     │ - → → → focusDate:·"2026-10-01",␍
+    131     │ - → → });␍
+    132     │ - → });␍
+    133     │ - ␍
+    134     │ - → it("ignores·an·employee·focus·for·non-managers",·async·()·=>·{␍
+    135     │ - → → const·searchParams·=·Promise.resolve({␍
+    136     │ - → → → employeeId:·"11111111-1111-4111-8111-111111111111",␍
+    137     │ - → → → date:·"2026-10-01",␍
+    138     │ - → → });␍
+    139     │ - → → const·suspenseShell·=·SchedulingPage({·searchParams·});␍
+    140     │ - → → const·SchedulingPageContent·=·suspenseShell.props.children.type;␍
+    141     │ - → → const·page·=·await·SchedulingPageContent(suspenseShell.props.children.props);␍
+    142     │ - → → const·scheduler·=·page.props.children.props.children[1];␍
+    143     │ - ␍
+    144     │ - → → expect(scheduler.props).toMatchObject({␍
+    145     │ - → → → isManager:·false,␍
+    146     │ - → → → focusEmployeeId:·null,␍
+    147     │ - → → → focusDate:·"2026-10-01",␍
+    148     │ - → → });␍
+    149     │ - → });␍
+    150     │ - });␍
+  157 more lines truncated
+  
+
+src\app\[locale]\(app)\scheduling\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1     │ - import·{·Suspense·}·from·"react";␍
+     2     │ - import·{·ShiftScheduler·}·from·"@/components/scheduling/scheduler/shift-scheduler";␍
+     3     │ - import·{·parseSchedulerFocus·}·from·"@/components/scheduling/scheduler/shift-scheduler-utils";␍
+     4     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     5     │ - import·{·db·}·from·"@/db";␍
+     6     │ - import·{·getAuthContext·}·from·"@/lib/auth-helpers";␍
+     7     │ - import·{·redirectWithLocale·}·from·"@/lib/navigation/locale-redirect";␍
+     8     │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+     9     │ - import·SchedulingPageLoading·from·"./loading";␍
+    10     │ - ␍
+    11     │ - type·SchedulingSearchParams·=·{␍
+    12     │ - → employeeId?:·string·|·string[];␍
+    13     │ - → date?:·string·|·string[];␍
+    14     │ - };␍
+    15     │ - ␍
+    16     │ - type·SchedulingPageProps·=·{␍
+    17     │ - → /**·`?employeeId=&date=`·opens·the·schedule·on·one·employee·around·one·date.·*/␍
+    18     │ - → searchParams?:·Promise<SchedulingSearchParams>;␍
+    19     │ - };␍
+    20     │ - ␍
+    21     │ - function·single(value:·string·|·string[]·|·undefined):·string·|·undefined·{␍
+    22     │ - → return·typeof·value·===·"string"·?·value·:·undefined;␍
+    23     │ - }␍
+    24     │ - ␍
+    25     │ - async·function·SchedulingPageContent({·searchParams·}:·SchedulingPageProps·=·{})·{␍
+    26     │ - → const·[authContext,·t,·query]·=·await·Promise.all([␍
+    27     │ - → → getAuthContext(),␍
+    28     │ - → → getTranslate(),␍
+    29     │ - → → searchParams·??·Promise.resolve<SchedulingSearchParams>({}),␍
+    30     │ - → ]);␍
+    31     │ - ␍
+    32     │ - → if·(!authContext?.employee)·{␍
+    33     │ - → → return·redirectWithLocale("/onboarding/welcome");␍
+    34     │ - → }␍
+    35     │ - ␍
+    36     │ - → const·emp·=·authContext.employee;␍
+    37     │ - → const·org·=·await·db.query.organization.findFirst({␍
+    38     │ - → → where:·(table,·{·eq·})·=>·eq(table.id,·emp.organizationId),␍
+    39     │ - → → columns:·{·timezone:·true,·name:·true·},␍
+    40     │ - → });␍
+    41     │ - ␍
+    42     │ - → const·isManager·=·emp.role·===·"manager"·||·emp.role·===·"admin";␍
+    43     │ - → const·focus·=·parseSchedulerFocus({␍
+    44     │ - → → employeeId:·single(query.employeeId),␍
+    45     │ - → → date:·single(query.date),␍
+    46     │ - → });␍
+    47     │ - ␍
+    48     │ - → return·(␍
+    49     │ - → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col">␍
+    50     │ - → → → <div·className="flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6">␍
+    51     │ - → → → → <PageHeader␍
+    52     │ - → → → → → title={␍
+    53     │ - → → → → → → isManager␍
+    54     │ - → → → → → → → ?·t("scheduling:scheduling.page.title",·"Shift·Schedule")␍
+    55     │ - → → → → → → → :·t("scheduling:scheduling.page.employeeTitle",·"My·Schedule")␍
+    56     │ - → → → → → }␍
+    57     │ - → → → → → scope={␍
+    58     │ - → → → → → → <span>␍
+    59     │ - → → → → → → → {org?.name}···{org?.timezone·??·"UTC"}␍
+    60     │ - → → → → → → </span>␍
+    61     │ - → → → → → }␍
+    62     │ - → → → → → description={␍
+    63     │ - → → → → → → isManager␍
+    64     │ - → → → → → → → ?·t(␍
+    65     │ - → → → → → → → → → "scheduling:scheduling.page.planningDescription",␍
+    66     │ - → → → → → → → → → "Plan·and·publish·shifts.·Planned·shifts·do·not·record·working·time.",␍
+    67     │ - → → → → → → → → )␍
+    68     │ - → → → → → → → :·t(␍
+    69     │ - → → → → → → → → → "scheduling:scheduling.page.employeeScheduleDescription",␍
+    70     │ - → → → → → → → → → "Your·published·shifts,·week·by·week",␍
+    71     │ - → → → → → → → → )␍
+    72     │ - → → → → → }␍
+    73     │ - → → → → />␍
+    74     │ - ␍
+    75     │ - → → → → <ShiftScheduler␍
+    76     │ - → → → → → //·A·new·focus·from·the·URL·opens·a·fresh·schedule·view.␍
+    77     │ - → → → → → key={`${emp.organizationId}:${emp.id}:${emp.role}:${focus.employeeId·??·""}:${focus.date·??·""}`}␍
+    78     │ - → → → → → organizationId={emp.organizationId}␍
+    79     │ - → → → → → organizationTimezone={org?.timezone·??·"UTC"}␍
+    80     │ - → → → → → employeeId={emp.id}␍
+    81     │ - → → → → → isManager={isManager}␍
+    82     │ - → → → → → //·Only·managers·see·other·employees'·shifts·to·filter·by.␍
+    83     │ - → → → → → focusEmployeeId={isManager·?·focus.employeeId·:·null}␍
+    84     │ - → → → → → focusDate={focus.date}␍
+    85     │ - → → → → />␍
+    86     │ - → → → </div>␍
+    87     │ - → → </div>␍
+    88     │ - → );␍
+    89     │ - }␍
+    90     │ - ␍
+    91     │ - export·default·function·SchedulingPage(props:·SchedulingPageProps)·{␍
+    92     │ - → return·(␍
+    93     │ - → → <Suspense·fallback={<SchedulingPageLoading·/>}>␍
+    94     │ - → → → <SchedulingPageContent·{...props}·/>␍
+    95     │ - → → </Suspense>␍
+    96     │ - → );␍
+    97     │ - }␍
+         1 │ + import·{·Suspense·}·from·"react";
+         2 │ + import·{·ShiftScheduler·}·from·"@/components/scheduling/scheduler/shift-scheduler";
+         3 │ + import·{·parseSchedulerFocus·}·from·"@/components/scheduling/scheduler/shift-scheduler-utils";
+         4 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+         5 │ + import·{·db·}·from·"@/db";
+         6 │ + import·{·getAuthContext·}·from·"@/lib/auth-helpers";
+         7 │ + import·{·redirectWithLocale·}·from·"@/lib/navigation/locale-redirect";
+         8 │ + import·{·getTranslate·}·from·"@/tolgee/server";
+         9 │ + import·SchedulingPageLoading·from·"./loading";
+        10 │ + 
+        11 │ + type·SchedulingSearchParams·=·{
+        12 │ + → employeeId?:·string·|·string[];
+        13 │ + → date?:·string·|·string[];
+        14 │ + };
+        15 │ + 
+        16 │ + type·SchedulingPageProps·=·{
+        17 │ + → /**·`?employeeId=&date=`·opens·the·schedule·on·one·employee·around·one·date.·*/
+        18 │ + → searchParams?:·Promise<SchedulingSearchParams>;
+        19 │ + };
+        20 │ + 
+        21 │ + function·single(value:·string·|·string[]·|·undefined):·string·|·undefined·{
+        22 │ + → return·typeof·value·===·"string"·?·value·:·undefined;
+        23 │ + }
+        24 │ + 
+        25 │ + async·function·SchedulingPageContent({
+        26 │ + → searchParams,
+        27 │ + }:·SchedulingPageProps·=·{})·{
+        28 │ + → const·[authContext,·t,·query]·=·await·Promise.all([
+        29 │ + → → getAuthContext(),
+        30 │ + → → getTranslate(),
+        31 │ + → → searchParams·??·Promise.resolve<SchedulingSearchParams>({}),
+        32 │ + → ]);
+        33 │ + 
+        34 │ + → if·(!authContext?.employee)·{
+        35 │ + → → return·redirectWithLocale("/onboarding/welcome");
+        36 │ + → }
+        37 │ + 
+        38 │ + → const·emp·=·authContext.employee;
+        39 │ + → const·org·=·await·db.query.organization.findFirst({
+        40 │ + → → where:·(table,·{·eq·})·=>·eq(table.id,·emp.organizationId),
+        41 │ + → → columns:·{·timezone:·true,·name:·true·},
+        42 │ + → });
+        43 │ + 
+        44 │ + → const·isManager·=·emp.role·===·"manager"·||·emp.role·===·"admin";
+        45 │ + → const·focus·=·parseSchedulerFocus({
+        46 │ + → → employeeId:·single(query.employeeId),
+        47 │ + → → date:·single(query.date),
+        48 │ + → });
+        49 │ + 
+        50 │ + → return·(
+        51 │ + → → <div·className="@container/main·flex·min-w-0·flex-1·flex-col">
+        52 │ + → → → <div·className="flex·min-w-0·flex-1·flex-col·gap-6·p-4·md:p-6">
+        53 │ + → → → → <PageHeader
+  47 more lines truncated
+  
+
+src\components\scheduling\scheduler\employee-shift-schedule.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /**·@vitest-environment·jsdom·*/␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·{·act·as·actPreact·}·from·"preact/test-utils";␍
+      5     │ - import·{·afterEach,·beforeEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      6     │ - import·{·UserPreferencesProvider·}·from·"@/components/providers/user-preferences-provider";␍
+      7     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+      8     │ - import·{·EmployeeShiftSchedule·}·from·"./employee-shift-schedule";␍
+      9     │ - ␍
+     10     │ - const·{·getShifts·}·=·vi.hoisted(()·=>·({·getShifts:·vi.fn()·}));␍
+     11     │ - vi.mock("@/app/[locale]/(app)/scheduling/actions",·()·=>·({␍
+     12     │ - → getShifts,␍
+     13     │ - → getShiftTemplates:·vi.fn(),␍
+     14     │ - → getScheduleComplianceSummary:·vi.fn(),␍
+     15     │ - → upsertShift:·vi.fn(),␍
+     16     │ - }));␍
+     17     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     18     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     19     │ - → useTolgee:·()·=>·({·getLanguage:·()·=>·"en"·}),␍
+     20     │ - }));␍
+     21     │ - ␍
+     22     │ - const·range·=·{·startDate:·"2026-11-16",·endDateExclusive:·"2026-11-23"·};␍
+     23     │ - function·mount(client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·}))·{␍
+     24     │ - → render(␍
+     25     │ - → → <QueryClientProvider·client={client}>␍
+     26     │ - → → → <UserPreferencesProvider·weekStartDay="monday">␍
+     27     │ - → → → → <EmployeeShiftSchedule␍
+     28     │ - → → → → → organizationId="org-a"␍
+     29     │ - → → → → → employeeId="employee-a"␍
+     30     │ - → → → → → organizationTimezone="Europe/Berlin"␍
+     31     │ - → → → → → focusDate="2026-11-16"␍
+     32     │ - → → → → />␍
+     33     │ - → → → </UserPreferencesProvider>␍
+     34     │ - → → </QueryClientProvider>,␍
+     35     │ - → );␍
+     36     │ - → return·client;␍
+     37     │ - }␍
+     38     │ - ␍
+     39     │ - describe("employee·schedule·recovery",·()·=>·{␍
+     40     │ - → beforeEach(()·=>·{␍
+     41     │ - → → vi.clearAllMocks();␍
+     42     │ - → → Object.defineProperty(window,·"innerWidth",·{·configurable:·true,·value:·390·});␍
+     43     │ - → → vi.stubGlobal("matchMedia",·()·=>·({␍
+     44     │ - → → → matches:·true,␍
+     45     │ - → → → addEventListener()·{},␍
+     46     │ - → → → removeEventListener()·{},␍
+     47     │ - → → }));␍
+     48     │ - → → vi.stubGlobal(␍
+     49     │ - → → → "ResizeObserver",␍
+     50     │ - → → → class·{␍
+     51     │ - → → → → observe()·{}␍
+     52     │ - → → → → unobserve()·{}␍
+     53     │ - → → → → disconnect()·{}␍
+     54     │ - → → → },␍
+     55     │ - → → );␍
+     56     │ - → → Element.prototype.scrollIntoView·=·vi.fn();␍
+     57     │ - → });␍
+     58     │ - → afterEach(async·()·=>·{␍
+     59     │ - → → actPreact(()·=>·cleanup());␍
+     60     │ - → → await·new·Promise((resolve)·=>·setTimeout(resolve,·50));␍
+     61     │ - → });␍
+     62     │ - ␍
+     63     │ - → it("offers·Retry·after·a·failed·read·without·marking·unloaded·days·free",·async·()·=>·{␍
+     64     │ - → → getShifts.mockResolvedValueOnce({·success:·false,·error:·"Unavailable"·});␍
+     65     │ - → → mount();␍
+     66     │ - → → await·screen.findByRole("alert");␍
+     67     │ - → → expect(screen.queryByText("No·shifts")).toBeNull();␍
+     68     │ - → → getShifts.mockResolvedValue({·success:·true,·data:·[]·});␍
+     69     │ - → → fireEvent.click(screen.getByRole("button",·{·name:·"Retry"·}));␍
+     70     │ - → → await·waitFor(()·=>·expect(screen.queryByRole("alert")).toBeNull());␍
+     71     │ - → → expect(screen.getAllByText("No·shifts")).toHaveLength(7);␍
+     72     │ - → });␍
+     73     │ - ␍
+     74     │ - → it("retains·loaded·shifts·when·a·background·refresh·fails",·async·()·=>·{␍
+     75     │ - → → getShifts.mockResolvedValue({␍
+     76     │ - → → → success:·true,␍
+     77     │ - → → → data:·[␍
+     78     │ - → → → → {␍
+     79     │ - → → → → → id:·"shift-a",␍
+     80     │ - → → → → → organizationId:·"org-a",␍
+     81     │ - → → → → → employeeId:·"employee-a",␍
+     82     │ - → → → → → status:·"published",␍
+     83     │ - → → → → → date:·new·Date("2026-11-15T23:00:00Z"),␍
+     84     │ - → → → → → startTime:·"09:00",␍
+     85     │ - → → → → → endTime:·"17:00",␍
+     86     │ - → → → → → notes:·"Reception·shift",␍
+     87     │ - → → → → → subarea:·{·name:·"Reception",·location:·{·name:·"Office"·}·},␍
+     88     │ - → → → → },␍
+     89     │ - → → → ],␍
+     90     │ - → → });␍
+     91     │ - → → const·client·=·mount();␍
+     92     │ - → → await·screen.findByRole("button",·{·name:·/09:00/·});␍
+     93     │ - → → getShifts.mockResolvedValue({·success:·false,·error:·"Refresh·failed"·});␍
+     94     │ - → → await·act(()·=>·client.invalidateQueries({·queryKey:·queryKeys.shifts.list("org-a",·range)·}));␍
+     95     │ - → → await·screen.findByRole("alert");␍
+     96     │ - → → expect(screen.getByRole("button",·{·name:·/09:00/·})).toBeTruthy();␍
+     97     │ - → });␍
+     98     │ - → it("does·not·present·a·planner's·cached·drafts·as·the·employee's·published·schedule",·async·()·=>·{␍
+     99     │ - → → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+    100     │ - → → client.setQueryData(queryKeys.shifts.list("org-a",·range),·[␍
+    101     │ - → → → {␍
+    102     │ - → → → → id:·"planner-draft",␍
+    103     │ - → → → → organizationId:·"org-a",␍
+    104     │ - → → → → employeeId:·"other",␍
+    105     │ - → → → → status:·"draft",␍
+    106     │ - → → → → date:·new·Date("2026-11-15T23:00:00Z"),␍
+    107     │ - → → → → startTime:·"03:00",␍
+    108     │ - → → → → endTime:·"04:00",␍
+    109     │ - → → → },␍
+    110     │ - → → ]);␍
+    111     │ - → → getShifts.mockImplementation(()·=>·new·Promise(()·=>·{}));␍
+    112     │ - → → mount(client);␍
+    113     │ - → → expect(screen.queryByRole("button",·{·name:·/03:00/·})).toBeNull();␍
+    114     │ - → });␍
+    115     │ - → it("keeps·late·A·data·out·of·B·and·restores·A·on·A·to·B·to·A·navigation",·async·()·=>·{␍
+    116     │ - → → const·data·=·[␍
+    117     │ - → → → {␍
+    118     │ - → → → → id:·"shift-a",␍
+    119     │ - → → → → organizationId:·"org-a",␍
+    120     │ - → → → → employeeId:·"employee-a",␍
+    121     │ - → → → → status:·"published",␍
+    122     │ - → → → → date:·new·Date("2026-11-15T23:00:00Z"),␍
+    123     │ - → → → → startTime:·"03:00",␍
+    124     │ - → → → → endTime:·"04:00",␍
+    125     │ - → → → },␍
+    126     │ - → → ];␍
+    127     │ - → → let·finishA:·(value:·unknown)·=>·void·=·()·=>·{};␍
+    128     │ - → → getShifts␍
+    129     │ - → → → .mockImplementationOnce(␍
+    130     │ - → → → → ()·=>␍
+    131     │ - → → → → → new·Promise((resolve)·=>·{␍
+    132     │ - → → → → → → finishA·=·resolve;␍
+    133     │ - → → → → → }),␍
+    134     │ - → → → )␍
+    135     │ - → → → .mockResolvedValueOnce({·success:·true,·data:·[]·})␍
+    136     │ - → → → .mockResolvedValue({·success:·true,·data·});␍
+    137     │ - → → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+    138     │ - → → const·draw·=·(organizationId:·string)·=>·(␍
+    139     │ - → → → <QueryClientProvider·client={client}>␍
+    140     │ - → → → → <UserPreferencesProvider·weekStartDay="monday">␍
+    141     │ - → → → → → <EmployeeShiftSchedule␍
+    142     │ - → → → → → → key={organizationId}␍
+    143     │ - → → → → → → organizationId={organizationId}␍
+    144     │ - → → → → → → employeeId={`employee-${organizationId}`}␍
+    145     │ - → → → → → → organizationTimezone="Europe/Berlin"␍
+    146     │ - → → → → → → focusDate="2026-11-16"␍
+    147     │ - → → → → → />␍
+    148     │ - → → → → </UserPreferencesProvider>␍
+    149     │ - → → → </QueryClientProvider>␍
+    150     │ - → → );␍
+  191 more lines truncated
+  
+
+src\components\scheduling\scheduler\employee-shift-schedule.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - //·Temporal·polyfill·must·be·imported·before·Schedule-X␍
+      4     │ - import·"temporal-polyfill/global";␍
+      5     │ - ␍
+      6     │ - import·{·createViewMonthGrid,·createViewWeek·}·from·"@schedule-x/calendar";␍
+      7     │ - import·{·createCalendarControlsPlugin·}·from·"@schedule-x/calendar-controls";␍
+      8     │ - import·{·ScheduleXCalendar,·useCalendarApp·}·from·"@schedule-x/react";␍
+      9     │ - import·"@schedule-x/theme-default/dist/index.css";␍
+     10     │ - import·{·IconChevronLeft,·IconChevronRight·}·from·"@tabler/icons-react";␍
+     11     │ - import·{·useTolgee,·useTranslate·}·from·"@tolgee/react";␍
+     12     │ - import·{·useEffect,·useEffectEvent,·useRef,·useState·}·from·"react";␍
+     13     │ - import·{·Temporal·}·from·"temporal-polyfill";␍
+     14     │ - import·type·{·DateRange,·ShiftWithRelations·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+     15     │ - import·{·useWeekStartDay·}·from·"@/components/providers/user-preferences-provider";␍
+     16     │ - import·{·useTheme·}·from·"@/components/theme-provider";␍
+     17     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     18     │ - import·{·useIsMobile·}·from·"@/hooks/use-mobile";␍
+     19     │ - import·{·toScheduleXLocale·}·from·"@/lib/calendar/schedule-x-locale";␍
+     20     │ - import·{·parsePlainDate,·type·ZonedDateTime·}·from·"@/lib/datetime/temporal-core";␍
+     21     │ - import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";␍
+     22     │ - import·{·parseIanaTimeZone·}·from·"@/lib/timezone/validation";␍
+     23     │ - import·{·ShiftDetailsPanel·}·from·"../shifts/shift-details-panel";␍
+     24     │ - import·{·employeeScheduleWeek,·employeeShiftEvent·}·from·"./employee-schedule-utils";␍
+     25     │ - import·{·EmployeeShiftAgenda·}·from·"./employee-shift-agenda";␍
+     26     │ - import·{·ScheduleReadFailure·}·from·"./schedule-read-failure";␍
+     27     │ - import·{·calendarRangeToDateRange·}·from·"./shift-scheduler-utils";␍
+     28     │ - import·{·useShiftSchedulerData·}·from·"./use-shift-scheduler-data";␍
+     29     │ - ␍
+     30     │ - interface·EmployeeShiftScheduleProps·{␍
+     31     │ - → organizationId:·string;␍
+     32     │ - → employeeId:·string;␍
+     33     │ - → organizationTimezone:·string;␍
+     34     │ - → /**·Opens·the·schedule·on·the·week·of·this·calendar·date·(YYYY-MM-DD).·*/␍
+     35     │ - → focusDate:·string·|·null;␍
+     36     │ - }␍
+     37     │ - ␍
+     38     │ - /**␍
+     39     │ - ·*·An·employee's·own·published·shifts.·Wide·screens·keep·the·week·and·month·calendar·with·its·own␍
+     40     │ - ·*·navigation;·at·phone·width·a·day-by-day·list·moves·a·week·at·a·time.·Days·are·the·organization's.␍
+     41     │ - ·*/␍
+     42     │ - export·function·EmployeeShiftSchedule({␍
+     43     │ - → organizationId,␍
+     44     │ - → employeeId,␍
+     45     │ - → organizationTimezone,␍
+     46     │ - → focusDate,␍
+     47     │ - }:·EmployeeShiftScheduleProps)·{␍
+     48     │ - → const·{·t·}·=·useTranslate();␍
+     49     │ - → const·locale·=·useTolgee(["language"]).getLanguage()·||·"en";␍
+     50     │ - → const·{·resolvedTheme·}·=·useTheme();␍
+     51     │ - → const·isDark·=·resolvedTheme·===·"dark";␍
+     52     │ - → const·isMobile·=·useIsMobile();␍
+     53     │ - → const·weekStartDay·=·useWeekStartDay();␍
+     54     │ - → const·today·=·Temporal.Now.plainDateISO(parseIanaTimeZone(organizationTimezone));␍
+     55     │ - → const·[anchorKey,·setAnchorKey]·=·useState(()·=>·focusDate·??·today.toString());␍
+     56     │ - → const·week·=·employeeScheduleWeek(parsePlainDate(anchorKey),·weekStartDay);␍
+     57     │ - → //·What·the·calendar·shows·after·its·own·navigation;·until·then,·the·anchor's·week.␍
+     58     │ - → const·[calendarRange,·setCalendarRange]·=·useState<DateRange·|·null>(null);␍
+     59     │ - → const·[selectedShift,·setSelectedShift]·=·useState<ShiftWithRelations·|·null>(null);␍
+     60     │ - → const·[calendarControls]·=·useState(()·=>·createCalendarControlsPlugin());␍
+     61     │ - ␍
+     62     │ - → const·{·shifts,·shiftsLoading,·shiftsFailed,·hasLoadedShifts,·shiftsFetching,·retryShifts·}·=␍
+     63     │ - → → useShiftSchedulerData({␍
+     64     │ - → → → organizationId,␍
+     65     │ - → → → employeeId,␍
+     66     │ - → → → organizationTimezone,␍
+     67     │ - → → → dateRange:·!isMobile·&&·calendarRange·?·calendarRange·:·week.dateRange,␍
+     68     │ - → → → isManager:·false,␍
+     69     │ - → → });␍
+     70     │ - ␍
+     71     │ - → //·Schedule-X·keeps·the·callbacks·of·its·first·render,·so·the·click·handler·reads·shifts·here.␍
+     72     │ - → const·shiftsRef·=·useRef(shifts);␍
+     73     │ - → useEffect(()·=>·{␍
+     74     │ - → → shiftsRef.current·=·shifts;␍
+     75     │ - → },·[shifts]);␍
+     76     │ - ␍
+     77     │ - → const·moveWeek·=·(weeks:·number)·=>␍
+     78     │ - → → setAnchorKey(parsePlainDate(anchorKey).add({·weeks·}).toString());␍
+     79     │ - ␍
+     80     │ - → const·calendar·=·useCalendarApp({␍
+     81     │ - → → views:·[createViewWeek(),·createViewMonthGrid()],␍
+     82     │ - → → selectedDate:·parsePlainDate(anchorKey),␍
+     83     │ - → → timezone:·organizationTimezone,␍
+     84     │ - → → firstDayOfWeek:·weekStartDay·===·"monday"·?·1·:·7,␍
+     85     │ - → → locale:·toScheduleXLocale(locale),␍
+     86     │ - → → isResponsive:·false,␍
+     87     │ - → → events:·[],␍
+     88     │ - → → isDark,␍
+     89     │ - → → calendars:·{␍
+     90     │ - → → → published:·{␍
+     91     │ - → → → → colorName:·"published",␍
+     92     │ - → → → → lightColors:·{·main:·"#3b82f6",·container:·"#dbeafe",·onContainer:·"#1e40af"·},␍
+     93     │ - → → → → darkColors:·{·main:·"#60a5fa",·container:·"#1e3a8a",·onContainer:·"#bfdbfe"·},␍
+     94     │ - → → → },␍
+     95     │ - → → },␍
+     96     │ - → → plugins:·[calendarControls],␍
+     97     │ - → → callbacks:·{␍
+     98     │ - → → → onEventClick:·(event:·{·id:·string·|·number·})·=>·{␍
+     99     │ - → → → → setSelectedShift(shiftsRef.current.find((shift)·=>·shift.id·===·event.id)·??·null);␍
+    100     │ - → → → },␍
+    101     │ - → → → onRangeUpdate:·(range:·{·start:·ZonedDateTime;·end:·ZonedDateTime·})·=>·{␍
+    102     │ - → → → → setCalendarRange(calendarRangeToDateRange(range));␍
+    103     │ - → → → → setAnchorKey(range.start.toPlainDate().toString());␍
+    104     │ - → → → },␍
+    105     │ - → → },␍
+    106     │ - → });␍
+    107     │ - ␍
+    108     │ - → const·shiftTitle·=·t("scheduling:scheduling.mySchedule.shift",·"Shift");␍
+    109     │ - → const·calendarEvents·=·shifts.map((shift)·=>␍
+    110     │ - → → employeeShiftEvent(shift,·organizationTimezone,·shiftTitle),␍
+    111     │ - → );␍
+    112     │ - ␍
+    113     │ - → useEffect(()·=>·{␍
+    114     │ - → → calendar?.events.set(calendarEvents);␍
+    115     │ - → },·[calendar,·calendarEvents]);␍
+    116     │ - ␍
+    117     │ - → useEffect(()·=>·{␍
+    118     │ - → → calendar?.setTheme(isDark·?·"dark"·:·"light");␍
+    119     │ - → },·[calendar,·isDark]);␍
+    120     │ - ␍
+    121     │ - → //·Coming·back·from·phone·width,·open·the·calendar·on·the·week·the·list·showed.␍
+    122     │ - → const·showAnchorInCalendar·=·useEffectEvent(()·=>·{␍
+    123     │ - → → calendarControls.setDate(parsePlainDate(anchorKey));␍
+    124     │ - → });␍
+    125     │ - → useEffect(()·=>·{␍
+    126     │ - → → if·(calendar·&&·!isMobile)·showAnchorInCalendar();␍
+    127     │ - → },·[calendar,·isMobile]);␍
+    128     │ - ␍
+    129     │ - → const·detailsPanel·=·(␍
+    130     │ - → → <ShiftDetailsPanel␍
+    131     │ - → → → open={selectedShift·!==·null}␍
+    132     │ - → → → onOpenChange={(open)·=>·{␍
+    133     │ - → → → → if·(!open)·setSelectedShift(null);␍
+    134     │ - → → → }}␍
+    135     │ - → → → shift={selectedShift}␍
+    136     │ - → → → organizationTimezone={organizationTimezone}␍
+    137     │ - → → />␍
+    138     │ - → );␍
+    139     │ - ␍
+    140     │ - → if·(!isMobile)·{␍
+    141     │ - → → return·(␍
+    142     │ - → → → <div·className="flex·min-w-0·flex-col·gap-4">␍
+    143     │ - → → → → {shiftsFailed·&&·(␍
+    144     │ - → → → → → <LoadFailedNotice·onRetry={()·=>·void·retryShifts()}·pending={shiftsFetching}·/>␍
+    145     │ - → → → → )}␍
+    146     │ - → → → → <div·className="relative·isolate·h-[36rem]·min-w-0·overflow-auto·rounded-lg·border">␍
+    147     │ - → → → → → <div·className="h-full·min-w-[42rem]">␍
+    148     │ - → → → → → → <ScheduleXCalendar·calendarApp={calendar}·/>␍
+    149     │ - → → → → → </div>␍
+    150     │ - → → → → → {shiftsLoading·&&·(␍
+  369 more lines truncated
+  
+
+src\components\scheduling\scheduler\schedule-read-failure.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     4    │ - import·{·Button·}·from·"@/components/ui/button";␍
+     5    │ - ␍
+     6    │ - /**·Data·stays·with·its·query·owner;·failure·never·turns·an·unloaded·day·into·a·free·day.·*/␍
+     7    │ - export·function·ScheduleReadFailure({␍
+     8    │ - → children,␍
+     9    │ - → onRetry,␍
+    10    │ - → pending,␍
+    11    │ - }:·{␍
+    12    │ - → children:·React.ReactNode;␍
+    13    │ - → onRetry:·()·=>·void;␍
+    14    │ - → pending:·boolean;␍
+    15    │ - })·{␍
+    16    │ - → const·{·t·}·=·useTranslate();␍
+    17    │ - → return·(␍
+    18    │ - → → <div␍
+    19    │ - → → → role="alert"␍
+    20    │ - → → → className="flex·flex-wrap·items-center·justify-between·gap-3·rounded-lg·border·border-destructive/30·p-3·text-sm"␍
+    21    │ - → → >␍
+    22    │ - → → → <p>{children}</p>␍
+    23    │ - → → → <Button·type="button"·variant="outline"·size="sm"·onClick={onRetry}·disabled={pending}>␍
+    24    │ - → → → → {t("scheduling:scheduling.scheduler.retry",·"Retry")}␍
+    25    │ - → → → </Button>␍
+    26    │ - → → </div>␍
+    27    │ - → );␍
+    28    │ - }␍
+        1 │ + "use·client";
+        2 │ + 
+        3 │ + import·{·useTranslate·}·from·"@tolgee/react";
+        4 │ + import·{·Button·}·from·"@/components/ui/button";
+        5 │ + 
+        6 │ + /**·Data·stays·with·its·query·owner;·failure·never·turns·an·unloaded·day·into·a·free·day.·*/
+        7 │ + export·function·ScheduleReadFailure({
+        8 │ + → children,
+        9 │ + → onRetry,
+       10 │ + → pending,
+       11 │ + }:·{
+       12 │ + → children:·React.ReactNode;
+       13 │ + → onRetry:·()·=>·void;
+       14 │ + → pending:·boolean;
+       15 │ + })·{
+       16 │ + → const·{·t·}·=·useTranslate();
+       17 │ + → return·(
+       18 │ + → → <div
+       19 │ + → → → role="alert"
+       20 │ + → → → className="flex·flex-wrap·items-center·justify-between·gap-3·rounded-lg·border·border-destructive/30·p-3·text-sm"
+       21 │ + → → >
+       22 │ + → → → <p>{children}</p>
+       23 │ + → → → <Button
+       24 │ + → → → → type="button"
+       25 │ + → → → → variant="outline"
+       26 │ + → → → → size="sm"
+       27 │ + → → → → onClick={onRetry}
+       28 │ + → → → → disabled={pending}
+       29 │ + → → → >
+       30 │ + → → → → {t("scheduling:scheduling.scheduler.retry",·"Retry")}
+       31 │ + → → → </Button>
+       32 │ + → → </div>
+       33 │ + → );
+       34 │ + }
+    29 35 │   
+  
+
+src\components\scheduling\scheduler\schedule-shift-list.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·useTolgee,·useTranslate·}·from·"@tolgee/react";␍
+     4    │ - import·type·{·ShiftWithRelations·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+     5    │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+     6    │ - import·{·buildAuthUserDisplayName·}·from·"@/lib/auth/derived-user-name";␍
+     7    │ - import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";␍
+     8    │ - import·{·shiftCalendarDate·}·from·"@/lib/scheduling/shift-date";␍
+     9    │ - import·{·shiftEndsNextDay,·shiftPlaceLabel·}·from·"@/lib/scheduling/shift-labels";␍
+    10    │ - ␍
+    11    │ - /**·The·same·calendar·records,·with·native·buttons·for·keyboard·and·non-gesture·access.·*/␍
+    12    │ - export·function·ScheduleShiftList({␍
+    13    │ - → shifts,␍
+    14    │ - → organizationTimezone,␍
+    15    │ - → onSelect,␍
+    16    │ - }:·{␍
+    17    │ - → shifts:·ShiftWithRelations[];␍
+    18    │ - → organizationTimezone:·string;␍
+    19    │ - → onSelect:·(shift:·ShiftWithRelations)·=>·void;␍
+    20    │ - })·{␍
+    21    │ - → const·{·t·}·=·useTranslate();␍
+    22    │ - → const·locale·=·useTolgee(["language"]).getLanguage()·||·"en";␍
+    23    │ - → return·(␍
+    24    │ - → → <details·className="rounded-lg·border">␍
+    25    │ - → → → <summary·className="cursor-pointer·rounded-lg·p-4·font-medium·focus-visible:outline-none·focus-visible:ring-2·focus-visible:ring-ring">␍
+    26    │ - → → → → {t("scheduling:scheduling.scheduler.shiftList",·"Shift·list")}·({shifts.length})␍
+    27    │ - → → → </summary>␍
+    28    │ - → → → <ul·className="divide-y·border-t">␍
+    29    │ - → → → → {shifts.map((shift)·=>·(␍
+    30    │ - → → → → → <li␍
+    31    │ - → → → → → → key={shift.id}␍
+    32    │ - → → → → → → className="[content-visibility:auto]·[contain-intrinsic-size:auto_5rem]"␍
+    33    │ - → → → → → >␍
+    34    │ - → → → → → → <button␍
+    35    │ - → → → → → → → type="button"␍
+    36    │ - → → → → → → → onClick={()·=>·onSelect(shift)}␍
+    37    │ - → → → → → → → className="flex·w-full·flex-wrap·items-center·justify-between·gap-3·p-4·text-left·text-sm·hover:bg-muted/50·focus-visible:outline-none·focus-visible:ring-2·focus-visible:ring-ring"␍
+    38    │ - → → → → → → >␍
+    39    │ - → → → → → → → <span·className="min-w-0·space-y-1·break-words">␍
+    40    │ - → → → → → → → → <span·className="block·font-medium">␍
+    41    │ - → → → → → → → → → {shift.employee?.user␍
+    42    │ - → → → → → → → → → → ?·buildAuthUserDisplayName(shift.employee.user)␍
+    43    │ - → → → → → → → → → → :·shift.employeeId␍
+    44    │ - → → → → → → → → → → → ?·t("scheduling:scheduling.scheduler.assigned",·"Assigned")␍
+    45    │ - → → → → → → → → → → → :·t("scheduling:scheduling.scheduler.open",·"Open·Shift")}␍
+    46    │ - → → → → → → → → </span>␍
+    47    │ - → → → → → → → → <span·className="block·text-muted-foreground">␍
+    48    │ - → → → → → → → → → {shiftPlaceLabel(shift.subarea?.location.name,·shift.subarea?.name)}␍
+    49    │ - → → → → → → → → </span>␍
+    50    │ - → → → → → → → </span>␍
+    51    │ - → → → → → → → <span·className="tabular-nums">␍
+    52    │ - → → → → → → → → {formatPlainDate(␍
+    53    │ - → → → → → → → → → shiftCalendarDate(shift.date,·organizationTimezone),␍
+    54    │ - → → → → → → → → → locale,␍
+    55    │ - → → → → → → → → → "weekdayMonthDay",␍
+    56    │ - → → → → → → → → )}{"·"}␍
+    57    │ - → → → → → → → → ··{shift.startTime}·–·{shift.endTime}␍
+    58    │ - → → → → → → → → {shiftEndsNextDay(shift)·&&·(␍
+    59    │ - → → → → → → → → → <>·({t("scheduling:scheduling.shiftDetails.endsNextDay",·"ends·next·day")})</>␍
+    60    │ - → → → → → → → → )}␍
+    61    │ - → → → → → → → </span>␍
+    62    │ - → → → → → → → <Badge·variant={shift.status·===·"draft"·?·"outline"·:·"secondary"}>␍
+    63    │ - → → → → → → → → {shift.status·===·"draft"␍
+    64    │ - → → → → → → → → → ?·t("scheduling:scheduling.shiftDialog.draft",·"Draft")␍
+    65    │ - → → → → → → → → → :·t("scheduling:scheduling.shiftDialog.published",·"Published")}␍
+    66    │ - → → → → → → → </Badge>␍
+    67    │ - → → → → → → </button>␍
+    68    │ - → → → → → </li>␍
+    69    │ - → → → → ))}␍
+    70    │ - → → → </ul>␍
+    71    │ - → → </details>␍
+    72    │ - → );␍
+    73    │ - }␍
+        1 │ + "use·client";
+        2 │ + 
+        3 │ + import·{·useTolgee,·useTranslate·}·from·"@tolgee/react";
+        4 │ + import·type·{·ShiftWithRelations·}·from·"@/app/[locale]/(app)/scheduling/types";
+        5 │ + import·{·Badge·}·from·"@/components/ui/badge";
+        6 │ + import·{·buildAuthUserDisplayName·}·from·"@/lib/auth/derived-user-name";
+        7 │ + import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";
+        8 │ + import·{·shiftCalendarDate·}·from·"@/lib/scheduling/shift-date";
+        9 │ + import·{
+       10 │ + → shiftEndsNextDay,
+       11 │ + → shiftPlaceLabel,
+       12 │ + }·from·"@/lib/scheduling/shift-labels";
+       13 │ + 
+       14 │ + /**·The·same·calendar·records,·with·native·buttons·for·keyboard·and·non-gesture·access.·*/
+       15 │ + export·function·ScheduleShiftList({
+       16 │ + → shifts,
+       17 │ + → organizationTimezone,
+       18 │ + → onSelect,
+       19 │ + }:·{
+       20 │ + → shifts:·ShiftWithRelations[];
+       21 │ + → organizationTimezone:·string;
+       22 │ + → onSelect:·(shift:·ShiftWithRelations)·=>·void;
+       23 │ + })·{
+       24 │ + → const·{·t·}·=·useTranslate();
+       25 │ + → const·locale·=·useTolgee(["language"]).getLanguage()·||·"en";
+       26 │ + → return·(
+       27 │ + → → <details·className="rounded-lg·border">
+       28 │ + → → → <summary·className="cursor-pointer·rounded-lg·p-4·font-medium·focus-visible:outline-none·focus-visible:ring-2·focus-visible:ring-ring">
+       29 │ + → → → → {t("scheduling:scheduling.scheduler.shiftList",·"Shift·list")}·(
+       30 │ + → → → → {shifts.length})
+       31 │ + → → → </summary>
+       32 │ + → → → <ul·className="divide-y·border-t">
+       33 │ + → → → → {shifts.map((shift)·=>·(
+       34 │ + → → → → → <li
+       35 │ + → → → → → → key={shift.id}
+       36 │ + → → → → → → className="[content-visibility:auto]·[contain-intrinsic-size:auto_5rem]"
+       37 │ + → → → → → >
+       38 │ + → → → → → → <button
+       39 │ + → → → → → → → type="button"
+       40 │ + → → → → → → → onClick={()·=>·onSelect(shift)}
+       41 │ + → → → → → → → className="flex·w-full·flex-wrap·items-center·justify-between·gap-3·p-4·text-left·text-sm·hover:bg-muted/50·focus-visible:outline-none·focus-visible:ring-2·focus-visible:ring-ring"
+       42 │ + → → → → → → >
+       43 │ + → → → → → → → <span·className="min-w-0·space-y-1·break-words">
+       44 │ + → → → → → → → → <span·className="block·font-medium">
+       45 │ + → → → → → → → → → {shift.employee?.user
+       46 │ + → → → → → → → → → → ?·buildAuthUserDisplayName(shift.employee.user)
+       47 │ + → → → → → → → → → → :·shift.employeeId
+       48 │ + → → → → → → → → → → → ?·t(
+       49 │ + → → → → → → → → → → → → → "scheduling:scheduling.scheduler.assigned",
+       50 │ + → → → → → → → → → → → → → "Assigned",
+       51 │ + → → → → → → → → → → → → )
+       52 │ + → → → → → → → → → → → :·t("scheduling:scheduling.scheduler.open",·"Open·Shift")}
+       53 │ + → → → → → → → → </span>
+       54 │ + → → → → → → → → <span·className="block·text-muted-foreground">
+       55 │ + → → → → → → → → → {shiftPlaceLabel(
+       56 │ + → → → → → → → → → → shift.subarea?.location.name,
+       57 │ + → → → → → → → → → → shift.subarea?.name,
+       58 │ + → → → → → → → → → )}
+       59 │ + → → → → → → → → </span>
+       60 │ + → → → → → → → </span>
+       61 │ + → → → → → → → <span·className="tabular-nums">
+       62 │ + → → → → → → → → {formatPlainDate(
+       63 │ + → → → → → → → → → shiftCalendarDate(shift.date,·organizationTimezone),
+       64 │ + → → → → → → → → → locale,
+       65 │ + → → → → → → → → → "weekdayMonthDay",
+       66 │ + → → → → → → → → )}{"·"}
+       67 │ + → → → → → → → → ··{shift.startTime}·–·{shift.endTime}
+       68 │ + → → → → → → → → {shiftEndsNextDay(shift)·&&·(
+       69 │ + → → → → → → → → → <>
+       70 │ + → → → → → → → → → → {"·"}
+       71 │ + → → → → → → → → → → (
+       72 │ + → → → → → → → → → → {t(
+       73 │ + → → → → → → → → → → → "scheduling:scheduling.shiftDetails.endsNextDay",
+       74 │ + → → → → → → → → → → → "ends·next·day",
+       75 │ + → → → → → → → → → → )}
+       76 │ + → → → → → → → → → → )
+       77 │ + → → → → → → → → → </>
+  20 more lines truncated
+  
+
+src\components\scheduling\scheduler\shift-scheduler.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - /**·@vitest-environment·jsdom·*/␍
+      2     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      3     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      4     │ - import·{·act·as·actPreact·}·from·"preact/test-utils";␍
+      5     │ - import·{·Activity·}·from·"react";␍
+      6     │ - import·{·afterEach,·beforeEach,·expect,·it,·vi·}·from·"vitest";␍
+      7     │ - import·type·{·ShiftWithRelations·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+      8     │ - ␍
+      9     │ - const·{·getShiftsMock,·upsertShiftMock·}·=·vi.hoisted(()·=>·({␍
+     10     │ - → upsertShiftMock:·vi.fn(),␍
+     11     │ - → getShiftsMock:·vi.fn(␍
+     12     │ - → → async·():·Promise<{·success:·true;·data:·ShiftWithRelations[]·}>·=>·({␍
+     13     │ - → → → success:·true,␍
+     14     │ - → → → data:·[],␍
+     15     │ - → → }),␍
+     16     │ - → ),␍
+     17     │ - }));␍
+     18     │ - ␍
+     19     │ - import·{·ShiftDialog·}·from·"../shifts/shift-dialog";␍
+     20     │ - import·{·ShiftScheduler·}·from·"./shift-scheduler";␍
+     21     │ - ␍
+     22     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     23     │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     24     │ - → useTolgee:·()·=>·({·getLanguage:·()·=>·"en"·}),␍
+     25     │ - }));␍
+     26     │ - vi.mock("@/app/[locale]/(app)/scheduling/actions",·()·=>·({␍
+     27     │ - → getShifts:·getShiftsMock,␍
+     28     │ - → getShiftTemplates:·async·()·=>·({·success:·true,·data:·[]·}),␍
+     29     │ - → getScheduleComplianceSummary:·async·()·=>·({␍
+     30     │ - → → success:·true,␍
+     31     │ - → → data:·{·summary:·{·totalFindings:·0·}·},␍
+     32     │ - → }),␍
+     33     │ - → getPendingShiftRequests:·async·()·=>·({·success:·true,·data:·[]·}),␍
+     34     │ - → upsertShift:·upsertShiftMock,␍
+     35     │ - → deleteShift:·vi.fn(),␍
+     36     │ - → publishShifts:·vi.fn(),␍
+     37     │ - → suggestStaffingForShift:·async·()·=>·({·success:·true,·data:·[]·}),␍
+     38     │ - → getLocationsWithSubareas:·async·()·=>·({·success:·true,·data:·[]·}),␍
+     39     │ - }));␍
+     40     │ - vi.mock("@/app/[locale]/(app)/settings/employees/actions",·()·=>·({␍
+     41     │ - → listEmployeesForSelect:·async·()·=>·({·success:·true,·data:·{·employees:·[]·}·}),␍
+     42     │ - }));␍
+     43     │ - vi.mock("@/app/[locale]/(app)/settings/skills/actions",·()·=>·({␍
+     44     │ - → validateEmployeeForShift:·vi.fn(),␍
+     45     │ - }));␍
+     46     │ - vi.mock("@/app/[locale]/(app)/settings/coverage-rules/actions",·()·=>·({␍
+     47     │ - → getTargetHeatmapData:·async·()·=>·({·success:·true,·data:·[]·}),␍
+     48     │ - }));␍
+     49     │ - beforeEach(()·=>·{␍
+     50     │ - → vi.clearAllMocks();␍
+     51     │ - → vi.stubGlobal("matchMedia",·()·=>·({␍
+     52     │ - → → matches:·false,␍
+     53     │ - → → addEventListener()·{},␍
+     54     │ - → → removeEventListener()·{},␍
+     55     │ - → }));␍
+     56     │ - → vi.stubGlobal(␍
+     57     │ - → → "ResizeObserver",␍
+     58     │ - → → class·{␍
+     59     │ - → → → observe()·{}␍
+     60     │ - → → → unobserve()·{}␍
+     61     │ - → → → disconnect()·{}␍
+     62     │ - → → },␍
+     63     │ - → );␍
+     64     │ - });␍
+     65     │ - afterEach(async·()·=>·{␍
+     66     │ - → actPreact(()·=>·cleanup());␍
+     67     │ - → await·new·Promise((r)·=>·setTimeout(r,·50));␍
+     68     │ - });␍
+     69     │ - it("offers·a·visible·Create·Shift·action·without·needing·a·template·or·gesture",·async·()·=>·{␍
+     70     │ - → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+     71     │ - → render(␍
+     72     │ - → → <QueryClientProvider·client={client}>␍
+     73     │ - → → → <ShiftScheduler␍
+     74     │ - → → → → organizationId="org-a"␍
+     75     │ - → → → → organizationTimezone="Europe/Berlin"␍
+     76     │ - → → → → employeeId="planner-a"␍
+     77     │ - → → → → isManager␍
+     78     │ - → → → → focusEmployeeId={null}␍
+     79     │ - → → → → focusDate="2026-11-16"␍
+     80     │ - → → → />␍
+     81     │ - → → </QueryClientProvider>,␍
+     82     │ - → );␍
+     83     │ - → expect(await·screen.findByRole("button",·{·name:·"Create·Shift"·})).toBeTruthy();␍
+     84     │ - });␍
+     85     │ - ␍
+     86     │ - it("offers·a·non-gesture·way·to·open·a·shift·with·its·date,·time,·place·and·status",·async·()·=>·{␍
+     87     │ - → getShiftsMock.mockResolvedValueOnce({␍
+     88     │ - → → success:·true,␍
+     89     │ - → → data:·[␍
+     90     │ - → → → {␍
+     91     │ - → → → → id:·"shift-a",␍
+     92     │ - → → → → organizationId:·"org-a",␍
+     93     │ - → → → → employeeId:·null,␍
+     94     │ - → → → → status:·"draft",␍
+     95     │ - → → → → date:·new·Date("2026-11-15T23:00:00Z"),␍
+     96     │ - → → → → startTime:·"09:00",␍
+     97     │ - → → → → endTime:·"17:00",␍
+     98     │ - → → → → templateId:·null,␍
+     99     │ - → → → → subareaId:·"reception",␍
+    100     │ - → → → → recurrenceId:·null,␍
+    101     │ - → → → → publishedAt:·null,␍
+    102     │ - → → → → publishedBy:·null,␍
+    103     │ - → → → → notes:·null,␍
+    104     │ - → → → → color:·null,␍
+    105     │ - → → → → createdAt:·new·Date("2026-11-01T00:00:00Z"),␍
+    106     │ - → → → → updatedAt:·new·Date("2026-11-01T00:00:00Z"),␍
+    107     │ - → → → → createdBy:·"planner",␍
+    108     │ - → → → → subarea:·{·id:·"reception",·name:·"Reception",·location:·{·id:·"office",·name:·"Office"·}·},␍
+    109     │ - → → → },␍
+    110     │ - → → ],␍
+    111     │ - → });␍
+    112     │ - → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+    113     │ - → render(␍
+    114     │ - → → <QueryClientProvider·client={client}>␍
+    115     │ - → → → <ShiftScheduler␍
+    116     │ - → → → → organizationId="org-a"␍
+    117     │ - → → → → organizationTimezone="Europe/Berlin"␍
+    118     │ - → → → → employeeId="planner-a"␍
+    119     │ - → → → → isManager␍
+    120     │ - → → → → focusEmployeeId={null}␍
+    121     │ - → → → → focusDate="2026-11-16"␍
+    122     │ - → → → />␍
+    123     │ - → → </QueryClientProvider>,␍
+    124     │ - → );␍
+    125     │ - → const·record·=·await·screen.findByRole("button",·{·name:·/Reception/·});␍
+    126     │ - → fireEvent.click(record);␍
+    127     │ - → expect(await·screen.findByRole("dialog",·{·name:·"Edit·Shift"·})).toBeTruthy();␍
+    128     │ - → expect(screen.getAllByDisplayValue("09:00").length).toBeGreaterThan(0);␍
+    129     │ - → expect(screen.getAllByDisplayValue("17:00").length).toBeGreaterThan(0);␍
+    130     │ - });␍
+    131     │ - ␍
+    132     │ - it("retains·a·pending·edit·when·Escape·is·pressed·and·submits·only·once",·async·()·=>·{␍
+    133     │ - → let·finish:·(value:·unknown)·=>·void·=·()·=>·{};␍
+    134     │ - → upsertShiftMock.mockImplementation(␍
+    135     │ - → → ()·=>␍
+    136     │ - → → → new·Promise((resolve)·=>·{␍
+    137     │ - → → → → finish·=·resolve;␍
+    138     │ - → → → }),␍
+    139     │ - → );␍
+    140     │ - → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+    141     │ - → const·close·=·vi.fn();␍
+    142     │ - → render(␍
+    143     │ - → → <QueryClientProvider·client={client}>␍
+    144     │ - → → → <ShiftDialog␍
+    145     │ - → → → → open␍
+    146     │ - → → → → onOpenChange={close}␍
+    147     │ - → → → → shift={null}␍
+    148     │ - → → → → defaultDate="2026-11-16"␍
+    149     │ - → → → → organizationId="org-a"␍
+    150     │ - → → → → organizationTimezone="Europe/Berlin"␍
+  421 more lines truncated
+  
+
+src\components\scheduling\scheduler\shift-scheduler.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - //·Temporal·polyfill·must·be·imported·before·Schedule-X␍
+      4     │ - import·"temporal-polyfill/global";␍
+      5     │ - ␍
+      6     │ - import·{·createViewDay,·createViewMonthGrid,·createViewWeek·}·from·"@schedule-x/calendar";␍
+      7     │ - import·{·ScheduleXCalendar,·useCalendarApp·}·from·"@schedule-x/react";␍
+      8     │ - import·"@schedule-x/theme-default/dist/index.css";␍
+      9     │ - import·{·IconPlus·}·from·"@tabler/icons-react";␍
+     10     │ - import·{·useTolgee,·useTranslate·}·from·"@tolgee/react";␍
+     11     │ - import·{·useEffect,·useRef,·useState·}·from·"react";␍
+     12     │ - import·type·{␍
+     13     │ - → DateRange,␍
+     14     │ - → ShiftTemplate,␍
+     15     │ - → ShiftWithRelations,␍
+     16     │ - }·from·"@/app/[locale]/(app)/scheduling/types";␍
+     17     │ - import·{·useWeekStartDay·}·from·"@/components/providers/user-preferences-provider";␍
+     18     │ - import·{·useTheme·}·from·"@/components/theme-provider";␍
+     19     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     20     │ - import·{·buildAuthUserDisplayName·}·from·"@/lib/auth/derived-user-name";␍
+     21     │ - import·{·toScheduleXLocale·}·from·"@/lib/calendar/schedule-x-locale";␍
+     22     │ - import·{·type·PlainDate,·parsePlainDate,·type·ZonedDateTime·}·from·"@/lib/datetime/temporal-core";␍
+     23     │ - import·{·formatPlainDate·}·from·"@/lib/datetime/temporal-format";␍
+     24     │ - import·{·ShiftRequestsReview·}·from·"../shift-requests/shift-requests-panel";␍
+     25     │ - import·{·ShiftDialog·}·from·"../shifts/shift-dialog";␍
+     26     │ - import·{·CoverageHeatmapOverlay·}·from·"./coverage-heatmap-overlay";␍
+     27     │ - import·{·EmployeeShiftSchedule·}·from·"./employee-shift-schedule";␍
+     28     │ - import·{·PublishComplianceDialog·}·from·"./publish-compliance-dialog";␍
+     29     │ - import·{·PublishFab·}·from·"./publish-fab";␍
+     30     │ - import·{·ScheduleComplianceBanner·}·from·"./schedule-compliance-banner";␍
+     31     │ - import·{·ScheduleReadFailure·}·from·"./schedule-read-failure";␍
+     32     │ - import·{·ScheduleShiftList·}·from·"./schedule-shift-list";␍
+     33     │ - import·{·createScheduleXDragAndDropPlugin·}·from·"./schedule-x-drag-and-drop";␍
+     34     │ - import·{␍
+     35     │ - → calendarRangeToDateRange,␍
+     36     │ - → eventToShiftTimes,␍
+     37     │ - → filterShiftsForEmployee,␍
+     38     │ - → initialSchedulerView,␍
+     39     │ - → scheduleXFirstDayOfWeek,␍
+     40     │ - }·from·"./shift-scheduler-utils";␍
+     41     │ - import·{·TemplateSidebar·}·from·"./template-sidebar";␍
+     42     │ - import·{·useCoverageHeatmap·}·from·"./use-coverage-heatmap";␍
+     43     │ - import·{·useShiftPublishFlow·}·from·"./use-shift-publish-flow";␍
+     44     │ - import·{·useShiftSchedulerData·}·from·"./use-shift-scheduler-data";␍
+     45     │ - ␍
+     46     │ - interface·ShiftSchedulerProps·{␍
+     47     │ - → organizationId:·string;␍
+     48     │ - → organizationTimezone:·string;␍
+     49     │ - → employeeId:·string;␍
+     50     │ - → isManager:·boolean;␍
+     51     │ - → /**·Opens·the·schedule·filtered·to·this·employee·(managers·only).·*/␍
+     52     │ - → focusEmployeeId:·string·|·null;␍
+     53     │ - → /**·Opens·the·schedule·on·the·week·of·this·calendar·date·(YYYY-MM-DD).·*/␍
+     54     │ - → focusDate:·string·|·null;␍
+     55     │ - }␍
+     56     │ - ␍
+     57     │ - export·function·ShiftScheduler(props:·ShiftSchedulerProps)·{␍
+     58     │ - → if·(!props.isManager)·{␍
+     59     │ - → → return·(␍
+     60     │ - → → → <EmployeeShiftSchedule␍
+     61     │ - → → → → key={`${props.organizationId}:${props.employeeId}:employee`}␍
+     62     │ - → → → → organizationId={props.organizationId}␍
+     63     │ - → → → → employeeId={props.employeeId}␍
+     64     │ - → → → → organizationTimezone={props.organizationTimezone}␍
+     65     │ - → → → → focusDate={props.focusDate}␍
+     66     │ - → → → />␍
+     67     │ - → → );␍
+     68     │ - → }␍
+     69     │ - → return·(␍
+     70     │ - → → <PlannerShiftScheduler·key={`${props.organizationId}:${props.employeeId}:planner`}·{...props}·/>␍
+     71     │ - → );␍
+     72     │ - }␍
+     73     │ - ␍
+     74     │ - function·PlannerShiftScheduler({␍
+     75     │ - → organizationId,␍
+     76     │ - → organizationTimezone,␍
+     77     │ - → employeeId,␍
+     78     │ - → isManager,␍
+     79     │ - → focusEmployeeId,␍
+     80     │ - → focusDate,␍
+     81     │ - }:·ShiftSchedulerProps)·{␍
+     82     │ - → const·{·t·}·=·useTranslate();␍
+     83     │ - → const·locale·=·useTolgee(["language"]).getLanguage()·||·"en";␍
+     84     │ - → const·{·resolvedTheme·}·=·useTheme();␍
+     85     │ - → const·weekStartDay·=·useWeekStartDay();␍
+     86     │ - → const·[initialView]·=·useState(()·=>␍
+     87     │ - → → initialSchedulerView(focusDate,·organizationTimezone,·weekStartDay),␍
+     88     │ - → );␍
+     89     │ - → const·[dateRange,·setDateRange]·=·useState<DateRange>(initialView.dateRange);␍
+     90     │ - → const·[showAllEmployees,·setShowAllEmployees]·=·useState(false);␍
+     91     │ - → const·employeeFilter·=·showAllEmployees·?·null·:·focusEmployeeId;␍
+     92     │ - → const·[selectedShift,·setSelectedShift]·=·useState<ShiftWithRelations·|·null>(null);␍
+     93     │ - → const·[isShiftDialogOpen,·setIsShiftDialogOpen]·=·useState(false);␍
+     94     │ - → const·[newShiftDate,·setNewShiftDate]·=·useState<string·|·null>(null);␍
+     95     │ - → const·[newTemplateId,·setNewTemplateId]·=·useState<string·|·null>(null);␍
+     96     │ - → const·[showCoverageOverlay,·setShowCoverageOverlay]·=·useState(true);␍
+     97     │ - → const·isDark·=·resolvedTheme·===·"dark";␍
+     98     │ - ␍
+     99     │ - → const·{␍
+    100     │ - → → shifts,␍
+    101     │ - → → templates,␍
+    102     │ - → → events,␍
+    103     │ - → → shiftsLoading,␍
+    104     │ - → → shiftsFailed,␍
+    105     │ - → → hasLoadedShifts,␍
+    106     │ - → → shiftsFetching,␍
+    107     │ - → → retryShifts,␍
+    108     │ - → → templatesFailed,␍
+    109     │ - → → complianceFailed,␍
+    110     │ - → → retrySupportingData,␍
+    111     │ - → → complianceSummary,␍
+    112     │ - → → draftCount,␍
+    113     │ - → → complianceFindingsCount,␍
+    114     │ - → → hasComplianceWarnings,␍
+    115     │ - → → updateShift,␍
+    116     │ - → }·=·useShiftSchedulerData({␍
+    117     │ - → → organizationId,␍
+    118     │ - → → employeeId,␍
+    119     │ - → → organizationTimezone,␍
+    120     │ - → → dateRange,␍
+    121     │ - → → isManager,␍
+    122     │ - → → employeeFilter,␍
+    123     │ - → });␍
+    124     │ - → const·{␍
+    125     │ - → → pendingAcknowledgment,␍
+    126     │ - → → isComplianceDialogOpen,␍
+    127     │ - → → setIsComplianceDialogOpen,␍
+    128     │ - → → publish,␍
+    129     │ - → → confirmPublish,␍
+    130     │ - → → isPublishing,␍
+    131     │ - → }·=·useShiftPublishFlow({·organizationId,·dateRange·});␍
+    132     │ - ␍
+    133     │ - → //·Fetch·coverage·heatmap·data␍
+    134     │ - → const·{·hasGaps:·hasCoverageGaps·}·=·useCoverageHeatmap(␍
+    135     │ - → → organizationId,␍
+    136     │ - → → dateRange,␍
+    137     │ - → → isManager·&&·showCoverageOverlay,␍
+    138     │ - → );␍
+    139     │ - ␍
+    140     │ - → //·Schedule-X·keeps·the·callbacks·of·its·first·render,·so·they·read·the·latest·shifts·here.␍
+    141     │ - → const·shiftsRef·=·useRef(shifts);␍
+    142     │ - → const·updateShiftRef·=·useRef(updateShift);␍
+    143     │ - → const·resetEventsRef·=·useRef(()·=>·{});␍
+    144     │ - → useEffect(()·=>·{␍
+    145     │ - → → shiftsRef.current·=·shifts;␍
+    146     │ - → → updateShiftRef.current·=·updateShift;␍
+    147     │ - → },·[shifts,·updateShift]);␍
+    148     │ - ␍
+    149     │ - → const·handleEventClick·=·(event:·{·id:·string·|·number·})·=>·{␍
+    150     │ - → → const·shift·=·shiftsRef.current.find((s)·=>·s.id·===·event.id);␍
+  761 more lines truncated
+  
+
+src\components\scheduling\scheduler\template-sidebar.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1    │ - /**·@vitest-environment·jsdom·*/␍
+     2    │ - import·{·fireEvent,·render,·screen·}·from·"@testing-library/react";␍
+     3    │ - import·{·describe,·expect,·it,·vi·}·from·"vitest";␍
+     4    │ - import·type·{·ShiftTemplate·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+     5    │ - import·{·TemplateSidebar·}·from·"./template-sidebar";␍
+     6    │ - ␍
+     7    │ - vi.mock("@tolgee/react",·()·=>·({␍
+     8    │ - → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),␍
+     9    │ - }));␍
+    10    │ - ␍
+    11    │ - const·template:·ShiftTemplate·=·{␍
+    12    │ - → id:·"morning",␍
+    13    │ - → organizationId:·"org-a",␍
+    14    │ - → name:·"Morning·reception",␍
+    15    │ - → startTime:·"09:00",␍
+    16    │ - → endTime:·"17:00",␍
+    17    │ - → color:·null,␍
+    18    │ - → subareaId:·null,␍
+    19    │ - → isActive:·true,␍
+    20    │ - → createdAt:·new·Date("2026-11-01T00:00:00Z"),␍
+    21    │ - → updatedAt:·new·Date("2026-11-01T00:00:00Z"),␍
+    22    │ - → createdBy:·"planner",␍
+    23    │ - };␍
+    24    │ - ␍
+    25    │ - describe("planner·template·access",·()·=>·{␍
+    26    │ - → it("lets·a·planner·choose·a·template·without·a·drag·gesture",·()·=>·{␍
+    27    │ - → → const·choose·=·vi.fn();␍
+    28    │ - → → render(<TemplateSidebar·templates={[template]}·onSelectTemplate={choose}·/>);␍
+    29    │ - → → fireEvent.click(screen.getByRole("button",·{·name:·/Morning·reception/·}));␍
+    30    │ - → → expect(choose).toHaveBeenCalledWith(template);␍
+    31    │ - → });␍
+    32    │ - });␍
+        1 │ + /**·@vitest-environment·jsdom·*/
+        2 │ + import·{·fireEvent,·render,·screen·}·from·"@testing-library/react";
+        3 │ + import·{·describe,·expect,·it,·vi·}·from·"vitest";
+        4 │ + import·type·{·ShiftTemplate·}·from·"@/app/[locale]/(app)/scheduling/types";
+        5 │ + import·{·TemplateSidebar·}·from·"./template-sidebar";
+        6 │ + 
+        7 │ + vi.mock("@tolgee/react",·()·=>·({
+        8 │ + → useTranslate:·()·=>·({·t:·(_key:·string,·fallback:·string)·=>·fallback·}),
+        9 │ + }));
+       10 │ + 
+       11 │ + const·template:·ShiftTemplate·=·{
+       12 │ + → id:·"morning",
+       13 │ + → organizationId:·"org-a",
+       14 │ + → name:·"Morning·reception",
+       15 │ + → startTime:·"09:00",
+       16 │ + → endTime:·"17:00",
+       17 │ + → color:·null,
+       18 │ + → subareaId:·null,
+       19 │ + → isActive:·true,
+       20 │ + → createdAt:·new·Date("2026-11-01T00:00:00Z"),
+       21 │ + → updatedAt:·new·Date("2026-11-01T00:00:00Z"),
+       22 │ + → createdBy:·"planner",
+       23 │ + };
+       24 │ + 
+       25 │ + describe("planner·template·access",·()·=>·{
+       26 │ + → it("lets·a·planner·choose·a·template·without·a·drag·gesture",·()·=>·{
+       27 │ + → → const·choose·=·vi.fn();
+       28 │ + → → render(
+       29 │ + → → → <TemplateSidebar·templates={[template]}·onSelectTemplate={choose}·/>,
+       30 │ + → → );
+       31 │ + → → fireEvent.click(screen.getByRole("button",·{·name:·/Morning·reception/·}));
+       32 │ + → → expect(choose).toHaveBeenCalledWith(template);
+       33 │ + → });
+       34 │ + });
+    33 35 │   
+  
+
+src\components\scheduling\scheduler\template-sidebar.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconClock,·IconGripVertical·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·type·{·ShiftTemplate·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+      6     │ - import·{·Card,·CardContent,·CardHeader,·CardTitle·}·from·"@/components/ui/card";␍
+      7     │ - import·{·ScrollArea·}·from·"@/components/ui/scroll-area";␍
+      8     │ - ␍
+      9     │ - interface·TemplateSidebarProps·{␍
+     10     │ - → templates:·ShiftTemplate[];␍
+     11     │ - → onSelectTemplate:·(template:·ShiftTemplate)·=>·void;␍
+     12     │ - }␍
+     13     │ - ␍
+     14     │ - interface·TemplateCardProps·{␍
+     15     │ - → template:·ShiftTemplate;␍
+     16     │ - → onDragStart:·(e:·React.DragEvent,·template:·ShiftTemplate)·=>·void;␍
+     17     │ - → onSelect:·(template:·ShiftTemplate)·=>·void;␍
+     18     │ - }␍
+     19     │ - ␍
+     20     │ - function·formatTime(time:·string):·string·{␍
+     21     │ - → const·[hours,·minutes]·=·time.split(":");␍
+     22     │ - → const·hour·=·parseInt(hours,·10);␍
+     23     │ - → const·ampm·=·hour·>=·12·?·"PM"·:·"AM";␍
+     24     │ - → const·hour12·=·hour·%·12·||·12;␍
+     25     │ - → return·`${hour12}:${minutes}·${ampm}`;␍
+     26     │ - }␍
+     27     │ - ␍
+     28     │ - function·calculateDuration(startTime:·string,·endTime:·string):·string·{␍
+     29     │ - → const·[startH,·startM]·=·startTime.split(":").map(Number);␍
+     30     │ - → const·[endH,·endM]·=·endTime.split(":").map(Number);␍
+     31     │ - ␍
+     32     │ - → const·startMinutes·=·startH·*·60·+·startM;␍
+     33     │ - → let·endMinutes·=·endH·*·60·+·endM;␍
+     34     │ - ␍
+     35     │ - → //·Handle·overnight·shifts␍
+     36     │ - → if·(endMinutes·<·startMinutes)·{␍
+     37     │ - → → endMinutes·+=·24·*·60;␍
+     38     │ - → }␍
+     39     │ - ␍
+     40     │ - → const·durationMinutes·=·endMinutes·-·startMinutes;␍
+     41     │ - → const·hours·=·Math.floor(durationMinutes·/·60);␍
+     42     │ - → const·minutes·=·durationMinutes·%·60;␍
+     43     │ - ␍
+     44     │ - → if·(minutes·===·0)·{␍
+     45     │ - → → return·`${hours}h`;␍
+     46     │ - → }␍
+     47     │ - → return·`${hours}h·${minutes}m`;␍
+     48     │ - }␍
+     49     │ - ␍
+     50     │ - function·handleDragStart(e:·React.DragEvent,·template:·ShiftTemplate)·{␍
+     51     │ - → e.dataTransfer.setData("application/json",·JSON.stringify(template));␍
+     52     │ - → e.dataTransfer.effectAllowed·=·"copy";␍
+     53     │ - }␍
+     54     │ - ␍
+     55     │ - function·TemplateCard({·template,·onDragStart,·onSelect·}:·TemplateCardProps)·{␍
+     56     │ - → const·duration·=·calculateDuration(template.startTime,·template.endTime);␍
+     57     │ - ␍
+     58     │ - → const·backgroundColor·=·template.color·||·"#3b82f6";␍
+     59     │ - ␍
+     60     │ - → return·(␍
+     61     │ - → → <li␍
+     62     │ - → → → draggable␍
+     63     │ - → → → onDragStart={(e)·=>·onDragStart(e,·template)}␍
+     64     │ - → → → className="group·rounded-lg·border·bg-card"␍
+     65     │ - → → → style={{␍
+     66     │ - → → → → borderLeftWidth:·"4px",␍
+     67     │ - → → → → borderLeftColor:·backgroundColor,␍
+     68     │ - → → → }}␍
+     69     │ - → → >␍
+     70     │ - → → → <button␍
+     71     │ - → → → → type="button"␍
+     72     │ - → → → → onClick={()·=>·onSelect(template)}␍
+     73     │ - → → → → className="flex·w-full·items-start·gap-2·rounded-lg·p-3·text-left·hover:bg-muted/50·focus-visible:outline-none·focus-visible:ring-2·focus-visible:ring-ring"␍
+     74     │ - → → → >␍
+     75     │ - → → → → <IconGripVertical·className="size-4·text-muted-foreground·opacity-0·group-hover:opacity-100·transition-opacity·mt-0.5"·/>␍
+     76     │ - → → → → <div·className="flex-1·min-w-0">␍
+     77     │ - → → → → → <span·className="block·break-words·font-medium·text-sm">{template.name}</span>␍
+     78     │ - → → → → → <div·className="mt-1·flex·flex-wrap·items-center·gap-2·text-sm·text-muted-foreground·tabular-nums">␍
+     79     │ - → → → → → → <IconClock·className="size-3"·/>␍
+     80     │ - → → → → → → <span>␍
+     81     │ - → → → → → → → {formatTime(template.startTime)}·-·{formatTime(template.endTime)}␍
+     82     │ - → → → → → → </span>␍
+     83     │ - → → → → → → <span·className="text-muted-foreground/60">({duration})</span>␍
+     84     │ - → → → → → </div>␍
+     85     │ - → → → → </div>␍
+     86     │ - → → → </button>␍
+     87     │ - → → </li>␍
+     88     │ - → );␍
+     89     │ - }␍
+     90     │ - ␍
+     91     │ - export·function·TemplateSidebar({·templates,·onSelectTemplate·}:·TemplateSidebarProps)·{␍
+     92     │ - → const·{·t·}·=·useTranslate();␍
+     93     │ - → const·activeTemplates·=·templates.filter((t)·=>·t.isActive);␍
+     94     │ - ␍
+     95     │ - → if·(activeTemplates.length·===·0)·{␍
+     96     │ - → → return·(␍
+     97     │ - → → → <Card·className="w-full·min-w-0·shrink-0·lg:w-64">␍
+     98     │ - → → → → <CardHeader·className="pb-3">␍
+     99     │ - → → → → → <CardTitle·className="text-sm·font-medium">␍
+    100     │ - → → → → → → {t("scheduling:scheduling.templates.title",·"Shift·Templates")}␍
+    101     │ - → → → → → </CardTitle>␍
+    102     │ - → → → → </CardHeader>␍
+    103     │ - → → → → <CardContent>␍
+    104     │ - → → → → → <p·className="text-sm·text-muted-foreground">␍
+    105     │ - → → → → → → {t(␍
+    106     │ - → → → → → → → "scheduling:scheduling.templates.empty",␍
+    107     │ - → → → → → → → "No·templates·available.·Create·templates·in·Settings·to·quickly·add·shifts.",␍
+    108     │ - → → → → → → )}␍
+    109     │ - → → → → → </p>␍
+    110     │ - → → → → </CardContent>␍
+    111     │ - → → → </Card>␍
+    112     │ - → → );␍
+    113     │ - → }␍
+    114     │ - ␍
+    115     │ - → return·(␍
+    116     │ - → → <Card·className="w-full·min-w-0·shrink-0·lg:w-64">␍
+    117     │ - → → → <CardHeader·className="pb-3">␍
+    118     │ - → → → → <CardTitle·className="text-sm·font-medium">␍
+    119     │ - → → → → → {t("scheduling:scheduling.templates.title",·"Shift·Templates")}␍
+    120     │ - → → → → </CardTitle>␍
+    121     │ - → → → → <p·className="text-xs·text-muted-foreground">␍
+    122     │ - → → → → → {t(␍
+    123     │ - → → → → → → "scheduling:scheduling.templates.selectHint",␍
+    124     │ - → → → → → → "Choose·a·template,·then·set·the·shift·date·and·assignment.",␍
+    125     │ - → → → → → )}␍
+    126     │ - → → → → </p>␍
+    127     │ - → → → </CardHeader>␍
+    128     │ - → → → <CardContent·className="p-0">␍
+    129     │ - → → → → <ScrollArea·className="h-40·lg:h-[calc(100vh-320px)]">␍
+    130     │ - → → → → → <ul·className="flex·flex-col·gap-2·px-4·pb-4">␍
+    131     │ - → → → → → → {activeTemplates.map((template)·=>·(␍
+    132     │ - → → → → → → → <TemplateCard␍
+    133     │ - → → → → → → → → key={template.id}␍
+    134     │ - → → → → → → → → template={template}␍
+    135     │ - → → → → → → → → onDragStart={handleDragStart}␍
+    136     │ - → → → → → → → → onSelect={onSelectTemplate}␍
+    137     │ - → → → → → → → />␍
+    138     │ - → → → → → → ))}␍
+    139     │ - → → → → → </ul>␍
+    140     │ - → → → → </ScrollArea>␍
+    141     │ - → → → </CardContent>␍
+    142     │ - → → </Card>␍
+    143     │ - → );␍
+    144     │ - }␍
+          1 │ + "use·client";
+          2 │ + 
+          3 │ + import·{·IconClock,·IconGripVertical·}·from·"@tabler/icons-react";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·type·{·ShiftTemplate·}·from·"@/app/[locale]/(app)/scheduling/types";
+          6 │ + import·{·Card,·CardContent,·CardHeader,·CardTitle·}·from·"@/components/ui/card";
+  144 more lines truncated
+  
+
+src\components\scheduling\scheduler\use-shift-scheduler-data.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useMutation,·useQuery,·useQueryClient·}·from·"@tanstack/react-query";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·toast·}·from·"sonner";␍
+      6     │ - import·{␍
+      7     │ - → getScheduleComplianceSummary,␍
+      8     │ - → getShifts,␍
+      9     │ - → getShiftTemplates,␍
+     10     │ - → upsertShift,␍
+     11     │ - }·from·"@/app/[locale]/(app)/scheduling/actions";␍
+     12     │ - import·type·{·DateRange·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+     13     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+     14     │ - import·{·SKILL_OVERRIDE_REASON_REQUIRED·}·from·"@/lib/scheduling/skill-override-refusal";␍
+     15     │ - import·{·filterShiftsForEmployee,·shiftToEvent·}·from·"./shift-scheduler-utils";␍
+     16     │ - ␍
+     17     │ - interface·UseShiftSchedulerDataOptions·{␍
+     18     │ - → organizationId:·string;␍
+     19     │ - → employeeId:·string;␍
+     20     │ - → organizationTimezone:·string;␍
+     21     │ - → dateRange:·DateRange;␍
+     22     │ - → isManager:·boolean;␍
+     23     │ - → /**·Shows·only·this·employee's·shifts·on·the·calendar;·counts·still·cover·all.·*/␍
+     24     │ - → employeeFilter?:·string·|·null;␍
+     25     │ - }␍
+     26     │ - ␍
+     27     │ - export·interface·ShiftSchedulerUpdateInput·{␍
+     28     │ - → id:·string;␍
+     29     │ - → employeeId?:·string·|·null;␍
+     30     │ - → subareaId:·string;␍
+     31     │ - → date:·string;␍
+     32     │ - → startTime:·string;␍
+     33     │ - → endTime:·string;␍
+     34     │ - }␍
+     35     │ - ␍
+     36     │ - export·function·useShiftSchedulerData({␍
+     37     │ - → organizationId,␍
+     38     │ - → employeeId,␍
+     39     │ - → organizationTimezone,␍
+     40     │ - → dateRange,␍
+     41     │ - → isManager,␍
+     42     │ - → employeeFilter·=·null,␍
+     43     │ - }:·UseShiftSchedulerDataOptions)·{␍
+     44     │ - → const·{·t·}·=·useTranslate();␍
+     45     │ - → const·queryClient·=·useQueryClient();␍
+     46     │ - ␍
+     47     │ - → const·{␍
+     48     │ - → → data:·shiftsResult,␍
+     49     │ - → → isLoading:·shiftsLoading,␍
+     50     │ - → → isError:·shiftsFailed,␍
+     51     │ - → → isFetching:·shiftsFetching,␍
+     52     │ - → → refetch:·retryShifts,␍
+     53     │ - → }·=·useQuery({␍
+     54     │ - → → //·A·planner's·drafts·must·never·hydrate·an·employee's·published-only·view.␍
+     55     │ - → → queryKey:·[␍
+     56     │ - → → → ...queryKeys.shifts.list(organizationId,·dateRange),␍
+     57     │ - → → → "scheduling-viewer",␍
+     58     │ - → → → employeeId,␍
+     59     │ - → → → isManager,␍
+     60     │ - → → ],␍
+     61     │ - → → queryFn:·async·()·=>·{␍
+     62     │ - → → → const·result·=·await·getShifts({␍
+     63     │ - → → → → startDate:·dateRange.startDate,␍
+     64     │ - → → → → endDateExclusive:·dateRange.endDateExclusive,␍
+     65     │ - → → → → includeOpenShifts:·true,␍
+     66     │ - → → → });␍
+     67     │ - → → → if·(!result.success)·throw·new·Error(result.error);␍
+     68     │ - → → → return·result.data;␍
+     69     │ - → → },␍
+     70     │ - → });␍
+     71     │ - ␍
+     72     │ - → const·{␍
+     73     │ - → → data:·templatesResult,␍
+     74     │ - → → isError:·templatesFailed,␍
+     75     │ - → → refetch:·retryTemplates,␍
+     76     │ - → }·=·useQuery({␍
+     77     │ - → → queryKey:·queryKeys.shiftTemplates.list(organizationId),␍
+     78     │ - → → queryFn:·async·()·=>·{␍
+     79     │ - → → → const·result·=·await·getShiftTemplates();␍
+     80     │ - → → → if·(!result.success)·throw·new·Error(result.error);␍
+     81     │ - → → → return·result.data;␍
+     82     │ - → → },␍
+     83     │ - → → enabled:·isManager,␍
+     84     │ - → });␍
+     85     │ - ␍
+     86     │ - → const·{␍
+     87     │ - → → data:·complianceSummaryResult,␍
+     88     │ - → → isError:·complianceFailed,␍
+     89     │ - → → refetch:·retryCompliance,␍
+     90     │ - → }·=·useQuery({␍
+     91     │ - → → queryKey:·queryKeys.compliance.scheduleWarnings(organizationId,·dateRange),␍
+     92     │ - → → queryFn:·async·()·=>·{␍
+     93     │ - → → → const·result·=·await·getScheduleComplianceSummary(dateRange);␍
+     94     │ - → → → if·(!result.success)·throw·new·Error(result.error);␍
+     95     │ - → → → return·result.data;␍
+     96     │ - → → },␍
+     97     │ - → → enabled:·isManager,␍
+     98     │ - → });␍
+     99     │ - ␍
+    100     │ - → const·updateShiftMutation·=·useMutation({␍
+    101     │ - → → mutationFn:·async·(data:·ShiftSchedulerUpdateInput)·=>·{␍
+    102     │ - → → → const·result·=·await·upsertShift({␍
+    103     │ - → → → → id:·data.id,␍
+    104     │ - → → → → employeeId:·data.employeeId,␍
+    105     │ - → → → → subareaId:·data.subareaId,␍
+    106     │ - → → → → date:·data.date,␍
+    107     │ - → → → → startTime:·data.startTime,␍
+    108     │ - → → → → endTime:·data.endTime,␍
+    109     │ - → → → });␍
+    110     │ - → → → if·(!result.success)·{␍
+    111     │ - → → → → //·Moving·the·shift·needs·a·skill·override·reason,·which·only·the·shift·dialog·asks·for·(#893).␍
+    112     │ - → → → → if·(result.refusal·===·SKILL_OVERRIDE_REASON_REQUIRED)·{␍
+    113     │ - → → → → → throw·new·Error(␍
+    114     │ - → → → → → → t(␍
+    115     │ - → → → → → → → "scheduling.scheduler.shiftUpdate.skillOverrideReasonRequired",␍
+    116     │ - → → → → → → → "The·employee·lacks·a·required·skill·on·this·day.·Open·the·shift·to·give·a·reason.",␍
+    117     │ - → → → → → → ),␍
+    118     │ - → → → → → );␍
+    119     │ - → → → → }␍
+    120     │ - → → → → throw·new·Error(result.error);␍
+    121     │ - → → → }␍
+    122     │ - → → → return·result.data;␍
+    123     │ - → → },␍
+    124     │ - → → onSuccess:·(result)·=>·{␍
+    125     │ - → → → if·(result.metadata.hasOverlap)·{␍
+    126     │ - → → → → toast.warning(␍
+    127     │ - → → → → → t("scheduling.scheduler.shiftUpdate.overlapWarning",·"Shift·saved·with·overlap·warning"),␍
+    128     │ - → → → → → {␍
+    129     │ - → → → → → → description:·t(␍
+    130     │ - → → → → → → → "scheduling.scheduler.shiftUpdate.overlapDescription",␍
+    131     │ - → → → → → → → "This·shift·overlaps·with·{count}·other·shift(s)",␍
+    132     │ - → → → → → → → {·count:·result.metadata.overlappingShifts.length·},␍
+    133     │ - → → → → → → ),␍
+    134     │ - → → → → → },␍
+    135     │ - → → → → );␍
+    136     │ - → → → }·else·{␍
+    137     │ - → → → → toast.success(t("scheduling.scheduler.shiftUpdate.updated",·"Shift·updated"));␍
+    138     │ - → → → }␍
+    139     │ - → → → queryClient.invalidateQueries({·queryKey:·queryKeys.shifts.all·});␍
+    140     │ - → → → queryClient.invalidateQueries({␍
+    141     │ - → → → → queryKey:·queryKeys.compliance.scheduleWarnings(organizationId,·dateRange),␍
+    142     │ - → → → });␍
+    143     │ - → → },␍
+    144     │ - → → onError:·(error)·=>·{␍
+    145     │ - → → → toast.error(t("scheduling.scheduler.shiftUpdate.failed",·"Failed·to·update·shift"),·{␍
+    146     │ - → → → → description:·error.message,␍
+    147     │ - → → → });␍
+    148     │ - → → },␍
+    149     │ - → });␍
+    150     │ - ␍
+  223 more lines truncated
+  
+
+src\components\scheduling\shifts\shift-dialog-sections.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconLoader2,·IconMapPin,·IconTrash,·IconUsers·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·type·ComponentProps,·useState·}·from·"react";␍
+      6     │ - import·{·z·}·from·"zod";␍
+      7     │ - import·type·{·ShiftTemplate,·ShiftWithRelations·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+      8     │ - import·{·SkillWarningAlert,·SkillWarningBadge·}·from·"@/components/scheduling/skill-warning-alert";␍
+      9     │ - import·{·ActionPanelFooter·}·from·"@/components/ui/action-panel";␍
+     10     │ - import·{·Badge·}·from·"@/components/ui/badge";␍
+     11     │ - import·{·Button·}·from·"@/components/ui/button";␍
+     12     │ - import·{·DatePicker·}·from·"@/components/ui/date-picker";␍
+     13     │ - import·{·Label·}·from·"@/components/ui/label";␍
+     14     │ - import·{␍
+     15     │ - → Select,␍
+     16     │ - → SelectContent,␍
+     17     │ - → SelectItem,␍
+     18     │ - → SelectTrigger,␍
+     19     │ - → SelectValue,␍
+     20     │ - }·from·"@/components/ui/select";␍
+     21     │ - import·{·Textarea·}·from·"@/components/ui/textarea";␍
+     22     │ - import·{·TimeInput·}·from·"@/components/ui/time-input";␍
+     23     │ - import·{·buildAuthUserDisplayName·}·from·"@/lib/auth/derived-user-name";␍
+     24     │ - import·type·{·StaffingSuggestion·}·from·"@/lib/scheduling/staffing/types";␍
+     25     │ - import·{·StaffingSuggestionsPanel·}·from·"./staffing-suggestions-panel";␍
+     26     │ - import·type·{·ShiftDialogEmployee,·ShiftDialogLocation·}·from·"./use-shift-dialog-data";␍
+     27     │ - import·type·{·ShiftDialogFormApi,·ShiftDialogFormValues·}·from·"./use-shift-dialog-form";␍
+     28     │ - ␍
+     29     │ - interface·ShiftDialogSectionsProps·{␍
+     30     │ - → form:·ShiftDialogFormApi;␍
+     31     │ - → formValues:·ShiftDialogFormValues;␍
+     32     │ - → isManager:·boolean;␍
+     33     │ - → templates:·ShiftTemplate[];␍
+     34     │ - → locations:·ShiftDialogLocation[];␍
+     35     │ - → employees:·ShiftDialogEmployee[];␍
+     36     │ - → skillValidation:·ComponentProps<typeof·SkillWarningAlert>["validation"];␍
+     37     │ - → isValidatingSkills:·boolean;␍
+     38     │ - → isEditing:·boolean;␍
+     39     │ - → shift:·ShiftWithRelations·|·null;␍
+     40     │ - → /**·Staffing·suggestions·while·the·shift·is·open·with·its·subarea,·date·and·times·set.·*/␍
+     41     │ - → staffing:·{␍
+     42     │ - → → suggestions:·StaffingSuggestion[]·|·undefined;␍
+     43     │ - → → isLoading:·boolean;␍
+     44     │ - → → isError:·boolean;␍
+     45     │ - → }·|·null;␍
+     46     │ - → /**·The·server·refused·the·save·for·want·of·a·skill·override·reason·(#893).·*/␍
+     47     │ - → skillOverrideReasonRequested?:·boolean;␍
+     48     │ - }␍
+     49     │ - ␍
+     50     │ - interface·ShiftDialogFooterBaseProps·{␍
+     51     │ - → onCancel:·()·=>·void;␍
+     52     │ - }␍
+     53     │ - ␍
+     54     │ - export·type·ShiftDialogFooterProps·=·ShiftDialogFooterBaseProps·&␍
+     55     │ - → (␍
+     56     │ - → → |·{␍
+     57     │ - → → → → mode:·"create";␍
+     58     │ - → → → → canManage:·true;␍
+     59     │ - → → → → status:·"idle"·|·"saving";␍
+     60     │ - → → ··}␍
+     61     │ - → → |·{␍
+     62     │ - → → → → mode:·"edit";␍
+     63     │ - → → → → canManage:·true;␍
+     64     │ - → → → → status:·"idle"·|·"saving"·|·"deleting";␍
+     65     │ - → → → → onDelete:·()·=>·void;␍
+     66     │ - → → ··}␍
+     67     │ - → → |·{␍
+     68     │ - → → → → mode:·"create";␍
+     69     │ - → → → → canManage:·false;␍
+     70     │ - → → → → status:·"idle";␍
+     71     │ - → → ··}␍
+     72     │ - → → |·{␍
+     73     │ - → → → → mode:·"edit";␍
+     74     │ - → → → → canManage:·false;␍
+     75     │ - → → → → status:·"idle";␍
+     76     │ - → → ··}␍
+     77     │ - → );␍
+     78     │ - ␍
+     79     │ - function·getFieldErrorMessage(error:·unknown)·{␍
+     80     │ - → if·(typeof·error·===·"string")·{␍
+     81     │ - → → return·error;␍
+     82     │ - → }␍
+     83     │ - ␍
+     84     │ - → if·(␍
+     85     │ - → → typeof·error·===·"object"·&&␍
+     86     │ - → → error·!==·null·&&␍
+     87     │ - → → "message"·in·error·&&␍
+     88     │ - → → typeof·error.message·===·"string"␍
+     89     │ - → )·{␍
+     90     │ - → → return·error.message;␍
+     91     │ - → }␍
+     92     │ - ␍
+     93     │ - → return·null;␍
+     94     │ - }␍
+     95     │ - ␍
+     96     │ - function·FieldErrorText({·errors,·id·}:·{·errors:·readonly·unknown[];·id?:·string·})·{␍
+     97     │ - → const·message·=·errors[0]·?·getFieldErrorMessage(errors[0])·:·null;␍
+     98     │ - ␍
+     99     │ - → if·(!message)·{␍
+    100     │ - → → return·null;␍
+    101     │ - → }␍
+    102     │ - ␍
+    103     │ - → return·(␍
+    104     │ - → → <p·id={id}·role="alert"·className="text-sm·font-medium·text-destructive">␍
+    105     │ - → → → {message}␍
+    106     │ - → → </p>␍
+    107     │ - → );␍
+    108     │ - }␍
+    109     │ - ␍
+    110     │ - type·SkillValidation·=·ShiftDialogSectionsProps["skillValidation"];␍
+    111     │ - ␍
+    112     │ - export·function·ShiftDialogSections({␍
+    113     │ - → form,␍
+    114     │ - → formValues,␍
+    115     │ - → isManager,␍
+    116     │ - → templates,␍
+    117     │ - → locations,␍
+    118     │ - → employees,␍
+    119     │ - → skillValidation,␍
+    120     │ - → isValidatingSkills,␍
+    121     │ - → isEditing,␍
+    122     │ - → shift,␍
+    123     │ - → staffing,␍
+    124     │ - → skillOverrideReasonRequested·=·false,␍
+    125     │ - }:·ShiftDialogSectionsProps)·{␍
+    126     │ - → return·(␍
+    127     │ - → → <>␍
+    128     │ - → → → <ShiftDateField·form={form}·isManager={isManager}·/>␍
+    129     │ - ␍
+    130     │ - → → → {isManager·&&·templates.length·>·0·&&·(␍
+    131     │ - → → → → <ShiftTemplateField·form={form}·templates={templates}·/>␍
+    132     │ - → → → )}␍
+    133     │ - ␍
+    134     │ - → → → <ShiftTimeFields·form={form}·isManager={isManager}·/>␍
+    135     │ - ␍
+    136     │ - → → → {isManager·&&·<ShiftSubareaField·form={form}·locations={locations}·/>}␍
+    137     │ - ␍
+    138     │ - → → → {isManager·&&·(␍
+    139     │ - → → → → <ShiftEmployeeField·form={form}·employees={employees}·skillValidation={skillValidation}·/>␍
+    140     │ - → → → )}␍
+    141     │ - ␍
+    142     │ - → → → {isManager·&&·(␍
+    143     │ - → → → → <ShiftAssignmentAssist␍
+    144     │ - → → → → → form={form}␍
+    145     │ - → → → → → formValues={formValues}␍
+    146     │ - → → → → → skillValidation={skillValidation}␍
+    147     │ - → → → → → isValidatingSkills={isValidatingSkills}␍
+    148     │ - → → → → → staffing={staffing}␍
+    149     │ - → → → → → skillOverrideReasonRequested={skillOverrideReasonRequested}␍
+    150     │ - → → → → />␍
+  1184 more lines truncated
+  
+
+src\components\scheduling\shifts\shift-dialog.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      4     │ - import·{·useState·}·from·"react";␍
+      5     │ - import·type·{·ShiftTemplate,·ShiftWithRelations·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+      6     │ - import·{␍
+      7     │ - → ActionPanel,␍
+      8     │ - → ActionPanelBody,␍
+      9     │ - → ActionPanelContent,␍
+     10     │ - → ActionPanelDescription,␍
+     11     │ - → ActionPanelHeader,␍
+     12     │ - → ActionPanelTitle,␍
+     13     │ - }·from·"@/components/ui/action-panel";␍
+     14     │ - import·{·ShiftDialogFooterActions,·ShiftDialogSections·}·from·"./shift-dialog-sections";␍
+     15     │ - import·{·useShiftDialogData·}·from·"./use-shift-dialog-data";␍
+     16     │ - import·{·useShiftDialogForm·}·from·"./use-shift-dialog-form";␍
+     17     │ - import·{␍
+     18     │ - → assignmentContextOf,␍
+     19     │ - → useShiftDeleteMutation,␍
+     20     │ - → useShiftUpsertMutation,␍
+     21     │ - }·from·"./use-shift-dialog-mutations";␍
+     22     │ - import·{·getStaffingShiftInput,·useStaffingSuggestions·}·from·"./use-staffing-suggestions";␍
+     23     │ - ␍
+     24     │ - function·editFooterStatus(isDeleting:·boolean,·isSaving:·boolean):·"idle"·|·"saving"·|·"deleting"·{␍
+     25     │ - → if·(isDeleting)·return·"deleting";␍
+     26     │ - → return·isSaving·?·"saving"·:·"idle";␍
+     27     │ - }␍
+     28     │ - ␍
+     29     │ - /**·The·footer:·managers·save·or·delete,·everyone·else·only·closes·the·dialog.·*/␍
+     30     │ - function·ShiftDialogFooter({␍
+     31     │ - → open,␍
+     32     │ - → shift,␍
+     33     │ - → isManager,␍
+     34     │ - → isDeleting,␍
+     35     │ - → isSaving,␍
+     36     │ - → onDelete,␍
+     37     │ - → onCancel,␍
+     38     │ - }:·{␍
+     39     │ - → open:·boolean;␍
+     40     │ - → shift:·ShiftWithRelations·|·null;␍
+     41     │ - → isManager:·boolean;␍
+     42     │ - → isDeleting:·boolean;␍
+     43     │ - → isSaving:·boolean;␍
+     44     │ - → onDelete:·()·=>·void;␍
+     45     │ - → onCancel:·()·=>·void;␍
+     46     │ - })·{␍
+     47     │ - → //·Remounts·the·footer·whenever·the·dialog·opens·or·closes,·or·shows·another·shift.␍
+     48     │ - → const·footerKey·=·`${open·?·"open"·:·"closed"}-${shift?.id·??·"new"}`;␍
+     49     │ - ␍
+     50     │ - → if·(!isManager)·{␍
+     51     │ - → → return·(␍
+     52     │ - → → → <ShiftDialogFooterActions␍
+     53     │ - → → → → key={footerKey}␍
+     54     │ - → → → → mode={shift·?·"edit"·:·"create"}␍
+     55     │ - → → → → status="idle"␍
+     56     │ - → → → → canManage={false}␍
+     57     │ - → → → → onCancel={onCancel}␍
+     58     │ - → → → />␍
+     59     │ - → → );␍
+     60     │ - → }␍
+     61     │ - ␍
+     62     │ - → if·(shift)·{␍
+     63     │ - → → return·(␍
+     64     │ - → → → <ShiftDialogFooterActions␍
+     65     │ - → → → → key={footerKey}␍
+     66     │ - → → → → mode="edit"␍
+     67     │ - → → → → status={editFooterStatus(isDeleting,·isSaving)}␍
+     68     │ - → → → → canManage␍
+     69     │ - → → → → onDelete={onDelete}␍
+     70     │ - → → → → onCancel={onCancel}␍
+     71     │ - → → → />␍
+     72     │ - → → );␍
+     73     │ - → }␍
+     74     │ - ␍
+     75     │ - → return·(␍
+     76     │ - → → <ShiftDialogFooterActions␍
+     77     │ - → → → key={footerKey}␍
+     78     │ - → → → mode="create"␍
+     79     │ - → → → status={isSaving·?·"saving"·:·"idle"}␍
+     80     │ - → → → canManage␍
+     81     │ - → → → onCancel={onCancel}␍
+     82     │ - → → />␍
+     83     │ - → );␍
+     84     │ - }␍
+     85     │ - ␍
+     86     │ - interface·ShiftDialogProps·{␍
+     87     │ - → open:·boolean;␍
+     88     │ - → onOpenChange:·(open:·boolean)·=>·void;␍
+     89     │ - → shift:·ShiftWithRelations·|·null;␍
+     90     │ - → templates:·ShiftTemplate[];␍
+     91     │ - → isManager:·boolean;␍
+     92     │ - → defaultDate:·string·|·null;␍
+     93     │ - → defaultTemplateId?:·string·|·null;␍
+     94     │ - → organizationId:·string;␍
+     95     │ - → organizationTimezone:·string;␍
+     96     │ - }␍
+     97     │ - ␍
+     98     │ - export·function·ShiftDialog({␍
+     99     │ - → open,␍
+    100     │ - → onOpenChange,␍
+    101     │ - → shift,␍
+    102     │ - → templates,␍
+    103     │ - → isManager,␍
+    104     │ - → defaultDate,␍
+    105     │ - → defaultTemplateId,␍
+    106     │ - → organizationId,␍
+    107     │ - → organizationTimezone,␍
+    108     │ - }:·ShiftDialogProps)·{␍
+    109     │ - → const·{·t·}·=·useTranslate();␍
+    110     │ - ␍
+    111     │ - → const·isEditing·=·!!shift;␍
+    112     │ - → const·title·=·isEditing␍
+    113     │ - → → ?·t("scheduling:scheduling.shiftDialog.editTitle",·"Edit·Shift")␍
+    114     │ - → → :·t("scheduling:scheduling.shiftDialog.createTitle",·"Create·Shift");␍
+    115     │ - → const·description·=·isEditing␍
+    116     │ - → → ?·t("scheduling:scheduling.shiftDialog.editDescription",·"Update·the·shift·details·below")␍
+    117     │ - → → :·t(␍
+    118     │ - → → → → "scheduling:scheduling.shiftDialog.createDescription",␍
+    119     │ - → → → → "Fill·in·the·details·for·the·new·shift",␍
+    120     │ - → → → );␍
+    121     │ - ␍
+    122     │ - → //·The·assignment·context·the·server·last·refused·for·want·of·a·skill·override·reason·(#893).␍
+    123     │ - → const·[reasonRefusedFor,·setReasonRefusedFor]·=·useState<string·|·null>(null);␍
+    124     │ - → const·handleOpenChange·=·(next:·boolean)·=>·{␍
+    125     │ - → → if·(!next·&&·(upsertMutation.isPending·||·deleteMutation.isPending·||·formSubmitting))·return;␍
+    126     │ - → → if·(!next)·setReasonRefusedFor(null);␍
+    127     │ - → → onOpenChange(next);␍
+    128     │ - → };␍
+    129     │ - ␍
+    130     │ - → const·closeDialog·=·()·=>·{␍
+    131     │ - → → setReasonRefusedFor(null);␍
+    132     │ - → → onOpenChange(false);␍
+    133     │ - → };␍
+    134     │ - ␍
+    135     │ - → const·upsertMutation·=·useShiftUpsertMutation({␍
+    136     │ - → → shiftId:·shift?.id,␍
+    137     │ - → → isEditing,␍
+    138     │ - → → onSaved:·closeDialog,␍
+    139     │ - → → onReasonRefused:·setReasonRefusedFor,␍
+    140     │ - → });␍
+    141     │ - ␍
+    142     │ - → const·{␍
+    143     │ - → → form,␍
+    144     │ - → → formValues,␍
+    145     │ - → → isSubmitting:·formSubmitting,␍
+    146     │ - → }·=·useShiftDialogForm({␍
+    147     │ - → → open,␍
+    148     │ - → → shift,␍
+    149     │ - → → templates,␍
+    150     │ - → → defaultDate,␍
+  373 more lines truncated
+  
+
+src\components\scheduling\shifts\use-shift-dialog-form.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useForm·}·from·"@tanstack/react-form";␍
+      4     │ - import·{·useStore·}·from·"@tanstack/react-store";␍
+      5     │ - import·{·useEffect,·useRef·}·from·"react";␍
+      6     │ - import·{·Temporal·}·from·"temporal-polyfill";␍
+      7     │ - import·type·{·ShiftTemplate,·ShiftWithRelations·}·from·"@/app/[locale]/(app)/scheduling/types";␍
+      8     │ - ␍
+      9     │ - import·{·useEditSession·}·from·"@/hooks/use-edit-session";␍
+     10     │ - ␍
+     11     │ - export·interface·ShiftDialogFormValues·{␍
+     12     │ - → employeeId:·string·|·null;␍
+     13     │ - → templateId:·string·|·null;␍
+     14     │ - → subareaId:·string;␍
+     15     │ - → date:·string;␍
+     16     │ - → startTime:·string;␍
+     17     │ - → endTime:·string;␍
+     18     │ - → notes:·string;␍
+     19     │ - → color:·string·|·undefined;␍
+     20     │ - → /**·Why·the·employee·is·assigned·without·every·required·skill·(#893);·cleared·on·reassignment.·*/␍
+     21     │ - → skillOverrideReason:·string;␍
+     22     │ - }␍
+     23     │ - ␍
+     24     │ - interface·UseShiftDialogFormOptions·{␍
+     25     │ - → open:·boolean;␍
+     26     │ - → shift:·ShiftWithRelations·|·null;␍
+     27     │ - → templates:·ShiftTemplate[];␍
+     28     │ - → defaultDate:·string·|·null;␍
+     29     │ - → defaultTemplateId?:·string·|·null;␍
+     30     │ - → organizationTimezone:·string;␍
+     31     │ - → onSubmit:·(values:·ShiftDialogFormValues)·=>·void·|·Promise<void>;␍
+     32     │ - }␍
+     33     │ - ␍
+     34     │ - const·DEFAULT_START_TIME·=·"09:00";␍
+     35     │ - const·DEFAULT_END_TIME·=·"17:00";␍
+     36     │ - ␍
+     37     │ - export·function·getDefaultShiftDialogValues(␍
+     38     │ - → defaultDate:·string·|·null,␍
+     39     │ - → organizationTimezone·=·"UTC",␍
+     40     │ - → now·=·Temporal.Now.instant().toString(),␍
+     41     │ - ):·ShiftDialogFormValues·{␍
+     42     │ - → return·{␍
+     43     │ - → → employeeId:·null,␍
+     44     │ - → → templateId:·null,␍
+     45     │ - → → subareaId:·"",␍
+     46     │ - → → date:␍
+     47     │ - → → → defaultDate·||␍
+     48     │ - → → → Temporal.Instant.from(now).toZonedDateTimeISO(organizationTimezone).toPlainDate().toString(),␍
+     49     │ - → → startTime:·DEFAULT_START_TIME,␍
+     50     │ - → → endTime:·DEFAULT_END_TIME,␍
+     51     │ - → → notes:·"",␍
+     52     │ - → → color:·undefined,␍
+     53     │ - → → skillOverrideReason:·"",␍
+     54     │ - → };␍
+     55     │ - }␍
+     56     │ - ␍
+     57     │ - export·function·getShiftDialogValues(␍
+     58     │ - → shift:·ShiftWithRelations,␍
+     59     │ - → organizationTimezone:·string,␍
+     60     │ - ):·ShiftDialogFormValues·{␍
+     61     │ - → return·{␍
+     62     │ - → → employeeId:·shift.employeeId,␍
+     63     │ - → → templateId:·shift.templateId,␍
+     64     │ - → → subareaId:·shift.subareaId·||·"",␍
+     65     │ - → → date:·Temporal.Instant.fromEpochMilliseconds(shift.date.getTime())␍
+     66     │ - → → → .toZonedDateTimeISO(organizationTimezone)␍
+     67     │ - → → → .toPlainDate()␍
+     68     │ - → → → .toString(),␍
+     69     │ - → → startTime:·shift.startTime,␍
+     70     │ - → → endTime:·shift.endTime,␍
+     71     │ - → → notes:·shift.notes·||·"",␍
+     72     │ - → → color:·shift.color·||·undefined,␍
+     73     │ - → → skillOverrideReason:·"",␍
+     74     │ - → };␍
+     75     │ - }␍
+     76     │ - ␍
+     77     │ - export·function·getTemplateAutofillValues(␍
+     78     │ - → template:·ShiftTemplate·|·undefined,␍
+     79     │ - → currentSubareaId:·string,␍
+     80     │ - ):·Partial<ShiftDialogFormValues>·{␍
+     81     │ - → if·(!template)·{␍
+     82     │ - → → return·{};␍
+     83     │ - → }␍
+     84     │ - ␍
+     85     │ - → return·{␍
+     86     │ - → → startTime:·template.startTime,␍
+     87     │ - → → endTime:·template.endTime,␍
+     88     │ - → → ...(template.color·?·{·color:·template.color·}·:·{}),␍
+     89     │ - → → ...(template.subareaId·&&·!currentSubareaId·?·{·subareaId:·template.subareaId·}·:·{}),␍
+     90     │ - → };␍
+     91     │ - }␍
+     92     │ - ␍
+     93     │ - export·function·useShiftDialogForm({␍
+     94     │ - → open,␍
+     95     │ - → shift,␍
+     96     │ - → templates,␍
+     97     │ - → defaultDate,␍
+     98     │ - → defaultTemplateId·=·null,␍
+     99     │ - → organizationTimezone,␍
+    100     │ - → onSubmit,␍
+    101     │ - }:·UseShiftDialogFormOptions)·{␍
+    102     │ - → const·submitting·=·useRef(false);␍
+    103     │ - → const·form·=·useForm({␍
+    104     │ - → → defaultValues:·getDefaultShiftDialogValues(defaultDate,·organizationTimezone),␍
+    105     │ - → → onSubmit:·async·({·value·})·=>·{␍
+    106     │ - → → → if·(submitting.current)·return;␍
+    107     │ - → → → submitting.current·=·true;␍
+    108     │ - → → → await·Promise.resolve()␍
+    109     │ - → → → → .then(()·=>·onSubmit(value))␍
+    110     │ - → → → → .finally(()·=>·{␍
+    111     │ - → → → → → submitting.current·=·false;␍
+    112     │ - → → → → });␍
+    113     │ - → → },␍
+    114     │ - → });␍
+    115     │ - ␍
+    116     │ - → const·formValues·=·useStore(form.store,·(state)·=>·state.values);␍
+    117     │ - → const·isSubmitting·=·useStore(form.store,·(state)·=>·state.isSubmitting);␍
+    118     │ - ␍
+    119     │ - → const·appliedTemplateId·=·useRef<string·|·null>(null);␍
+    120     │ - → useEditSession({␍
+    121     │ - → → open,␍
+    122     │ - → → scope:·shift?.id·??·"create",␍
+    123     │ - → → initialize:·()·=>·{␍
+    124     │ - → → → appliedTemplateId.current·=·shift?.templateId·??·null;␍
+    125     │ - → → → if·(!open)·{␍
+    126     │ - → → → → return;␍
+    127     │ - → → → }␍
+    128     │ - ␍
+    129     │ - → → → const·nextValues·=·shift␍
+    130     │ - → → → → ?·getShiftDialogValues(shift,·organizationTimezone)␍
+    131     │ - → → → → :·{␍
+    132     │ - → → → → → → ...getDefaultShiftDialogValues(defaultDate,·organizationTimezone),␍
+    133     │ - → → → → → → templateId:·defaultTemplateId,␍
+    134     │ - → → → → → };␍
+    135     │ - ␍
+    136     │ - → → → form.setFieldValue("employeeId",·nextValues.employeeId);␍
+    137     │ - → → → form.setFieldValue("templateId",·nextValues.templateId);␍
+    138     │ - → → → form.setFieldValue("subareaId",·nextValues.subareaId);␍
+    139     │ - → → → form.setFieldValue("date",·nextValues.date);␍
+    140     │ - → → → form.setFieldValue("startTime",·nextValues.startTime);␍
+    141     │ - → → → form.setFieldValue("endTime",·nextValues.endTime);␍
+    142     │ - → → → form.setFieldValue("notes",·nextValues.notes);␍
+    143     │ - → → → form.setFieldValue("color",·nextValues.color);␍
+    144     │ - → → → form.setFieldValue("skillOverrideReason",·nextValues.skillOverrideReason);␍
+    145     │ - → → },␍
+    146     │ - → });␍
+    147     │ - ␍
+    148     │ - → //·A·reason·covers·one·assignment·context:·another·employee,·date,·subarea·or·template␍
+    149     │ - → //·needs·its·own·(#893).␍
+    150     │ - → const·assignmentContext·=·[␍
+  273 more lines truncated
+  
+
+src\lib\navigation\route-metadata.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·describe,·expect,·it·}·from·"vitest";␍
+      2     │ - import·{·appPageOwnsHeading,·normalizeAppPath,·resolveAppRouteMetadata·}·from·"./route-metadata";␍
+      3     │ - ␍
+      4     │ - describe("route·metadata",·()·=>·{␍
+      5     │ - → it("adopts·only·the·scheduling·page·heading,·preserving·its·descendants·and·settings",·()·=>·{␍
+      6     │ - → → expect(appPageOwnsHeading("/de/scheduling")).toBe(true);␍
+      7     │ - → → expect(appPageOwnsHeading("/en/scheduling/detail")).toBe(false);␍
+      8     │ - → → expect(appPageOwnsHeading("/en/settings/shifts")).toBe(false);␍
+      9     │ - → });␍
+     10     │ - → it("adopts·payroll,·the·work-balance·directory·and·selected·balance·without·deeper·descendants",·()·=>·{␍
+     11     │ - → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);␍
+     12     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);␍
+     13     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(true);␍
+     14     │ - → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1/other")).toBe(false);␍
+     15     │ - → });␍
+     16     │ - → it("adopts·only·the·notification·timeline·heading,·retaining·settings·and·descendants",·()·=>·{␍
+     17     │ - → → expect(appPageOwnsHeading("/de/notifications")).toBe(true);␍
+     18     │ - → → expect(appPageOwnsHeading("/en/notifications/other")).toBe(false);␍
+     19     │ - → → expect(appPageOwnsHeading("/en/settings/notifications")).toBe(false);␍
+     20     │ - → });␍
+     21     │ - → it("adopts·only·the·personal·requests·page·heading",·()·=>·{␍
+     22     │ - → → expect(appPageOwnsHeading("/de/my-requests")).toBe(true);␍
+     23     │ - → → expect(appPageOwnsHeading("/en/my-requests/detail")).toBe(false);␍
+     24     │ - → });␍
+     25     │ - → it("adopts·the·personal·documents·heading·without·officer·descendants",·()·=>·{␍
+     26     │ - → → expect(appPageOwnsHeading("/de/my-documents")).toBe(true);␍
+     27     │ - → → expect(appPageOwnsHeading("/en/my-documents/extra")).toBe(false);␍
+     28     │ - → → expect(appPageOwnsHeading("/en/personnel-files")).toBe(false);␍
+     29     │ - → });␍
+     30     │ - → it("adopts·equipment·overview·and·exact·assignment·headings,·keeping·other·descendants·independent",·()·=>·{␍
+     31     │ - → → expect(appPageOwnsHeading("/de/equipment")).toBe(true);␍
+     32     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id")).toBe(true);␍
+     33     │ - → → expect(appPageOwnsHeading("/de/equipment/assignments/id?back=%2Fequipment")).toBe(true);␍
+     34     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments")).toBe(false);␍
+     35     │ - → → expect(appPageOwnsHeading("/en/equipment/assignments/id/extra")).toBe(false);␍
+     36     │ - → → expect(appPageOwnsHeading("/en/equipment/employees/id/detail")).toBe(false);␍
+     37     │ - → → expect(appPageOwnsHeading("/en/settings/equipment")).toBe(false);␍
+     38     │ - → });␍
+     39     │ - → it("adopts·the·employee·equipment·record·heading·without·adopting·its·collection",·()·=>·{␍
+     40     │ - → → expect(appPageOwnsHeading("/de/equipment/employees/id")).toBe(true);␍
+     41     │ - → → expect(appPageOwnsHeading("/en/equipment/employees")).toBe(false);␍
+     42     │ - → });␍
+     43     │ - → it("adopts·the·licence·workspace·and·employee·check·while·retaining·other·descendants·and·settings·headings",·()·=>·{␍
+     44     │ - → → expect(appPageOwnsHeading("/de/driving-licence")).toBe(true);␍
+     45     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1")).toBe(true);␍
+     46     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks/employee-1/detail")).toBe(false);␍
+     47     │ - → → expect(appPageOwnsHeading("/en/driving-licence/checks")).toBe(false);␍
+     48     │ - → → expect(appPageOwnsHeading("/en/settings/driving-licence")).toBe(false);␍
+     49     │ - → });␍
+     50     │ - → it("retains·independent·approvals·page·headings",·()·=>·{␍
+     51     │ - → → expect(appPageOwnsHeading("/de/approvals")).toBe(true);␍
+     52     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     53     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/absence/id")).toBe(true);␍
+     54     │ - → });␍
+     55     │ - → it("adopts·only·the·deputy·history·record,·preserving·other·approval·headings",·()·=>·{␍
+     56     │ - → → expect(appPageOwnsHeading("/de/approvals/deputy-decisions/absence-1")).toBe(true);␍
+     57     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions/absence-1/detail")).toBe(false);␍
+     58     │ - → → expect(appPageOwnsHeading("/en/approvals/deputy-decisions")).toBe(false);␍
+     59     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox")).toBe(true);␍
+     60     │ - → });␍
+     61     │ - → it("adopts·the·exact·inbox·heading,·retaining·independent·review·route·ownership",·()·=>·{␍
+     62     │ - → → expect(appPageOwnsHeading("/de/approvals/inbox")).toBe(true);␍
+     63     │ - → → expect(appPageOwnsHeading("/en/approvals/inbox/detail")).toBe(false);␍
+     64     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/time_entry/id")).toBe(true);␍
+     65     │ - → });␍
+     66     │ - → it("adopts·only·the·complete·review·arrival·route",·()·=>·{␍
+     67     │ - → → expect(appPageOwnsHeading("/de/approvals/review/org/canonical/id")).toBe(true);␍
+     68     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical")).toBe(false);␍
+     69     │ - → → expect(appPageOwnsHeading("/en/approvals/review/org/canonical/id/detail")).toBe(false);␍
+     70     │ - → });␍
+     71     │ - → it("adopts·the·exact·vacation·route·while·retaining·staged·descendants",·()·=>·{␍
+     72     │ - → → expect(appPageOwnsHeading("/de/analytics/vacation-trends")).toBe(true);␍
+     73     │ - → → expect(appPageOwnsHeading("/en/analytics/vacation-trends/detail")).toBe(false);␍
+     74     │ - → });␍
+     75     │ - → it("adopts·only·refreshed·analytics·routes·while·retaining·staged·descendants",·()·=>·{␍
+     76     │ - → → expect(appPageOwnsHeading("/de/analytics/overtime-burn-down")).toBe(true);␍
+     77     │ - → → expect(appPageOwnsHeading("/en/analytics/overtime-burn-down/detail")).toBe(false);␍
+     78     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance")).toBe(true);␍
+     79     │ - → → expect(appPageOwnsHeading("/en/analytics/team-performance/detail")).toBe(false);␍
+     80     │ - → });␍
+     81     │ - → it("adopts·refreshed·analytics·without·adopting·unconverted·descendants",·()·=>·{␍
+     82     │ - → → expect(appPageOwnsHeading("/de/analytics")).toBe(true);␍
+     83     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours")).toBe(true);␍
+     84     │ - → → expect(appPageOwnsHeading("/en/analytics/work-hours/detail")).toBe(false);␍
+     85     │ - → → expect(appPageOwnsHeading("/en/calendar")).toBe(true);␍
+     86     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1")).toBe(true);␍
+     87     │ - → → expect(appPageOwnsHeading("/en/calendar/employee-1/detail")).toBe(false);␍
+     88     │ - → });␍
+     89     │ - → it("adopts·only·the·portfolio·pilot·title,·leaving·other·reports·and·descendants·with·shell·titles",·()·=>·{␍
+     90     │ - → → expect(appPageOwnsHeading("/de/reports/projects")).toBe(true);␍
+     91     │ - → → expect(appPageOwnsHeading("/en/reports/vehicles")).toBe(false);␍
+     92     │ - → → expect(appPageOwnsHeading("/en/reports/projects/detail")).toBe(false);␍
+     93     │ - → });␍
+     94     │ - → it.each([␍
+     95     │ - → → ["/en",·"Dashboard"],␍
+     96     │ - → → ["/de/my-requests",·"My·Requests"],␍
+     97     │ - → → ["/en/organization",·"Org·Explorer"],␍
+     98     │ - → → ["/en/payroll",·"Payroll"],␍
+     99     │ - → → ["/en/scheduling",·"Scheduling"],␍
+    100     │ - → → ["/en/approvals/inbox",·"Approvals"],␍
+    101     │ - → → ["/en/compliance",·"Compliance"],␍
+    102     │ - → → ["/en/works-council",·"Works·Council"],␍
+    103     │ - → → ["/en/team/absences",·"Team·Absences"],␍
+    104     │ - → → ["/en/team/driving",·"Driving·Details"],␍
+    105     │ - → → ["/en/driving-licence",·"My·driving·authorization"],␍
+    106     │ - → → ["/en/driving-licence/checks/employee-1",·"My·driving·authorization"],␍
+    107     │ - → → ["/en/reports/projects",·"Project·Reports"],␍
+    108     │ - → → ["/en/reports/vehicles",·"Distance·per·Vehicle"],␍
+    109     │ - → → ["/en/settings/employees/employee-1",·"Employees"],␍
+    110     │ - → → ["/en/settings/locations/location-1",·"Locations"],␍
+    111     │ - → → ["/en/equipment",·"Equipment"],␍
+    112     │ - → → ["/en/equipment/employees/employee-1",·"Equipment"],␍
+    113     │ - → → ["/en/equipment/assignments/assignment-1",·"Equipment"],␍
+    114     │ - → → ["/de/my-equipment",·"My·equipment"],␍
+    115     │ - → → ["/en/settings/equipment",·"Settings"],␍
+    116     │ - → ])("resolves·%s",·(pathname,·title)·=>·{␍
+    117     │ - → → expect(resolveAppRouteMetadata(pathname).titleDefault).toBe(title);␍
+    118     │ - → });␍
+    119     │ - ␍
+    120     │ - → it("matches·route·prefixes·only·at·path-segment·boundaries",·()·=>·{␍
+    121     │ - → → expect(resolveAppRouteMetadata("/en/teamwork").titleDefault).toBe("Z8");␍
+    122     │ - → });␍
+    123     │ - ␍
+    124     │ - → it("normalizes·locale·and·trailing·slash·segments",·()·=>·{␍
+    125     │ - → → expect(normalizeAppPath("/de/settings/security/")).toBe("/settings/security");␍
+    126     │ - → });␍
+    127     │ - });␍
+          1 │ + import·{·describe,·expect,·it·}·from·"vitest";
+          2 │ + import·{
+          3 │ + → appPageOwnsHeading,
+          4 │ + → normalizeAppPath,
+          5 │ + → resolveAppRouteMetadata,
+          6 │ + }·from·"./route-metadata";
+          7 │ + 
+          8 │ + describe("route·metadata",·()·=>·{
+          9 │ + → it("adopts·only·the·scheduling·page·heading,·preserving·its·descendants·and·settings",·()·=>·{
+         10 │ + → → expect(appPageOwnsHeading("/de/scheduling")).toBe(true);
+         11 │ + → → expect(appPageOwnsHeading("/en/scheduling/detail")).toBe(false);
+         12 │ + → → expect(appPageOwnsHeading("/en/settings/shifts")).toBe(false);
+         13 │ + → });
+         14 │ + → it("adopts·payroll,·the·work-balance·directory·and·selected·balance·without·deeper·descendants",·()·=>·{
+         15 │ + → → expect(appPageOwnsHeading("/de/payroll")).toBe(true);
+         16 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances")).toBe(true);
+         17 │ + → → expect(appPageOwnsHeading("/en/payroll/work-balances/employee-1")).toBe(
+         18 │ + → → → true,
+         19 │ + → → );
+         20 │ + → → expect(
+         21 │ + → → → appPageOwnsHeading("/en/payroll/work-balances/employee-1/other"),
+         22 │ + → → ).toBe(false);
+         23 │ + → });
+  143 more lines truncated
+  
+
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+      1     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";␍
+      2     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+      3     │ - ␍
+      4     │ - export·type·AppRouteMetadata·=·{␍
+      5     │ - → id:·string;␍
+      6     │ - → href:·string;␍
+      7     │ - → titleKey:·string;␍
+      8     │ - → titleDefault:·string;␍
+      9     │ - };␍
+     10     │ - ␍
+     11     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[␍
+     12     │ - → {␍
+     13     │ - → → id:·"dashboard",␍
+     14     │ - → → href:·"/",␍
+     15     │ - → → titleKey:·"nav.dashboard",␍
+     16     │ - → → titleDefault:·"Dashboard",␍
+     17     │ - → },␍
+     18     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},␍
+     19     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment␍
+     20     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.␍
+     21     │ - → {␍
+     22     │ - → → id:·"equipment",␍
+     23     │ - → → href:·"/equipment",␍
+     24     │ - → → titleKey:·"nav.equipment",␍
+     25     │ - → → titleDefault:·"Equipment",␍
+     26     │ - → },␍
+     27     │ - → {␍
+     28     │ - → → id:·"my-equipment",␍
+     29     │ - → → href:·"/my-equipment",␍
+     30     │ - → → titleKey:·"nav.my-equipment",␍
+     31     │ - → → titleDefault:·"My·equipment",␍
+     32     │ - → },␍
+     33     │ - → {␍
+     34     │ - → → id:·"notifications",␍
+     35     │ - → → href:·"/notifications",␍
+     36     │ - → → titleKey:·"notifications.title",␍
+     37     │ - → → titleDefault:·"Notifications",␍
+     38     │ - → },␍
+     39     │ - → {␍
+     40     │ - → → id:·"calendar",␍
+     41     │ - → → href:·"/calendar",␍
+     42     │ - → → titleKey:·"nav.calendar",␍
+     43     │ - → → titleDefault:·"Calendar",␍
+     44     │ - → },␍
+     45     │ - → {␍
+     46     │ - → → id:·"time-tracking",␍
+     47     │ - → → href:·"/time-tracking",␍
+     48     │ - → → titleKey:·"nav.time-tracking",␍
+     49     │ - → → titleDefault:·"Time·Tracking",␍
+     50     │ - → },␍
+     51     │ - → {␍
+     52     │ - → → id:·"my-requests",␍
+     53     │ - → → href:·"/my-requests",␍
+     54     │ - → → titleKey:·"nav.my-requests",␍
+     55     │ - → → titleDefault:·"My·Requests",␍
+     56     │ - → },␍
+     57     │ - → {␍
+     58     │ - → → id:·"org-explorer",␍
+     59     │ - → → href:·"/organization",␍
+     60     │ - → → titleKey:·"nav.org-explorer",␍
+     61     │ - → → titleDefault:·"Org·Explorer",␍
+     62     │ - → },␍
+     63     │ - → {␍
+     64     │ - → → id:·"absences",␍
+     65     │ - → → href:·"/absences",␍
+     66     │ - → → titleKey:·"nav.absences",␍
+     67     │ - → → titleDefault:·"Absences",␍
+     68     │ - → },␍
+     69     │ - → {␍
+     70     │ - → → id:·"travel-expenses",␍
+     71     │ - → → href:·"/travel-expenses",␍
+     72     │ - → → titleKey:·"nav.travel-expenses",␍
+     73     │ - → → titleDefault:·"Travel·Expenses",␍
+     74     │ - → },␍
+     75     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this␍
+     76     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.␍
+     77     │ - → {␍
+     78     │ - → → id:·"driving-licence",␍
+     79     │ - → → href:·"/driving-licence",␍
+     80     │ - → → titleKey:·"drivingLicence.myTitle",␍
+     81     │ - → → titleDefault:·"My·driving·authorization",␍
+     82     │ - → },␍
+     83     │ - → {␍
+     84     │ - → → id:·"reports-projects",␍
+     85     │ - → → href:·"/reports/projects",␍
+     86     │ - → → titleKey:·"reports.projects.title",␍
+     87     │ - → → titleDefault:·"Project·Reports",␍
+     88     │ - → },␍
+     89     │ - → {␍
+     90     │ - → → id:·"reports-vehicles",␍
+     91     │ - → → href:·"/reports/vehicles",␍
+     92     │ - → → titleKey:·"reports.vehicles.title",␍
+     93     │ - → → titleDefault:·"Distance·per·Vehicle",␍
+     94     │ - → },␍
+     95     │ - → {␍
+     96     │ - → → id:·"reports",␍
+     97     │ - → → href:·"/reports",␍
+     98     │ - → → titleKey:·"nav.reports",␍
+     99     │ - → → titleDefault:·"Reports",␍
+    100     │ - → },␍
+    101     │ - → {␍
+    102     │ - → → id:·"team-absences",␍
+    103     │ - → → href:·"/team/absences",␍
+    104     │ - → → titleKey:·"nav.teamAbsences",␍
+    105     │ - → → titleDefault:·"Team·Absences",␍
+    106     │ - → },␍
+    107     │ - → {␍
+    108     │ - → → id:·"team-presence",␍
+    109     │ - → → href:·"/team/presence",␍
+    110     │ - → → titleKey:·"nav.teamPresence",␍
+    111     │ - → → titleDefault:·"Who·Is·In",␍
+    112     │ - → },␍
+    113     │ - → {␍
+    114     │ - → → id:·"team-period-submissions",␍
+    115     │ - → → href:·"/team/period-submissions",␍
+    116     │ - → → titleKey:·"nav.teamPeriodSubmissions",␍
+    117     │ - → → titleDefault:·"Period·Submissions",␍
+    118     │ - → },␍
+    119     │ - → {␍
+    120     │ - → → id:·"team-driving",␍
+    121     │ - → → href:·"/team/driving",␍
+    122     │ - → → titleKey:·"nav.teamDriving",␍
+    123     │ - → → titleDefault:·"Driving·Details",␍
+    124     │ - → },␍
+    125     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},␍
+    126     │ - → {␍
+    127     │ - → → id:·"approvals",␍
+    128     │ - → → href:·"/approvals",␍
+    129     │ - → → titleKey:·"nav.approvals",␍
+    130     │ - → → titleDefault:·"Approvals",␍
+    131     │ - → },␍
+    132     │ - → {␍
+    133     │ - → → id:·"analytics",␍
+    134     │ - → → href:·"/analytics",␍
+    135     │ - → → titleKey:·"nav.analytics",␍
+    136     │ - → → titleDefault:·"Analytics",␍
+    137     │ - → },␍
+    138     │ - → {␍
+    139     │ - → → id:·"payroll",␍
+    140     │ - → → href:·"/payroll",␍
+    141     │ - → → titleKey:·"nav.payroll",␍
+    142     │ - → → titleDefault:·"Payroll",␍
+    143     │ - → },␍
+    144     │ - → {␍
+    145     │ - → → id:·"scheduling",␍
+    146     │ - → → href:·"/scheduling",␍
+    147     │ - → → titleKey:·"nav.scheduling",␍
+    148     │ - → → titleDefault:·"Scheduling",␍
+    149     │ - → },␍
+    150     │ - → {␍
+  362 more lines truncated
+  
+
+Checked 17 files in 12ms. No fixes applied.
+Found 17 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

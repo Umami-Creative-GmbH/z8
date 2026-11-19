@@ -1,0 +1,33 @@
+{
+  "kind": "explicit-safe-public-allowlist",
+  "includes": [
+    "HANDOFF.md",
+    "public-recovery.test.tsx",
+    "public-recovery-02.test.tsx",
+    "public-result-01.json",
+    "public-result-02.json",
+    "public-command-01.json",
+    "public-command-02.json",
+    "roster-refusal-observation-01.json",
+    "roster-rejection-observation-01.json",
+    "roster-refusal-observation-02.json",
+    "roster-rejection-observation-02.json",
+    "roster-refusal-positive-control-02.json",
+    "roster-rejection-positive-control-02.json",
+    "test-multiset.json",
+    "preservation.json",
+    "bridge-manifest-01.json",
+    "bridge-manifest-02.json",
+    "post-seal-verification.json"
+  ],
+  "excluded": [
+    "raw Vitest results and logs",
+    "raw native-executable command diagnostics",
+    "drivers containing local executable paths",
+    "seal driver"
+  ],
+  "screenshots": 0,
+  "exports": 0,
+  "previousAllowlist": "safe-public-allowlist.json",
+  "final": true
+}

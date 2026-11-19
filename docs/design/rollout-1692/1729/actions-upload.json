@@ -1,0 +1,9 @@
+{
+  "stage": "upload",
+  "checks": [
+    "Actual category deep link limits records; one main h1."
+  ],
+  "errors": [],
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675",
+  "failure": "Waiting failed: 40000ms exceeded"
+}

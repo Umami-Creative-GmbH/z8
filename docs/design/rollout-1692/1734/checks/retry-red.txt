@@ -1,0 +1,245 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-9b0f468b-151f714db384cc36/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/sick-leave-overview.test.tsx (6 tests | 1 failed) 293ms
+   ❯ SickLeaveOverview (6)
+     × keeps a failed panel read distinct from an absence with no note 188ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/sick-leave-overview.test.tsx > SickLeaveOverview > keeps a failed panel read distinct from an absence with no note
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Retry"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Sick notes":
+  <h2
+    class="text-foreground break-words text-lg font-semibold leading-snug"
+    data-slot="action-panel-title"
+    id="base-ui-_r_17_"
+  />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p
+    class="text-sm text-muted-foreground"
+    data-slot="action-panel-description"
+    id="base-ui-_r_18_"
+  />
+
+  --------------------------------------------------alert:
+
+  Name "":
+  <p
+    class="text-sm text-destructive"
+    role="alert"
+  />
+
+  --------------------------------------------------button:
+
+  Name "Close":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+
+  Name "Link sick note":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+
+  Name "Attach sick note":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+
+  --------------------------------------------------button:
+
+  Name "Close":
+  <button
+    class="pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] absolute top-[calc(1rem+var(--sheet-inset-top,0px))] right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[open]:bg-secondary"
+    tabindex="0"
+    type="button"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<div
+  aria-describedby="base-ui-_r_18_"
+  aria-labelledby="base-ui-_r_17_"
+  class="fixed z-50 flex flex-col bg-muted shadow-lg transition-transform duration-200 ease-in-out data-[sheet-open=true]:duration-300 data-[sheet-open=true]:ease-out data-[sheet-side=bottom]:data-[sheet-open=true]:animate-sheet-enter-bottom data-[sheet-side=left]:data-[sheet-open=true]:animate-sheet-enter-left data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right data-[sheet-side=top]:data-[sheet-open=true]:animate-sheet-enter-top motion-reduce:animate-none motion-reduce:transition-none [&_[data-slot=tabs-list]]:bg-border/40 inset-y-0 right-0 h-full translate-x-full border-l data-[sheet-open=true]:translate-x-0 [--sheet-inset-top:env(safe-area-inset-top)] [--sheet-inset-bottom:env(safe-area-inset-bottom)] w-[calc(100vw-0.75rem)] gap-0 overflow-hidden p-0 sm:w-3/4 sm:max-w-xl"
+  data-base-ui-focusable=""
+  data-open=""
+  data-sheet-open="true"
+  data-sheet-side="right"
+  data-slot="action-panel-content"
+  id="_r_u_"
+  role="dialog"
+  style="--nested-dialogs: 0;"
+  tabindex="-1"
+>
+  <div
+    class="mt-[var(--sheet-inset-top,0px)] flex flex-col gap-1.5 p-4 min-w-0 shrink-0 border-b px-6 py-5 pr-12 text-left"
+    data-slot="action-panel-header"
+  >
+    <h2
+      class="text-foreground break-words text-lg font-semibold leading-snug"
+      data-slot="action-panel-title"
+      id="base-ui-_r_17_"
+    >
+      Sick notes
+    </h2>
+    <p
+      class="text-sm text-muted-foreground"
+      data-slot="action-panel-description"
+      id="base-ui-_r_18_"
+    >
+      Sick notes for the absence {dateRange}.
+    </p>
+  </div>
+  <div
+    class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-4"
+    data-slot="action-panel-body"
+  >
+    <p
+      class="text-sm text-destructive"
+      role="alert"
+    >
+      The sick notes could not be loaded.
+    </p>
+  </div>
+  <div
+    class="mb-[var(--sheet-inset-bottom,0px)] flex gap-2 p-4 mt-0 shrink-0 flex-col-reverse border-t px-4 py-4 sm:flex-row sm:flex-wrap sm:justify-end sm:px-6 *:w-full sm:*:w-auto"
+    data-slot="action-panel-footer"
+  >
+    <button
+      class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+      data-slot="button"
+      type="button"
+    >
+      Close
+    </button>
+    <button
+      class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+      data-slot="button"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        class="tabler-icon tabler-icon-link size-4"
+        fill="none"
+        height="24"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M9 15l6 -6"
+        />
+        <path
+          d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"
+        />
+        <path
+          d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"
+        />
+      </svg>
+      Link sick note
+    </button>
+    <button
+      class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+      data-slot="button"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        class="tabler-icon tabler-icon-paperclip size-4"
+        fill="none"
+        height="24"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5"
+        />
+      </svg>
+      Attach sick note
+    </button>
+  </div>
+  <button
+    class="pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] absolute top-[calc(1rem+var(--sheet-inset-top,0px))] right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[open]:bg-secondary"
+    tabindex="0"
+    type="button"
+  >
+    <svg
+      class="tabler-icon tabler-icon-x size-4"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 6l-12 12"
+      />
+      <path
+        d="M6 6l12 12"
+      />
+    </svg>
+    <span
+      class="sr-only"
+    >
+      Close
+    </span>
+  </button>
+</div>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/personnel-file/sick-leave-overview.test.tsx:106:34
+    104|   expect((await within(dialog).findByRole("alert")).textContent).toBe(…
+    105|   expect(within(dialog).queryByText("No sick notes you can open.")).to…
+    106|   fireEvent.click(within(dialog).getByRole("button", { name: "Retry" }…
+       |                                  ^
+    107|   expect(await within(dialog).findByText("No sick notes you can open."…
+    108|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  20:45:56
+   Duration  8.51s (import 66%, transform 17%, environment 13%, tests 3%, setup 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-9b0f468b-
+  │ 151f714db384cc36\apps\webapp
+

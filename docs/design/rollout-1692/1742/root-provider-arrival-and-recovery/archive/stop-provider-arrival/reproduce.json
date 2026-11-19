@@ -1,0 +1,17 @@
+{
+  "checkout": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6",
+  "candidate": "39c2bdddadd820df9fffdc7633692f798a46a188",
+  "temporaryBridge": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+  "recipe": [
+    "Verify temporaryBridge does not exist.",
+    "Copy minimal-arrival.test.tsx into temporaryBridge in OWN stopped candidate checkout; record its SHA256.",
+    "Run command from repository root, using normal escalation for the same command if engine-store lock denies sandbox access.",
+    "Expect two positive controls passed and one blocker failed.",
+    "Remove only temporaryBridge after checking its SHA256 still equals the recorded copy."
+  ],
+  "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit --maxWorkers 1 --bail 1 'src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx' --reporter=json --outputFile=../../.tmp/1742-isolated-merger-checks/recheck.json",
+  "lastExecutedResult": "minimal-header-confirmed.json",
+  "guardedPinnedPnpm": true,
+  "noRuntimeServices": true,
+  "bridgeRemovedAndHashGuarded": true
+}

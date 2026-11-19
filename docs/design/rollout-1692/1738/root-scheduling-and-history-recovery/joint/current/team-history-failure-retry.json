@@ -1,0 +1,11 @@
+{
+  "pending": {
+    "loading": true,
+    "retryVisible": false
+  },
+  "firstHeld": 1,
+  "secondPointerAdds": 0,
+  "sameDialogRecovered": true,
+  "canonicalResult": "empty",
+  "abortedHTTPAttempts": 5
+}

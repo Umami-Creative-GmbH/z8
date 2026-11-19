@@ -1,0 +1,20 @@
+{
+  "command": [
+    "pnpm",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "src/lib/auth/organization-joining.integration.test.ts",
+    "src/lib/work-balance/tracking-start.integration.test.ts",
+    "src/lib/employee-lifecycle/joining/joining.integration.test.ts",
+    "--maxWorkers=2",
+    "--reporter=json",
+    "--outputFile=../../docs/design/rollout-1692/1832/postgres.json"
+  ],
+  "exitCode": 0,
+  "fixture": "owned generated loopback disposable DB; billing/telemetry/cron disabled"
+}

@@ -1,0 +1,53 @@
+{
+  "result": "BOUNDED PASS",
+  "criticalFindings": [],
+  "verifiedCommit": null,
+  "readOnlyReview": true,
+  "sourceFixes": false,
+  "live": {
+    "normalDevelopment": true,
+    "normalSignInAndInit": true,
+    "authStateCopiedSavedMinted": false,
+    "adminAllRows": 8,
+    "managerManagedRows": 3,
+    "restrictedRedirect": "/en",
+    "off": {
+      "observedBeforeCadenceFixture": true,
+      "allScopeSettingsGuidance": true
+    },
+    "readFailureRetryHeaderRefresh": "PASS",
+    "periodPickerCalendarInbox": "PASS",
+    "layouts": "1600x1000 light, 2400x1200 dark18 collapsed, 390x844 dark18",
+    "phoneMainAxe": "0 violations, 0 incomplete",
+    "nativeExactCurrentTarget": "PASS",
+    "nextCompilationConfigSessionErrors": "all empty"
+  },
+  "fixture": {
+    "canonicalDisposable": true,
+    "canonicalMigrationsAndSeeder": true,
+    "historicalCadence": "Canonical savePeriodSubmissionSettings with explicit 2026-10-01 fixture clock, checked existing approved fixture admin; no authority mutation",
+    "liveStatuses": "awaiting; all five statuses/frozen employee date additionally passed assembled real provider route"
+  },
+  "historical": "Worker evidence remains partial-consumer historical evidence pinned before correction. No matched historical pair, regression classification, atomic revocation or live exploit claim from this run.",
+  "unpassed": [
+    "Final whole157-node branch review",
+    "Live owner/admin without employee (public provider and inherited canonical PG pass; standard fixture has employee actors)",
+    "Exhaustive live actor/org/employee/role revocation/ABA/Activity matrix (bounded public actual-provider probes pass)",
+    "All five live workflow outcomes (assembled provider route passed all five)",
+    "Physical devices/store wrapper and true browser zoom",
+    "Long translated-locale journeys and remote Tolgee synchronization",
+    "External provider/service journeys",
+    "Full production static generation and whole application build",
+    "Two shared metadata formatter findings remain"
+  ],
+  "attemptQualifications": [
+    "Initial store-lock denial followed by approved same-command install/test",
+    "Native sandbox daemon mismatch required reconnect of own session; no shared/default browser touched",
+    "Initial sign-in input raced hydration; retained-field and hydration-controlled normal sign-in passed",
+    "Combined pointer picker attempts timed out/could not reach an offscreen option; current native explicit option passed",
+    "Pillow unavailable; System.Drawing LockBits decoded every full PNG buffer instead",
+    "One own Next diagnostic script syntax error corrected before successful runtime query",
+    "Cleanup date parser emitted nonterminating culture errors; earlier exact pre-stop readback and independent recorded timestamp recheck confirm only the owned tree was stopped"
+  ],
+  "limitedOwnershipReleased": true
+}

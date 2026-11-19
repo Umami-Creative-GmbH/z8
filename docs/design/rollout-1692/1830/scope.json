@@ -1,0 +1,40 @@
+{
+  "source": {
+    "head": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+    "profileSha256": "eda75d845dc261483d578d164db84cc97030e24e7ca47d82006dc5b4bddb9a40"
+  },
+  "checks": [
+    {
+      "scope": "organization",
+      "action": "save",
+      "actualResponseHeld": true,
+      "roundTrip": true,
+      "noObsoleteNavigation": true,
+      "draft": "retained for same account"
+    },
+    {
+      "scope": "organization",
+      "action": "skip",
+      "actualResponseHeld": true,
+      "roundTrip": true,
+      "noObsoleteNavigation": true,
+      "draft": "retained for same account"
+    },
+    {
+      "scope": "account",
+      "action": "save",
+      "actualResponseHeld": true,
+      "roundTrip": true,
+      "noObsoleteNavigation": true,
+      "draft": "cleared across accounts"
+    },
+    {
+      "scope": "account",
+      "action": "skip",
+      "actualResponseHeld": true,
+      "roundTrip": true,
+      "noObsoleteNavigation": true,
+      "draft": "cleared across accounts"
+    }
+  ]
+}

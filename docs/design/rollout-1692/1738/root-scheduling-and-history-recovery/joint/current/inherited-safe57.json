@@ -1,0 +1,13 @@
+{
+  "source": "X:/t3-code/worktrees/z8/t3-31887db0-778bd1ebf3b5c998/.tmp/1738-isolated-comparison-v2-checks",
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "indexSha256": "096bc040ebbee1647ac9c55445a14835537c1c2c92539b628480e6dc780311cc",
+  "payloads": 57,
+  "json": 46,
+  "png": 8,
+  "sealSha256": "f2c1bb6305c3ec9a140ca7c727db2e95e52f499ecc4374b15a58ea0186e2ddcb",
+  "intakeSha256": "6393b89850c2aaf1a93071d574284f3d457056f37cc41a01c34d78a9062ec8de",
+  "allHashesVerified": true,
+  "noPrivateReferencesOpened": true,
+  "qualification": "Two Week pairs, qualified same-Day detail and historical-Day/current-Week phone; nine reported readbacks/seven public. Prior stale edit was automatically rejected; one clarified attempt timed out then restored/read back 6; not definitive stale response code. Original native/roles/publication remain inherited."
+}

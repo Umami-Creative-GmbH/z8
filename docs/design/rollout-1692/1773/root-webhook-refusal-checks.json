@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "issue": 1773,
+  "verifiedCommit": null,
+  "readiness": null,
+  "implementation": "06b93b7ea0e0705054d293023765a7839f75b2c3",
+  "reviewCandidate": "566971bb4f252ed7ed9a96c7533de1ac0d12f8ac",
+  "rootBefore": "8e96afdb4a4bd44412f83a3d692989e39db84329",
+  "provisionalImport": "e030c8b9a58cb27782ade452e7a7e89fc997d593",
+  "correctionCommit": "8f8b38b211b3087de20b6b04c80275c4a50b0db1",
+  "integrationCommit": "9bee6b1035b50c7d01b932292d4e91606f4c65ee",
+  "tree": "637e0cc578e4f93fb8cc8f149feeaf318d4924eb",
+  "appTree": "5e222347b2809b231d85368e67dceb994922c3aa",
+  "finding": {
+    "classification": "Incoming cache-composition refusal race with inherited retained-controller lifetime limitation; no equivalent historical public-refusal contract or live authorization-bypass claim",
+    "before": {
+      "physicalFiles": 1,
+      "cases": 3,
+      "passed": 2,
+      "failed": 1,
+      "reproSHA256": "a224cb5b617f7952577124ed9bfe1bbb7f6fe6fc3616935d87172738172ed69f"
+    },
+    "symptom": "A late create success converted an authoritative refused webhook snapshot to success and revealed the synthetic signing value."
+  },
+  "correction": [
+    "Cache completion updates only a still-successful local snapshot; refused or absent snapshots are unchanged.",
+    "The create form receives read availability. Refusal or Activity cleanup retires queued/dispatched operation effects and clears the one-time signing value without resetting the nonsecret draft.",
+    "TanStack submission carries the exact activation. An unsettled dispatched command keeps its duplicate lock until settlement; this is UI suppression, not command cancellation or server idempotency.",
+    "A rejected local cache completion suppresses signing-value reveal, close, toast and refresh; normal current completion and transient read-transport recovery remain supported."
+  ],
+  "fresh": {
+    "focused": {
+      "cases": 104,
+      "physicalFiles": 9,
+      "passed": 104,
+      "failed": 0,
+      "publicProviderCases": 10,
+      "compatibilityCases": 94
+    },
+    "finalPublicRerun": {
+      "cases": 10,
+      "physicalFiles": 1,
+      "passed": 10,
+      "additive": false
+    },
+    "typegen": "passed",
+    "typescriptProjects": [
+      "tsconfig.typecheck.json",
+      "tsconfig.workflow-contracts.json",
+      "tsconfig.smoke.json"
+    ],
+    "types": "passed; final follow-up changes only move the test clock out of render",
+    "biome": {
+      "ownedFiles": 4,
+      "explicit100ColumnCRLF": "passed",
+      "lintImport": "passed",
+      "ordinaryProfile": "unpassed: four errors and nine warnings"
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "e030c8b9a58cb27782ade452e7a7e89fc997d593",
+      "analyzedFiles": 4,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true,
+      "score": null
+    }
+  },
+  "inherited": {
+    "worker": {
+      "unitCases": 553,
+      "unitFiles": 16,
+      "postgresCases": 100,
+      "postgresFiles": 5,
+      "addedToFreshCounts": false
+    },
+    "noFreshPostgres": true,
+    "noFreshBrowser": true,
+    "noFreshNext": true,
+    "noFreshNative": true
+  },
+  "artifactIntake": {
+    "deltaPaths": 39,
+    "applicationPaths": 24,
+    "documentationEvidencePaths": 15,
+    "manifestEntries": 38,
+    "manifestExcludesItself": true,
+    "normalizedWorkerHashMatches": 38,
+    "candidateMismatch": "Only route-metadata.ts for preserved root heading union; root correction deliberately supersedes three webhook source pins.",
+    "jsonParsed": 12,
+    "localLinksResolved": 14,
+    "png": {
+      "count": 1,
+      "width": 800,
+      "height": 600,
+      "fullyDecoded": true,
+      "meaning": "Unfilled public sign-in diagnostic only; no authenticated R096 or matched capture acceptance."
+    },
+    "verifier": "Syntax checked only; source-specific worker verifier was not executed against the root union.",
+    "auditSHA256": "b965f149fd14e94d0257f619690175f1a82ec456da2c63ff41a3826cd25a1746"
+  },
+  "preservation": {
+    "importExpectedTree": "371a50fdd5449812f7bb9b0c20b09b5563237570",
+    "importExpectedAppTree": "82035c8040721624c76f2823021997475289ff34",
+    "importManualOverlap": [
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "headingComposition": "API-key exact predicate and existing employee exact predicate retained; no descendant adoption",
+    "verifiedTicketAnchors": 63,
+    "baselinePreserved": true,
+    "unaffectedPriorEntries": 18167,
+    "unexpectedPriorChanges": 0,
+    "lockSHA256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "canonicalAuthorityCredentialDeliveryOwnersChanged": false
+  },
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/webhooks/webhooks-page-client.tsx",
+      "gitBlob": "23e82f12aca257f1fc7317258e3ee57118f00cd3",
+      "sha256": "7c0a97e423060126ce94d5264d4bddfbab10af80dce01a1b7bb2fc84db7be563"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhook-form-controller.ts",
+      "gitBlob": "17052b0118afb7fbe9c883add15cbe5b6d8c3de0",
+      "sha256": "69b473ac6ea43d4572ec51cead1d7f9c681571b70010a42e02c092fbb371e904"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhook-form-body.tsx",
+      "gitBlob": "b2cbcdfe82d9749e81b68140cb7c06c82633c61a",
+      "sha256": "e3e9a0b06dd67292cf05d770710c3e3a2190462f2aa5973e16792e2733f2fade"
+    },
+    {
+      "path": "apps/webapp/src/components/webhooks/webhooks-refusal.test.tsx",
+      "gitBlob": "d9fe137c352138eb9426f6e50a0d4de24dbcc929",
+      "sha256": "314a93cbe8346a0638c7ae26418d6131f92a21de924a15f195c83a2762a16657"
+    }
+  ],
+  "failedAttempts": [
+    "Pinned pnpm initially refused sandbox engine-store lock; identical command succeeded under normal escalation.",
+    "First metadata predictor assumed a different insertion location; exact-byte guard rejected it before writing, then the actual share-links anchor composed both parent predicates.",
+    "Expanded test harness first attempted the intentionally hidden header during a modal and used unavailable jest-dom assertions. Corrected to real QueryClient background invalidation and installed Chai assertions.",
+    "Already-revealed-secret assertion initially preceded the Query observer commit; corrected to await the public dialog transition.",
+    "Initial Doctor scan found Date.now during test render; moved that clock capture to beforeEach and reran the ten public cases and Doctor."
+  ],
+  "limitations": [
+    "Fresh independent review of this root correction pending.",
+    "Authenticated API-key/webhook creation, one-time reveal/copy, real owner refusals and delivery remain unpassed; R155 owns isolated sign-in verification work.",
+    "No live revocation, simultaneous server authorization, cancellation, idempotency, provider/clipboard or cross-account/browser race claim follows from synthetic transports.",
+    "Full production generation, catalog synchronization, providers, physical devices, true zoom and exhaustive global transitions remain unpassed.",
+    "The worker archive and its historical hashes are preserved; source-specific historical pins do not assert current-source identity."
+  ],
+  "commands": {
+    "focused": "pnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit --maxWorkers 1 src/components/webhooks/webhooks-refusal.test.tsx src/components/webhooks/webhook-form-dialog.test.tsx src/components/webhooks/webhook-lifetime.test.tsx src/components/webhooks/webhook-endpoint-card.test.tsx src/components/enterprise/api-key-lifetime.test.tsx src/components/enterprise/api-key-page-client.test.tsx 'src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx' 'src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx' src/lib/navigation/route-metadata.test.ts",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "doctor": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base e030c8b9a58cb27782ade452e7a7e89fc997d593 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json",
+    "environment": "pnpm_config_verify_deps_before_run=false on every call; installed pinned pnpm; REACT_DOCTOR_PARALLEL=1 for Doctor"
+  },
+  "resources": "Root started no Next/browser/fixture services. All root foreground checks exited. R155 has the separate exclusive runtime allocation."
+}

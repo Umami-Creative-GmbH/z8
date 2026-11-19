@@ -1,0 +1,183 @@
+{
+  "at": "2026-11-16T00:33:42.9375755Z",
+  "origin": "http://localhost:64038",
+  "manifestPid": 108236,
+  "listenerPid": 91992,
+  "verifiedProcesses": [
+    {
+      "ProcessId": 108236,
+      "ParentProcessId": 97896,
+      "CreationDate": "2026-11-16T01:00:28.547298+01:00"
+    },
+    {
+      "ProcessId": 91992,
+      "ParentProcessId": 108236,
+      "CreationDate": "2026-11-16T01:00:28.68536+01:00"
+    },
+    {
+      "ProcessId": 108572,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:01:10.320207+01:00"
+    },
+    {
+      "ProcessId": 43992,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:01:10.47746+01:00"
+    },
+    {
+      "ProcessId": 7316,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:49.862285+01:00"
+    },
+    {
+      "ProcessId": 106612,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:49.872451+01:00"
+    },
+    {
+      "ProcessId": 98928,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.249452+01:00"
+    },
+    {
+      "ProcessId": 19232,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.579765+01:00"
+    },
+    {
+      "ProcessId": 98924,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.592621+01:00"
+    },
+    {
+      "ProcessId": 99000,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.674513+01:00"
+    },
+    {
+      "ProcessId": 47660,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.703281+01:00"
+    },
+    {
+      "ProcessId": 75716,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.746383+01:00"
+    },
+    {
+      "ProcessId": 40848,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.759886+01:00"
+    },
+    {
+      "ProcessId": 99888,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.773023+01:00"
+    },
+    {
+      "ProcessId": 103700,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.788926+01:00"
+    },
+    {
+      "ProcessId": 10532,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.80394+01:00"
+    },
+    {
+      "ProcessId": 95780,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.817119+01:00"
+    },
+    {
+      "ProcessId": 93272,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.844824+01:00"
+    },
+    {
+      "ProcessId": 96616,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.858536+01:00"
+    },
+    {
+      "ProcessId": 93068,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.873221+01:00"
+    },
+    {
+      "ProcessId": 102624,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.887115+01:00"
+    },
+    {
+      "ProcessId": 19600,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.899787+01:00"
+    },
+    {
+      "ProcessId": 96844,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.913056+01:00"
+    },
+    {
+      "ProcessId": 19788,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.935815+01:00"
+    },
+    {
+      "ProcessId": 110772,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:50.975689+01:00"
+    },
+    {
+      "ProcessId": 94916,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:51.077948+01:00"
+    },
+    {
+      "ProcessId": 27304,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:51.094205+01:00"
+    },
+    {
+      "ProcessId": 45984,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:51.160097+01:00"
+    },
+    {
+      "ProcessId": 50792,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:51.220446+01:00"
+    },
+    {
+      "ProcessId": 2280,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:51.347852+01:00"
+    },
+    {
+      "ProcessId": 110296,
+      "ParentProcessId": 91992,
+      "CreationDate": "2026-11-16T01:13:51.49048+01:00"
+    }
+  ],
+  "ports": [
+    64038,
+    64034,
+    64035,
+    64036
+  ],
+  "browserPid": 35048,
+  "browserDaemonPid": 102728,
+  "browserCreation": "2026-11-16T01:01:08.847266+01:00",
+  "services": [
+    "z8_perf_8b607152b05e_postgres",
+    "z8_perf_8b607152b05e_redis",
+    "z8_perf_8b607152b05e_storage"
+  ],
+  "manifestPathCreationListenerVerified": true,
+  "portsClosed": true,
+  "ownedProcessesClosed": true,
+  "browserClosedWithoutRestoreOrSave": true,
+  "servicesRemoved": 3,
+  "privateManifestsPreserved": true
+}

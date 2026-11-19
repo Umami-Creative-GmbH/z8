@@ -35,7 +35,6 @@
         "previousWeekDesc": "Exportar dados da semana anterior (seg-dom)"
       },
       "deleteDialog": {
-        "cancel": "Cancelar",
         "confirm": "Excluir",
         "description": "Tem certeza de que deseja excluir \"{name}\"? Esta ação não pode ser desfeita.",
         "title": "Excluir exportação agendada"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Falha ao excluir",
         "loadFailed": "Falha ao carregar exportações agendadas",
-        "toggleFailed": "Falha ao alternar"
+        "retry": "Tentar novamente"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "O proprietário do agendamento, {owner}, não é mais um administrador da organização. Defina você mesmo ou outro administrador da organização como proprietário primeiro."
       },
       "filters": {
         "allEmployees": "Todos os funcionários",
@@ -284,8 +286,9 @@
         "paused": "Pausado",
         "schedule": "Agendamento",
         "status": "Status",
-        "title": "Agendamentos ativos",
-        "type": "Tipo"
+        "titleAll": "Agendamentos",
+        "type": "Tipo",
+        "unknownOwner": "Proprietário desconhecido"
       },
       "title": "Exportações agendadas",
       "toast": {

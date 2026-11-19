@@ -158,4 +158,86 @@ describe("ShiftTemplateManagement", () => {
 			});
 		});
 	});
+
+	it("blocks the submit with an inline error while a time is not HH:mm", async () => {
+		renderManagement();
+
+		await screen.findByText("No templates yet");
+		fireEvent.click(screen.getByRole("button", { name: "Add Template" }));
+
+		const startTime = screen.getByLabelText("Start Time");
+		fireEvent.change(startTime, { target: { value: "" } });
+
+		expect(
+			await screen.findByText("Enter a time in 24-hour HH:mm format."),
+		).toBeTruthy();
+		expect(startTime.getAttribute("aria-invalid")).toBe("true");
+		const createButton = screen.getByRole("button", { name: "Create" });
+		expect((createButton as HTMLButtonElement).disabled).toBe(true);
+		fireEvent.click(createButton);
+		expect(mocks.createShiftTemplate).not.toHaveBeenCalled();
+
+		fireEvent.change(startTime, { target: { value: "07:00" } });
+		await waitFor(() => {
+			expect(
+				screen.queryByText("Enter a time in 24-hour HH:mm format."),
+			).toBeNull();
+		});
+		expect(
+			(screen.getByRole("button", { name: "Create" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(false);
+	});
+
+	it("accepts an overnight template, as the server does", async () => {
+		renderManagement();
+
+		await screen.findByText("No templates yet");
+		fireEvent.click(screen.getByRole("button", { name: "Add Template" }));
+
+		fireEvent.change(screen.getByLabelText("Name"), {
+			target: { value: "Night shift" },
+		});
+		fireEvent.change(screen.getByLabelText("Start Time"), {
+			target: { value: "22:00" },
+		});
+		fireEvent.change(screen.getByLabelText("End Time"), {
+			target: { value: "06:00" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+		await waitFor(() => {
+			expect(mocks.createShiftTemplate).toHaveBeenCalledWith(
+				expect.objectContaining({ startTime: "22:00", endTime: "06:00" }),
+			);
+		});
+	});
+
+	it("requires a scoped manager's subarea before the template can be saved", async () => {
+		const queryClient = new QueryClient({
+			defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ShiftTemplateManagement
+					organizationId="org_123"
+					manageableSubareaIds={[]}
+					locations={[]}
+				/>
+			</QueryClientProvider>,
+		);
+
+		await screen.findByText("No templates yet");
+		fireEvent.click(screen.getByRole("button", { name: "Add Template" }));
+
+		expect(screen.queryByText("(Optional)")).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+		expect(await screen.findByText("Select one of your subareas.")).toBeTruthy();
+		expect(
+			(screen.getByRole("button", { name: "Create" }) as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
+		expect(mocks.createShiftTemplate).not.toHaveBeenCalled();
+	});
 });

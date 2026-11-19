@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { Activity, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -47,7 +47,13 @@ const baseline = {
 
 function mount(node: ReactNode) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	render(<QueryClientProvider client={client}>{node}</QueryClientProvider>);
+	const view = (mode: "hidden" | "visible") => (
+		<QueryClientProvider client={client}>
+			<Activity mode={mode}>{node}</Activity>
+		</QueryClientProvider>
+	);
+	const rendered = render(view("visible"));
+	return (mode: "hidden" | "visible") => rendered.rerender(view(mode));
 }
 
 afterEach(() => {
@@ -121,6 +127,66 @@ describe("report adjustments (#615)", () => {
 		expect(screen.getByText("Wrong rate")).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Correct with an adjustment" })).toBeNull();
 	});
+
+	it.each(["a successful read", "a failed read and Retry"] as const)(
+		"lists an adjustment created after Activity reconnect via %s without redirecting",
+		async (readOutcome) => {
+			const data = { role: "original", eligibility: { ok: true }, baseline, adjustments: [] };
+			mocks.get.mockResolvedValue({ success: true, data });
+			const command = Promise.withResolvers<unknown>();
+			mocks.create.mockReturnValue(command.promise);
+			const setVisibility = mount(<ReportAdjustmentsPanel reportId={reportId} />);
+			fireEvent.click(await screen.findByRole("button", { name: "Correct with an adjustment" }));
+			fireEvent.change(screen.getByRole("textbox"), {
+				target: { value: "Hotel refunded a night" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Create adjustment" }));
+			await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1));
+
+			setVisibility("hidden");
+			setVisibility("visible");
+			mocks.get.mockResolvedValue({
+				success: true,
+				data: {
+					...data,
+					adjustments: [
+						{
+							reportId: "adjustment-1",
+							status: "draft",
+							reason: "Hotel refunded a night",
+							createdAt: "2026-10-02T08:00:00Z",
+							delta: null,
+							currency: "EUR",
+							applied: false,
+						},
+					],
+				},
+			});
+			if (readOutcome === "a failed read and Retry") {
+				mocks.get.mockResolvedValueOnce({ success: false, error: "Temporary read failure" });
+			}
+			await act(async () =>
+				command.resolve({ success: true, data: { status: "created", reportId: "adjustment-1" } }),
+			);
+			if (readOutcome === "a failed read and Retry") {
+				const retry = await screen.findByRole("button", { name: "Retry" });
+				const create = screen.getByRole<HTMLButtonElement>("button", {
+					name: "Correct with an adjustment",
+				});
+				expect(create.disabled).toBe(true);
+				fireEvent.click(create);
+				expect(mocks.create).toHaveBeenCalledTimes(1);
+				fireEvent.click(retry);
+			}
+			expect(await screen.findByRole("link", { name: "Open adjustment" })).toHaveProperty(
+				"pathname",
+				"/travel-expenses/reports/adjustment-1",
+			);
+			expect(screen.queryByRole("dialog")).toBeNull();
+			expect(mocks.push).not.toHaveBeenCalled();
+			expect(mocks.create).toHaveBeenCalledTimes(1);
+		},
+	);
 
 	it("shows the signed difference to the approved amount before the adjustment is submitted", async () => {
 		mocks.get.mockResolvedValue({

@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Απουσία",
-      "all-caught-up": "Όλα είναι ενημερωμένα!",
-      "approved-recently": "{count} {request} εγκρίθηκαν πρόσφατα",
       "by": "από {name}",
       "description": "Τελευταία εγκεκριμένα αιτήματα",
       "description-count": "Τελευταία {count} εγκεκριμένα {request}",
@@ -123,11 +121,27 @@
       "title": "Πρόσφατα εγκεκριμένα",
       "view-all": "Προβολή όλων των εγκρίσεων"
     },
+    "refresh": {
+      "activity": "Πρόσφατη δραστηριότητα",
+      "attention": "Η σημερινή ημέρα με μια ματιά",
+      "balanceRetry": "Κάντε ανανέωση για να προσπαθήσετε να φορτώσετε ξανά το υπόλοιπο.",
+      "balanceUnavailable": "Μη διαθέσιμο υπόλοιπο",
+      "currentSession": "Τρέχουσα συνεδρία",
+      "dayUnavailable": "Το σημερινό σύνολο δεν είναι διαθέσιμο. Κάντε ανανέωση για να προσπαθήσετε ξανά.",
+      "employee": "Εργαζόμενος",
+      "greeting": "Καλή ημέρα, {name}.",
+      "noAbsences": "Δεν έχουν καταγραφεί απουσίες για σήμερα.",
+      "openTimeTracking": "Μετάβαση στην καταγραφή χρόνου",
+      "overview": "Η εργασία σας με μια ματιά",
+      "personalDay": "Η εργάσιμη ημέρα σας",
+      "status": "Κατάσταση",
+      "summary": "Σύνοψη",
+      "team": "Ομάδα",
+      "todayTarget": "Σήμερα · απαιτούνται {target}"
+    },
     "team-overview": {
       "avg-hours": "Μέσος όρος ωρών",
       "current-employees": "Τρέχοντες εργαζόμενοι",
-      "current-employees-description": "Όλοι όσοι εργάζονται εδώ τώρα",
-      "description": "Στατιστικά στοιχεία ομάδας με μια ματιά",
       "employees-button": "Υπάλληλοι",
       "per-week": "/εβδομάδα",
       "teams": "Ομάδες",
@@ -175,9 +189,6 @@
       "used": "{days} χρησιμοποιημένες"
     },
     "whos-out": {
-      "everyone-in": "Όλοι είναι στο γραφείο σήμερα",
-      "everyones-in": "Είναι όλοι εδώ!",
-      "full-team": "Όλη η ομάδα είναι διαθέσιμη!",
       "member": "μέλος",
       "members": "μέλη",
       "members-out": "{count} {member} της ομάδας απουσιάζει",

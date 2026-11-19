@@ -1,21 +1,133 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApprovalPolicyDialog } from "./approval-policy-dialog";
 import {
 	type ApprovalPolicyFormValues,
+	type ApprovalPolicyRecord,
+	approvalPolicyToEditState,
 	approvalTypeOptions,
 	buildApprovalPolicyPayload,
 	defaultApprovalPolicyFormValues,
 } from "./approval-policy-dialog-utils";
 import { ApprovalPolicyStagesField } from "./approval-policy-stages-field";
+import type { ApproverEmployeeResolution } from "./use-approver-employees";
+
+const lookup = vi.hoisted(() => ({
+	resolve: vi.fn(
+		(_employeeId: string): ApproverEmployeeResolution => ({ status: "unknown" }),
+	),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
+		t: (
+			_key: string,
+			defaultValue?: string,
+			params?: Record<string, string | number>,
+		) => {
+			let text = defaultValue ?? _key;
+			for (const [name, value] of Object.entries(params ?? {})) {
+				text = text.replace(`{${name}}`, String(value));
+			}
+			return text;
+		},
 	}),
 }));
+
+vi.mock("./use-approver-employees", () => ({
+	useApproverEmployees: () => lookup.resolve,
+}));
+
+vi.mock("@/components/employee-select/employee-select-field", () => ({
+	EmployeeSingleSelect: ({
+		label,
+		value,
+		placeholder,
+		onChange,
+	}: {
+		label: string;
+		value: string | null;
+		placeholder?: string;
+		onChange: (value: string | null) => void;
+	}) => (
+		<div>
+			<span>{label}</span>
+			<span data-testid="employee-trigger">{placeholder}</span>
+			<span data-testid="employee-value">{value ?? ""}</span>
+			<button type="button" onClick={() => onChange("employee-picked")}>
+				Pick employee
+			</button>
+		</div>
+	),
+}));
+
+const t = (
+	_key: string,
+	defaultValue?: string,
+	params?: Record<string, string | number>,
+) => {
+	let text = defaultValue ?? _key;
+	for (const [name, value] of Object.entries(params ?? {})) {
+		text = text.replace(`{${name}}`, String(value));
+	}
+	return text;
+};
+
+const storedPolicy: ApprovalPolicyRecord = {
+	id: "policy-1",
+	name: "Absence escalation",
+	description: null,
+	isActive: true,
+	priority: 20,
+	conditions: [
+		{
+			conditionType: "approval_type",
+			operator: "in",
+			valueJson: { values: ["absence", "absence_entry"] },
+			amountMin: null,
+			amountMax: null,
+		},
+		{
+			conditionType: "team",
+			operator: "equals",
+			valueJson: null,
+			amountMin: null,
+			amountMax: null,
+			teamId: "team-1",
+		},
+		{
+			conditionType: "travel_expense_amount",
+			operator: "gte",
+			valueJson: {},
+			amountMin: "500.00",
+			amountMax: null,
+		},
+	],
+	stages: [
+		{
+			id: "stage-b",
+			stepOrder: 2,
+			label: "Operations",
+			approverType: "specific_employee",
+			approverEmployeeId: "abcdef12-3456-7890",
+			fallbackBehavior: "organization_admin",
+		},
+		{
+			id: "stage-a",
+			stepOrder: 1,
+			label: "Manager",
+			approverType: "direct_manager",
+			approverEmployeeId: null,
+			fallbackBehavior: "fail",
+		},
+	],
+};
+
+beforeEach(() => {
+	lookup.resolve.mockImplementation(() => ({ status: "unknown" }));
+});
 
 describe("approval policy dialog helpers", () => {
 	it("clears a stale specific employee ID when the approver changes", () => {
@@ -252,5 +364,188 @@ describe("approval policy dialog helpers", () => {
 				],
 			}),
 		).toThrow("Specific employee stages require an approver employee ID.");
+	});
+
+	it("chooses a specific approver from the employee picker and stores the employee id", () => {
+		let renderedStages: ApprovalPolicyFormValues["stages"] = [
+			{
+				localId: "stage-1",
+				label: "Operations",
+				approverType: "specific_employee",
+				approverEmployeeId: "",
+				fallbackBehavior: "fail",
+			},
+		];
+
+		render(
+			<ApprovalPolicyStagesField
+				stages={renderedStages}
+				onChange={(stages) => {
+					renderedStages = stages;
+				}}
+				onAddStage={() => {}}
+				t={t}
+			/>,
+		);
+
+		expect(screen.queryByPlaceholderText("Example: employee_123…")).toBeNull();
+		expect(screen.getByText("Approving employee")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Pick employee" }));
+		expect(renderedStages[0]?.approverEmployeeId).toBe("employee-picked");
+	});
+
+	it("names a stored approver that no longer resolves as an unknown employee", () => {
+		render(
+			<ApprovalPolicyStagesField
+				stages={[
+					{
+						localId: "stage-1",
+						label: "Operations",
+						approverType: "specific_employee",
+						approverEmployeeId: "abcdef12-3456-7890",
+						fallbackBehavior: "fail",
+					},
+				]}
+				onChange={() => {}}
+				onAddStage={() => {}}
+				approverLookup={() => ({ status: "unknown" })}
+				t={t}
+			/>,
+		);
+
+		expect(screen.getByTestId("employee-trigger").textContent).toBe(
+			"Unknown employee (abcdef12)",
+		);
+		expect(screen.getByTestId("employee-value").textContent).toBe(
+			"abcdef12-3456-7890",
+		);
+	});
+});
+
+describe("editing a stored approval policy", () => {
+	it("loads the editable fields and keeps everything the editor cannot change", () => {
+		const state = approvalPolicyToEditState(storedPolicy);
+
+		expect(state.id).toBe("policy-1");
+		expect(state.values).toMatchObject({
+			name: "Absence escalation",
+			description: "",
+			isActive: true,
+			priority: "20",
+			approvalTypes: ["absence"],
+		});
+		expect(state.values.stages.map((stage) => stage.localId)).toEqual([
+			"stage-a",
+			"stage-b",
+		]);
+		expect(state.values.stages[1]).toMatchObject({
+			approverType: "specific_employee",
+			approverEmployeeId: "abcdef12-3456-7890",
+			fallbackBehavior: "organization_admin",
+		});
+		expect(state.legacyApprovalTypes).toEqual(["absence_entry"]);
+		expect(state.preservedConditions).toEqual([
+			{ conditionType: "team", operator: "equals", value: "team-1" },
+			{ conditionType: "travel_expense_amount", operator: "gte", amountMin: 500 },
+		]);
+
+		const payload = buildApprovalPolicyPayload(state.values, undefined, {
+			preservedConditions: state.preservedConditions,
+			legacyApprovalTypes: state.legacyApprovalTypes,
+		});
+		expect(payload.conditions).toEqual([
+			{
+				conditionType: "approval_type",
+				operator: "in",
+				values: ["absence", "absence_entry"],
+			},
+			{ conditionType: "team", operator: "equals", value: "team-1" },
+			{ conditionType: "travel_expense_amount", operator: "gte", amountMin: 500 },
+		]);
+	});
+
+	it("prefills the edit form and saves the same policy id", async () => {
+		const onSubmit = vi.fn().mockResolvedValue(undefined);
+		render(
+			<ApprovalPolicyDialog
+				open
+				onOpenChange={() => {}}
+				policy={approvalPolicyToEditState(storedPolicy)}
+				onSubmit={onSubmit}
+			/>,
+		);
+
+		expect(screen.getByText("Edit approval policy")).toBeTruthy();
+		expect(
+			(screen.getByRole("textbox", { name: /Name/ }) as HTMLInputElement).value,
+		).toBe("Absence escalation");
+		expect(screen.getByText(/that can't be changed here/)).toBeTruthy();
+		expect(screen.getByText(/older approval type/)).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Save policy" }));
+
+		await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+		expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
+			id: "policy-1",
+			name: "Absence escalation",
+			isActive: true,
+			stages: [
+				{ id: "stage-a", stepOrder: 1, approverType: "direct_manager" },
+				{
+					id: "stage-b",
+					stepOrder: 2,
+					approverType: "specific_employee",
+					approverEmployeeId: "abcdef12-3456-7890",
+				},
+			],
+		});
+		expect(onSubmit.mock.calls[0]?.[0].conditions).toHaveLength(3);
+	});
+});
+
+describe("live approval chain preview", () => {
+	it("shows the stages being drafted, with resolved approver names", () => {
+		vi.stubGlobal("crypto", { randomUUID: () => "stage-1" });
+		lookup.resolve.mockImplementation((employeeId) =>
+			employeeId === "abcdef12-3456-7890"
+				? { status: "resolved", name: "Grace Hopper" }
+				: { status: "unknown" },
+		);
+
+		try {
+			const { unmount } = render(
+				<ApprovalPolicyDialog
+					open
+					onOpenChange={() => {}}
+					onSubmit={async () => {}}
+				/>,
+			);
+			const preview = () =>
+				screen.getByRole("region", { name: "Approval chain preview" });
+
+			expect(preview().textContent).toContain(
+				"Add a stage to see the approval chain.",
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Add stage" }));
+			expect(preview().textContent).toContain("Stage 1 · Manager review");
+			expect(preview().textContent).toContain("Direct manager");
+			expect(preview().textContent).toContain(
+				"If no approver is found: Fail request",
+			);
+			unmount();
+
+			render(
+				<ApprovalPolicyDialog
+					open
+					onOpenChange={() => {}}
+					policy={approvalPolicyToEditState(storedPolicy)}
+					onSubmit={async () => {}}
+				/>,
+			);
+			expect(preview().textContent).toContain("Stage 2 · Operations");
+			expect(preview().textContent).toContain("Grace Hopper");
+		} finally {
+			vi.unstubAllGlobals();
+		}
 	});
 });

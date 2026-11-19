@@ -1,0 +1,28 @@
+{
+  "status": "released",
+  "ownership": false,
+  "owner": "1692-1747-current-runtime-v2-network",
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "scope": "Exclusive root package/runtime/process ownership for a new bounded current #1747 fixture, with normal outbound canonical verification transport permission. All tracked source/docs, Git/index, dependencies/config/license/old evidence immutable. No auth/provider/token/TLS/proxy/config changes or bypass.",
+  "rootWillNotMutateUntilReleased": true,
+  "artifactDirectory": ".tmp/1747-current-runtime-20261118b",
+  "priorLease": ".tmp/1747-current-runtime-coordination-20261118/LEASE.json",
+  "verifiedCommit": null,
+  "ownedLiveResources": 0,
+  "activatedAt": "2026-11-18T03:45:15.732Z",
+  "releasedAt": "2026-11-18T04:04:27.211Z",
+  "release": "ALL checkout/index/Git/package/runtime/process/browser/container/listener/profile operational ownership released",
+  "operationalOwnership": {
+    "checkout": false,
+    "index": false,
+    "git": false,
+    "package": false,
+    "runtime": false,
+    "process": false,
+    "browser": false,
+    "containers": false,
+    "listeners": false,
+    "profiles": false
+  }
+}

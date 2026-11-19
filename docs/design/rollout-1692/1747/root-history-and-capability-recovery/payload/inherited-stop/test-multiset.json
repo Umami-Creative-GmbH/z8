@@ -1,0 +1,80 @@
+{
+  "identities": [
+    {
+      "physicalFile": "apps/webapp/src/components/travel-expenses/r165-review-priority.test.tsx",
+      "fullName": "healthy actual-provider personal history and distinct New receipt creation",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority",
+      "owner": "candidate"
+    },
+    {
+      "physicalFile": "apps/webapp/src/components/travel-expenses/r165-review-priority.test.tsx",
+      "fullName": "healthy actual-provider personal history and distinct New mileage creation",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority",
+      "owner": "candidate"
+    },
+    {
+      "physicalFile": "apps/webapp/src/components/travel-expenses/r165-review-priority.test.tsx",
+      "fullName": "healthy actual-provider personal history and distinct New trip creation",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority",
+      "owner": "candidate"
+    },
+    {
+      "physicalFile": "apps/webapp/src/components/travel-expenses/r165-review-priority.test.tsx",
+      "fullName": "header refresh and local Retry reach the actual failed history owner; transport outage retains authorized rows",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "priority",
+      "owner": "candidate"
+    },
+    {
+      "physicalFile": "apps/webapp/src/components/travel-expenses/r165-review-priority.test.tsx",
+      "fullName": "canonical personal-history refusal withdraws formerly authorized rows",
+      "occurrence": 1,
+      "status": "failed",
+      "run": "priority",
+      "owner": "candidate"
+    },
+    {
+      "physicalFile": "apps/webapp/src/components/travel-expenses/r165-review-classification.test.tsx",
+      "fullName": "initial canonical refusal remains unknown and local Retry restores only fresh evidence",
+      "occurrence": 1,
+      "status": "passed",
+      "run": "classification",
+      "owner": "candidate"
+    },
+    {
+      "physicalFile": "apps/webapp/src/components/travel-expenses/r165-review-classification.test.tsx",
+      "fullName": "minimal repeat and classification incoming: refusal then outage cannot retain retired rows; fresh success recovers",
+      "occurrence": 1,
+      "status": "failed",
+      "run": "classification",
+      "owner": "candidate"
+    },
+    {
+      "physicalFile": "apps/webapp/src/components/travel-expenses/r165-review-classification.test.tsx",
+      "fullName": "minimal repeat and classification premerge-root: refusal then outage cannot retain retired rows; fresh success recovers",
+      "occurrence": 1,
+      "status": "failed",
+      "run": "classification",
+      "owner": "premerge-control"
+    }
+  ],
+  "counts": {
+    "passed": 5,
+    "failed": 3
+  },
+  "uniqueIdentities": 8,
+  "physicalFiles": 2,
+  "uniqueFindings": 1,
+  "failedAssertionsAreSameFinding": 3,
+  "candidateIdentities": 7,
+  "baselineIdentities": 1,
+  "inheritedUnit87AndPg50Rerun": false,
+  "root545AndPg51Rerun": false
+}

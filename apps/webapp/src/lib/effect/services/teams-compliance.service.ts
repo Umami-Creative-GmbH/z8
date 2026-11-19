@@ -4,7 +4,7 @@
  * Provides compliance data formatted for Teams bot display.
  * Aggregates violations, alerts, and pending exception requests.
  */
-/** biome-ignore-all lint/suspicious/noExplicitAny: it is what it is */
+/** oxlint-disable typescript/no-explicit-any -- it is what it is */
 
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";

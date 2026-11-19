@@ -1,0 +1,121 @@
+{
+  "checks": [
+    {
+      "name": "small-admin admitted with exactly one Calendar h1",
+      "passed": true
+    },
+    {
+      "name": "small-admin explicit calendar zone",
+      "passed": true
+    },
+    {
+      "name": "small-manager admitted with exactly one Calendar h1",
+      "passed": true
+    },
+    {
+      "name": "small-manager explicit calendar zone",
+      "passed": true
+    },
+    {
+      "name": "small-employee admitted with exactly one Calendar h1",
+      "passed": true
+    },
+    {
+      "name": "small-employee explicit calendar zone",
+      "passed": true
+    },
+    {
+      "name": "small-restricted admitted with exactly one Calendar h1",
+      "passed": true
+    },
+    {
+      "name": "small-restricted explicit calendar zone",
+      "passed": true
+    },
+    {
+      "name": "Year retains employee selection",
+      "passed": true
+    },
+    {
+      "name": "phone scope stays above period",
+      "passed": true
+    },
+    {
+      "name": "phone exposes four labeled filters",
+      "passed": true
+    },
+    {
+      "name": "phone filter uses real calendar reader",
+      "passed": true
+    },
+    {
+      "name": "phone filter Escape returns focus",
+      "passed": true
+    },
+    {
+      "name": "phone filter survives reopen",
+      "passed": true
+    },
+    {
+      "name": "phone Month contains local comparison scroller",
+      "passed": true
+    },
+    {
+      "name": "phone document fits",
+      "passed": true
+    },
+    {
+      "name": "phone adjustment history reads successfully",
+      "passed": true
+    },
+    {
+      "name": "persisted Sunday preference reaches calendar query and grid",
+      "passed": true
+    },
+    {
+      "name": "Sunday preference survives reload",
+      "passed": true
+    },
+    {
+      "name": "record save announces pending by disabling Save",
+      "passed": true
+    },
+    {
+      "name": "record failure retains typed note",
+      "passed": true
+    },
+    {
+      "name": "record mutation survives real reload",
+      "passed": true
+    },
+    {
+      "name": "failed calendar read retains selected Week",
+      "passed": true
+    },
+    {
+      "name": "Retry recovers real calendar reader",
+      "passed": true
+    },
+    {
+      "name": "restricted actor cannot read unrelated employee",
+      "passed": true
+    },
+    {
+      "name": "restricted actor cannot read another organization",
+      "passed": true
+    },
+    {
+      "name": "wide dark document fits",
+      "passed": true
+    },
+    {
+      "name": "reduced-motion phone remains operable",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "limits": [
+    "Physical device, store wrapper, native browser zoom and exhaustive translation/contrast checks not performed.",
+    "Scope checks use independent real refused reads; in-flight organization switching and open-panel authority revocation are not established by this script."
+  ]
+}

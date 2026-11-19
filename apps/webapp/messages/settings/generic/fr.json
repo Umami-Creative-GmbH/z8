@@ -1,5 +1,8 @@
 {
   "settings": {
+    "approvalSettings": {
+      "pageDescription": "Configurez qui approuve les demandes, quand les approbations en retard sont remontées et quels problèmes d'approbation nécessitent un suivi."
+    },
     "approvalTriage": {
       "correctionError": "Saisissez un nombre entier compris entre 0 et 60 minutes.",
       "correctionHelp": "Zéro désactive la voie rapide pour les petites corrections, y compris les modifications sans variation. Sinon, utilisez une valeur de 1 à 60 minutes ; tous les justificatifs requis doivent tout de même être vérifiés.",
@@ -138,6 +141,7 @@
           "defaultTax": "Par défaut : {treatment}",
           "description": "Associez chaque client à son contact existant dans l'outil de comptabilité avant son premier transfert, et remplacez le régime fiscal si nécessaire.",
           "edit": "Modifier",
+          "editAction": "Modifier la comptabilité de {name}",
           "empty": "Aucun client pour le moment",
           "inactive": "Inactif",
           "notLinked": "Non associé",
@@ -157,6 +161,8 @@
           "start": "Importer des clients"
         },
         "keyMissing": "La clé API est absente du magasin de secrets. Remplacez la connexion par une nouvelle clé.",
+        "loadFailed": "Impossible de charger les paramètres de comptabilité.",
+        "loading": "Chargement des paramètres de comptabilité",
         "netPrices": {
           "label": "Ce compte sevdesk saisit les prix des factures en prix nets",
           "required": "Z8 transmet des prix nets. Confirmez que sevdesk saisit les prix en prix nets"
@@ -225,6 +231,7 @@
         "employeeTitle": "Taux de coût",
         "empty": "Aucun taux de coût pour l'instant. La marge pour le travail de cet employé s'affiche comme coût inconnu.",
         "history": "Historique",
+        "historyAction": "Historique du taux de coût pour {name}",
         "hourly": "Horaire",
         "inactive": "Inactif",
         "intro": "Un taux de coût correspond au coût horaire interne complet d'un employé en {currency}, utilisé pour la marge. Il est distinct du salaire : modifier l'un ne modifie jamais l'autre.",
@@ -234,6 +241,7 @@
         "ratePerHour": "{rate}/h",
         "saved": "Taux de coût enregistré",
         "set": "Définir le taux de coût",
+        "setAction": "Définir le taux de coût pour {name}",
         "setRateHelp": "Le nouveau taux de coût s'applique à partir de cette date jusqu'à la prochaine modification. Il ne modifie jamais le salaire, la paie ou les gains horaires.",
         "startsOn": "Débute le {date}",
         "today": "Aujourd'hui",
@@ -378,11 +386,14 @@
           "empty": "Aucune transmission pour le moment",
           "gone": "Supprimé dans l'outil",
           "open": "Ouvrir",
+          "openAction": "Ouvrir le transfert pour {name}, {period}",
           "period": "Période",
           "status": "Statut",
           "title": "Transmissions",
           "total": "Total net"
         },
+        "loadFailed": "Impossible de charger les transferts.",
+        "loading": "Chargement des transferts",
         "marks": {
           "compare": "Comparer",
           "compareItem": "Comparer {item}",
@@ -495,6 +506,9 @@
         "customerRate": "Taux facturable",
         "customerRateTitle": "Taux facturable pour {name}",
         "dateRequired": "Choisir le premier jour d'application",
+        "deletedCustomer": "Client supprimé",
+        "deletedEmployee": "Employé supprimé",
+        "deletedProject": "Projet supprimé",
         "effectiveFrom": "S'applique à partir du",
         "employee": "Employé",
         "employeeProjectRateFor": "Taux facturable pour {name} sur ce projet",
@@ -511,10 +525,13 @@
         "endsFrom": "Ne s'applique plus à partir du",
         "for": "Pour",
         "history": "Historique",
+        "historyAction": "Historique du taux pour {name}",
         "hourlyRate": "Taux horaire",
         "inEffect": "En vigueur",
         "inEffectTodayHint": "En vigueur aujourd'hui : {rate}",
         "intro": "Les taux sont en {currency} par heure. Pour chaque travail, le taux le plus spécifique en vigueur le jour du début s'applique : employé sur un projet, puis projet, puis client, puis employé.",
+        "invalidDate": "Saisissez une date valide.",
+        "invalidRate": "Saisissez un taux horaire positif avec au maximum deux décimales.",
         "level": {
           "customer": "Client",
           "customerDescription": "S'applique au travail sur les projets du client sans taux de projet.",
@@ -542,6 +559,8 @@
         "setRate": "Définir le taux",
         "setRateHelp": "Le nouveau taux s'applique à compter de cette date jusqu'au prochain changement de taux. Les dates antérieures recalculent le travail qui n'est pas encore facturé.",
         "startsOn": "Commence le {date}",
+        "switchedOff": "Le temps facturable est désactivé.",
+        "targetNotFound": "L'employé, le projet ou le client est introuvable.",
         "today": "Aujourd'hui",
         "unchanged": "Ce tarif s'applique déjà"
       },
@@ -550,6 +569,9 @@
     "billing": {
       "description": "Gérez votre abonnement, vos méthodes de paiement et vos factures",
       "title": "Facturation et abonnement"
+    },
+    "breadcrumbs": {
+      "label": "Fil d'Ariane des paramètres"
     },
     "closedMonths": {
       "automatic": {
@@ -587,6 +609,8 @@
       },
       "historyEmpty": "Aucun mois n'a encore été clôturé.",
       "historyTitle": "Historique",
+      "loadErrorDescription": "Rechargez la page pour réessayer.",
+      "loadErrorTitle": "Impossible de charger les mois clôturés",
       "locationNotFound": "Cet emplacement n'existe plus.",
       "monthsDescription": "Clôturer un mois fige le travail, l'attribution et les absences pour la paie. Les notes restent modifiables.",
       "monthsTitle": "Mois",
@@ -628,13 +652,19 @@
     },
     "compliance": {
       "description": "Examinez et gérez les demandes d'exception de conformité des membres de l'équipe",
+      "metadata": {
+        "description": "Configurer les paramètres de conformité ArbZG et gérer les demandes d'exception",
+        "title": "Paramètres de conformité | ArbZG"
+      },
       "title": "Conformité ArbZG"
     },
     "customDomains": {
       "title": "Domaine et image de marque"
     },
     "customers": {
+      "accountingAction": "Comptabilité pour {name}",
       "column": {
+        "actions": "Actions",
         "contactPerson": "Personne à contacter",
         "email": "E-mail",
         "name": "Nom de l'entreprise",
@@ -643,11 +673,13 @@
       "create": "Ajouter un client",
       "created": "Client créé",
       "createFailed": "Échec de la création du client",
-      "deleted": "Client supprimé",
+      "deleteAction": "Supprimer {name}",
       "delete": {
+        "confirm": "Supprimer {name}",
         "description": "Êtes-vous sûr de vouloir supprimer \"{name}\" ? Les projets assignés à ce client continueront de fonctionner, mais la référence client sera supprimée.",
         "title": "Supprimer le client"
       },
+      "deleted": "Client supprimé",
       "deleteFailed": "Échec de la suppression du client",
       "description": "Gérez les contacts clients pour les assignations de projets",
       "dialog": {
@@ -658,6 +690,8 @@
         "editTitle": "Modifier le client",
         "save": "Enregistrer les modifications"
       },
+      "edit": "Modifier le client",
+      "editAction": "Modifier {name}",
       "empty": {
         "description": "Ajoutez votre premier client pour l'assigner à des projets.",
         "title": "Aucun client pour le moment"
@@ -680,6 +714,7 @@
         "description": "{count} clients au total",
         "title": "Tous les clients"
       },
+      "loadFailed": "Impossible de charger les clients. Vérifiez votre connexion et réessayez.",
       "managerNoProjects": "Aucun projet géré disponible. Créez ou gérez un projet avant d'ajouter des clients.",
       "projectRequired": "Sélectionnez d'abord un projet",
       "title": "Clients",
@@ -905,7 +940,7 @@
         "columnDate": "Date",
         "columnSize": "Taille",
         "columnStatus": "Statut",
-        "deleteDialogDescription": "Êtes-vous sûr de vouloir supprimer cette exportation ? Cette action est irréversible.",
+        "deleteDialogDescriptionNamed": "Supprimer l'export créé le {date} à {time} ? Cette action est irréversible.",
         "deleteDialogTitle": "Supprimer l'exportation",
         "deleteError": "Échec de la suppression de l'exportation",
         "deleteSuccess": "Exportation supprimée",
@@ -914,7 +949,7 @@
         "downloadError": "Échec du téléchargement",
         "downloadSuccess": "Téléchargement lancé",
         "emptyDescription": "Aucune exportation pour le moment",
-        "emptyHint": "Créez votre première exportation en utilisant le formulaire ci-dessus",
+        "emptyHintNewExportTab": "Créez votre premier export dans l'onglet Nouvel export.",
         "moreCategories": "+{count} de plus",
         "statusCompleted": "Terminé",
         "statusFailed": "Échoué",
@@ -935,6 +970,7 @@
         "connectionFailed": "Échec de la connexion",
         "connectionSuccess": "Connexion réussie",
         "deleteDialogDescription": "Êtes-vous sûr de vouloir supprimer cette configuration de stockage ?",
+        "deleteDialogDescriptionNamed": "Supprimer la configuration de stockage pour le compartiment « {bucket} » ?",
         "deleteDialogTitle": "Supprimer la configuration",
         "deleteError": "Échec de la suppression de la configuration",
         "deleteSuccess": "Configuration supprimée",
@@ -962,7 +998,7 @@
         "verified": "Vérifié"
       },
       "storageNotConfigured": {
-        "description": "Configurez le stockage S3 avant de créer des exportations",
+        "descriptionWithTab": "Configurez le stockage S3 dans l'onglet Paramètres de stockage avant de créer des exports.",
         "title": "Stockage non configuré"
       },
       "tabs": {
@@ -980,6 +1016,7 @@
         "attribution": "Accordé par {actor} à {time}",
         "editor": "Périmètre du vérificateur",
         "empty": "Aucune responsabilité de vérificateur attribuée",
+        "failed": "Impossible de mettre à jour ou d'accéder à la responsabilité du vérificateur de permis de conduire. Vérifiez vos autorisations et vos sélections.",
         "formerEmployee": "Les anciens employés ne peuvent pas être ajoutés. Choisissez des employés figurant dans l'effectif actuel.",
         "history": "Historique des responsabilités",
         "historyEntry": "Accordé par {grantor} à {granted} ; révoqué par {revoker} à {revoked}",
@@ -990,6 +1027,7 @@
         "myUntil": "Votre responsabilité prend fin après le {date} ({timezone}).",
         "none": "Vous n'avez actuellement aucune responsabilité de vérificateur de permis de conduire.",
         "noTeams": "Aucune équipe disponible",
+        "notEnabled": "Les vérifications du permis de conduire ne sont pas activées pour cette organisation.",
         "person": "Vérificateur",
         "revoked": "Responsabilité de vérificateur révoquée",
         "revokeDescription": "Le vérificateur perd immédiatement l'accès aux vérifications dans ce périmètre. Une nouvelle attribution est requise pour rétablir la responsabilité.",
@@ -1109,8 +1147,12 @@
       },
       "emailTemplates": "Modèles d'e-mails",
       "empty": "Aucun modèle d'e-mail n'est disponible pour cette organisation.",
-      "eyebrow": "Communications opérationnelles",
       "reset": "Modèle d'e-mail réinitialisé au modèle système",
+      "resetDialog": {
+        "confirm": "Réinitialiser le modèle",
+        "description": "Cela supprime l'objet et le corps personnalisés de votre organisation pour cet e-mail. Les e-mails envoyés par la suite utilisent le modèle système.",
+        "title": "Réinitialiser « {template} » vers le modèle système ?"
+      },
       "resetFailed": "Échec de la réinitialisation du modèle d'e-mail",
       "saved": "Modèle d'e-mail enregistré",
       "saveFailed": "Échec de l'enregistrement du modèle d'e-mail",
@@ -1276,6 +1318,7 @@
       "savedPending": "Date d'embauche enregistrée. Les soldes d'heures sont en cours d'actualisation.",
       "savedRefreshFailed": "Date d'embauche enregistrée. Rechargez cette page pour actualiser les résultats affichés.",
       "saveFailed": "Impossible d'enregistrer cette correction. Générez un nouvel aperçu et réessayez.",
+      "stalePreview": "L'emploi examiné ou la configuration a changé. Générez un nouvel aperçu.",
       "title": "Corriger la date d'embauche réelle",
       "total": "Total avant utilisation",
       "unknown": "Non enregistré",
@@ -1436,6 +1479,8 @@
       "employee": {
         "outstanding": "{count, plural, =0 {Aucun retour en attente} one {# retour en attente} other {# retours en attente}}",
         "overdue": "{count, plural, other {# en retard}}",
+        "returns": "Retours des employés",
+        "scope": "Équipement autorisé pour cet employé",
         "title": "Équipements des employés"
       },
       "errors": {
@@ -1689,8 +1734,11 @@
       },
       "openOverview": "Ouvrir l'aperçu du matériel",
       "overview": {
+        "asOf": "Au {date} ({timezone})",
         "description": "Qui détient chaque équipement, ce qui doit être retourné et chaque transfert enregistré.",
-        "failed": "Impossible de charger le matériel. Rechargez la page pour réessayer."
+        "failed": "Impossible de charger le matériel. Rechargez la page pour réessayer.",
+        "scope": "Vos enregistrements d'équipement autorisé",
+        "summaryScope": "Retours et disponibilité dans votre périmètre"
       },
       "personal": {
         "closed": "Retourné et clôturé",
@@ -1701,6 +1749,7 @@
         "failed": "Impossible de charger votre matériel. Rechargez la page pour réessayer.",
         "keep": "À conserver",
         "quantity": "{count} attribués",
+        "remaining": "{count} à retourner",
         "title": "Mon matériel",
         "toggleHistory": "Afficher l'historique des transferts",
         "toReturn": "À retourner"
@@ -1831,11 +1880,9 @@
     },
     "error": {
       "actions": {
-        "backToSettings": "Retour aux paramètres",
-        "tryAgain": "Réessayer"
+        "backToSettings": "Retour aux paramètres"
       },
       "description": "Une erreur est survenue lors du chargement de la page des paramètres. Il peut s'agir d'un problème temporaire.",
-      "errorId": "ID d'erreur : {digest}",
       "title": "Une erreur est survenue"
     },
     "export": {
@@ -1941,9 +1988,16 @@
       "failed": "L'affectation n'a pas pu être mise à jour. Réessayez.",
       "noEmployees": "Aucun paramètre spécifique aux employés",
       "noTeams": "Aucun paramètre spécifique aux équipes",
+      "organizationDefaultRemoved": "Valeur par défaut de l'organisation supprimée",
       "orgDescription": "Paramètre par défaut pour tous les employés, sauf dérogation",
       "remove": "Supprimer {target}",
+      "removedFor": "Dérogation supprimée pour {name}",
       "valueFor": "{setting} pour {target}"
+    },
+    "featureOff": {
+      "askAdmin": "Demandez à un administrateur de l'organisation d'activer cette option.",
+      "status": "Désactivé pour cette organisation",
+      "turnOn": "Activer dans les paramètres de l'organisation"
     },
     "group": {
       "account": "Compte",
@@ -2221,12 +2275,21 @@
       "title": "Liste de contrôle d'implémentation"
     },
     "import": {
+      "commitConfirm": {
+        "pending": "Démarrage de la validation…"
+      },
       "csv": {
         "acceptSelected": "Accepter les lignes valides sélectionnées",
         "applyMapping": "Appliquer le mappage",
         "chooseSource": "Choisir une valeur source",
         "chooseTarget": "Choisir un enregistrement existant",
         "commit": "Valider les lignes acceptées",
+        "commitConfirm": {
+          "confirm": "Importer les lignes",
+          "description": "L'importation crée du travail terminé pour les employés associés, avec les détails du véhicule contenus dans les lignes. Elle s'exécute en arrière-plan. Les lignes qui chevauchent un travail existant ne sont pas importées : une importation n'écrase jamais un travail.",
+          "irreversible": "Une importation est irréversible. Pour modifier le travail importé par la suite, corrigez-le dans le suivi du temps.",
+          "title": "{count, plural, one {Importer # ligne acceptée ?} other {Importer # lignes acceptées ?}}"
+        },
         "committing": "Importation des lignes acceptées…",
         "description": "Importez une période de travail effectuée par ligne. Indiquez les pauses sous forme d'intervalles entre les lignes. Rien n'est enregistré tant que vous ne l'avez pas vérifié et accepté.",
         "download": "Télécharger le modèle CSV",
@@ -2304,6 +2367,12 @@
           "unmappedProject": "Facturable dans Clockodo, mais le projet Clockodo n'est pas associé à un projet Z8."
         },
         "commitAccepted": "Valider les lignes acceptées",
+        "commitConfirm": {
+          "confirm": "Valider les lignes",
+          "description": "La validation crée les enregistrements décrits par les lignes acceptées dans cette organisation, tels que les relevés d'heures, absences, employés, clients ou paramètres, ou les associe selon vos choix. Elle s'exécute en arrière-plan. Les lignes rejetées ne sont pas importées.",
+          "irreversible": "Une importation est irréversible. Pour modifier les enregistrements validés par la suite, modifiez-les là où ils sont gérés.",
+          "title": "{count, plural, one {Valider # ligne acceptée ?} other {Valider # lignes acceptées ?}}"
+        },
         "commitFailed": "Échec du lancement de la validation de l'importation",
         "commitQueued": "{count} lignes acceptées mises en file d'attente pour validation",
         "committing": "Validation en cours...",
@@ -2393,6 +2462,7 @@
         },
         "title": "Examen de l'importation"
       },
+      "sourceTabs": "Source d'importation",
       "supportedSources": "Importez du travail à partir de fichiers CSV ou connectez des fournisseurs pris en charge tels que Clockodo et Clockin.",
       "title": "Importer des données"
     },
@@ -2496,7 +2566,6 @@
       },
       "issueCodeConfirm": "Générer un nouveau code",
       "listDescription": "Chaque borne appartient à un emplacement. Associez un appareil en ouvrant la page de la borne sur celui-ci et en saisissant le code d'association.",
-      "listTitle": "Bornes",
       "loadFailed": "Impossible de charger les bornes.",
       "neverSeen": "Jamais",
       "nfcFobReaderOn": "Lecteur de porte-clés NFC activé",
@@ -2591,6 +2660,9 @@
       "assignEmployeeDescription": "Affecter un employé en tant que superviseur pour cet emplacement",
       "assignEmployeeToSubarea": "Affecter un employé à la sous-zone",
       "assignEmployeeToSubareaDescription": "Affecter un employé en tant que superviseur pour {subareaName}",
+      "assignmentRemovedFrom": "{name} retiré de {place}",
+      "assignmentRestored": "{name} restauré",
+      "assignmentRestoreFailed": "Impossible de restaurer l'affectation",
       "backToList": "Retour aux emplacements",
       "create": "Créer un emplacement",
       "created": "Emplacement créé",
@@ -2598,10 +2670,14 @@
       "deleted": "Emplacement supprimé",
       "deleteDescription": "Êtes-vous sûr de vouloir supprimer cet emplacement ? Cela supprimera également toutes les sous-zones et les affectations d'employés.",
       "deleteFailed": "Échec de la suppression de l'emplacement",
+      "deleteNamedTitle": "Supprimer l'emplacement {name} ?",
       "deleteSubareaDescription": "Êtes-vous sûr de vouloir supprimer cette sous-zone ? Cela supprimera également toutes les affectations d'employés.",
+      "deleteSubareaNamedTitle": "Supprimer la sous-zone {name} ?",
       "deleteSubareaTitle": "Supprimer la sous-zone",
       "deleteTitle": "Supprimer l'emplacement",
       "description": "Gérer les emplacements et les sous-zones de l'organisation",
+      "detailLoadFailed": "Impossible de charger cet emplacement",
+      "detailLoadFailedDescription": "Il a peut-être été supprimé ou la connexion a échoué. Réessayez ou revenez à la liste des emplacements.",
       "details": "Détails de l'emplacement",
       "dialog": {
         "create": "Créer un emplacement",
@@ -2614,7 +2690,6 @@
       "employee": "Employé",
       "employeeAssigned": "Employé affecté",
       "employeeAssignFailed": "Échec de l'affectation de l'employé",
-      "employeeRemoved": "Employé supprimé",
       "employeeRemoveFailed": "Échec de la suppression de l'employé",
       "field": {
         "active": "Actif",
@@ -2635,7 +2710,10 @@
         "subareaName": "Nom",
         "subareaNamePlaceholder": "ex. : Caisse, Stockage, Bistro"
       },
+      "loadFailed": "Impossible de charger les emplacements",
+      "loadFailedDescription": "Vérifiez votre connexion, puis réessayez.",
       "name": "Nom",
+      "nameRequired": "Le nom est requis",
       "noAvailableEmployees": "Tous les employés sont déjà affectés à cet emplacement",
       "noAvailableEmployeesSubarea": "Tous les employés sont déjà affectés à cette sous-zone",
       "noLocations": "Aucun emplacement pour le moment",
@@ -2671,6 +2749,9 @@
       "updated": "Emplacement mis à jour",
       "updateFailed": "Échec de la mise à jour de l'emplacement"
     },
+    "mobileNav": {
+      "open": "Menu des paramètres"
+    },
     "myData": {
       "aboutDownload": "Téléchargez-le ici en étant connecté. Les fichiers sont supprimés au bout de 7 jours.",
       "aboutEquipment": "Comprend les attributions d'équipements conservées, les états, les notes, les corrections, les réceptions physiques ainsi que les issues déclarées perdues ou abandonnées, les récupérations étant enregistrées séparément.",
@@ -2683,7 +2764,9 @@
       "exportDescription": "Un fichier ZIP contenant tout ce que cette organisation conserve à votre sujet, sous forme de fichiers JSON et CSV avec des explications. Il ne concerne que cette organisation.",
       "exportTitle": "Export des données personnelles",
       "listLabel": "Vos exports",
+      "loadFailed": "Vos exports de données n'ont pas pu être chargés. Réessayez.",
       "noEmployeeRecord": "Vous n'avez aucun dossier d'employé dans cette organisation. Pour obtenir une copie des données personnelles qu'elle conserve à votre sujet, contactez les administrateurs de l'organisation.",
+      "noExports": "Vous n'avez pas encore demandé d'export. Demandez-en un pour télécharger une copie de vos données.",
       "refusalDailyLimit": "Vous pouvez demander un export de vos données toutes les 24 heures. Veuillez réessayer plus tard.",
       "refusalInProgress": "Un export de vos données est déjà en cours de préparation. Vous recevrez une notification lorsqu'il sera prêt.",
       "refusalStorage": "Le stockage de fichiers n'est pas encore configuré pour cette organisation. Veuillez contacter ses administrateurs.",
@@ -2697,7 +2780,14 @@
       "title": "Mes données",
       "unavailable": "Mes données ne sont pas disponibles pour votre compte dans cette organisation."
     },
+    "nav": {
+      "disabledEntry": "{title} (désactivé)",
+      "label": "Navigation des paramètres"
+    },
     "navigation": {
+      "approval": {
+        "title": "Approbation"
+      },
       "audit": {
         "activity": "Activité",
         "description": "Consultez l'activité et configurez les exports d'audit signés",
@@ -2757,7 +2847,8 @@
       "description": "Choisissez comment et quand vous souhaitez être notifié",
       "digestTime": "Heure du résumé",
       "discord": {
-        "description": "Configurez les notifications Discord pour votre organisation."
+        "description": "Configurez les notifications Discord pour votre organisation.",
+        "setupInstructions": "La connexion à Discord depuis cette page n'est pas encore disponible. La connexion nécessite le jeton de bot, l'ID d'application et la clé publique de votre application Discord."
       },
       "escalations": "Escalades",
       "escalationsDescription": "Escalader les demandes d'approbation sans réponse après le délai configuré.",
@@ -2770,6 +2861,9 @@
       "saveFailed": "Échec de l'enregistrement des paramètres de notification de {channelName}",
       "saveSettings": "Enregistrer les paramètres",
       "slack": {
+        "connect": "Connecter Slack",
+        "connectFailed": "La connexion à Slack n'a pas pu être démarrée. Réessayez.",
+        "connectUnavailable": "Slack n'est pas disponible sur cette installation Z8.",
         "description": "Configurez les notifications Slack pour votre organisation."
       },
       "status": {
@@ -2783,11 +2877,12 @@
         "unknown": "Statut inconnu"
       },
       "teams": {
-        "description": "Configurez les notifications Microsoft Teams pour votre organisation."
+        "description": "Configurez les notifications Microsoft Teams pour votre organisation.",
+        "setupInstructions": "Pour connecter Microsoft Teams, ajoutez l'application Z8 à votre locataire Microsoft 365. Le bot Z8 envoie ensuite un lien de configuration qu'un administrateur de l'organisation ouvre pour lier le locataire à cette organisation."
       },
       "timeout": "Délai d'attente dépassé",
+      "timeoutInvalid": "Saisissez un nombre entier d'heures compris entre 1 et 168.",
       "timezone": "Fuseau horaire",
-      "timezonePlaceholder": "Europe/Berlin…",
       "title": "Paramètres de notification"
     },
     "organizations": {
@@ -2830,6 +2925,7 @@
       "empty": "Aucune clé d'accès configurée",
       "emptyDescription": "Ajoutez une clé d'accès pour activer l'authentification sans mot de passe",
       "loadError": "Échec du chargement des clés d'accès",
+      "loading": "Chargement des clés d'accès",
       "title": "Clés d'accès",
       "unnamed": "Clé d'accès sans nom"
     },
@@ -2846,6 +2942,7 @@
       "editorDescription": "Choisissez un responsable de paie et définissez s'il peut accéder à tout le monde ou à un périmètre spécifique.",
       "editTitle": "Modifier le responsable de paie",
       "employees": "Employés",
+      "loading": "Chargement des paramètres du gestionnaire de paie",
       "noGrants": "Aucun responsable de paie n'a encore été ajouté.",
       "noScope": "Aucun périmètre de paie attribué",
       "noTeams": "Aucune équipe disponible",
@@ -2872,7 +2969,6 @@
     },
     "positionCapture": {
       "assignmentFailed": "L'affectation n'a pas été enregistrée",
-      "assignmentRemoved": "Attribution supprimée",
       "assignmentRemoveFailed": "L'affectation n'a pas été supprimée",
       "assignmentSaved": "Attribution enregistrée",
       "assignmentsDescription": "L'attribution la plus spécifique prévaut : celle d'un employé l'emporte sur celle de son équipe principale, et celle d'une équipe sur celle de l'ensemble de l'organisation. Utilisez « désactivé » pour exclure une équipe ou un employé.",
@@ -2883,6 +2979,7 @@
       "description": "Enregistrer les positions lors des pointages des employés, avec leur consentement",
       "enabled": "Capturer les positions",
       "enabledDescription": "Désactiver cette option interrompt la capture pour tout le monde. Les positions enregistrées sont conservées jusqu'à leur date de suppression.",
+      "loadFailed": "Les paramètres de capture de position n'ont pas pu être chargés",
       "noNotice": "Aucune notice n'est encore publiée. L'enregistrement d'une déclaration de finalité publie la version 1.",
       "noticeDescription": "Ce que les employés acceptent : le texte prédéfini de Z8 et votre déclaration de finalité. Modifier la finalité ou conserver les positions plus longtemps publie une nouvelle version ; raccourcir la durée de conservation ne le fait pas.",
       "noticeTitle": "Notice relative à la position",
@@ -2907,6 +3004,7 @@
       "accessLogDescription": "Chaque fois que vos positions enregistrées sont affichées à une autre personne, cela est répertorié ici.",
       "accessLogEmpty": "Vos positions n'ont été montrées à personne d'autre.",
       "accessLogExport": "Exportation de données",
+      "accessLogLoadFailed": "La liste des personnes ayant vu vos positions n'a pas pu être chargée. Rechargez la page pour réessayer.",
       "accessLogRemovedWorkPeriod": "Une période de travail qui n'existe plus",
       "accessLogTitle": "Qui a vu vos positions",
       "accessLogWorkPeriod": "Période de travail du {date}",
@@ -2923,6 +3021,7 @@
       "consentUndecided": "Vous n'avez pas encore pris de décision.",
       "consentWithdrawn": "Vous avez retiré votre consentement le {date}.",
       "description": "Enregistrement de votre position lors de vos pointages et état de votre consentement",
+      "loadFailed": "Vos paramètres d'horodatage de position n'ont pas pu être chargés.",
       "noNotice": "Votre organisation n'a pas publié d'avis relatif à la position.",
       "noticeDescription": "Voici ce que vous acceptez. Une nouvelle version est publiée lorsque la finalité change ou que les positions sont conservées plus longtemps.",
       "noticeTitle": "Avis relatif à la position",
@@ -2954,6 +3053,7 @@
       "firstName": "Prénom",
       "firstNamePlaceholder": "Ada…",
       "gender": {
+        "clear": "Effacer la sélection",
         "female": "Femme",
         "label": "Genre",
         "male": "Homme",
@@ -2966,6 +3066,7 @@
       "lastName": "Nom",
       "lastNamePlaceholder": "Lovelace…",
       "loadFailed": "Échec du chargement du profil",
+      "loadFailedDetail": "Votre profil n'a pas pu être chargé et ne peut donc pas être modifié pour le moment. Réessayez.",
       "personalInformation": "Informations personnelles",
       "pronouns": "Pronoms",
       "pronouns.custom": "Pronoms personnalisés",
@@ -2989,7 +3090,9 @@
       "uploadProfilePicture": "Télécharger une photo de profil"
     },
     "projects": {
+      "budgetUsed": "Budget utilisé",
       "column": {
+        "actions": "Actions",
         "budget": "Budget",
         "customer": "Client",
         "deadline": "Date limite",
@@ -3002,6 +3105,12 @@
       "created": "Projet créé",
       "createFailed": "Échec de la création du projet",
       "customerDeleted": "{name} (supprimé)",
+      "deadline": {
+        "overdue": "{count, plural, one {# jour de retard} other {# jours de retard}}",
+        "remaining": "{count, plural, one {# jour restant} other {# jours restants}}",
+        "today": "Échéance aujourd'hui",
+        "tomorrow": "Échéance demain"
+      },
       "description": "Gérez les projets, les budgets, les dates limites et les affectations de temps",
       "dialog": {
         "create": "Créer un projet",
@@ -3011,6 +3120,8 @@
         "editTitle": "Modifier le projet",
         "save": "Enregistrer les modifications"
       },
+      "edit": "Modifier le projet",
+      "editAction": "Modifier {name}",
       "empty": {
         "description": "Créez votre premier projet pour commencer à suivre le temps passé dessus.",
         "title": "Aucun projet pour le moment"
@@ -3061,6 +3172,7 @@
         "description": "{count, plural, one {# projet au total} other {# projets au total}}",
         "title": "Tous les projets"
       },
+      "loadFailed": "Les projets n'ont pas pu être chargés. Vérifiez votre connexion et réessayez.",
       "members": {
         "addManager": "Ajouter un chef de projet",
         "assignEmployee": "Attribuer un employé",
@@ -3081,7 +3193,6 @@
         "noTeams": "Aucune équipe assignée",
         "remove": "Supprimer {name}",
         "removed": "{name} a été supprimé",
-        "removeFailed": "Échec de la suppression de {name}",
         "selectEmployee": "Sélectionner un employé",
         "selectTeam": "Sélectionner une équipe",
         "teamAssigned": "Équipe assignée",
@@ -3099,6 +3210,13 @@
         "saved": "Modèle {name} enregistré",
         "submit": "Enregistrer comme modèle",
         "title": "Enregistrer comme modèle"
+      },
+      "status": {
+        "active": "Actif",
+        "archived": "Archivé",
+        "completed": "Terminé",
+        "paused": "En pause",
+        "planned": "Planifié"
       },
       "tabs": {
         "projects": "Projets",
@@ -3118,6 +3236,16 @@
         "edit": "Modifier {name}",
         "editAction": "Modifier {name}",
         "empty": "Aucune tâche pour le moment. Les tâches permettent d'indiquer à quoi le temps a été consacré dans le projet.",
+        "errors": {
+          "booked": "Du temps est enregistré sur cette tâche, elle ne peut donc pas être supprimée.",
+          "descriptionTooLong": "La description de la tâche est trop longue.",
+          "duplicateName": "Une tâche portant ce nom existe déjà dans ce projet.",
+          "estimateInvalid": "Saisissez l'estimation sous forme d'un nombre d'heures positif.",
+          "nameRequired": "Saisissez un nom de tâche.",
+          "nameTooLong": "Le nom de la tâche est trop long.",
+          "notAllowed": "Vous n'avez pas l'autorisation de gérer les tâches de ce projet.",
+          "notFound": "Cette tâche n'existe plus."
+        },
         "estimate": "Estimation : {hours} h",
         "field": {
           "description": "Description",
@@ -3167,7 +3295,6 @@
         "delete": "Supprimer",
         "deleteAction": "Supprimer {name}",
         "deleted": "{name} supprimé",
-        "deleteFailed": "Échec de la suppression de {name}",
         "deleteQuestion": "Supprimer ce modèle ?",
         "description": "Modèles pour les nouveaux projets : tâches, budget, échéance, responsables et membres.",
         "dialogDescription": "Les nouveaux projets créés à partir de ce modèle copient son contenu une seule fois.",
@@ -3215,6 +3342,7 @@
         },
         "listCount": "{count, plural, one {# modèle} other {# modèles}}",
         "listTitle": "Tous les modèles",
+        "loadFailed": "Les modèles de projet n'ont pas pu être chargés. Vérifiez votre connexion et réessayez.",
         "managers": {
           "empty": "Aucun chef de projet",
           "picker": "Chef de projet à ajouter",
@@ -3339,6 +3467,7 @@
         "mobile": "Mobile",
         "tablet": "Tablette"
       },
+      "loadFailed": "Vos sessions actives n'ont pas pu être chargées. Réessayez.",
       "none": "Aucune session active",
       "othersRevoked": "Toutes les autres sessions ont été révoquées avec succès",
       "revoke": "Révoquer",
@@ -3346,6 +3475,11 @@
       "revokeAllOthers": "Révoquer toutes les autres sessions",
       "revoked": "Session révoquée avec succès",
       "revokeFailed": "Échec de la révocation de la session",
+      "revokeOthersDescription": "{count, plural, one {Cela vous déconnecte sur # autre appareil. Vous restez connecté ici.} other {Cela vous déconnecte sur # autres appareils. Vous restez connecté ici.}}",
+      "revokeOthersTitle": "Révoquer toutes les autres sessions ?",
+      "revokeSession": "Révoquer la session : {session}",
+      "revokeSessionDescription": "Cela déconnecte {session}. Toute personne qui l'utilise devra se reconnecter.",
+      "revokeSessionTitle": "Révoquer cette session ?",
       "revoking": "Révocation en cours…",
       "securityTip": "Si vous voyez une session que vous ne reconnaissez pas, révoquez-la immédiatement et changez votre mot de passe.",
       "signedIn": "Connecté",
@@ -3356,7 +3490,7 @@
     "socialAccounts": {
       "connect": "Connecter",
       "connected": "Connecté",
-      "connectedAs": "Connecté en tant que {accountId}",
+      "connectedOn": "Connecté le {date}",
       "connectFailed": "Échec de la connexion au compte",
       "connecting": "Connexion en cours…",
       "connectProvider": "Connectez votre compte {provider}",
@@ -3364,8 +3498,9 @@
       "disconnect": "Déconnecter",
       "disconnectDescription": "Cela supprimera le lien vers votre compte social. Vous pourrez le reconnecter à tout moment.",
       "disconnectFailed": "Échec de la déconnexion du compte",
+      "disconnectProviderTitle": "Déconnecter {provider} ?",
       "disconnectSuccess": "Compte déconnecté avec succès",
-      "disconnectTitle": "Déconnecter le compte ?",
+      "linkedForSignIn": "Lié pour la connexion",
       "loadFailed": "Échec du chargement des comptes connectés",
       "title": "Comptes sociaux",
       "unexpectedError": "Une erreur inattendue est survenue"
@@ -3391,6 +3526,7 @@
       "description": "Voir les statistiques et les métriques de votre instance",
       "lastUpdated": "Dernière mise à jour",
       "loadError": "Échec du chargement des statistiques",
+      "loadErrorRetry": "Rechargez la page pour réessayer.",
       "managerDescription": "Consultez les analyses en lecture seule pour les équipes que vous gérez.",
       "sections": {
         "absenceBreakdown": "Répartition des absences",
@@ -3542,6 +3678,7 @@
       "effectiveTo": "Date de fin",
       "legacy": {
         "description": "Conservé pour référence uniquement. Ces enregistrements n'ont jamais été utilisés pour calculer des dépenses et ne peuvent plus être modifiés ; configurez des barèmes kilométriques datés ci-dessus.",
+        "loadFailed": "Les enregistrements de politique précédents n'ont pas pu être chargés",
         "title": "Anciens enregistrements de la politique"
       },
       "mileage": {
@@ -3812,6 +3949,7 @@
       "archivedTitle": "Archivé",
       "archiveInstead": "Archiver plutôt",
       "archiveNamed": "Archiver {name}",
+      "count": "{count, plural, one {# véhicule} other {# véhicules}}",
       "delete": "Supprimer",
       "deleteConfirm": "Supprimer le véhicule",
       "deleted": "Véhicule supprimé",
@@ -3843,12 +3981,12 @@
         "teamsDescription": "Ce véhicule est proposé en premier à chaque membre d'une équipe assignée."
       },
       "listDescription": "Les véhicules archivés ne peuvent plus être sélectionnés, mais restent associés aux travaux sur lesquels ils ont été enregistrés.",
-      "listTitle": "Véhicules",
       "loadFailed": "Impossible de charger les véhicules.",
       "logbookNotice": {
         "description": "Z8 enregistre le véhicule utilisé pendant le travail ainsi que les relevés du compteur kilométrique. Il ne s'agit pas d'un carnet de route conforme aux exigences fiscales (Fahrtenbuch) : les relevés peuvent être corrigés et aucun motif de déplacement ni partenaire commercial n'est consigné.",
         "title": "Pas un carnet de bord fiscal"
       },
+      "noActive": "Aucun véhicule actif. Ajoutez un véhicule ou restaurez un véhicule archivé.",
       "noDrivers": "Aucun conducteur assigné",
       "photos": {
         "accessChanged": "Vos autorisations ont changé. Rouvrez les paramètres du véhicule pour vérifier vos accès.",
@@ -3910,7 +4048,6 @@
       "usedTitle": "{name} a été enregistré sur des interventions"
     },
     "vehicleUse": {
-      "assignmentRemoved": "Affectation supprimée",
       "assignmentSaved": "Affectation enregistrée",
       "assignmentsDescription": "Les employés sollicités peuvent enregistrer l'utilisation d'un véhicule lors du pointage. Les employés pour qui l'utilisation d'un véhicule est attendue sont sollicités à chaque fois, et leur intervention est signalée jusqu'à ce que les détails soient complétés. Le pointage n'est jamais bloqué. L'affectation la plus précise l'emporte : celle de l'employé prévaut sur celle de son équipe principale, et celle d'une équipe sur celle de l'organisation tout entière.",
       "enabled": "Enregistrer l'utilisation du véhicule",
@@ -3925,7 +4062,7 @@
         "invalidTarget": "Choisissez à qui s'applique l'affectation.",
         "teamNotFound": "Cette équipe n'existe plus."
       },
-      "loadFailed": "Impossible de charger les paramètres d'utilisation des véhicules. Rechargez la page.",
+      "loadFailedRetry": "Les paramètres d'utilisation des véhicules n'ont pas pu être chargés.",
       "mode": "Mode",
       "modeAsked": "Sollicité",
       "modeExpected": "Utilisation du véhicule attendue",
@@ -3958,6 +4095,13 @@
       "description": "Configurez les rappels d'hydratation et le suivi de l'hydratation pendant vos sessions de travail",
       "glasses": "verres",
       "increaseDailyGoal": "Augmenter l'objectif quotidien",
+      "loadFailed": "Vos paramètres de rappel d'hydratation n'ont pas pu être chargés. Réessayez.",
+      "presets": {
+        "active": "Actif",
+        "custom": "Personnalisé",
+        "light": "Léger",
+        "moderate": "Modéré"
+      },
       "reminderFrequency": "Fréquence des rappels",
       "saved": "Paramètres de bien-être enregistrés",
       "saveError": "Échec de l'enregistrement des paramètres de bien-être",
@@ -4095,6 +4239,9 @@
         "hidden": "Masqué"
       },
       "absenceVisibility": "Visibilité des absences",
+      "accessSectionTitle": "Accéder aux exports et les consulter",
+      "addLocation": "Ajouter un lieu",
+      "addTeam": "Ajouter une équipe",
       "description": "Configurer l'accès sécurisé du comité d'entreprise et les exports de revue",
       "exportEnabled": "Activer les exports de revue",
       "exportEnabledDescription": "Autoriser les utilisateurs autorisés du comité d'entreprise à générer des packs de revue filtrés pour la confidentialité.",
@@ -4107,14 +4254,26 @@
       "identityVisibility": "Visibilité de l'identité",
       "minimumThreshold": "Seuil d'agrégation minimum",
       "minimumThresholdDescription": "Les groupes en dessous de cette taille sont supprimés pour réduire le risque de ré-identification.",
+      "minimumThresholdInvalid": "Saisissez un nombre entier d'au moins 5",
+      "noLocationFound": "Aucun lieu trouvé",
+      "noLocationsAvailable": "Aucun autre lieu à ajouter",
+      "noTeamFound": "Aucune équipe trouvée",
+      "noTeamsAvailable": "Aucune autre équipe à ajouter",
+      "removeScopeItem": "Retirer {name}",
       "save": "Enregistrer les paramètres",
       "saved": "Paramètres du comité d'entreprise enregistrés",
       "saveError": "Échec de l'enregistrement des paramètres du comité d'entreprise",
+      "searchLocations": "Rechercher des lieux",
+      "searchTeams": "Rechercher des équipes",
+      "selectedLocations": "Lieux sélectionnés",
+      "selectedTeams": "Équipes sélectionnées",
       "title": "Mode Comité d'entreprise",
-      "visibleLocationIds": "IDs de localisation visibles",
-      "visibleLocationIdsDescription": "IDs de localisation optionnels séparés par des virgules. Laisser vide pour inclure toutes les localisations.",
-      "visibleTeamIds": "IDs d'équipe visibles",
-      "visibleTeamIdsDescription": "IDs d'équipe facultatifs séparés par des virgules. Laissez vide pour inclure toutes les équipes."
+      "unknownLocation": "Lieu inconnu ({shortId})",
+      "unknownTeam": "Équipe inconnue ({shortId})",
+      "visibleLocations": "Lieux visibles",
+      "visibleLocationsDescription": "Laissez vide pour inclure tous les lieux.",
+      "visibleTeams": "Équipes visibles",
+      "visibleTeamsDescription": "Laissez vide pour inclure toutes les équipes."
     }
   }
 }

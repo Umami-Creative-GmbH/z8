@@ -1,0 +1,37 @@
+{
+  "mode": "before",
+  "scope": "same small-admin / Performance small / Last Year 2025; original synthetic fixture history; no data mutations",
+  "checks": [
+    {
+      "name": "desktop-light",
+      "width": 1600,
+      "documentWidth": 1600,
+      "h1": [
+        "Analytics",
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\n01:54\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nVacation Utilization\nOverall vacation days usage across organization\n\nOverall Utilization\n\n0.0%\n\n416 days taken\n\n-416 days remaining\n\nx\nMonthly Vacation Usage\nVacation days taken per month\n2025-01\n2025-02\n2025-03\n2025-04\n2025-05\n2025-06\n2025-07\n2025-08\n2025-09\n2025-10\n2025-11\n2025-12\nVacation Balance\nDays allocated, taken, and remaining by employee\nEmployee\tAllocated\tTaken\tRemaining\tUtilization\n\nPerson 0\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 1\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 2\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 3\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 4\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 5\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 6\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 7\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\nPeak Vacation Months\nMonths with highest vacation activity"
+    },
+    {
+      "name": "phone-light",
+      "width": 390,
+      "documentWidth": 390,
+      "h1": [
+        "Analytics",
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\nMore actions\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nVacation Utilization\nOverall vacation days usage across organization\n\nOverall Utilization\n\n0.0%\n\n416 days taken\n\n-416 days remaining\n\nx\nMonthly Vacation Usage\nVacation days taken per month\n2025-02\n2025-05\n2025-08\n2025-12\nVacation Balance\nDays allocated, taken, and remaining by employee\nEmployee\nAllocated\nTaken\nRemaining\nUtilization\nPerson 0\n0\n52\n-52\nx\n0%\nPerson 1\n0\n52\n-52\nx\n0%\nPerson 2\n0\n52\n-52\nx\n0%\nPerson 3\n0\n52\n-52\nx\n0%\nPerson 4\n0\n52\n-52\nx\n0%\nPerson 5\n0\n52\n-52\nx\n0%\nPerson 6\n0\n52\n-52\nx\n0%\nPerson 7\n0\n52\n-52\nx\n0%\nPeak Vacation Months\nMonths with highest vacation activity"
+    },
+    {
+      "name": "wide-dark",
+      "width": 2400,
+      "documentWidth": 2400,
+      "h1": [
+        "Analytics",
+        "Analytics"
+      ],
+      "main": "Toggle Sidebar\nAnalytics\n01:54\nUTC+01:00\nClock In\nToggle theme\nAnalytics\nComprehensive insights into team performance, work hours, and absence patterns\nOverview\nTeam Performance\nVacation Trends\nWork Hours\nOvertime Burn-Down\nLast Year\nJan 1, 2025 - Dec 31, 2025\nExport\nVacation Utilization\nOverall vacation days usage across organization\n\nOverall Utilization\n\n0.0%\n\n416 days taken\n\n-416 days remaining\n\nx\nMonthly Vacation Usage\nVacation days taken per month\n2025-01\n2025-02\n2025-03\n2025-04\n2025-05\n2025-06\n2025-07\n2025-08\n2025-09\n2025-10\n2025-11\n2025-12\nVacation Balance\nDays allocated, taken, and remaining by employee\nEmployee\tAllocated\tTaken\tRemaining\tUtilization\n\nPerson 0\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 1\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 2\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 3\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 4\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 5\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 6\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\n\n\nPerson 7\n\t\n0\n\t\n52\n\t\n-52\n\t\nx\n0%\nPeak Vacation Months\nMonths with highest vacation activity"
+    }
+  ],
+  "errors": []
+}

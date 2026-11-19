@@ -1,0 +1,136 @@
+{
+  "head": "eba7258abf1071997dd5e1c3ea13f08fb88b5a5b",
+  "tree": "ea2677419d7a2eef80052e563c6e1e3edc43d75a",
+  "parents": [
+    "a904b3d19815bd511c67514fb48078cd4aec262f",
+    "e194f9f367ff747ecab779ebd47c2ba34c684b84"
+  ],
+  "independent": {
+    "unresolvedTree": "d553fc6efa82c6d9952cba2f05b765429ecfc4f9",
+    "onlyConflictPaths": [
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts"
+    ],
+    "resolutionBlobs": [
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "blob": "896047173635780ce8dc8b00479c9982cdc9a032"
+      },
+      {
+        "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+        "blob": "513a8a30666efd30a712d296f0b0b49063be0a3b"
+      }
+    ],
+    "resolvedExpectedTree": "ea2677419d7a2eef80052e563c6e1e3edc43d75a",
+    "matches": true
+  },
+  "baselineTree": "d508abda504b26e04b6c144629f44f675640ac81",
+  "trackedPaths": {
+    "parent": 16690,
+    "candidate": 16739,
+    "preservedUnchanged": 16684,
+    "changed": [
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+      "apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+      "apps/webapp/src/components/personnel-file/sick-leave-overview.test.tsx",
+      "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "deleted": [],
+    "addedCount": 49
+  },
+  "applicationChangedPaths": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+    "apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+    "apps/webapp/src/components/personnel-file/sick-leave-overview.test.tsx",
+    "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.ts"
+  ],
+  "exactOwned": [
+    "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+    "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+    "apps/webapp/src/components/personnel-file/sick-leave-overview.test.tsx",
+    "apps/webapp/src/components/absences/sick-notes/absence-sick-notes-panel.tsx",
+    "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "apps/webapp/src/lib/navigation/route-metadata.test.ts"
+  ],
+  "untouchedIncoming": {
+    "count": 53,
+    "allEqual": true
+  },
+  "all57VerifiedAncestors": true,
+  "proofFamilies": {
+    "1730": {
+      "preserved": 329,
+      "pathsUnchanged": true
+    },
+    "1731": {
+      "preserved": 235,
+      "pathsUnchanged": true
+    },
+    "1732": {
+      "preserved": 185,
+      "pathsUnchanged": true
+    },
+    "1733": {
+      "preserved": 385,
+      "pathsUnchanged": true
+    }
+  },
+  "allPriorRolloutPathsPreserved": 6394,
+  "inventory": {
+    "counts": {
+      "persistentPages": 153,
+      "redirectAliases": 19,
+      "sourcePageTemplates": 172,
+      "aliasTemplatesUnchangedFromInitialDev": 19
+    },
+    "persistentCount": 153,
+    "aliasesCount": 19
+  },
+  "configs": {
+    "allUnchanged": true
+  },
+  "dependencies": {
+    "physicalParents": [
+      {
+        "path": "node_modules",
+        "physical": true,
+        "real": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules"
+      },
+      {
+        "path": "apps/webapp/node_modules",
+        "physical": true,
+        "real": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\node_modules"
+      },
+      {
+        "path": "node_modules/.pnpm",
+        "physical": true,
+        "real": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm"
+      }
+    ],
+    "leafLinkCount": 158,
+    "allLinksExact": true
+  },
+  "licenses": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "count": 125,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "provenance": "Inherited; not regenerated",
+    "unchanged": true
+  },
+  "node": "v26.9.0",
+  "installedVersions": {
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "vitest": "5.1.0",
+    "typescript": "7.0.2"
+  },
+  "gitStatus": "",
+  "services": {
+    "launched": false,
+    "reason": "Stopped at confirmed source blocker before creating fixture/runtime; no own listeners, containers, Next, native or browser processes exist to stop"
+  }
+}

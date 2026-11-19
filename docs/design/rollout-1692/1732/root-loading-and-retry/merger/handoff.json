@@ -1,0 +1,208 @@
+{
+  "status": "merged; NOT VERIFIED; root correction required",
+  "head": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+  "tree": "414021289707825ace9f06fe533ef04e72e7d1e0",
+  "merge": "29e56ae7b6c8214b8d404de52d834ac0d99313d8",
+  "mergeTree": "906682516a4501da176383e2f891a69a67a7e90c",
+  "mergeParents": [
+    "96e64b16a10c629cae6ec820b11862ac48511503",
+    "df20c5d11bda382ccbe9104398600c6278a5038e"
+  ],
+  "reconciliationCommit": "ab1d1f571a54ebea6c9e2d48436c67cba04f8dd7",
+  "reconciliationParent": [
+    "29e56ae7b6c8214b8d404de52d834ac0d99313d8"
+  ],
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "workingTree": "",
+  "verifiedLedgerAncestors": 55,
+  "baselineAncestor": true,
+  "preservation": {
+    "priorTrackedPaths": 16110,
+    "modifiedPriorPaths": [
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/actions.ts",
+      "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx",
+      "apps/webapp/src/components/personnel-file/payslip-batch-start.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts"
+    ],
+    "priorRolloutProofPaths": 5822,
+    "changedPriorProofPaths": [],
+    "root1731ProofPaths": 173,
+    "root1730ProofPaths": 201,
+    "root1731CorrectionPreserved": true,
+    "trackedConfigurationSnapshots": 36,
+    "physicalDependencyParents": 3,
+    "internalOuterLinks": 158,
+    "lock": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "independentMergeTreeDifferenceOnlyHeadingTest": true
+  },
+  "counts": {
+    "currentTrackedUnits": {
+      "physicalFiles": 61,
+      "cases": 434,
+      "passed": 434,
+      "failed": 0,
+      "skipped": 0
+    },
+    "currentPublicProbes": {
+      "physicalFiles": 2,
+      "cases": 5,
+      "passed": 3,
+      "failed": 2,
+      "skipped": 0
+    },
+    "pinnedHistoricalControl": {
+      "physicalFiles": 1,
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "postgres": {
+      "physicalFiles": 1,
+      "cases": 20,
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    "combinedCurrent": {
+      "physicalFiles": 64,
+      "cases": 459,
+      "passed": 457,
+      "failed": 2,
+      "skipped": 0
+    },
+    "rawHistory": {
+      "physicalFiles": 65,
+      "cases": 461,
+      "passed": 458,
+      "failed": 3,
+      "skipped": 0
+    }
+  },
+  "checks": {
+    "nextTypegen": true,
+    "appTypes": true,
+    "workflowTypes": true,
+    "smokeTypes": true,
+    "biomeExplicitLintFiles": 8,
+    "biomeDiscoveryFormatErrors": 8,
+    "biomeExplicitCrlfFormatErrors": 6,
+    "formatterFixesApplied": 0,
+    "doctorErrors": 0,
+    "doctorWarnings": 3,
+    "staticRoutes": 153,
+    "aliases": 19,
+    "sourceTemplates": 172,
+    "allAliasesBlobUnchangedFromInitialDev": true,
+    "workerArtifacts": {
+      "artifactCount": 78,
+      "jsonFiles": 22,
+      "fullDecodedPngs": 20,
+      "allBlobExact": true,
+      "evidenceMapPins": 77,
+      "localLinks": 28
+    },
+    "syntaxCheckedAuditScripts": 8
+  },
+  "findings": [
+    {
+      "id": "H1",
+      "status": "confirmed blocker",
+      "seam": "Actual exported PayslipBatchesPage Suspense fallback + actual SiteHeader",
+      "expected": "One safe h1 while route admission/read is unresolved",
+      "actual": "Current headings []; pinned premerge control one h1",
+      "evidence": [
+        "heading-boundary.json",
+        "heading-probes.json",
+        "heading-current.test.tsx",
+        "heading-baseline.test.tsx",
+        "baseline-page.tsx",
+        "baseline-site-header.tsx",
+        "baseline-route-metadata.ts"
+      ],
+      "source": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx:177 and apps/webapp/src/components/site-header.tsx:40",
+      "cause": "Exact list opt-in changes shell title from h1 to p. LoadingRegion fallback contains only two skeletons and no safe PageHeader.",
+      "runtimeAcceptance": "Stopped before Next/browser/native launch. No product correction applied."
+    },
+    {
+      "id": "A1",
+      "status": "qualified public component concern",
+      "seam": "Actual exported PayslipBatchStart with React Activity and real TanStack form/shared controls",
+      "actual": "Outstanding start then Activity hide/show retains year 2025 and disabled Start until old request resolves. Old-result side effects are retired.",
+      "evidence": [
+        "lifetime-probes.json",
+        "lifetime-current.test.tsx"
+      ],
+      "qualification": "Probe expectation that a fresh lifetime should immediately release pending state fails. This is not live revocation, not an action idempotency guarantee and not proof that enabling a second uncertain write is safe. Root must choose recovery semantics. Three sibling queued loading/error and rejected late scope tests pass."
+    }
+  ],
+  "qualifications": [
+    "No fresh runtime, screenshot, native, Next compilation/route/error or historical consumer overlay accepted because the public heading blocker was confirmed first. Worker runtime remains inherited at its documented source boundaries.",
+    "Inherited before-desktop PNG visibly clips title/history label under left sidebar; after desktop legible. Inherited phone large text has Pets/Next obstruction over history. Original exact bytes preserved. No new matched comparison or live revocation claim.",
+    "Original translation timeout and superseded heading-stage failure retained. Raw identity history includes the retired old heading full case name; final current tracked suite uses latest complete file result.",
+    "No full generation/build/catalog synchronization/provider/device/true zoom/global guard acceptance; four-path roster guard remains unresolved/unrun.",
+    "Normal package-store lock escalation and read-only gh network escalation were approved. No automatic-review rejection beyond ordinary sandbox boundary refusals occurred in this merger. No dependency install, borrowed directory, config/resolver overlay or suppression used.",
+    "Canonical PostgreSQL session/storage/delivery fakes remain; authorized-both-organizations expected-scope assertion uses actual public action and real database, not browser identity switching."
+  ],
+  "cleanup": {
+    "command": [
+      "pnpm",
+      "--config.verify-deps-before-run=false",
+      "node",
+      "scripts/performance/fixture.mjs",
+      "cleanup",
+      ".tmp/merge1732-fixture"
+    ],
+    "exit": 0,
+    "removed": [
+      {
+        "name": "z8_perf_c3bc896fc34f_postgres",
+        "remaining": false
+      },
+      {
+        "name": "z8_perf_c3bc896fc34f_redis",
+        "remaining": false
+      },
+      {
+        "name": "z8_perf_c3bc896fc34f_storage",
+        "remaining": false
+      }
+    ],
+    "containersRemaining": 0,
+    "fixtureAppPort": 59358,
+    "fixtureAppPortListening": false,
+    "sourceBridgesRemoved": [
+      "apps/webapp/src/components/personnel-file/.tmp/merge1732/lifetime-current.test.tsx",
+      "apps/webapp/src/components/personnel-file/.tmp/merge1732/heading-current.test.tsx",
+      "apps/webapp/src/components/personnel-file/.tmp/merge1732/heading-baseline.test.tsx",
+      "apps/webapp/src/components/personnel-file/.tmp/merge1732/baseline-site-header.tsx",
+      "apps/webapp/src/components/personnel-file/.tmp/merge1732/baseline-route-metadata.ts",
+      "apps/webapp/src/components/personnel-file/.tmp/merge1732/baseline-page.tsx"
+    ],
+    "privateInputsPreserved": true,
+    "nextServersStarted": 0,
+    "browserSessionsStarted": 0,
+    "nativeSessionsStarted": 0,
+    "historicalOverlaysApplied": 0,
+    "ownedNextTreesRemaining": 0,
+    "ownedBrowserSessionsRemaining": 0,
+    "ownedNativeSessionsRemaining": 0,
+    "ownedRuntimeProcessesRemaining": 0,
+    "reason": "Confirmed public loading-heading blocker before runtime launch. No Next/browser/native process, cache move, historical source overlay, runtime auth, grants, sessions, memberships, Phase or provider operation was performed. Canonical initial synthetic fixture accounts/memberships were prepared; PostgreSQL test seeding/standard auth fakes remain suite boundary, not browser authority acceptance."
+  },
+  "publication": {
+    "readmeWritten": false,
+    "ledgerWritten": false,
+    "reportWritten": false,
+    "trackerWritten": false,
+    "pushed": false,
+    "prWritten": false,
+    "closed": false,
+    "mergedToDev": false,
+    "deployed": false
+  },
+  "auditDirectory": ".tmp/merge1732-audit",
+  "release": "RELEASE ALL checkout/index/package/runtime/process ownership. Zero owned Next/browser/native/runtime processes and zero owned fixture containers remain."
+}

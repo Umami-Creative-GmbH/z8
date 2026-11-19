@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
 import source from "./page.tsx?raw";
 
+// Behaviour (balance year, linked record year, calendar-date ranges) is covered in page-ui.test.tsx.
 describe("AbsencesPage calendar ranges", () => {
-	it("keeps visual calendar data and vacation balance on the calendar year", () => {
-		expect(source).toContain("const calendarStart = DateTime.fromObject");
-		expect(source).toContain('const calendarEnd = calendarStart.endOf("year")');
+	it("keeps the vacation balance on the calendar year and records on the linked year", () => {
 		expect(source).toContain(
 			"getVacationBalanceResult(employee.id, calendarYear, timezone)",
 		);
-		expect(source).toContain(
-			"getAbsenceEntries(employee.id, calendarStartDate, calendarEndDate)",
-		);
-		expect(source).toContain("currentYear={calendarYear}");
+		expect(source).toContain("readAbsenceCalendarYear(employee.id, recordYear)");
 		expect(source).not.toContain("fis" + "cal");
 	});
 });

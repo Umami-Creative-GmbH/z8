@@ -1,0 +1,178 @@
+{
+  "attempts": [
+    {
+      "stage": "001-identical-file-current.mjs",
+      "status": "failed",
+      "error": {
+        "name": "error",
+        "message": "column \"staged_storage_key\" does not exist"
+      }
+    },
+    {
+      "stage": "002-identical-file-readback-correction.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "003-populate-readback.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 45000ms exceeded"
+      }
+    },
+    {
+      "stage": "003b-observe-populated.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "003c-populated-byte-readback.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "004-context-preview-recovery.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "005-current-layout.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "006-operational-intake-confirm.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "007-restriction-download.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 45000ms exceeded"
+      }
+    },
+    {
+      "stage": "007b-observe-denial.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "007c-restriction-download.mjs",
+      "status": "failed",
+      "error": {
+        "name": "Error",
+        "message": "Node is either not clickable or not an Element"
+      }
+    },
+    {
+      "stage": "007d-restriction-download.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "008-parse-download-and-grant-controls.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TypeError",
+        "message": "pdf.destroy is not a function"
+      }
+    },
+    {
+      "stage": "008b-grant-controls.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "009-grant-selection.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "009b-grant-select-manager.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "009aa-filter-console.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "009c-save-category-grant.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "010-officer-self-and-open-confirm.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting for selector `[role=alertdialog]` failed"
+      }
+    },
+    {
+      "stage": "010b-observe-officer-confirm.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "010c-settled-officer-confirm.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "011-public-revoke-and-refused-confirm.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "012-matched-current.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "013-historical-journey.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "014-restored-current.mjs",
+      "status": "complete"
+    },
+    {
+      "stage": "015-final-native-next.mjs",
+      "status": "complete"
+    }
+  ],
+  "otherAttempts": [
+    {
+      "name": "initial pnpm engine-lock sandbox denial",
+      "result": "ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK; normal require_escalated retry approved",
+      "approvalRejection": false
+    },
+    {
+      "name": "first controller Windows ESM import",
+      "result": "ERR_UNSUPPORTED_ESM_URL_SCHEME; scoped recorded fresh browser PID cleanup check found it absent, corrected to file URL"
+    },
+    {
+      "name": "populated-ready selector",
+      "result": "Expected enabled Save despite ambiguous/unmatched included files; timed out; observation confirmed intentional gate; readback continued without reupload/reset"
+    },
+    {
+      "name": "synthetic contacts inventory",
+      "result": "Generated fixture email contacts were emitted by two early control inventories. No passwords/session/token/customer data. Raw inventory excluded; future output and all public clones redact contacts."
+    },
+    {
+      "name": "second evidence seal",
+      "result": "Function-body journey snippets contain return statements; standalone ESM syntax validation rejected them. Corrected validation compiles these bodies inside the same async function shape used by the controller, without execution."
+    },
+    {
+      "name": "first evidence seal",
+      "result": "Missing optional failed-controller-cleanup file; no file existed because its scoped browser cleanup check found the failed browser already absent. Optional record removed; no product/evidence pins changed."
+    },
+    {
+      "name": "native first and restored runs",
+      "result": "Both exit0/close0; restored run is retained public result"
+    },
+    {
+      "name": "Next wrapper stops",
+      "result": "Three owned server wrappers exit1 after exact verified forced tree stops; stop helpers exit0, no listener/process remained"
+    },
+    {
+      "name": "final typed-source syntax validator",
+      "result": "Installed TypeScript7 exports only version metadata; compiler-API assumption failed. Corrected to existing frozen tsx/esbuild parser; no dependency change."
+    },
+    {
+      "name": "readable handoff patch",
+      "result": "Editing tool rejected two operations targeting the same owned file; no file changed; authored a fresh ignored draft and moved only that exact file."
+    }
+  ],
+  "defaultTimeouts": true,
+  "noInflatedTimeouts": true,
+  "productSourceBlocker": false
+}

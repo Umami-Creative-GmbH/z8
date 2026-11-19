@@ -1,0 +1,60 @@
+{
+  "baseline": "111dc9e50908ec7f8c478b97c5a96f809b696c0a",
+  "comparison": "Matched page-client source only; same real synthetic account, fixture and local default-config Next runtime. No full historical application or provider claim.",
+  "notes": [
+    {
+      "phase": "before",
+      "sourceSHA256": "079b8da7bdf60c99c88f42d2e8665802c44130ffec9c1becd664c93ad70f51c1",
+      "url": "/en/onboarding/wellness",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "role": "small-admin",
+      "controls": [
+        {
+          "role": null,
+          "text": "Stay Hydrated",
+          "value": null
+        },
+        {
+          "role": "switch",
+          "text": "",
+          "value": null
+        },
+        {
+          "role": null,
+          "text": "Continue",
+          "value": null
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "sourceSHA256": "402bd3efc0758f4245ee046df7cdab8a937c78e37f473904a6e6f8a018e14bdb",
+      "url": "/en/onboarding/wellness",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "role": "small-admin",
+      "controls": [
+        {
+          "role": null,
+          "text": "Stay Hydrated",
+          "value": null
+        },
+        {
+          "role": "switch",
+          "text": "",
+          "value": null
+        },
+        {
+          "role": null,
+          "text": "Continue",
+          "value": null
+        }
+      ]
+    }
+  ]
+}

@@ -69,6 +69,7 @@ const loss = {
 	kind: "lost" as const,
 	quantity: 2,
 	receivedQuantity: 0,
+	receivableQuantity: 2,
 	reason: "Missing after move",
 	actorId: "owner",
 	actorName: "Pat Owner",
@@ -96,6 +97,7 @@ it("requires a reason for partial loss/waiver and preserves command identity on 
 						trackingMode: "quantity",
 						quantity: 3,
 						outstandingQuantity: 3,
+						receivableQuantity: 3,
 					},
 				],
 			}}
@@ -126,7 +128,8 @@ it("requires a reason for partial loss/waiver and preserves command identity on 
 	await user.clear(quantity);
 	await user.type(quantity, "2");
 	await user.click(panel.getByRole("button", { name: "Record closure" }));
-	await waitFor(() => expect(api.toast.error).toHaveBeenCalled());
+	expect(await panel.findByRole("alert")).toBeTruthy();
+	expect(api.toast.error).not.toHaveBeenCalled();
 	await user.click(panel.getByRole("button", { name: "Record closure" }));
 	await waitFor(() => expect(api.change).toHaveBeenCalledTimes(2));
 	expect(api.change.mock.calls[1][0]).toEqual(api.change.mock.calls[0][0]);
@@ -194,11 +197,19 @@ it("shows received, lost, waived and recovered quantities without calling a clos
 						waivedQuantity: 1,
 						recoveredQuantity: 1,
 						outstandingQuantity: 0,
+						receivableQuantity: 0,
 						outstanding: false,
 						overdue: false,
 						canReceive: false,
 						canCloseException: false,
-						exceptions: [{ ...loss, receivedQuantity: 1, canReceive: false }],
+						exceptions: [
+							{
+								...loss,
+								receivedQuantity: 1,
+								receivableQuantity: 1,
+								canReceive: false,
+							},
+						],
 					},
 				],
 			}}
@@ -238,10 +249,8 @@ it("offers closure on the employee page and keeps a stale refusal reviewable", a
 	const panel = await closeFromRow(user);
 	await user.type(panel.getByLabelText(/^Reason/), "Missing laptop");
 	await user.click(panel.getByRole("button", { name: "Record closure" }));
-	await waitFor(() =>
-		expect(api.toast.error).toHaveBeenCalledWith(
-			"This record changed. Reload equipment and review it before submitting again.",
-		),
+	expect((await panel.findByRole("alert")).textContent).toBe(
+		"This record changed. Reload equipment and review it before submitting again.",
 	);
 	expect(panel.getByLabelText(/^Reason/)).toHaveProperty(
 		"value",

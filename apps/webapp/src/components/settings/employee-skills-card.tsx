@@ -34,11 +34,23 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	Select,
 	SelectContent,
@@ -117,6 +129,10 @@ export function EmployeeSkillsCard({
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editing, setEditing] = useState<EmployeeSkillWithDetails | null>(null);
+	const [removeTarget, setRemoveTarget] = useState<{
+		skillId: string;
+		skillName: string;
+	} | null>(null);
 
 	// Fetch employee's skills
 	const { data: employeeSkills, isLoading } = useEmployeeSkills({
@@ -149,23 +165,15 @@ export function EmployeeSkillsCard({
 		},
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillRemoved", "Skill removed"));
+			setRemoveTarget(null);
 			queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
 		},
-		onError: (error) => {
-			toast.error(error.message || t("settings.skills.removeError", "Failed to remove skill"));
-		},
+		// A failure is shown inside the confirmation dialog, which stays open for a retry.
 	});
 
 	const handleRemove = (skillId: string, skillName: string) => {
-		if (
-			confirm(
-				t("settings.skills.confirmRemove", 'Remove "{skillName}" from this employee?', {
-					skillName,
-				}),
-			)
-		) {
-			removeMutation.mutate({ skillId });
-		}
+		removeMutation.reset();
+		setRemoveTarget({ skillId, skillName });
 	};
 
 	const handleSuccess = () => {
@@ -178,8 +186,8 @@ export function EmployeeSkillsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<div className="min-w-0">
 						<CardTitle>{t("settings.skills.employeeSkills", "Skills & Qualifications")}</CardTitle>
 						<CardDescription>
 							{t(
@@ -198,13 +206,18 @@ export function EmployeeSkillsCard({
 			</CardHeader>
 			<CardContent>
 				{isLoading ? (
-					<div className="flex items-center justify-center py-8">
+					<LoadingRegion
+						className="flex items-center justify-center py-8"
+						label={{ labelKey: "settings.loading", labelDefault: "Loading settings" }}
+					>
 						<IconLoader2 className="size-6 animate-spin text-muted-foreground" aria-hidden="true" />
-					</div>
+					</LoadingRegion>
 				) : skills.length === 0 ? (
-					<div className="py-8 text-center text-muted-foreground">
-						<IconAward className="mx-auto size-12 mb-4 opacity-50" aria-hidden="true" />
-						<p>{t("settings.skills.noSkillsAssigned", "No skills assigned")}</p>
+					<div className="space-y-1 py-8 text-center text-muted-foreground">
+						<IconAward className="mx-auto mb-2 size-6" aria-hidden="true" />
+						<p className="font-medium text-foreground">
+							{t("settings.skills.noSkillsAssigned", "No skills assigned")}
+						</p>
 						{canManageSkills && (
 							<p className="text-sm mt-1">
 								{t("settings.skills.assignSkillHint", "Click 'Assign Skill' to add qualifications")}
@@ -212,126 +225,27 @@ export function EmployeeSkillsCard({
 						)}
 					</div>
 				) : (
-					<div className="space-y-3">
-						{skills.map((employeeSkill) => {
-							const CategoryIcon = getCategoryIcon(employeeSkill.skill.category as SkillCategory);
-							const badge = badgeFor(employeeSkill.expiresAt);
-							const expired = badge === "expired";
-							const expiringSoon = badge === "expiringSoon";
-
-							return (
-								<div
-									key={employeeSkill.id}
-									className={`flex items-start justify-between rounded-lg border p-3 ${
-										expired ? "border-destructive/50 bg-destructive/5" : ""
-									} ${expiringSoon && !expired ? "border-yellow-500/50 bg-yellow-500/5" : ""}`}
-								>
-									<div className="flex items-start gap-3">
-										<div
-											className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}
-										>
-											<CategoryIcon className="size-5" aria-hidden="true" />
-										</div>
-										<div className="space-y-1">
-											<div className="flex items-center gap-2">
-												<span className="font-medium">{employeeSkill.skill.name}</span>
-												{expired && (
-													<Badge variant="destructive">
-														<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
-														{t("settings.skills.expired", "Expired")}
-													</Badge>
-												)}
-												{expiringSoon && !expired && (
-													<Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
-														<IconCalendarDue className="mr-1 size-3" aria-hidden="true" />
-														{t("settings.skills.expiringSoon", "Expiring Soon")}
-													</Badge>
-												)}
-												{employeeSkill.certificateOnFile && (
-													<Badge variant="outline">
-														<IconFileCertificate className="mr-1 size-3" aria-hidden="true" />
-														{t("settings.skills.certificateOnFile", "Certificate on file")}
-													</Badge>
-												)}
-											</div>
-											{employeeSkill.expiresAt && (
-												<p
-													className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}
-												>
-													{expired
-														? t("settings.skills.expiredOn", "Expired on {date}", {
-																date: formatExpiryDate(employeeSkill.expiresAt, locale),
-															})
-														: t("settings.skills.expiresOn", "Expires {date}", {
-																date: formatExpiryDate(employeeSkill.expiresAt, locale),
-															})}
-												</p>
-											)}
-											{employeeSkill.expiryDateFromCertificate && (
-												<p className="text-xs text-muted-foreground">
-													{t(
-														"settings.skills.expiryDateFromCertificate",
-														"A skill certificate in the personnel file sets this date.",
-													)}
-												</p>
-											)}
-											{employeeSkill.notes && (
-												<p className="text-xs text-muted-foreground">{employeeSkill.notes}</p>
-											)}
-										</div>
-									</div>
-									{canManageSkills && (
-										<TooltipProvider>
-											<div className="flex items-center gap-1">
-												{/* Skill certificates set the date: only the certificate changes it (#1145). */}
-												{!employeeSkill.expiryDateFromCertificate && (
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="size-8"
-																onClick={() => setEditing(employeeSkill)}
-																aria-label={t(
-																	"settings.skills.editExpiryDateFor",
-																	"Edit expiry date of {skillName}",
-																	{ skillName: employeeSkill.skill.name },
-																)}
-															>
-																<IconPencil className="size-4" aria-hidden="true" />
-															</Button>
-														</TooltipTrigger>
-														<TooltipContent>
-															{t("settings.skills.editExpiryDate", "Edit expiry date")}
-														</TooltipContent>
-													</Tooltip>
-												)}
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="size-8"
-															onClick={() =>
-																handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
-															}
-															disabled={removeMutation.isPending}
-															aria-label={t("common.remove", "Remove")}
-														>
-															<IconTrash className="size-4" aria-hidden="true" />
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>{t("common.remove", "Remove")}</TooltipContent>
-												</Tooltip>
-											</div>
-										</TooltipProvider>
-									)}
-								</div>
-							);
-						})}
-					</div>
+					<EmployeeSkillsList
+						skills={skills}
+						badgeFor={badgeFor}
+						locale={locale}
+						canManageSkills={canManageSkills}
+						onEdit={setEditing}
+						handleRemove={handleRemove}
+						removing={removeMutation.isPending}
+					/>
 				)}
 			</CardContent>
+
+			{canManageSkills ? (
+				<RemoveEmployeeSkillDialog
+					removeTarget={removeTarget}
+					setRemoveTarget={setRemoveTarget}
+					removing={removeMutation.isPending}
+					error={removeMutation.error}
+					onRemove={removeMutation.mutate}
+				/>
+			) : null}
 
 			{/* Assign Skill ActionPanel */}
 			{canManageSkills ? (
@@ -705,5 +619,207 @@ function AssignSkillDialog({
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function EmployeeSkillsList({
+	skills,
+	badgeFor,
+	locale,
+	canManageSkills,
+	onEdit,
+	handleRemove,
+	removing,
+}: {
+	skills: EmployeeSkillWithDetails[];
+	badgeFor: (expiresAt: string | null) => SkillExpiryBadge | null;
+	locale: string;
+	canManageSkills: boolean;
+	onEdit: (record: EmployeeSkillWithDetails) => void;
+	handleRemove: (skillId: string, skillName: string) => void;
+	removing: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="space-y-3">
+			{skills.map((employeeSkill) => {
+				const CategoryIcon = getCategoryIcon(employeeSkill.skill.category as SkillCategory);
+				const badge = badgeFor(employeeSkill.expiresAt);
+				const expired = badge === "expired";
+				const expiringSoon = badge === "expiringSoon";
+
+				return (
+					<div
+						key={employeeSkill.id}
+						className={`flex items-start justify-between rounded-lg border p-3 ${
+							expired ? "border-destructive/50 bg-destructive/5" : ""
+						} ${expiringSoon && !expired ? "border-warning/50 bg-warning/5" : ""}`}
+					>
+						<div className="flex items-start gap-3">
+							<div className={`mt-0.5 ${expired ? "text-destructive" : "text-muted-foreground"}`}>
+								<CategoryIcon className="size-5" aria-hidden="true" />
+							</div>
+							<div className="space-y-1">
+								<div className="flex items-center gap-2">
+									<span className="font-medium">{employeeSkill.skill.name}</span>
+									{expired && (
+										<Badge variant="destructive">
+											<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
+											{t("settings.skills.expired", "Expired")}
+										</Badge>
+									)}
+									{expiringSoon && !expired && (
+										<Badge variant="secondary" className="bg-warning/15 text-warning">
+											<IconCalendarDue className="mr-1 size-3" aria-hidden="true" />
+											{t("settings.skills.expiringSoon", "Expiring Soon")}
+										</Badge>
+									)}
+									{employeeSkill.certificateOnFile && (
+										<Badge variant="outline">
+											<IconFileCertificate className="mr-1 size-3" aria-hidden="true" />
+											{t("settings.skills.certificateOnFile", "Certificate on file")}
+										</Badge>
+									)}
+								</div>
+								{employeeSkill.expiresAt && (
+									<p
+										className={`text-xs ${expired ? "text-destructive" : "text-muted-foreground"}`}
+									>
+										{expired
+											? t("settings.skills.expiredOn", "Expired on {date}", {
+													date: formatExpiryDate(employeeSkill.expiresAt, locale),
+												})
+											: t("settings.skills.expiresOn", "Expires {date}", {
+													date: formatExpiryDate(employeeSkill.expiresAt, locale),
+												})}
+									</p>
+								)}
+								{employeeSkill.expiryDateFromCertificate && (
+									<p className="text-xs text-muted-foreground">
+										{t(
+											"settings.skills.expiryDateFromCertificate",
+											"A skill certificate in the personnel file sets this date.",
+										)}
+									</p>
+								)}
+								{employeeSkill.notes && (
+									<p className="text-xs text-muted-foreground">{employeeSkill.notes}</p>
+								)}
+							</div>
+						</div>
+						{canManageSkills && (
+							<TooltipProvider>
+								<div className="flex items-center gap-1">
+									{/* Skill certificates set the date: only the certificate changes it (#1145). */}
+									{!employeeSkill.expiryDateFromCertificate && (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-8"
+													onClick={() => onEdit(employeeSkill)}
+													aria-label={t(
+														"settings.skills.editExpiryDateFor",
+														"Edit expiry date of {skillName}",
+														{ skillName: employeeSkill.skill.name },
+													)}
+												>
+													<IconPencil className="size-4" aria-hidden="true" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("settings.skills.editExpiryDate", "Edit expiry date")}
+											</TooltipContent>
+										</Tooltip>
+									)}
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon"
+												className="size-8"
+												onClick={() =>
+													handleRemove(employeeSkill.skillId, employeeSkill.skill.name)
+												}
+												disabled={removing}
+												aria-label={t("settings.skills.removeSkillNamed", "Remove {skillName}", {
+													skillName: employeeSkill.skill.name,
+												})}
+											>
+												<IconTrash className="size-4" aria-hidden="true" />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>{t("common.remove", "Remove")}</TooltipContent>
+									</Tooltip>
+								</div>
+							</TooltipProvider>
+						)}
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
+function RemoveEmployeeSkillDialog({
+	removeTarget,
+	setRemoveTarget,
+	removing,
+	error,
+	onRemove,
+}: {
+	removeTarget: { skillId: string; skillName: string } | null;
+	setRemoveTarget: (value: null) => void;
+	removing: boolean;
+	error: Error | null;
+	onRemove: (input: { skillId: string }) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<AlertDialog
+			open={removeTarget !== null}
+			onOpenChange={(open) => {
+				if (!open && !removing) setRemoveTarget(null);
+			}}
+		>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{t("settings.skills.removeDialog.title", "Remove skill?")}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{t("settings.skills.confirmRemove", 'Remove "{skillName}" from this employee?', {
+							skillName: removeTarget?.skillName ?? "",
+						})}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				{error ? (
+					<p role="alert" className="text-sm text-destructive">
+						{error.message || t("settings.skills.removeError", "Failed to remove skill")}
+					</p>
+				) : null}
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={removing}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+					<AlertDialogAction asChild>
+						<Button
+							variant="destructive"
+							disabled={removing}
+							onClick={(event) => {
+								// Base UI's Close ignores preventDefault; stop its handler so the
+								// dialog stays open until the removal settles.
+								keepAlertDialogOpen(event);
+								if (removeTarget && !removing) onRemove({ skillId: removeTarget.skillId });
+							}}
+						>
+							{removing ? (
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+							) : null}
+							{t("settings.skills.removeDialog.confirm", "Remove skill")}
+						</Button>
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }

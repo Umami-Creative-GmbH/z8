@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
+import { PageHeader } from "@/components/ui/page-header";
 import { BillingAlerts } from "./billing-page/billing-alerts";
 import { BillingFaq } from "./billing-page/billing-faq";
 import { SubscriptionSummary } from "./billing-page/subscription-summary";
@@ -31,80 +32,78 @@ function BillingPageClientContent({
 	);
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<BillingAlerts
-				accessResult={accessResult}
-				canceled={canceled}
-				isTrialing={subscription?.status === "trialing"}
-				success={success}
-			/>
-
-			<div>
-				<h1 className="text-3xl font-bold">
-					{t("billing.title", "Billing & Subscription")}
-				</h1>
-				<p className="text-muted-foreground mt-1">
-					{t(
+		<div className="page-frame flex-1">
+			<div className="page-measure space-y-6">
+				<PageHeader
+					title={t("billing.title", "Billing & Subscription")}
+					description={t(
 						"billing.description",
 						"Manage your subscription and billing details",
 					)}
-				</p>
-			</div>
+				/>
 
-			{subscription ? (
-				<>
-					<SubscriptionSummary
-						canManageBilling={canManageBilling}
-						isPortalLoading={isPortalLoading}
-						kioskSeatsEnabled={kioskSeatsEnabled}
-						onManageBilling={openBillingPortal}
-						subscription={subscription}
-					/>
-					{subscription.isTrialing && !canManageBilling ? (
+				<BillingAlerts
+					accessResult={accessResult}
+					canceled={canceled}
+					isTrialing={subscription?.status === "trialing"}
+					success={success}
+				/>
+
+				{subscription ? (
+					<>
+						<SubscriptionSummary
+							canManageBilling={canManageBilling}
+							isPortalLoading={isPortalLoading}
+							kioskSeatsEnabled={kioskSeatsEnabled}
+							onManageBilling={openBillingPortal}
+							subscription={subscription}
+						/>
+						{subscription.isTrialing && !canManageBilling ? (
+							<BillingPricingCards
+								buttonLabels={{
+									monthly: t("billing.upgradeMonthly", "Upgrade Monthly"),
+									yearly: t("billing.upgradeYearly", "Upgrade Yearly"),
+								}}
+								description={t(
+									"billing.chooseUpgradePlanDescription",
+									"Choose a billing cadence now. Your paid subscription starts only after the remaining trial period.",
+								)}
+								isLoading={isCheckoutLoading}
+								kioskSeatsEnabled={kioskSeatsEnabled}
+								onSubscribe={startCheckout}
+								title={t("billing.choosePlan", "Choose Your Plan")}
+							/>
+						) : null}
+					</>
+				) : (
+					<div className="space-y-6">
 						<BillingPricingCards
 							buttonLabels={{
-								monthly: t("billing.upgradeMonthly", "Upgrade Monthly"),
-								yearly: t("billing.upgradeYearly", "Upgrade Yearly"),
+								monthly: t("billing.startTrial", "Start Free Trial"),
+								yearly: t("billing.startTrial", "Start Free Trial"),
 							}}
-							description={t(
-								"billing.chooseUpgradePlanDescription",
-								"Choose a billing cadence now. Your paid subscription starts only after the remaining trial period.",
-							)}
 							isLoading={isCheckoutLoading}
 							kioskSeatsEnabled={kioskSeatsEnabled}
 							onSubscribe={startCheckout}
-							title={t("billing.choosePlan", "Choose Your Plan")}
 						/>
-					) : null}
-				</>
-			) : (
-				<div className="space-y-6">
-					<BillingPricingCards
-						buttonLabels={{
-							monthly: t("billing.startTrial", "Start Free Trial"),
-							yearly: t("billing.startTrial", "Start Free Trial"),
-						}}
-						isLoading={isCheckoutLoading}
-						kioskSeatsEnabled={kioskSeatsEnabled}
-						onSubscribe={startCheckout}
-					/>
-					<p className="text-center text-sm text-muted-foreground">
-						{t(
-							"billing.vatNotice",
-							"Prices shown are net prices excluding VAT. VAT will be added where applicable.",
-						)}
-					</p>
-				</div>
-			)}
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"billing.vatNotice",
+								"Prices shown are net prices excluding VAT. VAT will be added where applicable.",
+							)}
+						</p>
+					</div>
+				)}
 
-			<BillingFaq />
+				<BillingFaq />
+			</div>
 		</div>
 	);
 }
 
 export function BillingPageClient(props: BillingPageClientProps) {
 	return (
-		<Suspense fallback={<SettingsContentLoading />}>
+		<Suspense fallback={<SettingsContentLoading variant="section" />}>
 			<BillingPageClientContent {...props} />
 		</Suspense>
 	);

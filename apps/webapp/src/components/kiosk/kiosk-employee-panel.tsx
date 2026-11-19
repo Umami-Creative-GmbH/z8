@@ -104,7 +104,7 @@ export function KioskEmployeePanel({
 					});
 
 	return (
-		<div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+		<div className="mx-auto flex w-full max-w-2xl flex-col gap-6 rounded-xl border bg-card p-4 sm:p-6">
 			<Button
 				variant="ghost"
 				size="lg"
@@ -141,7 +141,7 @@ export function KioskEmployeePanel({
 					{error}
 				</p>
 			) : null}
-			<div className="grid gap-4 sm:grid-cols-2">
+			<div aria-busy={pending !== null} className="grid gap-4 sm:grid-cols-2">
 				{kioskActionsFor(state).map((action, index) => {
 					const Icon = ACTION_ICONS[action];
 					return (

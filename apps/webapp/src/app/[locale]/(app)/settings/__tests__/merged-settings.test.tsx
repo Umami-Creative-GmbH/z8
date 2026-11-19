@@ -59,6 +59,9 @@ vi.mock("../enterprise/api-keys/actions", () => ({ listApiKeys: mocks.keys }));
 vi.mock("@/lib/webhooks", () => ({
 	getWebhookEndpointsByOrganization: mocks.webhooks,
 }));
+vi.mock("@/lib/webhooks/webhook-service", () => ({
+	getWebhookEndpointsByOrganization: mocks.webhooks,
+}));
 vi.mock("../audit-export/actions", () => ({
 	getAuditConfigAction: mocks.auditConfig,
 	getAuditPackagesAction: mocks.packages,
@@ -260,13 +263,19 @@ describe("merged organization settings", () => {
 		]);
 	});
 	it("combines API keys and webhooks with their original organization and user props", async () => {
+		// The keys and webhooks tabs are assembled client-side by DeveloperAccessClient
+		// (enterprise/api-keys/page-client.tsx); the server page supplies their data.
 		const page = await content(DeveloperPage);
-		expect(tabs(page)).toEqual(["keys", "webhooks"]);
 		expect(mocks.keys).toHaveBeenCalledWith();
 		expect(mocks.webhooks).toHaveBeenCalledWith("org-1");
-		expect(page.props.tabs[0].panel.props).toMatchObject({
+		expect(page.props).toMatchObject({
 			organizationId: "org-1",
 			currentUserId: "user-1",
+			settingsAccess: "orgAdmin",
+			initialApiKeys: [{ id: "key-1" }],
+			initialKeysError: false,
+			initialWebhooks: [{ id: "webhook-1" }],
+			initialWebhooksError: false,
 		});
 	});
 	it("exposes audit activity, configuration, packages and keys at one level", async () => {
@@ -334,8 +343,13 @@ describe("merged organization settings", () => {
 		[LegacyBrandingPage, "/settings/enterprise/domains?tab=branding"],
 	])("preserves a guarded legacy route", async (page, target) => {
 		const render = () => {
-			const result = page();
-			return result instanceof Promise ? result : result.props.children.type();
+			// Every Next page receives searchParams; the webhooks redirect forwards them.
+			const result = (page as (props: unknown) => ReturnType<typeof page>)({
+				searchParams: Promise.resolve({}),
+			});
+			return result instanceof Promise
+				? result
+				: result.props.children.type(result.props.children.props);
 		};
 		await expect(render()).rejects.toThrow(`redirect:${target}`);
 		mocks.access.mockRejectedValue(new Error("denied"));

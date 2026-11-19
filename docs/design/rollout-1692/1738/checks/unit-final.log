@@ -1,0 +1,183 @@
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-a83e6a27-7bf4f7950a71b256/apps/webapp
+
+ ❯ |unit| src/components/scheduling/scheduler/shift-scheduler.test.tsx (3 tests | 1 failed) 478ms
+   × offers a non-gesture way to open a shift with its date, time, place and status 187ms
+
+ Test Files  1 failed | 39 passed (40)
+      Tests  1 failed | 247 passed (248)
+   Start at  01:35:07
+   Duration  4.49s (environment 47%, import 28%, tests 10%, setup 8%, transform 7%, worker 1%)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/scheduling/scheduler/shift-scheduler.test.tsx > offers a non-gesture way to open a shift with its date, time, place and status
+TestingLibraryElementError: Found multiple elements with the display value: 09:00.
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<input[39m
+  [33mautocomplete[39m=[32m"off"[39m
+  [33mclass[39m=[32m"min-w-0 flex-1 border-0 bg-transparent px-3 py-1 text-base outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed md:text-sm"[39m
+  [33mdata-slot[39m=[32m"time-input-field"[39m
+  [33minputmode[39m=[32m"numeric"[39m
+  [33mtype[39m=[32m"text"[39m
+  [33mvalue[39m=[32m"09:00"[39m
+[36m/>[39m
+
+Ignored nodes: comments, script, style
+[36m<input[39m
+  [33maria-hidden[39m=[32m"true"[39m
+  [33mclass[39m=[32m"hidden tp-ui-input tp-ui-open-element"[39m
+  [33mdata-open[39m=[32m"tp-ui-input"[39m
+  [33mreadonly[39m=[32m""[39m
+  [33mtabindex[39m=[32m"-1"[39m
+  [33mtype[39m=[32m"text"[39m
+  [33mvalue[39m=[32m"09:00"[39m
+[36m/>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div[39m
+    [33mdata-base-ui-inert[39m=[32m""[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex min-w-0 flex-col gap-4"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33maria-hidden[39m=[32m"true"[39m
+        [33mclass[39m=[32m"flex flex-wrap items-center justify-between gap-3 border-b pb-4"[39m
+      [36m>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"text-sm text-muted-foreground tabular-nums"[39m
+        [36m>[39m
+          [0mNov 15, 2026[0m
+          [0m –[0m
+          [0m [0m
+          [0mNov 21, 2026[0m
+          [0m [0m
+          [0m([0m
+          [0mEurope/Berlin[0m
+          [0m)[0m
+        [36m</p>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"[39m
+          [33mdata-slot[39m=[32m"button"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"tabler-icon tabler-icon-plus size-4"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 5l0 14"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M5 12l14 0"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mCreate Shift[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33maria-hidden[39m=[32m"true"[39m
+        [33mclass[39m=[32m"flex flex-wrap items-center gap-4"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5 relative"[39m
+          [33mdata-base-ui-tooltip-trigger[39m=[32m""[39m
+          [33mdata-slot[39m=[32m"tooltip-trigger"[39m
+          [33mid[39m=[32m"base-ui-_r_6_"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33mclass[39m=[32m"tabler-icon tabler-icon-target mr-2 size-4"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M7 12a5 5 0 1 0 10 0a5 5 0 1 0 -10 0"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mCoverage[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mclass[39m=[32m"relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"[39m
+          [33mdata-slot[39m=[32m"button"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"tabler-icon tabler-icon-arrows-exchange mr-2 size-4"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M7 10h14l-4 -4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M17 14h-14l4 4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mShift requests[0m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex min-h-0 min-w-0 flex-1 flex-col gap-4 lg:flex-row"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"order-2 lg:order-none"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-...
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/scheduling/scheduler/shift-scheduler.test.tsx:111:16
+    109|  fireEvent.click(record);
+    110|  expect(await screen.findByRole("dialog", { name: "Edit Shift" })).toB…
+    111|  expect(screen.getByDisplayValue("09:00")).toBeTruthy();
+       |                ^
+    112|  expect(screen.getByDisplayValue("17:00")).toBeTruthy();
+    113| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

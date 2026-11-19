@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Regjistro mungesë për {name}"
       },
+      "allowances": "Kompensimet vjetore",
       "calendar": {
         "approved": "Miratuar",
         "changeDeputy": "Ndrysho zëvendësuesin",
@@ -12,7 +13,6 @@
         "deputyMissing": "Mungon zëvendësuesi",
         "description": "Mungesat e miratuara dhe në pritje për ekipin dhe vitin e zgjedhur.",
         "error": {
-          "description": "Ju lutemi provoni përsëri pas një çasti.",
           "title": "Nuk mund të ngarkohet kalendari"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Regjistro mungesën",
         "titleForEmployee": "Regjistro mungesën për {name}"
       },
+      "recordingUnavailable": "Opsionet e regjistrimit të mungesave nuk mund të ngarkohen",
+      "retained": "Po shfaqen të dhënat e ngarkuara më parë. Provoni përsëri për të marrë regjistrimet aktuale.",
+      "scopeChanged": "Fushëveprimi i ekipit ndryshoi. Ringarkoni për të vazhduar.",
+      "scopeLoading": "Po ngarkohet fushëveprimi aktual i ekipit…",
+      "scopeUnavailable": "Nuk mund të ngarkohet fushëveprimi aktual i ekipit",
+      "sections": "Seksionet e faqes",
       "sort": {
         "ascending": "rritëse",
         "by": "Rendit sipas {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Nuk ka balancë"
     },
-    "description": "Shikoni dhe menaxhoni punonjësit që mbikëqyrni drejtpërdrejt",
+    "directory": {
+      "count": "{count, plural, one {# anëtar në këtë fushëveprim} other {# anëtarë në këtë fushëveprim}}",
+      "loading": "Po ngarkohen anëtarët e ekipit",
+      "retained": "Po shfaqen anëtarët e ngarkuar së fundi. Provoni përsëri për t'i përditësuar.",
+      "retry": "Riprovo",
+      "retrying": "Duke riprovuar…",
+      "scope": "Ju dhe punonjësit që mbikëqyrni drejtpërdrejt në organizatën aktive.",
+      "scopeChanged": "Organizata ose qasja juaj ndryshoi. Rifreskoni për të ngarkuar ekipin tuaj."
+    },
     "driving": {
+      "clearFilters": "Pastro filtrat",
       "columns": {
         "calendar": "Kalendari",
         "date": "Data",
@@ -126,6 +141,8 @@
         "employee": "Punonjësi",
         "team": "Ekipi"
       },
+      "guidance": "Hapni kalendarin e një punonjësi për të përfunduar caktimin e periudhës së punës. Detajet që mungojnë nuk bllokojnë regjistrimin e orarit dhe nuk përcaktojnë autorizimin për drejtim automjeti.",
+      "loadFailed": "Detajet e drejtimit të automjetit nuk mund të ngarkoheshin.",
       "loading": "Po ngarkohen detajet e drejtimit",
       "missing": {
         "endReading": "Nuk ka lexim përfundimtar",
@@ -133,10 +150,18 @@
         "startReading": "Nuk ka lexim fillestar",
         "vehicle": "Nuk ka automjet"
       },
+      "noMatch": "Asnjë detaj që mungon për drejtimin e automjetit nuk përputhet me këta filtra.",
       "openCalendar": "Kalendari",
       "openCalendarOf": "Hap kalendarin e {name}",
+      "refreshFailed": "Detajet e drejtimit të automjetit nuk mund të rifreskoheshin. Po shfaqen regjistrimet e ngarkuara më parë.",
+      "restricted": "Detajet e drejtimit të automjetit nuk janë të disponueshme në fushëveprimin tuaj aktual.",
+      "scopeAll": "Të gjithë punonjësit në këtë organizatë",
+      "scopeFailed": "Fushëveprimi aktual i drejtimit të automjetit nuk mund të ngarkohej.",
+      "scopeLoading": "Po ngarkohet fushëveprimi aktual i drejtimit të automjetit…",
+      "scopeManaged": "Punonjësit që menaxhoni",
       "title": "Mungojnë detajet e drejtimit",
-      "truncated": "Po shfaqen {count} periudhat më të reja të punës. Filtroni sipas ekipit ose punonjësit për të parë pjesën tjetër."
+      "truncated": "Po shfaqen {count} periudhat më të reja të punës. Filtroni sipas ekipit ose punonjësit për të parë pjesën tjetër.",
+      "updating": "Po përditësohen detajet e drejtimit të automjetit…"
     },
     "empty": {
       "action": "Shko te Cilësimet e punonjësve",
@@ -148,9 +173,9 @@
       "title": "Diçka shkoi keq"
     },
     "feature": "shikoni ekipin tuaj",
-    "member": "anëtar",
-    "members": "anëtarë",
-    "member.you": "Ju",
+    "member": {
+      "you": "Ju"
+    },
     "noResults": {
       "action": "Pastro kërkimin",
       "description": "Asnjë anëtar ekipi nuk përputhet me \"{query}\"",
@@ -169,8 +194,8 @@
         "period": "Periudha",
         "status": "Statusi"
       },
-      "descriptionAll": "Kush e ka dorëzuar periudhën e përzgjedhur. Miratoni ose refuzoni dorëzimet në kutinë hyrëse të miratimeve.",
-      "descriptionManaged": "Cilët nga punonjësit që menaxhoni e kanë dorëzuar periudhën e përzgjedhur. Miratoni ose refuzoni dorëzimet në kutinë hyrëse të miratimeve.",
+      "confirmationContext": "Dorëzimet i konfirmojnë të dhënat pa i ngrirë ato. Regjistrimet e ndryshuara kërkojnë ridorëzim. Rishikoni vendimet në kutinë e miratimeve.",
+      "contextFailed": "Nuk mund të kontrollohej qasja juaj aktuale.",
       "empty": "Askush që mund të shihni nuk pritet ta dorëzojë këtë periudhë.",
       "loading": "Duke ngarkuar dorëzimet e periudhës",
       "notSubmitted": "E padorëzuar",
@@ -180,7 +205,12 @@
       "openInbox": "Hap kutinë e miratimeve",
       "owing": "{count, plural, one {# punonjës nuk e ka dorëzuar ende këtë periudhë.} other {# punonjës nuk e kanë dorëzuar ende këtë periudhë.}}",
       "period": "Periudha e dorëzimit",
+      "readFailed": "Nuk mund të ngarkoheshin dorëzimet e periudhës. Regjistrimet e ngarkuara më parë mund të jenë të vjetruara.",
+      "records": "Dorëzimet e punonjësve",
+      "refresh": "Rifresko dorëzimet",
       "running": "Kjo periudhë është ende në vazhdim. Punonjësit mund ta dorëzojnë atë duke filluar nga dita e saj e fundit.",
+      "scopeAll": "Të gjithë punonjësit e mbuluar",
+      "scopeManaged": "Punonjësit që menaxhoni",
       "status": {
         "approved": "Miratuar",
         "awaiting": "Në pritje të dorëzimit",
@@ -189,10 +219,13 @@
         "submitted": "Dorëzuar"
       },
       "summary": "Statuset",
-      "title": "Dorëzimet e periudhës"
+      "title": "Dorëzimet e periudhës",
+      "unavailable": "Dorëzimet e periudhës nuk janë të disponueshme për qasjen tuaj aktuale. Rifreskoni për të kontrolluar përsëri qasjen."
     },
     "presence": {
       "allLocations": "Të gjitha vendndodhjet",
+      "assignmentContext": "Caktimi i vendndodhjes nuk përbën dëshmi të pozicionit të pajisjes. Orët përdorin zonën e regjistruar kur filloi puna ose pushimi. Prania rifreskohet çdo minutë.",
+      "chooseLocation": "Zgjidhni një vendndodhje",
       "columns": {
         "name": "Emri",
         "since": "Që nga",
@@ -202,9 +235,19 @@
       "descriptionAll": "Punonjësit e caktuar në këtë vendndodhje që janë regjistruar në punë ose në pushim.",
       "descriptionManaged": "Punonjësit që menaxhoni të cilët janë caktuar në këtë vendndodhje dhe janë regjistruar në punë ose në pushim.",
       "empty": "Askush që mund të shihni nuk është i regjistruar në punë në këtë vendndodhje tani.",
+      "loadFailed": "Nuk mundëm të ngarkojmë praninë e kësaj vendndodhjeje. Provoni përsëri ose zgjidhni sërish një vendndodhje.",
+      "loading": "Po ngarkohet prania e vendndodhjes…",
+      "loadingLocations": "Po ngarkohen vendndodhjet për organizatën aktuale…",
       "locationTitle": "Kush është në punë: {location}",
+      "locationUnavailable": "Vendndodhja nuk është e disponueshme",
+      "locationUnavailableDescription": "Kjo vendndodhje nuk është e disponueshme në organizatën tuaj aktuale. Zgjidhni një vendndodhje aktive për të parë praninë.",
       "noLocations": "Organizata juaj nuk ka ende vendndodhje aktive.",
-      "title": "Kush është në punë"
+      "refreshFailed": "Vendndodhjet nuk mund të rifreskoheshin. Po shfaqen vendndodhjet e fundit të ngarkuara.",
+      "refreshingLocations": "Po rifreskohen vendndodhjet…",
+      "scopeChanged": "Prania kërkon një lexim të ri për llogarinë ose organizatën aktuale.",
+      "title": "Kush është në punë",
+      "unavailable": "Prania nuk është e disponueshme",
+      "viewPresence": "Shiko praninë"
     },
     "primaryManager": "Ju jeni menaxheri kryesor",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Punonjës",
       "position": "Pozicioni",
+      "region": "Tabela e anëtarëve të ekipit",
       "role": "Roli",
       "sort": {
         "ascending": "në rritje",

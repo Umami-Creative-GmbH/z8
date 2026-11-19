@@ -140,7 +140,6 @@ export function useKioskUncertainActions(input: {
 	// Waits a little before the first question, so a slow original can still answer itself,
 	// then asks again while Z8 cannot answer, and as soon as the kiosk is back online. Each
 	// unresolved action is asked about on its own, whatever the screen shows.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: coming back online restarts the wait
 	useEffect(() => {
 		const timers = pending
 			.filter((entry) => !entry.attempt.resolved)
@@ -153,7 +152,7 @@ export function useKioskUncertainActions(input: {
 		return () => {
 			for (const timer of timers) window.clearTimeout(timer);
 		};
-	}, [pending, input.online]);
+	}, [pending, input.online]); // oxlint-disable-line react-hooks/exhaustive-deps -- coming back online restarts the wait
 
-	return { pendingFor, hold, track };
+	return { pendingFor, hold, track, unresolvedCount: pending.filter(entry => !entry.attempt.resolved).length };
 }

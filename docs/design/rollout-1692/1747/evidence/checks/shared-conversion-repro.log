@@ -1,0 +1,54 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-dda21ee3-9d32a4e0612eb222/apps/webapp
+
+stderr | src/components/travel-expenses/travel-expense-management.test.tsx > travel history recovery > R165 repro: a retired legacy continuation must not navigate a new session
+An update to ContinueLegacyDraftButton inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ❯ |unit| src/components/travel-expenses/travel-expense-management.test.tsx (26 tests | 1 failed | 25 skipped) 179ms
+   ❯ travel history recovery (11)
+     × R165 repro: a retired legacy continuation must not navigate a new session 178ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/travel-expense-management.test.tsx > travel history recovery > R165 repro: a retired legacy continuation must not navigate a new session
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      "/travel-expenses/reports/retired-conversion",
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/travel-expenses/travel-expense-management.test.tsx:542:27
+    540|   await act(async () => complete({ success: true, data: { kind: "conve…
+    541|   await act(async () => { await new Promise(resolve => setTimeout(reso…
+    542|   expect(router.push).not.toHaveBeenCalled();
+       |                           ^
+    543|   client.clear();
+    544|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 skipped (26)
+   Start at  08:37:10
+   Duration  1.15s (environment 37%, import 31%, tests 19%, transform 9%, setup 3%)
+

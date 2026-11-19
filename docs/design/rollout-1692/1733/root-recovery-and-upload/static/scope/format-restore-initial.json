@@ -1,0 +1,5 @@
+{
+  "status": "failed before any source or evidence writes",
+  "failure": "MODULE_NOT_FOUND for a direct app-level @babel/parser resolution",
+  "boundary": "The shell also ran later read-only git diff commands, so its overall exit was 0; no separate initial node exit was captured. The corrected helper uses the existing Next-owned parser resolution already used by the published proof verifier. No install or dependency change occurred."
+}

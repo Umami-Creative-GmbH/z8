@@ -35,7 +35,6 @@
         "previousWeekDesc": "Exporter les données de la semaine précédente (lun-dim)"
       },
       "deleteDialog": {
-        "cancel": "Annuler",
         "confirm": "Supprimer",
         "description": "Êtes-vous sûr de vouloir supprimer \"{name}\" ? Cette action est irréversible.",
         "title": "Supprimer l'exportation planifiée"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Échec de la suppression",
         "loadFailed": "Impossible de charger les exports planifiés",
-        "toggleFailed": "Échec du basculement"
+        "retry": "Réessayer"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Le propriétaire de la planification, {owner}, n'est plus administrateur de l'organisation. Désignez-vous ou désignez un autre administrateur de l'organisation comme propriétaire au préalable."
       },
       "filters": {
         "allEmployees": "Tous les employés",
@@ -284,8 +286,9 @@
         "paused": "En pause",
         "schedule": "Planification",
         "status": "Statut",
-        "title": "Planifications actives",
-        "type": "Type"
+        "titleAll": "Planifications",
+        "type": "Type",
+        "unknownOwner": "Propriétaire inconnu"
       },
       "title": "Exportations planifiées",
       "toast": {

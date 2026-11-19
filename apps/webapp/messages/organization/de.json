@@ -89,7 +89,13 @@
       "slugLabel": "Organisations-Slug",
       "title": "Organisation bearbeiten",
       "updateError": "Fehler beim Aktualisieren der Organisation",
-      "updateSuccess": "Organisation erfolgreich aktualisiert"
+      "updateSuccess": "Organisation erfolgreich aktualisiert",
+      "validation": {
+        "nameMax": "Der Name darf maximal 100 Zeichen lang sein",
+        "nameMin": "Der Name muss mindestens 2 Zeichen lang sein",
+        "slugMax": "Der Slug darf maximal 50 Zeichen lang sein",
+        "slugMin": "Der Slug muss mindestens 2 Zeichen lang sein"
+      }
     },
     "error": {
       "description": "Das Organigramm konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -395,6 +401,7 @@
     "switchTo": "Organisation wechseln",
     "teams": {
       "card": {
+        "actionsFor": "Aktionen für {name}",
         "deleteTeam": "Team löschen",
         "editTeam": "Team bearbeiten",
         "fallbackManager": "Fallback-Manager",
@@ -406,10 +413,10 @@
       "delete": "Team löschen",
       "deleteDialogDescription": "Dies wird das Team „{teamName}“ dauerhaft löschen.",
       "deleteDialogMembersWarning": "Warnung: Dieses Team hat {count} Mitglied(er). Sie werden aus dem Team entfernt.",
+      "deleteDialogNamedTitle": "Team {name} löschen?",
       "deleteDialogTitle": "Sind Sie sicher?",
       "deleteError": "Löschen des Teams fehlgeschlagen",
       "deleteSuccess": "Team erfolgreich gelöscht",
-      "description": "Organisieren Sie Ihre Mitarbeiter zur besseren Zusammenarbeit in Teams",
       "edit": {
         "description": "Teamname und Beschreibung aktualisieren",
         "descriptionLabel": "Beschreibung (optional)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Mitglied aus dem Team entfernt",
         "selectEmployee": "Mitarbeiter zum Hinzufügen auswählen",
         "title": "{teamName} - Teammitglieder"
-      },
-      "title": "Teams"
+      }
     },
     "timezone": {
       "balances-recalculating": "Arbeitszeitsalden werden für die neue Zeitzone neu berechnet und bleiben ausgeblendet, bis sie fertiggestellt sind.",

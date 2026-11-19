@@ -1,0 +1,355 @@
+{
+  "phase": "before",
+  "scope": "label-owned synthetic Performance small; consumer-only source comparison, current shared shell",
+  "source": {
+    "head": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+    "localAI": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+    "files": {
+      "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx": {
+        "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+        "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+      },
+      "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx": {
+        "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+        "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+      },
+      "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts": {
+        "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+        "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+      },
+      "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+        "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+        "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+      },
+      "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+        "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+        "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+      },
+      "apps/webapp/src/app/globals.css": {
+        "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+        "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+      }
+    }
+  },
+  "checks": [],
+  "captures": [
+    {
+      "filename": "before-desktop-light.png",
+      "source": {
+        "head": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "localAI": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx": {
+            "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+            "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx": {
+            "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+            "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts": {
+            "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+            "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/src/app/globals.css": {
+            "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+            "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+          }
+        }
+      },
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "30px",
+      "fontsStatus": "loaded",
+      "savedFont": "default",
+      "savedTheme": "light",
+      "theme": "light",
+      "visualScale": 1,
+      "devicePixelRatio": 1,
+      "colors": {
+        "h1": {
+          "color": "lab(3.63763 -0.181116 -5.28437)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        ".text-muted-foreground": {
+          "color": "lab(47.7049 -1.02875 -9.20491)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        "a[href$=\"/init\"]": null
+      },
+      "focus": "Toggle themeFont sizeEnglishWelcomeOrganizationProfileWellnessNotifications6CompleteStep 6 of 6 Comp",
+      "pngDimensions": {
+        "width": 1600,
+        "height": 1000
+      }
+    },
+    {
+      "filename": "before-phone-light.png",
+      "source": {
+        "head": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "localAI": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx": {
+            "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+            "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx": {
+            "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+            "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts": {
+            "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+            "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/src/app/globals.css": {
+            "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+            "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+          }
+        }
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "16px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "30px",
+      "fontsStatus": "loaded",
+      "savedFont": "default",
+      "savedTheme": "light",
+      "theme": "light",
+      "visualScale": 1,
+      "devicePixelRatio": 1,
+      "colors": {
+        "h1": {
+          "color": "lab(3.63763 -0.181116 -5.28437)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        ".text-muted-foreground": {
+          "color": "lab(47.7049 -1.02875 -9.20491)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        "a[href$=\"/init\"]": null
+      },
+      "focus": "Toggle themeFont sizeEnglishWelcomeOrganizationProfileWellnessNotifications6CompleteStep 6 of 6 Comp",
+      "pngDimensions": {
+        "width": 390,
+        "height": 965
+      }
+    },
+    {
+      "filename": "before-wide-dark-large.png",
+      "source": {
+        "head": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "localAI": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx": {
+            "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+            "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx": {
+            "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+            "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts": {
+            "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+            "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/src/app/globals.css": {
+            "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+            "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+          }
+        }
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1200
+      },
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "33.75px",
+      "fontsStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark",
+      "visualScale": 1,
+      "devicePixelRatio": 1,
+      "colors": {
+        "h1": {
+          "color": "lab(98.2346 -0.420451 -2.99137)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        ".text-muted-foreground": {
+          "color": "lab(59.3079 -1.08305 -9.22933)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        "a[href$=\"/init\"]": null
+      },
+      "focus": "Toggle themeFont sizeEnglishWelcomeOrganizationProfileWellnessNotifications6CompleteStep 6 of 6 Comp",
+      "pngDimensions": {
+        "width": 2400,
+        "height": 1200
+      }
+    },
+    {
+      "filename": "before-phone-dark-large.png",
+      "source": {
+        "head": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "localAI": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx": {
+            "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+            "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx": {
+            "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+            "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts": {
+            "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+            "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/src/app/globals.css": {
+            "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+            "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+          }
+        }
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "33.75px",
+      "fontsStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark",
+      "visualScale": 1,
+      "devicePixelRatio": 1,
+      "colors": {
+        "h1": {
+          "color": "lab(98.2346 -0.420451 -2.99137)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        ".text-muted-foreground": {
+          "color": "lab(59.3079 -1.08305 -9.22933)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        "a[href$=\"/init\"]": null
+      },
+      "focus": "Toggle themeFont sizeEnglishWelcomeOrganizationProfileWellnessNotifications6CompleteStep 6 of 6 Comp",
+      "pngDimensions": {
+        "width": 390,
+        "height": 1085
+      }
+    },
+    {
+      "filename": "before-keyboard-focus.png",
+      "source": {
+        "head": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "localAI": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+        "files": {
+          "apps/webapp/src/app/[locale]/onboarding/complete/page-client.tsx": {
+            "blob": "73c17780434a3f52c8b6e81c8fb3d2dcb1ed1eb6",
+            "sha256": "dd3e525943c262e1e77ae4cff142d60eccc3500ced67335aaab7f7b72ad011e6"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx": {
+            "blob": "8798bc6372d1d0c971f00753650913e37e9a1a31",
+            "sha256": "e05345d32801b2806ccaadbd17622afa5c147cdd4fda633864be956511ed9179"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/complete/actions.ts": {
+            "blob": "c3c260069947cf397d9ccf820df497118ba4b71c",
+            "sha256": "09697120ebc566346385ea88655f414e2544d72796f91ae4f5161a021d5d472d"
+          },
+          "apps/webapp/src/app/[locale]/onboarding/layout.tsx": {
+            "blob": "ee0ea7dcac45339e615a45913f8a3dc7b8dc3179",
+            "sha256": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829"
+          },
+          "apps/webapp/src/components/onboarding/progress-indicator.tsx": {
+            "blob": "0df4678f44bad8dc7dd4fcf63b5147c1f4b8ac86",
+            "sha256": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0"
+          },
+          "apps/webapp/src/app/globals.css": {
+            "blob": "cf45755250b36073696ec05cd2030586f8f64c69",
+            "sha256": "fad52e532ae57ce395b62a4f7f2a47dd9dff69ee93613fb705c18f362fdd7fc8"
+          }
+        }
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "bodyFont": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "headingFont": "33.75px",
+      "fontsStatus": "loaded",
+      "savedFont": "large",
+      "savedTheme": "dark",
+      "theme": "dark",
+      "visualScale": 1,
+      "devicePixelRatio": 1,
+      "colors": {
+        "h1": {
+          "color": "lab(98.2346 -0.420451 -2.99137)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        ".text-muted-foreground": {
+          "color": "lab(59.3079 -1.08305 -9.22933)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        "a[href$=\"/init\"]": null
+      },
+      "focus": "Go to Dashboard",
+      "pngDimensions": {
+        "width": 390,
+        "height": 1085
+      }
+    }
+  ],
+  "pageErrors": [],
+  "failed": [],
+  "nextActionRequests": 10
+}

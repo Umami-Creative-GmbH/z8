@@ -1,0 +1,909 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+[logger error] `connection` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ |unit| src/components/travel-expenses/report/trip-report-editor.test.tsx (15 tests | 1 failed) 5396ms
+   ❯ trip report editor (15)
+     × heads the report with its kind, purpose and one status badge (#688) 117ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| src/components/travel-expenses/report/trip-report-editor.test.tsx > trip report editor > heads the report with its kind, purpose and one status badge (#688)
+TestingLibraryElementError: Unable to find an accessible element with the role "banner"
+Here are the accessible roles:
+  heading:
+  Name "Customer workshop":
+  <h1
+    class="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
+  />
+  Name "Trip details":
+  <h2
+    class="font-semibold leading-none"
+    id="6a010000-0000-4000-8000-000000000001-trip"
+  />
+  Name "Expenses":
+  <h2
+    class="text-lg font-semibold tracking-tight"
+    id="6a010000-0000-4000-8000-000000000001-expenses"
+  />
+  Name "Receipt 1":
+  <h3
+    class="scroll-mt-20 font-semibold leading-none outline-none focus-visible:underline"
+    id="expense-6a010000-0000-4000-8000-000000000002"
+    tabindex="-1"
+  />
+  Name "Receipt":
+  <h3
+    class="text-base font-semibold"
+    id="6a010000-0000-4000-8000-000000000002-receipts"
+  />
+  Name "Still needed":
+  <h3
+    class="text-base font-semibold"
+    id="6a010000-0000-4000-8000-000000000002-requirements"
+  />
+  Name "Receipt 2":
+  <h3
+    class="scroll-mt-20 font-semibold leading-none outline-none focus-visible:underline"
+    id="expense-6a010000-0000-4000-8000-000000000003"
+    tabindex="-1"
+  />
+  Name "Receipt":
+  <h3
+    class="text-base font-semibold"
+    id="6a010000-0000-4000-8000-000000000003-receipts"
+  />
+  Name "Still needed":
+  <h3
+    class="text-base font-semibold"
+    id="6a010000-0000-4000-8000-000000000003-requirements"
+  />
+  Name "Totals":
+  <h3
+    class="text-base font-semibold"
+    id="6a010000-0000-4000-8000-000000000001-totals"
+  />
+  Name "Still needed for this trip":
+  <h3
+    class="text-base font-semibold"
+    id="6a010000-0000-4000-8000-000000000001-requirements"
+  />
+  --------------------------------------------------
+  region:
+  Name "Trip details":
+  <section
+    aria-labelledby="6a010000-0000-4000-8000-000000000001-trip"
+  />
+  Name "Expenses":
+  <section
+    aria-labelledby="6a010000-0000-4000-8000-000000000001-expenses"
+    class="space-y-3 pt-2"
+  />
+  Name "Receipt 1":
+  <section
+    aria-labelledby="expense-6a010000-0000-4000-8000-000000000002"
+  />
+  Name "Receipt":
+  <section
+    aria-labelledby="6a010000-0000-4000-8000-000000000002-receipts"
+    class="space-y-3"
+  />
+  Name "Still needed":
+  <section
+    aria-labelledby="6a010000-0000-4000-8000-000000000002-requirements"
+    class="space-y-2 rounded-lg border p-4"
+  />
+  Name "Receipt 2":
+  <section
+    aria-labelledby="expense-6a010000-0000-4000-8000-000000000003"
+  />
+  Name "Receipt":
+  <section
+    aria-labelledby="6a010000-0000-4000-8000-000000000003-receipts"
+    class="space-y-3"
+  />
+  Name "Still needed":
+  <section
+    aria-labelledby="6a010000-0000-4000-8000-000000000003-requirements"
+    class="space-y-2 rounded-lg border p-4"
+  />
+  Name "Totals":
+  <section
+    aria-labelledby="6a010000-0000-4000-8000-000000000001-totals"
+    class="space-y-3 rounded-xl border bg-card p-6 shadow-sm"
+  />
+  Name "Still needed for this trip":
+  <section
+    aria-labelledby="6a010000-0000-4000-8000-000000000001-requirements"
+    class="space-y-3 rounded-xl border bg-card p-6 shadow-sm"
+  />
+  --------------------------------------------------
+  status:
+  Name "":
+  <p
+    aria-live="polite"
+    class="flex items-center gap-2 text-sm text-muted-foreground"
+    role="status"
+  />
+  Name "":
+  <p
+    aria-live="polite"
+    class="flex items-center gap-2 text-sm text-muted-foreground"
+    role="status"
+  />
+  Name "":
+  <p
+    aria-live="polite"
+    class="flex items-center gap-2 text-sm text-muted-foreground"
+    role="status"
+  />
+  --------------------------------------------------
+  textbox:
+  Name "Purpose of the trip":
+  <input
+    aria-describedby="_r_cg_-form-item-description"
+    aria-invalid="false"
+    autocomplete="off"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="form-control"
+    id="_r_cg_-form-item"
+    maxlength="500"
+    name="purpose"
+    placeholder="e.g. Customer workshop in Hamburg"
+    value="Customer workshop"
+  />
+  Name "Place 1":
+  <input
+    aria-label="Place 1"
+    autocomplete="off"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="input"
+    id="6a010000-0000-4000-8000-000000000001-destination-0-place"
+    maxlength="100"
+    placeholder="City or place"
+    value="Hamburg"
+  />
+  Name "Description":
+  <textarea
+    aria-describedby="_r_e0_-form-item-description"
+    aria-invalid="false"
+    class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-card px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="form-control"
+    id="_r_e0_-form-item"
+    maxlength="500"
+    name="description"
+    placeholder="e.g. Train ticket Berlin–Hamburg for the customer workshop"
+    rows="3"
+  />
+  Name "Amount on the receipt":
+  <input
+    aria-describedby="_r_e4_-form-item-description"
+    aria-invalid="false"
+    autocomplete="off"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="form-control"
+    id="_r_e4_-form-item"
+    inputmode="decimal"
+    name="amount"
+    placeholder="0.00"
+    value="89.90"
+  />
+  Name "Accounting reference (optional)":
+  <input
+    aria-describedby="_r_eo_-form-item-description"
+    aria-invalid="false"
+    autocomplete="off"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="form-control"
+    id="_r_eo_-form-item"
+    maxlength="100"
+    name="accountingReference"
+    value=""
+  />
+  Name "Description":
+  <textarea
+    aria-describedby="_r_fi_-form-item-description"
+    aria-invalid="false"
+    class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-card px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="form-control"
+    id="_r_fi_-form-item"
+    maxlength="500"
+    name="description"
+    placeholder="e.g. Train ticket Berlin–Hamburg for the customer workshop"
+    rows="3"
+  />
+  Name "Amount on the receipt":
+  <input
+    aria-describedby="_r_fm_-form-item-description"
+    aria-invalid="false"
+    autocomplete="off"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="form-control"
+    id="_r_fm_-form-item"
+    inputmode="decimal"
+    name="amount"
+    placeholder="0.00"
+    value="240.00"
+  />
+  Name "Accounting reference (optional)":
+  <input
+    aria-describedby="_r_ga_-form-item-description"
+    aria-invalid="false"
+    autocomplete="off"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+    data-slot="form-control"
+    id="_r_ga_-form-item"
+    maxlength="100"
+    name="accountingReference"
+    value=""
+  />
+  --------------------------------------------------
+  button:
+  Name "First travel day":
+  <button
+    aria-describedby="_r_ck_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-invalid="false"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+    data-base-ui-click-trigger=""
+    data-slot="form-control"
+    id="_r_ck_-form-item"
+    name="startDate"
+    tabindex="0"
+    type="button"
+  />
+  Name "Last travel day":
+  <button
+    aria-describedby="_r_cq_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-invalid="false"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+    data-base-ui-click-trigger=""
+    data-slot="form-control"
+    id="_r_cq_-form-item"
+    name="endDate"
+    tabindex="0"
+    type="button"
+  />
+  Name "Remove destination 1":
+  <button
+    aria-label="Remove destination 1"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9"
+    data-slot="button"
+    type="button"
+  />
+  Name "Add destination":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+    data-slot="button"
+    type="button"
+  />
+  Name "Remove Receipt 1":
+  <button
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-label="Remove Receipt 1"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+    data-base-ui-click-trigger=""
+    data-slot="alert-dialog-trigger"
+    id="base-ui-_r_di_"
+    tabindex="0"
+    type="button"
+  />
+  Name "Receipt date":
+  <button
+    aria-describedby="_r_dj_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-invalid="false"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+    data-base-ui-click-trigger=""
+    data-slot="form-control"
+    id="_r_dj_-form-item"
+    name="expenseDate"
+    tabindex="0"
+    type="button"
+  />
+  Name "Take photo":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+  Name "Choose file":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+  Name "Remove ticket.pdf":
+  <button
+    aria-label="Remove ticket.pdf"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 underline-offset-4 hover:underline gap-1.5 rounded-md has-[>svg]:px-2.5 h-auto p-0 text-destructive"
+    data-slot="button"
+    type="button"
+  />
+  Name "Remove Receipt 2":
+  <button
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-label="Remove Receipt 2"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+    data-base-ui-click-trigger=""
+    data-slot="alert-dialog-trigger"
+    id="base-ui-_r_f4_"
+    tabindex="0"
+    type="button"
+  />
+  Name "Receipt date":
+  <button
+    aria-describedby="_r_f5_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-invalid="false"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full justify-start text-left"
+    data-base-ui-click-trigger=""
+    data-slot="form-control"
+    id="_r_f5_-form-item"
+    name="expenseDate"
+    tabindex="0"
+    type="button"
+  />
+  Name "Take photo":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+  Name "Choose file":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+  Name "Add receipt expense":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+  Name "Add mileage":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+  Name "Add per diem":
+  <button
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    type="button"
+  />
+  Name "Review and submit":
+  <button
+    aria-describedby="6a010000-0000-4000-8000-000000000001-submit-hint"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+    data-slot="button"
+    disabled=""
+    type="button"
+  />
+  --------------------------------------------------
+  combobox:
+  Name "Time zone of the travel dates":
+  <button
+    aria-controls="_r_d3_"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full"
+    data-base-ui-click-trigger=""
+    data-slot="popover-trigger"
+    id="_r_d0_-form-item"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  Name "Trip project (optional)":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="select-trigger"
+    id="_r_d8_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  Name "Country 1":
+  <button
+    aria-controls="_r_dc_"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    aria-label="Country 1"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full"
+    data-base-ui-click-trigger=""
+    data-slot="popover-trigger"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  Name "Category":
+  <button
+    aria-describedby="_r_dp_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-invalid="false"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="form-control"
+    id="_r_dp_-form-item"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  Name "Currency":
+  <button
+    aria-controls="_r_eb_"
+    aria-describedby="_r_e8_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full"
+    data-base-ui-click-trigger=""
+    data-slot="popover-trigger"
+    id="_r_e8_-form-item"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  Name "Project (optional)":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="select-trigger"
+    id="_r_et_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  Name "Category":
+  <button
+    aria-describedby="_r_fb_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-invalid="false"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="form-control"
+    id="_r_fb_-form-item"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  Name "Currency":
+  <button
+    aria-controls="_r_ft_"
+    aria-describedby="_r_fq_-form-item-description"
+    aria-expanded="false"
+    aria-haspopup="dialog"
+    class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] shrink-0 disabled:pointer-events-none rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 h-9 py-2 px-3 has-[>svg]:px-3 w-full"
+    data-base-ui-click-trigger=""
+    data-slot="popover-trigger"
+    id="_r_fq_-form-item"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  Name "Project (optional)":
+  <button
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex items-center justify-between gap-2 whitespace-nowrap px-3 py-2 font-normal text-sm disabled:cursor-not-allowed disabled:opacity-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[placeholder]:text-muted-foreground dark:hover:bg-input/50 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 w-full"
+    data-size="default"
+    data-slot="select-trigger"
+    id="_r_gf_"
+    role="combobox"
+    tabindex="0"
+    type="button"
+  />
+  --------------------------------------------------
+  paragraph:
+  Name "":
+  <p
+    class="text-muted-foreground text-sm"
+    data-slot="form-description"
+    id="_r_d0_-form-item-description"
+  />
+  Name "":
+  <p
+    class="text-sm text-muted-foreground"
+  />
+  Name "":
+  <p
+    class="text-sm font-medium data-[error=true]:text-destructive"
+    data-error="false"
+  />
+  Name "":
+  <p
+    class="text-muted-foreground text-sm"
+    data-slot="form-description"
+    id="_r_eo_-form-item-description"
+  />
+  Name "":
+  <p
+    class="text-sm text-muted-foreground"
+  />
+  Name "":
+  <p
+    class="break-all text-sm font-medium"
+  />
+  Name "":
+  <p
+    class="text-sm text-muted-foreground"
+  />
+  Name "":
+  <p
+    class="text-sm font-medium data-[error=true]:text-destructive"
+    data-error="false"
+  />
+  Name "":
+  <p
+    class="text-muted-foreground text-sm"
+    data-slot="form-description"
+    id="_r_ga_-form-item-description"
+  />
+  Name "":
+  <p
+    class="text-sm text-muted-foreground"
+  />
+  Name "":
+  <p
+    class="text-sm text-muted-foreground"
+  />
+  Name "":
+  <p
+    class="text-sm text-muted-foreground"
+    id="6a010000-0000-4000-8000-000000000001-submit-hint"
+  />
+  --------------------------------------------------
+  group:
+  Name "Destinations":
+  <fieldset
+    class="space-y-3"
+  />
+  --------------------------------------------------
+  list:
+  Name "":
+  <ul
+    class="space-y-3"
+  />
+  Name "":
+  <ul
+    class="grid gap-3 sm:grid-cols-2"
+  />
+  Name "":
+  <ul
+    class="list-disc space-y-1 pl-5 text-sm"
+  />
+  Name "":
+  <ul
+    class="list-disc space-y-1 pl-5 text-sm"
+  />
+  --------------------------------------------------
+  listitem:
+  Name "":
+  <li
+    class="grid gap-2 sm:grid-cols-[1fr_1fr_auto]"
+  />
+  Name "":
+  <li
+    class="flex gap-3 rounded-lg border p-3"
+  />
+  Name "":
+  <li />
+  Name "":
+  <li />
+  --------------------------------------------------
+  radiogroup:
+  Name "Who paid?":
+  <div
+    aria-label="Who paid?"
+    class="grid gap-2"
+    data-slot="radio-group"
+    role="radiogroup"
+  />
+  Name "Who paid?":
+  <div
+    aria-label="Who paid?"
+    class="grid gap-2"
+    data-slot="radio-group"
+    role="radiogroup"
+  />
+  --------------------------------------------------
+  radio:
+  Name "I paid (reimburse me)":
+  <button
+    aria-checked="true"
+    class="border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 inline-flex aspect-square size-4 shrink-0 items-center justify-center rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+    data-checked=""
+    data-composite-item-active=""
+    data-slot="radio-group-item"
+    id="base-ui-_r_ei_"
+    role="radio"
+    tabindex="0"
+    type="button"
+  />
+  Name "The company paid (e.g. company card)":
+  <button
+    aria-checked="false"
+    class="border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 inline-flex aspect-square size-4 shrink-0 items-center justify-center rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+    data-slot="radio-group-item"
+    data-unchecked=""
+    id="base-ui-_r_el_"
+    role="radio"
+    tabindex="-1"
+    type="button"
+  />
+  Name "I paid (reimburse me)":
+  <button
+    aria-checked="false"
+    class="border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 inline-flex aspect-square size-4 shrink-0 items-center justify-center rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+    data-slot="radio-group-item"
+    data-unchecked=""
+    id="base-ui-_r_g4_"
+    role="radio"
+    tabindex="-1"
+    type="button"
+  />
+  Name "The company paid (e.g. company card)":
+  <button
+    aria-checked="true"
+    class="border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 inline-flex aspect-square size-4 shrink-0 items-center justify-center rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+    data-checked=""
+    data-composite-item-active=""
+    data-slot="radio-group-item"
+    id="base-ui-_r_g7_"
+    role="radio"
+    tabindex="0"
+    type="button"
+  />
+  --------------------------------------------------
+  link:
+  Name "Preview ticket.pdf":
+  <a
+    aria-label="Preview ticket.pdf"
+    class="shrink-0 rounded-md focus-visible:outline-2"
+    href="/api/travel-expenses/reports/6a010000-0000-4000-8000-000000000001/receipts/6a010000-0000-4000-8000-000000000009"
+    rel="noopener noreferrer"
+    target="_blank"
+  />
+  Name "Download ticket.pdf":
+  <a
+    aria-label="Download ticket.pdf"
+    class="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+    href="/api/travel-expenses/reports/6a010000-0000-4000-8000-000000000001/receipts/6a010000-0000-4000-8000-000000000009?download=1"
+    rel="noopener noreferrer"
+    target="_blank"
+  />
+  Name "Receipt 2: Hotel Hamburg":
+  <a
+    class="text-primary underline underline-offset-4 hover:text-primary/80"
+    href="#expense-6a010000-0000-4000-8000-000000000003"
+  />
+  --------------------------------------------------
+  term:
+  Name "":
+  <dt />
+  Name "":
+  <dt
+    class="text-muted-foreground"
+  />
+  --------------------------------------------------
+  definition:
+  Name "":
+  <dd
+    class="text-right font-medium tabular-nums"
+  />
+  Name "":
+  <dd
+    class="text-right tabular-nums text-muted-foreground"
+  />
+  --------------------------------------------------
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-4"
+    >
+      <div
+        class="space-y-4"
+      >
+        <div
+          class="flex flex-wrap items-end justify-between gap-4"
+        >
+          <div
+            class="min-w-0 flex-[1_1_18rem] space-y-2 break-words"
+          >
+            <div
+              class="text-sm text-muted-foreground"
+            >
+              <span
+                class="flex flex-wrap items-center gap-3"
+              >
+                Trip report
+                <span
+                  class="inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-md border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3 border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90"
+                  data-slot="badge"
+                >
+                  Draft
+                </span>
+              </span>
+            </div>
+            <h1
+              class="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
+            >
+              Customer workshop
+            </h1>
+          </div>
+          <div
+            class="flex max-w-full flex-wrap items-center gap-2"
+          />
+        </div>
+        <section
+          aria-labelledby="6a010000-0000-4000-8000-000000000001-trip"
+        >
+          <div
+            class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+            data-slot="card"
+          >
+            <div
+              class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+              data-slot="card-header"
+            >
+              <h2
+                class="font-semibold leading-none"
+                id="6a010000-0000-4000-8000-000000000001-trip"
+              >
+                Trip details
+              </h2>
+              <div
+                class="text-muted-foreground text-sm"
+                data-slot="card-description"
+              >
+                Every expense of this trip shares these details.
+              </div>
+            </div>
+            <div
+              class="min-w-0 px-6 space-y-4"
+              data-slot="card-content"
+            >
+              <p
+                aria-live="polite"
+                class="flex items-center gap-2 text-sm text-muted-foreground"
+                role="status"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="tabler-icon tabler-icon-circle-check size-4 text-emerald-600"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"
+                  />
+                  <path
+                    d="M9 12l2 2l4 -4"
+                  />
+                </svg>
+                All changes saved
+              </p>
+              <form
+                class="grid gap-4"
+                novalidate=""
+              >
+                <div
+                  class="grid content-start gap-2"
+                  data-slot="form-item"
+                >
+                  <label
+                    class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 data-[error=true]:text-destructive"
+                    data-error="false"
+                    data-slot="form-label"
+                    for="_r_cg_-form-item"
+                  >
+                    Purpose of the trip
+                  </label>
+                  <input
+                    aria-describedby="_r_cg_-form-item-description"
+                    aria-invalid="false"
+                    autocomplete="off"
+                    class="rounded-md border border-input bg-card shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex h-9 w-full min-w-0 px-3 py-1 text-base selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                    data-slot="form-control"
+                    id="_r_cg_-form-item"
+                    maxlength="500"
+                    name="purpose"
+                    placeholder="e.g. Customer workshop in Hamburg"
+                  ...
+ ❯ Object.getElementError ../../node_modules/.pnpm/@[contact removed]@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@[contact removed]@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@[contact removed]@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@[contact removed]@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/travel-expenses/report/trip-report-editor.test.tsx:229:25
+    227|   mount();
+    228|   await purpose();
+    229|   const header = screen.getByRole("banner");
+       |                         ^
+    230|   expect(within(header).getByText("Trip report")).toBeTruthy();
+    231|   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed | 19 passed (20)
+      Tests  1 failed | 165 passed (166)
+   Start at  12:24:22
+   Duration  14.10s (tests 38%, import 33%, environment 21%, transform 6%, setup 2%)

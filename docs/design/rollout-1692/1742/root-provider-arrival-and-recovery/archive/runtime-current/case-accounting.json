@@ -1,0 +1,212 @@
+{
+  "fresh": {
+    "uniqueFullNames": 33,
+    "physicalFiles": 3,
+    "occurrences": 43,
+    "rerunOverlap": 10,
+    "failures": 0,
+    "runs": [
+      {
+        "file": "priority-tests.json",
+        "cases": 32
+      },
+      {
+        "file": "independent-final-tests.json",
+        "cases": 11
+      }
+    ],
+    "cases": [
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: employee removal retires a read and null display role accepts canonical all",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: retained raw pending IDs retire both rows and outstanding rejection",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: actor ABA invalidates old success with actual provider",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: organization ABA invalidates old success with actual provider",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: provider employee and role ABA never reuses the earlier read",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: hidden Activity rejects header refresh and old success then reads current provider",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: period navigation retires a pending read, preserves canonical local deep link",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: all distinguishes initial failure, healthy empty, off and serialized retry",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: managed distinguishes initial failure, healthy empty, off and serialized retry",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: unchanged provider plus header refresh retains stale rows through read failure",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "name": "retains a same-period record after rejected refresh and retries its real read",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "name": "blocks retained pending session data and drops late A reads across A to B to A",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "name": "refuses an old actor snapshot and clears records on an authoritative read refusal",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "name": "invalidates Activity reads, refuses hidden queued refreshes, and reads freshly on reactivation",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "name": "does not duplicate a pending retry and retains rows across the server refresh of its access envelope",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "name": "keeps cadence-disabled guidance distinct and shows settings only to all-employee scope",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "name": "does not turn an unavailable first read into zero counts and recovers locally",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/period-submissions-client.test.tsx",
+        "name": "drops the previous wider snapshot when the server narrows the admitted scope",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retains the current reader when the actual provider refreshes unchanged authority",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued success after canonical employee changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued refusal after canonical employee changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued rejection after canonical employee changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued success after canonical role changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued refusal after canonical role changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued rejection after canonical role changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued success after canonical employee and role changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued refusal after canonical employee and role changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "retires queued rejection after canonical employee and role changes before RSC arrival",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "reconciles a fresh server scope after the provider retires the old wider reader",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "recovers an initial canonical-context failure through its real local Retry",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "does not revive cached rows after provider failure and a changed-authority recovery",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/provider-arrival.test.tsx",
+        "name": "allows the canonical read for an approved administrator without an employee",
+        "status": "passed"
+      },
+      {
+        "file": "src/app/[locale]/(app)/team/period-submissions/independent-arrival-review.test.tsx",
+        "name": "independent: the actual provider route preserves all five canonical outcomes and frozen employee date",
+        "status": "passed"
+      }
+    ]
+  },
+  "inherited": {
+    "unit": {
+      "cases": 546,
+      "uniqueFileFullNames": 537,
+      "duplicateFullNameOccurrences": 9,
+      "physicalFiles": 44
+    },
+    "postgres": {
+      "cases": 35,
+      "physicalFiles": 6,
+      "uniqueFileFullNames": 35
+    },
+    "sourcePin": "989968d6aab7b7e6be7f87a94e60673e1de55424",
+    "appTree": "36930b073418c8f624d0f94b74de02e2497f726b",
+    "static": "Root all3 types + Next typegen, scoped lint and complete Doctor 12 zero; source/config pinned and reused, no independent rerun",
+    "format": "Two shared metadata findings remain; correction explicit100 CRLF passes",
+    "postgresMigrationAndCleanup": "Inherited canonical runner verification, no independent PG run"
+  },
+  "overlapWithInheritedUnit": 22,
+  "nonadditiveUnion": {
+    "caseOccurrencesAfterRunOverlapRemoved": 592,
+    "uniqueFileFullNames": 583,
+    "physicalFiles": 51,
+    "duplicateFullNameOccurrences": 9,
+    "explanation": "Root 546 unit + 35 PG + 11 new independent cases. The 22 fresh permanent cases overlap root. Nine root parameterized cases share file/fullname labels and remain separate cases. Fresh execution has 43 occurrences across two runs, with ten reruns; 33 unique fresh cases in three physical files."
+  }
+}

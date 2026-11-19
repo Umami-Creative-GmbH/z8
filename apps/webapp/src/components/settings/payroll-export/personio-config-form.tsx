@@ -21,17 +21,9 @@ import {
 	savePersonioCredentialsAction,
 	testPersonioConnectionAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -133,28 +125,27 @@ export function PersonioConfigForm({
 			onConfigSaved?.();
 		});
 	};
-	const deleteCredentials = () =>
-		run(async () => {
-			const result = await deletePersonioCredentialsAction();
-			if (result.success) {
-				toast.success(
-					t(
-						"settings.payrollExport.personio.credentialsDeleted",
-						"API credentials deleted",
-					),
-				);
-				setShowCredentialsForm(true);
-				onConfigSaved?.();
-			} else {
-				toast.error(
-					t(
-						"settings.payrollExport.personio.credentialsDeleteError",
-						"Failed to delete credentials",
-					),
-					{ description: actionErrorMessage(t, result) },
-				);
-			}
-		});
+	// Resolves once the credentials are gone and throws the worded reason otherwise,
+	// so the confirmation stays open with the failure inline.
+	const deleteCredentials = async () => {
+		const result = await deletePersonioCredentialsAction();
+		if (!result.success) {
+			throw new Error(
+				actionErrorMessage(t, result, {}, [
+					"settings.payrollExport.personio.credentialsDeleteError",
+					"Failed to delete credentials",
+				]),
+			);
+		}
+		toast.success(
+			t(
+				"settings.payrollExport.personio.credentialsDeleted",
+				"API credentials deleted",
+			),
+		);
+		setShowCredentialsForm(true);
+		onConfigSaved?.();
+	};
 	const cancelCredentials = () => {
 		setShowCredentialsForm(false);
 		setClientId("");
@@ -214,7 +205,7 @@ function PersonioCredentialsCard({
 	onShowForm: () => void;
 	onSave: () => void;
 	onCancel: () => void;
-	onDelete: () => void;
+	onDelete: () => Promise<void>;
 }) {
 	return (
 		<Card>
@@ -290,7 +281,7 @@ function PersonioCredentialsCard({
 				) : (
 					<div className="flex items-center justify-between rounded-lg border p-4">
 						<div className="flex items-center gap-3">
-							<IconPlugConnected className="size-5 text-green-600" />
+							<IconPlugConnected className="size-5 shrink-0 text-primary" aria-hidden="true" />
 							<div>
 								<p className="font-medium">
 									{t(
@@ -413,49 +404,50 @@ function DeleteCredentialsButton({
 	onDelete,
 }: {
 	t: Translate;
-	onDelete: () => void;
+	onDelete: () => Promise<void>;
 }) {
+	const deletion = useConfirmedAction<"credentials">();
 	return (
-		<AlertDialog>
-			<AlertDialogTrigger asChild>
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					aria-label={t(
-						"settings.payrollExport.personio.deleteCredentials",
-						"Delete credentials",
-					)}
-				>
-					<IconTrash className="size-4 text-destructive" aria-hidden="true" />
-				</Button>
-			</AlertDialogTrigger>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t(
-							"settings.payrollExport.personio.deleteCredentialsTitle",
-							"Delete API Credentials?",
-						)}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{t(
-							"settings.payrollExport.personio.deleteCredentialsDescription",
-							"This will remove your Personio API credentials. You will need to re-enter them to use the Personio export.",
-						)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={onDelete}
-						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-					>
-						{t("common.delete", "Delete")}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+		<>
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				aria-label={t(
+					"settings.payrollExport.personio.deleteCredentials",
+					"Delete credentials",
+				)}
+				disabled={deletion.isPending}
+				onClick={() => deletion.request("credentials")}
+			>
+				<IconTrash className="size-4 text-destructive" aria-hidden="true" />
+			</Button>
+			<DeleteConfirmDialog
+				open={deletion.open}
+				onOpenChange={deletion.onOpenChange}
+				title={t(
+					"settings.payrollExport.personio.deleteCredentialsTitle",
+					"Delete API Credentials?",
+				)}
+				description={t(
+					"settings.payrollExport.personio.deleteCredentialsDescription",
+					"This will remove your Personio API credentials. You will need to re-enter them to use the Personio export.",
+				)}
+				isDeleting={deletion.isPending}
+				error={deletion.error}
+				onConfirm={() =>
+					void deletion.confirm(onDelete, (failure) =>
+						describeFailure(
+							failure,
+							t(
+								"settings.payrollExport.personio.credentialsDeleteError",
+								"Failed to delete credentials",
+							),
+						),
+					)
+				}
+			/>
+		</>
 	);
 }
 
@@ -536,9 +528,7 @@ function PersonioSettingsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
-					{t("settings.payrollExport.personio.configTitle", "Export Settings")}
-				</CardTitle>
+				<CardTitle>{t("settings.payrollExport.personio.configTitle", "Export Settings")}</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.payrollExport.personio.configDescription",

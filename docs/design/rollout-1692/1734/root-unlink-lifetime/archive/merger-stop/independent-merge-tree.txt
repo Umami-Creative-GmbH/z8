@@ -1,0 +1,12 @@
+d553fc6efa82c6d9952cba2f05b765429ecfc4f9
+100644 8bdc11da5143262f07b2c813ac3e6f4514b0336c 1	apps/webapp/src/lib/navigation/route-metadata.test.ts
+100644 fa67ab6a25bcbfc2c4fd41427d59b142e96f7643 2	apps/webapp/src/lib/navigation/route-metadata.test.ts
+100644 3d688aafa14fd31c968e725fbfb4a77eb86c7c5a 3	apps/webapp/src/lib/navigation/route-metadata.test.ts
+100644 44bb16af4a8e469eadacc980a1012ec68ec0eb85 1	apps/webapp/src/lib/navigation/route-metadata.ts
+100644 7db5fd1cc4042ffde22c50850b6822afa69d1620 2	apps/webapp/src/lib/navigation/route-metadata.ts
+100644 c67599f688dbba68795ec41c983c17811ebd1681 3	apps/webapp/src/lib/navigation/route-metadata.ts
+
+Auto-merging apps/webapp/src/lib/navigation/route-metadata.test.ts
+CONFLICT (content): Merge conflict in apps/webapp/src/lib/navigation/route-metadata.test.ts
+Auto-merging apps/webapp/src/lib/navigation/route-metadata.ts
+CONFLICT (content): Merge conflict in apps/webapp/src/lib/navigation/route-metadata.ts

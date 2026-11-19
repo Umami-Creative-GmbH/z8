@@ -1,0 +1,180 @@
+{
+  "scripts": [
+    {
+      "file": "admin-arrival.js",
+      "bytes": 760,
+      "sha256": "a5d72731513ccccdde0b5e827c3a91448b279130a8a24b91efdfd8a5a8472aa4"
+    },
+    {
+      "file": "browser.mjs",
+      "bytes": 799,
+      "sha256": "8ac12a73e5b3e4db57ee9fc76f33cdb25818c56789ac280998e11df659e694ac"
+    },
+    {
+      "file": "call.mjs",
+      "bytes": 419,
+      "sha256": "5d6efb533b2c9791badcaa6eed9e81ef775f399433a6ea706477a1df7434421e"
+    },
+    {
+      "file": "capture.js",
+      "bytes": 707,
+      "sha256": "0d3018b4d2aea7d5d571e97ceb5003fcac938ef4b64b0a2c5e64927be907a533"
+    },
+    {
+      "file": "cleanup-processes-v2.ps1",
+      "bytes": 3181,
+      "sha256": "42fc46c9abe791cac117f5c992232d1175efdae8805c5f11b2f79521f19fb5d4"
+    },
+    {
+      "file": "cleanup-processes-v3.ps1",
+      "bytes": 2408,
+      "sha256": "2a128756d27c86ccfe6afaed9ed52f53a09bcfce3d386bcfd0368598345f84cd"
+    },
+    {
+      "file": "cleanup-processes.ps1",
+      "bytes": 3044,
+      "sha256": "444591c7553e2a4a0e990a234a1ac93beb8831d9c137cbf6e8fe77c5a02ee527"
+    },
+    {
+      "file": "close.js",
+      "bytes": 302,
+      "sha256": "88f2e6b681268c2332fefb321d98fc34524d42f25a9d0b465ff4dc907e2f13e8"
+    },
+    {
+      "file": "controller-status.js",
+      "bytes": 88,
+      "sha256": "1caeecae5dd55bd4189b1f9d74d573335bd435ec9204782117aa7a2d4ee19f4c"
+    },
+    {
+      "file": "controller.mjs",
+      "bytes": 1661,
+      "sha256": "08fa5e55095f90129e4df2bf816031fcdd39b029bef1b6c0586f4f7f84bcd8d7"
+    },
+    {
+      "file": "diagnostics.js",
+      "bytes": 1830,
+      "sha256": "5be6d930e378eb78be67c3413913493aa0f3c623dbc08ba78b930ec029470489"
+    },
+    {
+      "file": "empty-control.js",
+      "bytes": 671,
+      "sha256": "c283f526cfb9d8964e938ba0f06e62f46a29d2d9c2ff121d7d593be789fed915"
+    },
+    {
+      "file": "f1.js",
+      "bytes": 2179,
+      "sha256": "cd3f420f6aa5c9f3032515f74235d2b49565c4f53206f3b76b7b3a650d83790b"
+    },
+    {
+      "file": "f2.js",
+      "bytes": 1831,
+      "sha256": "4d5976a27f341fdb7a2ba852f0e859ffb595d823027c05ab3f43a8a3a08b0ec8"
+    },
+    {
+      "file": "f5.js",
+      "bytes": 1209,
+      "sha256": "64a8552093aeb508986637549c8e5f6b9316b989046d9febe29f69e94868db7e"
+    },
+    {
+      "file": "f6.js",
+      "bytes": 3216,
+      "sha256": "02e7d7d0176e0f4e16d016830179b107f13a2c4b33737bf5f40b2e483ead62a9"
+    },
+    {
+      "file": "f7.js",
+      "bytes": 3539,
+      "sha256": "fb8cbcf8414aa1835bc3dbcc28a591143e927b51786f7d73555992b2f78ef5a9"
+    },
+    {
+      "file": "final-database.js",
+      "bytes": 2766,
+      "sha256": "d254664853f194fe326596d9cb141c7023e8ee2f0d80854a4e03dd2be58fdcfb"
+    },
+    {
+      "file": "finance-arrival.js",
+      "bytes": 1063,
+      "sha256": "af3a6867ebaa94983d1014c14fd4e18f285412e7e25faa35063b2de7f15d771c"
+    },
+    {
+      "file": "grant.js",
+      "bytes": 1577,
+      "sha256": "daccd7c0bf3e0a95553c9de66d3f6bbc289308380825d2f833d6e1866135beaf"
+    },
+    {
+      "file": "no-match-control.js",
+      "bytes": 815,
+      "sha256": "c2a9f37e0f074c5e4b99d758a833b02bbd7a42b954d553d78fc16a823c399a05"
+    },
+    {
+      "file": "no-match-v2.js",
+      "bytes": 954,
+      "sha256": "736881366565f13febc2ea9fcd1df9b26d5681c67ffe824d668b58b24c14d1c6"
+    },
+    {
+      "file": "preflight-v2.mjs",
+      "bytes": 3844,
+      "sha256": "3e565b5f6de0c93c5a96cc561e26c20e38f7b7bcbba3540d55758bcafd1e24a1"
+    },
+    {
+      "file": "preflight-v3.mjs",
+      "bytes": 3890,
+      "sha256": "ffaa3a6f4ede6117f5c2976940c76c09c8c1d592c34443ad053b92bfb506a6bf"
+    },
+    {
+      "file": "preflight.mjs",
+      "bytes": 3818,
+      "sha256": "1e9cde3e5b41f547642e488a84a4b34380ab39d7c0fffb6b8b3695e10a4c988b"
+    },
+    {
+      "file": "prepare-arrival.js",
+      "bytes": 957,
+      "sha256": "42e3461468682a19e7c8b076b22166b46d08eff910e21cf3ddee1801675f08c0"
+    },
+    {
+      "file": "preserve-final.mjs",
+      "bytes": 1935,
+      "sha256": "17d6614eef699ebe00372743bbf267253bc114fc23c701ca8ec683aee23ded80"
+    },
+    {
+      "file": "revocation-readback.js",
+      "bytes": 817,
+      "sha256": "eed0bfd4b7a5f5ad031b9c978be0daabcb81f7f5acdeed2fbc42acde5a6b59c5"
+    },
+    {
+      "file": "revoke-v2.js",
+      "bytes": 1523,
+      "sha256": "3fbac0d2e5a48c6f96f4d52cf62e4077162c735aa9d4e724e9e330e318592056"
+    },
+    {
+      "file": "revoke.js",
+      "bytes": 1508,
+      "sha256": "4bfcaa63c55690890dc63e6518c68ccdb7725fe44cef69334d2f37f2c5b178ca"
+    },
+    {
+      "file": "runtime.mjs",
+      "bytes": 2176,
+      "sha256": "5ca71ce4935cdafa8e54d2f610e19d79fc8f4f59867cb5d03fc430178f6e29a4"
+    },
+    {
+      "file": "seal.mjs",
+      "bytes": 20945,
+      "sha256": "8119ddc21f63587acc671edb7384a052ba2d88e2e57d3e8a50e83784303f2608"
+    },
+    {
+      "file": "seed.ts",
+      "bytes": 4203,
+      "sha256": "8221da25f79c8b1d37547db8c5cd8e7c11e8f5337fb3477290c440a3eb67240e"
+    },
+    {
+      "file": "setup-v2.js",
+      "bytes": 2984,
+      "sha256": "e6b115660e603bfafa3ea50646a4869f8270ecbf75b932000c92f5ec7b98d1ae"
+    },
+    {
+      "file": "setup.js",
+      "bytes": 4282,
+      "sha256": "a4bad1b2b25756a663fb8a7aa2644b43c64d2c63ac08e3101f39bb24bbe0ec1c"
+    }
+  ],
+  "qualification": "Only new ignored scripts. Authored code contains no credential literals. Hashes admitted; script content, private inputs, raw inventories/headers/bodies/auth state/logs excluded. Prior helper code inspected/adapted; no old driver execution or private fixture/profile reuse."
+}

@@ -1,9 +1,11 @@
 "use client";
 
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { getEntriesByGroup, type SettingsEntry, type SettingsGroupConfig } from "./settings-config";
 
 export function SettingsSearch({
@@ -30,6 +32,28 @@ export function SettingsSearch({
 				aria-label={t("settings.search.label", "Search settings")}
 				placeholder={t("settings.search.placeholder", "Search settings…")}
 			/>
+		</div>
+	);
+}
+
+/** The no-results state of a settings search: what is empty, plus the way back to every setting. */
+export function SettingsSearchEmpty({
+	onClear,
+	className,
+}: {
+	onClear: () => void;
+	className?: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className={cn("flex flex-col items-start gap-2", className)}>
+			<p role="status" className="text-sm text-muted-foreground">
+				{t("settings.search.noResults", "No settings found. Try a different search.")}
+			</p>
+			<Button type="button" variant="outline" size="sm" onClick={onClear}>
+				<IconX aria-hidden="true" />
+				{t("common.clearSearch", "Clear search")}
+			</Button>
 		</div>
 	);
 }

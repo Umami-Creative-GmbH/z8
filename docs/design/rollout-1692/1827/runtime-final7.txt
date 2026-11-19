@@ -1,0 +1,18 @@
+Passed: desktop-light fits width and saved font
+Passed: phone-light fits width and saved font
+Passed: wide-dark-large fits width and saved font
+Passed: phone-dark-large fits width and saved font
+Passed: single semantic task heading
+Passed: real summary names current organization
+Passed: real font preference action saves Large
+Passed: keyboard returns to initialization link with visible focus
+Passed: authoritative API reads seeded incomplete flag
+Passed: real pending finalization has no continuation or success
+Passed: transport failure does not mutate flag
+Passed: real completion persists flag through public API
+Passed: PG reads cleared step and durable completion timestamp
+Passed: summary failure retains confirmed personal outcome and continuation
+Passed: summary retry makes one read without another finalization
+Passed: admin holiday link remains in existing context
+Passed: native continuation reaches existing init owner
+Passed: employee summary omits administrator holiday link

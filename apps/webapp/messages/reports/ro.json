@@ -13,9 +13,11 @@
       "yes": "Da"
     },
     "description": "Generați rapoarte detaliate despre orele de lucru și absențe, cu date relevante fiscal privind munca la domiciliu",
+    "employeeNumber": "Număr angajat",
     "employeeSelector": {
       "error": "Nu s-au putut încărca membrii echipei",
       "label": "Angajat",
+      "loading": "Se încarcă membrii echipei",
       "placeholder": "Selectează angajatul..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Se încarcă setările organizației înainte de a activa presetările.",
       "period": "Perioadă",
-      "selectPeriod": "Selectați perioada"
+      "selectPeriod": "Selectați perioada",
+      "settingsError": "Setările organizației nu sunt disponibile",
+      "settingsRequired": "Setările organizației sunt necesare pentru a utiliza presetările.",
+      "title": "Generează un raport pentru angajat"
     },
     "generate": "Generează raport",
     "generating": "Se generează raportul…",
@@ -62,6 +67,7 @@
       "month": "Lună",
       "noHomeOfficeDays": "Nu există zile de telemuncă înregistrate în această perioadă.",
       "overtime": "Ore suplimentare",
+      "title": "Previzualizare raport",
       "total": "Total",
       "totalHomeOfficeDays": "Total zile de telemuncă",
       "totalHomeOfficeHours": "Total ore lucrate de acasă",
@@ -266,6 +272,9 @@
         "noPermission": "Nu aveți permisiunea de a vizualiza rapoartele de proiect.",
         "title": "Rapoarte de proiect"
       },
+      "refreshFailed": "Nu s-au putut reîmprospăta rapoartele de proiect",
+      "scopeLoading": "Se încarcă domeniul curent al raportului…",
+      "scopeUnavailable": "Nu s-a putut încărca domeniul curent al raportului.",
       "status": {
         "active": "Activ",
         "archived": "Arhivat",
@@ -324,7 +333,6 @@
         "failedGenerate": "Generarea raportului a eșuat",
         "failedPortfolio": "Generarea raportului de portofoliu a eșuat",
         "failedProject": "Generarea raportului de proiect a eșuat",
-        "failedProjectReport": "Generarea raportului de proiect a eșuat",
         "portfolioGenerated": "Raportul de portofoliu a fost generat",
         "projectGenerated": "Raport generat pentru {name}",
         "unexpectedError": "A apărut o eroare neașteptată"
@@ -376,6 +384,8 @@
         "loading": "Se încarcă linkurile de partajare…",
         "revokedAutomatically": "Revocat automat la {date}: creatorul nu mai poate vedea toate proiectele din acesta",
         "revokedBy": "Revocat de {name} la {date}",
+        "scopeLoading": "Se încarcă domeniul curent al linkului de partajare…",
+        "scopeUnavailable": "Nu s-a putut încărca domeniul curent al linkului de partajare.",
         "someone": "cineva",
         "title": "Linkuri către acest raport",
         "views": "{count, plural, one {# vizualizare} few {# vizualizări} other {# de vizualizări}}",
@@ -398,7 +408,8 @@
         "description": "Linkul încetează imediat să funcționeze, iar captura sa este ștearsă. Înregistrarea și istoricul vizualizărilor sunt păstrate.",
         "done": "Link revocat",
         "failed": "Linkul nu a putut fi revocat",
-        "title": "Revocați acest link?"
+        "titleDeletedReport": "Revocați linkul de partajare pentru un raport șters, {period}?",
+        "titleNamed": "Revocați linkul de partajare pentru {report}, {period}?"
       },
       "status": {
         "active": "Activ",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "arhivat",
       "archivedBadge": "Arhivat",
+      "comparison": "Distanța lunară în funcție de vehicul și angajat",
       "empty": {
         "description": "Nu a fost înregistrată nicio activitate finalizată cu distanță parcursă în această perioadă.",
         "title": "Nicio deplasare în această perioadă"
@@ -457,6 +469,7 @@
         "period": "Perioadă"
       },
       "generate": "Generează raportul",
+      "generated": "Generat la {time}",
       "generating": "Se generează raportul…",
       "kilometres": "{distance} km",
       "noReportYet": "Niciun raport generat încă",
@@ -465,7 +478,11 @@
         "description": "Kilometri parcurși în interes de serviciu per vehicul și angajat, pe luni",
         "feature": "vizualizați raportul privind distanța per vehicul"
       },
+      "scope": "Angajați disponibili pentru dvs. în această organizație",
+      "scopeLoading": "Se confirmă organizația și angajatul curent…",
+      "scopeUnavailable": "Nu s-a putut încărca domeniul curent al raportului vehiculului.",
       "selectPeriod": "Alegeți o perioadă și generați raportul.",
+      "staged": "Perioada a fost modificată. Generați raportul pentru a actualiza rezultatele și descărcările.",
       "table": {
         "employee": "Angajat",
         "licencePlate": "Număr de înmatriculare",
@@ -473,8 +490,7 @@
         "vehicle": "Vehicul",
         "vehicleAndEmployee": "Vehicul / angajat"
       },
-      "title": "Distanță per vehicul",
-      "totalDriven": "{distance} parcurși"
+      "title": "Distanță per vehicul"
     }
   }
 }

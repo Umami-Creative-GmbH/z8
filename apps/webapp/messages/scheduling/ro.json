@@ -6,9 +6,13 @@
       "gapCount": "{count} deficit de personal",
       "gaps": "lacune",
       "hideOverlay": "Ascunde suprapunerea de acoperire",
+      "lastLoaded": "Ultima acoperire încărcată",
+      "loading": "Se încarcă acoperirea…",
       "metSlots": "{count} adecvat",
       "overSlots": "{count} supradimensionat",
       "overstaffed": "Supradimensionat",
+      "readFailed": "Nu s-a putut încărca acoperirea. Reîncercați pentru a verifica personalul.",
+      "refreshing": "Se reîmprospătează acoperirea…",
       "showOverlay": "Afișează suprapunerea țintelor de acoperire",
       "summary": "Rezumat acoperire:",
       "toggleLabel": "Acoperire",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Turele dvs. publicate, săptămână de săptămână",
       "employeeTitle": "Programul meu",
-      "managerDescription": "Gestionați și planificați turele angajaților",
+      "planningDescription": "Planificați și publicați ture. Turele planificate nu înregistrează timpul de lucru.",
       "title": "Program de ture"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Anulare",
       "complianceAcknowledgmentRequired": "Este necesară confirmarea conformității",
       "complianceWarnings": "{count, plural, one {Verificările de conformitate au identificat # avertisment; va trebui să îl confirmați înainte de publicare.} other {Verificările de conformitate au identificat # avertismente; va trebui să le confirmați înainte de publicare.}}",
+      "coverageLoading": "Se încarcă acoperirea",
+      "coverageRulesCheckedOnPublish": "Publicarea va aplica regulile actuale privind personalul.",
+      "coverageUnavailable": "Acoperirea nu este disponibilă",
+      "coverageUnloaded": "Acoperirea nu a fost verificată",
       "coverageWarning": "Unele intervale de timp nu îndeplinesc cerințele minime de personal.",
       "maxHours": "Ore maxime: {count}",
       "notifyEmployees": "{count, plural, one {Publicați # tură ciornă și notificați angajații} other {Publicați # ture ciornă și notificați angajații}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Avertismente detectate înainte de publicare"
     },
     "scheduler": {
+      "assigned": "Alocat",
       "complianceBanner": {
         "findingsDetected": "{count} problemă(e) detectată(e) înainte de publicare.",
         "maxHours": "Ore maxime: {count}",
@@ -59,18 +68,24 @@
         "employee": "Se afișează turele pentru {name}",
         "showAll": "Afișează toate turele"
       },
+      "loadFailed": "Turele nu au putut fi reîmprospătate. Turele încărcate sunt păstrate.",
       "loading": "Se încarcă programul...",
+      "open": "Tură deschisă",
       "publish": {
         "failed": "Publicarea turelor a eșuat",
         "published": "S-au publicat {count} tură(e)"
       },
+      "retry": "Reîncearcă",
+      "shiftList": "Listă de ture",
       "shiftUpdate": {
         "failed": "Actualizarea turei a eșuat",
         "overlapDescription": "Această tură se suprapune cu alte {count} tură(e)",
         "overlapWarning": "Tură salvată cu avertisment de suprapunere",
         "skillOverrideReasonRequired": "Angajatul nu deține o competență necesară în această zi. Deschideți tura pentru a introduce un motiv.",
         "updated": "Tură actualizată"
-      }
+      },
+      "supportFailed": "Șabloanele sau informațiile de conformitate nu au putut fi reîmprospătate. Verificați din nou înainte de a publica.",
+      "templatesUnavailable": "Șabloanele de tură nu au putut fi încărcate."
     },
     "shiftDetails": {
       "close": "Închide",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Trageți un șablon în calendar pentru a crea o tură",
       "empty": "Niciun șablon disponibil. Creați șabloane în Setări pentru a adăuga rapid ture.",
+      "selectHint": "Alegeți un șablon, apoi setați data turei și alocarea.",
       "title": "Șabloane de tură"
     }
   }

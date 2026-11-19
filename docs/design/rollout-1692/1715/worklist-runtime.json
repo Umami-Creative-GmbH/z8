@@ -1,0 +1,27 @@
+{
+  "results": [
+    {
+      "name": "long employee action and all fields fit phone",
+      "value": {
+        "document": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "server sorting retains named order feedback",
+      "value": true
+    },
+    {
+      "name": "pending worklist retains actual rows",
+      "value": true
+    },
+    {
+      "name": "failed refresh retains actual worklist",
+      "value": true
+    },
+    {
+      "name": "Retry refetches real worklist after transport recovery",
+      "value": true
+    }
+  ]
+}

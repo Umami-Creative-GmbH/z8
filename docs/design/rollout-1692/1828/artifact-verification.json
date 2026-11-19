@@ -1,0 +1,261 @@
+{
+  "pngCount": 22,
+  "images": [
+    {
+      "file": "after-desktop-light.png",
+      "width": 1600,
+      "height": 1442,
+      "fullyDecoded": true,
+      "sha256": "9854f448f670852b9699534891e03a70575b91443b24c7e5e440199f34b40aa6"
+    },
+    {
+      "file": "after-phone-dark-large.png",
+      "width": 390,
+      "height": 1976,
+      "fullyDecoded": true,
+      "sha256": "0704082af306fbfc0659bf61099a88818213447ec0cfcaaee37e287e960d7f11"
+    },
+    {
+      "file": "after-phone-light.png",
+      "width": 390,
+      "height": 1638,
+      "fullyDecoded": true,
+      "sha256": "2e636935586342087698d8c06d948ad42de4d0a80ffbef628a635622f08e33fd"
+    },
+    {
+      "file": "after-wide-dark-large.png",
+      "width": 2400,
+      "height": 1621,
+      "fullyDecoded": true,
+      "sha256": "f3766c0b134da38be9887a4e78877309f7562aca4299b16e81f343f360a92063"
+    },
+    {
+      "file": "before-desktop-light.png",
+      "width": 1600,
+      "height": 1282,
+      "fullyDecoded": true,
+      "sha256": "a40745d6ae62b35dcf4be351d3b98ba27477b32606e538dd76f6faa4b78de9c3"
+    },
+    {
+      "file": "before-phone-dark-large.png",
+      "width": 390,
+      "height": 1616,
+      "fullyDecoded": true,
+      "sha256": "ad3d1124d288bc80589f6302073018c7e5831b664c9f260e919d221d2af9fcf2"
+    },
+    {
+      "file": "before-phone-light.png",
+      "width": 390,
+      "height": 1382,
+      "fullyDecoded": true,
+      "sha256": "b360cf0fbbc1167393b10fe6f34d12e94e7c3a11234142326889d7f4a566164d"
+    },
+    {
+      "file": "before-wide-dark-large.png",
+      "width": 2400,
+      "height": 1440,
+      "fullyDecoded": true,
+      "sha256": "9af0a3edd4881d868262c4b2db90611de5f5bd7ed171468881d6350f2c4c2d59"
+    },
+    {
+      "file": "initial-presentation/after-desktop-light.png",
+      "width": 1600,
+      "height": 1392,
+      "fullyDecoded": true,
+      "sha256": "288512222416624cd4e3e1f5e97295d8ce82eae9d1fe3a8a02c992c9879e90b8"
+    },
+    {
+      "file": "initial-presentation/after-phone-dark-large.png",
+      "width": 390,
+      "height": 1920,
+      "fullyDecoded": true,
+      "sha256": "3b4653b214d34d42fd3d9a3bd4fb60417f7f66226c91836cf717450bd99150b6"
+    },
+    {
+      "file": "initial-presentation/after-phone-light.png",
+      "width": 390,
+      "height": 1588,
+      "fullyDecoded": true,
+      "sha256": "d323a98b3ef1b816fb4247fe7d9a7fbdf10b0241f0567d52a16c2001cbb54002"
+    },
+    {
+      "file": "initial-presentation/after-wide-dark-large.png",
+      "width": 2400,
+      "height": 1565,
+      "fullyDecoded": true,
+      "sha256": "d98a7a10bb3502b17f1c53d17c3dd978183231b2d572f6934a9c28d074abc8df"
+    },
+    {
+      "file": "initial-presentation/state-actual-browser-permission-result.png",
+      "width": 1600,
+      "height": 1372,
+      "fullyDecoded": true,
+      "sha256": "80e187ccd543a4a2a5a28de5edb394708f0054d8b321b0f2fe83dc7993e66aac"
+    },
+    {
+      "file": "initial-presentation/state-default-browser-permission.png",
+      "width": 1600,
+      "height": 1340,
+      "fullyDecoded": true,
+      "sha256": "aaf454f797f94f1f5dda4556d567d91d81dbfd678da75c681fa7ca07876b0ccd"
+    },
+    {
+      "file": "initial-presentation/state-save-pending.png",
+      "width": 1600,
+      "height": 1432,
+      "fullyDecoded": true,
+      "sha256": "34d16b882927ba492f5aa811fb549c9741859c7cbda7cce04a6e0c67acf5beac"
+    },
+    {
+      "file": "initial-presentation/state-save-transport-refused.png",
+      "width": 1600,
+      "height": 1432,
+      "fullyDecoded": true,
+      "sha256": "8e0bb2cc9115f54af3a449bb272d34125ce3946e40a5dcd1f3791f5245cb58a2"
+    },
+    {
+      "file": "initial-presentation/state-session-refused.png",
+      "width": 1600,
+      "height": 1432,
+      "fullyDecoded": true,
+      "sha256": "fb4d80eb9769a90b1fd84c519a970ff1f183476738863b0ea549d9c05eb061d4"
+    },
+    {
+      "file": "state-actual-browser-permission-result.png",
+      "width": 1600,
+      "height": 1422,
+      "fullyDecoded": true,
+      "sha256": "b4320b1b6db1f2b65e56026d5029626be6b1001a2df1f0c0e233f7e4704d9262"
+    },
+    {
+      "file": "state-default-browser-permission.png",
+      "width": 1600,
+      "height": 1390,
+      "fullyDecoded": true,
+      "sha256": "48349081642b6a77373948b4ca56d5dee6fc9654fa6d002a64a8fb9a48510516"
+    },
+    {
+      "file": "state-save-pending.png",
+      "width": 1600,
+      "height": 1482,
+      "fullyDecoded": true,
+      "sha256": "8f50ae48613ee945af81ce40cea53c1225ac23e738ea9a21aa63704d7e2c0ef7"
+    },
+    {
+      "file": "state-save-transport-refused.png",
+      "width": 1600,
+      "height": 1482,
+      "fullyDecoded": true,
+      "sha256": "53c75f7a3052d9fddbd6d2be08509fa664689cc8a9a0f847f356f6ce8782347d"
+    },
+    {
+      "file": "state-session-refused.png",
+      "width": 1600,
+      "height": 1482,
+      "fullyDecoded": true,
+      "sha256": "62da6a2c5c2291c40fee607c03f3790fe9c1ef93c5b1bdbb740cb2b9033a4398"
+    }
+  ],
+  "validJsonFiles": [
+    {
+      "file": "actions-runtime.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "after-runtime.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "artifact-verification.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "attempts-and-limits.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "before-runtime.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "cleanup.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "comparison-source.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "doctor-final.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "doctor-refined.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "doctor.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "green-expanded.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "green-initial.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "initial-presentation/actions-runtime.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "initial-presentation/after-runtime.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "initial-red.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "next-runtime.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "page-final-fixed.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "page-final.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "page-refined.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "permission-red.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "postgres-initial.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "postgres.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "race-initial.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "source-and-counts.json",
+      "hasUtf8Bom": false
+    },
+    {
+      "file": "unit-final.json",
+      "hasUtf8Bom": false
+    }
+  ]
+}

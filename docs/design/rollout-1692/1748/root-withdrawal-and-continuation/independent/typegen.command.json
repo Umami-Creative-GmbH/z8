@@ -1,0 +1,20 @@
+{
+  "label": "typegen",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "argv": [
+    "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "next",
+    "typegen"
+  ],
+  "exit": 0,
+  "seconds": 0.649,
+  "logBytes": 59,
+  "logSha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+}

@@ -10,6 +10,7 @@ import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { startTransition, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { approveWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions/mutations";
 import { DataTable } from "@/components/data-table-server";
 import {
@@ -18,15 +19,19 @@ import {
 } from "@/components/time-tracking/time-entries-table-columns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatDuration } from "@/lib/time-tracking/time-utils";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
+import { cn } from "@/lib/utils";
 import { Link, useRouter } from "@/navigation";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
+import { timeEntryDayGroups } from "./time-entry-day-groups";
 
 const TimeCorrectionDialog = dynamic(
 	() =>
@@ -66,6 +71,8 @@ export function TimeEntriesTable({
 	const locale = useLocale();
 	const { refresh } = useRouter();
 	const billableTimeEnabled = useBillableTimeEnabled();
+	const [grouped, setGrouped] = useState(true);
+	const groups = timeEntryDayGroups(workPeriods, employeeTimezone);
 	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<
 		string | null
 	>(null);
@@ -118,12 +125,36 @@ export function TimeEntriesTable({
 			/>
 		),
 	});
+	const groupedColumns = columns.filter(
+		(column) => !("accessorKey" in column && column.accessorKey === "startTime"),
+	);
 
 	return (
-		<Card>
-			<CardHeader className="flex min-w-0 flex-col items-start justify-between gap-3 pb-4 sm:flex-row sm:items-center">
-				<CardTitle>{t("timeTracking.table.title", "Time Entries")}</CardTitle>
-				<div className="flex items-center gap-2">
+		<Card className="gap-0 overflow-hidden rounded-xl py-0 shadow-none">
+			<CardHeader className="flex min-w-0 flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+				<CardTitle>
+					<h2 className="text-base font-semibold">
+						{t("timeTracking.table.title", "Time Entries")}
+					</h2>
+				</CardTitle>
+				<div className="flex flex-wrap items-center gap-2">
+					{/* Both views named up front: a single toggle labelled with its current state read as an action. */}
+					<ToggleGroup
+						type="single"
+						size="sm"
+						variant="outline"
+						value={grouped ? "day" : "all"}
+						onValueChange={(value) => {
+							if (value) setGrouped(value === "day");
+						}}
+					>
+						<ToggleGroupItem value="day">
+							{t("timeTracking.table.groupedByDay", "Grouped by day")}
+						</ToggleGroupItem>
+						<ToggleGroupItem value="all">
+							{t("timeTracking.table.allEntries", "All entries")}
+						</ToggleGroupItem>
+					</ToggleGroup>
 					<Button asChild variant="outline" size="sm">
 						<Link href="/calendar">
 							<IconCalendarEvent className="size-4" aria-hidden="true" />
@@ -138,16 +169,80 @@ export function TimeEntriesTable({
 					/>
 				</div>
 			</CardHeader>
-			<CardContent>
-				<DataTable
-					mobileLayout="stacked"
-					columns={columns}
-					data={workPeriods}
-					emptyMessage={t(
-						"timeTracking.table.emptyState",
-						"No time entries found for this week. Clock in to start tracking your time.",
+			<CardContent className="px-0 sm:[&_th]:align-top sm:[&_th]:py-1 sm:[&_th]:leading-4 sm:[&_th]:whitespace-normal sm:[&_td]:align-top sm:[&_:is(th,td):first-child]:pl-4 sm:[&_:is(th,td):last-child]:pr-4">
+				{grouped && groups.length > 0 ? (
+					groups.map((group, groupIndex) => (
+						<section
+							key={group.date}
+							aria-label={Temporal.PlainDate.from(group.date).toLocaleString(
+								locale,
+								{ dateStyle: "full" },
+							)}
+						>
+							<div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-y bg-muted/40 px-4 py-2 text-sm">
+								<h3 className="font-medium">
+									{Temporal.PlainDate.from(group.date).toLocaleString(locale, {
+										weekday: "long",
+										day: "numeric",
+										month: "long",
+									})}
+								</h3>
+								<div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+									<span>
+										{t(
+											"timeTracking.table.entryCount",
+											"{count, plural, one {# entry} other {# entries}}",
+											{ count: group.periods.length },
+										)}
+									</span>
+									<span className="font-semibold text-foreground tabular-nums">
+										{formatDuration(group.durationMinutes)}
+									</span>
+									{group.incomplete ? (
+										<span>
+											{t(
+												"timeTracking.table.incompleteDay",
+												"Includes active or incomplete entries",
+											)}
+										</span>
+									) : null}
+								</div>
+							</div>
+							<DataTable
+								mobileLayout="stacked"
+								columns={groupedColumns}
+								data={group.periods}
+								manualPagination
+								// One visible column header for the whole list; later days keep theirs for
+								// screen readers. Widths sit on every cell so hidden headers keep columns aligned.
+								className={cn(
+									"rounded-none border-0 sm:[&_table]:min-w-xl sm:[&_table]:table-fixed sm:[&_:is(th,td):nth-child(-n+2)]:w-[22%] sm:[&_:is(th,td):nth-child(3)]:w-28 sm:[&_:is(th,td):last-child]:w-24 sm:[&_[data-slot=badge]]:max-w-full sm:[&_[data-slot=badge]]:whitespace-normal sm:[&_[data-slot=badge]]:wrap-anywhere",
+									// A fixed layout reads widths from the (now hidden) first row; auto honours the cells'.
+									groupIndex > 0 && "sm:[&_thead]:sr-only sm:[&_table]:table-auto",
+								)}
+							/>
+						</section>
+					))
+				) : (
+					<DataTable
+						mobileLayout="stacked"
+						columns={columns}
+						data={workPeriods}
+						manualPagination
+						className="rounded-none border-x-0"
+						emptyMessage={t(
+							"timeTracking.table.emptyState",
+							"No time entries found for this week. Clock in to start tracking your time.",
+						)}
+					/>
+				)}
+				<p className="px-4 py-3 text-sm text-muted-foreground">
+					{t(
+						"timeTracking.table.offsetContext",
+						"Endpoint times use each entry's captured local UTC offset. Day headings follow your calendar timezone: {timezone}.",
+						{ timezone: employeeTimezone },
 					)}
-				/>
+				</p>
 			</CardContent>
 		</Card>
 	);

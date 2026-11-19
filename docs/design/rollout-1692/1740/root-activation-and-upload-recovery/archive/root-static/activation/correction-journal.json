@@ -1,0 +1,19 @@
+{
+  "parent": "2bb9640064f141965697a6abf339a8843669d6b8",
+  "branch": "fix/1740-queued-absence-submit",
+  "red": "activation-red-02.log:1pass/1fail, expected0/actual1",
+  "green": "units-final-02.log:141/9",
+  "types": "types-final-02.log:all3+typegen pass",
+  "lint": "owned-biome-final-03.log:2pass",
+  "doctor": "doctor-final-02.log:12files/0diagnostics",
+  "reportOriginalBytes": 17208,
+  "reportOriginalSha256": "da67e37bc49bee4575a03c839cb0f60585226855de6b3f8d5024f0cb6ad76961",
+  "freshPG": 0,
+  "freshBrowser": false,
+  "verifiedCommit": null,
+  "failures": [
+    "activation-red-01:copy setup/no tests",
+    "units-final-01:Sonner global notification isolation",
+    "owned-biome-final-02:import ordering"
+  ]
+}

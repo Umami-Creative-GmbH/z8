@@ -1,0 +1,84 @@
+{
+  "candidate": "9afe127e43f686675da1ed025b87eaf8dfd9ca63",
+  "sourceEdited": false,
+  "normalPublicDevelopmentLogin": true,
+  "notificationsDenied": true,
+  "authStateCopiedOrSaved": false,
+  "serverAuthorizationBypassClaim": false,
+  "expanded": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "bodyPointer": "auto",
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "auto"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "text": "Fixture Person 2Independent scheduling office · Independent receptionMon, Nov 16 · 09:00 – 17:00Published",
+      "isPublish": false,
+      "isShiftListRecord": true
+    },
+    "listExpanded": true
+  },
+  "expandedImage": {
+    "path": "stop-publish-list-expanded-1600-01.png",
+    "bytes": 89175,
+    "sha256": "c105b76a16fa9c3938b5e0cee4f0ede10da87ee43ad751602150896617dbcfe4",
+    "provenance": "Actual admitted current consumer screenshot; fixture actor strings removed in DOM before pixel capture; no private failure image opened"
+  },
+  "collapsed": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "bodyPointer": "auto",
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "auto"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "text": "Publish (2)",
+      "isPublish": true,
+      "isShiftListRecord": false
+    },
+    "listExpanded": false
+  },
+  "collapsedImage": {
+    "path": "stop-publish-list-collapsed-1600-01.png",
+    "bytes": 90287,
+    "sha256": "39a9cc98b52e380261a5a866610b9bf6c43ad491b9652aff3c1a7711da4ce78c",
+    "provenance": "Actual admitted current consumer screenshot; fixture actor strings removed in DOM before pixel capture; no private failure image opened"
+  },
+  "pointerReproduction": {
+    "clicked": "actual enabled Publish center",
+    "opened": {
+      "title": "Edit Shift",
+      "assignee": "Fixture Person 2"
+    },
+    "publishRequests": 0
+  },
+  "wrongPanelImage": {
+    "path": "stop-publish-hit-wrong-edit-1600-01.png",
+    "bytes": 122093,
+    "sha256": "b474fcc7e102ad46317269d5ed00626da2868ce2590761739804b122da6ab031",
+    "provenance": "Actual admitted current consumer screenshot; fixture actor strings removed in DOM before pixel capture; no private failure image opened"
+  }
+}

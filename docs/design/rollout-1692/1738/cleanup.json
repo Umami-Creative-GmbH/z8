@@ -1,0 +1,19 @@
+{
+  "containers": [
+    {
+      "name": "z8_perf_4a559c154d94_postgres",
+      "exists": false
+    },
+    {
+      "name": "z8_perf_4a559c154d94_redis",
+      "exists": false
+    },
+    {
+      "name": "z8_perf_4a559c154d94_storage",
+      "exists": false
+    }
+  ],
+  "label": "z8-scheduling-fixture-1738",
+  "browser": "closed with own named transient session, restore/state vars removed",
+  "listener52219": false
+}

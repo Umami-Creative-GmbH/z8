@@ -1,0 +1,247 @@
+[
+  {
+    "name": "actual-consumers.json",
+    "bytes": 2880,
+    "sha256": "fa4767f91defcc4e364190eadda6dfd06337c90be65f4ef2cd4e4875f05dac4c",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "actual-consumers.log",
+    "bytes": 494,
+    "sha256": "c6a03842547315b8f87a9ee8b62ea477223750d4dacae8bcad7135132bb192a9",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "compatibility.json",
+    "bytes": 184077,
+    "sha256": "97608f66b2ec51902328229369508e996db4d07a09b3cc7cbd239ddc5526c3f4",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "compatibility.log",
+    "bytes": 3844,
+    "sha256": "f6bc4d9dea7a65ea428b653d17219a79d105f9a025667f632adfac45cf801e30",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "doctor-version.log",
+    "bytes": 7,
+    "sha256": "b092840e628fef3f3d89757723ea756d4f778c61175f24d99276ace077105eca",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "doctor.json",
+    "bytes": 4112,
+    "sha256": "3c7c5bc2c01752f4ffae9be41bb891d08a926f7668de3b1df389bf7f870519df",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "doctor.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "explicit100crlf.log",
+    "bytes": 14182,
+    "sha256": "657736b589d310a8b6183234b60c94c770cd752d3595e2fc6e48007e26703508",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "install.log",
+    "bytes": 4882,
+    "sha256": "43f4e3f865d56a1e8dc353b0e68ba1b0598767d0f7041af0d7a32bcf9a30123e",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "integration.json",
+    "bytes": 21458,
+    "sha256": "4fa04cd91fc4da75313bca632239d8f0dfd6ae22cfeb03bdbc916f6be8d412b4",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "integration.log",
+    "bytes": 63560,
+    "sha256": "f8394ed4a8b0ca372f9ac597c7f29b59c5ea63d204cf6c650022677778d48bff",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "lint.log",
+    "bytes": 44,
+    "sha256": "bf23302970f71286aa0aee1631965dcf915bfdd3c3df2414a68c2636c9ca0d0f",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "main-types.log",
+    "bytes": 145,
+    "sha256": "86ee5b0fa2e18d754caedc8a79c364d2d5638ce8711fa13dfd8a41920ca5c8e1",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "owned-explicit100crlf.log",
+    "bytes": 42,
+    "sha256": "ea8da84394d5ebdf969f7e609674657186a865817df5f1fb6313a14101b57d1e",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "owned-ordinary.log",
+    "bytes": 19638,
+    "sha256": "96263d9bacecd02a30124a9abd08712a7e758222c0ed3eaab1063b7c07634060",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-detail.json",
+    "bytes": 1662,
+    "sha256": "608474f4f39fb78b1c2e56330a3a8756c17b5a208612cd55a3a6b14380d7b5a2",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-detail.log",
+    "bytes": 493,
+    "sha256": "3a5c4af8dc57279106f84930499ecdb5a2b596eea5368226b4d569183415bb09",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-objections-controlled.json",
+    "bytes": 5190,
+    "sha256": "e07e6022a102a4b308dd957763a31d61b0a2f3bc23a117242b5f9bc6ae17f6c9",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-objections-controlled.log",
+    "bytes": 508,
+    "sha256": "eef0a124d93ff2836c84951768b3dd62c5415ef68835c31b0bd2a85008ae8f5f",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-objections-settled.json",
+    "bytes": 6779,
+    "sha256": "8f96f188d073bab7f5d5f4238554205a2f80e9ec333040274a787742ed9e8e56",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-objections-settled.log",
+    "bytes": 505,
+    "sha256": "f2f56686efc7d3c91182d95f7afdb8ff2f09ca7411b59d0d0d2ebe89e69bbf84",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-objections-waited.json",
+    "bytes": 23075,
+    "sha256": "9832d93c8fb1556d21fe02933ded33b790bdf3e3a86c3b13cfe240234eca10cf",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-objections-waited.log",
+    "bytes": 504,
+    "sha256": "1bc66a95220f8b7e8174f4227caa0beb8488f147f6f673ace110f27644c04c91",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-objections.json",
+    "bytes": 15025,
+    "sha256": "56cd7de0c3ab30aa16efc8ece50c26a49a09c49aba15178d427cdfd4748815bd",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-objections.log",
+    "bytes": 497,
+    "sha256": "d43371869ed9d2831631c811175fec2f53462359c98b7890a6ef0551ecbba1a9",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-original.json",
+    "bytes": 9243,
+    "sha256": "c4b7847387846fa1829915f428b1d892a07193ed037ce8888f788037d284ed26",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "priority-original.log",
+    "bytes": 495,
+    "sha256": "eaee0d592162909868cb010d75d4ec23a92a09e2def2bfa6e4f3281b3365cb2d",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "real-refresh.json",
+    "bytes": 1827,
+    "sha256": "e71375dc275a8ceb40ee709a4962ea2eb10ebaba2742f19595b43b0281fe7849",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "real-refresh.log",
+    "bytes": 490,
+    "sha256": "3079c9864c418fb5eea92f8a4531cb3a1cd0e174c501694e9f59e3ac2287fae7",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "smoke-types.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "static-syntax-babel.log",
+    "bytes": 29,
+    "sha256": "1bc211a486d91798ff38f9c99a071ecb099dec562326137b130113b40e92e94e",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "static-syntax-final.log",
+    "bytes": 29,
+    "sha256": "9208528b54c4e84a59bac6198a61ac656640b9d736eb170be834dc62a6d154bc",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "static-syntax.log",
+    "bytes": 1043,
+    "sha256": "c4c793d73bf4810b39f1bdad1e3a8ef81b17833e3705a4f307387d1eb63942ce",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "typegen.log",
+    "bytes": 59,
+    "sha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  },
+  {
+    "name": "workflow-types.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "contentAudited": false,
+    "classification": "Excluded raw output; hash-only receipt, not public audited content"
+  }
+]

@@ -23,6 +23,7 @@
       },
       "deleteDescription": "Tem certeza de que deseja excluir \"{name}\"? Categorias usadas por ausências existentes não podem ser excluídas e devem ser desativadas.",
       "deleteFailed": "Não foi possível excluir a categoria",
+      "deleteInUse": "Esta categoria ainda está em uso. Em vez disso, desative-a ou remova primeiro o que depende dela.",
       "deleteTitle": "Excluir categoria de ausência",
       "drawsOnWorkBalance": "Desconta do saldo de trabalho",
       "editCategory": "Editar \"{name}\"",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "Sem dedução",
       "reactivate": "Reativar",
       "saveFailed": "Não foi possível salvar a categoria de ausência",
+      "saveInUse": "Esta categoria é usada por ausências existentes. Crie uma nova categoria para regras diferentes ou desative esta.",
       "searchPlaceholder": "Pesquisar categorias…",
       "statusUpdateFailed": "Não foi possível atualizar o status da categoria",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Atualizar categoria"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Ausência",
+        "absenceChange": "Alteração de ausência",
+        "complianceException": "Exceção de conformidade",
+        "manualTimeSubmission": "Envio manual de horas",
+        "periodSubmission": "Envio de período",
+        "policyClockOut": "Registro de saída por política",
+        "shiftRequest": "Solicitação de turno",
+        "timeCorrection": "Correção de horário",
+        "travelExpense": "Despesa de viagem"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Entrega",
+          "retirement": "Atualização de mensagem",
+          "transfer": "Transferência"
+        },
+        "outcome": {
+          "ambiguous": "Resultado desconhecido",
+          "delivered": "Entregue",
+          "deliveredAfterPurge": "Entregue após limpeza",
+          "destinationInvalid": "Destino inválido",
+          "gone": "Mensagem não está mais disponível",
+          "notCovering": "Mensagem não é mais atual",
+          "permanent": "Falha permanente",
+          "retryable": "Falha temporária",
+          "unavailable": "Canal indisponível"
+        }
+      },
       "attention": {
         "alertedAt": "Administradores alertados em {date}",
         "approvalType": "Aprovação",
@@ -116,6 +147,18 @@
         "recheck": "Verificar novamente",
         "resolved": "Resolvido",
         "retryDelivery": "Tentar entrega novamente",
+        "technical": {
+          "approvalRequestId": "ID da solicitação de aprovação",
+          "approvalType": "Código do tipo de aprovação",
+          "assignmentId": "ID da atribuição",
+          "attemptReference": "Referência da tentativa",
+          "attentionId": "ID do item de atenção",
+          "copied": "{label} copiado",
+          "copy": "Copiar {label}",
+          "copyFailed": "Não foi possível copiar o valor. Selecione-o e copie-o manualmente.",
+          "title": "Detalhes técnicos",
+          "workflowId": "ID do fluxo de trabalho"
+        },
         "title": "Requer atenção",
         "transfer": "Transferir…",
         "unknownApprover": "Não registrado"
@@ -155,6 +198,22 @@
         "disposed": "Descartado",
         "raised": "Aberto",
         "resolved": "Resolvido"
+      },
+      "evidence": {
+        "actionableAt": "Acionável desde",
+        "actionableEvidence": "Acionável desde (origem)",
+        "attemptCount": "Tentativas realizadas",
+        "cause": "Causa",
+        "code": "Código de erro",
+        "deadline": "Prazo",
+        "effect": "Ação da mensagem",
+        "error": "Erro",
+        "outcome": "Resultado",
+        "policyRevision": "Revisão da política",
+        "reason": "Código do motivo",
+        "recovered": "Recuperado por",
+        "route": "Caminho de decisão",
+        "workId": "Tarefa de entrega"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Não foi possível carregar as configurações de escalonamento.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Alterado por",
+        "empty": "Nenhuma alteração de política foi registrada ainda.",
         "migration": "Migração de configurações",
         "policy": "Política",
         "revision": "Revisão",
@@ -217,8 +277,10 @@
       },
       "title": "Escalonamento de aprovação",
       "toast": {
+        "conflict": "Isso foi alterado entretanto. Recarregue para ver o estado atual.",
         "deliveryRetried": "Nova tentativa de entrega agendada",
         "disposed": "Item de atenção fechado",
+        "notFound": "Este item não existe mais. Recarregue para ver o estado atual.",
         "rechecked": "{checked} itens verificados, {resolved} resolvidos",
         "requestFailed": "A solicitação falhou. Tente novamente.",
         "reviewed": "Conflitos marcados como revisados",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Tipos de aprovação",
       "approver": "Aprovador",
-      "approverEmployeeId": "ID do funcionário aprovador",
-      "approverEmployeeIdPlaceholder": "Exemplo: employee_123…",
+      "approverEmployee": "Funcionário aprovador",
       "approverType": {
         "directManager": "Gestor direto",
         "managerManager": "Gestor do gestor",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Contagem de condições",
       "createPolicy": "Criar política de aprovação",
+      "createPolicySubmit": "Criar política",
+      "deactivateConfirm": {
+        "confirm": "Desativar",
+        "description": "Novas solicitações deixarão de corresponder a esta política e serão encaminhadas para a próxima política ativa correspondente ou para a rota de aprovação padrão. Você pode ativá-la novamente editando-a.",
+        "title": "Desativar “{name}”?"
+      },
+      "deactivatePolicyNamed": "Desativar {name}",
       "defaultStageLabel": "Revisão do gerente",
       "description": "Configure cadeias de aprovação sequenciais para fluxos de trabalho operacionais",
       "descriptionPlaceholder": "Exemplo: Escala fluxos de trabalho sensíveis para operações…",
       "dialogDescription": "Defina quando uma cadeia de aprovação se aplica e quais aprovadores lidam com cada estágio sequencial.",
-      "editPolicy": "Editar política",
+      "editPolicyNamed": "Editar {name}",
+      "editPolicyTitle": "Editar política de aprovação",
       "empty": "Nenhuma política de aprovação configurada ainda. Crie uma política para definir sua primeira cadeia de aprovação.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Administrador da organização"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, one {Esta política também corresponde a # tipo de aprovação mais antigo que não pode ser selecionado aqui. Salvar mantém {count, plural, one {ele} other {eles}} sem alterações.} other {Esta política também corresponde a # tipos de aprovação mais antigos que não podem ser selecionados aqui. Salvar mantém {count, plural, one {ele} other {eles}} sem alterações.}}",
       "loadFailed": "Não foi possível carregar as políticas de aprovação.",
       "loading": "Carregando políticas…",
       "namePlaceholder": "Exemplo: Escalonamento de ausência…",
       "noStages": "Nenhuma etapa de aprovação configurada ainda.",
+      "preservedConditions": "{count, plural, one {Esta política tem mais # condição que não pode ser alterada aqui. Salvar mantém {count, plural, one {ela} other {elas}} sem alterações.} other {Esta política tem mais # condições que não podem ser alteradas aqui. Salvar mantém {count, plural, one {ela} other {elas}} sem alterações.}}",
       "preview": {
         "ariaLabel": "Visualização da cadeia de aprovação",
-        "badge": "Shell de visualização",
-        "description": "Veja como as solicitações correspondentes passarão por cada estágio de aprovação antes de ativar uma política.",
-        "footer": "A visualização completa do contexto da solicitação resolverá os aprovadores ativos assim que as condições da política e os grupos de funcionários forem conectados ao editor.",
+        "chainDescription": "Como uma solicitação correspondente avança pelos estágios conforme configurado acima.",
+        "chainTitle": "Pré-visualização da cadeia de aprovação",
+        "fallback": "Se nenhum aprovador for encontrado: {fallback}",
+        "loadingEmployee": "Carregando funcionário…",
+        "noEmployeeSelected": "Nenhum funcionário selecionado ainda",
+        "noStages": "Adicione um estágio para ver a cadeia de aprovação.",
         "stage": {
           "approved": "Aprovado",
-          "directManager": "Gerente direto",
-          "operationsAdmin": "Administrador de operações",
           "requester": "Solicitante"
-        },
-        "title": "Resumo da cadeia de visualização"
+        }
       },
       "priority": "Prioridade",
-      "removeStage": "Remover etapa",
+      "removeStageNumber": "Remover estágio {number}",
+      "savePolicySubmit": "Salvar política",
+      "selectApproverEmployee": "Selecionar funcionário",
       "stageNumber": "Etapa {number}",
       "stages": "Etapas de aprovação",
       "stagesCount": "Contagem de estágios",
@@ -322,14 +395,19 @@
       "title": "Políticas de aprovação",
       "toast": {
         "created": "Política de aprovação criada",
-        "saveFailed": "Não foi possível salvar a política de aprovação."
+        "deactivated": "“{name}” desativada",
+        "reactivated": "“{name}” está ativa novamente",
+        "saveFailed": "Não foi possível salvar a política de aprovação.",
+        "updated": "Política de aprovação salva"
       },
+      "unknownEmployee": "Funcionário desconhecido ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Políticas ativas exigem pelo menos um estágio de aprovação.",
-        "specificEmployeeRequiresId": "Estágios de funcionários específicos exigem um ID de funcionário aprovador."
+        "specificEmployeeRequired": "Escolha o funcionário aprovador para cada estágio de funcionário específico."
       }
     },
     "changePolicies": {
+      "actionsFor": "Ações para {name}",
       "allManagers": "Todos os gerentes",
       "approvalDaysDescription": "Além do autoatendimento, os funcionários podem solicitar alterações dentro desta janela (requer aprovação). 0 = sem janela adicional.",
       "approvalDaysLabel": "Janela de aprovação (dias)",
@@ -363,6 +441,7 @@
       "deleted": "Política excluída",
       "deleteDescription": "Tem certeza de que deseja excluir esta política? Quaisquer atribuições que usem esta política também serão removidas. Funcionários que usavam esta política anteriormente não terão restrições até que uma nova política seja atribuída.",
       "deleteFailed": "Falha ao excluir política",
+      "deleteNamedDescription": "Excluir a política de alteração \"{name}\"? Todas as atribuições que usam esta política também serão removidas. Os funcionários que usavam esta política anteriormente não terão restrições até que uma nova política seja atribuída.",
       "deleteTitle": "Excluir Política de Alteração",
       "description": "Controle quando os funcionários podem editar registros de horas e exija aprovação do gerente",
       "descriptionLabel": "Descrição",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "A política padrão aplicada a todos os funcionários que não possuem uma substituição de equipe ou individual.",
       "policySummary": "Resumo da Política:",
       "primaryOnly": "Apenas principal",
+      "removeAssignmentFor": "Remover atribuição de {name}",
       "removeAssignmentTitle": "Remover Atribuição de Política?",
       "removeEmployeeDescription": "Isso removerá a substituição para \"{name}\". Eles usarão o padrão da equipe ou da organização.",
       "removeOrgDescription": "Isso removerá a política padrão da organização. Os funcionários não terão restrições, a menos que tenham uma substituição de equipe ou individual.",
+      "removeOrgNamedDescription": "Isso removerá \"{policy}\" como a política padrão da organização. Os funcionários não terão restrições, a menos que tenham uma substituição de equipe ou individual.",
       "removeTeamDescription": "Isso removerá a política da equipe \"{team}\". Eles usarão o padrão da organização.",
       "sameDay": "Apenas no mesmo dia",
       "sameDayFree": "Edições no mesmo dia são gratuitas",
@@ -438,6 +519,13 @@
       "description": "Definir requisitos mínimos de pessoal por local e horário",
       "editRule": "Editar regra de cobertura",
       "endTime": "Hora de término",
+      "errors": {
+        "endNotAfterStart": "O horário de término deve ser posterior ao horário de início no mesmo dia.",
+        "invalidTime": "Insira um horário no formato de 24 horas HH:mm.",
+        "staffCountRange": "Insira um número inteiro de 1 a 100.",
+        "subareaRequired": "Selecione uma subárea."
+      },
+      "loadFailed": "Não foi possível carregar as regras de cobertura.",
       "loading": "Carregando regras de cobertura...",
       "minimumStaffCount": "Contagem mínima de funcionários",
       "minimumStaffHint": "O número mínimo de funcionários necessários durante este bloco de tempo.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Regra de cobertura atualizada",
       "selectSubarea": "Selecione uma subárea",
       "settingsFailed": "Falha ao salvar configurações",
+      "settingsLoadFailed": "Não foi possível carregar as configurações de publicação.",
       "settingsSaved": "Configurações salvas",
       "startTime": "Hora de início",
       "subarea": "Local / Subárea",
@@ -493,6 +582,10 @@
         "colorSelection": "Seleção de cor",
         "defaultSubarea": "Subárea padrão",
         "endTime": "Hora de término",
+        "errors": {
+          "invalidTime": "Insira um horário no formato de 24 horas HH:mm.",
+          "subareaRequired": "Selecione uma de suas subáreas."
+        },
         "name": "Nome",
         "namePlaceholder": "ex: Turno da Manhã…",
         "noSubarea": "Nenhuma subárea padrão",
@@ -508,6 +601,7 @@
         "description": "Gerencie seus modelos de turno",
         "title": "Modelos"
       },
+      "loadError": "Não foi possível carregar os modelos de turno.",
       "table": {
         "duration": "Duração",
         "name": "Nome",
@@ -544,7 +638,7 @@
       "deleteModel": "Excluir modelo de sobretaxa",
       "deleteModelDescription": "Isso desativará o modelo e todas as suas atribuições. Esta ação não pode ser desfeita.",
       "deleteModelTitle": "Excluir Modelo de Adicional?",
-      "deleteOrgAssignmentDescription": "Isso removerá o padrão da organização. Equipes e funcionários sem atribuições específicas não terão nenhum modelo de adicional aplicado.",
+      "deleteOrgAssignmentNamedDescription": "Isso removerá \"{model}\" como padrão da organização. Equipes e funcionários sem atribuições específicas não terão nenhum modelo de sobretaxa aplicado.",
       "deleteTeamAssignmentDescription": "Isso removerá o modelo de adicional da equipe \"{team}\". Eles usarão o padrão da organização.",
       "description": "Configure adicionais de tempo para horas extras, trabalho noturno, fins de semana e feriados.",
       "descriptionLabel": "Descrição",
@@ -605,9 +699,11 @@
           "loadTitle": "Não foi possível carregar os cálculos"
         },
         "filters": {
+          "allEmployees": "Todos os funcionários",
           "apply": "Aplicar filtros",
-          "employeeId": "ID do funcionário",
+          "employee": "Funcionário",
           "endDate": "Data de término",
+          "showAllEmployees": "Mostrar todos os funcionários",
           "startDate": "Data de início"
         },
         "loading": "Carregando cálculos...",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Exibindo os primeiros 500 cálculos correspondentes. Restrinja os filtros de data ou funcionário para refinar os totais.",
         "summary": {
           "baseHours": "Horas base",
+          "calculationCount": "{count, plural, one {# cálculo} other {# cálculos}}",
           "calculations": "Cálculos",
           "creditedHours": "Horas de sobretaxa creditadas",
           "qualifyingHours": "Horas de sobretaxa qualificáveis"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Remover dos conjuntos primeiro",
       "categories": "Categorias",
       "categoriesDescription": "Crie e gerencie categorias de trabalho que podem ser compartilhadas entre vários conjuntos",
+      "categoriesLoadError": "Não foi possível carregar as categorias de trabalho",
       "categoriesTitle": "Categorias de trabalho",
       "categoryCreated": "Categoria criada",
       "categoryCreateFailed": "Falha ao criar categoria",
@@ -709,6 +807,7 @@
       "categoryInUse": "Não é possível excluir uma categoria usada em {count} conjunto(s). Remova-a de todos os conjuntos primeiro.",
       "categoryName": "Nome",
       "categoryNamePlaceholder": "ex: Viagem passiva",
+      "categoryNameTaken": "Já existe uma categoria com este nome.",
       "categoryUpdated": "Categoria atualizada",
       "categoryUpdateFailed": "Falha ao atualizar categoria",
       "chooseColor": "Escolher cor",
@@ -722,22 +821,30 @@
       "createSetDescription": "Crie um novo conjunto de categorias e selecione quais categorias incluir",
       "defaultSet": "Conjunto de categorias padrão",
       "deleteAssignmentTitle": "Remover atribuição?",
+      "deleteCategoryDescription": "A categoria \"{name}\" será excluída permanentemente.",
+      "deleteCategoryNamed": "Excluir categoria {name}",
+      "deleteCategoryTitle": "Excluir categoria?",
       "deleteEmployeeAssignment": "Isso removerá a substituição para \"{name}\". Eles usarão o padrão da equipe ou da organização.",
-      "deleteOrgAssignment": "Isso removerá o padrão da organização. Os funcionários não terão categorias de trabalho disponíveis, a menos que sejam atribuídos individualmente.",
+      "deleteOrgAssignmentNamed": "Isso removerá \"{set}\" como padrão da organização. Os funcionários não terão categorias de trabalho disponíveis, a menos que sejam atribuídos individualmente.",
       "deleteSetDescription": "Isso excluirá permanentemente o conjunto de categorias \"{name}\" e todas as suas categorias. Quaisquer atribuições que usem este conjunto também serão removidas.",
+      "deleteSetNamed": "Excluir conjunto de categorias {name}",
       "deleteSetTitle": "Excluir conjunto de categorias?",
       "deleteTeamAssignment": "Isso removerá o conjunto de categorias da equipe \"{team}\". Eles usarão o padrão da organização.",
       "description": "Defina categorias de trabalho com fatores de tempo para um cálculo de tempo eficaz",
       "descriptionPlaceholder": "Descrição opcional",
       "editCategory": "Editar categoria",
       "editCategoryDescription": "Atualizar os detalhes da categoria",
+      "editCategoryNamed": "Editar categoria {name}",
       "editSet": "Editar conjunto de categorias",
       "editSetDescription": "Atualizar os detalhes do conjunto de categorias e gerenciar suas categorias",
+      "editSetNamed": "Editar conjunto de categorias {name}",
       "employeeLevel": "Substituições de funcionários",
       "employeeLevelDescription": "Substituir padrões da equipe ou da organização para funcionários específicos",
       "factor": "Fator",
       "factorExplanation": "O fator determina o tempo efetivo: 0,5 = 50% (por exemplo, deslocamento passivo), 1,0 = 100% (trabalho normal), 1,5 = 150% (hora extra)",
       "loadError": "Falha ao carregar conjuntos de categorias",
+      "moveCategoryDown": "Mover {name} para baixo",
+      "moveCategoryUp": "Mover {name} para cima",
       "noCategories": "Nenhuma categoria ainda",
       "noCategoriesAvailable": "Nenhuma categoria disponível",
       "noCategoriesHint": "Crie categorias para atribuí-las a conjuntos",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "Nenhuma equipe disponível.",
       "orgLevel": "Padrão da Organização",
       "orgLevelDescription": "Conjunto de categorias padrão aplicado a todos os funcionários, a menos que substituído",
+      "removeAssignmentFor": "Remover atribuição de {name}",
+      "removeCategoryFromSet": "Remover {name} do conjunto",
       "selectCategories": "Selecionar Categorias",
-      "selectedCategories": "Categorias selecionadas (arraste para reordenar)",
+      "selectedCategoriesOrder": "Categorias selecionadas (use as setas para reordenar)",
       "selectEmployee": "Funcionário",
       "selectEmployeePlaceholder": "Selecione um funcionário",
       "selectSet": "Conjunto de Categorias",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Descrição opcional para este conjunto de categorias",
       "setName": "Nome",
       "setNamePlaceholder": "por exemplo, Categorias de Viagem",
+      "setNameTaken": "Já existe um conjunto de categorias com este nome.",
       "setUpdated": "Conjunto de categorias atualizado",
       "setUpdateFailed": "Falha ao atualizar conjunto de categorias",
       "tab": {

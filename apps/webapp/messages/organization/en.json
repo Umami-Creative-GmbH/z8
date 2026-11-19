@@ -89,7 +89,13 @@
       "slugLabel": "Organization Slug",
       "title": "Edit Organization",
       "updateError": "Failed to update organization",
-      "updateSuccess": "Organization updated successfully"
+      "updateSuccess": "Organization updated successfully",
+      "validation": {
+        "nameMax": "Name cannot exceed 100 characters",
+        "nameMin": "Name must be at least 2 characters",
+        "slugMax": "Slug cannot exceed 50 characters",
+        "slugMin": "Slug must be at least 2 characters"
+      }
     },
     "error": {
       "description": "The organization chart could not be loaded. Please try again.",
@@ -395,6 +401,7 @@
     "switchTo": "Switch Organization",
     "teams": {
       "card": {
+        "actionsFor": "Actions for {name}",
         "deleteTeam": "Delete Team",
         "editTeam": "Edit Team",
         "fallbackManager": "Fallback manager",
@@ -406,10 +413,10 @@
       "delete": "Delete Team",
       "deleteDialogDescription": "This will permanently delete the team \"{teamName}\".",
       "deleteDialogMembersWarning": "Warning: This team has {count} member(s). They will be removed from the team.",
+      "deleteDialogNamedTitle": "Delete team {name}?",
       "deleteDialogTitle": "Are you sure?",
       "deleteError": "Failed to delete team",
       "deleteSuccess": "Team deleted successfully",
-      "description": "Organize your employees into teams for better collaboration",
       "edit": {
         "description": "Update team name and description",
         "descriptionLabel": "Description (Optional)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Member removed from team",
         "selectEmployee": "Select an employee to add",
         "title": "{teamName} - Team Members"
-      },
-      "title": "Teams"
+      }
     },
     "timezone": {
       "balances-recalculating": "Work balances are being recalculated for the new timezone and stay hidden until they are ready.",

@@ -104,15 +104,22 @@ async function ShiftTemplatesPageContent() {
 function ShiftTemplatesPageLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-4 p-4"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.shiftTemplateSettings",
 				labelDefault: "Loading shift template settings",
 			}}
 		>
-			<Skeleton className="h-8 w-48" aria-hidden="true" />
-			<Skeleton className="h-64 w-full" aria-hidden="true" />
+			{/* Mirrors SettingsTabbedPage: heading and description, tabs, then the panel. */}
+			<div className="space-y-2">
+				<Skeleton className="h-8 w-48" aria-hidden="true" />
+				<Skeleton className="h-4 w-96 max-w-full" aria-hidden="true" />
+			</div>
+			<div className="flex flex-col gap-4">
+				<Skeleton className="h-9 w-64 max-w-full" aria-hidden="true" />
+				<Skeleton className="h-64 w-full" aria-hidden="true" />
+			</div>
 		</LoadingRegion>
 	);
 }

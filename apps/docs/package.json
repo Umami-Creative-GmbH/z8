@@ -7,14 +7,16 @@
 		"build": "next build",
 		"start": "next start -p 3001",
 		"postinstall": "fumadocs-mdx",
-		"generate:api-reference": "node scripts/generate-api-reference.mjs"
+		"generate:api-reference": "node scripts/generate-api-reference.mjs",
+		"analyze:bundle": "next analyze --output",
+		"analyze:bundle:export": "next analyze export"
 	},
 	"dependencies": {
 		"@tabler/icons-react": "^3.52.0",
-		"fumadocs-core": "^16.19.3",
-		"fumadocs-mdx": "^15.6.2",
-		"fumadocs-openapi": "12.6.2",
-		"fumadocs-ui": "^16.19.3",
+		"fumadocs-core": "^16.19.4",
+		"fumadocs-mdx": "^15.6.3",
+		"fumadocs-openapi": "12.6.5",
+		"fumadocs-ui": "^16.19.4",
 		"next": "16.4.6",
 		"react": "19.3.1",
 		"react-dom": "19.3.1"
@@ -23,7 +25,7 @@
 		"@tailwindcss/postcss": "^4.3.5",
 		"@types/node": "^26.6.6",
 		"@types/react": "19.3.0",
-		"postcss": "8.5.32",
+		"postcss": "8.5.33",
 		"tailwindcss": "^4.3.5",
 		"typescript": "^7.0.2"
 	}

@@ -19,11 +19,11 @@ import type {
 	EquipmentAssignmentView,
 	EquipmentView,
 } from "@/lib/organization/equipment/contracts";
-import { cn } from "@/lib/utils";
 import { CorrectionHistory } from "./equipment-corrections";
 import { EquipmentExceptionTotals } from "./equipment-exceptions";
 import { EquipmentHistory } from "./equipment-history";
 import { groupPersonalAssignments } from "./equipment-list";
+import { EquipmentPersonalHeader } from "./equipment-personal-header";
 import {
 	AssignmentStatusBadge,
 	DeadlineText,
@@ -41,31 +41,41 @@ function PersonalRow({
 	const locale = useLocale();
 	const corrections = assignment.corrections ?? [];
 	return (
-		<Collapsible
-			render={<li />}
-			className={cn(
-				"[content-visibility:auto]",
-				assignment.outstanding && assignment.overdue && "bg-destructive/5",
-			)}
-		>
-			<CollapsibleTrigger className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-6 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring sm:grid-cols-[minmax(0,1fr)_6rem_10rem_auto_auto]">
-				<ItemIdentity assignment={assignment} />
-				<span className="hidden text-sm tabular-nums sm:block">
-					{t("settings.equipment.personal.quantity", "{count} issued", {
-						count: assignment.quantity.toLocaleString(locale),
-					})}
+		<Collapsible render={<li />} className="[content-visibility:auto]">
+			<CollapsibleTrigger className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 text-left hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-6 @4xl/main:grid-cols-[minmax(0,1fr)_9rem_10rem_10rem_auto]">
+				<span className="min-w-0 [&_.truncate]:whitespace-normal [&_.truncate]:wrap-anywhere">
+					<ItemIdentity assignment={assignment} />
 				</span>
-				<span className="col-span-2 text-sm sm:col-span-1">
-					<DeadlineText assignment={assignment} today={data.today} />
+				<span className="col-span-2 flex flex-col gap-1 text-sm tabular-nums @4xl/main:col-span-1">
+					{assignment.outstanding ? (
+						<span className="font-medium">
+							{t("settings.equipment.personal.remaining", "{count} to return", {
+								count: assignment.outstandingQuantity.toLocaleString(locale),
+							})}
+						</span>
+					) : null}
+					<span className="text-muted-foreground">
+						{t("settings.equipment.personal.quantity", "{count} issued", {
+							count: assignment.quantity.toLocaleString(locale),
+						})}
+					</span>
 				</span>
 				<AssignmentStatusBadge
 					assignment={assignment}
-					className="justify-self-start"
+					className="col-span-2 max-w-full justify-self-start whitespace-normal @4xl/main:col-span-1"
 				/>
-				<IconChevronDown
-					className="row-start-1 size-4 text-muted-foreground transition-transform group-data-[panel-open]:rotate-180 sm:row-start-auto"
-					aria-hidden="true"
-				/>
+				<span className="col-span-2 text-sm @4xl/main:col-span-1">
+					<DeadlineText assignment={assignment} today={data.today} />
+				</span>
+				<span className="col-start-2 row-start-1 flex items-center gap-1 text-sm text-muted-foreground @4xl/main:col-start-auto @4xl/main:row-start-auto">
+					<span className="hidden @4xl/main:inline">
+						{t("settings.equipment.custody.history", "Handover history")}
+					</span>
+					<IconChevronDown
+						className="size-4 shrink-0 transition-transform group-data-[panel-open]:rotate-180 motion-reduce:transition-none"
+						aria-hidden="true"
+					/>
+				</span>
 				<span className="sr-only">
 					{t(
 						"settings.equipment.personal.toggleHistory",
@@ -73,7 +83,7 @@ function PersonalRow({
 					)}
 				</span>
 			</CollapsibleTrigger>
-			<CollapsibleContent className="space-y-4 border-t bg-muted/20 px-6 py-5">
+			<CollapsibleContent className="space-y-4 border-t bg-muted/20 px-4 py-5 wrap-anywhere sm:px-6">
 				<dl className="grid gap-3 text-sm sm:grid-cols-3">
 					<div>
 						<dt className="text-muted-foreground">
@@ -194,19 +204,9 @@ export function PersonalEquipment({ data }: { data: EquipmentView }) {
 	const locale = useLocale();
 	const groups = groupPersonalAssignments(data.assignments, locale);
 	return (
-		<>
-			<div className="space-y-1 px-4 lg:px-6">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.equipment.personal.title", "My equipment")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.equipment.personal.description",
-						"Equipment issued to you, what to return and by when, and every recorded handover.",
-					)}
-				</p>
-			</div>
-			<div className="flex flex-col gap-6 px-4 lg:px-6">
+		<div className="space-y-6">
+			<EquipmentPersonalHeader calendar={data} />
+			<div className="flex flex-col gap-6">
 				{data.assignments.length ? (
 					<>
 						<PersonalGroup
@@ -250,6 +250,6 @@ export function PersonalEquipment({ data }: { data: EquipmentView }) {
 					</Empty>
 				)}
 			</div>
-		</>
+		</div>
 	);
 }

@@ -16,18 +16,10 @@ import {
 	saveStorageConfigAction,
 	testStorageConnectionAction,
 } from "@/app/[locale]/(app)/settings/export/actions";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -231,44 +223,52 @@ function useStorageSettingsForm({ initialConfig, onConfigChange }: StorageSettin
 		});
 	};
 
-	const handleDelete = () => {
-		startTransition(async () => {
-			let result: Awaited<ReturnType<typeof deleteStorageConfigAction>>;
-			try {
-				result = await deleteStorageConfigAction();
-			} catch {
-				toast.error(t("settings.dataExport.storage.deleteError", "Failed to delete configuration"));
-				return;
-			}
+	const deletion = useConfirmedAction<StorageConfigResult>();
 
-			if (result.success) {
-				setConfig(null);
-				setTestResult(null);
-				form.reset();
-				form.setFieldValue("bucket", "");
-				form.setFieldValue("accessKeyId", "");
-				form.setFieldValue("secretAccessKey", "");
-				form.setFieldValue("region", "us-east-1");
-				form.setFieldValue("endpoint", "");
-				toast.success(t("settings.dataExport.storage.deleteSuccess", "Configuration deleted"));
-				onConfigChange?.(false);
-			} else {
-				toast.error(
-					t("settings.dataExport.storage.deleteError", "Failed to delete configuration"),
-					{
-						description:
-							actionErrorMessage(t, result, {}, [
-								"settings.dataExport.storage.unexpectedError",
-								"An unexpected error occurred",
-							]),
-					},
-				);
-			}
-		});
+	// Resolves once the configuration is gone and throws the worded reason otherwise,
+	// so the confirmation stays open with the failure inline.
+	const deleteConfig = async () => {
+		let result: Awaited<ReturnType<typeof deleteStorageConfigAction>>;
+		try {
+			result = await deleteStorageConfigAction();
+		} catch {
+			throw new Error(
+				t("settings.dataExport.storage.deleteError", "Failed to delete configuration"),
+			);
+		}
+
+		if (!result.success) {
+			throw new Error(
+				actionErrorMessage(t, result, {}, [
+					"settings.dataExport.storage.deleteError",
+					"Failed to delete configuration",
+				]),
+			);
+		}
+
+		setConfig(null);
+		setTestResult(null);
+		form.reset();
+		form.setFieldValue("bucket", "");
+		form.setFieldValue("accessKeyId", "");
+		form.setFieldValue("secretAccessKey", "");
+		form.setFieldValue("region", "us-east-1");
+		form.setFieldValue("endpoint", "");
+		toast.success(t("settings.dataExport.storage.deleteSuccess", "Configuration deleted"));
+		onConfigChange?.(false);
 	};
+
+	const handleDelete = () =>
+		void deletion.confirm(deleteConfig, (failure) =>
+			describeFailure(
+				failure,
+				t("settings.dataExport.storage.deleteError", "Failed to delete configuration"),
+			),
+		);
 
 	return {
 		config,
+		deletion,
 		form,
 		formValues,
 		handleDelete,
@@ -289,6 +289,7 @@ export function StorageSettingsForm(props: StorageSettingsFormProps) {
 
 function StorageSettingsCard({
 	config,
+	deletion,
 	form,
 	handleDelete,
 	handleTestConnection,
@@ -321,44 +322,40 @@ function StorageSettingsCard({
 						</CardDescription>
 					</div>
 					{config && (
-						<AlertDialog>
-							<AlertDialogTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="text-destructive"
-									aria-label={t(
-										"settings.dataExport.storage.deleteDialogTitle",
-										"Delete Configuration",
-									)}
-								>
-									<IconTrash className="size-4" />
-								</Button>
-							</AlertDialogTrigger>
-							<AlertDialogContent>
-								<AlertDialogHeader>
-									<AlertDialogTitle>
-										{t("settings.dataExport.storage.deleteDialogTitle", "Delete Configuration")}
-									</AlertDialogTitle>
-									<AlertDialogDescription>
-										{t(
-											"settings.dataExport.storage.deleteDialogDescription",
-											"Are you sure you want to delete this storage configuration?",
-										)}
-									</AlertDialogDescription>
-								</AlertDialogHeader>
-								<AlertDialogFooter>
-									<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-									<AlertDialogAction
-										onClick={handleDelete}
-										className="bg-destructive text-destructive-foreground"
-									>
-										{t("common.delete", "Delete")}
-									</AlertDialogAction>
-								</AlertDialogFooter>
-							</AlertDialogContent>
-						</AlertDialog>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="text-destructive"
+							aria-label={t(
+								"settings.dataExport.storage.deleteDialogTitle",
+								"Delete Configuration",
+							)}
+							disabled={deletion.isPending}
+							onClick={() => deletion.request(config)}
+						>
+							<IconTrash className="size-4" aria-hidden="true" />
+						</Button>
 					)}
+					<DeleteConfirmDialog
+						open={deletion.open}
+						onOpenChange={deletion.onOpenChange}
+						title={t("settings.dataExport.storage.deleteDialogTitle", "Delete Configuration")}
+						description={
+							deletion.target
+								? t(
+										"settings.dataExport.storage.deleteDialogDescriptionNamed",
+										'Delete the storage configuration for bucket "{bucket}"?',
+										{ bucket: deletion.target.bucket },
+									)
+								: t(
+										"settings.dataExport.storage.deleteDialogDescription",
+										"Are you sure you want to delete this storage configuration?",
+									)
+						}
+						isDeleting={deletion.isPending}
+						error={deletion.error}
+						onConfirm={handleDelete}
+					/>
 				</div>
 			</CardHeader>
 			<form

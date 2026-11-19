@@ -1,14 +1,17 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { IconDownload, IconFileUpload, IconLoader2, IconUpload } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useId, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	commitOpeningBalanceUploadAction,
 	previewOpeningBalanceUploadAction,
 } from "@/app/[locale]/(app)/settings/employees/opening-balance-upload-actions";
+import { useOrganization } from "@/components/providers/organization-context-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +21,15 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+} from "@/components/ui/tanstack-form";
 import {
 	MAX_OPENING_BALANCE_UPLOAD_CHARACTERS,
 	openingBalanceCsvTemplate,
@@ -66,35 +75,80 @@ function downloadTemplate() {
  * employee list, payroll grant holders from the payroll Work balances page.
  */
 export function OpeningBalanceUploadDialog() {
+	const { userId, activeOrganizationId } = useOrganization();
+	if (!userId || !activeOrganizationId) return null;
+	return <ScopedOpeningBalanceUploadDialog key={JSON.stringify([userId, activeOrganizationId])} />;
+}
+
+function OpeningBalanceUploadHeader() {
 	const { t } = useTranslate();
-	const inputId = useId();
+	return (
+		<DialogHeader>
+			<DialogTitle>
+				{t("settings.employees.workBalance.upload.title", "Upload opening balances")}
+			</DialogTitle>
+			<DialogDescription>
+				{t(
+					"settings.employees.workBalance.upload.description",
+					"Set the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.",
+				)}
+			</DialogDescription>
+		</DialogHeader>
+	);
+}
+
+function useOpeningBalanceUpload() {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const actionError = useBalanceAdjustmentErrorMessage();
 	const { fileError } = useOpeningBalanceUploadMessages();
 	const [open, setOpen] = useState(false);
 	const [upload, setUpload] = useState<Upload | null>(null);
 	const [pending, setPending] = useState<"preview" | "commit" | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const busy = useRef(false);
+	const alive = useRef(true);
+	const generation = useRef(0);
+	useLayoutEffect(() => {
+		alive.current = true;
+		return () => {
+			alive.current = false;
+			generation.current += 1;
+		};
+	}, []);
+	const form = useForm({ defaultValues: { file: null as File | null }, onSubmit: handleCommit });
+
+	function isCurrent(startedGeneration: number) {
+		return alive.current && generation.current === startedGeneration;
+	}
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (pending) return;
-		if (!nextOpen) setUpload(null);
+		if (busy.current) return;
+		if (!nextOpen) {
+			setUpload(null);
+			setError(null);
+			form.reset();
+		}
 		setOpen(nextOpen);
 	}
 
 	async function run(
 		kind: "preview" | "commit",
 		csv: string,
+		startedGeneration: number,
 	): Promise<OpeningBalanceUploadOutcome | null> {
+		if (!isCurrent(startedGeneration)) return null;
 		setPending(kind);
+		setError(null);
 		const action =
 			kind === "preview" ? previewOpeningBalanceUploadAction : commitOpeningBalanceUploadAction;
 		const result: BalanceAdjustmentActionResult<OpeningBalanceUploadOutcome> | null = await action({
 			csv,
 		}).catch(() => null);
-		setPending(null);
+		if (!isCurrent(startedGeneration)) return null;
 		if (!result?.success) {
 			const failure = result ? balanceAdjustmentFailureOf(result) : null;
-			toast.error(
+			setError(
 				actionError(failure?.code ?? null, { closedMonth: failure?.details.closedMonth ?? null }),
 			);
 			return null;
@@ -102,96 +156,199 @@ export function OpeningBalanceUploadDialog() {
 		return result.data;
 	}
 
-	async function handleFile(file: File | undefined) {
-		if (!file) return;
-		const csv = await file.text().catch(() => null);
-		if (csv === null) {
-			setUpload({ csv: "", outcome: { status: "unreadable" }, refused: false });
-			return;
-		}
-		if (csv.length > MAX_OPENING_BALANCE_UPLOAD_CHARACTERS) {
-			setUpload({
-				csv,
-				outcome: { status: "invalid_file", code: "file_too_large" },
-				refused: false,
-			});
-			return;
-		}
-		const outcome = await run("preview", csv);
-		setUpload(outcome ? { csv, outcome, refused: false } : null);
+	function finishPending() {
+		// Activity preserves state while hiding the page; release the lock there too.
+		busy.current = false;
+		setPending(null);
 	}
 
-	async function handleCommit() {
-		if (!upload) return;
-		const outcome = await run("commit", upload.csv);
-		if (!outcome) return;
-		if (outcome.status === "committed") {
-			toast.success(
-				t(
-					"settings.employees.workBalance.upload.committed",
-					"{count, plural, one {# opening balance set} other {# opening balances set}}",
-					{ count: outcome.created },
-				),
-			);
-			await queryClient.invalidateQueries({ queryKey: EMPLOYEE_WORK_BALANCE_QUERY_KEY });
-			setUpload(null);
-			setOpen(false);
-			return;
-		}
-		setUpload({ csv: upload.csv, outcome, refused: true });
+	function handleFile(file: File | undefined) {
+		if (!file || busy.current || !alive.current) return;
+		const startedGeneration = generation.current;
+		busy.current = true;
+		setPending("preview");
+		setError(null);
+		setUpload(null);
+		form.setFieldValue("file", file);
+		return (async () => {
+			const csv = await file.text().catch(() => null);
+			if (!isCurrent(startedGeneration)) return;
+			if (csv === null) {
+				setUpload({ csv: "", outcome: { status: "unreadable" }, refused: false });
+				return;
+			}
+			if (csv.length > MAX_OPENING_BALANCE_UPLOAD_CHARACTERS) {
+				setUpload({
+					csv,
+					outcome: { status: "invalid_file", code: "file_too_large" },
+					refused: false,
+				});
+				return;
+			}
+			const outcome = await run("preview", csv, startedGeneration);
+			if (!isCurrent(startedGeneration)) return;
+			setUpload(outcome ? { csv, outcome, refused: false } : null);
+		})().finally(finishPending);
+	}
+
+	function handleCommit() {
+		if (upload?.outcome.status !== "ready" || busy.current || !alive.current) return;
+		const startedGeneration = generation.current;
+		busy.current = true;
+		return (async () => {
+			const outcome = await run("commit", upload.csv, startedGeneration);
+			if (!outcome) return;
+			if (outcome.status === "committed") {
+				toast.success(
+					t(
+						"settings.employees.workBalance.upload.committed",
+						"{count, plural, one {# opening balance set} other {# opening balances set}}",
+						{ count: outcome.created },
+					),
+				);
+				await queryClient.invalidateQueries({ queryKey: EMPLOYEE_WORK_BALANCE_QUERY_KEY });
+				if (!isCurrent(startedGeneration)) return;
+				setUpload(null);
+				setOpen(false);
+				return;
+			}
+			setUpload({ csv: upload.csv, outcome, refused: true });
+		})().finally(() => {
+			// A retired commit may have written successfully. Recheck before another submission.
+			if (!isCurrent(startedGeneration)) setUpload(null);
+			finishPending();
+		});
 	}
 
 	const outcome = upload?.outcome;
 	const rows = outcome && "rows" in outcome ? outcome.rows : [];
 	const errorRows = rows.filter((row) => row.errors.length > 0).length;
 	const replacing = rows.filter((row) => row.replaces && row.errors.length === 0).length;
+	return {
+		t,
+		fileError,
+		open,
+		upload,
+		pending,
+		error,
+		busy,
+		form,
+		handleOpenChange,
+		handleFile,
+		outcome,
+		rows,
+		errorRows,
+		replacing,
+	};
+}
+
+function ScopedOpeningBalanceUploadDialog() {
+	const {
+		t,
+		fileError,
+		open,
+		upload,
+		pending,
+		error,
+		busy,
+		form,
+		handleOpenChange,
+		handleFile,
+		outcome,
+		rows,
+		errorRows,
+		replacing,
+	} = useOpeningBalanceUpload();
 
 	return (
-		<>
-			<Button type="button" variant="outline" onClick={() => setOpen(true)}>
-				<IconUpload aria-hidden="true" className="size-4" />
-				{t("settings.employees.workBalance.upload.open", "Upload opening balances")}
-			</Button>
-			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogContent className="sm:max-w-5xl">
-					<DialogHeader>
-						<DialogTitle>
-							{t("settings.employees.workBalance.upload.title", "Upload opening balances")}
-						</DialogTitle>
-						<DialogDescription>
-							{t(
-								"settings.employees.workBalance.upload.description",
-								"Set the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.",
-							)}
-						</DialogDescription>
-					</DialogHeader>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			<DialogTrigger asChild>
+				<Button type="button" variant="outline">
+					<IconUpload aria-hidden="true" className="size-4" />
+					{t("settings.employees.workBalance.upload.open", "Upload opening balances")}
+				</Button>
+			</DialogTrigger>
+			<DialogContent
+				className="overscroll-contain sm:max-w-5xl"
+				showCloseButton={!pending}
+				onEscapeKeyDown={(event) => {
+					if (busy.current) event.preventDefault();
+				}}
+				onInteractOutside={(event) => {
+					if (busy.current) event.preventDefault();
+				}}
+			>
+				<ClientForm
+					className="grid min-w-0 gap-4"
+					aria-busy={pending !== null}
+					stopPropagation
+					onSubmit={() => {
+						if (busy.current) return;
+						return form.handleSubmit();
+					}}
+				>
+					<OpeningBalanceUploadHeader />
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-						<div className="grid flex-1 gap-2">
-							<Label htmlFor={inputId}>
-								{t("settings.employees.workBalance.upload.file", "CSV file")}
-							</Label>
-							<Input
-								id={inputId}
-								type="file"
-								accept=".csv,text/csv"
-								disabled={pending !== null}
-								onChange={(event) => {
-									const file = event.target.files?.[0];
-									event.target.value = "";
-									void handleFile(file);
-								}}
-							/>
-						</div>
+						<form.Field name="file">
+							{(field) => (
+								<TFormItem className="min-w-0 flex-1">
+									<TFormLabel>
+										{t("settings.employees.workBalance.upload.file", "CSV file")}
+									</TFormLabel>
+									<TFormControl>
+										<Input
+											type="file"
+											accept=".csv,text/csv"
+											name="file"
+											onBlur={field.handleBlur}
+											disabled={pending !== null}
+											onChange={(event) => {
+												const file = event.target.files?.[0];
+												event.target.value = "";
+												void handleFile(file);
+											}}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.employees.workBalance.upload.fileHelp",
+											"Choose a CSV (UTF-8) file. Check every row before setting opening balances.",
+										)}
+									</TFormDescription>
+								</TFormItem>
+							)}
+						</form.Field>
 						<Button type="button" variant="ghost" onClick={downloadTemplate}>
 							<IconDownload aria-hidden="true" className="size-4" />
 							{t("settings.employees.workBalance.upload.template", "Download template")}
 						</Button>
 					</div>
+					{error ? (
+						<Alert variant="destructive">
+							<AlertTitle>
+								{t("settings.employees.workBalance.upload.refusedTitle", "Nothing was saved")}
+							</AlertTitle>
+							<AlertDescription>{error}</AlertDescription>
+							{!upload ? (
+								<Button
+									type="button"
+									variant="outline"
+									disabled={pending !== null}
+									onClick={() => void handleFile(form.getFieldValue("file") ?? undefined)}
+								>
+									{t("common.retry", "Retry")}
+								</Button>
+							) : null}
+						</Alert>
+					) : null}
 
 					{pending === "preview" ? (
 						<p className="flex items-center gap-2 text-muted-foreground text-sm" role="status">
-							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+							<IconLoader2
+								aria-hidden="true"
+								className="size-4 animate-spin motion-reduce:animate-none"
+							/>
 							{t("settings.employees.workBalance.upload.checking", "Checking the file…")}
 						</p>
 					) : null}
@@ -210,36 +367,12 @@ export function OpeningBalanceUploadDialog() {
 					) : null}
 
 					{rows.length > 0 ? (
-						<div className="grid gap-3">
-							{errorRows > 0 ? (
-								<Alert variant="destructive">
-									<AlertTitle>
-										{upload?.refused
-											? t("settings.employees.workBalance.upload.refusedTitle", "Nothing was saved")
-											: t(
-													"settings.employees.workBalance.upload.hasErrorsTitle",
-													"Fix the rows with errors",
-												)}
-									</AlertTitle>
-									<AlertDescription>
-										{t(
-											"settings.employees.workBalance.upload.hasErrors",
-											"{errors, plural, one {# of {total} rows has an error} other {# of {total} rows have errors}}. Correct the file and upload it again.",
-											{ errors: errorRows, total: rows.length },
-										)}
-									</AlertDescription>
-								</Alert>
-							) : (
-								<p className="text-sm">
-									{t(
-										"settings.employees.workBalance.upload.allReady",
-										"{total, plural, one {# row is ready} other {All # rows are ready}}; {replacing, plural, =0 {none replaces an opening balance in effect} one {# replaces an opening balance in effect} other {# replace an opening balance in effect}}.",
-										{ total: rows.length, replacing },
-									)}
-								</p>
-							)}
-							<OpeningBalanceUploadTable rows={rows} />
-						</div>
+						<OpeningBalancePreview
+							rows={rows}
+							errorRows={errorRows}
+							refused={upload?.refused}
+							replacing={replacing}
+						/>
 					) : null}
 
 					<DialogFooter>
@@ -251,13 +384,12 @@ export function OpeningBalanceUploadDialog() {
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button
-							type="button"
-							disabled={outcome?.status !== "ready" || pending !== null}
-							onClick={() => void handleCommit()}
-						>
+						<Button type="submit" disabled={outcome?.status !== "ready" || pending !== null}>
 							{pending === "commit" ? (
-								<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+								<IconLoader2
+									aria-hidden="true"
+									className="size-4 animate-spin motion-reduce:animate-none"
+								/>
 							) : (
 								<IconFileUpload aria-hidden="true" className="size-4" />
 							)}
@@ -268,8 +400,54 @@ export function OpeningBalanceUploadDialog() {
 							)}
 						</Button>
 					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</>
+				</ClientForm>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function OpeningBalancePreview({
+	rows,
+	errorRows,
+	refused,
+	replacing,
+}: {
+	rows: ReturnType<typeof useOpeningBalanceUpload>["rows"];
+	errorRows: number;
+	refused: boolean | undefined;
+	replacing: number;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="grid gap-3">
+			{errorRows > 0 ? (
+				<Alert variant="destructive">
+					<AlertTitle>
+						{refused
+							? t("settings.employees.workBalance.upload.refusedTitle", "Nothing was saved")
+							: t(
+									"settings.employees.workBalance.upload.hasErrorsTitle",
+									"Fix the rows with errors",
+								)}
+					</AlertTitle>
+					<AlertDescription>
+						{t(
+							"settings.employees.workBalance.upload.hasErrors",
+							"{errors, plural, one {# of {total} rows has an error} other {# of {total} rows have errors}}. Correct the file and upload it again.",
+							{ errors: errorRows, total: rows.length },
+						)}
+					</AlertDescription>
+				</Alert>
+			) : (
+				<p className="text-sm">
+					{t(
+						"settings.employees.workBalance.upload.allReady",
+						"{total, plural, one {# row is ready} other {All # rows are ready}}; {replacing, plural, =0 {none replaces an opening balance in effect} one {# replaces an opening balance in effect} other {# replace an opening balance in effect}}.",
+						{ total: rows.length, replacing },
+					)}
+				</p>
+			)}
+			<OpeningBalanceUploadTable rows={rows} />
+		</div>
 	);
 }

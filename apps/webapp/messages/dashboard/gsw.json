@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Abweseheit",
-      "all-caught-up": "Alles erledigt!",
-      "approved-recently": "{count} {request} chürzlich freigäh",
       "by": "vo {name}",
       "description": "Die letschte freigäbene Aastellige",
       "description-count": "Die letschte {count} freigäbene {request}",
@@ -123,11 +121,27 @@
       "title": "Chürzlich freigäh",
       "view-all": "Alli Freigabe aazeige"
     },
+    "refresh": {
+      "activity": "Letzte Aktivität",
+      "attention": "Heute auf einen Blick",
+      "balanceRetry": "Aktualisieren Sie, um den Saldo erneut zu laden.",
+      "balanceUnavailable": "Saldo nicht verfügbar",
+      "currentSession": "Aktuelle Sitzung",
+      "dayUnavailable": "Das heutige Total ist nicht verfügbar. Aktualisieren Sie, um es erneut zu versuchen.",
+      "employee": "Mitarbeitende",
+      "greeting": "Guten Tag, {name}.",
+      "noAbsences": "Für heute sind keine Absenzen erfasst.",
+      "openTimeTracking": "Zur Zeiterfassung",
+      "overview": "Ihre Arbeit auf einen Blick",
+      "personalDay": "Ihr Arbeitstag",
+      "status": "Status",
+      "summary": "Zusammenfassung",
+      "team": "Team",
+      "todayTarget": "Heute · {target} erforderlich"
+    },
     "team-overview": {
       "avg-hours": "Durchschn. Stunde",
       "current-employees": "Aktuelli Mitarbeiter",
-      "current-employees-description": "Ali, wo jetzt da schaffed",
-      "description": "Teamstatistik uf e Blick",
       "employees-button": "Aagstellti",
       "per-week": "/Wuche",
       "teams": "Team",
@@ -175,9 +189,6 @@
       "used": "{days} brucht"
     },
     "whos-out": {
-      "everyone-in": "All sind hüt im Büro",
-      "everyones-in": "All sind da!",
-      "full-team": "S'ganze Team isch verfügbar!",
       "member": "Mitglied",
       "members": "Mitglieder",
       "members-out": "{count} Team-{member} abwesend",

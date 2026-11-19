@@ -236,6 +236,8 @@ describe("DepartureCard", () => {
 
 		const balance = screen.getByRole("region", { name: "Work balance" });
 		expect(balance.textContent).toContain("+6:00h");
+		// The signed value carries the status; its color is the semantic success token.
+		expect(screen.getByText("+6:00h").className).toContain("text-success");
 		expect(balance.textContent).toContain("Through Oct 9, 2026");
 		await user.click(screen.getByRole("button", { name: "Record final overtime payout" }));
 
@@ -255,6 +257,7 @@ describe("DepartureCard", () => {
 		);
 
 		expect(screen.getByRole("region", { name: "Work balance" }).textContent).toContain("-1:30h");
+		expect(screen.getByText("-1:30h").className).toContain("text-destructive");
 		expect(screen.queryByRole("button", { name: "Record final overtime payout" })).toBeNull();
 	});
 

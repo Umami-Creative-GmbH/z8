@@ -1,0 +1,31 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+ ❯ |unit| src/components/travel-expenses/report/travel-expense-report-editor.test.tsx (0 test)
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| src/components/travel-expenses/report/travel-expense-report-editor.test.tsx [ src/components/travel-expenses/report/travel-expense-report-editor.test.tsx ]
+Error: Transform failed with 1 error:
+[PARSE_ERROR] Expected `,` or `)` but found `:`
+    ╭─[ src/components/travel-expenses/report/project-picker.tsx:53:10 ]
+    │
+ 47 │        queryKey: useReportQueryKey(queryKeys.travelExpenses.projectChoices(
+    │                                   ┬
+    │                                   ╰── Opened here
+    │
+ 53 │        queryFn: async (): Promise<ProjectChoicesView> => {
+    │               ┬
+    │               ╰── `,` or `)` expected
+────╯
+  Plugin: vite:oxc
+  File: WORKTREE_ROOT/apps/webapp/src/components/travel-expenses/report/project-picker.tsx
+ ❯ transformWithOxc [contact removed]@[contact removed]
+ ❯ TransformPluginContext.transform [contact removed]@[contact removed]
+ ❯ EnvironmentPluginContainer.transform [contact removed]@[contact removed]
+ ❯ loadAndTransform [contact removed]@[contact removed]
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  12:28:29
+   Duration  1.34s (environment 90%, setup 7%, transform 2%, worker 1%)

@@ -1,0 +1,36 @@
+{
+  "baseline": "d4f4859527122f39dfda456671d48de131bab51c",
+  "partialPropCorrection": "ad7f28deb",
+  "finalCorrection": "7fed18b191760826b1076de827ff9de27f026ea9",
+  "verifiedIntegration": "b9abdb440e847dadf1067cea54a7279c729fb607",
+  "fresh": {
+    "unitFiles": 45,
+    "unitCases": 489,
+    "redCases": 3,
+    "typecheck": "Complete route/application/workflow-contract/smoke passed",
+    "biome": "Two-file actual-checkout CRLF-aware check passed",
+    "doctor": "Two files,zero findings",
+    "runtimeAssertions": 12,
+    "readStatus": "All recorded calendar GETs200; no work mutation",
+    "native": "Unavailable,OS10060; Preview timed out twice",
+    "next": "Fresh connected compilation/config/session diagnostics empty;get_routes succeeded"
+  },
+  "commands": [
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/calendar/calendar-view.test.tsx -t 'follows a same-date route back|keeps a returned picker choice|restores the cached route'",
+    "pnpm --filter webapp exec vitest run --project unit --maxWorkers 2 src/components/calendar src/hooks/use-calendar-data.test.tsx src/hooks/use-calendar-employees.test.ts src/lib/calendar 'src/app/[locale]/(app)/calendar' src/app/api/calendar/events/route.test.ts src/components/time-tracking/manual-time-entry-dialog.test.tsx src/lib/navigation/route-metadata.test.ts",
+    "pnpm --filter webapp typecheck",
+    "pnpm --filter webapp exec biome check --line-ending=crlf src/components/calendar/calendar-view.tsx src/components/calendar/calendar-view.test.tsx",
+    "pnpm exec react-doctor apps/webapp --verbose --scope changed --base d4f485952 --include-untracked --no-score --no-supply-chain --no-telemetry --max-duration 90",
+    "pnpm node docs/design/rollout-1692/1713/root-route-arrivals/verify-runtime.mjs $repo $privateFixture $privateOutput after"
+  ],
+  "boundaries": [
+    "The same real manager roster/date/fixture is used before/after. Source comparison temporarily overlays only the owned CalendarView with exact d4f4859 bytes in the actual Git checkout, records disk hash/check-out identity and restores final bytes in finally. All other production application files match that base; test-only changes do not affect runtime.",
+    "Visible heading/target and actual calendar reads are checked; React fiber inspection records instance identity only. It is diagnostic DOM/fiber evidence,not a successful native React DevTools command.",
+    "Actual Back restores the original scope instance1 and same document; baseline route/person3 displays person5, final displays person3. Unit regressions additionally verify record/manual panel teardown; the attempted real manual range did not acquire its grid target and is not a browser panel-reset pass.",
+    "Default/strict whole-ticket formatting limits from merger remain; focused two-file check passes without suppressions.",
+    "Original63 assertions,NewYork submission/readback/native/PG/provider/build/catalog/device/zoom/exhaustive consequential findings remain inherited or unpassed as specified in1713.md. No new PostgreSQL suite,work mutation,full generation,remote catalog,physical-device/truezoom/provider delivery acceptance is claimed.",
+    "Earlier partial prop correction passed assembled cases but failed real cached Back. Final transition bounds the temporary override to active navigation; chosen-route acknowledgement still refuses older in-flight arrivals.",
+    "Owned Preview/native/Puppeteer sessions,verified Next process tree and three label-owned fixture containers are cleaned. Private manifests/logs remain outsideGit; no cache was moved or deleted.",
+    "Corrected desktop/phone Back captures show pending grid. They prove current target and viewport during loading; settled record visual acceptance is not claimed from these captures."
+  ]
+}

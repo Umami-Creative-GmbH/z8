@@ -1,0 +1,10 @@
+{
+  "source": "scripts/performance/fixture.mjs",
+  "sourceSha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077",
+  "copySha256": "52440c01b1783be9c92d4a503b0ce1a105ef8de6f56193998f02f46017bab38a",
+  "changes": [
+    "relative imports rebound to unchanged repository helpers",
+    "inherited pnpm environment false and exact flag enforced"
+  ],
+  "productionSourceChanged": false
+}

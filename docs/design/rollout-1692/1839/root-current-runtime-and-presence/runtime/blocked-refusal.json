@@ -1,0 +1,4 @@
+{
+  "executed": false,
+  "reason": "Automatic approval review rejected intentional wrong-password submission because of lockout/rate-limit risk; no credential attempt occurred."
+}

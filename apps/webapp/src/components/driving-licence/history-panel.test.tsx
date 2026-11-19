@@ -18,12 +18,14 @@ vi.mock("@/components/ui/date-picker", async () => {
 	return {
 		DatePicker: (props: {
 			id?: string;
+			"aria-describedby"?: string;
 			value?: string | null;
 			onChange: (value: string) => void;
 			onBlur?: () => void;
 		}) =>
 			createElement("input", {
 				id: props.id,
+				"aria-describedby": props["aria-describedby"],
 				value: props.value ?? "",
 				onBlur: props.onBlur,
 				onChange: (event: { target: { value: string } }) => props.onChange(event.target.value),
@@ -146,6 +148,26 @@ function show() {
 	);
 	return client;
 }
+it("retries unavailable history and reads current supplement rights before offering evidence actions", async () => {
+	remote.available = false;
+	const client = show();
+	await screen.findByRole("alert");
+	expect(screen.queryByRole("link", { name: "Download evidence PDF" })).toBeNull();
+	remote.available = true;
+	remote.canSupplement = false;
+	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+	await screen.findByRole("link", { name: "Download evidence PDF" });
+	expect(screen.queryByRole("button", { name: /Supplement original check/ })).toBeNull();
+	client.clear();
+});
+it("associates the UTC date-boundary guidance with each history control", () => {
+	show();
+	for (const label of ["From date (UTC)", "Before date (UTC)"]) {
+		const field = screen.getByLabelText(label);
+		const description = document.getElementById(field.getAttribute("aria-describedby") ?? "");
+		expect(description?.textContent).toContain("00:00 UTC");
+	}
+});
 it("appends a correction beside unchanged original confirmation and authorization decisions", async () => {
 	const client = show();
 	const user = userEvent.setup();

@@ -1,0 +1,260 @@
+{
+  "scope": "Read-only SAFE intake. No repository/index/Git/package/runtime/tracker mutation; no archive scripts, probes, harnesses or tests executed. Only explicit SAFE payloads and newly authored system TEMP results read.",
+  "index": {
+    "path": "C:\\Users\\KAIHEN~1\\AppData\\Local\\Temp\\z8-r165-review-bceb0ee-SAFE\\SHA256.json",
+    "sha256": "0f8bb1c3fa10466d981bae4e594b674972ece096dfbd911db32104619718f67b",
+    "expectedHashMatches": true,
+    "fileCount": 56,
+    "totalBytes": 6242185,
+    "allBytesAndHashesMatch": true
+  },
+  "staticParsing": {
+    "jsonCount": 22,
+    "allJsonParseWithoutDuplicateKeys": true,
+    "python": [
+      {
+        "path": "commit-candidate.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "make-classification.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "prepare-attempt1.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "prepare-attempt2.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "prepare-attempt3.py",
+        "astParse": "fail",
+        "line": 60,
+        "message": "invalid syntax. Is this intended to be part of the string?",
+        "documentedFailedAttempt": true
+      },
+      {
+        "path": "prepare.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "preserve-and-clean-attempt1.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "preserve-and-clean.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "run-package.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "seal.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "VERIFY-SEAL.py",
+        "astParse": "pass"
+      },
+      {
+        "path": "write-report.py",
+        "astParse": "pass"
+      }
+    ],
+    "typedSourceCount": 11,
+    "tsxCount": 10,
+    "tsCount": 1,
+    "typedSourcesDecodeUtf8": true,
+    "typedSyntaxParserRun": false,
+    "typedSyntaxReason": "No tsc command available; no outside-allowlist module/harness loaded. UTF-8 decoding and bounded manual source inspection only, not formal TS/TSX syntax acceptance.",
+    "javascriptFiles": 0,
+    "explicitPngFiles": 0,
+    "pngDecodes": 0
+  },
+  "candidateRecord": {
+    "commit": "c70858bfe507eb99f844a455230e312cc8247b61",
+    "tree": "52914144178afccc17f7093ee588817be99d6180",
+    "appTree": "887eab4a441b413763f93588dfe5d874ebfffb75",
+    "parents": [
+      "bceb0ee32ca64e1d0fcf36906e89b0509665c479",
+      "4460bc433f99a7e9b3dc84862e9efedf72cbcf8a"
+    ]
+  },
+  "mapRecalculation": {
+    "baselineTree": "fd5820196b334fa9b370d67e53ed3b4ab3af2525",
+    "candidateTree": "52914144178afccc17f7093ee588817be99d6180",
+    "appTree": "887eab4a441b413763f93588dfe5d874ebfffb75",
+    "compositionBlob": "af46342d736672775d7b9f49116991231a2863e0",
+    "predictionCandidateTreesAgree": true,
+    "orderedParentRecordsAgree": true,
+    "baselineEntries": 18791,
+    "expectedEntries": 18869,
+    "exactRootEntries": 18783,
+    "addedEntries": 78,
+    "deletedEntries": 0,
+    "changedExistingEntries": 8,
+    "rootDesignPaths": 8450,
+    "rootDesignExact": 8450,
+    "archiveEntries": 202,
+    "archiveEntriesExact": true,
+    "ledgerMapExact": true,
+    "evidenceBoundary": "Independent recomputation of sealed payload maps only; no fresh candidate Git object, current worktree, incoming/base map or ancestry query."
+  },
+  "tests": {
+    "vitestIdentityRecordsExactlyMatchMultiset": true,
+    "uniqueIdentities": 8,
+    "physicalFiles": 2,
+    "counts": {
+      "passed": 5,
+      "failed": 3
+    },
+    "candidateCounts": {
+      "passed": 5,
+      "failed": 2
+    },
+    "baselineCounts": {
+      "failed": 1
+    },
+    "uniqueFinding": 1,
+    "finding": "Inherited cached-personal-history presentation gap: canonical Unauthorized leaves old links visible; later outage retains them. Pinned premerge root fails identically. Both repeat sequences show fresh success recovery.",
+    "notProved": "No live server authorization bypass, cross-tenant read or unauthorized server write.",
+    "producerWarnings": "Initial priority transport control has act warning; classification repeat has no act warning. Both native Vite loader warnings retained."
+  },
+  "bridges": [
+    {
+      "bridge": "r165-root-management.tsx",
+      "sha256MatchesSafe": true,
+      "rawSha256Matches": true,
+      "rawGitBlobMatches": true,
+      "rootMapBlobMatches": true,
+      "onlyDocumentedBridgeEdits": false
+    },
+    {
+      "bridge": "r165-root-expense-history.tsx",
+      "sha256MatchesSafe": true,
+      "rawSha256Matches": true,
+      "rawGitBlobMatches": true,
+      "rootMapBlobMatches": true,
+      "onlyDocumentedBridgeEdits": true
+    },
+    {
+      "bridge": "r165-root-new-buttons.tsx",
+      "sha256MatchesSafe": true,
+      "rawSha256Matches": true,
+      "rawGitBlobMatches": true,
+      "rootMapBlobMatches": true,
+      "onlyDocumentedBridgeEdits": true
+    },
+    {
+      "bridge": "r165-review-classification.test.tsx",
+      "sha256MatchesSafe": true
+    },
+    {
+      "bridge": "r165-review-priority.test.tsx",
+      "sha256MatchesSafe": true
+    }
+  ],
+  "anchors": {
+    "count": 65,
+    "baseline": 1,
+    "tickets": 64,
+    "uniqueIds": 65,
+    "allAncestorBooleansTrue": true,
+    "commandReceiptCount": 65,
+    "allReceiptExitsZero": true,
+    "receiptsMatchAnchorSet": true,
+    "nodes": 157,
+    "edges": 159,
+    "statusCounts": {
+      "integrated": 64,
+      "awaiting-integration": 40,
+      "pending": 53
+    },
+    "boundary": "Producer ancestry receipts, not fresh Git acceptance."
+  },
+  "producerPreservation": {
+    "expectedMapEqual": true,
+    "trackedCandidateEntries": 18869,
+    "rootBaselineEntries": 18791,
+    "rootNonoverlapExact": 18783,
+    "incomingChangedPaths": 86,
+    "rootExistingPathsLegitimatelyChanged": 8,
+    "archivePathsExact": 202,
+    "allRootDesignPathsExact": 8450,
+    "protectedAdvancePaths": 207,
+    "orderedParentsVerified": true,
+    "appTreeVerified": true,
+    "ledgerUnchanged": true,
+    "allRootNonoverlapModesBlobsPreserved": true,
+    "allIncomingNonoverlapModesBlobsPreserved": true,
+    "routeTemplatesAliasesAndAllUnchangedSourcePreservedByFullMap": true
+  },
+  "producerArchiveIntegrity": {
+    "log": {
+      "status": "PASS",
+      "mode": "archive",
+      "payloads": 172,
+      "payloadBytes": 2297645,
+      "sourceClones": 14,
+      "currentSources": 0,
+      "archiveFiles": 202,
+      "jsonParsed": 127,
+      "newMarkdownLinks": 24,
+      "generationADeclared": 140,
+      "generationARootDispositions": {
+        "unsupported": [
+          42
+        ],
+        "narrowed": [
+          16
+        ]
+      },
+      "focused": {
+        "passed": 29,
+        "total": 32,
+        "unpassed": [
+          13,
+          14,
+          28
+        ]
+      },
+      "unitIdentities": 545,
+      "unitFiles": 48,
+      "pgCases": 51,
+      "pgFiles": 4,
+      "verifiedCommit": null
+    },
+    "boundary": "Archive integrity receipt only; 545 unit identities / 51 PG cases and runtime assertions not rerun.",
+    "sourceEvolutionPins": 14,
+    "sourceEvolutionMatches": 13,
+    "soleDeclaredDrift": "apps/webapp/src/lib/navigation/route-metadata.ts",
+    "currentSourceModeExecuted": false
+  },
+  "stop": {
+    "stopped": true,
+    "reason": "confirmed P1",
+    "finding": "finding.json",
+    "noProductFixes": true,
+    "broadChecksAfterStop": 0,
+    "verifiedCommit": null,
+    "whole157BranchReviewDeferred": true,
+    "rootOwnsReconciliationAndReadiness": true
+  },
+  "discrepancies": [
+    {
+      "type": "documented failed intermediate",
+      "file": "prepare-attempt3.py",
+      "line": 60,
+      "detail": "Python AST syntax error; COMMANDS.md explicitly records quoting failure and replacement. Final prepare.py parses."
+    },
+    {
+      "type": "provenance description mismatch",
+      "file": "COMMANDS.md / commit-candidate.py",
+      "detail": "COMMANDS.md attributes copying precomputed resolved metadata bytes to commit-candidate.py; the sealed script stages and commits but contains no copy/write step. Tree/map/blob consistency passes; copy operation is not evidenced by that script."
+    }
+  ],
+  "deferred": "Broader quality checks, selected PostgreSQL, live runtime/auth/browser/native, whole-branch review and artifact acceptance remain deferred at STOP. Intake hash/JSON/Python parsing is not fresh product acceptance. No readiness decision made."
+}

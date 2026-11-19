@@ -1,0 +1,1688 @@
+[
+  {
+    "case": "nondefault-control",
+    "result": {
+      "success": true
+    },
+    "before": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "f956bf2b-d4c9-4399-9b16-ea5c8e1f771b",
+          "organization_id": "0c1b6882-afb2-4fe8-9806-804a72836692",
+          "name": "Audit 9edb0062-853b-4e08-96ba-8ab52f673f07",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:55.274Z",
+          "created_by": "1bef9272-e102-4090-8fe3-17c3c13c8c7c",
+          "updated_at": "2026-11-16T03:57:55.272Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "ef4b9d8e-16e8-4441-8641-07b581e22eba",
+          "policy_id": "f956bf2b-d4c9-4399-9b16-ea5c8e1f771b",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:55.276Z",
+          "updated_at": "2026-11-16T03:57:55.275Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "1926cc58-c61a-4b5c-ac0c-656a3202e48a",
+          "schedule_id": "ef4b9d8e-16e8-4441-8641-07b581e22eba",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.278Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "3cd73ac7-0e21-41df-ad77-944dede5b4fb",
+          "schedule_id": "ef4b9d8e-16e8-4441-8641-07b581e22eba",
+          "day_of_week": "thursday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.278Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "8a7a128e-653e-4f6c-b393-4226a7c19a11",
+          "schedule_id": "ef4b9d8e-16e8-4441-8641-07b581e22eba",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.278Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "9858f05e-80d0-47bc-b886-9863f354488c",
+          "schedule_id": "ef4b9d8e-16e8-4441-8641-07b581e22eba",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.278Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "f15584d1-fb9f-43af-8f74-85c3c2c7090f",
+          "schedule_id": "ef4b9d8e-16e8-4441-8641-07b581e22eba",
+          "day_of_week": "monday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.278Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "f8696682-0bfa-4651-a040-302d5f75fbaa",
+          "schedule_id": "ef4b9d8e-16e8-4441-8641-07b581e22eba",
+          "day_of_week": "wednesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.278Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "fce8af44-64bc-4a2d-8ee3-5512c7e55625",
+          "schedule_id": "ef4b9d8e-16e8-4441-8641-07b581e22eba",
+          "day_of_week": "tuesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.278Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "62065cdc-867b-4560-824d-9834b0d4f87f",
+          "user_id": "1bef9272-e102-4090-8fe3-17c3c13c8c7c",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:55.279Z",
+          "updated_at": "2026-11-16T03:57:55.280Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "existing-default-atomicity",
+    "result": {
+      "success": false,
+      "error": "Database query failed: createWorkTemplate",
+      "code": "DatabaseError"
+    },
+    "before": {
+      "policy": [
+        {
+          "id": "154e35ef-b69e-48b0-af18-5faa80e6a8fa",
+          "organization_id": "81c6aadb-8965-4262-9af8-bf408931dd77",
+          "name": "Audit ea7541e4-d1bc-471c-a954-0ffe959adb24",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": true,
+          "created_at": "2026-11-16T03:57:55.480Z",
+          "created_by": "84e7bf4e-1e39-4555-8aa2-d64b9f79d1f2",
+          "updated_at": "2026-11-16T03:57:55.479Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "policy_id": "154e35ef-b69e-48b0-af18-5faa80e6a8fa",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:55.482Z",
+          "updated_at": "2026-11-16T03:57:55.481Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "1a5dbb62-5e7d-45c2-a1f6-f8ad6ecee39f",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "41d6968a-e15f-415e-8e25-89ac0ea2bff5",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "tuesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "59be34ca-2e55-4502-b483-c3b1bbd00ba6",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "monday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "64cb48bd-3194-4726-8397-fbb34920447f",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "9cccdd3c-5493-4606-b5a5-6898b8b165b6",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "ac0fb6ac-d362-4293-b21e-43d2a007cab7",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "wednesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "e5dabbfb-cc9a-47fd-b7e7-1fed9e9e416b",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "thursday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [
+        {
+          "id": "54b6deb2-ac0d-40c6-8410-309f039f06ee",
+          "policy_id": "154e35ef-b69e-48b0-af18-5faa80e6a8fa",
+          "organization_id": "81c6aadb-8965-4262-9af8-bf408931dd77",
+          "assignment_type": "organization",
+          "team_id": null,
+          "employee_id": null,
+          "priority": 0,
+          "effective_from": "2026-11-16T03:57:55.483Z",
+          "effective_until": null,
+          "is_active": true,
+          "created_at": "2026-11-16T03:57:55.484Z",
+          "created_by": "84e7bf4e-1e39-4555-8aa2-d64b9f79d1f2",
+          "updated_at": "2026-11-16T03:57:55.484Z"
+        }
+      ],
+      "settings": [
+        {
+          "id": "656a7bab-a4e1-4968-8adf-9395d38adefd",
+          "user_id": "84e7bf4e-1e39-4555-8aa2-d64b9f79d1f2",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:55.486Z",
+          "updated_at": "2026-11-16T03:57:55.487Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "154e35ef-b69e-48b0-af18-5faa80e6a8fa",
+          "organization_id": "81c6aadb-8965-4262-9af8-bf408931dd77",
+          "name": "Audit ea7541e4-d1bc-471c-a954-0ffe959adb24",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": true,
+          "created_at": "2026-11-16T03:57:55.480Z",
+          "created_by": "84e7bf4e-1e39-4555-8aa2-d64b9f79d1f2",
+          "updated_at": "2026-11-16T03:57:55.479Z",
+          "updated_by": null
+        },
+        {
+          "id": "e0eb52f8-aae0-4cda-a4ee-7f2f51acc400",
+          "organization_id": "81c6aadb-8965-4262-9af8-bf408931dd77",
+          "name": "Audit 50e4745e-4c93-4463-8ecd-8704126d7f43",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": true,
+          "created_at": "2026-11-16T03:57:55.492Z",
+          "created_by": "84e7bf4e-1e39-4555-8aa2-d64b9f79d1f2",
+          "updated_at": "2026-11-16T03:57:55.491Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "29d96821-deea-483f-bc44-1b7f6b1101e7",
+          "policy_id": "e0eb52f8-aae0-4cda-a4ee-7f2f51acc400",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:55.493Z",
+          "updated_at": "2026-11-16T03:57:55.492Z"
+        },
+        {
+          "id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "policy_id": "154e35ef-b69e-48b0-af18-5faa80e6a8fa",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:55.482Z",
+          "updated_at": "2026-11-16T03:57:55.481Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "1a5dbb62-5e7d-45c2-a1f6-f8ad6ecee39f",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "3a0c57c0-3192-45de-adfc-0c1fca7d0854",
+          "schedule_id": "29d96821-deea-483f-bc44-1b7f6b1101e7",
+          "day_of_week": "thursday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.495Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "405dde6c-2361-4b4a-8160-7150f96938c2",
+          "schedule_id": "29d96821-deea-483f-bc44-1b7f6b1101e7",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.495Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "41d6968a-e15f-415e-8e25-89ac0ea2bff5",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "tuesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "4d3101e8-7795-466e-99ed-d9583e457327",
+          "schedule_id": "29d96821-deea-483f-bc44-1b7f6b1101e7",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.495Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "59be34ca-2e55-4502-b483-c3b1bbd00ba6",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "monday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "64cb48bd-3194-4726-8397-fbb34920447f",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "7811d65c-3933-4766-bf91-4e165a95372f",
+          "schedule_id": "29d96821-deea-483f-bc44-1b7f6b1101e7",
+          "day_of_week": "wednesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.495Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "96744328-18a2-431d-b411-7ac2c9aa833f",
+          "schedule_id": "29d96821-deea-483f-bc44-1b7f6b1101e7",
+          "day_of_week": "monday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.495Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "9cccdd3c-5493-4606-b5a5-6898b8b165b6",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "ac0fb6ac-d362-4293-b21e-43d2a007cab7",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "wednesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "b00e078a-b19e-4198-a632-2901e51c1b5b",
+          "schedule_id": "29d96821-deea-483f-bc44-1b7f6b1101e7",
+          "day_of_week": "tuesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.495Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "de50a60d-0c47-4024-a1d6-e044cf6d0dac",
+          "schedule_id": "29d96821-deea-483f-bc44-1b7f6b1101e7",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.495Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "e5dabbfb-cc9a-47fd-b7e7-1fed9e9e416b",
+          "schedule_id": "7966d054-3ad6-4258-b3f5-e50457ffc054",
+          "day_of_week": "thursday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.483Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [
+        {
+          "id": "54b6deb2-ac0d-40c6-8410-309f039f06ee",
+          "policy_id": "154e35ef-b69e-48b0-af18-5faa80e6a8fa",
+          "organization_id": "81c6aadb-8965-4262-9af8-bf408931dd77",
+          "assignment_type": "organization",
+          "team_id": null,
+          "employee_id": null,
+          "priority": 0,
+          "effective_from": "2026-11-16T03:57:55.483Z",
+          "effective_until": null,
+          "is_active": true,
+          "created_at": "2026-11-16T03:57:55.484Z",
+          "created_by": "84e7bf4e-1e39-4555-8aa2-d64b9f79d1f2",
+          "updated_at": "2026-11-16T03:57:55.484Z"
+        }
+      ],
+      "settings": [
+        {
+          "id": "656a7bab-a4e1-4968-8adf-9395d38adefd",
+          "user_id": "84e7bf4e-1e39-4555-8aa2-d64b9f79d1f2",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:55.486Z",
+          "updated_at": "2026-11-16T03:57:55.487Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "day-overflow-atomicity",
+    "result": {
+      "success": false,
+      "error": "Database query failed: createWorkTemplate",
+      "code": "DatabaseError"
+    },
+    "before": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "cf2e53b7-4f6d-4d59-be58-90f5b3aa3422",
+          "organization_id": "fa52bd94-61dc-4124-acfb-3ea5cede4149",
+          "name": "Audit ca6ed3bb-e2af-4ddc-879a-259aa389ec8e",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:55.680Z",
+          "created_by": "016c174f-d163-4f96-91e3-05693de81a53",
+          "updated_at": "2026-11-16T03:57:55.679Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "820502d3-8936-4669-8fc6-143f586b58eb",
+          "policy_id": "cf2e53b7-4f6d-4d59-be58-90f5b3aa3422",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "168.00",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:55.682Z",
+          "updated_at": "2026-11-16T03:57:55.681Z"
+        }
+      ],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    }
+  },
+  {
+    "case": "malformed-empty-name",
+    "result": {
+      "success": true
+    },
+    "before": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "9178c5a9-5cc4-4119-ba6b-e0cbce10d7de",
+          "organization_id": "a1a0f34a-c3ba-423d-87b9-e1f69c43ac3e",
+          "name": "",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:55.810Z",
+          "created_by": "c68ae08d-8fe1-4460-bd9f-58b12d80df43",
+          "updated_at": "2026-11-16T03:57:55.809Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "0f71af38-701b-4cd1-a14b-3cc9696e98ee",
+          "policy_id": "9178c5a9-5cc4-4119-ba6b-e0cbce10d7de",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:55.812Z",
+          "updated_at": "2026-11-16T03:57:55.811Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "319b9f38-0748-4320-aed8-b9d5427cd9f2",
+          "schedule_id": "0f71af38-701b-4cd1-a14b-3cc9696e98ee",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.814Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "5fc30436-75ab-4fca-8226-00a1d5a21159",
+          "schedule_id": "0f71af38-701b-4cd1-a14b-3cc9696e98ee",
+          "day_of_week": "thursday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.814Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "9dd1b015-a368-46bc-9509-19ff95c2343a",
+          "schedule_id": "0f71af38-701b-4cd1-a14b-3cc9696e98ee",
+          "day_of_week": "wednesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.814Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "b763884a-7e59-4110-bdfe-d39333692bc7",
+          "schedule_id": "0f71af38-701b-4cd1-a14b-3cc9696e98ee",
+          "day_of_week": "tuesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.814Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "e6f610ab-22c2-46d3-bff7-38fab858f4f2",
+          "schedule_id": "0f71af38-701b-4cd1-a14b-3cc9696e98ee",
+          "day_of_week": "monday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.814Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "e8d95252-03e1-4873-8a91-081e7de72218",
+          "schedule_id": "0f71af38-701b-4cd1-a14b-3cc9696e98ee",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.814Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "eeb7149f-28c1-4e9d-819e-7d6f17f8c055",
+          "schedule_id": "0f71af38-701b-4cd1-a14b-3cc9696e98ee",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.814Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "b715b83b-4fe6-42d0-b790-127898a84b3d",
+          "user_id": "c68ae08d-8fe1-4460-bd9f-58b12d80df43",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:55.816Z",
+          "updated_at": "2026-11-16T03:57:55.816Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "malformed-over-week-limit",
+    "result": {
+      "success": true
+    },
+    "before": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "255d2574-67e0-4ad3-8be4-2b36dce2b601",
+          "organization_id": "24e5f9d4-9134-43e3-aaad-2b46f8d5ef34",
+          "name": "Audit ea6feae0-68d6-4b6d-b95b-5372ec7b5940",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:55.981Z",
+          "created_by": "97815f35-c266-4687-9e2f-7ed00a0be74e",
+          "updated_at": "2026-11-16T03:57:55.980Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "1e1f2a7e-b75a-4a92-bd81-d54e66070d3f",
+          "policy_id": "255d2574-67e0-4ad3-8be4-2b36dce2b601",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "169.00",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:55.983Z",
+          "updated_at": "2026-11-16T03:57:55.982Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "24e1648e-d4a8-4664-8036-0543fb4db71e",
+          "schedule_id": "1e1f2a7e-b75a-4a92-bd81-d54e66070d3f",
+          "day_of_week": "tuesday",
+          "hours_per_day": "42.30",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.984Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "49e54f57-bd40-418c-bb95-6a553ed535c2",
+          "schedule_id": "1e1f2a7e-b75a-4a92-bd81-d54e66070d3f",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.984Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "4e2dc395-f43e-4bd3-84aa-71404ca879c1",
+          "schedule_id": "1e1f2a7e-b75a-4a92-bd81-d54e66070d3f",
+          "day_of_week": "thursday",
+          "hours_per_day": "42.30",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.984Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "71613431-0195-4595-9fc0-37bef794daa3",
+          "schedule_id": "1e1f2a7e-b75a-4a92-bd81-d54e66070d3f",
+          "day_of_week": "wednesday",
+          "hours_per_day": "42.30",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.984Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "81d915a4-f948-46b5-abef-39b6c312394a",
+          "schedule_id": "1e1f2a7e-b75a-4a92-bd81-d54e66070d3f",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.984Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "e225c4f8-8e6c-4cfe-b98e-d9ec734cf9bc",
+          "schedule_id": "1e1f2a7e-b75a-4a92-bd81-d54e66070d3f",
+          "day_of_week": "monday",
+          "hours_per_day": "42.30",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.984Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "e3ef9435-4042-4386-8f32-db07770778e7",
+          "schedule_id": "1e1f2a7e-b75a-4a92-bd81-d54e66070d3f",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:55.984Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "8e8ad9de-1951-4840-b323-aa5786fe632d",
+          "user_id": "97815f35-c266-4687-9e2f-7ed00a0be74e",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:55.986Z",
+          "updated_at": "2026-11-16T03:57:55.986Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "malformed-unknown-day",
+    "result": {
+      "success": true
+    },
+    "before": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "9be8da76-d59c-48dc-b6b6-15139500de15",
+          "organization_id": "ac9a6f18-7d2d-4b2a-a73a-1bb6fb8bd08c",
+          "name": "Audit cbbc88bb-358b-4530-8641-fda005d6eb44",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:56.108Z",
+          "created_by": "2da1bfc9-4070-4286-98c7-b2fe23e5dea6",
+          "updated_at": "2026-11-16T03:57:56.107Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "84e0cb5d-9998-4631-8a84-06ce93df9080",
+          "policy_id": "9be8da76-d59c-48dc-b6b6-15139500de15",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:56.110Z",
+          "updated_at": "2026-11-16T03:57:56.109Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "29f8f43b-1754-408b-a883-94010fb68ce1",
+          "schedule_id": "84e0cb5d-9998-4631-8a84-06ce93df9080",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.111Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "5a274535-24c3-4517-8edb-840de87d92f2",
+          "schedule_id": "84e0cb5d-9998-4631-8a84-06ce93df9080",
+          "day_of_week": "monday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.111Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "5a3de500-6cfe-414b-bc16-01c549a16739",
+          "schedule_id": "84e0cb5d-9998-4631-8a84-06ce93df9080",
+          "day_of_week": "wednesday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.111Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "7e38d248-e18d-43af-b152-3ece4443ccc5",
+          "schedule_id": "84e0cb5d-9998-4631-8a84-06ce93df9080",
+          "day_of_week": "thursday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.111Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "8ffb54a2-8a5d-4f76-927e-b2eaae908bd5",
+          "schedule_id": "84e0cb5d-9998-4631-8a84-06ce93df9080",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.111Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "95ebc44b-3eaf-4b1d-adf1-97da2d6a7f3e",
+          "schedule_id": "84e0cb5d-9998-4631-8a84-06ce93df9080",
+          "day_of_week": "tuesday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.111Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "d3dc3e5b-a412-40eb-be70-6190abc0bcb8",
+          "schedule_id": "84e0cb5d-9998-4631-8a84-06ce93df9080",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.111Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "f7e5a0e6-6586-4c85-84e4-4e2a22533b3a",
+          "user_id": "2da1bfc9-4070-4286-98c7-b2fe23e5dea6",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:56.113Z",
+          "updated_at": "2026-11-16T03:57:56.113Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "existing-empty-day-semantics",
+    "result": {
+      "success": true
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "42d2a37b-acea-4442-b002-97d42627bd1f",
+          "organization_id": "f6efd581-1761-445e-bc3c-978c5f74fa9f",
+          "name": "Audit 295b0c27-9b2f-479c-a043-9486b4209943",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:56.282Z",
+          "created_by": "ea2bf61f-b3fd-4243-82a0-88cd34bc1bdd",
+          "updated_at": "2026-11-16T03:57:56.281Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "8d432dde-7f0b-4be2-b2f1-faf8a184e386",
+          "policy_id": "42d2a37b-acea-4442-b002-97d42627bd1f",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:56.284Z",
+          "updated_at": "2026-11-16T03:57:56.283Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "21b884a3-9f27-42a8-a8c2-d742a63bf7f0",
+          "schedule_id": "8d432dde-7f0b-4be2-b2f1-faf8a184e386",
+          "day_of_week": "monday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.285Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "42ba79a7-cb4f-4777-85b7-444e85c2ec44",
+          "schedule_id": "8d432dde-7f0b-4be2-b2f1-faf8a184e386",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.285Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "91e949cb-1ba5-49ae-8f78-b7be3e417dce",
+          "schedule_id": "8d432dde-7f0b-4be2-b2f1-faf8a184e386",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.285Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "a842ab4d-a25a-42e2-acdd-68567271fea7",
+          "schedule_id": "8d432dde-7f0b-4be2-b2f1-faf8a184e386",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.285Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "c320f4b5-a078-4829-9d03-a33bfd677a2f",
+          "schedule_id": "8d432dde-7f0b-4be2-b2f1-faf8a184e386",
+          "day_of_week": "wednesday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.285Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "cb7f1adc-3deb-48f7-a35b-3d6d00f21fa5",
+          "schedule_id": "8d432dde-7f0b-4be2-b2f1-faf8a184e386",
+          "day_of_week": "tuesday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.285Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "dd6dfdd5-d477-493b-b4ab-6fbfbf467e7e",
+          "schedule_id": "8d432dde-7f0b-4be2-b2f1-faf8a184e386",
+          "day_of_week": "thursday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.285Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "6080e7bf-ab64-4093-ab7d-4adcc0f3ff14",
+          "user_id": "ea2bf61f-b3fd-4243-82a0-88cd34bc1bdd",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:56.287Z",
+          "updated_at": "2026-11-16T03:57:56.287Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "existing-duplicate-day-semantics",
+    "result": {
+      "success": true
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "895641c3-b4ae-4ec5-89ef-047a82ed640e",
+          "organization_id": "b69d3628-3a4e-4739-a515-1214c447d392",
+          "name": "Audit 887d1c94-89ab-45bf-9508-32de166b43fd",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:56.419Z",
+          "created_by": "9cd53ea9-4669-48fb-b355-d95a5c6082b7",
+          "updated_at": "2026-11-16T03:57:56.418Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "def4e86c-ad04-4ddb-be3e-88fc07f549ff",
+          "policy_id": "895641c3-b4ae-4ec5-89ef-047a82ed640e",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "40.00",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:56.421Z",
+          "updated_at": "2026-11-16T03:57:56.420Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "1914b4f7-9e4b-42a2-aab1-867d47bfe418",
+          "schedule_id": "def4e86c-ad04-4ddb-be3e-88fc07f549ff",
+          "day_of_week": "tuesday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.422Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "5563c0a8-cc13-48d3-a8e3-ad1d34713e6e",
+          "schedule_id": "def4e86c-ad04-4ddb-be3e-88fc07f549ff",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.422Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "7479a66d-9485-4968-aeed-0a5ea3cc9ed8",
+          "schedule_id": "def4e86c-ad04-4ddb-be3e-88fc07f549ff",
+          "day_of_week": "wednesday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.422Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "d6d0755b-eb63-46ed-8086-a8c12a33b0ea",
+          "schedule_id": "def4e86c-ad04-4ddb-be3e-88fc07f549ff",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.422Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "de3b22f3-35c6-4948-b480-c7bca395b596",
+          "schedule_id": "def4e86c-ad04-4ddb-be3e-88fc07f549ff",
+          "day_of_week": "thursday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.422Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "ee0f5acb-b4c3-4b8a-9fe0-b62fb2d162d0",
+          "schedule_id": "def4e86c-ad04-4ddb-be3e-88fc07f549ff",
+          "day_of_week": "monday",
+          "hours_per_day": "20.00",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.422Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "f2f1f922-4d79-4692-850d-5365e193548b",
+          "schedule_id": "def4e86c-ad04-4ddb-be3e-88fc07f549ff",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.422Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "54f0e1d0-5a45-4eee-b51b-d0d9d3c44604",
+          "user_id": "9cd53ea9-4669-48fb-b355-d95a5c6082b7",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:56.424Z",
+          "updated_at": "2026-11-16T03:57:56.425Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "former-admin-create",
+    "admission": {
+      "success": true,
+      "data": false
+    },
+    "result": {
+      "success": true
+    },
+    "before": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "after": {
+      "policy": [
+        {
+          "id": "db00f82b-34d9-4260-bae2-5d1b366c86c4",
+          "organization_id": "090d3eb0-a82d-4caf-a750-7f38ade44403",
+          "name": "Audit 0ba7ec6b-cf64-4d1c-82c1-624ede5c6139",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:56.634Z",
+          "created_by": "fa1acc02-39ca-432b-b890-e79246328983",
+          "updated_at": "2026-11-16T03:57:56.633Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "14a1623d-a7f3-4a80-8fe1-6697ce7416d3",
+          "policy_id": "db00f82b-34d9-4260-bae2-5d1b366c86c4",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:56.636Z",
+          "updated_at": "2026-11-16T03:57:56.635Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "562652e2-bd2f-4a0b-8a2b-60a3c2bbe96d",
+          "schedule_id": "14a1623d-a7f3-4a80-8fe1-6697ce7416d3",
+          "day_of_week": "monday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.637Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "568e8ab8-7336-42eb-b72b-90f35ac8afc5",
+          "schedule_id": "14a1623d-a7f3-4a80-8fe1-6697ce7416d3",
+          "day_of_week": "wednesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.637Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "58d58ea6-4088-4126-a165-3a61cd558b7c",
+          "schedule_id": "14a1623d-a7f3-4a80-8fe1-6697ce7416d3",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.637Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "c7016ff3-aa07-4cae-92f1-43ffd9bd6113",
+          "schedule_id": "14a1623d-a7f3-4a80-8fe1-6697ce7416d3",
+          "day_of_week": "tuesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.637Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "dd63ee01-4703-4e20-857c-ca5e4c22c7be",
+          "schedule_id": "14a1623d-a7f3-4a80-8fe1-6697ce7416d3",
+          "day_of_week": "thursday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.637Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "e817d281-7793-485f-bb53-941457462cb6",
+          "schedule_id": "14a1623d-a7f3-4a80-8fe1-6697ce7416d3",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.637Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "f9384f2b-9b5f-4e60-bff8-5aba0ed4d87f",
+          "schedule_id": "14a1623d-a7f3-4a80-8fe1-6697ce7416d3",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:56.637Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "8f688a36-9ab5-443a-bdd6-1ab748e511dd",
+          "user_id": "fa1acc02-39ca-432b-b890-e79246328983",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:56.639Z",
+          "updated_at": "2026-11-16T03:57:56.639Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "former-admin-skip",
+    "admission": {
+      "success": true,
+      "data": false
+    },
+    "result": {
+      "success": true
+    },
+    "before": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "after": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "af6e05af-2d13-40fc-89c4-49d61b652f2e",
+          "user_id": "83a431b3-71d1-4a4e-9667-15d65bbb45f3",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:56.882Z",
+          "updated_at": "2026-11-16T03:57:56.883Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "two-authorized-org-arrival",
+    "expected": {
+      "userId": "afbc16e1-4a47-4fde-a750-d914802aeacc",
+      "organizationId": "45b6f010-f064-46a7-bf61-dc725460ef7a"
+    },
+    "serverSelectedOrganization": "264319a6-c560-41c9-a3f4-8abb71ab5363",
+    "result": {
+      "success": true
+    },
+    "beforeA": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "beforeB": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "afterA": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "e9d68f93-d0ec-4d61-9f57-ee371d076561",
+          "user_id": "afbc16e1-4a47-4fde-a750-d914802aeacc",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:57.073Z",
+          "updated_at": "2026-11-16T03:57:57.073Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    },
+    "afterB": {
+      "policy": [
+        {
+          "id": "a3ac217e-82ec-4cb8-af03-03d8d716fdfc",
+          "organization_id": "264319a6-c560-41c9-a3f4-8abb71ab5363",
+          "name": "Audit cda5c88f-9bbb-4215-9e59-05d85bd4c676",
+          "description": "Created during onboarding",
+          "schedule_enabled": true,
+          "regulation_enabled": false,
+          "presence_enabled": false,
+          "is_active": true,
+          "is_default": false,
+          "created_at": "2026-11-16T03:57:57.069Z",
+          "created_by": "afbc16e1-4a47-4fde-a750-d914802aeacc",
+          "updated_at": "2026-11-16T03:57:57.068Z",
+          "updated_by": null
+        }
+      ],
+      "schedule": [
+        {
+          "id": "e9bb51ed-f195-497b-85b9-99e94d5aa6b1",
+          "policy_id": "a3ac217e-82ec-4cb8-af03-03d8d716fdfc",
+          "schedule_cycle": "weekly",
+          "schedule_type": "simple",
+          "working_days_preset": "weekdays",
+          "hours_per_cycle": "32.50",
+          "home_office_days_per_cycle": 0,
+          "created_at": "2026-11-16T03:57:57.070Z",
+          "updated_at": "2026-11-16T03:57:57.069Z"
+        }
+      ],
+      "days": [
+        {
+          "id": "19ae5946-5e54-4044-8574-b0d4bd2a1a20",
+          "schedule_id": "e9bb51ed-f195-497b-85b9-99e94d5aa6b1",
+          "day_of_week": "friday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:57.071Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "231e5d7a-d12f-40bf-bb21-5b891e868f62",
+          "schedule_id": "e9bb51ed-f195-497b-85b9-99e94d5aa6b1",
+          "day_of_week": "saturday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:57.071Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "26982beb-3528-4d8b-9300-780fccdacc3c",
+          "schedule_id": "e9bb51ed-f195-497b-85b9-99e94d5aa6b1",
+          "day_of_week": "wednesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:57.071Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "577698c6-4ca0-46ac-adb2-c1efde25ecf3",
+          "schedule_id": "e9bb51ed-f195-497b-85b9-99e94d5aa6b1",
+          "day_of_week": "monday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:57.071Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "63cbc35a-0144-446a-bee0-7028a0992762",
+          "schedule_id": "e9bb51ed-f195-497b-85b9-99e94d5aa6b1",
+          "day_of_week": "thursday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:57.071Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "6b76ce43-3a51-4d91-a584-8553682118c0",
+          "schedule_id": "e9bb51ed-f195-497b-85b9-99e94d5aa6b1",
+          "day_of_week": "sunday",
+          "hours_per_day": "0.00",
+          "is_work_day": false,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:57.071Z",
+          "latest_clock_in": null
+        },
+        {
+          "id": "e5fd3e72-3ca1-4501-8e77-707321f3b90a",
+          "schedule_id": "e9bb51ed-f195-497b-85b9-99e94d5aa6b1",
+          "day_of_week": "tuesday",
+          "hours_per_day": "8.10",
+          "is_work_day": true,
+          "cycle_week": 1,
+          "created_at": "2026-11-16T03:57:57.071Z",
+          "latest_clock_in": null
+        }
+      ],
+      "assignment": [],
+      "settings": [
+        {
+          "id": "e9d68f93-d0ec-4d61-9f57-ee371d076561",
+          "user_id": "afbc16e1-4a47-4fde-a750-d914802aeacc",
+          "dashboard_widget_order": null,
+          "onboarding_complete": false,
+          "onboarding_step": "wellness",
+          "onboarding_started_at": null,
+          "onboarding_completed_at": null,
+          "water_reminder_enabled": false,
+          "water_reminder_preset": "moderate",
+          "water_reminder_interval_minutes": 45,
+          "water_reminder_daily_goal": 8,
+          "timezone": "UTC",
+          "locale": null,
+          "created_at": "2026-11-16T03:57:57.073Z",
+          "updated_at": "2026-11-16T03:57:57.073Z",
+          "week_start_day": "sunday",
+          "time_format": "24h",
+          "help_improve_product": true
+        }
+      ],
+      "time": []
+    }
+  },
+  {
+    "case": "member-control",
+    "result": {
+      "success": false,
+      "error": "Only organization owners and admins can manage work templates",
+      "code": "AuthorizationError"
+    },
+    "skip": {
+      "success": false,
+      "error": "Only organization owners and admins can manage work templates",
+      "code": "AuthorizationError"
+    },
+    "before": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    },
+    "after": {
+      "policy": [],
+      "schedule": [],
+      "days": [],
+      "assignment": [],
+      "settings": [],
+      "time": []
+    }
+  }
+]

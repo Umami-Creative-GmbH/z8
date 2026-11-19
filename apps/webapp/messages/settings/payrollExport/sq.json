@@ -96,11 +96,12 @@
         "year": "Viti"
       },
       "history": {
-        "description": "Shikoni dhe shkarkoni eksportet e mëparshme të DATEV",
+        "descriptionAllFormats": "Shikoni dhe shkarkoni eksportet e mëparshme të listëpagesave",
         "download": "Shkarko eksportin",
         "downloadError": "Marrja e URL-së së shkarkimit dështoi",
         "employees": "punonjës",
         "noExports": "Ende nuk ka eksporte",
+        "noExportsHint": "Nisni një eksport të listëpagesave në skedën Eksporto. Eksportet e përfunduara shfaqen këtu për shkarkim.",
         "payrollRun": "{count, plural, one {Ekzekutimi i listëpagesës: # raport shpenzimesh} other {Ekzekutimi i listëpagesës: # raporte shpenzimesh}}",
         "periods": "periudha",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "Në përpunim"
         },
         "table": {
+          "actions": "Veprimet",
           "createdAt": "Krijuar",
           "dateRange": "Gama e datave",
           "records": "Regjistrime",
@@ -151,7 +153,8 @@
         "configureFirst": "Ju lutemi konfiguroni të paktën një format eksporti të listëpagesës (DATEV, Lexware, ose Sage) përpara se të konfiguroni përputhjet.",
         "deleteDescription": "A jeni të sigurt që dëshironi ta fshini këtë përputhje të llojit të pagës?",
         "deleteError": "Fshirja e përputhjes dështoi",
-        "deleteMapping": "Fshi përputhjen",
+        "deleteMappingNamed": "Fshi hartëzimin për {name}",
+        "deleteNamedDescription": "Të fshihet hartëzimi i llojit të pagës për \"{name}\"?",
         "deleteSuccess": "Përputhja u fshi",
         "deleteTitle": "Fshi përputhjen",
         "description": "Përshkrimi",
@@ -335,7 +338,8 @@
         "name": "Punonjësi",
         "noNumber": "Nuk është caktuar",
         "personnelIdentifier": "Identifikuesi i personelit",
-        "personnelNumber": "Numri i personelit"
+        "personnelNumber": "Numri i personelit",
+        "unnamed": "Punonjës pa emër"
       },
       "checks": {
         "count": "Numri",
@@ -364,6 +368,13 @@
       },
       "description": "Kontrolloni nëse një periudhë e listëpagesës është gati përpara se të eksportoni të dhënat e orarit, mungesave dhe listëpagesës.",
       "openPayrollExport": "Hap eksportin e listëpagesës",
+      "period": {
+        "currentMonth": "Muaji aktual",
+        "navLabel": "Periudha e listëpagesës",
+        "previousMonth": "Muaji i kaluar",
+        "scope": "Periudha e listëpagesës: {period} (UTC)",
+        "showMonth": "Shfaq {month}"
+      },
       "status": {
         "blocked": "Bllokuar",
         "ready": "Gati për listëpagesë",

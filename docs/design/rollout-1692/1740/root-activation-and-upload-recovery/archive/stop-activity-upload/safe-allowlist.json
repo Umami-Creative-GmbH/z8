@@ -1,0 +1,86 @@
+{
+  "root": "X:\\t3-code\\worktrees\\z8\\t3-9ccb8bb8-a2dda608751b975d\\.tmp\\1740-activation-independent-checks",
+  "scope": "SAFE synthetic/local handoff only; raw failures/auth/profile/controller/action/RSC bodies/images excluded",
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "bytes": 12194,
+      "sha256": "bc0f9baa1db5eb49de4b83e8d60db77c0772504a2313a55d8d3d3b64f0ec8bd1"
+    },
+    {
+      "path": "audit.cjs",
+      "bytes": 4857,
+      "sha256": "7b9a5de16c891938595afabca59acfc08dde61db48d13003c8a50bfa308d381a"
+    },
+    {
+      "path": "bridge.cjs",
+      "bytes": 897,
+      "sha256": "8b271b80bd819d8eb635bece067d6fc5de7071342a767edf5f5d390d47c8e1d9"
+    },
+    {
+      "path": "browser-upload.config.mts",
+      "bytes": 641,
+      "sha256": "982c7fc84f493b41428677ba9a1fda16b3caf9cf498c1a43fae8ff1d0bb95017"
+    },
+    {
+      "path": "minimize.cjs",
+      "bytes": 773,
+      "sha256": "3896681921fda846d1a785773283b476607d31e77d0114b2a01da2e72679d333"
+    },
+    {
+      "path": "seal.cjs",
+      "bytes": 4144,
+      "sha256": "b36f10fb2afa11cccabd879baca81820815692968282fe7330a26d1c58738b33"
+    },
+    {
+      "path": "upload-cases.fragment",
+      "bytes": 3664,
+      "sha256": "7b6f351c3aa921218f56b6be32f7151021e2695d5e423cf504205883ccb08fa0"
+    },
+    {
+      "path": "upload-recovery.test.tsx",
+      "bytes": 8409,
+      "sha256": "17e36d9f082741c567eb2a19e7c10f6d649ed02ca28a4722d42e01aabb84511f"
+    },
+    {
+      "path": "public-acceptance.test.tsx",
+      "bytes": 18245,
+      "sha256": "9399cbaeb98ca5a9676519eccb76f01b7865cf95c0ae831e0756b9e63045f628"
+    },
+    {
+      "path": "public-passing-13.test.tsx",
+      "bytes": 16413,
+      "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b"
+    },
+    {
+      "path": "public-results.txt",
+      "bytes": 2206,
+      "sha256": "099244830fde9532a5d13439c0f3e6d2caebfaca2cd76e6948a153f7ebc0d417"
+    },
+    {
+      "path": "candidate-result.txt",
+      "bytes": 562,
+      "sha256": "df2fe83a2df9c9cfe13ec810a5188e226e6aea52cd5b04d89f75fea1238188eb"
+    },
+    {
+      "path": "premerge-result.txt",
+      "bytes": 561,
+      "sha256": "b04ae07f95454eaa1043066e70cf166d2049bc675caa1d8cf79e888686c94f69"
+    },
+    {
+      "path": "results.json",
+      "bytes": 2203,
+      "sha256": "0f29e6240f67d67f6e56807c5c3d34a878b0e4ed3f4e22b0e504b0f636446cdd"
+    },
+    {
+      "path": "candidate-audit.json",
+      "bytes": 8373,
+      "sha256": "208fb6a157b986e34d392e533b07e0bbda82ee9e36fe2160a869dcfed846b3f9"
+    },
+    {
+      "path": "resource-seal.json",
+      "bytes": 399,
+      "sha256": "df9f994307b5fc4f878204749e75fa766b58e1cc55f718f492b5ea7f9e61e085"
+    }
+  ]
+}

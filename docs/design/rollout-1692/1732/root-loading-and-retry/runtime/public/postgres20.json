@@ -1,0 +1,154 @@
+{
+  "head": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "physicalFiles": 1,
+  "distinctCases": 20,
+  "passed": 20,
+  "failed": 0,
+  "skipped": 0,
+  "exit": 0,
+  "separateNewCanonicalFixture": true,
+  "source": "latest complete physical file attempt; fullName plus occurrence retained",
+  "identities": [
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) starting a batch refuses displayed scope drift even when the actor administers both organizations",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 131.1931000000002
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) starting a batch refuses an officer whose grant does not include payslips",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 37.32729999999992
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) starting a batch shows a batch only to whoever started it",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 28.438100000000077
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) starting a batch holds at most 500 files, counting staged files whose objects expired",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 51.24330000000009
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) starting a batch takes PDF files only",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 20.17840000000001
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) matching matches the whole personnel number token, never part of a longer number",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 66.2047
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) matching makes a number two employees share ambiguous, to be assigned by hand",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 93.69659999999999
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) matching leaves a file of an out-of-scope employee unmatched for the officer",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 84.98419999999987
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) matching never matches or assigns the officer's own payslip, even with their team in scope",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 103.17540000000008
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) matching lets the officer assign a file of an employee without a personnel number, or drop it",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 95.66699999999992
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) confirmation stores nothing as an employee document before confirmation",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 45.575399999999945
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) confirmation creates a payslip per included file with the batch's pay period and visibility",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 71.25220000000013
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) confirmation stores a confirmed payslip under the employee's key and cleans up the staged object",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 66.24270000000001
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) confirmation keeps the staged file when storing the payslip fails, and confirms it on retry",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 92.67630000000008
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) confirmation flags an employee who already has a payslip for the pay period and keeps both",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 180.6797999999999
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) confirmation creates no duplicates when a confirmation is retried after a partial failure",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 156.8200999999999
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) confirmation notifies each employee once per shared batch, however many files are theirs",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 158.08410000000003
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) confirmation audits every created document and one batch summary per confirmation",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 107.45119999999997
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) cleanup cleans up staged files that are never confirmed, after a day",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 93.86490000000003
+    },
+    {
+      "physicalFile": "src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "fullName": "payslip batches matched by personnel number (#868) cleanup releases dropped files once every included file is a document",
+      "occurrence": 1,
+      "status": "passed",
+      "durationMs": 85.18259999999964
+    }
+  ],
+  "standardBoundaries": "Canonical integration setup and standard session/storage/delivery fakes; not browser same-user cross-org authority acceptance"
+}

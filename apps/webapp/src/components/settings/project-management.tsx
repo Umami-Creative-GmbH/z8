@@ -13,9 +13,11 @@ import {
 } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useLocale } from "next-intl";
+import { useMemo, useState } from "react";
 import {
 	getProjects,
+	type ProjectStatus,
 	type ProjectWithDetails,
 } from "@/app/[locale]/(app)/settings/projects/actions";
 import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
@@ -23,8 +25,17 @@ import { BulkBillabilityActionPanel } from "@/components/billable-time/bulk-bill
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
+import { PageHeader } from "@/components/ui/page-header";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SettingsListSkeleton } from "./settings-list-skeleton";
 import {
 	Table,
 	TableBody,
@@ -33,8 +44,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import { daysUntilProjectDeadline } from "@/lib/projects/project-deadline-days";
 import { queryKeys } from "@/lib/query";
-import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
+import {
+	useBillableTimeEnabled,
+	useOrganizationTimezone,
+} from "@/stores/organization-settings-store";
 import { MissingRequiredValuesBadge } from "./custom-fields/custom-field-values-section";
 import { ProjectDialog } from "./project-dialog";
 import { ProjectMembersPanel } from "./project-members-panel";
@@ -45,44 +61,86 @@ interface ProjectManagementProps {
 	organizationId: string;
 	/** Only org admins may add or remove project managers (#367). */
 	canManageProjectManagers: boolean;
+	/**
+	 * Inside the project settings tabs the page heading sits above the tabs, so
+	 * the list renders only its actions; on its own it renders the page heading.
+	 */
+	embedded?: boolean;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-	planned: "bg-slate-500",
-	active: "bg-green-500",
-	paused: "bg-yellow-500",
-	completed: "bg-blue-500",
-	archived: "bg-gray-400",
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** Status is told by its label; the badge style only separates live from finished work. */
+const STATUS_BADGE_VARIANT: Record<ProjectStatus, "default" | "secondary" | "outline"> = {
+	planned: "outline",
+	active: "default",
+	paused: "outline",
+	completed: "secondary",
+	archived: "secondary",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-	planned: "Planned",
-	active: "Active",
-	paused: "Paused",
-	completed: "Completed",
-	archived: "Archived",
-};
+function projectStatusLabel(t: Translate, status: ProjectStatus) {
+	switch (status) {
+		case "planned":
+			return t("settings.projects.status.planned", "Planned");
+		case "active":
+			return t("settings.projects.status.active", "Active");
+		case "paused":
+			return t("settings.projects.status.paused", "Paused");
+		case "completed":
+			return t("settings.projects.status.completed", "Completed");
+		case "archived":
+			return t("settings.projects.status.archived", "Archived");
+	}
+}
 
 function formatBudgetProgress(project: ProjectWithDetails) {
 	if (!project.budgetHours) return null;
 	const budgetHours = parseFloat(project.budgetHours);
 	const percentage = Math.min((project.totalHoursBooked / budgetHours) * 100, 100);
 	return {
+		budgetHours,
 		percentage,
 		remaining: Math.max(budgetHours - project.totalHoursBooked, 0),
 	};
 }
 
-function formatDeadline(deadline: Date | null) {
+/**
+ * Days to the deadline day in the organization's timezone, the same count
+ * project reports and deadline notifications use (never the viewer's device).
+ */
+function formatDeadline(t: Translate, deadline: Date | null, timeZone: string) {
 	if (!deadline) return null;
-	const now = new Date();
-	const diff = deadline.getTime() - now.getTime();
-	const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+	const days = daysUntilProjectDeadline({
+		deadline,
+		now: systemClock.nowInstant(),
+		timeZone,
+	});
 
-	if (days < 0) return { text: `${Math.abs(days)} days overdue`, isOverdue: true };
-	if (days === 0) return { text: "Due today", isOverdue: false };
-	if (days === 1) return { text: "Due tomorrow", isOverdue: false };
-	return { text: `${days} days remaining`, isOverdue: false };
+	if (days < 0) {
+		return {
+			text: t(
+				"settings.projects.deadline.overdue",
+				"{count, plural, one {# day overdue} other {# days overdue}}",
+				{ count: Math.abs(days) },
+			),
+			isOverdue: true,
+		};
+	}
+	if (days === 0) {
+		return { text: t("settings.projects.deadline.today", "Due today"), isOverdue: false };
+	}
+	if (days === 1) {
+		return { text: t("settings.projects.deadline.tomorrow", "Due tomorrow"), isOverdue: false };
+	}
+	return {
+		text: t(
+			"settings.projects.deadline.remaining",
+			"{count, plural, one {# day remaining} other {# days remaining}}",
+			{ count: days },
+		),
+		isOverdue: false,
+	};
 }
 
 function useProjectManagement({
@@ -104,6 +162,7 @@ function useProjectManagement({
 	const {
 		data: projectsResult,
 		isLoading,
+		isError,
 		isFetching,
 		refetch,
 	} = useQuery({
@@ -148,6 +207,8 @@ function useProjectManagement({
 		isFetching,
 		handleCreate,
 		isLoading,
+		// A failed background refetch keeps the loaded list; only a failed first load shows the error.
+		isError: isError && !projectsResult,
 		projects,
 		setMembersProjectId,
 		setTasksProjectId,
@@ -174,6 +235,7 @@ function useProjectManagement({
 export function ProjectManagement({
 	organizationId,
 	canManageProjectManagers,
+	embedded = false,
 }: ProjectManagementProps) {
 	const {
 		t,
@@ -181,6 +243,7 @@ export function ProjectManagement({
 		isFetching,
 		handleCreate,
 		isLoading,
+		isError,
 		projects,
 		setMembersProjectId,
 		setTasksProjectId,
@@ -200,68 +263,91 @@ export function ProjectManagement({
 		templateSource,
 		tasksProject,
 	} = useProjectManagement({ organizationId, canManageProjectManagers });
+
+	const actions = (
+		<>
+			<Button
+				variant="ghost"
+				size="icon"
+				onClick={() => refetch()}
+				disabled={isFetching}
+				aria-label={t("common.refresh", "Refresh")}
+			>
+				<IconRefresh aria-hidden="true" className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+			</Button>
+			<Button onClick={handleCreate}>
+				<IconPlus aria-hidden="true" className="mr-2 size-4" />
+				{t("settings.projects.create", "Create Project")}
+			</Button>
+		</>
+	);
+
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex items-center justify-between">
-				<div className="flex flex-col gap-2">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.projects.title", "Projects")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.projects.description",
-							"Manage projects, budgets, deadlines, and time assignments",
-						)}
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
-						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-						<span className="sr-only">{t("common.refresh", "Refresh")}</span>
-					</Button>
-					<Button onClick={handleCreate}>
-						<IconPlus className="mr-2 size-4" />
-						{t("settings.projects.create", "Create Project")}
-					</Button>
-				</div>
-			</div>
+		<div className="flex flex-1 flex-col gap-6">
+			{embedded ? (
+				<div className="flex flex-wrap items-center justify-end gap-2">{actions}</div>
+			) : (
+				<PageHeader
+					title={t("settings.projects.title", "Projects")}
+					description={t(
+						"settings.projects.description",
+						"Manage projects, budgets, deadlines, and time assignments",
+					)}
+					actions={actions}
+				/>
+			)}
 
 			{isLoading ? (
 				// Mirrors the loaded list card: a titled header above the project rows.
-				<Card aria-busy="true">
-					<CardHeader className="space-y-2">
-						<Skeleton className="h-6 w-40" />
-						<Skeleton className="h-4 w-28" />
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
+				<SettingsListSkeleton />
+			) : isError ? (
+				<Card>
+					<CardContent className="flex flex-col items-start gap-3">
+						<p className="text-sm text-destructive" role="alert">
+							{t(
+								"settings.projects.loadFailed",
+								"Projects could not be loaded. Check your connection and try again.",
+							)}
+						</p>
+						<Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+							<IconRefresh aria-hidden="true" className="mr-2 size-4" />
+							{t("common.retry", "Retry")}
+						</Button>
 					</CardContent>
 				</Card>
 			) : projects.length === 0 ? (
 				<Card>
-					<CardContent className="flex flex-col items-center justify-center py-12">
-						<IconBriefcase className="size-12 text-muted-foreground" />
-						<h3 className="mt-4 text-lg font-medium">
-							{t("settings.projects.empty.title", "No projects yet")}
-						</h3>
-						<p className="mt-2 text-sm text-muted-foreground">
-							{t(
-								"settings.projects.empty.description",
-								"Create your first project to start tracking time against it.",
-							)}
-						</p>
-						<Button onClick={handleCreate} className="mt-4">
-							<IconPlus className="mr-2 size-4" />
-							{t("settings.projects.create", "Create Project")}
-						</Button>
+					<CardContent>
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<IconBriefcase aria-hidden="true" />
+								</EmptyMedia>
+								<EmptyTitle role="heading" aria-level={2}>
+									{t("settings.projects.empty.title", "No projects yet")}
+								</EmptyTitle>
+								<EmptyDescription>
+									{t(
+										"settings.projects.empty.description",
+										"Create your first project to start tracking time against it.",
+									)}
+								</EmptyDescription>
+							</EmptyHeader>
+							<EmptyContent>
+								<Button onClick={handleCreate}>
+									<IconPlus aria-hidden="true" className="mr-2 size-4" />
+									{t("settings.projects.create", "Create Project")}
+								</Button>
+							</EmptyContent>
+						</Empty>
 					</CardContent>
 				</Card>
 			) : (
 				<Card>
 					<CardHeader>
-						<CardTitle>{t("settings.projects.list.title", "All Projects")}</CardTitle>
+						<CardTitle role="heading" aria-level={2}>
+							{t("settings.projects.list.title", "All Projects")}
+						</CardTitle>
 						<CardDescription>
 							{t("settings.projects.list.description", "{count} projects total", {
 								count: projects.length,
@@ -374,6 +460,13 @@ function ProjectManagementTable({
 	| "canManageProjectManagers"
 	| "setTemplateSourceId"
 >) {
+	const locale = useLocale();
+	const timeZone = useOrganizationTimezone();
+	const hours = useMemo(
+		() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
+		[locale],
+	);
+
 	return (
 		<Table mobileLayout="stacked">
 			<TableHeader>
@@ -385,26 +478,31 @@ function ProjectManagementTable({
 					<TableHead>{t("settings.projects.column.deadline", "Deadline")}</TableHead>
 					<TableHead>{t("settings.projects.column.team", "Team")}</TableHead>
 					<TableHead>{t("settings.projects.column.tasks", "Tasks")}</TableHead>
-					<TableHead className="w-[100px]"></TableHead>
+					<TableHead className="w-[100px]">
+						<span className="sr-only">{t("settings.projects.column.actions", "Actions")}</span>
+					</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
 				{projects.map((project) => {
 					const budgetProgress = formatBudgetProgress(project);
-					const deadline = formatDeadline(project.deadline);
+					const deadline = formatDeadline(t, project.deadline, timeZone);
 
 					return (
 						<TableRow key={project.id}>
 							<TableCell>
-								<div className="flex items-center gap-2">
+								<div className="flex min-w-0 items-center gap-2">
 									{project.color && (
-										<div
-											className="size-4 rounded-full"
+										<span
+											className="size-4 shrink-0 rounded-full"
 											style={{ backgroundColor: project.color }}
+											aria-hidden="true"
 										/>
 									)}
-									<div>
-										<div className="font-medium">{project.name}</div>
+									<div className="min-w-0 max-w-xs">
+										<div className="truncate font-medium" title={project.name}>
+											{project.name}
+										</div>
 										{project.missingRequiredCustomFields && (
 											<MissingRequiredValuesBadge className="mt-1" />
 										)}
@@ -417,11 +515,8 @@ function ProjectManagementTable({
 								</div>
 							</TableCell>
 							<TableCell>
-								<Badge
-									variant="secondary"
-									className={`${STATUS_COLORS[project.status]} text-white`}
-								>
-									{STATUS_LABELS[project.status]}
+								<Badge variant={STATUS_BADGE_VARIANT[project.status]}>
+									{projectStatusLabel(t, project.status)}
 								</Badge>
 							</TableCell>
 							<TableCell>
@@ -440,17 +535,20 @@ function ProjectManagementTable({
 							<TableCell>
 								{budgetProgress ? (
 									<div className="w-32 space-y-1">
-										<div className="flex justify-between text-xs">
-											<span>{project.totalHoursBooked}h</span>
-											<span className="text-muted-foreground">/ {project.budgetHours}h</span>
+										<div className="flex justify-between text-xs tabular-nums">
+											<span>{hours.format(project.totalHoursBooked)}h</span>
+											<span className="text-muted-foreground">
+												/ {hours.format(budgetProgress.budgetHours)}h
+											</span>
 										</div>
 										<Progress
 											value={budgetProgress.percentage}
+											aria-label={t("settings.projects.budgetUsed", "Budget used")}
 											className={
 												budgetProgress.percentage >= 100
-													? "bg-red-100 [&>div]:bg-red-500"
+													? "bg-destructive/20 [&>div]:bg-destructive"
 													: budgetProgress.percentage >= 90
-														? "bg-yellow-100 [&>div]:bg-yellow-500"
+														? "bg-destructive/10 [&>div]:bg-destructive/70"
 														: ""
 											}
 										/>
@@ -462,9 +560,9 @@ function ProjectManagementTable({
 							<TableCell>
 								{deadline ? (
 									<div
-										className={`flex items-center gap-1 text-sm ${deadline.isOverdue ? "text-red-600" : ""}`}
+										className={`flex items-center gap-1 text-sm tabular-nums ${deadline.isOverdue ? "font-medium text-destructive" : ""}`}
 									>
-										<IconCalendar className="size-4" />
+										<IconCalendar aria-hidden="true" className="size-4 shrink-0" />
 										{deadline.text}
 									</div>
 								) : (
@@ -508,16 +606,28 @@ function ProjectManagementTable({
 								</Button>
 							</TableCell>
 							<TableCell>
-								<div className="flex items-center gap-1">
-									<Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
-										<IconEdit className="size-4" />
+								<div className="flex flex-wrap items-center justify-end gap-1">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => handleEdit(project)}
+										aria-label={t("settings.projects.editAction", "Edit {name}", {
+											name: project.name,
+										})}
+										title={t("settings.projects.edit", "Edit project")}
+									>
+										<IconEdit aria-hidden="true" className="size-4" />
 									</Button>
 									{canSetBillableRates && (
 										<Button
 											variant="ghost"
 											size="sm"
 											onClick={() => setRatesProject(project)}
-											aria-label={t("settings.billableTime.rates.projectRate", "Billable rate")}
+											aria-label={t(
+												"settings.billableTime.rates.projectRateTitle",
+												"Billable rate for {name}",
+												{ name: project.name },
+											)}
 											title={t("settings.billableTime.rates.projectRate", "Billable rate")}
 										>
 											<IconCoin aria-hidden="true" className="size-4" />

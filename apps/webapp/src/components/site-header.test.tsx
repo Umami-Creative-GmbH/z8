@@ -4,8 +4,23 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { SiteHeader } from "./site-header";
+import { FinanceHeading } from "./travel-expenses/finance/finance-heading";
+import { PageHeader } from "./ui/page-header";
 
 let pathname = "/";
+
+it("lets the retained legacy claim page own the single main heading", () => {
+	pathname = "/en/travel-expenses/4053401f-806e-4839-ae66-96b9fa36c054";
+	const view = render(
+		<>
+			<SiteHeader />
+			<PageHeader title="Travel expense claim" />
+		</>,
+	);
+	expect(view.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+	view.unmount();
+	pathname = "/";
+});
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -15,6 +30,9 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("@/navigation", () => ({
 	usePathname: () => pathname,
+	Link: ({ href, children }: { href: string; children: ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
@@ -37,6 +55,11 @@ vi.mock("@/components/notifications", () => ({
 	NotificationBell: () => <button type="button">Notifications</button>,
 }));
 
+vi.mock("@/components/theme-toggle", () => ({
+	ThemeToggle: ({ trigger }: { trigger?: ReactElement }) =>
+		trigger ?? <button type="button">Toggle theme</button>,
+}));
+
 vi.mock("@/components/time-tracking/time-clock-popover", () => ({
 	TimeClockPopover: () => <button type="button">Clock In</button>,
 }));
@@ -51,20 +74,120 @@ vi.mock("@/components/dashboard/dashboard-header-customize", () => ({
 }));
 
 describe("SiteHeader", () => {
+	it("gives only the exact finance route one page heading during arrival", () => {
+		pathname = "/en/travel-expenses/finance";
+		const page = render(
+			<>
+				<SiteHeader />
+				<FinanceHeading />
+			</>,
+		);
+		expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual([
+			"Expense finance",
+		]);
+		page.unmount();
+		pathname = "/travel-expenses";
+		const listing = render(<><SiteHeader /><PageHeader title="Travel expenses" /></>);
+		expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual(["Travel expenses"]);
+		listing.unmount();
+		for (const excluded of [
+			"/travel-expenses/claim",
+			"/travel-expenses/finance/extra",
+			"/travel-expenses/finances",
+		]) {
+			pathname = excluded;
+			const sibling = render(<SiteHeader />);
+			expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+			sibling.unmount();
+		}
+	});
+	it("hands the personal equipment title to its page without adopting other destinations", () => {
+		pathname = "/en/my-equipment";
+		const page = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="My equipment" />
+			</>,
+		);
+		expect(screen.getAllByRole("heading", { level: 1 }).map((n) => n.textContent)).toEqual([
+			"My equipment",
+		]);
+		page.unmount();
+		pathname = "/en/my-equipment/other";
+		render(<SiteHeader />);
+		expect(screen.getByRole("heading", { level: 1, name: "My equipment" })).toBeTruthy();
+	});
+	it("hands the suspended recovery title to the page without opting descendants into heading ownership", () => {
+		pathname = "/de/billing/suspended";
+		const page = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Organization suspended" />
+			</>,
+		);
+		expect(
+			screen.getAllByRole("heading", { level: 1 }).map((heading) => heading.textContent),
+		).toEqual(["Organization suspended"]);
+		page.unmount();
+		pathname = "/en/billing/suspended/unconverted";
+		render(<SiteHeader />);
+		expect(screen.getByRole("heading", { level: 1, name: "Billing & Subscription" })).toBeTruthy();
+	});
+	it("hands the main title to converted pages while retaining unknown descendant titles", () => {
+		pathname = "/de/reports";
+		const page = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Employee Reports" />
+			</>,
+		);
+		expect(
+			screen.getAllByRole("heading", { level: 1 }).map((heading) => heading.textContent),
+		).toEqual(["Employee Reports"]);
+		page.unmount();
+		pathname = "/de/calendar/employee-1";
+		const calendar = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Calendar" />
+			</>,
+		);
+		expect(
+			screen.getAllByRole("heading", { level: 1 }).map((heading) => heading.textContent),
+		).toEqual(["Calendar"]);
+		calendar.unmount();
+		pathname = "/en/calendar/employee-1/detail";
+		render(<SiteHeader />);
+		expect(screen.getByRole("heading", { level: 1, name: "Calendar" })).toBeTruthy();
+	});
+
+	it("hands the exact vehicle report its heading and retains descendant shell titles", () => {
+		pathname = "/en/reports/vehicles";
+		const page = render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Distance per Vehicle" />
+			</>,
+		);
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		page.unmount();
+		pathname = "/en/reports/vehicles/detail";
+		render(<SiteHeader />);
+		expect(screen.getByRole("heading", { level: 1, name: "Distance per Vehicle" })).toBeTruthy();
+	});
 	it("shows header actions in the requested order on the dashboard route", () => {
 		pathname = "/en";
 
 		render(<SiteHeader />);
 
-		const buttons = screen
-			.getAllByRole("button")
-			.map((button) => button.textContent);
+		const buttons = screen.getAllByRole("button").map((button) => button.textContent);
 		expect(buttons).toEqual([
 			"Toggle sidebar",
 			"Customize dashboard",
 			"Timezone",
 			"Clock In",
 			"Refresh data",
+			"Toggle theme",
 			"Notifications",
 			"More actions",
 		]);
@@ -75,21 +198,12 @@ describe("SiteHeader", () => {
 		render(<SiteHeader />);
 		fireEvent.click(screen.getByRole("button", { name: "More actions" }));
 		const panel = await screen.findByRole("dialog", { name: "More actions" });
-		expect(
-			within(panel).getByRole("button", { name: "Customize dashboard" }),
-		).toBeTruthy();
-		expect(
-			within(panel).getByRole("button", { name: "Saved timezone" }),
-		).toBeTruthy();
-		expect(
-			within(panel).getByRole("button", { name: "Refresh data" }),
-		).toBeTruthy();
-		expect(
-			within(panel).queryByRole("button", { name: "Clock In" }),
-		).toBeNull();
-		expect(
-			within(panel).queryByRole("button", { name: "Notifications" }),
-		).toBeNull();
+		expect(within(panel).getByRole("button", { name: "Customize dashboard" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Saved timezone" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Refresh data" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Toggle theme" })).toBeTruthy();
+		expect(within(panel).queryByRole("button", { name: "Clock In" })).toBeNull();
+		expect(within(panel).queryByRole("button", { name: "Notifications" })).toBeNull();
 	});
 
 	it("keeps mobile overflow actions available outside the dashboard without customization", async () => {
@@ -97,15 +211,9 @@ describe("SiteHeader", () => {
 		render(<SiteHeader />);
 		fireEvent.click(screen.getByRole("button", { name: "More actions" }));
 		const panel = await screen.findByRole("dialog", { name: "More actions" });
-		expect(
-			within(panel).queryByRole("button", { name: "Customize dashboard" }),
-		).toBeNull();
-		expect(
-			within(panel).getByRole("button", { name: "Saved timezone" }),
-		).toBeTruthy();
-		expect(
-			within(panel).getByRole("button", { name: "Refresh data" }),
-		).toBeTruthy();
+		expect(within(panel).queryByRole("button", { name: "Customize dashboard" })).toBeNull();
+		expect(within(panel).getByRole("button", { name: "Saved timezone" })).toBeTruthy();
+		expect(within(panel).getByRole("button", { name: "Refresh data" })).toBeTruthy();
 	});
 
 	it("does not show the dashboard customize trigger outside the dashboard route", () => {
@@ -113,20 +221,26 @@ describe("SiteHeader", () => {
 
 		render(<SiteHeader />);
 
-		expect(
-			screen.queryByRole("button", { name: "Customize dashboard" }),
-		).toBeNull();
+		expect(screen.queryByRole("button", { name: "Customize dashboard" })).toBeNull();
 		expect(screen.getByRole("button", { name: "Notifications" })).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Timezone" })).toBeTruthy();
 	});
 
-	it("shows the most specific route title instead of falling back to Dashboard", () => {
+	it("shows the employee section label while the employee page owns its heading", () => {
 		pathname = "/en/settings/employees/employee-1";
 
-		render(<SiteHeader />);
+		render(
+			<>
+				<SiteHeader />
+				<PageHeader title="Ada Lovelace" />
+			</>,
+		);
 
-		expect(screen.getByRole("heading", { name: "Employees" })).toBeTruthy();
-		expect(screen.queryByRole("heading", { name: "Dashboard" })).toBeNull();
+		expect(within(screen.getByRole("banner")).getByText("Employees")).toBeTruthy();
+		expect(screen.queryByText("Dashboard")).toBeNull();
+		expect(screen.getAllByRole("heading", { level: 1 }).map((title) => title.textContent)).toEqual([
+			"Ada Lovelace",
+		]);
 	});
 
 	it("truncates a long title so the header actions stay on a phone screen (#846)", () => {
@@ -134,7 +248,9 @@ describe("SiteHeader", () => {
 
 		render(<SiteHeader />);
 
-		const title = screen.getByRole("heading");
+		const title = screen.getByText("Notifications", {
+			selector: '[data-slot="route-title"]',
+		});
 		expect(title.classList.contains("truncate")).toBe(true);
 		expect(title.classList.contains("min-w-0")).toBe(true);
 	});

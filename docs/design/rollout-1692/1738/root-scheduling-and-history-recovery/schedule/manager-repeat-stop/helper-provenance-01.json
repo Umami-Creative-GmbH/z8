@@ -1,0 +1,98 @@
+{
+  "sources": [
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\fixture-helper-01.mjs",
+      "sourceSha256": "720c598199e5098e6f3d2c117b4edd6f9135d05775d8f0179cd8de55f60bb2b1",
+      "target": "fixture-helper-01.mjs",
+      "sha256": "ef5d968a8c756c15f791bc31573902c1a69a54ecec84947eaef6251204b76218",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\dev-01-private.mjs",
+      "sourceSha256": "6f154c85fc4faf0a5c26d363ef718e7f61ea9506bddf83cfe38ee5f30e6dd093",
+      "target": "dev-01-private.mjs",
+      "sha256": "61541b03fbb088c66ee57bfbc35a372ec6c90d02c0434081e7188eb0d3e9c1cb",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\browser-controller-01.private.mjs",
+      "sourceSha256": "6a8bd265f8ce8bbea602bf59f265afc9f0d9c4e9ff4db5655ee6647c9b151eb0",
+      "target": "browser-controller-01.private.mjs",
+      "sha256": "0793380af5791d2372c2f3652a1edace19874a76fee55c5daf29e6e139a8f24b",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\start-browser-01.mjs",
+      "sourceSha256": "2c29d9203ea771a10e0d50d3d7cb8812813f0c48c15b239e4fe999aec1aa7ca6",
+      "target": "start-browser-01.mjs",
+      "sha256": "33696026fb335ff32d9f911c84fcfc0fce5844087940281a9090ae50d4d8dba1",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\rpc-03.mjs",
+      "sourceSha256": "9b18da484bce380dffdbe2200efba08be276005f7a167946cb5f55a8c9f74194",
+      "target": "rpc-03.mjs",
+      "sha256": "f16e3fab0a840852b9d7e3cae624bc009db98dbaf5c57c66abf93594c20068dd",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\scheduling-fixture-bridge-03.ts",
+      "sourceSha256": "af7cabe72a1b865ccb084e36ceb203298b507ed1f569874e57fa40f5440b2ea1",
+      "target": "scheduling-fixture-bridge-03.ts",
+      "sha256": "b488be70a227f1e893c60b1a8e37b99b808fb8898dd06200c8a7d4aed0cf0b93",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\run-fixture-tool-03.mjs",
+      "sourceSha256": "9b96107eefcd8a000ee9247d39cdbddaf4615fa24aba2adbbaacf881dccfdfd9",
+      "target": "run-fixture-tool-03.mjs",
+      "sha256": "6e59bf5f273d3d1c653e1254762ed7a7cbcc47295231087b1e8e3766a49cca0b",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\cleanup-processes-01.ps1",
+      "sourceSha256": "5126401f8e5f35e5e837e474461b09d5a64c369ccf974ec6f38816220fd61889",
+      "target": "cleanup-processes-01.ps1",
+      "sha256": "507d27db77e1eee0ee295ab41de2936d8efaf5074f2a4891253e9ec1d8cf1099",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\verify-cleanup-01.ps1",
+      "sourceSha256": "c83f5331d24057e807c4037430cf28879a7ed368463312850605ddfd45a27eb9",
+      "target": "verify-cleanup-01.ps1",
+      "sha256": "2b9d72097bd3eb34d6bc3ca82a7c5d300d4526b601d7f203a9658e3e64935160",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    },
+    {
+      "source": ".tmp\\1738-range-hit-independent-checks\\preservation-final-01.mjs",
+      "sourceSha256": "14ac5b765d3a1e3b226af84e2886afd28232305fa8db1b62fd5c52e7725782b3",
+      "target": "preservation-final-01.mjs",
+      "sha256": "9dcbba937ecf753b175d8db273de0408412744927de0714497dd2eb576fc40a3",
+      "changes": [
+        "own namespace, own label, own bridge; preservation includes preceding archive"
+      ]
+    }
+  ],
+  "initialBootstrap": "canonical prepare only; no authenticate; fresh generated initial prerequisites",
+  "login": "normal DEVELOPMENT widget/form, private stdin, transient context",
+  "authStateSavedCopiedRestored": false,
+  "notifications": "denied"
+}

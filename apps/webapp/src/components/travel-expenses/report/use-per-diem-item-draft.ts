@@ -48,7 +48,7 @@ export function usePerDiemItemDraft({
 					"Your latest changes to an expense could not be saved. Open it again to check it.",
 				),
 			),
-		save: async (values, expectedVersion): Promise<DraftSaveOutcome<ReportItemView>> => {
+		save: async (values, expectedVersion, isCurrent): Promise<DraftSaveOutcome<ReportItemView>> => {
 			const parsed = parsePerDiemDraft(values);
 			if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
 			const result = await savePerDiemDraftAction({
@@ -60,8 +60,10 @@ export function usePerDiemItemDraft({
 			if (!result.success) return { status: "failed", error: result.error };
 			switch (result.data.status) {
 				case "saved":
-					setLastSaved(result.data.item);
-					onSaved?.(result.data.item);
+					if (isCurrent()) {
+						setLastSaved(result.data.item);
+						onSaved?.(result.data.item);
+					}
 					return { status: "saved", version: result.data.item.version };
 				case "conflict":
 					return { status: "conflict", version: result.data.item.version, item: result.data.item };
@@ -95,7 +97,6 @@ export function usePerDiemItemDraft({
 	});
 
 	// A new per diem is prefilled with the trip's days and zone: save that right away.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: runs once for the first load
 	useEffect(() => {
 		const prefilled = toDraftInput(defaultValues);
 		const parsed = parsePerDiemDraft(prefilled);
@@ -107,7 +108,7 @@ export function usePerDiemItemDraft({
 		}
 		// Runs once for the first load: later loads never reset or re-prefill entered values.
 		// react-doctor-disable-next-line react-doctor/exhaustive-deps
-	}, []);
+	}, []); // oxlint-disable-line react-hooks/exhaustive-deps -- runs once for the first load
 
 	/** Resolves a save conflict with the other version and shows its values. */
 	function resolveWithTheirs() {

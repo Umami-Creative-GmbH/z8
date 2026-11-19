@@ -17,6 +17,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import {
@@ -41,6 +42,15 @@ export interface RateHistoryCardProps {
 	/** Newest first. */
 	periods: readonly BillableRatePeriodView[];
 	isLoading?: boolean;
+	/**
+	 * Why the history could not be read. Shown in place of the history, inside the
+	 * card frame so its title stays; editing is unavailable meanwhile.
+	 */
+	loadError?: ReactNode;
+	/** Reads the history again after a failure; shows a Retry button. */
+	onRetry?: () => void;
+	/** True while a retry is running. */
+	isRetrying?: boolean;
 	/** Shows the change form; the server still authorizes every change. */
 	canEdit: boolean;
 	onSetRate: (input: { effectiveFrom: string; rate: string }) => Promise<RateChangeResult>;
@@ -71,7 +81,10 @@ export function RateHistoryCard({
 	currency,
 	periods,
 	isLoading,
-	canEdit,
+	loadError,
+	onRetry,
+	isRetrying = false,
+	canEdit: canEditProp,
 	onSetRate,
 	onEndRate,
 	emptyText,
@@ -82,6 +95,7 @@ export function RateHistoryCard({
 	const { t } = useTranslate();
 	const { locale, timezone } = useDisplayContext();
 	const [mode, setMode] = useState<FormMode | null>(null);
+	const canEdit = canEditProp && !loadError;
 	const today = Temporal.Now.plainDateISO(timezone).toString();
 	const inEffectToday = periods.find((period) => periodContains(period, today)) ?? null;
 
@@ -101,12 +115,12 @@ export function RateHistoryCard({
 
 	const header = (
 		<div className="flex flex-wrap items-start justify-between gap-3">
-			<div className="space-y-1">
-				<div className="flex items-center gap-2 font-semibold">{title}</div>
+			<div className="min-w-0 flex-[1_1_12rem] space-y-1 break-words">
+				<div className="flex flex-wrap items-center gap-2 font-semibold">{title}</div>
 				{description && <div className="text-sm text-muted-foreground">{description}</div>}
 			</div>
 			{canEdit && mode === null && (
-				<div className="flex gap-2">
+				<div className="flex flex-wrap gap-2">
 					<Button size="sm" onClick={() => setMode("set")}>
 						<IconPlus aria-hidden="true" className="mr-2 size-4" />
 						{t("settings.billableTime.rates.setRate", "Set rate")}
@@ -123,10 +137,11 @@ export function RateHistoryCard({
 	);
 
 	const changeForm = mode !== null && (
-		<form
-			onSubmit={(event) => {
-				event.preventDefault();
-				event.stopPropagation();
+		<ClientForm
+			stopPropagation
+			onSubmit={() => {
+				// Enter in a field must not start a second change while one is saving.
+				if (form.state.isSubmitting) return;
 				void form.handleSubmit();
 			}}
 			className="space-y-4 rounded-lg border bg-muted/30 p-4"
@@ -187,9 +202,15 @@ export function RateHistoryCard({
 						<TFormItem>
 							<TFormLabel hasError={fieldHasError(field)}>
 								{t("settings.billableTime.rates.hourlyRate", "Hourly rate")}
+								{/* The unit suffix inside the input is visual; name it for assistive technology. */}
+								<span className="sr-only">
+									{" "}
+									({t("settings.billableTime.rates.perHour", "{currency}/h", { currency })})
+								</span>
 							</TFormLabel>
-							<TFormControl hasError={fieldHasError(field)}>
-								<div className="relative">
+							{/* The control (and so the label's target) is the input itself, not its wrapper. */}
+							<div className="relative">
+								<TFormControl hasError={fieldHasError(field)}>
 									<Input
 										inputMode="decimal"
 										autoComplete="off"
@@ -197,13 +218,16 @@ export function RateHistoryCard({
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
 										placeholder={formatRateInput(locale, inEffectToday?.hourlyRate ?? "0.00")}
-										className="pr-16"
+										className="pr-16 tabular-nums"
 									/>
-									<span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
-										{t("settings.billableTime.rates.perHour", "{currency}/h", { currency })}
-									</span>
-								</div>
-							</TFormControl>
+								</TFormControl>
+								<span
+									aria-hidden="true"
+									className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
+								>
+									{t("settings.billableTime.rates.perHour", "{currency}/h", { currency })}
+								</span>
+							</div>
 							{inEffectToday && (
 								<TFormDescription>
 									{t("settings.billableTime.rates.inEffectTodayHint", "In effect today: {rate}", {
@@ -243,7 +267,7 @@ export function RateHistoryCard({
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
 							{isSubmitting && (
-								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+								<IconLoader2 aria-hidden="true" className="mr-2 size-4 motion-safe:animate-spin" />
 							)}
 							{mode === "set"
 								? t("settings.billableTime.rates.saveRate", "Save rate")
@@ -252,15 +276,80 @@ export function RateHistoryCard({
 					</div>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 
-	const history = isLoading ? (
-		<div className="flex items-center justify-center p-4">
+	const history = (
+		<RateHistory
+			periods={periods}
+			loadError={loadError}
+			onRetry={onRetry}
+			isRetrying={isRetrying}
+			isLoading={isLoading}
+			emptyText={emptyText}
+			inEffectToday={inEffectToday}
+			locale={locale}
+			currency={currency}
+		/>
+	);
+
+	if (bare) {
+		return (
+			<div className="space-y-4">
+				{header}
+				{changeForm}
+				{history}
+			</div>
+		);
+	}
+
+	return (
+		<Card>
+			<CardHeader>{header}</CardHeader>
+			<CardContent className="space-y-4">
+				{changeForm}
+				{history}
+			</CardContent>
+		</Card>
+	);
+}
+
+function RateHistory({
+	periods,
+	loadError,
+	onRetry,
+	isRetrying,
+	isLoading,
+	emptyText,
+	inEffectToday,
+	locale,
+	currency,
+}: Pick<
+	RateHistoryCardProps,
+	"periods" | "loadError" | "onRetry" | "isRetrying" | "isLoading" | "emptyText" | "currency"
+> & { inEffectToday: BillableRatePeriodView | null; locale: string }) {
+	const { t } = useTranslate();
+	return loadError ? (
+		<div className="flex flex-wrap items-center justify-between gap-3">
+			<p className="text-sm text-destructive" role="alert">
+				{loadError}
+			</p>
+			{onRetry && (
+				<Button type="button" variant="outline" size="sm" disabled={isRetrying} onClick={onRetry}>
+					{isRetrying && (
+						<IconLoader2 aria-hidden="true" className="mr-2 size-4 motion-safe:animate-spin" />
+					)}
+					{t("common.retry", "Retry")}
+				</Button>
+			)}
+		</div>
+	) : isLoading ? (
+		<div className="flex items-center justify-center p-4" role="status">
 			<IconLoader2
-				aria-label={t("common.loading", "Loading")}
-				className="size-6 animate-spin text-muted-foreground"
+				aria-hidden="true"
+				className="size-6 motion-safe:animate-spin text-muted-foreground"
 			/>
+			<span className="sr-only">{t("common.loading", "Loading")}</span>
 		</div>
 	) : periods.length === 0 ? (
 		<p className="text-sm text-muted-foreground">
@@ -285,7 +374,7 @@ export function RateHistoryCard({
 								<IconCircleDot className="size-4" />
 							</div>
 							<div className="ml-4 flex-1 space-y-1">
-								<div className="flex items-center gap-2">
+								<div className="flex flex-wrap items-center gap-2">
 									<span
 										className={cn("font-medium tabular-nums", isInEffectToday && "text-primary")}
 									>
@@ -301,7 +390,7 @@ export function RateHistoryCard({
 								</div>
 								<div className="flex items-center gap-2 text-xs text-muted-foreground">
 									<IconCalendar aria-hidden="true" className="size-3" />
-									<span>
+									<span className="tabular-nums">
 										{period.effectiveTo === null
 											? t("settings.billableTime.rates.openPeriod", "From {from}", { from })
 											: t("settings.billableTime.rates.closedPeriod", "{from} to {to}", {
@@ -316,25 +405,5 @@ export function RateHistoryCard({
 				})}
 			</ol>
 		</div>
-	);
-
-	if (bare) {
-		return (
-			<div className="space-y-4">
-				{header}
-				{changeForm}
-				{history}
-			</div>
-		);
-	}
-
-	return (
-		<Card>
-			<CardHeader>{header}</CardHeader>
-			<CardContent className="space-y-4">
-				{changeForm}
-				{history}
-			</CardContent>
-		</Card>
 	);
 }

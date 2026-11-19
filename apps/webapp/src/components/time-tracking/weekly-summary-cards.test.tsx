@@ -14,11 +14,20 @@ import { WeeklySummaryCards } from "./weekly-summary-cards";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
-			fallback.replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name] ?? `{${name}}`)),
+		t: (
+			_key: string,
+			fallback: string,
+			params?: Record<string, string | number>,
+		) =>
+			fallback.replace(/\{(\w+)\}/g, (_, name: string) =>
+				String(params?.[name] ?? `{${name}}`),
+			),
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("@/hooks/use-time-summary-clock-sync", () => ({
+	useTimeSummaryClockSync: () => true,
+}));
 vi.mock("@/components/work-balance/balance-adjustment-history-button", () => ({
 	BalanceAdjustmentHistoryButton: () => null,
 }));
@@ -28,13 +37,25 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-function completed(start: string, end: string, surchargeMinutes: number | null = null) {
-	return { startTime: new Date(start), endTime: new Date(end), surchargeMinutes };
+function completed(
+	start: string,
+	end: string,
+	surchargeMinutes: number | null = null,
+) {
+	return {
+		startTime: new Date(start),
+		endTime: new Date(end),
+		surchargeMinutes,
+	};
 }
 
 function weekdays(first: string, last: string, minutes = 480) {
 	const required: Record<string, number> = {};
-	for (let date = parsePlainDate(first); date.toString() <= last; date = date.add({ days: 1 })) {
+	for (
+		let date = parsePlainDate(first);
+		date.toString() <= last;
+		date = date.add({ days: 1 })
+	) {
 		if (date.dayOfWeek <= 5) required[date.toString()] = minutes;
 	}
 	return required;
@@ -73,7 +94,9 @@ function card(label: string) {
 
 // Wednesday 2026-10-07, 14:00 in Berlin.
 const NOW = "2026-10-07T12:00:00Z";
-const REQUIRED = { requiredMinutesByDate: weekdays("2026-09-01", "2026-10-31") };
+const REQUIRED = {
+	requiredMinutesByDate: weekdays("2026-09-01", "2026-10-31"),
+};
 
 describe("time tracking KPI cards", () => {
 	it("shows the week's progress toward its required time, ahead or behind so far", () => {
@@ -89,7 +112,9 @@ describe("time tracking KPI cards", () => {
 		const week = card("This Week");
 		expect(within(week).getByText("20h 00m")).toBeTruthy();
 		// 20h worked against 20h 40m required by Wednesday 14:00.
-		expect(within(week).getByText("20h 00m of 40h 00m · 0h 40m behind")).toBeTruthy();
+		expect(
+			within(week).getByText("20h 00m of 40h 00m · 0h 40m behind"),
+		).toBeTruthy();
 		const bar = within(week).getByRole("progressbar");
 		expect(bar.getAttribute("aria-valuenow")).toBe("1200");
 		expect(bar.getAttribute("aria-valuemax")).toBe("2400");
@@ -107,17 +132,28 @@ describe("time tracking KPI cards", () => {
 			REQUIRED,
 		);
 
-		expect(within(card("This Week")).getByText("1h 30m (+15%) vs last week")).toBeTruthy();
+		expect(
+			within(card("This Week")).getByText("1h 30m (+15%) vs last week"),
+		).toBeTruthy();
 	});
 
 	it("shows only the duration when the previous period had no work", () => {
-		renderCards([completed("2026-10-05T06:00:00Z", "2026-10-05T07:00:00Z")], NOW, REQUIRED);
+		renderCards(
+			[completed("2026-10-05T06:00:00Z", "2026-10-05T07:00:00Z")],
+			NOW,
+			REQUIRED,
+		);
 
-		expect(within(card("This Week")).getByText("1h 00m vs last week")).toBeTruthy();
+		expect(
+			within(card("This Week")).getByText("1h 00m vs last week"),
+		).toBeTruthy();
 	});
 
 	it("has no bar when there is no required time today", () => {
-		renderCards([completed("2026-10-07T06:00:00Z", "2026-10-07T07:00:00Z")], NOW);
+		renderCards(
+			[completed("2026-10-07T06:00:00Z", "2026-10-07T07:00:00Z")],
+			NOW,
+		);
 
 		const today = card("Today");
 		expect(within(today).getByText("No required time today")).toBeTruthy();
@@ -126,22 +162,38 @@ describe("time tracking KPI cards", () => {
 	});
 
 	it("headlines worked time and adds surcharge as a footnote only when there is some", () => {
-		renderCards([completed("2026-10-07T06:00:00Z", "2026-10-07T08:00:00Z", 30)], NOW, REQUIRED);
+		renderCards(
+			[completed("2026-10-07T06:00:00Z", "2026-10-07T08:00:00Z", 30)],
+			NOW,
+			REQUIRED,
+		);
 
 		const today = card("Today");
 		expect(within(today).getByText("2h 00m")).toBeTruthy();
 		expect(within(today).getByText("+0h 30m surcharge")).toBeTruthy();
 		cleanup();
 
-		renderCards([completed("2026-10-07T06:00:00Z", "2026-10-07T08:00:00Z")], NOW, REQUIRED);
+		renderCards(
+			[completed("2026-10-07T06:00:00Z", "2026-10-07T08:00:00Z")],
+			NOW,
+			REQUIRED,
+		);
 		expect(within(card("Today")).queryByText(/surcharge/)).toBeNull();
 	});
 
 	it("marks the card's status from required time and the work policy's limits", () => {
-		renderCards([completed("2026-10-07T00:00:00Z", "2026-10-07T09:45:00Z")], NOW, {
-			...REQUIRED,
-			limits: { maxDailyMinutes: 600, maxWeeklyMinutes: null, alertBeforeLimitMinutes: 30 },
-		});
+		renderCards(
+			[completed("2026-10-07T00:00:00Z", "2026-10-07T09:45:00Z")],
+			NOW,
+			{
+				...REQUIRED,
+				limits: {
+					maxDailyMinutes: 600,
+					maxWeeklyMinutes: null,
+					alertBeforeLimitMinutes: 30,
+				},
+			},
+		);
 
 		expect(card("Today").dataset.tone).toBe("warning");
 		expect(card("This Month").dataset.tone).toBe("info");
@@ -152,11 +204,21 @@ describe("time tracking KPI cards", () => {
 		vi.setSystemTime(new Date("2026-10-07T13:29:00Z"));
 		// Live since 06:00 in Berlin; 9h 29m worked, a minute before the daily limit's warning.
 		renderCards(
-			[{ startTime: new Date("2026-10-07T04:00:00Z"), endTime: null, surchargeMinutes: null }],
+			[
+				{
+					startTime: new Date("2026-10-07T04:00:00Z"),
+					endTime: null,
+					surchargeMinutes: null,
+				},
+			],
 			"2026-10-07T13:29:00Z",
 			{
 				...REQUIRED,
-				limits: { maxDailyMinutes: 600, maxWeeklyMinutes: null, alertBeforeLimitMinutes: 30 },
+				limits: {
+					maxDailyMinutes: 600,
+					maxWeeklyMinutes: null,
+					alertBeforeLimitMinutes: 30,
+				},
 			},
 		);
 		expect(within(card("Today")).getByText("9h 29m")).toBeTruthy();
@@ -165,9 +227,11 @@ describe("time tracking KPI cards", () => {
 		act(() => vi.advanceTimersByTime(60_000));
 		expect(within(card("Today")).getByText("9h 30m")).toBeTruthy();
 		expect(within(card("This Week")).getByText("9h 30m")).toBeTruthy();
-		expect(within(card("Today")).getByRole("progressbar").getAttribute("aria-valuenow")).toBe(
-			"570",
-		);
+		expect(
+			within(card("Today"))
+				.getByRole("progressbar")
+				.getAttribute("aria-valuenow"),
+		).toBe("570");
 		expect(card("Today").dataset.tone).toBe("warning");
 	});
 
@@ -194,6 +258,8 @@ describe("time tracking KPI cards", () => {
 	it("says when the work balance is not calculated yet", () => {
 		renderCards([], NOW);
 
-		expect(within(card("All-time balance")).getByText("Not calculated yet")).toBeTruthy();
+		expect(
+			within(card("All-time balance")).getByText("Not calculated yet"),
+		).toBeTruthy();
 	});
 });

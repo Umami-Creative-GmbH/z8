@@ -1,0 +1,9 @@
+{
+  "privacyLimited": true,
+  "attempts": [
+    {"operation": "evidence seal", "exit": 1, "result": "Zero byte in diagnostic clone", "recovery": "Original PowerShell UTF-16 diagnostics decoded before cloning; separate all-zero helper was not executed"},
+    {"operation": "staged whitespace check", "shellExit": 1, "result": "Display padding and blank diagnostic EOF lines flagged", "recovery": "Display-only trailing whitespace normalized in labeled diagnostic clones; outcomes preserved"},
+    {"operation": "staged Git-byte verifier", "exit": 1, "result": "CRLF public helper differed from earlier LF-normalized index bytes", "recovery": "Scoped evidence byte-preservation attribute and owned-path re-normalization; CR-at-EOL is recognized as the intentional line ending"},
+    {"operation": "exact verified merge and evidence staging", "result": "Worktree Git metadata locks denied in sandbox", "recovery": "Approved narrow Git metadata access for the exact merge and owned evidence paths"}
+  ]
+}

@@ -15,11 +15,7 @@ const { getActivityMock, replaceMock, useBalanceAdjustmentSectionMock } = vi.hoi
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en-GB" }),
 	useTranslate: () => ({
-		t: (
-			_key: string,
-			fallback: string,
-			params?: Record<string, string | number>,
-		) =>
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
 				(label, [key, value]) => label.replace(`{${key}}`, String(value)),
 				fallback,
@@ -56,14 +52,7 @@ vi.mock("@/hooks/use-display-context", () => ({
 }));
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ replace: replaceMock }),
-	Link: ({
-		href,
-		children,
-		...props
-	}: {
-		href: string;
-		children: ReactNode;
-	}) => (
+	Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
 		<a href={href} {...props}>
 			{children}
 		</a>
@@ -95,11 +84,7 @@ const employee = (overrides: Partial<ManagedEmployee>): ManagedEmployee => ({
 	...overrides,
 });
 
-const timeBalance = (
-	employeeId: string,
-	actualMinutes: number,
-	requiredMinutes: number,
-) => ({
+const timeBalance = (employeeId: string, actualMinutes: number, requiredMinutes: number) => ({
 	employeeId,
 	organizationId: "org-1",
 	actualMinutes,
@@ -136,6 +121,18 @@ describe("TeamMembersList", () => {
 		});
 	});
 
+	it("keeps scope controls available when the managed scope is empty", () => {
+		render(<TeamMembersList employees={[]} showFormer />);
+		expect(screen.getByRole("textbox", { name: "Search team members" })).toBeTruthy();
+		fireEvent.click(screen.getByRole("switch", { name: "Show former employees" }));
+		expect(replaceMock).toHaveBeenCalledWith("/team", { scroll: false });
+		expect(screen.getByRole("link", { name: "Go to Employee Settings" }).getAttribute("href")).toBe(
+			"/settings/employees",
+		);
+		expect(screen.getByText("No team members yet")).toBeTruthy();
+		expect(screen.queryByText("No results found")).toBeNull();
+	});
+
 	it.each([
 		["card", false],
 		["table", true],
@@ -158,7 +155,10 @@ describe("TeamMembersList", () => {
 
 			const dialog = screen.getByRole("dialog");
 			expect(within(dialog).getByText("Paid with the October payroll")).toBeTruthy();
-			expect(useBalanceAdjustmentSectionMock).toHaveBeenCalledWith("employee-1");
+			expect(useBalanceAdjustmentSectionMock).toHaveBeenCalledWith(
+				"employee-1",
+				expect.any(String),
+			);
 			// Read-only: no cancel action.
 			expect(within(dialog).queryByRole("button", { name: "Cancel" })).toBeNull();
 		},
@@ -167,9 +167,7 @@ describe("TeamMembersList", () => {
 	it("labels the search input for assistive technology", () => {
 		render(<TeamMembersList employees={[employee({})]} />);
 
-		expect(
-			screen.getByRole("textbox", { name: "Search team members" }),
-		).toBeTruthy();
+		expect(screen.getByRole("textbox", { name: "Search team members" })).toBeTruthy();
 	});
 
 	it("renders the You badge for the current user", () => {
@@ -261,13 +259,9 @@ describe("TeamMembersList", () => {
 
 		render(<TeamMembersList employees={[employee({})]} />);
 
-		expect(
-			screen.getByText("activity:2026-07-28T10:40:00.000Z:120"),
-		).toBeTruthy();
+		expect(screen.getByText("activity:2026-07-28T10:40:00.000Z:120")).toBeTruthy();
 		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
-		expect(
-			screen.getByText("activity:2026-07-28T10:40:00.000Z:120"),
-		).toBeTruthy();
+		expect(screen.getByText("activity:2026-07-28T10:40:00.000Z:120")).toBeTruthy();
 		expect(getActivityMock).toHaveBeenCalledWith("employee-1");
 	});
 
@@ -319,9 +313,7 @@ describe("TeamMembersList", () => {
 		fireEvent.click(sortButton);
 
 		expect(balanceHeader.getAttribute("aria-sort")).toBe("ascending");
-		expect(
-			screen.getByRole("button", { name: "All-time balance (ascending)" }),
-		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "All-time balance (ascending)" })).toBeTruthy();
 		const bodyRows = screen.getAllByRole("row").slice(1);
 		expect(bodyRows[0]?.textContent).toContain("Grace Hopper");
 		expect(bodyRows[1]?.textContent).toContain("Katherine Johnson");

@@ -5,17 +5,9 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { ConfirmActionDialog, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { TimezonePicker } from "@/components/settings/timezone-picker";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -112,13 +104,19 @@ export function DrivingLicenceFeature({
 	const [isPending, startTransition] = useTransition();
 	const [enabled, setEnabled] = useServerDataState(state.enabled);
 	const [setupOpen, setSetupOpen] = useState(false);
-	const [confirmOffOpen, setConfirmOffOpen] = useState(false);
-	/** Authorizations switching on again will suspend; null while not confirming. */
-	const [reactivationImpact, setReactivationImpact] = useState<number | null>(null);
+	// Switching off, and on again, ask first; each dialog stays open until the switch is
+	// saved and shows a failure inside it.
+	const switchOff = useConfirmedAction<"off">();
+	/** The target is how many authorizations switching on again will suspend. */
+	const switchOnAgain = useConfirmedAction<number>();
 	const [saving, setSaving] = useState(false);
 
-	const submit = async (next: boolean, setup?: DrivingLicenceSetupInput) => {
-		if (!canEdit) return false;
+	/** Switches control; resolves to the worded failure, or null once it is saved. */
+	const switchControl = async (
+		next: boolean,
+		setup?: DrivingLicenceSetupInput,
+	): Promise<string | null> => {
+		if (!canEdit) return null;
 		setSaving(true);
 		setEnabled(next);
 		const input = setup ? { enabled: next, setup } : { enabled: next };
@@ -131,8 +129,7 @@ export function DrivingLicenceFeature({
 		setSaving(false);
 		if (!result.success) {
 			setEnabled(!next);
-			toast.error(switchError(t, result.error));
-			return false;
+			return switchError(t, result.error);
 		}
 		toast.success(
 			next
@@ -149,8 +146,26 @@ export function DrivingLicenceFeature({
 				router.refresh();
 			});
 		}
+		return null;
+	};
+
+	const submit = async (next: boolean, setup?: DrivingLicenceSetupInput) => {
+		if (!canEdit) return false;
+		const failure = await switchControl(next, setup);
+		if (failure) {
+			toast.error(failure);
+			return false;
+		}
 		return true;
 	};
+
+	/** A confirmed switch: throws the worded failure so its dialog stays open showing it. */
+	const runSwitch = (next: boolean) => async () => {
+		const failure = await switchControl(next);
+		if (failure) throw new Error(failure);
+	};
+	const describeSwitchFailure = (failure: unknown) =>
+		describeFailure(failure, switchError(t, "unexpected"));
 
 	/** Counts what switching on again suspends (#1422) before asking to confirm. */
 	const askToSwitchOnAgain = async () => {
@@ -168,13 +183,13 @@ export function DrivingLicenceFeature({
 			toast.error(switchError(t, impact.error));
 			return;
 		}
-		setReactivationImpact(impact.data.suspendedAuthorizations);
+		switchOnAgain.request(impact.data.suspendedAuthorizations);
 	};
 
 	const handleCheckedChange = (next: boolean) => {
 		if (!canEdit) return;
 		if (!next) {
-			setConfirmOffOpen(true);
+			switchOff.request("off");
 			return;
 		}
 		if (state.setupRequired) {
@@ -188,8 +203,8 @@ export function DrivingLicenceFeature({
 
 	return (
 		<>
-			<div className="flex items-center justify-between">
-				<div className="flex items-start gap-3">
+			<div className="flex items-center justify-between gap-4">
+				<div className="flex min-w-0 items-start gap-3">
 					<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
 						<IconLicense aria-hidden="true" className="size-5 text-primary" />
 					</div>
@@ -208,7 +223,7 @@ export function DrivingLicenceFeature({
 						</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex shrink-0 items-center gap-2">
 					{busy && (
 						<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
 					)}
@@ -256,72 +271,49 @@ export function DrivingLicenceFeature({
 				</DialogContent>
 			</Dialog>
 
-			<AlertDialog open={confirmOffOpen} onOpenChange={setConfirmOffOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"organization.features.driving-licence-disable-title",
-								"Switch off driving licence control?",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"organization.features.driving-licence-disable-description",
-								"Intended drivers, verifier grants, check records and authorizations are kept, and deadlines keep running. Reminders and tasks stop. Evidence cleanup continues on the saved retention period.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction onClick={() => void submit(false)}>
-							{t("organization.features.driving-licence-disable-confirm", "Switch off")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmActionDialog
+				open={switchOff.open}
+				onOpenChange={switchOff.onOpenChange}
+				variant="default"
+				title={t(
+					"organization.features.driving-licence-disable-title",
+					"Switch off driving licence control?",
+				)}
+				description={t(
+					"organization.features.driving-licence-disable-description",
+					"Intended drivers, verifier grants, check records and authorizations are kept, and deadlines keep running. Reminders and tasks stop. Evidence cleanup continues on the saved retention period.",
+				)}
+				confirmLabel={t("organization.features.driving-licence-disable-confirm", "Switch off")}
+				isPending={switchOff.isPending}
+				error={switchOff.error}
+				onConfirm={() => void switchOff.confirm(runSwitch(false), describeSwitchFailure)}
+			/>
 
-			<AlertDialog
-				open={reactivationImpact !== null}
-				onOpenChange={(open) => {
-					if (!open) setReactivationImpact(null);
-				}}
+			<ConfirmActionDialog
+				open={switchOnAgain.open}
+				onOpenChange={switchOnAgain.onOpenChange}
+				variant="default"
+				title={t(
+					"organization.features.driving-licence-enable-again-title",
+					"Switch driving licence control on again?",
+				)}
+				description={t(
+					"organization.features.driving-licence-enable-again-impact",
+					"{count, plural, =0 {No authorization will be suspended: no deadline or expiry passed while control was off.} one {# authorization will be suspended because its deadline or expiry passed while control was off.} other {# authorizations will be suspended because their deadline or expiry passed while control was off.}}",
+					{ count: switchOnAgain.target ?? 0 },
+				)}
+				confirmLabel={t("organization.features.driving-licence-setup-confirm", "Switch on")}
+				isPending={switchOnAgain.isPending}
+				error={switchOnAgain.error}
+				onConfirm={() => void switchOnAgain.confirm(runSwitch(true), describeSwitchFailure)}
 			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"organization.features.driving-licence-enable-again-title",
-								"Switch driving licence control on again?",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"organization.features.driving-licence-enable-again-impact",
-								"{count, plural, =0 {No authorization will be suspended: no deadline or expiry passed while control was off.} one {# authorization will be suspended because its deadline or expiry passed while control was off.} other {# authorizations will be suspended because their deadline or expiry passed while control was off.}}",
-								{ count: reactivationImpact ?? 0 },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"organization.features.driving-licence-enable-again-description",
-							"Each suspended authorization gets one suspension notice to the employee and their verifiers. Reminders that fell due while control was off aren't sent; later reminders follow the usual schedule.",
-						)}
-					</p>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => {
-								setReactivationImpact(null);
-								void submit(true);
-							}}
-						>
-							{t("organization.features.driving-licence-setup-confirm", "Switch on")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"organization.features.driving-licence-enable-again-description",
+						"Each suspended authorization gets one suspension notice to the employee and their verifiers. Reminders that fell due while control was off aren't sent; later reminders follow the usual schedule.",
+					)}
+				</p>
+			</ConfirmActionDialog>
 		</>
 	);
 }

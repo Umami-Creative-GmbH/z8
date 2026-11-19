@@ -1,0 +1,26 @@
+{
+  "exactlyThreeManifestNames": true,
+  "records": [
+    {
+      "name": "z8_perf_c36524c7f6ec_postgres",
+      "expectedLabel": "z8-performance-fixture-1450",
+      "absent": true,
+      "idAndCreationAvailable": false
+    },
+    {
+      "name": "z8_perf_c36524c7f6ec_redis",
+      "expectedLabel": "z8-performance-fixture-1450",
+      "absent": true,
+      "idAndCreationAvailable": false
+    },
+    {
+      "name": "z8_perf_c36524c7f6ec_storage",
+      "expectedLabel": "z8-performance-fixture-1450",
+      "absent": true,
+      "idAndCreationAvailable": false
+    }
+  ],
+  "allAbsent": true,
+  "removedByThisCheck": false,
+  "qualification": "Already absent at final inspection; final IDs/creation not captured. No broad cleanup."
+}

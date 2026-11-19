@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Actual restricted officer arrival lists only seeded certificate coverage",
+    "Former-file history remains marked and visible to covering officer",
+    "Actual officer read excludes own request even when seeded scope names self",
+    "Ctrl+B collapses sidebar without changing request route",
+    "Actual font menu saves Large and reload applies18px",
+    "Saved18px phone fits viewport",
+    "Phone drawer Escape returns focus to trigger"
+  ]
+}

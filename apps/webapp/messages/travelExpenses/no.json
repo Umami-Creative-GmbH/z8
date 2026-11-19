@@ -96,21 +96,27 @@
       "rejectTitle": "Avvis krav"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Bekrefter gjeldende organisasjon og ansatt …",
       "created": "Opprettet",
       "decisionRecorded": "Beslutning registrert",
       "destination": "Destinasjon",
       "history": "Beslutningshistorikk",
       "historyDescription": "Hvert trinn i dette kravet, eldste først. Tidspunkter vises i UTC.",
       "intermediateApproval": "Godkjenning registrert — venter på ytterligere godkjenning",
+      "legacyClaim": "Eldre krav",
       "legacyReceiptIdentity": "Eldre kvittering: sjekksum for innhold ble ikke registrert.",
       "loading": "Laster inn krav…",
       "noReceipts": "Ingen kvitteringer registrert",
       "notRecorded": "Ikke registrert",
       "originalAmount": "Opprinnelig beløp",
       "receipts": "Kvitteringer",
+      "receiptVersion": "Registrert versjon",
       "refreshing": "Oppdaterer krav…",
+      "scopeUnavailable": "Oppdater dette kravet for å bekrefte din nåværende tilgang.",
       "submitted": "Sendt inn",
       "title": "Reiseregning",
+      "unavailable": "Kravet ble ikke funnet, eller tilgangen er ikke lenger tilgjengelig.",
       "unknownDates": "Kontekst for reisedato ble ikke registrert (eldre krav)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Velg {name}",
         "selectAll": "Velg alle utgifter som venter på refusjon på denne siden",
         "selected": "{count} valgt",
+        "selectionChanged": "Én eller flere valgte utgifter er endret. Lukk denne dialogboksen og se gjennom gjeldende utgifter før du starter en ny betaling.",
         "skipped": "Ikke inkludert ({count})",
         "submit": "Marker {count} som refundert",
         "title": "Marker som refundert"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Ingen aktiv utgiftsansvarlig som kan registrere refusjoner har disse innenfor sitt ansvarsområde. Eiere og administratorer kan fortsatt registrere dem, eller utvide en ansvarliges ansvarsområde.",
         "empty": "En utgiftsansvarlig dekker alle godkjente utgifter som venter på refusjon.",
+        "failed": "Kunne ikke kontrollere dekning. Prøv på nytt.",
         "queueFilter": "Godkjente utgifter som venter på refusjon og som ingen utgiftsansvarlig dekker.",
         "show": "Vis disse utgiftene",
         "showAll": "Vis alle godkjente utgifter",
@@ -237,6 +245,7 @@
           "none": "Ingen ansatt funnet.",
           "search": "Søk etter ansatte…"
         },
+        "failed": "Kunne ikke laste inn filteralternativer. Prøv på nytt.",
         "label": "Vis utgifter",
         "notExported": "Ikke eksportert ennå",
         "open": "Åpen",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Disse lønnskjøringene inneholder utgiftsrapporter som venter på refusjon. Når lønn for en kjøring er utbetalt, bekrefter du den for å registrere refusjonene.",
+        "failed": "Kunne ikke laste inn lønnsbekreftelser. Prøv på nytt.",
         "reports": "{count, plural, one {# utgiftsrapport du må bekrefte, {amount}} other {# utgiftsrapporter du må bekrefte, {amount}}}",
         "title": "Lønnskjøringer som venter på bekreftelse"
       },
       "queue": {
         "description": "Åpne et utlegg for å se oppgjøret og registrere en refusjon.",
+        "failed": "Kunne ikke laste inn økonomikøen. Prøv på nytt.",
         "title": "Godkjente utlegg"
+      },
+      "scope": {
+        "failed": "Din nåværende økonomitilgang kunne ikke bekreftes. Prøv på nytt.",
+        "loading": "Bekrefter økonomitilgang …"
       },
       "title": "Utgiftsøkonomi"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Kjøregodtgjørelse uten tittel"
     },
     "legacyDraft": {
+      "checking": "Sjekker fortsettelse av utkast …",
       "continue": "Fortsett som rapport",
       "converted": "Du fortsatte dette utkastet som en utgiftsrapport. Dette kravet forblir uendret her som referanse.",
       "description": "Utkast fra det tidligere kravskjemaet fullføres nå som utgiftsrapporter. Beløp, datoer, notater og kvitteringer videreføres; alt det nye skjemaet krever som dette utkastet ikke registrerte, må fylles ut av deg. Selve kravet forblir uendret.",
@@ -367,6 +383,7 @@
         "title": "Fortsatt fra et tidligere kravutkast"
       },
       "openReport": "Åpne rapporten",
+      "readRefused": "Fortsettelse av utkast er ikke tilgjengelig for gjeldende leser.",
       "receipt": {
         "mismatch": "den lagrede filen samsvarer ikke lenger med det som ble lastet opp",
         "unreadable": "den lagrede filen kan ikke leses akkurat nå",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Ingenting er utestående for denne utgiften.",
         "ownExpense": "Du kan ikke registrere betalinger for dine egne utgifter.",
         "referenceRequired": "Angi betalingsreferansen, f.eks. referansen for bankoverføringen.",
+        "refresh": "Saldoen kunne ikke oppdateres. Tidligere innlastede oppføringer vises; prøv på nytt før du registrerer en betaling.",
         "refused": "Denne betalingen kan ikke registreres for denne utgiften.",
         "staleBalance": "Saldoen ble endret mens du la inn denne betalingen. Kontroller den oppdaterte saldoen og registrer på nytt.",
         "tooLong": "Denne teksten er for lang."
@@ -1149,7 +1167,13 @@
     },
     "title": "Reiseutgifter",
     "workspace": {
-      "description": "Samle reiseutgifter og frittstående utgifter, send dem til gjennomgang og følg refusjonen."
+      "create": "Opprett en utgiftsrapport",
+      "description": "Samle reiseutgifter og frittstående utgifter, send dem til gjennomgang og følg refusjonen.",
+      "mileageDescription": "Registrer en tjenestekjøring utenom en reise.",
+      "otherWork": "Gjennomgang og økonomi",
+      "receiptDescription": "Registrer én utgift med kvittering.",
+      "reconciling": "Laster inn utgiftene dine for den gjeldende organisasjonen…",
+      "tripDescription": "Samle utgifter med felles reisedetaljer."
     }
   }
 }

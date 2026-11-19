@@ -1,0 +1,124 @@
+{
+  "commands": [
+    {
+      "id": "C01",
+      "command": "node .tmp/1747-current-runtime-20261118a/preflight.mjs",
+      "exit": 0
+    },
+    {
+      "id": "C02",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --version",
+      "exit": 0,
+      "output": "12.16.1",
+      "narrowEngineStoreEscalation": true
+    },
+    {
+      "id": "C03",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node .tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs prepare .tmp/1747-current-runtime-20261118a/fixture-private *> .tmp/1747-current-runtime-20261118a/prepare-attempt1-private.log",
+      "exit": 0
+    },
+    {
+      "id": "C04",
+      "command": "node .tmp/1747-current-runtime-20261118a/runtime.mjs",
+      "exit": "terminated after exact ownership verification",
+      "effect": "Fresh runtime env only; direct owned Next dev Turbopack child; no fixture start/config overlay"
+    },
+    {
+      "id": "C05",
+      "command": "node .tmp/1747-current-runtime-20261118a/controller.mjs",
+      "exit": "stopped after verified identity; failed sandbox browser attempt"
+    },
+    {
+      "id": "C06",
+      "command": "node .tmp/1747-current-runtime-20261118a/controller2.mjs",
+      "exit": "stopped after verified identity; browser/pool already closed"
+    },
+    {
+      "id": "C07",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false --dir apps/webapp exec tsx ../../.tmp/1747-current-runtime-20261118a/seed.ts *> .tmp/1747-current-runtime-20261118a/seed-attempt1-private.log",
+      "exit": 0
+    },
+    {
+      "id": "C08",
+      "command": "node .tmp/1747-current-runtime-20261118a/call.mjs database-before.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C09",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs originals-before.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C10",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs database-before2.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C11",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs status.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C12",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs login-state.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C13",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs mcp-list.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C14",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs auth-boundary.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C15",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs database-after.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C16",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs mcp-final.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C17",
+      "command": "node .tmp/1747-current-runtime-20261118a/call2.mjs close-browser.js",
+      "exit": 0,
+      "harnessOk": true
+    },
+    {
+      "id": "C18",
+      "command": "$env:pnpm_config_verify_deps_before_run='false'; pnpm --config.verify-deps-before-run=false node .tmp/1839-1744-runtime-root-prepared-v2/fixture-process-guard.mjs cleanup .tmp/1747-current-runtime-20261118a/fixture-private *> .tmp/1747-current-runtime-20261118a/cleanup-attempt1-private.log",
+      "exit": 0
+    },
+    {
+      "id": "C19",
+      "command": "node .tmp/1747-current-runtime-20261118a/preservation-final.mjs",
+      "exit": 0
+    },
+    {
+      "id": "C20",
+      "command": "Native inline PowerShell exact process inventory/cleanup and final resources commands",
+      "exit": 0,
+      "receipt": [
+        "process-inventory-SAFE.json",
+        "process-cleanup-SAFE.json",
+        "resources-final-SAFE.json"
+      ],
+      "exactInlineCommandText": "Retained in task tool transcript; no raw private process inventory published."
+    }
+  ],
+  "qualification": "Primary executable operations and failures recorded; repeated read-only source/file/status reads are not test assertions. Failed attempt commands are in attempts.json. No tests rerun."
+}

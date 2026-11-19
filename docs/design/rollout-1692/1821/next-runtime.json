@@ -1,0 +1,19 @@
+{
+  "head": "670a6b1a762517393579651c96c0dc7098554b19",
+  "dirty": " M docs/design/rollout-1692/1821/quality.json",
+  "results": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "issues": []
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "configErrors": [],
+        "sessionErrors": []
+      }
+    }
+  ]
+}

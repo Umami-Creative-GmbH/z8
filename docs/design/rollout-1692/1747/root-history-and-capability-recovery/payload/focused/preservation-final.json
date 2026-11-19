@@ -1,0 +1,16 @@
+{
+  "at": "2026-11-18T04:31:35.473Z",
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "trackedClean": true,
+  "trackedFileCount": 18871,
+  "protectedFileCount": 183931,
+  "indexUnchanged": true,
+  "sourcePinsUnchanged": true,
+  "fileChanges": [],
+  "linkChanges": [],
+  "priorV1V2IndexedArchivesUnchanged": true,
+  "pass": true,
+  "qualification": "All tracked bytes, Git index, dependency regular-file bytes and inventoried links, lock/license/canonical fixture pins and old v1/v2 indexed payloads compared. Generated .next allowed. Prior native intake/transport evidence never mutated; no independent pre-run byte inventory claimed for unindexed private evidence."
+}

@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "L'accès à cette organisation est suspendu jusqu'à la mise à jour de la facturation.",
       "adminDescription": "Votre essai a expiré ou votre abonnement n'est plus valide. Mettez à jour votre facturation pour continuer à utiliser Z8.",
       "goToBilling": "Accéder à la facturation",
       "memberDescription": "Cette organisation est suspendue. Contactez un administrateur de l'organisation pour mettre à jour la facturation.",
@@ -165,6 +166,13 @@
     "teal": "Sarcelle"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Une erreur s'est produite. Réessayez.",
+      "formerEmployee": "Les anciens employés ne peuvent pas être sélectionnés. Choisissez une personne de l'effectif actuel.",
+      "invalidInput": "Vérifiez votre saisie et réessayez.",
+      "notAllowed": "Vous n'avez pas accès à ce paramètre.",
+      "signInRequired": "Connectez-vous pour continuer."
+    },
     "actions": "Actions",
     "active": "Actif",
     "add": "Ajouter",
@@ -174,6 +182,7 @@
     "approve": "Approuver",
     "assign": "Attribuer",
     "back": "Retour",
+    "backToDashboard": "Retour au tableau de bord",
     "brandLogo": "Logo {brand}",
     "breadcrumb": {
       "breadcrumb": "fil d'Ariane",
@@ -195,6 +204,7 @@
     "copy": "Copier",
     "create": "Créer",
     "current": "Actuel",
+    "date": "Date",
     "datePicker": {
       "clearDate": "Effacer la date",
       "placeholder": "Choisir une date"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} min",
     "edit": "Modifier",
     "employees": "Employés",
-    "enabled": "Activé",
     "error": "Erreur",
     "error-occurred": "Une erreur s'est produite",
     "errors": {
       "monthClosed": "{month} est clôturé. Il doit être rouvert avant de pouvoir modifier les temps de travail ou les absences."
     },
     "fieldPresets": "Préréglages {label}",
+    "filters": "Filtres",
     "focusInput": "Cibler le champ",
     "gender": {
       "female": "Féminin",
@@ -253,6 +263,7 @@
       "application": "Chargement de l'application",
       "auditExportSettings": "Chargement des paramètres d'exportation d'audit",
       "authentication": "Chargement de l'authentification",
+      "billableTimeSettings": "Chargement des paramètres de temps facturable",
       "changePolicySettings": "Chargement des paramètres de politique de modification",
       "coverageRuleSettings": "Chargement des paramètres des règles de couverture",
       "customerSettings": "Chargement des paramètres client",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Chargement des paramètres des données de démonstration",
       "deploymentDiagnostics": "Chargement des diagnostics de déploiement",
       "employeeReports": "Chargement des rapports des employés",
+      "employees": "Chargement des employés",
+      "employeeVacationAllowance": "Chargement des droits aux congés des employés",
       "employeeVacationAllowances": "Chargement des droits aux congés des employés",
       "exportOperations": "Chargement des opérations d'exportation",
       "holidaySettings": "Chargement des paramètres des jours fériés",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Chargement du planning des quarts",
       "shiftTemplateSettings": "Chargement des paramètres des modèles de quarts",
       "skillSettings": "Chargement des paramètres de compétences",
+      "statistics": "Chargement des statistiques",
       "surchargeSettings": "Chargement des paramètres de majoration",
       "team": "Chargement de l'équipe",
       "todaySManagerBriefing": "Chargement du briefing manager du jour",
@@ -315,8 +329,6 @@
     },
     "more": "plus",
     "moreActions": "Plus d'actions",
-    "moveDown": "Déplacer vers le bas",
-    "moveUp": "Monter",
     "name": "Nom",
     "navigation": {
       "retry": "Réessayer la navigation",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Notifications} other {Notifications (# non lues)}}"
     },
+    "offline": "Hors ligne",
     "open": "Ouvrir",
     "openEnded": "Sans fin",
     "openMenu": "Ouvrir le menu",
@@ -389,6 +402,7 @@
     "removing": "Suppression en cours...",
     "reset": "Réinitialiser",
     "retry": "Réessayer",
+    "retrying": "Nouvelle tentative…",
     "revoke": "Révoquer",
     "save": "Enregistrer",
     "saveChanges": "Enregistrer les changements",
@@ -403,7 +417,9 @@
       "sidebar": "Barre latérale",
       "toggleSidebar": "Basculer la barre latérale"
     },
+    "signIn": "Se connecter",
     "skip": "Passer",
+    "skipToContent": "Aller au contenu",
     "start": "Démarrer",
     "status": "Statut",
     "submitting": "Envoi en cours…",
@@ -422,6 +438,9 @@
     },
     "to": "à",
     "today": "Aujourd'hui",
+    "tryAgain": "Réessayer",
+    "unavailable": "Indisponible",
+    "undo": "Annuler",
     "unexpectedError": "Une erreur inattendue s'est produite",
     "unknown": "Inconnu",
     "unknownEmployee": "Employé inconnu",
@@ -575,6 +594,7 @@
       "submit": "Enregistrer le contrôle de l'original",
       "suspensionNotice": "Un nouveau contrôle concluant ne rétablit pas automatiquement une autorisation suspendue. Un nouveau contrôle et une décision explicite de rétablissement sont requis.",
       "title": "Vérifier le permis original de {name}",
+      "transportError": "La vérification n'a pas pu être enregistrée. Votre saisie est conservée ; réessayez après avoir vérifié votre connexion et votre responsabilité.",
       "verifier": "Je confirme que les faits enregistrés et les résultats individuels des catégories reflètent ma vérification."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "Impossible de charger le dossier de permis de conduire. Vérifiez votre périmètre de vérification actuel.",
       "loading": "Chargement du dossier de permis de conduire…",
       "notIntended": "{name} n'est pas un conducteur désigné. Un contrôle n'est requis que pour les conducteurs désignés.",
+      "retained": "Les justificatifs conservés restent consultables. Les nouvelles vérifications sont indisponibles pour les anciens employés.",
       "title": "Contrôle du permis de conduire pour {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Statut",
         "team": "Équipe"
       },
+      "customOrder": "Trié selon la colonne et l'ordre sélectionnés.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Contrôle à effectuer maintenant",
+      "dueOrder": "Les vérifications dues maintenant en premier, puis la prochaine échéance.",
       "empty": {
         "description": "Les conducteurs désignés relevant de votre périmètre de vérification s'affichent ici. Adressez-vous à un administrateur s'il manque quelqu'un.",
         "title": "Personne à contrôler pour le moment"
@@ -607,6 +630,8 @@
       "loadError": "Impossible de charger la liste. Vérifiez votre périmètre de vérification actuel.",
       "loading": "Chargement des conducteurs désignés…",
       "noMatches": "Aucun conducteur désigné ne correspond à la recherche ou au filtre.",
+      "refresh": "Actualiser la liste des vérifications",
+      "refreshing": "Mise à jour de la liste des vérifications…",
       "search": "Rechercher par nom",
       "status": {
         "active": "Actif",
@@ -682,6 +707,7 @@
       "failed": "Catégorie inspectée non concluante",
       "field": "Champ corrigé",
       "from": "Date de début (UTC)",
+      "fromHelp": "La période commence à 00:00 UTC.",
       "globalSuspension": "Toute autorisation de conduite suspendue",
       "help": "Les confirmations initiales, les compléments datés et les décisions d'autorisation effectives restent distincts. Les justificatifs antérieurs nécessaires pour comprendre la période sélectionnée sont identifiés comme contexte. Toutes les heures d'événements et limites de périodes ci-dessous utilisent UTC.",
       "impedimentReported": "Empêchement à la conduite signalé",
@@ -716,6 +742,7 @@
       "suspended": "Autorisation suspendue",
       "title": "Historique des vérifications et des autorisations",
       "to": "Avant la date (UTC)",
+      "toHelp": "La période se termine avant 00:00 UTC à cette date.",
       "unavailable": "L'historique est indisponible. Vérifiez la période et vos accès actuels.",
       "value": "Valeur corrigée",
       "verifierConfirmation": "Confirmation du vérificateur enregistrée au moment de la vérification originale"
@@ -751,7 +778,6 @@
         "teamNotFound": "Cette équipe n'existe plus."
       },
       "notRequired": "Non requis (exclu)",
-      "removed": "Attribution de conducteur prévu supprimée",
       "required": "Requis",
       "saved": "Conducteurs prévus enregistrés",
       "targetOrganization": "Toute l'organisation",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Autorisation de conduite",
       "loading": "Chargement de l'autorisation de conduite…",
+      "loadingEmployees": "Chargement des employés pour la planification…",
       "noEmployees": "Aucun employé correspondant.",
       "recordingHelp": "Vous pouvez toujours enregistrer le temps de travail et l'utilisation réelle du véhicule. La sélection d'un véhicule n'accorde aucune autorisation de conduite ; les catégories vérifiées n'établissent pas l'aptitude pour chaque véhicule.",
       "refresh": "Actualiser le statut de conduite",
+      "refreshEmployees": "Actualiser les employés de la planification",
+      "rosterUnavailable": "Les employés de la planification sont indisponibles. Vérifiez votre accès à l'organisation actuelle et réessayez.",
       "search": "Trouver un employé",
       "searchHelp": "Jusqu'à 50 employés sont affichés. Affinez la recherche pour trouver un autre employé. Cette vue ne contient aucun dossier d'inspection.",
       "title": "Statut de conduite pour la planification",
       "unavailable": "Le statut de l'autorisation de conduite est indisponible."
     },
     "page": {
+      "reconciling": "Chargement de l'accès aux permis de conduire pour l'organisation actuelle…",
+      "scope": "Autorisation de conduite, vérifications des originaux et planification dans votre organisation active. Chaque vue dépend de votre accès actuel.",
       "title": "Permis de conduire"
     },
     "policyTitle": "Politique de l'organisation",
@@ -960,6 +991,13 @@
       "description": "Vous avez besoin d'un profil d'employé pour {feature}. Veuillez créer une organisation ou contacter votre administrateur.",
       "emailBody": "Bonjour,\n\nj'ai besoin qu'un profil d'employé soit configuré pour accéder aux fonctionnalités de la plateforme. Pourriez-vous m'aider avec cela ?\n\nMerci !",
       "emailSubject": "Configuration du profil d'employé requise",
+      "formerEmployee": {
+        "description": "Vous êtes à nouveau membre de cette organisation, mais votre précédent emploi a pris fin. Un administrateur doit vous réembaucher avant que vous puissiez {feature}.",
+        "emailBody": "Bonjour,\n\nJe suis à nouveau membre de l'organisation, mais mon précédent emploi a pris fin. Pourriez-vous me réembaucher afin que je puisse accéder aux fonctionnalités de la plateforme ?\n\nMerci !",
+        "emailSubject": "Demande de réembauche",
+        "helpText": "Demandez à votre administrateur de vous réembaucher. D'ici là, vous ne pouvez pas utiliser cette organisation.",
+        "title": "Votre emploi ici a pris fin"
+      },
       "helpText": "Si vous avez été invité dans une organisation, demandez à votre administrateur de configurer votre profil d'employé.",
       "title": "Profil d'employé requis"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Chargement de la file d'attente des workers"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Vérifier une connexion existante"
+    },
     "banner": {
       "action": "Examiner les exigences et vérifier",
       "requirement": "Cette organisation exige une authentification vérifiée à compter du {deadline}."
     },
     "code": {
       "label": "Code de l'authentificateur",
+      "required": "Saisir un code d'authentification",
       "verify": "Vérifier l'authentificateur"
     },
     "continue": "Continuer après la vérification",
@@ -1056,6 +1098,8 @@
       "title": "Inscrire ou remplacer un authentificateur",
       "warning": "L'ajout ou le remplacement d'un facteur nécessite une vérification sous cinq minutes. Vérifiez le remplacement avant de supprimer l'ancien facteur. La révocation de votre dernier facteur est autorisée et peut bloquer l'accès aux organisations répertoriées ci-dessus ; elle n'accorde pas de nouvelle période d'inscription."
     },
+    "loading": "Chargement de la vérification de sécurité",
+    "navigation": "Organisation et compte",
     "organization": {
       "select": "Sélectionner une autre organisation"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Échec de la vérification du mot de passe",
       "label": "Mot de passe actuel",
+      "required": "Saisir votre mot de passe actuel",
       "verified": "Mot de passe vérifié. Vous pouvez enregistrer votre premier authentificateur, ou vérifier un authentificateur ou un code de secours existant ci-dessous.",
       "verify": "Vérifier le mot de passe"
     },
@@ -1097,7 +1142,16 @@
       "description": "Pour la récupération, vérifiez votre mot de passe ci-dessus, puis saisissez un code de secours inutilisé. Cela réinitialise la vérification locale précédente dans toutes vos organisations.",
       "label": "Code de secours",
       "lockout": "Si un administrateur unique perd tous ses moyens d'authentification et de récupération, l'organisation reste verrouillée. Aucun contournement n'est possible par un administrateur ou l'assistance.",
-      "success": "La récupération permet uniquement l'inscription d'un remplacement. Vérifiez un moyen d'authentification avant de retourner à votre organisation."
+      "nextSteps": "Vérifiez à nouveau votre mot de passe avant de vérifier un authentificateur.",
+      "open": "Récupérer avec un code de secours",
+      "required": "Saisir un code de secours inutilisé",
+      "success": "La récupération permet uniquement l'inscription d'un remplacement. Vérifiez un moyen d'authentification avant de retourner à votre organisation.",
+      "title": "Récupération de compte"
+    },
+    "requirements": {
+      "empty": "Aucune exigence d'organisation n'est répertoriée pour ce compte.",
+      "selected": "Organisation sélectionnée",
+      "title": "Exigences de l'organisation"
     },
     "security": {
       "factorWarning": "La suppression d'un facteur peut bloquer l'accès aux organisations qui l'exigent. Vérifiez d'abord un facteur de remplacement ; supprimer le dernier facteur n'accorde aucun nouveau délai de grâce.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Politique d'authentification de l'organisation (propriétaires/administrateurs)"
     },
     "signout": "Se déconnecter",
+    "signout.failed": "Échec de la déconnexion. Réessayez.",
     "social": {
       "verify": "Vérifier la connexion existante avec {provider}"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Administrateur de la plateforme",
     "reports": "Rapports",
     "scheduling": "Planification",
+    "secondary-label": "Paramètres et aide",
     "settings": "Paramètres",
     "team": "Équipe",
     "teamAbsences": "Absences de l'équipe",
     "teamDriving": "Détails de conduite",
-    "team-label": "Équipe",
+    "team-organization-label": "Équipe et organisation",
     "teamPeriodSubmissions": "Soumissions de période",
     "teamPresence": "Qui est présent",
     "time-tracking": "Suivi du temps",
     "today": "Aujourd'hui",
     "travel-expenses": "Frais de déplacement",
+    "workplace-label": "Espace de travail",
     "worksCouncil": "Comité d'entreprise"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Votre quart de travail s'est terminé à {endTime} ({timezone}). Pointez votre départ si vous avez fini de travailler.",
         "title": "Vous n'avez pas encore pointé votre départ"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} est à nouveau membre, mais son précédent emploi a pris fin. Cette personne n'a aucun accès tant que vous ne la réembauchez pas.",
+        "title": "Un ancien employé doit être réembauché"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# employé est toujours rattaché uniquement à un ancien responsable : {names}. Attribuez un responsable actuel.} other {# employés sont toujours rattachés uniquement à un ancien responsable : {names}. Attribuez un responsable actuel.}}",
@@ -1735,6 +1796,7 @@
         "title": "C'est l'heure de s'hydrater !"
       }
     },
+    "countFailed": "Nombre de non-lus indisponible",
     "description": "Consultez les mises à jour, les approbations et les alertes système dans une seule chronologie.",
     "empty": {
       "description": "Vous êtes à jour ! Les nouvelles notifications apparaîtront ici.",
@@ -1754,6 +1816,8 @@
       "read": "Lu",
       "unread": "Non lu"
     },
+    "loading": "Chargement des notifications…",
+    "loadingCount": "Chargement du nombre d'éléments non lus…",
     "nativePush": {
       "attention": {
         "title": "Un élément requiert votre attention"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Créneaux ouverts suite à une désactivation",
         "equipment_return_reminder": "Rappels de retour d'équipement",
         "forgotten_clock_out_reminder": "Oubli de pointage de sortie",
+        "former_employee_needs_rehire": "Anciens employés à réembaucher",
         "former_employee_reports_without_manager": "Employés sans responsable actuel",
         "kiosk_command_refused": "Pointage sur la borne non enregistré",
         "kiosk_fob_registered": "Badge de borne enregistré",
@@ -1871,6 +1936,7 @@
       "placeholder": "Rechercher des notifications..."
     },
     "selection": {
+      "actions": "Notifications sélectionnées",
       "selectAll": "Tout sélectionner",
       "selectAllAria": "Sélectionner toutes les notifications visibles",
       "selectNamedAria": "Sélectionner {title}",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "{count} notifications supprimées",
       "deleteFailed": "Échec de la suppression des notifications",
+      "deletePartial": "{count} supprimée(s) ; {failed} en échec. Réessayez pour la sélection restante.",
       "markedRead": "{count} notifications marquées comme lues",
-      "markReadFailed": "Échec du marquage des notifications comme lues"
+      "markReadFailed": "Échec du marquage des notifications comme lues",
+      "readPartial": "{count} marquée(s) comme lue(s) ; {failed} en échec. Réessayez pour la sélection restante."
     },
     "unreadBadge": "{count} non lu",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} visible(s) · {limit} dernières notifications"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}h",
     "pm": "PM"
   },
-  "userAvatar": {
-    "alt": "Avatar utilisateur"
-  },
   "user": {
+    "account": "Compte",
     "font-size": "Taille de la police",
     "language": "Langue",
+    "loadingAccount": "Chargement du compte",
     "logging-out": "Déconnexion...",
     "log-out": "Se déconnecter",
     "log-out-failed": "Impossible de se déconnecter. Veuillez réessayer.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Basé sur l'heure",
     "theme-time-info": "Le mode basé sur l'heure utilise le mode {currentMode}. Passage au mode {nextMode} à {time}.",
     "theme-toggle": "Basculer le thème"
+  },
+  "userAvatar": {
+    "alt": "Avatar utilisateur"
   },
   "vacationBalance": {
     "conflictingPolicies": "Politiques de congés en conflit",

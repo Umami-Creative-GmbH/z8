@@ -96,21 +96,27 @@
       "rejectTitle": "Respinge cererea"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Se confirmă organizația și angajatul actual…",
       "created": "Creat",
       "decisionRecorded": "Decizie înregistrată",
       "destination": "Destinație",
       "history": "Istoric decizii",
       "historyDescription": "Fiecare pas al acestei cereri, începând cu cele mai vechi. Orele sunt afișate în UTC.",
       "intermediateApproval": "Aprobare înregistrată — se așteaptă o altă aprobare",
+      "legacyClaim": "Cerere de decontare veche",
       "legacyReceiptIdentity": "Chitanță veche: suma de control a conținutului nu a fost înregistrată.",
       "loading": "Se încarcă decontul…",
       "noReceipts": "Nu există chitanțe înregistrate",
       "notRecorded": "Neînregistrat",
       "originalAmount": "Sumă inițială",
       "receipts": "Chitanțe",
+      "receiptVersion": "Versiune înregistrată",
       "refreshing": "Se reîmprospătează decontul…",
+      "scopeUnavailable": "Reîmprospătați această cerere de decontare pentru a vă confirma accesul actual.",
       "submitted": "Trimis",
       "title": "Decont de cheltuieli de deplasare",
+      "unavailable": "Cererea de decontare nu a fost găsită sau accesul nu mai este disponibil.",
       "unknownDates": "Contextul datei călătoriei nu a fost înregistrat (decont vechi)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Selectează {name}",
         "selectAll": "Selectează toate cheltuielile care așteaptă rambursarea de pe această pagină",
         "selected": "{count} selectate",
+        "selectionChanged": "Una sau mai multe cheltuieli selectate s-au modificat. Închideți această casetă de dialog și examinați cheltuielile actuale înainte de a iniția o altă plată.",
         "skipped": "Neincluse ({count})",
         "submit": "Marchează {count} ca rambursate",
         "title": "Marchează ca rambursat"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Niciun responsabil de cheltuieli activ care poate înregistra rambursări nu le are în domeniul său de competență. Proprietarii și administratorii le pot înregistra în continuare sau pot extinde domeniul de competență al unui responsabil.",
         "empty": "Un responsabil de cheltuieli acoperă fiecare cheltuială aprobată care așteaptă rambursarea.",
+        "failed": "Acoperirea nu a putut fi verificată. Vă rugăm să reîncercați.",
         "queueFilter": "Cheltuieli aprobate care așteaptă rambursarea și nu sunt acoperite de niciun responsabil de cheltuieli.",
         "show": "Afișează aceste cheltuieli",
         "showAll": "Afișează toate cheltuielile aprobate",
@@ -237,6 +245,7 @@
           "none": "Nu a fost găsit niciun angajat.",
           "search": "Caută angajați…"
         },
+        "failed": "Opțiunile de filtrare nu au putut fi încărcate. Vă rugăm să reîncercați.",
         "label": "Afișează cheltuielile",
         "notExported": "Neexportat încă",
         "open": "Deschide",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Aceste rulări de salarizare conțin rapoarte de cheltuieli care așteaptă rambursarea. După ce salarizarea a achitat o rulare, confirmați-o pentru a înregistra rambursările.",
+        "failed": "Confirmările de plată a salariilor nu au putut fi încărcate. Vă rugăm să reîncercați.",
         "reports": "{count, plural, one {# raport de cheltuieli de confirmat, {amount}} other {# rapoarte de cheltuieli de confirmat, {amount}}}",
         "title": "Rulări de salarizare în așteptarea confirmării"
       },
       "queue": {
         "description": "Deschideți o cheltuială pentru a vedea decontarea acesteia și a înregistra o rambursare.",
+        "failed": "Nu se poate încărca lista de așteptare financiară. Vă rugăm să reîncercați.",
         "title": "Cheltuieli aprobate"
+      },
+      "scope": {
+        "failed": "Accesul dvs. financiar actual nu a putut fi confirmat. Vă rugăm să reîncercați.",
+        "loading": "Se confirmă accesul financiar…"
       },
       "title": "Financiar cheltuieli"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Kilometraj fără titlu"
     },
     "legacyDraft": {
+      "checking": "Se verifică continuarea ciornei…",
       "continue": "Continuă ca raport",
       "converted": "Ați continuat această ciornă ca raport de cheltuieli. Acest decont rămâne aici neschimbat pentru referință.",
       "description": "Ciornele din formularul de decont anterior sunt acum finalizate ca rapoarte de cheltuieli. Suma, datele, notele și chitanțele dvs. sunt preluate; orice element necesar noului formular care nu a fost înregistrat în această ciornă rămâne să fie completat de dvs. Acest decont în sine rămâne neschimbat.",
@@ -367,6 +383,7 @@
         "title": "Continuat dintr-o ciornă anterioară de cerere"
       },
       "openReport": "Deschideți raportul",
+      "readRefused": "Continuarea ciornei nu este disponibilă pentru cititorul curent.",
       "receipt": {
         "mismatch": "fișierul stocat nu mai corespunde cu cel încărcat",
         "unreadable": "fișierul stocat nu poate fi citit în acest moment",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Nu există sume restante pentru această cheltuială.",
         "ownExpense": "Nu puteți înregistra plăți pentru propriile cheltuieli.",
         "referenceRequired": "Introduceți referința plății, de exemplu referința transferului bancar.",
+        "refresh": "Soldul nu a putut fi reîmprospătat. Sunt afișate înregistrările încărcate anterior; reîncercați înainte de a înregistra o plată.",
         "refused": "Această plată nu poate fi înregistrată pentru această cheltuială.",
         "staleBalance": "Soldul s-a modificat în timp ce introduceați această plată. Verificați soldul actualizat și înregistrați din nou.",
         "tooLong": "Acest text este prea lung."
@@ -1149,7 +1167,13 @@
     },
     "title": "Cheltuieli de deplasare",
     "workspace": {
-      "description": "Colectați cheltuielile de călătorie și cheltuielile individuale, trimiteți-le spre revizuire și urmăriți rambursarea acestora."
+      "create": "Creați un raport de cheltuieli",
+      "description": "Colectați cheltuielile de călătorie și cheltuielile individuale, trimiteți-le spre revizuire și urmăriți rambursarea acestora.",
+      "mileageDescription": "Înregistrați o deplasare în interes de serviciu în afara unei călătorii.",
+      "otherWork": "Examinare și finanțe",
+      "receiptDescription": "Înregistrați o cheltuială împreună cu chitanța acesteia.",
+      "reconciling": "Se încarcă cheltuielile pentru organizația curentă…",
+      "tripDescription": "Colectați cheltuieli cu detalii de călătorie comune."
     }
   }
 }

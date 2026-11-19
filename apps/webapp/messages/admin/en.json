@@ -75,8 +75,10 @@
         "title": "Analytics trends",
         "viewFull": "View full analytics"
       },
+      "scope": "Platform-wide reporting",
       "sectionDescription": "Updated from current platform data for the selected range and bucket.",
       "sectionTitle": "Analytics Trends",
+      "seriesValues": "View series values",
       "title": "Platform Analytics",
       "values": {
         "notAvailable": "Not available"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Platform access could not be confirmed.",
       "analytics": {
         "title": "Analytics Trends"
       },
-      "description": "Platform metrics and quick actions",
+      "analyticsUnavailable": "Platform analytics are unavailable. Try again.",
+      "confirmingAccess": "Confirming platform access",
+      "groups": {
+        "access": "Access management",
+        "billing": "Billing and subscriptions",
+        "operations": "Platform operations"
+      },
+      "loadingAnalytics": "Loading platform analytics",
+      "loadingMetrics": "Loading platform metrics",
       "metrics": {
         "bannedUsers": "Banned Users",
         "bannedUsersDescription": "Restricted from access",
@@ -295,6 +306,9 @@
         "totalUsers": "Total Users",
         "totalUsersDescription": "Registered platform accounts"
       },
+      "metricsUnavailable": "Platform metrics are unavailable. Try again.",
+      "platformDescription": "Review platform-wide accounts, workspaces and activity, then open an administration workspace.",
+      "platformTitle": "Platform overview",
       "quickActions": {
         "billing": {
           "description": "Revenue metrics and subscription status",
@@ -318,7 +332,7 @@
           "title": "User Management"
         }
       },
-      "title": "Overview"
+      "refreshAccess": "Refresh the overview to confirm platform access before continuing."
     },
     "settings": {
       "actions": {

@@ -1,0 +1,483 @@
+{
+  "source": {
+    "base": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+    "product": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+    "implementation": "abd6e73c93d822cd53dec8b7875ec476b0570a9b",
+    "files": [
+      {
+        "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/page.tsx",
+        "i": 0,
+        "before": "b5781dbadae7c49dbdbe6ebd9933f4342e90b9ae4b305e1a3d8188359d7ab9e9",
+        "after": "a997063dd6ab646921421beead2b79dbd746dcef743e29d7719dfac65ebc77a5"
+      },
+      {
+        "file": "apps/webapp/src/components/travel-expenses/travel-expense-management.tsx",
+        "i": 1,
+        "before": "90777b2798983cd9a1a062a2f031c1c144c5b0044451fe01dd03406613fee5e2",
+        "after": "bde3b8bcecc010b342b87148bf17eecbf5be1bf32281c9fb80d78336cd8c08c5"
+      },
+      {
+        "file": "apps/webapp/src/components/travel-expenses/expense-history.tsx",
+        "i": 2,
+        "before": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+        "after": "2f820d67696efdcba6bd9eeccdc56285ea6e8b176627ba6955e428613bec9234"
+      },
+      {
+        "file": "apps/webapp/src/components/travel-expenses/report/new-receipt-expense-button.tsx",
+        "i": 3,
+        "before": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+        "after": "a8358aa19d36dcdae3c8a470f13562ecac037f567b4bd3cc44602459eb61ff22"
+      },
+      {
+        "file": "apps/webapp/src/components/travel-expenses/approvals-entry.tsx",
+        "i": 4,
+        "before": "3c2ed7c8ca4f9923c519a4d5b3fa9bd010d2e3771b95be24d816da4b74c32cea",
+        "after": "375f9fd716ad637e19837ca2509e1ba2d71e6a7932a6f01ad77622c6f6170dc3"
+      },
+      {
+        "file": "apps/webapp/src/components/travel-expenses/finance/finance-entry.tsx",
+        "i": 5,
+        "before": "eb425329ea066a11f2cc28fbfcda30f9f5061a874c81f45c79ac55575f423d37",
+        "after": "8e1121c3e3c1d4273d2e5b8dfcf689243b241a3c39bb9df4c20431f8dd1de416"
+      },
+      {
+        "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+        "i": 6,
+        "before": "c57adda1eb42d494c0d20709a7740665072614693a8f26df8b4b2dec93adb045",
+        "after": "1ce77b262cdda3b09d149af58f4e34b8148f148caaff090ea16db5fb342ef719"
+      }
+    ]
+  },
+  "ancestry": [
+    {
+      "sha": "cab40dcbb6ea69cefb7aa919228298a881a66060",
+      "ancestor": true
+    },
+    {
+      "sha": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "ancestor": true
+    },
+    {
+      "sha": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "ancestor": true
+    },
+    {
+      "sha": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "ancestor": true
+    },
+    {
+      "sha": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "ancestor": true
+    },
+    {
+      "sha": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    }
+  ],
+  "images": [
+    {
+      "file": "after-desktop-dark-default.png",
+      "sha256": "9bfec370ce25331d4699394be7221d04d575d955e921ce7edc43e1f3af0d9ad1",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-desktop-dark-large.png",
+      "sha256": "ef400bc40ac8fd0d54ca253bf4141f4db277e355e91e3b9d50cd69d37fbd7c96",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-desktop-light-default.png",
+      "sha256": "d29ca8375d81d407f1c5245475e3235a7e1396d66391d730c42b1068645167d9",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-desktop-light-large.png",
+      "sha256": "f989a3677f8f5e38358de0c6bcaf39deecbb8d4ab7f5f57015e53045eb4d0439",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-phone-dark-default.png",
+      "sha256": "810698908d15de547bbe0fb399c675515691c5109ef7db4cc46259af0b0b45fc",
+      "width": 390,
+      "height": 844,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-phone-dark-large.png",
+      "sha256": "f4b1e954757ff992662c24b1905889696dea46a33c8103f9cd6557f077e98f9f",
+      "width": 390,
+      "height": 844,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-phone-light-default.png",
+      "sha256": "a0bec39d6ee9803a55b58f5f00d34040774b47fde3d696b5e3968aaa66875eb9",
+      "width": 390,
+      "height": 844,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-phone-light-large.png",
+      "sha256": "ba578568d46b42f4ce1eb372f72b3698dd064cb7a64512ed1f98e804864a1698",
+      "width": 390,
+      "height": 844,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-wide-dark-default.png",
+      "sha256": "a7d3a07ded563a0a2e5278bc0bdbe54db8118a74c99fa4299b661206478eaeec",
+      "width": 2200,
+      "height": 1200,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-wide-dark-large.png",
+      "sha256": "7fc47b5a5df6eb69e7138486620130d414a2f62e771a3537851c69ac1eba6cb5",
+      "width": 2200,
+      "height": 1200,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-wide-light-default.png",
+      "sha256": "7cd17ae8779cc1749862a8a9df39e50c07a21fe9311b1b2bfa0bac791b167056",
+      "width": 2200,
+      "height": 1200,
+      "fullyDecoded": true
+    },
+    {
+      "file": "after-wide-light-large.png",
+      "sha256": "b3b1b7461a10f1ad545fede04df0b44402ee282ad1a1872a87c8d23e51fcc230",
+      "width": 2200,
+      "height": 1200,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-desktop-dark-default.png",
+      "sha256": "e43b7087141ecefb56ae0b284fe3402cc34cb5463fc73453c0807986bf9cb2ef",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-desktop-dark-large.png",
+      "sha256": "2ed98f0a80eb9c079b1e3e9241d1c405fe9294b82985b86f9725aed8710544f0",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-desktop-light-default.png",
+      "sha256": "ae6042fbaa3e78b3b1e898b2a91f2bf70894d0e95ddeb5dfa581c64ca90f5bad",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-desktop-light-large.png",
+      "sha256": "0c90a715e4d3100e7986317ede811b44a2290d45097602eb0f8725a8c353b981",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-phone-dark-default.png",
+      "sha256": "21248d037e958b291a6225ddc39ce6cb847eb5f8287e3319dd7b11ce43cfbfe9",
+      "width": 390,
+      "height": 844,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-phone-dark-large.png",
+      "sha256": "57ad0659169ebf2430ef96ed6525a6af02f85f76d2b7fa03f42fc63c20ddf472",
+      "width": 390,
+      "height": 844,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-phone-light-default.png",
+      "sha256": "3ab04d87fb5d3765d3b2b2e83f736e200f7ba448a453461809d595bb8134e929",
+      "width": 390,
+      "height": 844,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-phone-light-large.png",
+      "sha256": "c701a5554edf05512d4cec8d443a67097a777c47a65cb37fa27b64677ce823ad",
+      "width": 390,
+      "height": 844,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-wide-dark-default.png",
+      "sha256": "5590bb3b22cfa2b57a9a7ce33e239d053d37117c11940a29ad547e1a98309cfc",
+      "width": 2200,
+      "height": 1200,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-wide-dark-large.png",
+      "sha256": "701bb0d507b811f6e51557361678d3f36ccf489450f9f3e0ae788852ef725628",
+      "width": 2200,
+      "height": 1200,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-wide-light-default.png",
+      "sha256": "c4c5f4a4513799fe885d054021419bb4f621d1589ffd1e2bd915ac88853a7117",
+      "width": 2200,
+      "height": 1200,
+      "fullyDecoded": true
+    },
+    {
+      "file": "before-wide-light-large.png",
+      "sha256": "fad4fa33e0e837bf06f34f546be9d627ff65017f491ed086bfadf3f9337da739",
+      "width": 2200,
+      "height": 1200,
+      "fullyDecoded": true
+    },
+    {
+      "file": "native-desktop-collapsed.png",
+      "sha256": "a6bf59d126233b65dc85533ad085259e15c14d6dc15dbfdf0085eb2d1392680f",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    },
+    {
+      "file": "native-no-match.png",
+      "sha256": "ec66ecde905f107d158364be774b7edd7d8acc2a1c00ed34e3e3b623d5654296",
+      "width": 1600,
+      "height": 1000,
+      "fullyDecoded": true
+    }
+  ],
+  "json": [
+    {
+      "file": "after.json",
+      "sha256": "ed573ca04859f8a49e5896af902098c18dfdebacb4a8c11a78996286c9d4d1fd",
+      "parsed": true
+    },
+    {
+      "file": "before.json",
+      "sha256": "4a7715b3031e328a663792208c4606a8040a83bc2c5fb8819949e4041deeec8d",
+      "parsed": true
+    },
+    {
+      "file": "capabilities.json",
+      "sha256": "956deaa3ba5ab009d20dbeeba528363a8829e90dfcd9b0d91c448be1b2e6f262",
+      "parsed": true
+    },
+    {
+      "file": "journeys.json",
+      "sha256": "1d72d8df205ef91e6432630ba4ee028021d42c52a75f7070a626ea911a4b71b2",
+      "parsed": true
+    }
+  ],
+  "raw": [
+    {
+      "file": "checks/.tmp-1747-install.log",
+      "sha256": "3a4c84b818ef6f5def4ce7356d86e1b6c1a9fdabefb30d794df08b736ed6bc6c"
+    },
+    {
+      "file": "checks/.tmp-1747-install-escalated.log",
+      "sha256": "74e334a10d63d445f97d5114d5f95d67c9bb8a0fee279bd8068707c46b3f1800"
+    },
+    {
+      "file": "checks/.tmp-1747-red-empty-target.log",
+      "sha256": "27d4385a06a58f6846489334e08f27e21db7cfd356b94ddb08faff3860acd59a"
+    },
+    {
+      "file": "checks/red-create.log",
+      "sha256": "cc474e40c8a1151805cbdd12a9b62ef79907e07991c8d4cc0cd642f3346606e5"
+    },
+    {
+      "file": "checks/red-scope.log",
+      "sha256": "0854a9f3d0005b15ed8daa0b6c29ebf34c9a90f357c3575d4e65734cf92abc8d"
+    },
+    {
+      "file": "checks/red-heading.log",
+      "sha256": "1d85fe44404824b8382fbec15585be0ca3aea2b1f5ba244267f30b304282100e"
+    },
+    {
+      "file": "checks/red-filter-lifetime.log",
+      "sha256": "405c1fa6de3efc442348a55e9130b57788af1f36ec340452807b6dd8a10df61f"
+    },
+    {
+      "file": "checks/unit-filter-final.log",
+      "sha256": "79696491c12e9d85066b615d39471fdd608ef63314d84370b5294e00f83dc45e"
+    },
+    {
+      "file": "checks/integration.log",
+      "sha256": "8e8fe222737e7a5310f35699aaea876eea7337bfba3f1cf994c80b53fdaa53dd"
+    },
+    {
+      "file": "checks/integration-mileage.log",
+      "sha256": "2fded62d004f1bd41415d7cffd362d7466c7f033710f010ef3eaee9ea07e1690"
+    },
+    {
+      "file": "checks/typegen.log",
+      "sha256": "8b0db89a1e25137a4cb79143a4ea63ae347e6f5f2247f026d984e133255d3084"
+    },
+    {
+      "file": "checks/type-app-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "checks/type-workflow-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "checks/type-smoke-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "checks/doctor-filter-final.log",
+      "sha256": "846393b04ea7da4f5ff60c12dd80b6f58fa009f962fbc81be44387184f90b262"
+    },
+    {
+      "file": "checks/biome-final-corrected.log",
+      "sha256": "d4d71de6a8275c6d3840c5216dcfb5c41c27226dfaf180e6dcd7507404ce8832"
+    },
+    {
+      "file": "checks/biome-ordinary.log",
+      "sha256": "ba724595f7f43287140c73e7df16818af322adff081cd919a530dec6025365f6"
+    },
+    {
+      "file": "checks/biome-lint.log",
+      "sha256": "a35ee8a41646cd3209719ef0e7ec14f9f42b2f26e4ae56247d9f63143b0ca98a"
+    },
+    {
+      "file": "checks/native-open.log",
+      "sha256": "110a6cd1c173dfbfa013420282ca435a214385f458210dcf309cee0fc96dfe22"
+    },
+    {
+      "file": "checks/browser-before.log",
+      "sha256": "9509b7fb33b83769948e462bf6f68bf39a88a8e948740712c56f96aa5d05e16b"
+    },
+    {
+      "file": "checks/browser-before-pinned.log",
+      "sha256": "9cdf90a96810fb55102de8b8e6bf122ecd9260a6d2edeb8200212f2bbde2602a"
+    },
+    {
+      "file": "checks/next-get_compilation_issues.txt",
+      "sha256": "202e2614d911cd207907b2bd9f44d418b4f91c2f6ac43abe9bd60af0b9c8e0f1"
+    },
+    {
+      "file": "checks/next-get_errors.txt",
+      "sha256": "3aab3e92066d11c3436b51c199fc23571e9114c8a1a3789e19b38fe448e1fe48"
+    },
+    {
+      "file": "checks/next-final-compile_route.txt",
+      "sha256": "438b5563754a3d1409b41cc132f476ab94bae8d027e96fa2b15469f09ff2b681"
+    },
+    {
+      "file": "checks/next-final-get_errors.txt",
+      "sha256": "533927af527a38c958cbb23c9f02ef821c174449d4fde14043d4dc6ab369d151"
+    },
+    {
+      "file": "checks/next-final-get_project_metadata.txt",
+      "sha256": "c150034e2caab8a57c5b457d7cea85421de28a873ad11296a566259b11f4011c"
+    },
+    {
+      "file": "checks/next-final-get_page_metadata.txt",
+      "sha256": "3914adc5e62294aaaeda67faf2cd5b766e04d28fedf10ee54bcb8ccc6b0a8ad3"
+    },
+    {
+      "file": "checks/native-phone-state.json",
+      "sha256": "f26a48fb2384e118c0db15ddec0283c820cb9f06b543372b8347c2dc64fa9803"
+    },
+    {
+      "file": "checks/native-phone-settled.json",
+      "sha256": "d259780e2438e465e4853441febb179addb991a45f26c6c5f347b3754a21f99b"
+    },
+    {
+      "file": "checks/native-collapse-before.json",
+      "sha256": "0a0e40a95dc483ae352fdddebdb2f4417a5c013d58ad434439d065a3262aa09c"
+    },
+    {
+      "file": "checks/native-collapse-after.json",
+      "sha256": "99bb2eacff440bb6f6834cf6115acfb55329ab69e4ef5d5e5e2e63d915f888c5"
+    },
+    {
+      "file": "checks/native-show-all-state.json",
+      "sha256": "214a11134bf61bfffb858f3a7e46668e68d26ff4c0df89f731f89d66f39f5e11"
+    },
+    {
+      "file": "checks/native-no-match.log",
+      "sha256": "ee829f4c9dc2afa35f58886584358a7bc9dc1b2a96f28d6d1780f2f002686974"
+    },
+    {
+      "file": "checks/native-no-match-second.log",
+      "sha256": "631a00c12fa9b5ec3823bf88aea5ca700132354a4dbd5498d3b5785e76f5025c"
+    },
+    {
+      "file": "checks/shared-conversion-repro.patch",
+      "sha256": "3aaf2a951ee33f4f5a7a73cff594f7267f17a5401c32847775d33204afbbd7b3"
+    },
+    {
+      "file": "checks/shared-conversion-repro.log",
+      "sha256": "98d702aafc7172bd450647a3e56965eb970cd3109563d50f56d57667f037c45c"
+    },
+    {
+      "file": "checks/stopped-final.json",
+      "sha256": "1b27b85bb809df77add4a17be034c0ed68ac1f03c8f1143f8fe1d8e3e6f84ecd"
+    },
+    {
+      "file": "checks/cleanup.log",
+      "sha256": "15519f30aea57657cebf812dc8d1b8db7aaf2e3c497e018718186825aa3511f8"
+    },
+    {
+      "file": "checks/native-final-close.log",
+      "sha256": "462e1ce47492715a9144f255f10e21588de655c76e1a10e52de2a23fb9f4e227"
+    },
+    {
+      "file": "checks/issue-final.json",
+      "sha256": "4906ee5d722475e5303f0c9ff6d4df2f9b09db68828e3e658713e7a67c349f97"
+    },
+    {
+      "file": "checks/unit-handoff.log",
+      "sha256": "240d41bd4e065bb1a0c791b2e3e80cc00fdff9fc0a0d31923694bd256ea9ab07"
+    },
+    {
+      "file": "checks/biome-metadata-lint.log",
+      "sha256": "88be4fd718dcd77d4236b8e770104f9d8d0246e49f27ab3e978fe691c1fb4bd6"
+    }
+  ],
+  "fixture": {
+    "kind": "disposable",
+    "serviceLabel": "z8-performance-fixture-1450",
+    "serviceCount": 3,
+    "images": [
+      {
+        "name": "postgres",
+        "id": "sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d"
+      },
+      {
+        "name": "redis",
+        "id": "sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11"
+      },
+      {
+        "name": "storage",
+        "id": "sha256:8cc9801755448b71a786705ce76692c77e14936cccd87cf2fc31842e58f4d1ff"
+      }
+    ],
+    "initialDeploymentId": "cab40dcbb6ea69cefb7aa919228298a881a66060"
+  },
+  "harnesses": [
+    {
+      "file": "capture-harness.mjs",
+      "sha256": "23d1c9590f24762d5135706240bce669201a0d54107037fb607549293ef60db7"
+    },
+    {
+      "file": "capabilities-harness.mjs",
+      "sha256": "b770f362f5d0060195536eaa6a34890039b5a760db99d16fdfad349440c947d5"
+    }
+  ]
+}

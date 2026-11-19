@@ -278,7 +278,7 @@ function WorkBalanceSummary({
 			<p
 				className={cn(
 					"font-semibold text-lg tabular-nums",
-					status === "positive" && "text-emerald-600 dark:text-emerald-400",
+					status === "positive" && "text-success",
 					status === "negative" && "text-destructive",
 				)}
 			>

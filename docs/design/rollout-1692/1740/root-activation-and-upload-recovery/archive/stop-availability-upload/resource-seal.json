@@ -1,0 +1,12 @@
+{
+  "root": "X:\\t3-code\\worktrees\\z8\\t3-4999db72-6c906cbd55870c06",
+  "checkedAt": "2026-11-17T09:04:37.0107597Z",
+  "liveOwnedRuntimes": [],
+  "liveOwnedRuntimeCount": 0,
+  "nextStarted": 0,
+  "browserStarted": 0,
+  "fixtureStarted": 0,
+  "containerStarted": 0,
+  "listenersStarted": 0,
+  "cleanup": "Only own hash-guarded bridge and verified physical Vitest cache removed; no peer or root resources targeted"
+}

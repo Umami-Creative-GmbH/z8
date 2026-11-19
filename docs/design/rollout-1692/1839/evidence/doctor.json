@@ -1,0 +1,15 @@
+{
+  "version": "0.9.22",
+  "sourceRevision": "ce1a4d23d973ebf73a8ad1e0c1be873d784d6f7f",
+  "base": "38da311d680f1ee2a2258b400585d16a33587483",
+  "changedFileCount": 14,
+  "scope": "files",
+  "ok": true,
+  "diagnostics": [],
+  "options": {
+    "score": false,
+    "supplyChain": false,
+    "parallel": false,
+    "maxDurationSeconds": 90
+  }
+}

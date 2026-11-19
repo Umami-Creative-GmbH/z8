@@ -1,0 +1,166 @@
+{
+  "stages": [
+    {
+      "phase": "template after 1200ms",
+      "alerts": [
+        {
+          "text": "Coverage could not be loaded. Retry to check staffing.Retry",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "phase": "compliance after 1200ms",
+      "alerts": [
+        {
+          "text": "Coverage could not be loaded. Retry to check staffing.Retry",
+          "disabled": false
+        }
+      ]
+    }
+  ],
+  "oneActivation": true,
+  "actions": {
+    "observations": [
+      {
+        "sequence": 1,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 2,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 3,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 4,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 5,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 6,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 7,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 8,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 9,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 10,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 11,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 12,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 13,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 14,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 15,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 16,
+        "name": "unresolved",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 17,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "hold"
+      },
+      {
+        "sequence": 18,
+        "name": "getScheduleComplianceSummary",
+        "method": "POST",
+        "mode": "hold"
+      },
+      {
+        "sequence": 19,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 20,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 21,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "continue"
+      },
+      {
+        "sequence": 22,
+        "name": "getShiftTemplates",
+        "method": "POST",
+        "mode": "hold"
+      },
+      {
+        "sequence": 23,
+        "name": "getScheduleComplianceSummary",
+        "method": "POST",
+        "mode": "hold"
+      }
+    ],
+    "held": 0
+  }
+}

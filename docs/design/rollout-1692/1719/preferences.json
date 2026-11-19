@@ -1,0 +1,36 @@
+{
+  "checks": [
+    {
+      "name": "Ctrl+B collapse persists",
+      "actual": "false"
+    },
+    {
+      "name": "saved dark and large font survive phone reload",
+      "actual": {
+        "font": "large",
+        "size": "18px",
+        "dark": true
+      }
+    },
+    {
+      "name": "phone has no document overflow",
+      "actual": true
+    },
+    {
+      "name": "current-route phone drawer closes first Escape and returns focus",
+      "actual": true
+    },
+    {
+      "name": "enlarged reduced-motion phone fits",
+      "actual": true
+    },
+    {
+      "name": "zoom equivalent fits",
+      "actual": true
+    }
+  ],
+  "errors": [],
+  "limits": [
+    "Standalone preferences-only verification completed: 6 checks and no browser exceptions; organization-menu keyboard activation remains unclassified in separate attempts."
+  ]
+}

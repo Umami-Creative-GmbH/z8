@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Gjeneroni të dhëna shembull për testim ose pastroni të dhënat ekzistuese lidhur me kohën",
+      "employeesLoadError": {
+        "description": "Të dhënat demo gjenerohen për punonjësit tuaj, prandaj gjenerimi nuk është i disponueshëm derisa ata të ngarkohen.",
+        "retrying": "Po riprovohet…",
+        "title": "Punonjësit nuk mund të ngarkoheshin"
+      },
       "errors": {
-        "generationFailed": "Gjenerimi dështoi. Ju lutemi provoni përsëri.",
-        "noOrganization": "Nuk është zgjedhur asnjë organizatë"
+        "generationFailed": "Gjenerimi dështoi. Ju lutemi provoni përsëri."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Të gjithë punonjësit ({count})",
+          "allCountUnavailable": "Të gjithë punonjësit",
           "label": "Punonjësit",
           "selectSpecific": "Zgjidhni punonjës specifikë"
         }

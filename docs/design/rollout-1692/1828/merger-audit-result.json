@@ -1,0 +1,1575 @@
+{
+  "head": "3c7bc534edeb355d862c3f38759444658863af20",
+  "parents": [
+    "383c64f06a86bf94b89b980f9ec1091c6040d554",
+    "028b4c0a026419567874190ce20b019180c7f304"
+  ],
+  "tree": "f8fa940f919eee987e3628e3cd8b3b108435703c",
+  "independentTree": "f8fa940f919eee987e3628e3cd8b3b108435703c",
+  "sourceChanged": [
+    "apps/webapp/src/app/[locale]/onboarding/notifications/actions.integration.test.ts",
+    "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+    "apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx"
+  ],
+  "preservation": {
+    "unaffectedPaths": 12750,
+    "unaffectedMismatch": [],
+    "priorRolloutPaths": 2502,
+    "priorRolloutMismatch": [],
+    "incomingPaths": 62,
+    "incomingMismatch": []
+  },
+  "ancestors": [
+    {
+      "issue": 1693,
+      "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "ancestor": true
+    },
+    {
+      "issue": 1694,
+      "commit": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "ancestor": true
+    },
+    {
+      "issue": 1695,
+      "commit": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "ancestor": true
+    },
+    {
+      "issue": 1853,
+      "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    },
+    {
+      "issue": 1700,
+      "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "ancestor": true
+    },
+    {
+      "issue": 1701,
+      "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "ancestor": true
+    },
+    {
+      "issue": 1820,
+      "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "ancestor": true
+    },
+    {
+      "issue": 1702,
+      "commit": "416c04fc1b65f798422ddeecb8413249b064f715",
+      "ancestor": true
+    },
+    {
+      "issue": 1703,
+      "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "ancestor": true
+    },
+    {
+      "issue": 1704,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1705,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1706,
+      "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "ancestor": true
+    },
+    {
+      "issue": 1707,
+      "commit": "6fa8147fae492939056a76e83e327e520d921ae1",
+      "ancestor": true
+    },
+    {
+      "issue": 1708,
+      "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "ancestor": true
+    },
+    {
+      "issue": 1709,
+      "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "ancestor": true
+    },
+    {
+      "issue": 1710,
+      "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "ancestor": true
+    },
+    {
+      "issue": 1711,
+      "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "ancestor": true
+    },
+    {
+      "issue": 1712,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1713,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1714,
+      "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "ancestor": true
+    },
+    {
+      "issue": 1715,
+      "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "ancestor": true
+    },
+    {
+      "issue": 1716,
+      "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "ancestor": true
+    },
+    {
+      "issue": 1717,
+      "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "ancestor": true
+    },
+    {
+      "issue": 1718,
+      "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "ancestor": true
+    },
+    {
+      "issue": 1719,
+      "commit": "a9b472e5864f386d881604605d593cffc189d61a",
+      "ancestor": true
+    },
+    {
+      "issue": 1821,
+      "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1822,
+      "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "ancestor": true
+    },
+    {
+      "issue": 1823,
+      "commit": "65b74963b69e9536af5e862199fa43a8583473cc",
+      "ancestor": true
+    },
+    {
+      "issue": 1824,
+      "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "ancestor": true
+    },
+    {
+      "issue": 1825,
+      "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "ancestor": true
+    },
+    {
+      "issue": 1826,
+      "commit": "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "ancestor": true
+    },
+    {
+      "issue": 1720,
+      "commit": "ced095089163e69b232c2bce96a40cba800186d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1721,
+      "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "ancestor": true
+    },
+    {
+      "issue": 1722,
+      "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "ancestor": true
+    },
+    {
+      "issue": 1723,
+      "commit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "ancestor": true
+    },
+    {
+      "issue": 1827,
+      "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "ancestor": true
+    },
+    {
+      "issue": 1724,
+      "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "ancestor": true
+    },
+    {
+      "issue": 1725,
+      "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "ancestor": true
+    },
+    {
+      "issue": 1726,
+      "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "ancestor": true
+    },
+    {
+      "issue": 1727,
+      "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "ancestor": true
+    },
+    {
+      "issue": 1745,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    }
+  ],
+  "inventory": {
+    "pageFiles": 172,
+    "aliases": [
+      {
+        "id": "R067",
+        "route": "/settings/approval-escalation",
+        "target": "/settings/approval-policies",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/approval-escalation/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R070",
+        "route": "/settings/audit-log",
+        "target": "/settings/audit-export",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/audit-log/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R079",
+        "route": "/settings/change-policies",
+        "target": "/settings/work-policies",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/change-policies/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R081",
+        "route": "/settings/clockodo-import",
+        "target": "/settings/import",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/clockodo-import/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R085",
+        "route": "/settings/coverage-rules",
+        "target": "/settings/shifts",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R089",
+        "route": "/settings/discord",
+        "target": "/settings/notification-channels",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/discord/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R091",
+        "route": "/settings/email-templates",
+        "target": "/settings/enterprise/email",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/email-templates/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R094",
+        "route": "/settings/employees/new",
+        "target": "/settings/organization",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/new/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R095",
+        "route": "/settings/enterprise",
+        "target": "/settings/enterprise/domains",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R098",
+        "route": "/settings/enterprise/audit-log",
+        "target": "/settings/audit-export",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/audit-log/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R099",
+        "route": "/settings/enterprise/branding",
+        "target": "/settings/enterprise/domains",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/branding/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R103",
+        "route": "/settings/enterprise/sso",
+        "target": "/settings/enterprise/identity-setup",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/sso/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R108",
+        "route": "/settings/holidays",
+        "target": "/settings/vacation",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/holidays/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R119",
+        "route": "/settings/organizations",
+        "target": "/settings/organization",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/organizations/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R135",
+        "route": "/settings/slack",
+        "target": "/settings/notification-channels",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/slack/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R139",
+        "route": "/settings/teams-notifications",
+        "target": "/settings/notification-channels",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/teams-notifications/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R141",
+        "route": "/settings/telegram",
+        "target": "/settings/notification-channels",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/telegram/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R146",
+        "route": "/settings/vehicle-use",
+        "target": "/settings/vehicles",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/vehicle-use/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      },
+      {
+        "id": "R148",
+        "route": "/settings/webhooks",
+        "target": "/settings/enterprise/api-keys",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/webhooks/page.tsx",
+        "ownerRoutePresent": true,
+        "sourcePreserved": true
+      }
+    ],
+    "ledgerRoutes": 153,
+    "ledgerNodes": 157,
+    "edges": 159
+  },
+  "dependencies": {
+    "directoryTypes": [
+      {
+        "path": "node_modules",
+        "symbolic": false,
+        "real": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules"
+      },
+      {
+        "path": "apps/webapp/node_modules",
+        "symbolic": false,
+        "real": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\node_modules"
+      }
+    ],
+    "leafLinks": 158,
+    "external": []
+  },
+  "artifacts": {
+    "images": [
+      {
+        "file": "docs/design/rollout-1692/1828/after-desktop-light.png",
+        "width": 1600,
+        "height": 1442,
+        "sha256": "9854f448f670852b9699534891e03a70575b91443b24c7e5e440199f34b40aa6",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/after-phone-dark-large.png",
+        "width": 390,
+        "height": 1976,
+        "sha256": "0704082af306fbfc0659bf61099a88818213447ec0cfcaaee37e287e960d7f11",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/after-phone-light.png",
+        "width": 390,
+        "height": 1638,
+        "sha256": "2e636935586342087698d8c06d948ad42de4d0a80ffbef628a635622f08e33fd",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/after-wide-dark-large.png",
+        "width": 2400,
+        "height": 1621,
+        "sha256": "f3766c0b134da38be9887a4e78877309f7562aca4299b16e81f343f360a92063",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/before-desktop-light.png",
+        "width": 1600,
+        "height": 1282,
+        "sha256": "a40745d6ae62b35dcf4be351d3b98ba27477b32606e538dd76f6faa4b78de9c3",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/before-phone-dark-large.png",
+        "width": 390,
+        "height": 1616,
+        "sha256": "ad3d1124d288bc80589f6302073018c7e5831b664c9f260e919d221d2af9fcf2",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/before-phone-light.png",
+        "width": 390,
+        "height": 1382,
+        "sha256": "b360cf0fbbc1167393b10fe6f34d12e94e7c3a11234142326889d7f4a566164d",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/before-wide-dark-large.png",
+        "width": 2400,
+        "height": 1440,
+        "sha256": "9af0a3edd4881d868262c4b2db90611de5f5bd7ed171468881d6350f2c4c2d59",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/after-desktop-light.png",
+        "width": 1600,
+        "height": 1392,
+        "sha256": "288512222416624cd4e3e1f5e97295d8ce82eae9d1fe3a8a02c992c9879e90b8",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/after-phone-dark-large.png",
+        "width": 390,
+        "height": 1920,
+        "sha256": "3b4653b214d34d42fd3d9a3bd4fb60417f7f66226c91836cf717450bd99150b6",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/after-phone-light.png",
+        "width": 390,
+        "height": 1588,
+        "sha256": "d323a98b3ef1b816fb4247fe7d9a7fbdf10b0241f0567d52a16c2001cbb54002",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/after-wide-dark-large.png",
+        "width": 2400,
+        "height": 1565,
+        "sha256": "d98a7a10bb3502b17f1c53d17c3dd978183231b2d572f6934a9c28d074abc8df",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/state-actual-browser-permission-result.png",
+        "width": 1600,
+        "height": 1372,
+        "sha256": "80e187ccd543a4a2a5a28de5edb394708f0054d8b321b0f2fe83dc7993e66aac",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/state-default-browser-permission.png",
+        "width": 1600,
+        "height": 1340,
+        "sha256": "aaf454f797f94f1f5dda4556d567d91d81dbfd678da75c681fa7ca07876b0ccd",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/state-save-pending.png",
+        "width": 1600,
+        "height": 1432,
+        "sha256": "34d16b882927ba492f5aa811fb549c9741859c7cbda7cce04a6e0c67acf5beac",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/state-save-transport-refused.png",
+        "width": 1600,
+        "height": 1432,
+        "sha256": "8e0bb2cc9115f54af3a449bb272d34125ce3946e40a5dcd1f3791f5245cb58a2",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/state-session-refused.png",
+        "width": 1600,
+        "height": 1432,
+        "sha256": "fb4d80eb9769a90b1fd84c519a970ff1f183476738863b0ea549d9c05eb061d4",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/state-actual-browser-permission-result.png",
+        "width": 1600,
+        "height": 1422,
+        "sha256": "b4320b1b6db1f2b65e56026d5029626be6b1001a2df1f0c0e233f7e4704d9262",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/state-default-browser-permission.png",
+        "width": 1600,
+        "height": 1390,
+        "sha256": "48349081642b6a77373948b4ca56d5dee6fc9654fa6d002a64a8fb9a48510516",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/state-save-pending.png",
+        "width": 1600,
+        "height": 1482,
+        "sha256": "8f50ae48613ee945af81ce40cea53c1225ac23e738ea9a21aa63704d7e2c0ef7",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/state-save-transport-refused.png",
+        "width": 1600,
+        "height": 1482,
+        "sha256": "53c75f7a3052d9fddbd6d2be08509fa664689cc8a9a0f847f356f6ce8782347d",
+        "fullDecoded": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/state-session-refused.png",
+        "width": 1600,
+        "height": 1482,
+        "sha256": "62da6a2c5c2291c40fee607c03f3790fe9c1ef93c5b1bdbb740cb2b9033a4398",
+        "fullDecoded": true
+      }
+    ],
+    "jsonFiles": [
+      {
+        "file": "docs/design/rollout-1692/1828/actions-runtime.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/after-runtime.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/artifact-verification.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/attempts-and-limits.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/before-runtime.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/cleanup.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/comparison-source.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/doctor-final.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/doctor-refined.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/doctor.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/green-expanded.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/green-initial.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/actions-runtime.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-presentation/after-runtime.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/initial-red.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/next-runtime.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/page-final-fixed.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/page-final.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/page-refined.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/permission-red.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/postgres-initial.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/postgres.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/race-initial.json",
+        "bom": false,
+        "endsLF": false
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/source-and-counts.json",
+        "bom": false,
+        "endsLF": true
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/unit-final.json",
+        "bom": false,
+        "endsLF": false
+      }
+    ],
+    "scripts": [
+      {
+        "file": "docs/design/rollout-1692/1828/capture-before.mjs",
+        "status": 0,
+        "stderr": ""
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/check-integration.mjs",
+        "status": 0,
+        "stderr": ""
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/next.mjs",
+        "status": 0,
+        "stderr": ""
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/start.mjs",
+        "status": 0,
+        "stderr": ""
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/verify-actions.mjs",
+        "status": 0,
+        "stderr": ""
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/verify-artifacts.mjs",
+        "status": 0,
+        "stderr": ""
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/verify-evidence.mjs",
+        "status": 0,
+        "stderr": ""
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/verify-permission-regression.mjs",
+        "status": 0,
+        "stderr": ""
+      },
+      {
+        "file": "docs/design/rollout-1692/1828/verify-runtime.mjs",
+        "status": 0,
+        "stderr": ""
+      }
+    ],
+    "links": [
+      {
+        "link": "1828/initial-red.json",
+        "exists": true
+      },
+      {
+        "link": "1828/green-initial.json",
+        "exists": true
+      },
+      {
+        "link": "1828/permission-red.json",
+        "exists": true
+      },
+      {
+        "link": "1828/verify-permission-regression.mjs",
+        "exists": true
+      },
+      {
+        "link": "1828/unit-final.json",
+        "exists": true
+      },
+      {
+        "link": "1828/postgres.json",
+        "exists": true
+      },
+      {
+        "link": "1828/postgres-initial.json",
+        "exists": true
+      },
+      {
+        "link": "1828/check-integration.mjs",
+        "exists": true
+      },
+      {
+        "link": "1828/actions-runtime.json",
+        "exists": true
+      },
+      {
+        "link": "1828/verify-actions.mjs",
+        "exists": true
+      },
+      {
+        "link": "1828/before-runtime.json",
+        "exists": true
+      },
+      {
+        "link": "1828/after-runtime.json",
+        "exists": true
+      },
+      {
+        "link": "1828/verify-runtime.mjs",
+        "exists": true
+      },
+      {
+        "link": "1828/comparison-source.json",
+        "exists": true
+      },
+      {
+        "link": "1828/initial-presentation/after-runtime.json",
+        "exists": true
+      },
+      {
+        "link": "1828/next-runtime.json",
+        "exists": true
+      },
+      {
+        "link": "1828/next.mjs",
+        "exists": true
+      },
+      {
+        "link": "1828/types-final.txt",
+        "exists": true
+      },
+      {
+        "link": "1828/biome-final.txt",
+        "exists": true
+      },
+      {
+        "link": "1828/doctor-final.json",
+        "exists": true
+      },
+      {
+        "link": "1828/source-and-counts.json",
+        "exists": true
+      },
+      {
+        "link": "1828/artifact-verification.json",
+        "exists": true
+      },
+      {
+        "link": "1828/attempts-and-limits.json",
+        "exists": true
+      },
+      {
+        "link": "1828/cleanup.json",
+        "exists": true
+      }
+    ],
+    "pins": [
+      {
+        "source": "docs/design/rollout-1692/1828/actions-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+        "matches": [
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+        "matches": [
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx",
+        "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+        "matches": [
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts",
+        "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+        "matches": [
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+        "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "matches": [
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/after-runtime.json",
+        "file": "apps/webapp/src/hooks/use-push-notifications.ts",
+        "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+        "matches": [
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/glass-panels.css",
+        "hash": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+        "matches": [
+          {
+            "hash": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "c7f94968e0bb9bb90f119697c8481538af985455935baf6f0ae5029d41a5344e",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/after-runtime.json",
+        "file": "apps/webapp/src/components/onboarding/progress-indicator.tsx",
+        "hash": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+        "matches": [
+          {
+            "hash": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "decb2f3a4e86a77937f17750c5ced15c3ec6c2ecd0c89841680a9908cd7837b0",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/after-runtime.json",
+        "file": "apps/webapp/next.config.ts",
+        "hash": "cdf64ec0e2a1b6b58d81b60d1c4405b2c5d033e86456bffd07bad2a4815383e1",
+        "matches": []
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/before-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "hash": "8c570eb2be3e83839a995a2a77ac8e934047d2fec17fabc4cb6bf8b8d479d440",
+        "matches": [
+          {
+            "hash": "8c570eb2be3e83839a995a2a77ac8e934047d2fec17fabc4cb6bf8b8d479d440",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "canonical git blob",
+            "gitBlob": "6261bb5cbe300bac255724f0b41333e306b26c54"
+          },
+          {
+            "hash": "8c570eb2be3e83839a995a2a77ac8e934047d2fec17fabc4cb6bf8b8d479d440",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "canonical git blob",
+            "gitBlob": "6261bb5cbe300bac255724f0b41333e306b26c54"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/before-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx",
+        "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+        "matches": [
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/before-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts",
+        "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+        "matches": [
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/before-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+        "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "matches": [
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/before-runtime.json",
+        "file": "apps/webapp/src/hooks/use-push-notifications.ts",
+        "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+        "matches": [
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/initial-presentation/actions-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "hash": "f5ef2c5360b3f33ec84ad8679527e0c6ed12e16e02464b8f538143c6b4813cf4",
+        "matches": []
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/initial-presentation/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "hash": "e87fb164ff6872395f7ccc2a58c0cb3305a6ee4235594f714f65b9afda07ed8b",
+        "matches": []
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/initial-presentation/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx",
+        "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+        "matches": [
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "58bde8e8473a1509a2b0a12d3397495a5d527c7715f2a6cc1125c6d79a23ea33",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/initial-presentation/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/actions.ts",
+        "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+        "matches": [
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "f21162c1e4d65d61a0193df0cef9afc58cb6031b6d70a36c51124d114e223045",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/initial-presentation/after-runtime.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/layout.tsx",
+        "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+        "matches": [
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "a5d901a093e193545ef886806ff14346847d314c5255b3a8d5737c46414a6829",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/initial-presentation/after-runtime.json",
+        "file": "apps/webapp/src/hooks/use-push-notifications.ts",
+        "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+        "matches": [
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "383c64f06a86bf94b89b980f9ec1091c6040d554",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "64abc784d717cdb86000f2768b5c03c2ebe1f43417d7126a0d1f341ddeefec6b",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/source-and-counts.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page-client.tsx",
+        "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+        "recordedGitBlob": "d1f95844fd0f8a0df1420a43e8f5ca49c742893d",
+        "actualGitBlob": "d1f95844fd0f8a0df1420a43e8f5ca49c742893d",
+        "matches": [
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "8ccb132b530850ff33e53b935a86bcf2c8f7d456d4ddac629c1e6775471d5eb5",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/source-and-counts.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page.test.tsx",
+        "hash": "1c271dd4fa97499cb54139a1b27eab86cfc162c0bfcea422b2a5cb24e4af9443",
+        "recordedGitBlob": "848d98e8ca9147c649b4c901f3642fbe660aacae",
+        "actualGitBlob": "848d98e8ca9147c649b4c901f3642fbe660aacae",
+        "matches": [
+          {
+            "hash": "1c271dd4fa97499cb54139a1b27eab86cfc162c0bfcea422b2a5cb24e4af9443",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "1c271dd4fa97499cb54139a1b27eab86cfc162c0bfcea422b2a5cb24e4af9443",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "1c271dd4fa97499cb54139a1b27eab86cfc162c0bfcea422b2a5cb24e4af9443",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "1c271dd4fa97499cb54139a1b27eab86cfc162c0bfcea422b2a5cb24e4af9443",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      },
+      {
+        "source": "docs/design/rollout-1692/1828/source-and-counts.json",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/actions.integration.test.ts",
+        "hash": "d58607a5ab0200d0961e082cad76b1e179753818f8b7bacd8925315d661b2e53",
+        "recordedGitBlob": "2653a246c20b25463d47eda07b76e26f4a425342",
+        "actualGitBlob": "2653a246c20b25463d47eda07b76e26f4a425342",
+        "matches": [
+          {
+            "hash": "d58607a5ab0200d0961e082cad76b1e179753818f8b7bacd8925315d661b2e53",
+            "commit": "HEAD",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "d58607a5ab0200d0961e082cad76b1e179753818f8b7bacd8925315d661b2e53",
+            "commit": "028b4c0a026419567874190ce20b019180c7f304",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "d58607a5ab0200d0961e082cad76b1e179753818f8b7bacd8925315d661b2e53",
+            "commit": "898e02935a740f4c47c9b10e28551498779f4eea",
+            "kind": "CRLF checkout reconstruction"
+          },
+          {
+            "hash": "d58607a5ab0200d0961e082cad76b1e179753818f8b7bacd8925315d661b2e53",
+            "commit": "working tree",
+            "kind": "actual raw bytes"
+          }
+        ]
+      }
+    ]
+  },
+  "checks": {
+    "testCounts": [
+      {
+        "name": "unit-exact",
+        "files": 7,
+        "tests": 83,
+        "passed": 83,
+        "failed": 0
+      },
+      {
+        "name": "unit-compat",
+        "files": 42,
+        "tests": 347,
+        "passed": 347,
+        "failed": 0
+      }
+    ],
+    "uniquePhysicalFiles": 42,
+    "uniqueCases": 347,
+    "failed": [],
+    "adversarial": {
+      "tests": 1,
+      "failed": 1,
+      "assertions": [
+        {
+          "ancestorTitles": [],
+          "fullName": "keeps one safe task heading while the authenticated account is loading",
+          "status": "failed",
+          "title": "keeps one safe task heading while the authenticated account is loading",
+          "duration": 24.976999999999975,
+          "failureMessages": [
+            "AssertionError: expected [] to have a length of 1 but got +0\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1861:20)\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/chai@6.3.0/node_modules/chai/index.js:1737:25)\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1828-audit/arrival-heading.test.tsx:15:53\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20"
+          ],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ]
+    }
+  },
+  "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+  "status": ""
+}

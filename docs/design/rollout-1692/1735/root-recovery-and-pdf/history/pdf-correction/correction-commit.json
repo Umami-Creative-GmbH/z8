@@ -1,0 +1,14 @@
+{
+  "source": "c7eab9013b6fa39be7e6d258a7ca639e73befac8",
+  "parent": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "branch": "fix/1735-compiled-pdf",
+  "sourcePaths": [
+    "apps/webapp/src/lib/reports/exporters/pdf-exporter.tsx",
+    "apps/webapp/src/lib/reports/exporters/pdf-exporter.compiled.test.ts"
+  ],
+  "unit": {
+    "cases": 294,
+    "files": 52
+  },
+  "verifiedCommit": null
+}

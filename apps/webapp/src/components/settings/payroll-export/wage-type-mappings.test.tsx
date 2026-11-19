@@ -268,6 +268,38 @@ describe("WageTypeMappings", () => {
 		);
 	});
 
+	it("names the mapping it deletes and keeps the dialog open with the reason on failure", async () => {
+		deleteMappingActionMock.mockResolvedValueOnce({
+			success: false,
+			error: "Mapping is used by an export",
+		});
+		render(<WageTypeMappings hasMappingFormat />);
+		await screen.findByText("First category");
+
+		fireEvent.click(
+			screen.getAllByRole("button", { name: "Delete mapping for {name}" })[0],
+		);
+		expect(
+			(await screen.findByRole("alertdialog")).textContent,
+		).toContain('Delete the wage type mapping for "{name}"?');
+		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+		await waitFor(() =>
+			expect(deleteMappingActionMock).toHaveBeenCalledWith({
+				mappingId: "mapping-1",
+			}),
+		);
+		expect((await screen.findByRole("alert")).textContent).toBeTruthy();
+		expect(screen.getByRole("alertdialog")).toBeTruthy();
+
+		deleteMappingActionMock.mockResolvedValueOnce({ success: true });
+		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+		await waitFor(() =>
+			expect(screen.queryByRole("alertdialog")).toBeNull(),
+		);
+		expect(deleteMappingActionMock).toHaveBeenCalledTimes(2);
+	});
+
 	it("uses distinct translated text for the subtitle and format description labels", async () => {
 		render(<WageTypeMappings hasMappingFormat />);
 		await screen.findByText("First category");

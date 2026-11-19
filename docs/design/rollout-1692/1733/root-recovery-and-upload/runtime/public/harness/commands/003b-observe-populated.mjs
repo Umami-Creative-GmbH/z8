@@ -1,0 +1,1 @@
+return{main:(await dom()).main,files:(await db.query('select file_name,match_kind,matched_employee_ids,included,failure from payslip_batch_file where organization_id=$1 and batch_id=$2 order by file_name',[org,initialId])).rows};

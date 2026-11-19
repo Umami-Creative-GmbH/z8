@@ -1,0 +1,14 @@
+{
+  "allInitialPayloadHashesVerified": true,
+  "allSafeJsonParsed": true,
+  "credentialLiteralScanPassed": true,
+  "credentialValuesPrinted": false,
+  "pngPayloads": 0,
+  "pngDecode": "N/A",
+  "scriptsIncluded": false,
+  "privateInventoriesIncluded": false,
+  "leaseReleased": true,
+  "zeroOwnedResources": true,
+  "verifiedCommit": null,
+  "checkedAt": "2026-11-18T03:36:44.970Z"
+}

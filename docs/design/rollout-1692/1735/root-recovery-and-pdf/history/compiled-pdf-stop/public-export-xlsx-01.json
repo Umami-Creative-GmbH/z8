@@ -1,0 +1,24 @@
+{
+  "kind": "safe metadata for actual completed browser file and actual parser output; no source data recomputation",
+  "rawParsedSha256": "0433f2be0a70543136ba7d23e4b4704e7a37f61d9e04fed5702804c20ad5a886",
+  "format": "xlsx",
+  "completed": true,
+  "bytes": 10602,
+  "sha256": "0970b2037ef7a98cec6157a584952604b8ebe5af35a900099940def02c6addc9",
+  "actualSuggestedFilename": "report-person-0-1794867910383.xlsx",
+  "archivalByteIdenticalCopy": "exports/current-admin-2025.xlsx",
+  "parsedEmployee": "Person 0",
+  "parsedPeriod": "Jan 1, 2025 - Dec 31, 2025",
+  "parser": "ExcelJS Workbook.xlsx.load applied to actual emitted bytes",
+  "actualSheets": [
+    "Summary",
+    "Work Hours",
+    "Absences",
+    "Home Office (Tax)"
+  ],
+  "canonicalParity": "canonical-export-controls-02.json",
+  "limits": [
+    "Own fixture custom fields and hourly earnings absent; no live custom-field redaction claim",
+    "Original byte-identical synthetic file includes its generated example.test employee email; no real contacts or credentials"
+  ]
+}

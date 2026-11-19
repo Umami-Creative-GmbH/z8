@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "issue": 1773,
+  "node": "R148",
+  "status": "bounded-live-pass-owner-unpassed",
+  "verifiedCommit": null,
+  "frozenCommit": "1d1f08c7e597325ab056aa69dc91d98549438858",
+  "appTree": "0ada8178304098b103daa1284f9158cdf59384d8",
+  "runtime": {
+    "uniquePassed": 12,
+    "failed": 0,
+    "assertionPayloads": 15,
+    "duplicateEnglishPayloads": 3,
+    "controllerCommands": 20,
+    "harnessErrors": 5,
+    "newUnitCases": 0,
+    "newPostgresSuiteCases": 0,
+    "criticalProductFindings": 0
+  },
+  "accepted": [
+    "Saved English with a German request reaches the English canonical route; the ready Webhooks tab survives reload.",
+    "Saved German with a German request reaches the German canonical route; the ready Webhooks tab survives reload.",
+    "Queries preserve ordered keep=[one,two], empty=, decoded encoded=/work?a=1&b=2 and exactly one tab=webhooks.",
+    "Sequential requests without query retain only tab=webhooks. The English same-locale control passes.",
+    "Normal public language changes persist in scoped readbacks; English is restored normally.",
+    "A fresh manager login is denied the canonical developer route; scoped role readback shows no role or grant change.",
+    "Final connected Next diagnostics report zero compilation, configuration or session errors and no visible Issue badge."
+  ],
+  "owner": {
+    "passed": false,
+    "reason": "Visible ordinary Create Organization entry absent; no neworg/owner command, hiddenonboarding, role/grant/policy/tier/SQL workaround attempted."
+  },
+  "privacy": {
+    "transportEcho": "Absent boolean recorded for query/document receipts; not part of alias pass predicate, so observed rather than a separately enforced assertion.",
+    "readback": "Readonlyexactfixtureactor+org joins user_settings/user/employee/member for locale/membership booleans/counts. No credential/session/key/signing rows or values exposed; no SQL writes.",
+    "capture": "Three current-only main-area crops, no historical pairs or fabricated masks; phone dev/ReactQuery indicators retained."
+  },
+  "intake": {
+    "files": 28,
+    "bytes": 289313,
+    "jsonParsed": 8,
+    "jsSyntaxChecks": 14,
+    "powershellSyntaxChecks": 2,
+    "pngDecodedAndVisuallyReviewed": 3,
+    "indexSha256": "9628666fcb0df0e8be075580621753b8799942ffe4ed6b87eca87604f68b71a9",
+    "handoffSha256": "e5b3bf0bbe5721a81a491819e568a1c2a24d692b4f2236179197384021efb1a0",
+    "independentAuditSha256": "6dff0004ef1a5936548df6c9a48b9fc946947e5151ea8750e2e747548c798b7e",
+    "queryReceiptReconciliationAtRoot": true
+  },
+  "preservation": {
+    "producerTrackedFiles": 18505,
+    "producerDependencyEntries": 189632,
+    "producerLinks": 158,
+    "producerTrackedIndexConfigDependenciesLicenseLockUnchanged": true,
+    "qualification": "Full excluded inventories and resource probes are producer receipts, not newly re-certified by SAFE intake."
+  },
+  "release": {
+    "lease": "released",
+    "ownership": false,
+    "reportedProcesses": 0,
+    "reportedListeners": 0,
+    "reportedContainers": 0,
+    "reportedBrowserContexts": 0,
+    "reportedControllers": 0,
+    "reportedProfiles": 0
+  },
+  "qualifications": [
+    "Five controller errors are startup/navigation/hydration/menu timing; none established a product defect.",
+    "Initial sandbox engine-store discovery fallback12.21 performed no package/fixture operation; pinned12.16.1 verified under normal access and both dependency guards used.",
+    "Three English assertion payloads repeated unnecessarily and are counted once; current-only crop refreshed without overwriting historical evidence.",
+    "NativeReact/axe, owner metadata/signing/rotation, live authority/account/org races, delivery/provider/build/catalog/device/zoom/global matrices remain unpassed."
+  ],
+  "privateSafeIndex": ".tmp/1773-locale-runtime-20261117d/SAFE/SAFE-index.json"
+}

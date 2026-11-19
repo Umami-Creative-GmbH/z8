@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * Job Status Hook with SWR Deduplication
+ * Job status polling with shared TanStack Query ownership.
  *
  * Provides real-time job status polling with automatic request deduplication.
  * Multiple components can watch the same job without duplicate API calls.
  *
- * Rule: client-swr-dedup
  */
 
-import { useEffect, useRef } from "react";
-import useSWR from "swr";
+import { type QueryClient, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useEffectEvent, useRef } from "react";
+import { useSession } from "@/lib/auth-client";
 
 export interface JobStatus {
 	state: "waiting" | "active" | "completed" | "failed" | "delayed" | "unknown";
@@ -23,8 +23,6 @@ export interface JobStatus {
 	};
 	error?: string;
 }
-
-type JobStatusEntry = [jobId: string, status: JobStatus];
 
 interface UseJobStatusOptions {
 	/**
@@ -48,8 +46,11 @@ interface UseJobStatusOptions {
 	onError?: (error: string) => void;
 }
 
-const fetcher = async (url: string): Promise<JobStatus> => {
-	const res = await fetch(url);
+const fetcher = async (jobId: string, signal: AbortSignal): Promise<JobStatus> => {
+	const res = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/status`, {
+		signal,
+		cache: "no-store",
+	});
 	if (!res.ok) {
 		if (res.status === 404) {
 			return { state: "unknown", progress: 0 };
@@ -58,6 +59,45 @@ const fetcher = async (url: string): Promise<JobStatus> => {
 	}
 	return res.json();
 };
+
+function jobStatusKey(userId: string | null, organizationId: string | null, jobId: string) {
+	return ["job-status", userId, organizationId, jobId] as const;
+}
+
+function subscribeToJobStatus(
+	client: QueryClient,
+	key: ReturnType<typeof jobStatusKey>,
+	notify: (status: JobStatus | undefined) => void,
+) {
+	const cache = client.getQueryCache();
+	const watchedQuery = cache.find({ queryKey: key, exact: true });
+	notify(client.getQueryData<JobStatus>(key));
+	return cache.subscribe((event) => {
+		if (event.type === "updated" && event.query.queryHash === watchedQuery?.queryHash) {
+			notify(client.getQueryData<JobStatus>(key));
+		}
+	});
+}
+
+function jobStatusQuery(
+	userId: string | null,
+	organizationId: string | null,
+	jobId: string,
+	enabled: boolean,
+	refreshInterval: number,
+) {
+	return {
+		queryKey: jobStatusKey(userId, organizationId, jobId),
+		queryFn: ({ signal }: { signal: AbortSignal }) => fetcher(jobId, signal),
+		enabled: enabled && Boolean(userId) && Boolean(jobId),
+		staleTime: 1000,
+		refetchOnWindowFocus: true,
+		refetchInterval: (query: { state: { data: JobStatus | undefined } }) =>
+			query.state.data?.state === "completed" || query.state.data?.state === "failed"
+				? false
+				: refreshInterval || false,
+	};
+}
 
 /**
  * Hook to watch job status with automatic deduplication
@@ -89,74 +129,55 @@ export function useJobStatus(
 	mutate: () => Promise<JobStatus | undefined>;
 } {
 	const { refreshInterval = 2000, enabled = true, onSuccess, onError } = options;
+	const { data: session, isPending } = useSession();
+	const userId = session?.user.id ?? null;
+	const organizationId = session?.session.activeOrganizationId ?? null;
+	const identity = JSON.stringify([userId, organizationId, jobId]);
 
-	const onSuccessRef = useRef(onSuccess);
-	const onErrorRef = useRef(onError);
 	const terminalNotificationsRef = useRef<{
-		jobId: string | null | undefined;
+		identity: string;
 		outcomes: Set<"success" | "failure">;
-	}>({ jobId, outcomes: new Set() });
+	}>({ identity, outcomes: new Set() });
 
-	useEffect(() => {
-		onSuccessRef.current = onSuccess;
-		onErrorRef.current = onError;
-	}, [onSuccess, onError]);
-
-	useEffect(() => {
-		terminalNotificationsRef.current = { jobId, outcomes: new Set() };
-	}, [jobId]);
-
-	const shouldFetch = enabled && !!jobId;
-
-	const { data, error, isLoading, isValidating, mutate } = useSWR<JobStatus>(
-		shouldFetch ? `/api/jobs/${jobId}/status` : null,
-		fetcher,
-		{
-			// SWR deduplication: multiple hooks watching same job share one request
-			dedupingInterval: 1000,
-			// Stop polling when job is in terminal state
-			refreshInterval: (data: JobStatus | undefined) => {
-				if (!data) return refreshInterval;
-				if (data.state === "completed" || data.state === "failed") {
-					return 0; // Stop polling
-				}
-				return refreshInterval;
-			},
-			// Revalidate on focus to catch updates user might have missed
-			revalidateOnFocus: true,
-			// Handle completion/failure callbacks
-			onSuccess: (data: JobStatus) => {
-				if (terminalNotificationsRef.current.jobId !== jobId) {
-					terminalNotificationsRef.current = { jobId, outcomes: new Set() };
-				}
-				if (data.state === "completed" && data.result) {
-					if (data.result.success === false) {
-						if (!terminalNotificationsRef.current.outcomes.has("failure")) {
-							terminalNotificationsRef.current.outcomes.add("failure");
-							onErrorRef.current?.("Job failed");
-						}
-					} else {
-						if (!terminalNotificationsRef.current.outcomes.has("success")) {
-							terminalNotificationsRef.current.outcomes.add("success");
-							onSuccessRef.current?.(data.result);
-						}
-					}
-				} else if (data.state === "failed") {
-					if (!terminalNotificationsRef.current.outcomes.has("failure")) {
-						terminalNotificationsRef.current.outcomes.add("failure");
-						onErrorRef.current?.("Job failed");
-					}
-				}
-			},
-		},
+	const shouldFetch = enabled && Boolean(jobId) && Boolean(userId) && !isPending;
+	const query = useQuery(
+		jobStatusQuery(userId, organizationId, jobId ?? "", shouldFetch, refreshInterval),
 	);
+	const data = shouldFetch ? query.data : undefined;
+	const client = useQueryClient();
+	const notifyTerminal = useEffectEvent((sourceIdentity: string, status: JobStatus | undefined) => {
+		if (!shouldFetch || sourceIdentity !== identity) return;
+		const notifications = terminalNotificationsRef.current.outcomes;
+		if (
+			status?.state === "failed" ||
+			(status?.state === "completed" && status.result?.success === false)
+		) {
+			if (notifications.has("failure")) return;
+			notifications.add("failure");
+			onError?.("Job failed");
+		} else if (status?.state === "completed" && status.result && !notifications.has("success")) {
+			notifications.add("success");
+			onSuccess?.(status.result);
+		}
+	});
+	useEffect(() => {
+		if (terminalNotificationsRef.current.identity !== identity) {
+			terminalNotificationsRef.current = { identity, outcomes: new Set() };
+		}
+		if (!shouldFetch || !jobId) return;
+
+		return subscribeToJobStatus(client, jobStatusKey(userId, organizationId, jobId), (status) =>
+			notifyTerminal(identity, status),
+		);
+	}, [client, identity, jobId, organizationId, shouldFetch, userId]);
 
 	return {
 		status: data,
-		isLoading,
-		isValidating,
-		error,
-		mutate,
+		isLoading: shouldFetch && query.isPending,
+		isValidating: shouldFetch && query.isFetching,
+		error: query.error ?? undefined,
+		mutate: async () =>
+			shouldFetch ? (await query.refetch({ cancelRefetch: false })).data : undefined,
 	};
 }
 
@@ -175,37 +196,20 @@ export function useJobStatuses(
 	pendingCount: number;
 } {
 	const { refreshInterval = 2000, enabled = true } = options;
-	const shouldFetch = enabled && jobIds.length > 0;
-
-	const { data: results = [], isLoading } = useSWR<JobStatusEntry[]>(
-		shouldFetch ? ["job-statuses", ...jobIds] : null,
-		async ([, ...ids]: [string, ...string[]]) => {
-			const settledStatuses = await Promise.allSettled(
-				ids.map((id) => fetcher(`/api/jobs/${id}/status`)),
-			);
-
-			return settledStatuses.flatMap((result, index): JobStatusEntry[] => {
-				if (result.status !== "fulfilled") {
-					return [];
-				}
-
-				return [[ids[index], result.value]];
-			});
-		},
-		{
-			dedupingInterval: 1000,
-			refreshInterval: (data: JobStatusEntry[] | undefined) => {
-				if (!data) return refreshInterval;
-				if (
-					data.length === jobIds.length &&
-					data.every(([, status]) => status.state === "completed" || status.state === "failed")
-				) {
-					return 0;
-				}
-				return refreshInterval;
-			},
-		},
+	const { data: session, isPending } = useSession();
+	const userId = session?.user.id ?? null;
+	const organizationId = session?.session.activeOrganizationId ?? null;
+	const shouldFetch = enabled && Boolean(userId) && !isPending;
+	// Share each job with single-job observers too; a failed sibling retains its own retry state.
+	const queries = useQueries({
+		queries: jobIds.map((jobId) =>
+			jobStatusQuery(userId, organizationId, jobId, shouldFetch, refreshInterval),
+		),
+	});
+	const results = queries.flatMap((query, index): Array<[string, JobStatus]> =>
+		shouldFetch && query.data ? [[jobIds[index], query.data]] : [],
 	);
+	const isLoading = shouldFetch && queries.some((query) => query.isPending);
 
 	const { statuses, completedCount, failedCount, pendingCount } = results.reduce(
 		(accumulator, [jobId, status]) => {

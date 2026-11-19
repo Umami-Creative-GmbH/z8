@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	IconAlertTriangle,
 	IconBriefcase,
 	IconCalendarTime,
 	IconDatabase,
@@ -17,16 +18,8 @@ import { toast } from "sonner";
 import { switchBillableTime } from "@/app/[locale]/(app)/settings/billable-time/actions";
 import { toggleOrganizationFeature } from "@/app/[locale]/(app)/settings/organization/actions";
 import { BillableCurrencyForm } from "@/components/billable-time/billable-currency-form";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -125,8 +118,6 @@ function useOrganizationFeatures({
 	// owner-or-admin rule, under their own names.
 	const canSwitchDrivingLicence = canEditPersonnelFiles;
 	const canEditEquipment = canEditPersonnelFiles;
-	const [confirmPersonnelFilesOff, setConfirmPersonnelFilesOff] = useState(false);
-	const [confirmEquipmentOff, setConfirmEquipmentOff] = useState(false);
 
 	const applyFeatures = (values: Partial<OrganizationFeatureState>) => {
 		for (const [feature, enabled] of Object.entries(values) as [OrganizationFeature, boolean][]) {
@@ -135,14 +126,18 @@ function useOrganizationFeatures({
 		setOrgSettings(values);
 	};
 
-	const handleToggleFeature = async (feature: OrganizationFeature, enabled: boolean) => {
+	/** Switches one feature; resolves to the worded failure, or null once it is saved. */
+	const toggleFeature = async (
+		feature: OrganizationFeature,
+		enabled: boolean,
+	): Promise<string | null> => {
 		const allowed =
 			feature === "personnelFilesEnabled"
 				? canEditPersonnelFiles
 				: feature === "equipmentEnabled"
 					? canEditEquipment
 					: canEdit;
-		if (!allowed) return;
+		if (!allowed) return null;
 
 		// Billable Time needs projects: the server switches it off with them (#897).
 		const cascadesBillableTime = feature === "projectsEnabled" && !enabled;
@@ -153,9 +148,9 @@ function useOrganizationFeatures({
 				: { [feature]: enabled },
 		);
 
-		const result = await toggleOrganizationFeature({ feature, enabled });
+		const result = await toggleOrganizationFeature({ feature, enabled }).catch(() => null);
 
-		if (result.success) {
+		if (result?.success) {
 			toast.success(
 				t(
 					enabled
@@ -167,17 +162,36 @@ function useOrganizationFeatures({
 			startTransition(() => {
 				refresh();
 			});
-		} else {
-			applyFeatures(
-				cascadesBillableTime
-					? { [feature]: !enabled, billableTimeEnabled: previousBillableTime }
-					: { [feature]: !enabled },
-			);
-			toast.error(
-				result.error || t("organization.features.update-failed", "Failed to update feature"),
-			);
+			return null;
 		}
+		applyFeatures(
+			cascadesBillableTime
+				? { [feature]: !enabled, billableTimeEnabled: previousBillableTime }
+				: { [feature]: !enabled },
+		);
+		return result?.error || t("organization.features.update-failed", "Failed to update feature");
 	};
+
+	const handleToggleFeature = async (feature: OrganizationFeature, enabled: boolean) => {
+		const failure = await toggleFeature(feature, enabled);
+		if (failure) toast.error(failure);
+	};
+
+	// Switching a feature off behind a confirmation keeps the dialog open until the
+	// change is saved and shows a failure inside it.
+	const featureOff = useConfirmedAction<"personnelFilesEnabled" | "equipmentEnabled">();
+	const confirmFeatureOff = () =>
+		void featureOff.confirm(
+			async (feature) => {
+				const failure = await toggleFeature(feature, false);
+				if (failure) throw new Error(failure);
+			},
+			(failure) =>
+				describeFailure(
+					failure,
+					t("organization.features.update-failed", "Failed to update feature"),
+				),
+		);
 
 	const saveBillableTime = async (enabled: boolean, currency: BillableCurrency | null) => {
 		if (!canEdit) return false;
@@ -224,13 +238,17 @@ function useOrganizationFeatures({
 		currencyDialogOpen,
 		setCurrencyDialogOpen,
 		saveBillableTime,
-		setConfirmPersonnelFilesOff,
 		canEditPersonnelFiles,
 		canSwitchDrivingLicence,
-		confirmPersonnelFilesOff,
 		canEditEquipment,
-		confirmEquipmentOff,
-		setConfirmEquipmentOff,
+		featureOff,
+		confirmFeatureOff,
+		setConfirmPersonnelFilesOff: (open: boolean) => {
+			if (open) featureOff.request("personnelFilesEnabled");
+		},
+		setConfirmEquipmentOff: (open: boolean) => {
+			if (open) featureOff.request("equipmentEnabled");
+		},
 	};
 }
 
@@ -254,12 +272,12 @@ function OrganizationFeaturesCardContent({
 		currencyDialogOpen,
 		setCurrencyDialogOpen,
 		saveBillableTime,
-		setConfirmPersonnelFilesOff,
 		canEditPersonnelFiles,
 		canSwitchDrivingLicence,
-		confirmPersonnelFilesOff,
 		canEditEquipment,
-		confirmEquipmentOff,
+		featureOff,
+		confirmFeatureOff,
+		setConfirmPersonnelFilesOff,
 		setConfirmEquipmentOff,
 	} = useOrganizationFeatures({
 		settingsAccess,
@@ -269,7 +287,9 @@ function OrganizationFeaturesCardContent({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("organization.features.title", "Features")}</CardTitle>
+				<CardTitle>
+					<h2>{t("organization.features.title", "Features")}</h2>
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"organization.features.description",
@@ -386,32 +406,23 @@ function OrganizationFeaturesCardContent({
 					canEditPersonnelFiles={canEditPersonnelFiles}
 				/>
 
-				<AlertDialog open={confirmPersonnelFilesOff} onOpenChange={setConfirmPersonnelFilesOff}>
-					<AlertDialogContent>
-						<AlertDialogHeader>
-							<AlertDialogTitle>
-								{t(
-									"organization.features.personnel-files-disable-title",
-									"Turn off personnel files?",
-								)}
-							</AlertDialogTitle>
-							<AlertDialogDescription>
-								{t(
-									"organization.features.personnel-files-disable-description",
-									"Personnel file pages and downloads are hidden for everyone. Documents stay stored and still count for retention. Turning personnel files back on restores everything.",
-								)}
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						<AlertDialogFooter>
-							<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-							<AlertDialogAction
-								onClick={() => void handleToggleFeature("personnelFilesEnabled", false)}
-							>
-								{t("organization.features.personnel-files-disable-confirm", "Turn off")}
-							</AlertDialogAction>
-						</AlertDialogFooter>
-					</AlertDialogContent>
-				</AlertDialog>
+				<ConfirmActionDialog
+					open={featureOff.open && featureOff.target === "personnelFilesEnabled"}
+					onOpenChange={featureOff.onOpenChange}
+					variant="default"
+					title={t(
+						"organization.features.personnel-files-disable-title",
+						"Turn off personnel files?",
+					)}
+					description={t(
+						"organization.features.personnel-files-disable-description",
+						"Personnel file pages and downloads are hidden for everyone. Documents stay stored and still count for retention. Turning personnel files back on restores everything.",
+					)}
+					confirmLabel={t("organization.features.personnel-files-disable-confirm", "Turn off")}
+					isPending={featureOff.isPending}
+					error={featureOff.error}
+					onConfirm={confirmFeatureOff}
+				/>
 
 				{/* Equipment Tracking Feature (#1572): owners and admins */}
 				<EquipmentFeature
@@ -423,36 +434,33 @@ function OrganizationFeaturesCardContent({
 					canEditEquipment={canEditEquipment}
 				/>
 
-				<AlertDialog open={confirmEquipmentOff} onOpenChange={setConfirmEquipmentOff}>
-					<AlertDialogContent>
-						<AlertDialogHeader>
-							<AlertDialogTitle>
-								{t("organization.features.equipment-disable-title", "Turn off equipment?")}
-							</AlertDialogTitle>
-							<AlertDialogDescription>
-								{t(
-									"organization.features.equipment-disable-description",
-									"Equipment pages are hidden for everyone and return reminders stop. All equipment records, outstanding returns and record retention stay in place. Turning equipment back on restores everything.",
-								)}
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						{equipmentOutstandingReturns > 0 && (
-							<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
+				<ConfirmActionDialog
+					open={featureOff.open && featureOff.target === "equipmentEnabled"}
+					onOpenChange={featureOff.onOpenChange}
+					variant="default"
+					title={t("organization.features.equipment-disable-title", "Turn off equipment?")}
+					description={t(
+						"organization.features.equipment-disable-description",
+						"Equipment pages are hidden for everyone and return reminders stop. All equipment records, outstanding returns and record retention stay in place. Turning equipment back on restores everything.",
+					)}
+					confirmLabel={t("organization.features.equipment-disable-confirm", "Turn off")}
+					isPending={featureOff.isPending}
+					error={featureOff.error}
+					onConfirm={confirmFeatureOff}
+				>
+					{equipmentOutstandingReturns > 0 && (
+						<div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+							<IconAlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+							<p>
 								{t(
 									"organization.features.equipment-disable-outstanding",
 									"{count, plural, one {# return is still outstanding. It stays recorded, but nobody can record its receipt while equipment is off.} other {# returns are still outstanding. They stay recorded, but nobody can record receipts while equipment is off.}}",
 									{ count: equipmentOutstandingReturns },
 								)}
 							</p>
-						)}
-						<AlertDialogFooter>
-							<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-							<AlertDialogAction onClick={() => void handleToggleFeature("equipmentEnabled", false)}>
-								{t("organization.features.equipment-disable-confirm", "Turn off")}
-							</AlertDialogAction>
-						</AlertDialogFooter>
-					</AlertDialogContent>
-				</AlertDialog>
+						</div>
+					)}
+				</ConfirmActionDialog>
 
 				{/* Driving Licence Control (#1421): owners and admins, the feature's only activation */}
 				{drivingLicence && (
@@ -497,10 +505,10 @@ function ShiftFeature({
 	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
 >) {
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-start gap-3">
+		<div className="flex items-center justify-between gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-					<IconCalendarTime className="size-5 text-primary" />
+					<IconCalendarTime aria-hidden="true" className="size-5 text-primary" />
 				</div>
 				<div className="space-y-1">
 					<Label
@@ -517,8 +525,8 @@ function ShiftFeature({
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+			<div className="flex shrink-0 items-center gap-2">
+				{isPending && (<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />)}
 				<Switch
 					id="shifts-toggle"
 					checked={features.shiftsEnabled}
@@ -542,10 +550,10 @@ function ProjectFeature({
 	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
 >) {
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-start gap-3">
+		<div className="flex items-center justify-between gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-					<IconBriefcase className="size-5 text-primary" />
+					<IconBriefcase aria-hidden="true" className="size-5 text-primary" />
 				</div>
 				<div className="space-y-1">
 					<Label
@@ -562,8 +570,8 @@ function ProjectFeature({
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+			<div className="flex shrink-0 items-center gap-2">
+				{isPending && (<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />)}
 				<Switch
 					id="projects-toggle"
 					checked={features.projectsEnabled}
@@ -588,8 +596,8 @@ function BillableTimeFeature({
 	"t" | "features" | "billableCurrency" | "isPending" | "handleToggleBillableTime" | "canEdit"
 >) {
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-start gap-3">
+		<div className="flex items-center justify-between gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
 					<IconReceipt aria-hidden="true" className="size-5 text-primary" />
 				</div>
@@ -623,8 +631,8 @@ function BillableTimeFeature({
 					)}
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+			<div className="flex shrink-0 items-center gap-2">
+				{isPending && (<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />)}
 				<Switch
 					id="billable-time-toggle"
 					checked={features.billableTimeEnabled && features.projectsEnabled}
@@ -648,10 +656,10 @@ function SurchargeFeature({
 	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
 >) {
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-start gap-3">
+		<div className="flex items-center justify-between gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-					<IconPercentage className="size-5 text-primary" />
+					<IconPercentage aria-hidden="true" className="size-5 text-primary" />
 				</div>
 				<div className="space-y-1">
 					<Label
@@ -668,8 +676,8 @@ function SurchargeFeature({
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+			<div className="flex shrink-0 items-center gap-2">
+				{isPending && (<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />)}
 				<Switch
 					id="surcharges-toggle"
 					checked={features.surchargesEnabled}
@@ -693,8 +701,8 @@ function WorksCouncilFeature({
 	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
 >) {
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-start gap-3">
+		<div className="flex items-center justify-between gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
 					<IconGavel aria-hidden="true" className="size-5 text-primary" />
 				</div>
@@ -713,8 +721,8 @@ function WorksCouncilFeature({
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+			<div className="flex shrink-0 items-center gap-2">
+				{isPending && (<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />)}
 				<Switch
 					id="works-council-toggle"
 					checked={features.worksCouncilEnabled}
@@ -738,10 +746,10 @@ function DemoFeature({
 	"t" | "isPending" | "features" | "handleToggleFeature" | "canEdit"
 >) {
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-start gap-3">
+		<div className="flex items-center justify-between gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-					<IconDatabase className="size-5 text-primary" />
+					<IconDatabase aria-hidden="true" className="size-5 text-primary" />
 				</div>
 				<div className="space-y-1">
 					<Label
@@ -758,8 +766,8 @@ function DemoFeature({
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+			<div className="flex shrink-0 items-center gap-2">
+				{isPending && (<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />)}
 				<Switch
 					id="demo-data-toggle"
 					checked={features.demoDataEnabled}
@@ -789,8 +797,8 @@ function PersonnelFileFeature({
 	| "canEditPersonnelFiles"
 >) {
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-start gap-3">
+		<div className="flex items-center justify-between gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
 					<IconFileText aria-hidden="true" className="size-5 text-primary" />
 				</div>
@@ -809,8 +817,8 @@ function PersonnelFileFeature({
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+			<div className="flex shrink-0 items-center gap-2">
+				{isPending && (<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />)}
 				<Switch
 					id="personnel-files-toggle"
 					checked={features.personnelFilesEnabled}
@@ -846,8 +854,8 @@ function EquipmentFeature({
 	| "canEditEquipment"
 >) {
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-start gap-3">
+		<div className="flex items-center justify-between gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<div className="mt-0.5 rounded-lg bg-primary/10 p-2">
 					<IconPackage aria-hidden="true" className="size-5 text-primary" />
 				</div>
@@ -866,8 +874,8 @@ function EquipmentFeature({
 					</p>
 				</div>
 			</div>
-			<div className="flex items-center gap-2">
-				{isPending && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+			<div className="flex shrink-0 items-center gap-2">
+				{isPending && (<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />)}
 				<Switch
 					id="equipment-toggle"
 					checked={features.equipmentEnabled}

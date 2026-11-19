@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Gerar dados de exemplo para teste ou limpar dados existentes relacionados ao tempo",
+      "employeesLoadError": {
+        "description": "Os dados de demonstração são gerados para os seus colaboradores, portanto, a geração não estará disponível até que eles sejam carregados.",
+        "retrying": "Tentando novamente…",
+        "title": "Não foi possível carregar os colaboradores"
+      },
       "errors": {
-        "generationFailed": "A geração falhou. Por favor, tente novamente.",
-        "noOrganization": "Nenhuma organização selecionada"
+        "generationFailed": "A geração falhou. Por favor, tente novamente."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Todos os funcionários ({count})",
+          "allCountUnavailable": "Todos os colaboradores",
           "label": "Funcionários",
           "selectSpecific": "Selecionar funcionários específicos"
         }

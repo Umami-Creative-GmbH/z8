@@ -6,7 +6,6 @@ import {
 	IconLoader2,
 	IconPlus,
 	IconQrcode,
-	IconTrash,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -18,16 +17,9 @@ import {
 	getInviteBaseUrl,
 	listInviteCodes,
 } from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,12 +61,12 @@ interface InviteCodeManagementProps {
 	settingsAccess: SettingsAccess | null;
 }
 
+// Semantic status tints; the badge always carries the status label as text.
 const statusColors = {
-	active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-	paused:
-		"bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-	expired: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-	archived: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+	active: "border-success/40 bg-success/10 text-success",
+	paused: "border-warning/40 bg-warning/10 text-warning",
+	expired: "border-destructive/40 bg-destructive/10 text-destructive",
+	archived: "",
 };
 
 function formatUsage(code: InviteCodeWithRelations) {
@@ -125,10 +117,7 @@ function InviteCodeMobileCard({
 							aria-label={t("settings.inviteCodes.copyCode", "Copy code")}
 						>
 							{copiedCode === code.code ? (
-								<IconCheck
-									className="size-4 text-green-600"
-									aria-hidden="true"
-								/>
+								<IconCheck className="size-4 text-success" aria-hidden="true" />
 							) : (
 								<IconCopy className="size-4" aria-hidden="true" />
 							)}
@@ -278,9 +267,9 @@ function InviteCodeDesktopTable({
 												)}
 											>
 												{copiedCode === code.code ? (
-													<IconCheck className="size-4 text-green-600" />
+													<IconCheck className="size-4 text-success" aria-hidden="true" />
 												) : (
-													<IconCopy className="size-4" />
+													<IconCopy className="size-4" aria-hidden="true" />
 												)}
 											</Button>
 										</TooltipTrigger>
@@ -379,10 +368,12 @@ function InviteCodeDialogStack({
 	editingCode,
 	qrDialogCode,
 	deleteDialogCode,
+	deleteOpen,
 	deletePending,
+	deleteError,
 	onCloseEditor,
 	onCloseQr,
-	onCloseDelete,
+	onDeleteOpenChange,
 	onDelete,
 	t,
 }: {
@@ -393,11 +384,13 @@ function InviteCodeDialogStack({
 	editingCode: InviteCodeWithRelations | null;
 	qrDialogCode: InviteCodeWithRelations | null;
 	deleteDialogCode: InviteCodeWithRelations | null;
+	deleteOpen: boolean;
 	deletePending: boolean;
+	deleteError: string | null;
 	onCloseEditor: () => void;
 	onCloseQr: () => void;
-	onCloseDelete: () => void;
-	onDelete: (id: string) => void;
+	onDeleteOpenChange: (open: boolean) => void;
+	onDelete: () => void;
 	t: ReturnType<typeof useTranslate>["t"];
 }) {
 	return (
@@ -415,41 +408,19 @@ function InviteCodeDialogStack({
 				open={!!qrDialogCode}
 				onOpenChange={(open) => !open && onCloseQr()}
 			/>
-			<AlertDialog
-				open={!!deleteDialogCode}
-				onOpenChange={(open) => !open && onCloseDelete()}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.inviteCodes.deleteTitle", "Delete Invite Code")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.inviteCodes.deleteDescription",
-								'Are you sure you want to delete the invite code "{code}"? This action cannot be undone.',
-								{ code: deleteDialogCode?.code || "" },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => deleteDialogCode && onDelete(deleteDialogCode.id)}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{deletePending ? (
-								<IconLoader2 className="size-4 animate-spin mr-2" />
-							) : (
-								<IconTrash className="size-4 mr-2" />
-							)}
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				open={deleteOpen}
+				onOpenChange={onDeleteOpenChange}
+				title={t("settings.inviteCodes.deleteTitle", "Delete Invite Code")}
+				description={t(
+					"settings.inviteCodes.deleteDescription",
+					'Are you sure you want to delete the invite code "{code}"? This action cannot be undone.',
+					{ code: deleteDialogCode?.code || "" },
+				)}
+				isDeleting={deletePending}
+				error={deleteError}
+				onConfirm={onDelete}
+			/>
 		</>
 	);
 }
@@ -467,8 +438,7 @@ export function InviteCodeManagement({
 		useState<InviteCodeWithRelations | null>(null);
 	const [qrDialogCode, setQrDialogCode] =
 		useState<InviteCodeWithRelations | null>(null);
-	const [deleteDialogCode, setDeleteDialogCode] =
-		useState<InviteCodeWithRelations | null>(null);
+	const deletion = useConfirmedAction<InviteCodeWithRelations>();
 	const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
 	const canManage =
@@ -509,11 +479,8 @@ export function InviteCodeManagement({
 				queryKey: queryKeys.inviteCodes.list(organizationId),
 			});
 			toast.success(t("settings.inviteCodes.deleted", "Invite code deleted"));
-			setDeleteDialogCode(null);
 		},
-		onError: (error) => {
-			toast.error(error.message);
-		},
+		// A failure is shown inside the confirmation dialog, which stays open for a retry.
 	});
 
 	const handleCopyCode = async (code: string) => {
@@ -585,7 +552,7 @@ export function InviteCodeManagement({
 							onCopyUrl={handleCopyCode}
 							onOpenQr={setQrDialogCode}
 							onEdit={setEditingCode}
-							onDelete={setDeleteDialogCode}
+							onDelete={deletion.request}
 							t={t}
 						/>
 						<div className="space-y-3 md:hidden">
@@ -598,7 +565,7 @@ export function InviteCodeManagement({
 									onCopyUrl={handleCopyCode}
 									onOpenQr={setQrDialogCode}
 									onEdit={setEditingCode}
-									onDelete={setDeleteDialogCode}
+									onDelete={deletion.request}
 									urlActionsDisabled={urlActionsDisabled}
 									formatDate={formatDate}
 									formatUsage={formatUsage}
@@ -617,15 +584,26 @@ export function InviteCodeManagement({
 				createDialogOpen={createDialogOpen}
 				editingCode={editingCode}
 				qrDialogCode={qrDialogCode}
-				deleteDialogCode={deleteDialogCode}
-				deletePending={deleteMutation.isPending}
+				deleteDialogCode={deletion.target}
+				deleteOpen={deletion.open}
+				deletePending={deletion.isPending}
+				deleteError={deletion.error}
 				onCloseEditor={() => {
 					setCreateDialogOpen(false);
 					setEditingCode(null);
 				}}
 				onCloseQr={() => setQrDialogCode(null)}
-				onCloseDelete={() => setDeleteDialogCode(null)}
-				onDelete={(id) => deleteMutation.mutate(id)}
+				onDeleteOpenChange={deletion.onOpenChange}
+				onDelete={() =>
+					void deletion.confirm(
+						(code) => deleteMutation.mutateAsync(code.id),
+						(failure) =>
+							describeFailure(
+								failure,
+								t("settings.inviteCodes.deleteFailed", "Failed to delete invite code"),
+							),
+					)
+				}
 				t={t}
 			/>
 		</Card>

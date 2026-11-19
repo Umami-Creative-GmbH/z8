@@ -1,0 +1,37 @@
+{
+  "status": "released",
+  "ownership": false,
+  "owner": "1692-1747-current-runtime-v1",
+  "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "scope": "Exclusive root package/runtime/process ownership for bounded current #1747 verification only. All tracked source/docs, Git/index, config, dependencies, license and prior archives immutable. Own new ignored scripts, fresh canonical fixture, ephemeral profile and generated Next cache permitted.",
+  "rootWillNotMutateUntilReleased": true,
+  "fixture": "One fresh canonical disposable generation; exact label/name/PID/path/creation/parent/listener cleanup only.",
+  "artifactDirectory": ".tmp/1747-current-runtime-20261118a",
+  "verifiedCommit": null,
+  "ownedLiveResources": 0,
+  "activatedAt": "2026-11-18T03:23:41.069Z",
+  "releasedAt": "2026-11-18T03:36:07.818Z",
+  "release": "ALL checkout/index/Git/package/runtime/process ownership released",
+  "operationalOwnership": {
+    "checkout": false,
+    "index": false,
+    "git": false,
+    "package": false,
+    "runtime": false,
+    "process": false,
+    "browser": false,
+    "containers": false,
+    "listeners": false,
+    "profiles": false
+  },
+  "resources": {
+    "ownedBrowserContexts": 0,
+    "exactFixtureAndRuntimePortsListening": 0,
+    "exactOwnedContainersRemaining": 0,
+    "ownedProcesses": 0,
+    "exactOwnedContainersVerifiedAbsent": 3,
+    "zeroExactOwnedResources": true,
+    "ownedProfiles": 0
+  }
+}

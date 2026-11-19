@@ -1,0 +1,17 @@
+{
+  "head": "668b49e553dddb50de6e8976213ef8bd2b1ba2d3",
+  "tree": "86acb3e4959c122cf9f7e54edc9036528f9eb7c2",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "trackedClean": true,
+  "trackedBytesPreserved": 17406,
+  "indexExact": true,
+  "configsPreserved": 129,
+  "linksPreserved": 158,
+  "physicalParentsPreserved": 3,
+  "licensePreserved": true,
+  "verifiedAnchors": 59,
+  "baselinePreserved": true,
+  "routesPreserved": 172,
+  "aliasesPreserved": 19,
+  "protectedEvidence": "Every tracked path has the original raw SHA256, including #1738, #1735, personnel proofs and all archived reports. Ignored peer namespaces were not modified, executed or cleaned."
+}

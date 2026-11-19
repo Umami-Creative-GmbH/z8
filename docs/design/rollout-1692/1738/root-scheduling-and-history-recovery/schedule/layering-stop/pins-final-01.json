@@ -1,0 +1,1310 @@
+{
+  "candidate": "9afe127e43f686675da1ed025b87eaf8dfd9ca63",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "clean": true,
+  "headTree": "c1eda714b575afbd4d17d015aceaa781e4b14182",
+  "correctionTree": "7d9c402e4d75c90e8e200dd7e2398feb5bc635f9",
+  "expectedCorrectionTree": "7d9c402e4d75c90e8e200dd7e2398feb5bc635f9",
+  "appTree": "a5a773676d18f560e0e237be9b62993f909c98d5",
+  "appUnchangedFromCorrection": true,
+  "anchors": [
+    {
+      "issue": 1693,
+      "commit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5",
+      "ancestor": true
+    },
+    {
+      "issue": 1694,
+      "commit": "382b8f5be837dad724d3a54274d3050b0104881f",
+      "ancestor": true
+    },
+    {
+      "issue": 1695,
+      "commit": "bfacad421ffe77f50729ea5895c546698ef28383",
+      "ancestor": true
+    },
+    {
+      "issue": 1853,
+      "commit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211",
+      "ancestor": true
+    },
+    {
+      "issue": 1700,
+      "commit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde",
+      "ancestor": true
+    },
+    {
+      "issue": 1701,
+      "commit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc",
+      "ancestor": true
+    },
+    {
+      "issue": 1820,
+      "commit": "996074d9fcbbaeb956a1b7316f914052d8c24733",
+      "ancestor": true
+    },
+    {
+      "issue": 1702,
+      "commit": "416c04fc1b65f798422ddeecb8413249b064f715",
+      "ancestor": true
+    },
+    {
+      "issue": 1703,
+      "commit": "2bc30e88f63d9db3d547353f49077db0c0ee7805",
+      "ancestor": true
+    },
+    {
+      "issue": 1704,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1705,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    },
+    {
+      "issue": 1706,
+      "commit": "62f92f0447a35b30b9806bca0a480f03a8f3c896",
+      "ancestor": true
+    },
+    {
+      "issue": 1707,
+      "commit": "6fa8147fae492939056a76e83e327e520d921ae1",
+      "ancestor": true
+    },
+    {
+      "issue": 1708,
+      "commit": "3f86b1d7e17025e89f314638a042aa1eed378ed1",
+      "ancestor": true
+    },
+    {
+      "issue": 1709,
+      "commit": "97ecd83ca05ad1bab75fee84beed57f23e74c007",
+      "ancestor": true
+    },
+    {
+      "issue": 1710,
+      "commit": "273320a9376b4deb60b57ba3882fc17b37ae308a",
+      "ancestor": true
+    },
+    {
+      "issue": 1711,
+      "commit": "3a0274c800d218689dbe3f235184e40ab15ebbeb",
+      "ancestor": true
+    },
+    {
+      "issue": 1712,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1713,
+      "commit": "b9abdb440e847dadf1067cea54a7279c729fb607",
+      "ancestor": true
+    },
+    {
+      "issue": 1714,
+      "commit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10",
+      "ancestor": true
+    },
+    {
+      "issue": 1715,
+      "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+      "ancestor": true
+    },
+    {
+      "issue": 1716,
+      "commit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741",
+      "ancestor": true
+    },
+    {
+      "issue": 1717,
+      "commit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784",
+      "ancestor": true
+    },
+    {
+      "issue": 1718,
+      "commit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd",
+      "ancestor": true
+    },
+    {
+      "issue": 1719,
+      "commit": "a9b472e5864f386d881604605d593cffc189d61a",
+      "ancestor": true
+    },
+    {
+      "issue": 1821,
+      "commit": "f53de8d531fa49b70afe72a722ce3588a477d0d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1822,
+      "commit": "984436c44a2c44bbe99e22fb23c4dbb108534e83",
+      "ancestor": true
+    },
+    {
+      "issue": 1823,
+      "commit": "65b74963b69e9536af5e862199fa43a8583473cc",
+      "ancestor": true
+    },
+    {
+      "issue": 1824,
+      "commit": "fe2bed7cdcd268b59727f04fd8496730cdd21179",
+      "ancestor": true
+    },
+    {
+      "issue": 1825,
+      "commit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c",
+      "ancestor": true
+    },
+    {
+      "issue": 1826,
+      "commit": "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "ancestor": true
+    },
+    {
+      "issue": 1720,
+      "commit": "ced095089163e69b232c2bce96a40cba800186d8",
+      "ancestor": true
+    },
+    {
+      "issue": 1721,
+      "commit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a",
+      "ancestor": true
+    },
+    {
+      "issue": 1722,
+      "commit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27",
+      "ancestor": true
+    },
+    {
+      "issue": 1723,
+      "commit": "f15492e4bc5bee60293b22797d42eacdd8296190",
+      "ancestor": true
+    },
+    {
+      "issue": 1827,
+      "commit": "e873311bc1c8d33fdc7240c51b97ca54d347341a",
+      "ancestor": true
+    },
+    {
+      "issue": 1828,
+      "commit": "752c500833e751df9988a3b2434d240124b89a51",
+      "ancestor": true
+    },
+    {
+      "issue": 1829,
+      "commit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b",
+      "ancestor": true
+    },
+    {
+      "issue": 1830,
+      "commit": "63a5e6ff43e6541473a927da0a651686bfd33afe",
+      "ancestor": true
+    },
+    {
+      "issue": 1831,
+      "commit": "059ddd58efe3e68c9f9c369a8ff83919e6143069",
+      "ancestor": true
+    },
+    {
+      "issue": 1832,
+      "commit": "5646e7b320376d2605b80e231b6b828f4b35f670",
+      "ancestor": true
+    },
+    {
+      "issue": 1833,
+      "commit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+      "ancestor": true
+    },
+    {
+      "issue": 1834,
+      "commit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914",
+      "ancestor": true
+    },
+    {
+      "issue": 1835,
+      "commit": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "ancestor": true
+    },
+    {
+      "issue": 1724,
+      "commit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7",
+      "ancestor": true
+    },
+    {
+      "issue": 1725,
+      "commit": "807fcc6311ec8f0511c9eea401c144b4da070da3",
+      "ancestor": true
+    },
+    {
+      "issue": 1726,
+      "commit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a",
+      "ancestor": true
+    },
+    {
+      "issue": 1727,
+      "commit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510",
+      "ancestor": true
+    },
+    {
+      "issue": 1728,
+      "commit": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7",
+      "ancestor": true
+    },
+    {
+      "issue": 1729,
+      "commit": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9",
+      "ancestor": true
+    },
+    {
+      "issue": 1730,
+      "commit": "8e3876c39725b7a8ef5218439766395401d64b80",
+      "ancestor": true
+    },
+    {
+      "issue": 1731,
+      "commit": "b1e9a95c02374118deb9bba789f3aa8291b5e932",
+      "ancestor": true
+    },
+    {
+      "issue": 1732,
+      "commit": "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "ancestor": true
+    },
+    {
+      "issue": 1733,
+      "commit": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+      "ancestor": true
+    },
+    {
+      "issue": 1734,
+      "commit": "9f2bd756833e85a33a97db496487afbc992c69ae",
+      "ancestor": true
+    },
+    {
+      "issue": 1735,
+      "commit": "769a2e7844ed1ff43d6a36145869b50cee921db6",
+      "ancestor": true
+    },
+    {
+      "issue": 1736,
+      "commit": "c9a56648c81206527d1935bfcb46e0a959a4157f",
+      "ancestor": true
+    },
+    {
+      "issue": 1737,
+      "commit": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+      "ancestor": true
+    },
+    {
+      "issue": 1745,
+      "commit": "f9769a74353ac6670c4a36401029faf805b2a899",
+      "ancestor": true
+    }
+  ],
+  "baselineAncestor": true,
+  "source": [
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/coverage-heatmap-overlay.tsx",
+      "bytes": 8905,
+      "sha256": "bcaa9df8227dab32fd0b814dd927f20cf8ff592b53ce87628fed7b62360a573a",
+      "gitBlob": "a74fba45ece957e19e9b74c380cba3437fb99174",
+      "finalSha256": "bcaa9df8227dab32fd0b814dd927f20cf8ff592b53ce87628fed7b62360a573a",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+      "bytes": 3962,
+      "sha256": "6d6355a7ec428be6e51159ec6d3e3415ce37c4d6480fe4a16324c506d39417f5",
+      "gitBlob": "a94f81ab64b6624afb664d5a78cca781a127752f",
+      "finalSha256": "6d6355a7ec428be6e51159ec6d3e3415ce37c4d6480fe4a16324c506d39417f5",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "bytes": 14294,
+      "sha256": "fe0f64e33984017d31da551960f44ac8875fe60ffe28dac108eecdfa7e232a48",
+      "gitBlob": "46702517352e3bd91e7d9e95e02daf0891eb199c",
+      "finalSha256": "fe0f64e33984017d31da551960f44ac8875fe60ffe28dac108eecdfa7e232a48",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+      "bytes": 1912,
+      "sha256": "f6b7fcfb92366cb56eb52f41c970caa7c20b12a76feb4ef1275261b9930eb5ea",
+      "gitBlob": "a7354dd343c9951797682318e6e0a0518ec03338",
+      "finalSha256": "f6b7fcfb92366cb56eb52f41c970caa7c20b12a76feb4ef1275261b9930eb5ea",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+      "bytes": 5588,
+      "sha256": "181fceda5d4e47f454e2dc881a250129d21b30c637306994455f91811849b851",
+      "gitBlob": "1d35178af1764619c777e5b4f2382367deec4526",
+      "finalSha256": "181fceda5d4e47f454e2dc881a250129d21b30c637306994455f91811849b851",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler-coverage.test.tsx",
+      "bytes": 13193,
+      "sha256": "e0cb3ba1509abd8865604ae6580860b68164b6ecff1e9f29c29ad000a6e9f0c4",
+      "gitBlob": "cc2ad64127cfb479f482eadd130c9498e9c098da",
+      "finalSha256": "e0cb3ba1509abd8865604ae6580860b68164b6ecff1e9f29c29ad000a6e9f0c4",
+      "unchanged": true
+    }
+  ],
+  "frozen": [
+    {
+      "path": ".npmrc",
+      "bytes": 105,
+      "sha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "gitBlob": "901e422dfa4838df9e44e94aff5f9804c71f54bf",
+      "finalSha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "unchanged": true
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "bytes": 1294,
+      "sha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "gitBlob": "cd85e43b66add6695d43a3f175b30e9073d0d8c4",
+      "finalSha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "unchanged": true
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "bytes": 633,
+      "sha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "gitBlob": "123792ce31a9d6fdada4546a5d96042d8af60d7c",
+      "finalSha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "unchanged": true
+    },
+    {
+      "path": "apps/desktop/tsconfig.node.json",
+      "bytes": 223,
+      "sha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "gitBlob": "42872c59f5b01c9155864572bc2fbd5833a7406c",
+      "finalSha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "unchanged": true
+    },
+    {
+      "path": "apps/desktop/vitest.config.ts",
+      "bytes": 156,
+      "sha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "gitBlob": "0f9a3209e3538b13d8009d113d3735303cdb97b6",
+      "finalSha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "unchanged": true
+    },
+    {
+      "path": "apps/docs/next.config.mjs",
+      "bytes": 207,
+      "sha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "gitBlob": "457dcf29d20b23969c6b6daac0100b66a2d7fde2",
+      "finalSha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "unchanged": true
+    },
+    {
+      "path": "apps/docs/package.json",
+      "bytes": 745,
+      "sha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "gitBlob": "3aeb05dace6b34ecfb5d99bc2427143c28862e0b",
+      "finalSha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "unchanged": true
+    },
+    {
+      "path": "apps/docs/tsconfig.json",
+      "bytes": 854,
+      "sha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "gitBlob": "a235ed0aa4cd034f5f85b407eaeb67c11b712928",
+      "finalSha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "unchanged": true
+    },
+    {
+      "path": "apps/marketing/next.config.ts",
+      "bytes": 280,
+      "sha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "gitBlob": "18969479290931565660edaf6f8a99c5f1198d7d",
+      "finalSha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "unchanged": true
+    },
+    {
+      "path": "apps/marketing/package.json",
+      "bytes": 816,
+      "sha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "gitBlob": "2727137574d71cc268f4d7a58ba524acedaa2cce",
+      "finalSha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "unchanged": true
+    },
+    {
+      "path": "apps/marketing/tsconfig.json",
+      "bytes": 654,
+      "sha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "gitBlob": "3180b6b614e1902ddfb14c322b7edfb34b244cd6",
+      "finalSha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "unchanged": true
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "bytes": 1375,
+      "sha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "gitBlob": "142e458a0bf96ec328fe7e711db62b4d93f89b1b",
+      "finalSha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "unchanged": true
+    },
+    {
+      "path": "apps/mobile/tsconfig.json",
+      "bytes": 371,
+      "sha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "gitBlob": "f93aa9f526f3be3cce9b373324a73d9581d945d8",
+      "finalSha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "bytes": 4308,
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e",
+      "finalSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "gitBlob": "ac01ea7c0d42b1ac318c84e223609397bb406e9e",
+      "finalSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.json",
+      "bytes": 687,
+      "sha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "gitBlob": "ee5b75c0f4a1e53ab7120d871d8bb0cd6d5fa7f8",
+      "finalSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "bytes": 213,
+      "sha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "gitBlob": "e1ff03407fa993bf86febced177e215913454df1",
+      "finalSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "bytes": 252,
+      "sha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "gitBlob": "8bf7f766f1e6385391c06810d2127373c3f1457b",
+      "finalSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "bytes": 453,
+      "sha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "gitBlob": "70cb54aa1232d668bccf8230215e4dfc2d699c45",
+      "finalSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "unchanged": true
+    },
+    {
+      "path": "apps/webapp/vitest.config.ts",
+      "bytes": 1840,
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "gitBlob": "1cab2ecdaea301721039932e3ac72f63c35c0fe4",
+      "finalSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/db-seed/package.json",
+      "bytes": 401,
+      "sha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "gitBlob": "97e91091024ec5d7af90983658b27d15e5e1ef6c",
+      "finalSha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-lock.yaml",
+      "bytes": 34617,
+      "sha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "gitBlob": "7cfb4ba913dfe0910477a6916bee08b65cdf1774",
+      "finalSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/db-seed/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBlob": "3e42bba732734f87c407d35526bade9425a45775",
+      "finalSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/migration/package.json",
+      "bytes": 272,
+      "sha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "gitBlob": "cfde57d378dd1e0d414aefef67f18e2beef7e912",
+      "finalSha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/migration/pnpm-lock.yaml",
+      "bytes": 22958,
+      "sha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "gitBlob": "f890e49c7a68ed9c513e769f4d3d41bf4207c8a0",
+      "finalSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/migration/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBlob": "3e42bba732734f87c407d35526bade9425a45775",
+      "finalSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/worker/package.json",
+      "bytes": 1534,
+      "sha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "gitBlob": "dd58f83c1e42c7824cd4bda4f7e36b94f998bc42",
+      "finalSha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/worker/pnpm-lock.yaml",
+      "bytes": 188668,
+      "sha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "gitBlob": "471e295e875774ee3a99f5b0625aa89ce9e18589",
+      "finalSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "unchanged": true
+    },
+    {
+      "path": "docker/targets/worker/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBlob": "3e42bba732734f87c407d35526bade9425a45775",
+      "finalSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1705/biome-baseline-root.json",
+      "bytes": 1158,
+      "sha256": "568e8d1bbe3393d7a2c551f9a739a4ac35dca1d8efd94287129197a68c9964f1",
+      "gitBlob": "1394230d58b68b269429493800e8257c2cb0ac1f",
+      "finalSha256": "568e8d1bbe3393d7a2c551f9a739a4ac35dca1d8efd94287129197a68c9964f1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1705/biome-baseline.json",
+      "bytes": 1040,
+      "sha256": "1d0a93a76a5a65690b10f704228d48059901c2f111b258dc7a3692826698b61c",
+      "gitBlob": "f89efe8590ba01b6d082860a931dbab3f59f2093",
+      "finalSha256": "1d0a93a76a5a65690b10f704228d48059901c2f111b258dc7a3692826698b61c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1705/check-biome-baseline.mjs",
+      "bytes": 2473,
+      "sha256": "978a4e6457cd24cb1dc483898d3ac12c6d6eb21fdcada54f5ac14becd4b629c8",
+      "gitBlob": "1b04caf658f9d6da9ac46773510327972db30481",
+      "finalSha256": "978a4e6457cd24cb1dc483898d3ac12c6d6eb21fdcada54f5ac14becd4b629c8",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1724/root-load-recovery/biome-commands.json",
+      "bytes": 6132,
+      "sha256": "3c7d5e77f5cf6fe56d7173db712bd9dfa9b50123e558026a78dc94821464f6c1",
+      "gitBlob": "95dfb434ddcfdb98bb371bd35213d07af6c5b384",
+      "finalSha256": "3c7d5e77f5cf6fe56d7173db712bd9dfa9b50123e558026a78dc94821464f6c1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1725/root-scope-arrivals/biome-commands.json",
+      "bytes": 3888,
+      "sha256": "a404049ea0c58fecc366c27e5d9333274ac8d1ba0b3867001c542051f7a12e4e",
+      "gitBlob": "41fdd991c997102c8e6a55982fb501f0c020f60f",
+      "finalSha256": "a404049ea0c58fecc366c27e5d9333274ac8d1ba0b3867001c542051f7a12e4e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1730/biome-profiles.json",
+      "bytes": 3633,
+      "sha256": "d61f3dca34ad6bf9c3f93edb98d5292418e09aa7e8407284698ff1b937cf409b",
+      "gitBlob": "4055625a3b6f4ca4b14e5fb8909f6c7b0f902f4d",
+      "finalSha256": "d61f3dca34ad6bf9c3f93edb98d5292418e09aa7e8407284698ff1b937cf409b",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1731/biome-final-commands.json",
+      "bytes": 1700,
+      "sha256": "37c1590c5d311b57d69b317e10a64e04c5201d6f296996da894f3da41c132cca",
+      "gitBlob": "a9e967e5c55778479448bbd5ea9acdb57ab09667",
+      "finalSha256": "37c1590c5d311b57d69b317e10a64e04c5201d6f296996da894f3da41c132cca",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1731/biome-profiles.json",
+      "bytes": 3243,
+      "sha256": "0a788ba719f0a8b6fea3344c36b0248345801f8164277bdeee4b8202a9e3a24d",
+      "gitBlob": "80c1c2c7511388e47b3695ac040049bf9fa48c59",
+      "finalSha256": "0a788ba719f0a8b6fea3344c36b0248345801f8164277bdeee4b8202a9e3a24d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/.npmrc",
+      "bytes": 105,
+      "sha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "gitBlob": "213f226ad1b1feafc0f65a4d78d0c507af1aeaae",
+      "finalSha256": "b4b849a5e5c9365f945fdfeb6e7842f06df39ea129c60715ffc7cdb186713f03",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/desktop/package.json",
+      "bytes": 1294,
+      "sha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "gitBlob": "e9be0c21da9d13192514e5540c855012c3aecd84",
+      "finalSha256": "ab0da846dea4721817df91389c5abe63b2aff7d55199bad71a5175f12ea90ab2",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/desktop/tsconfig.json",
+      "bytes": 633,
+      "sha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "gitBlob": "0bcbb30afafdb7e37e2a627f610358618f78e90a",
+      "finalSha256": "6065364dc9275aafb74c6433b58e3dc4490bdf2bc1a240fe95bbbdffcbe69446",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/desktop/tsconfig.node.json",
+      "bytes": 223,
+      "sha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "gitBlob": "165a9ba72698cc5ac57ca4d2c9a16bc4cc664fa1",
+      "finalSha256": "6ec602b8aa146888c76f0b41ca3515f91f95919f6e6417a4670decaba8fcb982",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/desktop/vitest.config.ts",
+      "bytes": 156,
+      "sha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "gitBlob": "72941e45d50b19cfc4692293d64851b30026a5c2",
+      "finalSha256": "eded1edd9cc0baaa443f0f51f66d764e19eff8470c110e2df225c2855a902291",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/docs/next.config.mjs",
+      "bytes": 207,
+      "sha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "gitBlob": "91e44c90b63048ed56c4325e540047d15ee4c447",
+      "finalSha256": "013944d49dc756f74702e1eaa45a6be319132883d6d5981e481c258f975da2c6",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/docs/package.json",
+      "bytes": 745,
+      "sha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "gitBlob": "d7d11716a28100edca594b5d43736f260421b6a4",
+      "finalSha256": "5e570e3009ca436cc24cbbf0f679707d2fb2b2cb6a22e552b5d9d66eeb17677f",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/docs/tsconfig.json",
+      "bytes": 854,
+      "sha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "gitBlob": "f61061e1066b6cdd034a5282dc7e3fce6cd32c3a",
+      "finalSha256": "2d453adeb6a3cf03376379a13d0e135c7d4c961dca63fa86420f9a38335a3a7d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/marketing/next.config.ts",
+      "bytes": 280,
+      "sha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "gitBlob": "d575fce3992171c0f6af626dfa7db600dded8c9c",
+      "finalSha256": "0d72138b190707b4bdda8431939760ef752844da5cbd3f19d7a66305592418f0",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/marketing/package.json",
+      "bytes": 816,
+      "sha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "gitBlob": "d8ea08df70faa741fc6f79f64bb484a15e1b409c",
+      "finalSha256": "4c0bb6c5ebb145a464644add9a44eecc3e000614c08d92ff72206999190cb283",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/marketing/tsconfig.json",
+      "bytes": 654,
+      "sha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "gitBlob": "c4743ccf075999fa53e813edbcfa295aab1f7753",
+      "finalSha256": "bcf82fe9a523559bb80b750c3a6b721f18aa17c59ad9913fe74219c979536574",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/mobile/package.json",
+      "bytes": 1375,
+      "sha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "gitBlob": "cb8711dc2b7c9b2168219e7d1fef0b08ca635ef6",
+      "finalSha256": "b4fc873e88b4fad71db3be1637fb50c46ce7903f3d2c05d60cfda415a9db4d4a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/mobile/tsconfig.json",
+      "bytes": 371,
+      "sha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "gitBlob": "53d98af599c1973c14516731760bdaa839b77ac6",
+      "finalSha256": "a1e026b426cab88aa9b9171eab0697db05c62a0d96df0fd8d9d11d08a547ceb1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/next.config.ts",
+      "bytes": 4308,
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "gitBlob": "69ea0637d81093b88e7789427feee3e117a96458",
+      "finalSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/package.json",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "gitBlob": "521eff6c0912f3868bc888a5c3bf4798ecaa1d78",
+      "finalSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/tsconfig.json",
+      "bytes": 687,
+      "sha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "gitBlob": "78b696cd77840752a253c47181f478dbe193c910",
+      "finalSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/tsconfig.smoke.json",
+      "bytes": 213,
+      "sha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "gitBlob": "6991bb076481e7a4e9d69bd69465ad2dcf3f969a",
+      "finalSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/tsconfig.typecheck.json",
+      "bytes": 252,
+      "sha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "gitBlob": "6af8417d3d4d70fe0008d72c5c053bda69d916a0",
+      "finalSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/tsconfig.workflow-contracts.json",
+      "bytes": 453,
+      "sha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "gitBlob": "e8575adb80da109ec3ba7ebf486cd59b1723b364",
+      "finalSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/apps/webapp/vitest.config.ts",
+      "bytes": 1840,
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "gitBlob": "527ba3a956f00f7ee799c64251019d76ebca6861",
+      "finalSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/db-seed/package.json",
+      "bytes": 401,
+      "sha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "gitBlob": "5889ef5dc738d5a5d47144f7a9b94308aad584af",
+      "finalSha256": "a56f4cbb378ce5442187b2280ec5f354c26ff0236fe24bc2ae360a9515ea45cd",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/db-seed/pnpm-lock.yaml",
+      "bytes": 34617,
+      "sha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "gitBlob": "7cfb4ba913dfe0910477a6916bee08b65cdf1774",
+      "finalSha256": "30fc4c8c1ebd7f9ae57f95302185ca7e2d735f23135010868f4588b1b246e8a6",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/db-seed/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBlob": "c0af3293039117837a378040390b1cefe04621ff",
+      "finalSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/migration/package.json",
+      "bytes": 272,
+      "sha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "gitBlob": "25457ce39a0a3e85728bec2e4947e04c70e2c771",
+      "finalSha256": "57cbf9340fd5eb749bb9daf8c31a658249bb5e77481b6ddd00e64bbca3283138",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/migration/pnpm-lock.yaml",
+      "bytes": 22958,
+      "sha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "gitBlob": "f890e49c7a68ed9c513e769f4d3d41bf4207c8a0",
+      "finalSha256": "b812ce3b2d7bfbde67328815cdea229b85494ba4a1590cdc67f6da13e3c7bcf1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/migration/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBlob": "c0af3293039117837a378040390b1cefe04621ff",
+      "finalSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/worker/package.json",
+      "bytes": 1534,
+      "sha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "gitBlob": "fe494d2ee3ae2020aa230b910b7d230af8faf36d",
+      "finalSha256": "0e2414b0ac942ff359b8e906bc296f50d927641ddb5ce1ef8e2e5569755f605e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/worker/pnpm-lock.yaml",
+      "bytes": 188668,
+      "sha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "gitBlob": "471e295e875774ee3a99f5b0625aa89ce9e18589",
+      "finalSha256": "da2b018d68a195614e34280ff2e2712b8ce7762eb736b710b81f6e42e0eeb041",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docker/targets/worker/pnpm-workspace.yaml",
+      "bytes": 1411,
+      "sha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "gitBlob": "c0af3293039117837a378040390b1cefe04621ff",
+      "finalSha256": "f8e699354b03de1aa633a004b56c8e31da6d799f588a5794ca66885c28460734",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docs/design/rollout-1692/1831/root-authority-and-loading/vitest.config.ts",
+      "bytes": 942,
+      "sha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "gitBlob": "86a366c293653e7a25dcbea92d58ba68c2110b8a",
+      "finalSha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/docs/design/rollout-1692/1834/root-loading-heading/vitest.config.ts",
+      "bytes": 971,
+      "sha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "gitBlob": "250f485b0c8297620b021eea1fe56c5f93d67c2d",
+      "finalSha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/package.json",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "gitBlob": "2558e0d17a1991fb02ca94ccd096d157ec104463",
+      "finalSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/pnpm-lock.yaml",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "gitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "finalSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1734/root-unlink-lifetime/archive/config/pnpm-workspace.yaml",
+      "bytes": 1880,
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "gitBlob": "3192e22bf14b27da9065c10411320cf4015c3603",
+      "finalSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/next.config.ts",
+      "bytes": 4308,
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "gitBlob": "69ea0637d81093b88e7789427feee3e117a96458",
+      "finalSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/package.json",
+      "bytes": 8541,
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "gitBlob": "521eff6c0912f3868bc888a5c3bf4798ecaa1d78",
+      "finalSha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/tsconfig.json",
+      "bytes": 687,
+      "sha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "gitBlob": "78b696cd77840752a253c47181f478dbe193c910",
+      "finalSha256": "38242546cd57b33543ba8ca4bcf5bf6354908dd89822471bb4dbafd667ee6223",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/tsconfig.smoke.json",
+      "bytes": 213,
+      "sha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "gitBlob": "6991bb076481e7a4e9d69bd69465ad2dcf3f969a",
+      "finalSha256": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/tsconfig.typecheck.json",
+      "bytes": 252,
+      "sha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "gitBlob": "6af8417d3d4d70fe0008d72c5c053bda69d916a0",
+      "finalSha256": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/tsconfig.workflow-contracts.json",
+      "bytes": 453,
+      "sha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "gitBlob": "e8575adb80da109ec3ba7ebf486cd59b1723b364",
+      "finalSha256": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/apps/webapp/vitest.config.ts",
+      "bytes": 1840,
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "gitBlob": "527ba3a956f00f7ee799c64251019d76ebca6861",
+      "finalSha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/package.json",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "gitBlob": "2558e0d17a1991fb02ca94ccd096d157ec104463",
+      "finalSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/pnpm-lock.yaml",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "gitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "finalSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1735/root-recovery-and-pdf/config/pnpm-workspace.yaml",
+      "bytes": 1880,
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "gitBlob": "3192e22bf14b27da9065c10411320cf4015c3603",
+      "finalSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/checks/biome-explicit.json",
+      "bytes": 1545,
+      "sha256": "5d10e2034a69f62eb36a8d05a235ca10a9f80f2d81ea9e5aa3e1991cd2fc0836",
+      "gitBlob": "3051752abc63115c1593fb1a223cbf12f9222a54",
+      "finalSha256": "5d10e2034a69f62eb36a8d05a235ca10a9f80f2d81ea9e5aa3e1991cd2fc0836",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/checks/biome-ordinary.json",
+      "bytes": 1493,
+      "sha256": "4a42ecf0ac6b775c2ab519e0316197ad21235e9995b17242d9ac7e488c4dcdf9",
+      "gitBlob": "5621a8abcf6b1545568e130c6b4e5edc1165895b",
+      "finalSha256": "4a42ecf0ac6b775c2ab519e0316197ad21235e9995b17242d9ac7e488c4dcdf9",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/checks/final-biome-explicit.json",
+      "bytes": 1612,
+      "sha256": "b217507bf91b8d7f5b0d56f3c115a1489fe8fa8f05a1bb1892a17679f5d7ae27",
+      "gitBlob": "edfc4eb6ae0b89d36392860e856f8e5b6cdb6e71",
+      "finalSha256": "b217507bf91b8d7f5b0d56f3c115a1489fe8fa8f05a1bb1892a17679f5d7ae27",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/checks/final-biome-lint.json",
+      "bytes": 1559,
+      "sha256": "d0a1ea2074ba6664a26b12246f281e3b9db3b555da9b2e8bc3e826f6eddae769",
+      "gitBlob": "1e0e943231a52c21502ec6675e238636e460a2e9",
+      "finalSha256": "d0a1ea2074ba6664a26b12246f281e3b9db3b555da9b2e8bc3e826f6eddae769",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1738/checks/final-biome-ordinary.json",
+      "bytes": 1560,
+      "sha256": "a1651ffe437075b32c597b987df70383b20d6c7a585cb93e846e38a18d86887d",
+      "gitBlob": "17f42b55d830009b39e77cf626ab55867e818058",
+      "finalSha256": "a1651ffe437075b32c597b987df70383b20d6c7a585cb93e846e38a18d86887d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1824/biome-baseline.json",
+      "bytes": 1299,
+      "sha256": "a35e130ef447341cebdaabb77f2bf1fc5e33cc8ef44d50685bd16c7a8d550fe7",
+      "gitBlob": "f0d8cfe59d7749d0ba553279c57863772e565706",
+      "finalSha256": "a35e130ef447341cebdaabb77f2bf1fc5e33cc8ef44d50685bd16c7a8d550fe7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1827/merger-vitest.config.mts",
+      "bytes": 1175,
+      "sha256": "6f3e3fa433a251b420276e9890bf1342a4a47e35b0bbfbda08efc9f5b7c3e872",
+      "gitBlob": "773e1c73307bc110a6e34c24aa5fa22932172efb",
+      "finalSha256": "6f3e3fa433a251b420276e9890bf1342a4a47e35b0bbfbda08efc9f5b7c3e872",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1829/merger-biome-crlf-command.json",
+      "bytes": 845,
+      "sha256": "5d787dabde94fb3bde0a3c645965063870ea55e3ed60dfd8aef3027c58879dc0",
+      "gitBlob": "68a2fd5b70cc979ba169f0175b4a7636d9da4333",
+      "finalSha256": "5d787dabde94fb3bde0a3c645965063870ea55e3ed60dfd8aef3027c58879dc0",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1829/merger-biome-default-command.json",
+      "bytes": 808,
+      "sha256": "a4e837504064a7cfbe9fcb4652d735b9fdc66f8ae6f92bfc854eeb7cafb5b5e2",
+      "gitBlob": "4ca44f1f629f7e7917713ff1955b92f0adc425d5",
+      "finalSha256": "a4e837504064a7cfbe9fcb4652d735b9fdc66f8ae6f92bfc854eeb7cafb5b5e2",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1829/merger-biome-explicit-command.json",
+      "bytes": 856,
+      "sha256": "5f2666b97c51966c193a72412b745cbb50002080dcd1606e47e065375a2f9d48",
+      "gitBlob": "2736e6d29b5dc6cb710f8e5a6c39ab040b3bc452",
+      "finalSha256": "5f2666b97c51966c193a72412b745cbb50002080dcd1606e47e065375a2f9d48",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1829/merger-biome-explicit-crlf-command.json",
+      "bytes": 901,
+      "sha256": "0824b2db0233e16946efa5e48c289ae78c723a3eb849bdf3c51cb65b6c20d17c",
+      "gitBlob": "7b648ee939d7d5f2bb111b973966fe6dee874eb2",
+      "finalSha256": "0824b2db0233e16946efa5e48c289ae78c723a3eb849bdf3c51cb65b6c20d17c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1829/merger-biome-explicit-lint-command.json",
+      "bytes": 908,
+      "sha256": "490f58562cb6339d5cdad1838053ecb9f42a94135386eef9f66a47a045575a49",
+      "gitBlob": "fc88a72b720e96b9582a61e1504a47aab07661c1",
+      "finalSha256": "490f58562cb6339d5cdad1838053ecb9f42a94135386eef9f66a47a045575a49",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1829/merger-biome-lint-import-command.json",
+      "bytes": 859,
+      "sha256": "599326a4e157668c07f29dc69276844494fc6d952c0bed9f741415527e793aa2",
+      "gitBlob": "b5c1701592e250239666b84b8b7624bdcf387455",
+      "finalSha256": "599326a4e157668c07f29dc69276844494fc6d952c0bed9f741415527e793aa2",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1829/merger-vitest.config.ts",
+      "bytes": 702,
+      "sha256": "d8a0bfd22620259365b1a0e4c3fe41fe26501713984977c383240d5247e7c1a8",
+      "gitBlob": "10585073c30cc23d39af41ed4dadca819629d995",
+      "finalSha256": "d8a0bfd22620259365b1a0e4c3fe41fe26501713984977c383240d5247e7c1a8",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1830/root-submit-arrival/biome-explicit-crlf-command.json",
+      "bytes": 593,
+      "sha256": "beb6085171fa6158e80ad59a2b5ae31b305eb0203d4d680cea271435825f545f",
+      "gitBlob": "7dc4f475916a6da6495de702bc58a2de42fe367b",
+      "finalSha256": "beb6085171fa6158e80ad59a2b5ae31b305eb0203d4d680cea271435825f545f",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1830/root-submit-arrival/biome-explicit-lint-command.json",
+      "bytes": 600,
+      "sha256": "1f5b307453a4b2e56d66bd9ea1396ac5eebb1b8cde18e952f8cf8078380914d3",
+      "gitBlob": "36cbce37c693e818a80e218b2d8fc0b880b5b8d3",
+      "finalSha256": "1f5b307453a4b2e56d66bd9ea1396ac5eebb1b8cde18e952f8cf8078380914d3",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1830/root-submit-arrival/merger-vitest.config.ts",
+      "bytes": 938,
+      "sha256": "dbfc284af7c05e9dcdd03b817dcd05790855e51a3c3bf006822803530d029ade",
+      "gitBlob": "f39dd3991169afb38484b3334350ee980140e99e",
+      "finalSha256": "dbfc284af7c05e9dcdd03b817dcd05790855e51a3c3bf006822803530d029ade",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1831/root-authority-and-loading/merger-vitest.config.ts",
+      "bytes": 940,
+      "sha256": "693c81f3154b8daeec1fdd21b1d2b46bf07897e59b8c8045195351e55bb5bd21",
+      "gitBlob": "e61c77b00b0cf09278bb0b18dd46b8da9af7c2bd",
+      "finalSha256": "693c81f3154b8daeec1fdd21b1d2b46bf07897e59b8c8045195351e55bb5bd21",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1831/root-authority-and-loading/vitest.config.ts",
+      "bytes": 942,
+      "sha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "gitBlob": "38d9f2cb96ce977e0d9b601cc4beb84e0618fc1e",
+      "finalSha256": "7884b462cf480a029b201a751789756157fde523f443af1b925aa8b2d60d697e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1832/root-readiness/merger-biome-discovery-crlf-command.json",
+      "bytes": 891,
+      "sha256": "b1c55a3dd7392d3191801fb66aa7082250ba36625c106c6ebb76e5d20fbaee47",
+      "gitBlob": "0fa4cea679f0191f4295d8688f432560bb3380ec",
+      "finalSha256": "b1c55a3dd7392d3191801fb66aa7082250ba36625c106c6ebb76e5d20fbaee47",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1832/root-readiness/merger-biome-explicit-crlf-command.json",
+      "bytes": 937,
+      "sha256": "24cd31c856f69844d478b20f61cad76dc542a3a4a0f0c5509e780411382f74b1",
+      "gitBlob": "bbffc8d05b5ff8ba4a104cb7ffaad186923a59de",
+      "finalSha256": "24cd31c856f69844d478b20f61cad76dc542a3a4a0f0c5509e780411382f74b1",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1832/root-readiness/merger-biome-explicit-lint-command.json",
+      "bytes": 944,
+      "sha256": "82b20e460a15e47c2a1bbf5e285be6c564a2f8922308345de1ec548b4c6da32e",
+      "gitBlob": "c41fa691ecb527e1791663b224254a1a07cc48c2",
+      "finalSha256": "82b20e460a15e47c2a1bbf5e285be6c564a2f8922308345de1ec548b4c6da32e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1832/root-readiness/merger-vitest.config.ts",
+      "bytes": 922,
+      "sha256": "33f605df6e25c723a13c79b3d4bfa22873d91177a2a11c9d2803fbf433c9968a",
+      "gitBlob": "3a8a7a4842fcc4cc61ee57f4cc523e22a47a4650",
+      "finalSha256": "33f605df6e25c723a13c79b3d4bfa22873d91177a2a11c9d2803fbf433c9968a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/root-submit-arrival/merger-biome-discovery-crlf-command.json",
+      "bytes": 827,
+      "sha256": "365793947b69a1345912ef841e9b28b34b65706d8efb2450c208735c170c0c4e",
+      "gitBlob": "c5d4f97cb5e235c4dab80498b66f876d44d63f5b",
+      "finalSha256": "365793947b69a1345912ef841e9b28b34b65706d8efb2450c208735c170c0c4e",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/root-submit-arrival/merger-biome-explicit-crlf-command.json",
+      "bytes": 911,
+      "sha256": "cca12088a71edb2e4c79d078b15c2a7574daf7bfed1f10375039a3b0c4ab9770",
+      "gitBlob": "78f333deefa15b2edc564ee139f3ccafc45d14c8",
+      "finalSha256": "cca12088a71edb2e4c79d078b15c2a7574daf7bfed1f10375039a3b0c4ab9770",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/root-submit-arrival/merger-biome-explicit-lint-command.json",
+      "bytes": 880,
+      "sha256": "7525fdef6eda1d07cf45a2132ced759517e79401e2d18e324e9dbeba0d69959f",
+      "gitBlob": "2671941db1d25e39c1823c5b2820c869b5f9c6f1",
+      "finalSha256": "7525fdef6eda1d07cf45a2132ced759517e79401e2d18e324e9dbeba0d69959f",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1833/root-submit-arrival/merger-vitest.config.ts",
+      "bytes": 971,
+      "sha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "gitBlob": "e33989c220645b4e00d890dc81e217ec33e6e243",
+      "finalSha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "unchanged": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1834/root-loading-heading/vitest.config.ts",
+      "bytes": 971,
+      "sha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "gitBlob": "e33989c220645b4e00d890dc81e217ec33e6e243",
+      "finalSha256": "c77b18c0ea99013008926bb2919f6eb5b0cf888db21d0eb2e76dbb204dbb6a19",
+      "unchanged": true
+    },
+    {
+      "path": "package.json",
+      "bytes": 6018,
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "gitBlob": "2baeb6e9b617ae5a3ccdb67fbb467a2ba44ece54",
+      "finalSha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "unchanged": true
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "bytes": 771361,
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "gitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c",
+      "finalSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "unchanged": true
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "bytes": 1880,
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "gitBlob": "72bd6c845fc48f077c52fd789d799cb0928b6873",
+      "finalSha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/performance/collector-open-retention.vitest.config.mjs",
+      "bytes": 1184,
+      "sha256": "35a6119d5bc17cbe6c95e099091605ef93adc337d1179024df7c2d83f52bd020",
+      "gitBlob": "10470b6731b04773d41dd502e0ed755e12c8106a",
+      "finalSha256": "35a6119d5bc17cbe6c95e099091605ef93adc337d1179024df7c2d83f52bd020",
+      "unchanged": true
+    }
+  ],
+  "dependencyParents": [
+    {
+      "path": "node_modules",
+      "physical": true
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true
+    }
+  ],
+  "dependencyLeaves": {
+    "root": 5,
+    "app": 153,
+    "initialInventorySha256": "051acf4f47910176a18bcf5fe0fc2e452beb068c74a0da938470e426b5e9141b",
+    "finalInventorySha256": "051acf4f47910176a18bcf5fe0fc2e452beb068c74a0da938470e426b5e9141b",
+    "unchanged": true,
+    "storeInternalLinks": 1598,
+    "allResolveInsideOwnedCheckout": true,
+    "noInstallRepairOverlayOrUpgrade": true,
+    "physicalPackageContentHashAudit": false
+  },
+  "lock": {
+    "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "unchanged": true
+  },
+  "license": {
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "count": 125,
+    "unchanged": true
+  },
+  "protected": {
+    "count": 790,
+    "pdf202": 202,
+    "indexSha256": "d92d4f04da4d4fe0ceef0ecd26963cec916eea554701547a8384e32a748430d1",
+    "unchanged": true
+  },
+  "oldStop": {
+    "sealSha256": "026a64195a5f9ef69815c3836847834eb30a10a21cffa617e3965fc9a0063874",
+    "expected": "026a64195a5f9ef69815c3836847834eb30a10a21cffa617e3965fc9a0063874",
+    "unchanged": true
+  },
+  "verifiedCommit": null
+}

@@ -1,0 +1,143 @@
+{
+  "actor": "standard manager",
+  "steps": [
+    {
+      "name": "public saved Large font + reload",
+      "fontSize": "18px"
+    },
+    {
+      "name": "global Refresh",
+      "path": "/en/scheduling",
+      "listCount": "Shift list (5)"
+    },
+    {
+      "name": "phone create dialog above Fab, first Escape",
+      "closed": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "manager-current-1600-light-18.png",
+      "geometry": {
+        "h1": [
+          {
+            "text": "Shift Schedule",
+            "box": {
+              "x": 315,
+              "y": 131.5,
+              "width": 1258,
+              "height": 40.5,
+              "right": 1573,
+              "bottom": 172
+            }
+          }
+        ],
+        "main": {
+          "x": 288,
+          "y": 0,
+          "width": 1312,
+          "height": 1100,
+          "right": 1600,
+          "bottom": 1100
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 288,
+          "height": 1100,
+          "right": 288,
+          "bottom": 1100
+        },
+        "viewport": {
+          "width": 1600,
+          "height": 1100
+        },
+        "documentWidth": 1600,
+        "fontSize": "18px",
+        "dark": false
+      }
+    },
+    {
+      "name": "manager-current-2400-dark-18.png",
+      "geometry": {
+        "h1": [
+          {
+            "text": "Shift Schedule",
+            "box": {
+              "x": 315,
+              "y": 131.5,
+              "width": 2058,
+              "height": 40.5,
+              "right": 2373,
+              "bottom": 172
+            }
+          }
+        ],
+        "main": {
+          "x": 288,
+          "y": 0,
+          "width": 2112,
+          "height": 1300,
+          "right": 2400,
+          "bottom": 1300
+        },
+        "sidebar": {
+          "x": 0,
+          "y": 0,
+          "width": 288,
+          "height": 1300,
+          "right": 288,
+          "bottom": 1300
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1300
+        },
+        "documentWidth": 2400,
+        "fontSize": "18px",
+        "dark": true
+      }
+    },
+    {
+      "name": "manager-current-390-dark-18.png",
+      "geometry": {
+        "h1": [
+          {
+            "text": "Shift Schedule",
+            "box": {
+              "x": 18,
+              "y": 122.5,
+              "width": 354,
+              "height": 35.984375,
+              "right": 372,
+              "bottom": 158.484375
+            }
+          }
+        ],
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844,
+          "right": 390,
+          "bottom": 844
+        },
+        "sidebar": null,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "documentWidth": 390,
+        "fontSize": "18px",
+        "dark": true
+      }
+    }
+  ],
+  "historicalMatched": false,
+  "dialogLayer": {
+    "dialogHit": true,
+    "width": 376.5,
+    "right": 390,
+    "viewport": 390
+  }
+}

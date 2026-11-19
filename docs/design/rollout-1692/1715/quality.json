@@ -1,0 +1,56 @@
+{
+  "issue": 1715,
+  "branch": "feat/1715-driving-licence",
+  "startingIntegration": "cca1977df820ef288a7910a4f9d44b464d289b3b",
+  "ownedImplementation": "3404bdcb4",
+  "latestIntegrationMerged": "8224968accfe22981f15c5ddefe3c179f67b8dc7",
+  "testedMerge": "334c434bed275edfb583e4c0d9e7409df74fcc8c",
+  "unit": { "suites": 31, "tests": 215, "passed": true },
+  "integration": {
+    "suites": 6,
+    "tests": 59,
+    "passed": true,
+    "boundary": "Separate guarded disposable PostgreSQL; fresh pre-merge licence-domain run, unchanged by merged shared/approval source."
+  },
+  "types": "Passed: Next route generation, complete application, workflow contracts and smoke projects on merged tree.",
+  "biome": {
+    "fullCheckFiles": 10,
+    "lintAndImportCheckFiles": 4,
+    "findings": 0,
+    "qualification": "Four legacy tests retain pre-existing formatter differences; --formatter-enabled=false avoids broad unrelated reformatting."
+  },
+  "doctor": { "files": 14, "findings": 0, "base": "8224968accfe22981f15c5ddefe3c179f67b8dc7", "score": null, "supplyChain": false, "telemetry": false },
+  "runtime": {
+    "mainContextLifecycleWorklistObservations": 40,
+    "passed": 39,
+    "preMergeDrawerEscapeObservation": false,
+    "postMergeCurrentRouteDrawerVariants": 3,
+    "postMergeFirstEscapeAndFocusPassed": 3,
+    "captures": 48,
+    "matchedComparisonCaptures": 14,
+    "nativeReactTreeInspectRenders": "Succeeded on actual authenticated route; development render profile is not a performance benchmark.",
+    "mergedAxe": { "passes": 31, "violations": 0, "incomplete": 0 },
+    "mergedNext": { "compilationIssues": 0, "configErrors": 0, "sessionErrors": 0 }
+  },
+  "cleanup": {
+    "browsers": "Owned Puppeteer contexts and native worktree session closed.",
+    "next": "Verified own manifest PID/checkout/port; process tree stopped.",
+    "finalOwnedContainersRemoved": 6,
+    "discardedFixtureContainersRemovedEarlier": 3,
+    "privateFixtureDirectoriesRemoved": 4,
+    "copiedPrivateHelperRemoved": true,
+    "nextOutputMoved": false
+  },
+  "freshLimits": [
+    "Four legacy test files linted without whole-file formatting.",
+    "Browser emulation is not physical device/store-wrapper, keyboard, safe-area or true zoom certification.",
+    "Native route tree/inspect/render evidence and axe do not certify every route, screen reader or production performance.",
+    "No exhaustive view-transition, cross-route hydration or production-cache certification.",
+    "No live external reminder delivery or every task/form/provider permutation."
+  ],
+  "inheritedUnpassedLimits": [
+    "Remote Tolgee catalog synchronization/pull needs provider configuration; static English defaults tested, catalogs unchanged.",
+    "Full production static generation remains unpassed after the known root timeout; not rerun here.",
+    "Provider/SSO/MFA/email/logo variants and physical native-wrapper acceptance remain root work."
+  ]
+}

@@ -130,7 +130,7 @@ function withLineBreaks(text: string): ReactNode {
 	const lines = text.split("\n");
 	return lines.map((line, index) => (
 		// Lines of one static string: their order is their identity.
-		// biome-ignore lint/suspicious/noArrayIndexKey: static text lines
+		// oxlint-disable-next-line react/no-array-index-key -- static text lines
 		<Fragment key={index}>
 			{index > 0 ? <br /> : null}
 			{line}

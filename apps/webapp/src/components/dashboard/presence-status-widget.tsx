@@ -8,24 +8,14 @@ import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
 import { WidgetReadError } from "./widget-read-error";
 
-const WEEKDAY_LABELS: Record<string, string> = {
-	monday: "Mon",
-	tuesday: "Tue",
-	wednesday: "Wed",
-	thursday: "Thu",
-	friday: "Fri",
-	saturday: "Sat",
-	sunday: "Sun",
-};
-
-const WEEKDAY_TRANSLATION_KEYS: Record<string, string> = {
-	monday: "common.weekdays.mon",
-	tuesday: "common.weekdays.tue",
-	wednesday: "common.weekdays.wed",
-	thursday: "common.weekdays.thu",
-	friday: "common.weekdays.fri",
-	saturday: "common.weekdays.sat",
-	sunday: "common.weekdays.sun",
+const WEEKDAY_LABELS: Record<string, [string, string]> = {
+	monday: ["common.weekdays.mon", "Mon"],
+	tuesday: ["common.weekdays.tue", "Tue"],
+	wednesday: ["common.weekdays.wed", "Wed"],
+	thursday: ["common.weekdays.thu", "Thu"],
+	friday: ["common.weekdays.fri", "Fri"],
+	saturday: ["common.weekdays.sat", "Sat"],
+	sunday: ["common.weekdays.sun", "Sun"],
 };
 
 export function PresenceStatusWidget({
@@ -44,9 +34,10 @@ export function PresenceStatusWidget({
 	if (!loading && !error && status?.presenceEnabled === false) return null;
 
 	const fixedOfficeDays = status?.fixedOfficeDays
-		?.map((day) =>
-			t(WEEKDAY_TRANSLATION_KEYS[day] ?? `common.weekdays.${day}`, WEEKDAY_LABELS[day] ?? day),
-		)
+		?.map((day) => {
+			const [key, fallback] = WEEKDAY_LABELS[day] ?? [`common.weekdays.${day}`, day];
+			return t(key, fallback);
+		})
 		.join(", ");
 	const showOfficeWarning =
 		status?.available && status.officeDaysRequiredLeft > status.workingDaysRemaining;

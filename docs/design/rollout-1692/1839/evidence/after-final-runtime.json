@@ -1,0 +1,450 @@
+{
+  "sourceHashes": {
+    "apps/webapp/src/components/login/alternative-auth.tsx": "89193dda62a15b27c64832f4e15075093335ea22e33eaeb8e9902a5f9ecf99a5",
+    "apps/webapp/src/components/login/credentials-fields.tsx": "e7ca681ecd517d7fa7b18cbc557e73584a7f9429ee5559570f13e2085e7f7885",
+    "apps/webapp/src/components/login/login-actions.tsx": "bb64a6533052f45b8c09d714cb7796e5e4a2d310dd9f0d770164b5d1a0724bc3",
+    "apps/webapp/src/components/login/login-client-arrival.test.tsx": "998294cfb352cc0d5f320412ebba53fd0e975a6691c9e4f7c72582f2923c9fbd",
+    "apps/webapp/src/components/login/login-form-content.test.tsx": "fa6ea395ddd005dd9908c2a9850e5020826d7b81e285050c5175cbdf06c0bbcf",
+    "apps/webapp/src/components/login/login-form-content.tsx": "902304ed457b6c80065011fcc749b549edfa0f8fd96427a1e108f01a0d3349ef",
+    "apps/webapp/src/components/login/login-state.test.ts": "cd4ec542a1cdb92e044f5ce9adc5fbb6554c2e680384683e5571819389583e78",
+    "apps/webapp/src/components/login/login-state.ts": "85af75a8d63c6847ac6c01b3f4e17574c70354031b19532ec945d32dc65d23e0",
+    "apps/webapp/src/components/login/login-ui.test.tsx": "9d0abb5a3d4505875ed7f37c222c80bba95b2ebf3bc6a3698fcd73fc7a3077cb",
+    "apps/webapp/src/components/login/login-verification.tsx": "4052ce659c9a21ce66406980bc1b468875920b5d1f5815a413cd269d31b518c6",
+    "apps/webapp/src/components/login/store-app-sign-in-form.test.tsx": "85298049b4e821bec6130912c0aaec6ce449b89d4c034d6baf78a3cb352e5db1",
+    "apps/webapp/src/components/login/store-app-sign-in-form.tsx": "b4e8ef2a495234b0727eac8c0e1caa69516d6c4b3517a971521b84e45f5d5f9c",
+    "apps/webapp/src/components/login/two-factor-form.tsx": "259e574238c8ba98d4dbca562ba175150b9127afd92c0e33ef8b8b3ba9246e35",
+    "apps/webapp/src/components/login/use-login-auth.ts": "5a738b16becc1cdddd3dd3e714a20a6d5e0f03676b07c7e647c6c828a6887146",
+    "apps/webapp/src/components/auth-form-wrapper.tsx": "78be245be6ecc296b8012a41eb8a763c8d357250a6eabe0f90c9b5fedd735421",
+    "apps/webapp/src/components/turnstile-widget.tsx": "3d12b5eb68a5fd90f49eb632ff0e77eb2419f93dd99ef0141fc2b92dac02e115",
+    "apps/webapp/src/lib/auth/domain-auth-context.tsx": "40b997f4c3e687a8944c010ab75a93cede83a6f2d5cab857d607c3608321d24c",
+    "apps/webapp/src/lib/auth.ts": "6cb3d4e6f933a58626c0af9e72cf85ad259b47e85ae4c67556e03ad3274ff7f2",
+    "apps/webapp/src/lib/auth/auth-page-client.ts": "57d5966b5b4b91b86255acd6425119c54c258f1c9358fd3d7e30fad644aa7647",
+    "apps/webapp/src/lib/auth/callback-url.ts": "3ac263e22ecbe2d0d704b70d0f02b24507d9d2ed075b272d8d63f676a5ef6bc5",
+    "apps/webapp/src/lib/store-app/store-app-sign-in.ts": "fbfea83a08267060f15b35b9a229e05327f3369f3f7a30a61e5ce2f62b8e07df"
+  },
+  "mode": "after-final",
+  "head": "ce1a4d23d973ebf73a8ad1e0c1be873d784d6f7f",
+  "captures": [
+    {
+      "name": "after-final-desktop-light.png",
+      "width": 1600,
+      "documentWidth": 1600,
+      "fontSize": "16px",
+      "dark": false,
+      "heading": [
+        "Login to your account"
+      ],
+      "fields": [
+        {
+          "name": "email",
+          "empty": true
+        },
+        {
+          "name": "password",
+          "empty": true
+        }
+      ],
+      "challenge": {
+        "responsePresent": true,
+        "ready": true,
+        "frames": 0
+      },
+      "links": [
+        {
+          "name": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "name": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Finit"
+        },
+        {
+          "name": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "name": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "name": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "name": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "name": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "name": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ],
+      "loginDisabled": false
+    },
+    {
+      "name": "after-final-desktop-dark.png",
+      "width": 1600,
+      "documentWidth": 1600,
+      "fontSize": "16px",
+      "dark": true,
+      "heading": [
+        "Login to your account"
+      ],
+      "fields": [
+        {
+          "name": "email",
+          "empty": true
+        },
+        {
+          "name": "password",
+          "empty": true
+        }
+      ],
+      "challenge": {
+        "responsePresent": true,
+        "ready": true,
+        "frames": 0
+      },
+      "links": [
+        {
+          "name": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "name": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Finit"
+        },
+        {
+          "name": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "name": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "name": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "name": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "name": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "name": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ],
+      "loginDisabled": false
+    },
+    {
+      "name": "after-final-wide-light.png",
+      "width": 2400,
+      "documentWidth": 2400,
+      "fontSize": "16px",
+      "dark": false,
+      "heading": [
+        "Login to your account"
+      ],
+      "fields": [
+        {
+          "name": "email",
+          "empty": true
+        },
+        {
+          "name": "password",
+          "empty": true
+        }
+      ],
+      "challenge": {
+        "responsePresent": true,
+        "ready": true,
+        "frames": 0
+      },
+      "links": [
+        {
+          "name": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "name": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Finit"
+        },
+        {
+          "name": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "name": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "name": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "name": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "name": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "name": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ],
+      "loginDisabled": false
+    },
+    {
+      "name": "after-final-wide-dark.png",
+      "width": 2400,
+      "documentWidth": 2400,
+      "fontSize": "16px",
+      "dark": true,
+      "heading": [
+        "Login to your account"
+      ],
+      "fields": [
+        {
+          "name": "email",
+          "empty": true
+        },
+        {
+          "name": "password",
+          "empty": true
+        }
+      ],
+      "challenge": {
+        "responsePresent": true,
+        "ready": true,
+        "frames": 0
+      },
+      "links": [
+        {
+          "name": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "name": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Finit"
+        },
+        {
+          "name": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "name": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "name": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "name": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "name": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "name": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ],
+      "loginDisabled": false
+    },
+    {
+      "name": "after-final-phone-light.png",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "dark": false,
+      "heading": [
+        "Login to your account"
+      ],
+      "fields": [
+        {
+          "name": "email",
+          "empty": true
+        },
+        {
+          "name": "password",
+          "empty": true
+        }
+      ],
+      "challenge": {
+        "responsePresent": true,
+        "ready": true,
+        "frames": 0
+      },
+      "links": [
+        {
+          "name": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "name": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Finit"
+        },
+        {
+          "name": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "name": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "name": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "name": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "name": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "name": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ],
+      "loginDisabled": false
+    },
+    {
+      "name": "after-final-phone-dark.png",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "16px",
+      "dark": true,
+      "heading": [
+        "Login to your account"
+      ],
+      "fields": [
+        {
+          "name": "email",
+          "empty": true
+        },
+        {
+          "name": "password",
+          "empty": true
+        }
+      ],
+      "challenge": {
+        "responsePresent": true,
+        "ready": true,
+        "frames": 0
+      },
+      "links": [
+        {
+          "name": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "name": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Finit"
+        },
+        {
+          "name": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "name": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "name": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "name": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "name": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "name": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ],
+      "loginDisabled": false
+    },
+    {
+      "name": "after-final-phone-dark-large.png",
+      "width": 390,
+      "documentWidth": 390,
+      "fontSize": "18px",
+      "dark": true,
+      "heading": [
+        "Login to your account"
+      ],
+      "fields": [
+        {
+          "name": "email",
+          "empty": true
+        },
+        {
+          "name": "password",
+          "empty": true
+        }
+      ],
+      "challenge": {
+        "responsePresent": true,
+        "ready": true,
+        "frames": 0
+      },
+      "links": [
+        {
+          "name": "Forgot your password?",
+          "href": "/en/forgot-password"
+        },
+        {
+          "name": "Sign up",
+          "href": "/en/sign-up?callbackUrl=%2Finit"
+        },
+        {
+          "name": "Terms of Service",
+          "href": "https://www.z8-time.app/terms-app"
+        },
+        {
+          "name": "Privacy Policy",
+          "href": "https://www.z8-time.app/privacy-app"
+        },
+        {
+          "name": "Imprint",
+          "href": "https://www.z8-time.app/imprint"
+        },
+        {
+          "name": "T&Cs",
+          "href": "https://www.z8-time.app/agb"
+        },
+        {
+          "name": "Trust Center",
+          "href": "https://www.z8-time.app/trustcenter"
+        },
+        {
+          "name": "Open Source Licenses",
+          "href": "/en/licenses"
+        }
+      ],
+      "loginDisabled": false
+    }
+  ],
+  "errors": []
+}

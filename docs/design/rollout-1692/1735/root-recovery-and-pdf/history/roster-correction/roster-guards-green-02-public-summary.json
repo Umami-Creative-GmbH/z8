@@ -1,0 +1,77 @@
+{
+  "kind": "Derived public test summary; not original raw result",
+  "original": {
+    "path": ".tmp/1735-roster-checks/roster-guards-green-02.json",
+    "bytes": 5021,
+    "sha256": "f909375ead95de2ff3fc3a1fd3f06e9a9c2b8e53a804e4d7943575c0ef126748"
+  },
+  "reported": {
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "pending": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "does not reuse retired actor/organization options on A → B → A while the current roster read is held",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster success on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster refusal on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retires a deferred roster rejection on Activity return under StrictMode without clearing peer caches",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains current roster during same-arrival refetch and rerenders, but hides it while session is disabled",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "status": "passed",
+      "cases": [
+        {
+          "fullName": "recovers failed organization settings through local Retry before enabling report generation",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers a roster refusal through local Retry without generating a report",
+          "status": "passed"
+        },
+        {
+          "fullName": "recovers a roster rejection through local Retry without generating a report",
+          "status": "passed"
+        },
+        {
+          "fullName": "shows pending roster recovery and keeps a rejected retry recoverable without duplicate transport",
+          "status": "passed"
+        },
+        {
+          "fullName": "does not let a roster Retry retired by Activity replace the new opening's options",
+          "status": "passed"
+        },
+        {
+          "fullName": "keeps failed settings recoverable and prevents duplicate transport while Retry is pending",
+          "status": "passed"
+        },
+        {
+          "fullName": "retains the selected period across a failed settings refresh without permitting generation until Retry succeeds",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

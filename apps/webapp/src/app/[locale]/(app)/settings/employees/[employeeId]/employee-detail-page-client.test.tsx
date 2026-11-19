@@ -53,15 +53,28 @@ vi.mock("@/lib/query/use-employee", () => ({
 	useEmployee: useEmployeeMock,
 }));
 
+const detailHeaderProps = vi.hoisted(() => ({
+	employeeName: undefined as string | null | undefined,
+}));
+
 vi.mock("./page-sections", async () => {
 	const { EmployeeEditFormCard } = await import("./employee-edit-form-card");
 	return {
-		EmployeeDetailHeader: ({ actions }: { actions?: ReactNode }) => (
-			<header>
-				<h1>Employee details</h1>
-				{actions}
-			</header>
-		),
+		EmployeeDetailHeader: ({
+			actions,
+			employeeName,
+		}: {
+			actions?: ReactNode;
+			employeeName?: string | null;
+		}) => {
+			detailHeaderProps.employeeName = employeeName;
+			return (
+				<header>
+					<h1>Employee heading</h1>
+					{actions}
+				</header>
+			);
+		},
 		EmployeeEditFormCard: (
 			props: ComponentProps<typeof EmployeeEditFormCard>,
 		) =>
@@ -448,6 +461,19 @@ describe("employee detail Team field (#1575)", () => {
 		} finally {
 			formSection.real = false;
 		}
+	});
+});
+
+describe("employee detail heading", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		detailHeaderProps.employeeName = undefined;
+	});
+
+	it("titles the loaded page with the employee's name", async () => {
+		renderDetail();
+		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		expect(detailHeaderProps.employeeName).toBe("Alex Morgan");
 	});
 });
 

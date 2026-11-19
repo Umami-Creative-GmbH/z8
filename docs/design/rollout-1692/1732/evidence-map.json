@@ -1,0 +1,450 @@
+{
+  "secretMatches": 0,
+  "files": [
+    {
+      "path": "docs/design/rollout-1692/1732/.gitattributes",
+      "bytes": 92,
+      "sha256": "b86d6f7bfb9786208c95c4200fd7cf07b5dbef44dade011f754c9dcb2d85fbad"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-consumer.json",
+      "bytes": 3641,
+      "sha256": "99c3108ca17d8a80fd76c7fcb7faeb85e69f2f71f4318a554e451b4a8340e6b9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-desktop.png",
+      "bytes": 110825,
+      "sha256": "3e75d36ca103d5c32240c043bf3ca201d863cc58d4cc987462d6c222b75f6f1e",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-large-text-dark.png",
+      "bytes": 96668,
+      "sha256": "83a4275ed13d88ac89d151cacb4538987fd95dbdae2ed16500856ed264986fe8",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-phone-dark.png",
+      "bytes": 49062,
+      "sha256": "0725f0b7ecc07d67e332cfaf0b857e575955f2a5329c498e09ea5c02dd3abe72",
+      "width": 390,
+      "height": 844,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-phone-large-history.png",
+      "bytes": 44237,
+      "sha256": "6c50dab0f52716bbcd79abcecde74dade58e853987b148b245f919530fd85bf2",
+      "width": 390,
+      "height": 844,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-phone-large-text.png",
+      "bytes": 45745,
+      "sha256": "8624b83b179548f50e996501ef8e289bbde4f5c3c21cecf8388b0ec331d95341",
+      "width": 390,
+      "height": 844,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-phone.png",
+      "bytes": 49882,
+      "sha256": "615dd3f8ef8b3ec8c5cdea65adf0aafca318e8e3f24949fcd0e4ace1e81680c6",
+      "width": 390,
+      "height": 844,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-wide-dark.png",
+      "bytes": 109721,
+      "sha256": "d07372519cd63b1ffa771cc833108a1f4951877bb59c69ca8a5d50c065baf252",
+      "width": 2200,
+      "height": 1100,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/after-wide.png",
+      "bytes": 116052,
+      "sha256": "80690759960b36f92f82dae7373ea2a2ac0518953a6f7806f06b55de8a9d1638",
+      "width": 2200,
+      "height": 1100,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/before-consumer.json",
+      "bytes": 3361,
+      "sha256": "d2c999c2d81befe70c7b27062a78ad99291d81dba311a60bdaa8f78d80d983d1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/before-desktop.png",
+      "bytes": 97964,
+      "sha256": "33edc9a27388cb7a914198846b8a16d77ec85492dcf76eb291e3cc3e7f2034b9",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/before-phone.png",
+      "bytes": 44306,
+      "sha256": "638a617211db8447a280f1d7ab56afeb51b8cb9a67d9050c29949c412ddfe3af",
+      "width": 390,
+      "height": 844,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/before-wide.png",
+      "bytes": 102144,
+      "sha256": "f0fd0e80ff3ccf53b30f0a90b69ef086f36a6fb956790466a212c9c4de3fb11a",
+      "width": 2200,
+      "height": 1100,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/capability-map.md",
+      "bytes": 2954,
+      "sha256": "537e6cfa6b73df17dc7370778e13ef73e2ac197f49d5472d2a3ccb9f296a8874"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/action-green-isolated.log",
+      "bytes": 612,
+      "sha256": "ae4f5e4b9f8a64542f4ece934d6d243d1257112d6082c0f4558edc884fa9c1f7"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/action-green.log",
+      "bytes": 1802,
+      "sha256": "dbad334028e2bedc3e7ceb5376260296261232603622ffe729d6f0d8dd9fd468"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/action-red.log",
+      "bytes": 1914,
+      "sha256": "5223844fe5452c5d0f8d3246fb1ab896ec2f8e914e6c8170d2b96f57cbb5ff10"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/biome-63a.log",
+      "bytes": 44,
+      "sha256": "817075d4638af748f79d613ce68f274386480bae029624327848c52bb2b5d70c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/biome-scoped.log",
+      "bytes": 44,
+      "sha256": "8d42704d03224240949f709d024e9e0693c59d2bd9d562a012e1d8086f28c443"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/browser-launch.log",
+      "bytes": 75,
+      "sha256": "cfc0b583f50661b5f75d10a8cac88b45af71b948c22d4b119ec034e883b07b4b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/compatibility-63a-bounded.log",
+      "bytes": 644,
+      "sha256": "7bbbbe667e06fe90e8788bf135a3cdc97e6a2e2f0793a6cc37a59f679249ffea"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/compatibility-63a.log",
+      "bytes": 1560,
+      "sha256": "2753ab7f2da2c3cdbbef6417317bbc2110ae2df97f678cfc3359608106f3be25"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/doctor-63a-diagnostics.json",
+      "bytes": 2132,
+      "sha256": "e723459fabe781fcc04735027f9530a18f1a3d6ce8dbea4ed179fe40c176e9f2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/doctor-63a.log",
+      "bytes": 3109,
+      "sha256": "7d5a1187fba7ac2edd163dc5761bcf6de664baa5f56bebf92bd569f345a7b144"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/doctor-diagnostics.json",
+      "bytes": 2132,
+      "sha256": "e723459fabe781fcc04735027f9530a18f1a3d6ce8dbea4ed179fe40c176e9f2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/doctor-final.log",
+      "bytes": 3111,
+      "sha256": "5fec968dbd7e5e20fefa27d7fc2220202c04257346406998158e343984134df2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/form-green-1.log",
+      "bytes": 638,
+      "sha256": "fab7d6186a9479dc25cb5196ee19f9d6f29daf8a951684a5771e0cd2a23b7ad2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/form-red.log",
+      "bytes": 15296,
+      "sha256": "a57078d74249bcf956b3bbdc481fe1ed92a8eff4930f1846638df3a44c0a0405"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/heading-red.log",
+      "bytes": 1691,
+      "sha256": "032d295e4dab1c8fc2f68a388b9ddff7f046374abc16c924e7c1f43fd2c13908"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/install-escalated.log",
+      "bytes": 10643,
+      "sha256": "341be12144f93065b3d7e54afebed0163c3fea8bb5cbfe24e485307dc4bde6ac"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/install.log",
+      "bytes": 1260,
+      "sha256": "52f4169d4d01d62dc9ddb9b4cacd9bb996a588e1fd4c5704f799608c2511aaf3"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/licenses.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/lifetime-green.log",
+      "bytes": 638,
+      "sha256": "e6b63dd47f4dada59d92dcd2209ab13dde4baabc5c195c67c9ab415e8fb2378f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/lifetime-red.log",
+      "bytes": 2005,
+      "sha256": "d3b371c45515d953500c21c94c000fd08b5d03d640ae83322cc3dcf6307f028b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/officer-finish.log",
+      "bytes": 940,
+      "sha256": "73415244c57a9f04fdf82d22d5a89b7a9d2c3bf5228ec60321997afda7f46dfc"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/officer-save.log",
+      "bytes": 2692,
+      "sha256": "71e5273fdec9c337f53b7389d26439a5a60dccabf52b98a0743704c5976906d2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/operations.log",
+      "bytes": 450,
+      "sha256": "decd31c27d3430f19cb92261e5a726cecaa2a093c04ce8817f7350cd8982784e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/preferences-final.log",
+      "bytes": 555,
+      "sha256": "1b4f7b7d93fee814c70f4f8eceae77335dfee714f2168def9c873f8377160822"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/preferences.log",
+      "bytes": 381,
+      "sha256": "5781fba39fc54f4af8021f65f201eb740acd90947d8fad8a46f2aeca3e623833"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/prepare-escalated.log",
+      "bytes": 151,
+      "sha256": "aff4a6c3efb926b7f4f675d5d2497d097656104b6e58435d73c7e716d3e65b04"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/prepare-pg.log",
+      "bytes": 139,
+      "sha256": "0aa6d5de7b32b696d0c990cc80f92e7f955c997d767aa5f6de79464e6f54faa4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/prepare-ready.log",
+      "bytes": 139,
+      "sha256": "0aa6d5de7b32b696d0c990cc80f92e7f955c997d767aa5f6de79464e6f54faa4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/prepare.log",
+      "bytes": 1260,
+      "sha256": "2716a9092a22b968e282bac3b9ec398e4e89e467df677b96d06adafe67b60453"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/roles-final.log",
+      "bytes": 91,
+      "sha256": "fc80f816c79aad3940dcacf744fc95fa6e996dbd97bfd1634c57be58ebc71dd2"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/roles-officer.log",
+      "bytes": 506,
+      "sha256": "59dd5c6224ed73f6b5220954dafb16a2b9cce71a045fa5936ee52d51e7835ec0"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/roles-settled.log",
+      "bytes": 474,
+      "sha256": "18e0e69f79974a3bab70267b75684a4e45712f3719daac26d88cbc070ab44092"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/roles.log",
+      "bytes": 167,
+      "sha256": "61a5e7f47513c6c4a953343bdab3b7b3172c0957ae5874b15a8d039051840c0b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/types-63a.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/types-complete.log",
+      "bytes": 292,
+      "sha256": "a6cd7e7f93e5623e3b5979a0670a9df7cc5774cf320d7f99300f1ec97914e29e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/checks/unit-complete.log",
+      "bytes": 640,
+      "sha256": "7c533aa5eb1f9ea38ca2732fbf1fb65d308280b78ab87ef47e9b3d963c0ac5f3"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/cleanup-containers.json",
+      "bytes": 686,
+      "sha256": "7c4dce9fa5e66093e9a940c31cec27aa9fb652b1317995ba9b66122004b54173"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/cleanup-next-tree.json",
+      "bytes": 6525,
+      "sha256": "c9428e8d075f1543e5e0fa130ee78c96c70279fa9096093b85dfc77ee3d20504"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/cleanup.json",
+      "bytes": 126,
+      "sha256": "a08dfdfbf33c15d340b6aa3bda5cc9eb1f5808de3b321802e69602c72e385f0b"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/commands.json",
+      "bytes": 4835,
+      "sha256": "4436e408f9d2b69f20b498e2347e6328d1201c537c9bd767d08b0f3b8aea1213"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/history-destination.png",
+      "bytes": 71902,
+      "sha256": "1724b1c42cc568ded9f94ceb05be7a73beb4c4accd75b59ba66b372405c49515",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/keyboard-final.json",
+      "bytes": 85,
+      "sha256": "086551aea81007be5a6ac1d33807351e5c010463b8b9071ff873ed1c55ecdf57"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/keyboard-visible-final.json",
+      "bytes": 215,
+      "sha256": "ae61b8fbae722596353517b42d69cdec771dd669fb82c31f29885974fecffa2c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/native-target.json",
+      "bytes": 222,
+      "sha256": "d8a663849cddc36ae123c638e8d3044de5a8b7940c6dc84dc67a3ac430a7ea3f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/next-runtime.json",
+      "bytes": 2815,
+      "sha256": "a0e68dc1d24314be006f3b52b0ed269372b54f1dc4aa80794a62858ba3deab76"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/officer-empty.png",
+      "bytes": 97017,
+      "sha256": "8a4e879db2970dfd074e764163f2b6162ba8b68383ba4d70540071bd92cc2156",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/officer-grant.png",
+      "bytes": 44953,
+      "sha256": "80dd4aed77cf5c5e3ed16b1332a42ef04bf85e7c4d3dc31d27f139368a628967",
+      "width": 764,
+      "height": 485,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/operations.json",
+      "bytes": 550,
+      "sha256": "9f36d3af63f5468f9ad116852416f7c9981325d9e91071f854cd092f95206563"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/preferences-final.json",
+      "bytes": 730,
+      "sha256": "4364896edd219e29fc8c3adb4c564fd6c9cc4dab14db9b439f235e45551886aa"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/preferences.json",
+      "bytes": 455,
+      "sha256": "84722d69bed774fddbded8142edc579b5e7a4fdfc20fd1b0c252fb1ad66bae63"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/published-metadata-pins.json",
+      "bytes": 2256,
+      "sha256": "1d782a9679ea396acd7f39e4af73a62f64b2b6147e61b24570bab6cc1722c89e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/revoked-officer.png",
+      "bytes": 104020,
+      "sha256": "9c0707b04c3fe8fd56d631f7b80afc286b8ccce08eacd31ed6237efc85046b14",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/roles-arrival-partial.json",
+      "bytes": 377,
+      "sha256": "4bbe5405f35952c302d5b71b83d11ff8e1a54838fb82ab38d8982d8c33ca66f5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/roles-officer.json",
+      "bytes": 619,
+      "sha256": "87f26c61167caa2c52d80028d3cccd93243ecba2091daa9441de4de9c241bf5f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/roles.json",
+      "bytes": 377,
+      "sha256": "4bbe5405f35952c302d5b71b83d11ff8e1a54838fb82ab38d8982d8c33ca66f5"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/scroll-reachability.json",
+      "bytes": 109,
+      "sha256": "4abf60f578e85f45663a3edc3e5479f90ced8858725da851b1ea53e71bdf0a0e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/small-manager-restricted.png",
+      "bytes": 69158,
+      "sha256": "411bc1d26bdfadc2473c315b935e28858996c52b6fcd9d394117b3de8e24ca9e",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/small-restricted-restricted.png",
+      "bytes": 63723,
+      "sha256": "8db249041904ef1c275fd63d1332e6be33051588f3d9c8cbdcf68bc0a361ca86",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/started-batch.png",
+      "bytes": 60046,
+      "sha256": "22de589e8e599c71db892646a1bde351f4c525702e0dfc02432351aa0f9be983",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/transport-failure.png",
+      "bytes": 114125,
+      "sha256": "66d21f83a51be7e73c4eb8a388d27b82e06e2bfcb5b2682ad22af362a56403ef",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/validation.png",
+      "bytes": 113412,
+      "sha256": "df7abf1a5f9ac916122262cb6a0f09a95c3f55edb62ae6db7bc61d9c9fecfca3",
+      "width": 1600,
+      "height": 1000,
+      "decoded": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1732/verified-merge-pins.json",
+      "bytes": 2256,
+      "sha256": "83fae9e075f54d71d3cd3a773cdd2acc2bee472eb62f31df0130f518024c7ec0"
+    }
+  ]
+}

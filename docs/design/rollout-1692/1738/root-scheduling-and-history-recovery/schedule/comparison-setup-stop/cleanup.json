@@ -1,0 +1,16 @@
+{
+  "previewTabClosed": true,
+  "previewTabHadNoNavigationOrAuth": true,
+  "ownFixtureServicesNeverCreated": true,
+  "ownNextNeverStarted": true,
+  "ownBrowserControllerNeverStarted": true,
+  "ownNativeNamespacesNeverCreated": true,
+  "ownHoldsNeverCreated": true,
+  "ownDatabaseMutations": 0,
+  "ownedLiveResourcesRemaining": 0,
+  "initialAndFinalBranch": "test/1738-independent-checks",
+  "initialAndFinalHead": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "trackedStatusClean": true,
+  "branchSwitches": 0,
+  "parentOrPeerResourcesTouched": false
+}

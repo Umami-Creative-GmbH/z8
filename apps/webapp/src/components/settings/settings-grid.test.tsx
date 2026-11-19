@@ -81,6 +81,25 @@ describe("SettingsGrid", () => {
 		},
 	);
 
+	it("names the hub with one page heading", () => {
+		render(<SettingsGrid visibleSettings={visibleSettings} visibleGroups={visibleGroups} />);
+
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeTruthy();
+	});
+
+	it("offers to clear a search that matches nothing", async () => {
+		const user = userEvent.setup();
+		render(<SettingsGrid visibleSettings={visibleSettings} visibleGroups={visibleGroups} />);
+		const search = screen.getByRole("searchbox", { name: "Search settings" });
+		await user.type(search, "no matching setting");
+		await user.click(screen.getByRole("button", { name: "Clear search" }));
+		expect((search as HTMLInputElement).value).toBe("");
+		expect(screen.queryByRole("status")).toBeNull();
+		expect(screen.getByText("Profile")).toBeTruthy();
+		expect(screen.getByText("Employees")).toBeTruthy();
+	});
+
 	it("shows a helpful empty state and restores settings when the search is cleared", async () => {
 		const user = userEvent.setup();
 		render(<SettingsGrid visibleSettings={visibleSettings} visibleGroups={visibleGroups} />);

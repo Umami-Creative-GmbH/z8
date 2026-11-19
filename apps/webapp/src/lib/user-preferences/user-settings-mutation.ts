@@ -16,6 +16,7 @@ import { userSettings } from "@/db/schema";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 
 type Database = Pick<typeof db, "transaction">;
+export type UserSettingsTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export type UserSettingsValues = Omit<
 	Partial<typeof userSettings.$inferInsert>,
@@ -26,9 +27,13 @@ export async function writeUserSettings(
 	database: Database,
 	userId: string,
 	values: UserSettingsValues,
+	beforeWrite?: (transaction: UserSettingsTransaction) => Promise<void>,
 ): Promise<void> {
 	await database.transaction(async (transaction) => {
 		await acquireExclusiveUserConfigurationAccessGuards(transaction, [userId]);
+		// Related domain writes and progress must either all commit or all roll back.
+		// The callback already holds exclusive user protection; it opens no inner transaction.
+		await beforeWrite?.(transaction);
 		await transaction
 			.insert(userSettings)
 			.values({ userId, ...values })

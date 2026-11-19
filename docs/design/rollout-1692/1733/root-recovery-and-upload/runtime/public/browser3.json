@@ -1,0 +1,23 @@
+{
+  "passed": 3,
+  "failed": 0,
+  "physicalFiles": [
+    {
+      "file": "apps/webapp/src/components/personnel-file/use-payslip-batch-upload.browser.test.ts",
+      "assertions": [
+        {
+          "fullName": "payslip upload transport uploads the same PDF again after an earlier batch consumed its temporary bytes",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip upload transport still resumes unfinished bytes after a browser reload",
+          "status": "passed"
+        },
+        {
+          "fullName": "payslip upload transport ignores a consumed completed URL retained by the previous client",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "Faturalandırma güncellenene kadar bu kuruluşa erişim duraklatıldı.",
       "adminDescription": "Deneme süreniz sona erdi veya aboneliğiniz artık geçerli değil. Z8'i kullanmaya devam etmek için faturalandırmayı güncelleyin.",
       "goToBilling": "Faturalandırmaya git",
       "memberDescription": "Bu kuruluş askıya alındı. Faturalandırmayı güncellemek için bir kuruluş yöneticisiyle iletişime geçin.",
@@ -165,6 +166,13 @@
     "teal": "Deniz Mavisi"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Bir şeyler ters gitti. Tekrar deneyin.",
+      "formerEmployee": "Eski çalışanlar seçilemez. Mevcut listeden birini seçin.",
+      "invalidInput": "Girdinizi kontrol edip tekrar deneyin.",
+      "notAllowed": "Bu ayara erişiminiz yok.",
+      "signInRequired": "Devam etmek için giriş yapın."
+    },
     "actions": "Eylemler",
     "active": "Aktif",
     "add": "Ekle",
@@ -174,6 +182,7 @@
     "approve": "Onayla",
     "assign": "Ata",
     "back": "Geri",
+    "backToDashboard": "Kontrol paneline dön",
     "brandLogo": "{brand} logosu",
     "breadcrumb": {
       "breadcrumb": "İçerik haritası",
@@ -195,6 +204,7 @@
     "copy": "Kopyala",
     "create": "Oluştur",
     "current": "Mevcut",
+    "date": "Tarih",
     "datePicker": {
       "clearDate": "Tarihi temizle",
       "placeholder": "Bir tarih seçin"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} dk.",
     "edit": "Düzenle",
     "employees": "Çalışanlar",
-    "enabled": "Etkin",
     "error": "Hata",
     "error-occurred": "Bir hata oluştu",
     "errors": {
       "monthClosed": "{month} kapalı. Çalışma veya devamsızlık kayıtlarının değiştirilebilmesi için yeniden açılmalıdır."
     },
     "fieldPresets": "{label} ön ayarları",
+    "filters": "Filtreler",
     "focusInput": "Giriş alanına odaklan",
     "gender": {
       "female": "Kadın",
@@ -253,6 +263,7 @@
       "application": "Uygulama yükleniyor",
       "auditExportSettings": "Denetim dışa aktarma ayarları yükleniyor",
       "authentication": "Kimlik doğrulama yükleniyor",
+      "billableTimeSettings": "Faturalanabilir zaman ayarları yükleniyor",
       "changePolicySettings": "Değişiklik politikası ayarları yükleniyor",
       "coverageRuleSettings": "Kapsam kuralı ayarları yükleniyor",
       "customerSettings": "Müşteri ayarları yükleniyor",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Demo veri ayarları yükleniyor",
       "deploymentDiagnostics": "Dağıtım tanılamaları yükleniyor",
       "employeeReports": "Çalışan raporları yükleniyor",
+      "employees": "Çalışanlar yükleniyor",
+      "employeeVacationAllowance": "Çalışan izin hakkı yükleniyor",
       "employeeVacationAllowances": "Çalışan izin hakları yükleniyor",
       "exportOperations": "Dışa aktarma işlemleri yükleniyor",
       "holidaySettings": "Tatil ayarları yükleniyor",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Vardiya çizelgesi yükleniyor",
       "shiftTemplateSettings": "Vardiya şablonu ayarları yükleniyor",
       "skillSettings": "Beceri ayarları yükleniyor",
+      "statistics": "İstatistikler yükleniyor",
       "surchargeSettings": "Ek ücret ayarları yükleniyor",
       "team": "Ekip yükleniyor",
       "todaySManagerBriefing": "Günün yönetici bilgilendirmesi yükleniyor",
@@ -315,8 +329,6 @@
     },
     "more": "daha fazla",
     "moreActions": "Diğer eylemler",
-    "moveDown": "Aşağı taşı",
-    "moveUp": "Yukarı taşı",
     "name": "Ad",
     "navigation": {
       "retry": "Gezinmeyi yeniden dene",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Bildirimler} other {Bildirimler (# okunmamış)}}"
     },
+    "offline": "Çevrimdışı",
     "open": "Aç",
     "openEnded": "Ucu açık",
     "openMenu": "Menüyü aç",
@@ -389,6 +402,7 @@
     "removing": "Kaldırılıyor...",
     "reset": "Sıfırla",
     "retry": "Yeniden dene",
+    "retrying": "Tekrar deneniyor…",
     "revoke": "Geri al",
     "save": "Kaydet",
     "saveChanges": "Değişiklikleri Kaydet",
@@ -403,7 +417,9 @@
       "sidebar": "Kenar Çubuğu",
       "toggleSidebar": "Kenar Çubuğunu Aç/Kapat"
     },
+    "signIn": "Giriş yap",
     "skip": "Atla",
+    "skipToContent": "İçeriğe atla",
     "start": "Başlat",
     "status": "Durum",
     "submitting": "Gönderiliyor…",
@@ -422,6 +438,9 @@
     },
     "to": "ile",
     "today": "Bugün",
+    "tryAgain": "Tekrar dene",
+    "unavailable": "Kullanılamıyor",
+    "undo": "Geri al",
     "unexpectedError": "Beklenmedik bir hata oluştu",
     "unknown": "Bilinmiyor",
     "unknownEmployee": "Bilinmeyen Çalışan",
@@ -575,6 +594,7 @@
       "submit": "Orijinal kontrolü kaydet",
       "suspensionNotice": "Yeniden yapılan başarılı bir kontrol, askıya alınan yetkiyi otomatik olarak geri yüklemez. Yeni bir kontrol ve açık bir yeniden etkinleştirme kararı gereklidir.",
       "title": "{name} adlı kişinin orijinal sürücü belgesini incele",
+      "transportError": "Kontrol kaydedilemedi. Girdiniz korundu; bağlantınızı ve sorumluluğunuzu kontrol ettikten sonra tekrar deneyin.",
       "verifier": "Kaydedilen bilgilerin ve münferit sınıf sonuçlarının incelememi yansıttığını onaylıyorum."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "Sürücü belgesi kaydı yüklenemedi. Mevcut doğrulayıcı sorumluluğunuzu kontrol edin.",
       "loading": "Sürücü belgesi kaydı yükleniyor…",
       "notIntended": "{name} öngörülen bir sürücü değil. Kontrol yalnızca öngörülen sürücüler için gereklidir.",
+      "retained": "Saklanan kanıtlar incelenebilir. Eski çalışanlar için yeni kontroller yapılamaz.",
       "title": "{name} için sürücü belgesi kontrolü"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Durum",
         "team": "Ekip"
       },
+      "customOrder": "Seçilen sütuna ve yöne göre sıralandı.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Kontrol zamanı geldi",
+      "dueOrder": "Önce vadesi gelen kontroller, ardından bir sonraki son tarih.",
       "empty": {
         "description": "Doğrulayıcı sorumluluğunuzdaki öngörülen sürücüler burada görünür. Eksik biri varsa bir yöneticiye danışın.",
         "title": "Henüz kontrol edilecek kimse yok"
@@ -607,6 +630,8 @@
       "loadError": "Liste yüklenemedi. Mevcut doğrulayıcı sorumluluğunuzu kontrol edin.",
       "loading": "Öngörülen sürücüler yükleniyor…",
       "noMatches": "Arama veya filtreyle eşleşen öngörülen sürücü yok.",
+      "refresh": "Kontrol iş listesini yenile",
+      "refreshing": "Kontrol iş listesi güncelleniyor…",
       "search": "Ada göre ara",
       "status": {
         "active": "Aktif",
@@ -682,6 +707,7 @@
       "failed": "İncelenen sınıf başarısız",
       "field": "Düzeltilen alan",
       "from": "Başlangıç tarihi (UTC)",
+      "fromHelp": "Dönem 00:00 UTC'de başlar.",
       "globalSuspension": "Tüm sürüş yetkileri askıya alındı",
       "help": "Orijinal onaylar, tarihli ekler ve yürürlükteki yetkilendirme kararları ayrı kalır. Seçilen dönemi anlamak için gereken önceki kanıtlar bağlam olarak etiketlenir. Aşağıdaki tüm etkinlik zamanları ve dönem sınırları UTC kullanır.",
       "impedimentReported": "Sürüş engeli bildirildi",
@@ -716,6 +742,7 @@
       "suspended": "Yetkilendirme askıya alındı",
       "title": "Kontrol ve yetkilendirme geçmişi",
       "to": "Tarihinden önce (UTC)",
+      "toHelp": "Dönem, bu tarihte 00:00 UTC'den önce sona erer.",
       "unavailable": "Geçmiş kullanılamıyor. Dönemi ve geçerli erişiminizi kontrol edin.",
       "value": "Düzeltilmiş değer",
       "verifierConfirmation": "Doğrulayıcı onayı, orijinal kontrol zamanında kaydedildi"
@@ -751,7 +778,6 @@
         "teamNotFound": "Bu ekip artık mevcut değil."
       },
       "notRequired": "Gerekli değil (hariç tutuldu)",
-      "removed": "Öngörülen sürücü ataması kaldırıldı",
       "required": "Gerekli",
       "saved": "Öngörülen sürücüler kaydedildi",
       "targetOrganization": "Tüm kuruluş",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Sürüş yetkisi",
       "loading": "Sürüş yetkisi yükleniyor…",
+      "loadingEmployees": "Planlama için çalışanlar yükleniyor…",
       "noEmployees": "Eşleşen çalışan yok.",
       "recordingHelp": "Çalışma süresini ve fiili araç kullanımını her zaman kaydedebilirsiniz. Bir araç seçmek sürüş yetkisi vermez; kontrol edilen sınıflar her araç için uygunluğu belirlemez.",
       "refresh": "Sürüş durumunu yenile",
+      "refreshEmployees": "Planlama çalışanlarını yenile",
+      "rosterUnavailable": "Planlama çalışanlarına ulaşılamıyor. Mevcut kuruluş erişiminizi kontrol edip tekrar deneyin.",
       "search": "Çalışan bul",
       "searchHelp": "En fazla 50 çalışan gösterilir. Başka bir çalışan bulmak için aramayı daraltın. Bu görünüm denetim kaydı içermez.",
       "title": "Planlama için sürüş durumu",
       "unavailable": "Sürüş yetkisi durumu kullanılamıyor."
     },
     "page": {
+      "reconciling": "Mevcut kuruluş için sürücü belgesi erişimi yükleniyor…",
+      "scope": "Aktif kuruluşunuzda sürüş yetkisi, orijinal kontroller ve planlama. Her görünüm mevcut erişiminizi takip eder.",
       "title": "Sürücü belgesi"
     },
     "policyTitle": "Kuruluş politikası",
@@ -960,6 +991,13 @@
       "description": "{feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
       "emailBody": "Merhaba,\n\nPlatform özelliklerine erişebilmek için bir çalışan profiline ihtiyacım var. Bu konuda bana yardımcı olabilir misiniz?\n\nTeşekkürler!",
       "emailSubject": "Çalışan Profili Kurulumu Gerekli",
+      "formerEmployee": {
+        "description": "Tekrar bu kuruluşun üyesisiniz ancak önceki istihdamınız sona ermiş. {feature} özelliğini kullanabilmeniz için önce bir yöneticinin sizi tekrar işe alması gerekir.",
+        "emailBody": "Merhaba,\n\nTekrar kuruluşun bir üyesiyim ancak önceki istihdamım sona ermişti. Platform özelliklerine erişebilmem için beni tekrar işe alabilir misiniz?\n\nTeşekkürler!",
+        "emailSubject": "Tekrar İşe Alma Talebi",
+        "helpText": "Yöneticinizden sizi tekrar işe almasını isteyin. O zamana kadar bu kuruluşu kullanamazsınız.",
+        "title": "Buradaki istihdamınız sona erdi"
+      },
       "helpText": "Bir organizasyona davet edildiyseniz, yöneticinizden çalışan profilinizi oluşturmasını isteyin.",
       "title": "Çalışan Profili Gerekli"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "İşçi kuyruğu yükleniyor"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Mevcut bir girişi doğrulayın"
+    },
     "banner": {
       "action": "Gereksinimleri inceleyin ve doğrulayın",
       "requirement": "Bu kuruluş, {deadline} tarihinden itibaren doğrulanmış kimlik doğrulaması gerektirir."
     },
     "code": {
       "label": "Kimlik doğrulayıcı kodu",
+      "required": "Kimlik doğrulayıcı kodunu girin",
       "verify": "Kimlik doğrulayıcıyı doğrula"
     },
     "continue": "Doğrulamadan sonra devam et",
@@ -1056,6 +1098,8 @@
       "title": "Bir kimlik doğrulayıcı kaydedin veya değiştirin",
       "warning": "Bir faktör eklemek veya değiştirmek beş dakika içinde doğrulama gerektirir. Eski faktörü kaldırmadan önce yenisini doğrulayın. Son faktörünüzü iptal etmeye izin verilir ve yukarıda listelenen kuruluşlara erişimi engelleyebilir; bu yeni bir kayıt penceresi sağlamaz."
     },
+    "loading": "Güvenlik doğrulaması yükleniyor",
+    "navigation": "Kuruluş ve hesap",
     "organization": {
       "select": "Başka bir kuruluş seçin"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Parola doğrulaması başarısız oldu",
       "label": "Mevcut parola",
+      "required": "Mevcut şifrenizi girin",
       "verified": "Parola doğrulandı. Aşağıda ilk kimlik doğrulayıcınızı kaydedebilir ya da mevcut bir kimlik doğrulayıcıyı veya yedekleme kodunu doğrulayabilirsiniz.",
       "verify": "Parolayı doğrula"
     },
@@ -1097,7 +1142,16 @@
       "description": "Kurtarma için yukarıdaki şifrenizi doğrulayın ve ardından kullanılmamış bir yedek kod girin. Bu işlem, kuruluşlarınız genelindeki önceki yerel doğrulamaları temizler.",
       "label": "Yedek kod",
       "lockout": "Tek yönetici tüm kimlik doğrulama ve kurtarma yollarını kaybederse kuruluş kilitli kalır. Yönetici veya destek atlama yolu yoktur.",
-      "success": "Kurtarma yalnızca yeni yedek kayda izin verir. Kuruluşunuza dönmeden önce bir kimlik doğrulayıcıyı doğrulayın."
+      "nextSteps": "Bir kimlik doğrulayıcıyı doğrulamadan önce şifrenizi tekrar doğrulayın.",
+      "open": "Kurtarma koduyla kurtarın",
+      "required": "Kullanılmamış bir kurtarma kodu girin",
+      "success": "Kurtarma yalnızca yeni yedek kayda izin verir. Kuruluşunuza dönmeden önce bir kimlik doğrulayıcıyı doğrulayın.",
+      "title": "Hesap kurtarma"
+    },
+    "requirements": {
+      "empty": "Bu hesap için listelenmiş herhangi bir kuruluş gereksinimi yok.",
+      "selected": "Seçilen kuruluş",
+      "title": "Kuruluş gereksinimleri"
     },
     "security": {
       "factorWarning": "Bir faktörü kaldırmak, bunu gerektiren kuruluşlara erişimi engelleyebilir. Önce bir yedek faktör doğrulayın; son faktörü kaldırmak yeni bir ek süre tanımaz.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Kuruluş kimlik doğrulama ilkesi (sahipler/yöneticiler)"
     },
     "signout": "Oturumu kapat",
+    "signout.failed": "Çıkış yapılamadı. Tekrar deneyin.",
     "social": {
       "verify": "{provider} ile mevcut oturum açma işlemini doğrulayın"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Platform Yöneticisi",
     "reports": "Raporlar",
     "scheduling": "Planlama",
+    "secondary-label": "Ayarlar ve yardım",
     "settings": "Ayarlar",
     "team": "Ekip",
     "teamAbsences": "Ekip Devamsızlıkları",
     "teamDriving": "Sürüş Ayrıntıları",
-    "team-label": "Ekip",
+    "team-organization-label": "Ekip ve kuruluş",
     "teamPeriodSubmissions": "Dönem Gönderimleri",
     "teamPresence": "Kimler Burada",
     "time-tracking": "Zaman Takibi",
     "today": "Bugün",
     "travel-expenses": "Seyahat Masrafları",
+    "workplace-label": "İş yeri",
     "worksCouncil": "İşçi Konseyi"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Vardiyanız {endTime} ({timezone}) saatinde sona erdi. Çalışmayı bitirdiyseniz çıkış yapın.",
         "title": "Hâlâ giriş yapmış durumdasınız"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} yeniden üye oldu ancak önceki istihdamı sona ermişti. Siz onları tekrar işe alana kadar erişimleri olmayacak.",
+        "title": "Eski bir çalışanın tekrar işe alınması gerekiyor"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, other {# çalışan hâlâ yalnızca eski bir yöneticiye bağlı: {names}. Mevcut bir yönetici atayın.} }",
@@ -1735,6 +1796,7 @@
         "title": "Su içme vakti!"
       }
     },
+    "countFailed": "Okunmamış sayısı kullanılamıyor",
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
     "empty": {
       "description": "Her şey güncel! Yeni bildirimler burada görünecektir.",
@@ -1754,6 +1816,8 @@
       "read": "Okundu",
       "unread": "Okunmadı"
     },
+    "loading": "Bildirimler yükleniyor…",
+    "loadingCount": "Okunmamış sayısı yükleniyor…",
     "nativePush": {
       "attention": {
         "title": "İlgilenmeniz gereken bir konu var"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Bir devre dışı bırakma nedeniyle açılan vardiyalar",
         "equipment_return_reminder": "Ekipman iade hatırlatıcıları",
         "forgotten_clock_out_reminder": "Unutulan çıkış",
+        "former_employee_needs_rehire": "Yeniden işe alınması gereken eski çalışanlar",
         "former_employee_reports_without_manager": "Mevcut yöneticisi olmayan çalışanlar",
         "kiosk_command_refused": "Kiosk zaman kaydı kaydedilmedi",
         "kiosk_fob_registered": "Kiosk anahtarlığı kaydedildi",
@@ -1871,6 +1936,7 @@
       "placeholder": "Bildirimleri ara..."
     },
     "selection": {
+      "actions": "Seçilen bildirimler",
       "selectAll": "Görünenlerin tümünü seç",
       "selectAllAria": "Görünen tüm bildirimleri seç",
       "selectNamedAria": "{title} öğesini seç",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "{count} bildirim silindi",
       "deleteFailed": "Bildirimler silinemedi",
+      "deletePartial": "{count} silindi; {failed} başarısız oldu. Kalan seçimi tekrar deneyin.",
       "markedRead": "{count} bildirim okundu olarak işaretlendi",
-      "markReadFailed": "Bildirimler okundu olarak işaretlenemedi"
+      "markReadFailed": "Bildirimler okundu olarak işaretlenemedi",
+      "readPartial": "{count} okundu olarak işaretlendi; {failed} başarısız oldu. Kalan seçimi tekrar deneyin."
     },
     "unreadBadge": "{count} okunmamış",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} görünür · son {limit} bildirim"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}s",
     "pm": "ÖS"
   },
-  "userAvatar": {
-    "alt": "Kullanıcı avatarı"
-  },
   "user": {
+    "account": "Hesap",
     "font-size": "Yazı tipi boyutu",
     "language": "Dil",
+    "loadingAccount": "Hesap yükleniyor",
     "logging-out": "Çıkış yapılıyor...",
     "log-out": "Çıkış yap",
     "log-out-failed": "Çıkış yapılamadı. Lütfen tekrar deneyin.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Zamana dayalı",
     "theme-time-info": "Zamana dayalı mod {currentMode} modunu kullanıyor. {time} saatinde {nextMode} moduna geçiş yapar.",
     "theme-toggle": "Temayı değiştir"
+  },
+  "userAvatar": {
+    "alt": "Kullanıcı avatarı"
   },
   "vacationBalance": {
     "conflictingPolicies": "Çakışan izin politikaları",

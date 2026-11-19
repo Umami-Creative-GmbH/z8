@@ -1,0 +1,12 @@
+{
+  "source": "scheduling-fixture-bridge-02.ts",
+  "sourceSha256": "8decb3c3ce02b2259f7c2fb56eb9d226714bf00b5ff37ea5db52bae716a02ba8",
+  "target": "apps\\webapp\\scripts\\1738-publication-independent-fixture-bridge.ts",
+  "sha256": "00b568d70a11143b09e7dafbf11eca597b7fad23787a92daa997064082bdc687",
+  "changes": [
+    "initial domain-only two boundary drafts per own org",
+    "read-only published audit actor boolean/timestamp and row digest",
+    "read-only recorded-work counts and digest"
+  ],
+  "authMemberGrantChanges": false
+}

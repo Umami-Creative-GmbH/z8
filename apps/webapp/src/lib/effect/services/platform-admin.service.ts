@@ -173,10 +173,7 @@ export class PlatformAdminService extends Context.Service<
 	}
 >()("PlatformAdminService") {}
 
-export async function requirePlatformAdmin(): Promise<{
-	userId: string;
-	email: string;
-}> {
+async function getAuthorizedPlatformSession() {
 	try {
 		const sessionData = await getRequestSession();
 
@@ -192,10 +189,7 @@ export async function requirePlatformAdmin(): Promise<{
 			throw new Error("Account is banned");
 		}
 
-		return {
-			userId: sessionData.user.id,
-			email: sessionData.user.email,
-		};
+		return sessionData;
 	} catch {
 		throw new AuthorizationError({
 			message: "Platform admin access required",
@@ -203,6 +197,19 @@ export async function requirePlatformAdmin(): Promise<{
 			action: "access",
 		});
 	}
+}
+
+export async function requirePlatformAdmin(): Promise<{ userId: string; email: string }> {
+	const { user } = await getAuthorizedPlatformSession();
+	return { userId: user.id, email: user.email };
+}
+
+export async function requirePlatformAdminSession(): Promise<{
+	userId: string;
+	sessionId: string;
+}> {
+	const { user, session } = await getAuthorizedPlatformSession();
+	return { userId: user.id, sessionId: session.id };
 }
 
 // Service implementation

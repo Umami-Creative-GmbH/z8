@@ -1,0 +1,43 @@
+{
+  "phase": "final",
+  "kind": "canonical-fixture-read-only",
+  "small": {
+    "absences": 419,
+    "absenceDigest": "7b33158e5d1fe6be24be2fbbcd8278a0d46d9accf92bc9b297a77aff81b32df4",
+    "workDigest": "2a7ead4396ad621d5de71c97eae6a0c1e11a3de6753741f18658590a63ca4e85",
+    "entryDigest": "e5bd24ad3865ffbded7bd7b7a758c50e84e3306528f3a93d2793ab2e2ef757b4",
+    "reviewRecords": [
+      {
+        "employeeId": "6da81604-a1ac-4d77-9620-eec6ec8d7e1a",
+        "categoryId": "65ee1f8e-c012-4f05-85d6-037bff845f50",
+        "date": "2026-11-18T00:00:00.000Z",
+        "endDate": "2026-11-18T00:00:00.000Z",
+        "status": "approved",
+        "notes": "1740 independent manager retry record"
+      },
+      {
+        "employeeId": "b2ddc3e8-0771-429f-8476-8af9e2296f73",
+        "categoryId": "65ee1f8e-c012-4f05-85d6-037bff845f50",
+        "date": "2026-11-19T00:00:00.000Z",
+        "endDate": "2026-11-19T00:00:00.000Z",
+        "status": "approved",
+        "notes": "1740 independent admin record"
+      },
+      {
+        "employeeId": "b9cfdbff-7fbf-476d-bb80-3664b04915df",
+        "categoryId": "65ee1f8e-c012-4f05-85d6-037bff845f50",
+        "date": "2026-11-17T00:00:00.000Z",
+        "endDate": "2026-11-17T00:00:00.000Z",
+        "status": "approved",
+        "notes": "1740 independent manager record"
+      }
+    ]
+  },
+  "large": {
+    "absences": 10400,
+    "absenceDigest": "fcc0f3929392454f10946c9c622777ed70e08e088b77ad10af38872dab6e35f4",
+    "workDigest": "ecd8e16bbaede1192d5eb133e40067c78220125cdf1060076933556a4c61a99c",
+    "entryDigest": "a3a84d601b9452ef7c9d9d447106195073feb689ba0e30bc28ccdb1d8169834a",
+    "reviewRecords": []
+  }
+}

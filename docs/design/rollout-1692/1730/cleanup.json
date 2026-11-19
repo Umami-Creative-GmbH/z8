@@ -1,0 +1,23 @@
+{
+  "port": 50151,
+  "portClosed": true,
+  "privateArtifacts": "retained untracked under .tmp/1730 and .tmp/1730-fixture",
+  "previewClosed": true,
+  "native": "named next-dev-loop-1730-t3-abec2f0c-e8d469008a3d13b5 close code0; native-close.json",
+  "containers": [
+    {
+      "label": "z8-performance-fixture-1450",
+      "container": "z8_perf_27816eacc23c_postgres"
+    },
+    {
+      "label": "z8-performance-fixture-1450",
+      "container": "z8_perf_27816eacc23c_redis"
+    },
+    {
+      "label": "z8-performance-fixture-1450",
+      "container": "z8_perf_27816eacc23c_storage"
+    }
+  ],
+  "puppeteer": "All journey/capture drivers close their owned browser in finally",
+  "containersRemoved": true
+}

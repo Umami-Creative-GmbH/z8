@@ -1,0 +1,713 @@
+{
+  "scope": "Read-only sealed SAFE payload intake; no tests, archived script execution, private reads, Git/index/package/runtime/tracker mutations, or readiness decision. Only this new system TEMP audit directory written.",
+  "source": {
+    "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "verifiedCommit": null
+  },
+  "index": {
+    "sha256": "04c3ffe1c4070bba2db8265019d7a986589bf189125acb8951002b3058b3b1e6",
+    "payloadCount": 34,
+    "totalBytes": 694058,
+    "allIndexHashesAndSizesMatch": true,
+    "jsonParsed": 25,
+    "markdownRead": 2,
+    "pngFullyDecodedAndVisuallyInspected": 7,
+    "archivedScriptsAllowlisted": 0
+  },
+  "payloads": [
+    {
+      "file": "HANDOFF.md",
+      "bytes": 4585,
+      "sha256": "4bb0969bbcbc07c76cfc53a118f700e54701f1ae954adaac184f95ebd321772e",
+      "matchesIndex": true
+    },
+    {
+      "file": "REPORT.json",
+      "bytes": 5353,
+      "sha256": "c415d045d3fec4ef21c9bb559c01874507868c7179459574fa356ae7a92892b6",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "ASSERTIONS.md",
+      "bytes": 13289,
+      "sha256": "4cb45aec61cf8fdeaa82e7f8c411e94541a6b9e9756f33f63dc8eeac6c51b54d",
+      "matchesIndex": true
+    },
+    {
+      "file": "assertion-ledger-SAFE.json",
+      "bytes": 40048,
+      "sha256": "e36ea3a4fa39c6ae5efc3ef36eea77180b700ddcbb7e1b53219b682d8830a0d7",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "attempt-qualifications-SAFE.json",
+      "bytes": 6119,
+      "sha256": "ae209dc31f8ab3d8101a6a87c9006bb464bc766e8a8a37f7396f18091c088682",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "commands-SAFE.json",
+      "bytes": 17948,
+      "sha256": "59928809ba21bab378e3236439c36d17cf2d8b144547a6c980740b2cc8e75974",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "preflight-SAFE.json",
+      "bytes": 677,
+      "sha256": "856810d233c730731412898e1cb03a2f37f1b1976aaa70845264c5d80da0381d",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "seed-SAFE.json",
+      "bytes": 430,
+      "sha256": "1c31875952fd781b564ecb4f9d50fa4f729404456539c6167f486d2c4f840329",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "database-initial-SAFE.json",
+      "bytes": 9514,
+      "sha256": "7f94a20a0812f96416aaaf35d91bfaf1e0e117833f6ee61ed06e691bfc10cb05",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "database-before-SAFE.json",
+      "bytes": 9514,
+      "sha256": "71dae63afb1eaa4b3cdda3b0dd65a3f8f730cf7d42e6a4569c7c9c9e7adc4300",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "database-after-SAFE.json",
+      "bytes": 9514,
+      "sha256": "148b222663acc566dc33aefee35af71176a79035ff3984f78c763483a0894ab0",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "database-checks-SAFE.json",
+      "bytes": 22668,
+      "sha256": "1075a5acc04ee72444ba924b12737673faba14d7b7cd45b34670032e8badb8f6",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "legacy-rows-before-SAFE.json",
+      "bytes": 2696,
+      "sha256": "bdfd829c9fd784b5fbb32a24b51bfb97410e6cb713f0ed46500fb1afb176329f",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "legacy-rows-after-SAFE.json",
+      "bytes": 2696,
+      "sha256": "bdfd829c9fd784b5fbb32a24b51bfb97410e6cb713f0ed46500fb1afb176329f",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "conversion-graph-SAFE.json",
+      "bytes": 242,
+      "sha256": "7fafd84bf748eb0b180a6f9be0cea8fedfa33a52b4e8a249d600b1cb0cfdda9e",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "download-SAFE.json",
+      "bytes": 241,
+      "sha256": "23de41cb29882ce611be3346e0b0d43354167a66b0b0481c4d6a6415ac923803",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "readers-SAFE.json",
+      "bytes": 458,
+      "sha256": "406111feecbf36d31eff907154d48935becbbc1be6cb7956a6423ea255f42554",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "react-approved-SAFE.json",
+      "bytes": 337,
+      "sha256": "fff1b32c474c359295b1b49fe4d19311f0e1c5abf6fa0354298c5c87549e18f2",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "next-diagnostics-SAFE.json",
+      "bytes": 805,
+      "sha256": "e658931e460944784ee9942a9876fd4ab996c0d66c5d226e080494fc64675862",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "desktop-layout-SAFE.json",
+      "bytes": 408,
+      "sha256": "bc74b688128cc883b1b7dd607de17ac1780079714b33eae9079366de0c94126a",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "phone-layout-SAFE.json",
+      "bytes": 512,
+      "sha256": "e61946133473f77598a8649250e367369e85f694c5e1bd17b3cb576b414c9bb9",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "wide-layout-SAFE.json",
+      "bytes": 832,
+      "sha256": "eb75ac7a910beb8abb89aa7222bd17951212f1cfc42a91cf6dd59678aad22ffc",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "captures-SAFE.json",
+      "bytes": 3210,
+      "sha256": "87a5bb3bcead646eb58072d775aa278017ddc5bc0ac9c995e38cbc0086909441",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "preservation-final-SAFE.json",
+      "bytes": 609,
+      "sha256": "c1f6d51f4040a969cdb212838b35bd4985246a30121b26f3c5a7ffcb8285466e",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "process-cleanup-SAFE.json",
+      "bytes": 126,
+      "sha256": "2cf143020b67ea1ffd98b5b575424fd069080b711cbc9b1419d81890177a2520",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "resources-final-SAFE.json",
+      "bytes": 237,
+      "sha256": "9179e1d1ed81943c30915a8bfa91b8df16ca548e2049017ca8d90bce39bf4faf",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "lease-release-SAFE.json",
+      "bytes": 189,
+      "sha256": "ed337462ceaa21a3453e9684896ceaec7dcba08bceb42d2f9f970171d8b49ed1",
+      "matchesIndex": true,
+      "jsonParsed": true
+    },
+    {
+      "file": "draft-desktop-1600-settled.png",
+      "bytes": 73801,
+      "sha256": "19dc722635ac7577abfb8b951f923f18532e790b0a5ec8d4f478987316e7abda",
+      "matchesIndex": true,
+      "png": {
+        "width": 1344,
+        "height": 1000,
+        "bitDepth": 8,
+        "colorType": 2,
+        "interlace": 0,
+        "allChunkCrcsValid": true,
+        "zlibStreamFullyConsumed": true,
+        "allScanlinesUnfiltered": true,
+        "inflatedBytes": 4033000,
+        "rgbPixelBytes": 4032000,
+        "rgbPixelSha256": "05153b78523f02732e736679d47c7f96c640212a75cf4fcac2ae5df024451935",
+        "filterCounts": {
+          "4": 209,
+          "2": 704,
+          "1": 79,
+          "3": 8
+        },
+        "visuallyInspected": true
+      }
+    },
+    {
+      "file": "real-receipt-refusal-desktop.png",
+      "bytes": 95736,
+      "sha256": "ee3ddafdcb4465093afbac647e518386cf441e9d13ca1d979b8cac4e11c1d3eb",
+      "matchesIndex": true,
+      "png": {
+        "width": 1344,
+        "height": 1000,
+        "bitDepth": 8,
+        "colorType": 2,
+        "interlace": 0,
+        "allChunkCrcsValid": true,
+        "zlibStreamFullyConsumed": true,
+        "allScanlinesUnfiltered": true,
+        "inflatedBytes": 4033000,
+        "rgbPixelBytes": 4032000,
+        "rgbPixelSha256": "826e9cc720943629e64836131f15d370a66f4f7fb19cb502839634ebcfd8a8f6",
+        "filterCounts": {
+          "4": 248,
+          "2": 664,
+          "1": 81,
+          "3": 7
+        },
+        "visuallyInspected": true
+      }
+    },
+    {
+      "file": "converted-desktop.png",
+      "bytes": 81043,
+      "sha256": "8961453d56bd57014002a5e43ec194b6ae42254a92a4c1230c814c416f0eb317",
+      "matchesIndex": true,
+      "png": {
+        "width": 1344,
+        "height": 1000,
+        "bitDepth": 8,
+        "colorType": 2,
+        "interlace": 0,
+        "allChunkCrcsValid": true,
+        "zlibStreamFullyConsumed": true,
+        "allScanlinesUnfiltered": true,
+        "inflatedBytes": 4033000,
+        "rgbPixelBytes": 4032000,
+        "rgbPixelSha256": "61350fe92a40220eeba632fb2484f49f89d4e2a0bf23ceadb314fce55bbbc516",
+        "filterCounts": {
+          "4": 234,
+          "2": 672,
+          "1": 85,
+          "3": 9
+        },
+        "visuallyInspected": true
+      }
+    },
+    {
+      "file": "submitted-desktop-1600.png",
+      "bytes": 71183,
+      "sha256": "2f9e794007badb520bb9f238d1ffa51b0d9d22d64d3a078ad4c339132119d326",
+      "matchesIndex": true,
+      "png": {
+        "width": 1344,
+        "height": 1000,
+        "bitDepth": 8,
+        "colorType": 2,
+        "interlace": 0,
+        "allChunkCrcsValid": true,
+        "zlibStreamFullyConsumed": true,
+        "allScanlinesUnfiltered": true,
+        "inflatedBytes": 4033000,
+        "rgbPixelBytes": 4032000,
+        "rgbPixelSha256": "5b6e5cf7ac19bd8658d15972d60c2f48a9a969c1c7df348a608df6ec1f6ce184",
+        "filterCounts": {
+          "4": 210,
+          "2": 712,
+          "1": 75,
+          "3": 3
+        },
+        "visuallyInspected": true
+      }
+    },
+    {
+      "file": "submitted-local-retry.png",
+      "bytes": 79261,
+      "sha256": "3ebd71f82e84b58e25f4a208a50c25b9136bc9f231647ed3dac08e380e4d84d6",
+      "matchesIndex": true,
+      "png": {
+        "width": 1312,
+        "height": 1000,
+        "bitDepth": 8,
+        "colorType": 2,
+        "interlace": 0,
+        "allChunkCrcsValid": true,
+        "zlibStreamFullyConsumed": true,
+        "allScanlinesUnfiltered": true,
+        "inflatedBytes": 3937000,
+        "rgbPixelBytes": 3936000,
+        "rgbPixelSha256": "abcf6b0cb3f8227574f6f8e2ccc4412ed8866436dbed4fc64557544d9af3008a",
+        "filterCounts": {
+          "4": 237,
+          "2": 688,
+          "1": 74,
+          "3": 1
+        },
+        "visuallyInspected": true
+      }
+    },
+    {
+      "file": "submitted-phone-390-large.png",
+      "bytes": 42338,
+      "sha256": "33d1c27c83d263d611d45f345c04ceb1662a9d6969c423d85bb1c6530882c418",
+      "matchesIndex": true,
+      "png": {
+        "width": 390,
+        "height": 844,
+        "bitDepth": 8,
+        "colorType": 2,
+        "interlace": 0,
+        "allChunkCrcsValid": true,
+        "zlibStreamFullyConsumed": true,
+        "allScanlinesUnfiltered": true,
+        "inflatedBytes": 988324,
+        "rgbPixelBytes": 987480,
+        "rgbPixelSha256": "a8f157ffa01e8ea61c7be63c43a639ee42b5c5cc049c093ed4e38fcd3ccf1a05",
+        "filterCounts": {
+          "4": 176,
+          "2": 599,
+          "1": 65,
+          "3": 4
+        },
+        "visuallyInspected": true
+      }
+    },
+    {
+      "file": "submitted-wide-2400-dark-large.png",
+      "bytes": 97439,
+      "sha256": "5999f11759e62589b409d9576d8af50dd371cbe502f9f07d2507b3b267599f14",
+      "matchesIndex": true,
+      "png": {
+        "width": 2337,
+        "height": 1200,
+        "bitDepth": 8,
+        "colorType": 2,
+        "interlace": 0,
+        "allChunkCrcsValid": true,
+        "zlibStreamFullyConsumed": true,
+        "allScanlinesUnfiltered": true,
+        "inflatedBytes": 8414400,
+        "rgbPixelBytes": 8413200,
+        "rgbPixelSha256": "2236bb149244892073c1263a2a902403b4a3a1c251c95fdb4854884241cfab8d",
+        "filterCounts": {
+          "4": 258,
+          "2": 833,
+          "1": 67,
+          "3": 42
+        },
+        "visuallyInspected": true
+      }
+    }
+  ],
+  "recordedAssertions": {
+    "declared": {
+      "runtime": 46,
+      "database": 88,
+      "preservation": 6,
+      "total": 140,
+      "passed": 140,
+      "failed": 0
+    },
+    "actualCategories": {
+      "runtime": 46,
+      "database-readback/preservation": 88,
+      "source/resource preservation": 6
+    },
+    "actualResults": {
+      "PASS": 140
+    },
+    "uniqueIds": 140,
+    "uniqueNames": 140,
+    "sequentialIds1To140": true,
+    "markdownMatchesJsonLedger": true,
+    "databaseNamesAndResultsMatchReadback": true
+  },
+  "discrepancies": [
+    {
+      "id": 42,
+      "classification": "Unsupported/stale named assertion conflicting with final qualification",
+      "recorded": "PASS: actual rendered names include both target detail and conversion panel",
+      "evidence": "Ledger has available:true and targetNames, not an observed names array. react-approved-SAFE contains names:[TravelExpenseClaimDetail]. REPORT/HANDOFF explicitly state LegacyDraftConversionPanel tree name not obtained. commands-SAFE records two TimeoutErrors for react-and-retirement attempt.",
+      "conclusion": "Do not count a conversion-panel React inspection pass. The exact archived boolean predicate cannot be inspected because scripts/raw attempts are excluded."
+    },
+    {
+      "id": 16,
+      "classification": "Wording overstatement; actual report navigation unproved",
+      "recorded": "PASS: converted claim retains original evidence and opens same existing report",
+      "evidence": "Ledger supplies only name/PASS/category. Conversion graph supplies reportRouteMatches:true. Converted PNG retains claim evidence but is cropped at Continue this draft heading. REPORT/HANDOFF exclude converted report editor reload proof. No public click/navigation or editor arrival receipt.",
+      "conclusion": "Credit only retained claim evidence, correct report route/readback and separately claimed claim reload; no actual Open the report navigation or editor reload proof."
+    }
+  ],
+  "databasePayloadComparisons": {
+    "scope": "Independent equality comparison of producer-published digest receipts, not fresh database queries",
+    "tableDigestsPerOrganization": {
+      "own-org": 32,
+      "foreign-org": 32
+    },
+    "beforeAfterChanges": [
+      {
+        "org": "own-org",
+        "table": "travel_expense_legacy_draft_conversion",
+        "before": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "after": {
+          "count": 1,
+          "sha256": "058d2faa6acdd9c2df62e1721e503804d1be3cc5fbb2b1375f058f3d5e2e08cb"
+        }
+      },
+      {
+        "org": "own-org",
+        "table": "travel_expense_report",
+        "before": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "after": {
+          "count": 1,
+          "sha256": "3563f091a812f969460cebc532f8c87b595e1758b71f9431b97d672493279a80"
+        }
+      },
+      {
+        "org": "own-org",
+        "table": "travel_expense_report_item",
+        "before": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "after": {
+          "count": 1,
+          "sha256": "7dbb76c6240cad530c3814d7a2f3cc8b779cd6ac1cc994e46b3f5f924c7aaba3"
+        }
+      },
+      {
+        "org": "own-org",
+        "table": "travel_expense_report_receipt",
+        "before": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "after": {
+          "count": 1,
+          "sha256": "3448e2933df5384dfc67a63efd7ec8883ce28ec3ed9ae5325a9706e76cd93c09"
+        }
+      },
+      {
+        "org": "own-org",
+        "table": "travel_expense_settlement_entry",
+        "before": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "after": {
+          "count": 1,
+          "sha256": "75e58921cb8cadc4f91452dc6ecda6b1a5da7d48c040ab5a024aa878a26460f4"
+        }
+      }
+    ],
+    "allForeignBeforeAfterEqual": true,
+    "timekeeping": {
+      "own-org": {
+        "time_record": {
+          "count": 2088,
+          "sha256": "6d773cede83cb7803e2ede803a6fb4600163636567eab08f2b86d4cd35ce2afe",
+          "initialBeforeAfterEqual": true
+        },
+        "time_entry": {
+          "count": 4176,
+          "sha256": "ba2b00ced88b5398d2b1c7bb0578b5bfbb7e485f57eb01fb43642035ba05c692",
+          "initialBeforeAfterEqual": true
+        },
+        "work_period": {
+          "count": 2088,
+          "sha256": "5aeb790cc8bebd01cc7a33b4bd85b1b32db8fc078a0563feb31c717345276bbd",
+          "initialBeforeAfterEqual": true
+        }
+      },
+      "foreign-org": {
+        "time_record": {
+          "count": 52200,
+          "sha256": "d4f31728ae61658780341e3b565c86d49f49e6c7b3ea861c1bd00d86001cd3de",
+          "initialBeforeAfterEqual": true
+        },
+        "time_entry": {
+          "count": 104400,
+          "sha256": "497a618c2e4f09573b02a5c9f6ab96f69f8386ac9c88616efd83d7e92bd0fac8",
+          "initialBeforeAfterEqual": true
+        },
+        "work_period": {
+          "count": 52200,
+          "sha256": "a7aa319fd4ad5ddd03d79656ece71ff45844fd90591e44e5d6d488790216da8b",
+          "initialBeforeAfterEqual": true
+        }
+      }
+    },
+    "legacyReceiptAliases": [
+      "draft",
+      "submitted",
+      "approved",
+      "unavailable",
+      "same-org-sentinel",
+      "foreign-sentinel"
+    ],
+    "legacyDigestReceiptFields": 18,
+    "legacyBeforeAfterObjectsEqual": true,
+    "legacyFilesByteIdentical": true,
+    "legacyReceiptFileSha256": "bdfd829c9fd784b5fbb32a24b51bfb97410e6cb713f0ed46500fb1afb176329f"
+  },
+  "businessReadbacks": {
+    "scope": "Producer runtime/readback receipts; original database rows, storage object and downloaded bytes are excluded from allowlist and were not independently queried/read",
+    "download": {
+      "completed": true,
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec",
+      "exactBytes": true,
+      "filenameExpected": true,
+      "pngSignature": true,
+      "width": 1,
+      "height": 1,
+      "eventBytes": 68
+    },
+    "downloadBytesIndependentlyRead": false,
+    "conversionGraph": {
+      "provenanceCount": 1,
+      "reportCount": 1,
+      "itemCount": 1,
+      "receiptCount": 1,
+      "reportOwn": true,
+      "itemMatches": true,
+      "legacyFactsPresent": true,
+      "legacyFactsType": "object",
+      "flagsArray": true,
+      "reportRouteMatches": true
+    },
+    "missingObject": {
+      "id": 14,
+      "name": "Real missing owned receipt refuses conversion with no partial report/provenance graph",
+      "result": "PASS",
+      "sameClaim": true,
+      "receiptRefusal": true,
+      "retryOffered": true,
+      "noPartial": true,
+      "zeroReports": true,
+      "category": "runtime"
+    },
+    "missingObjectNoPartialPersistence": {
+      "id": 134,
+      "name": "Missing receipt draft has no partial conversion",
+      "result": "PASS",
+      "category": "database-readback/preservation"
+    },
+    "reimbursement": {
+      "amount": "1.25",
+      "currency": "EUR",
+      "remaining": "119.25",
+      "externalPayment": false
+    },
+    "settlementEntryCountBeforeAfter": [
+      0,
+      1
+    ]
+  },
+  "attemptQualifications": {
+    "excludedAcceptanceAttempts": 3,
+    "browserHarnessFailures": 15,
+    "failureCategories": {
+      "Sandboxed browser connection failure": 1,
+      "Bounded harness wait timeout": 12,
+      "Unsupported harness event API": 1,
+      "Selector mismatch": 1
+    },
+    "otherAttempts": 10,
+    "unitCasesRun": 0,
+    "postgresSuitesRun": 0,
+    "newUnitCases": 0,
+    "newPostgresqlSuiteCases": 0,
+    "inherited545Unit51Postgresql": "Not rerun; not additive",
+    "initialSeedExposure": "Synthetic row identifiers reached tool output; no credentials reported exposed."
+  },
+  "commandReceipt": {
+    "entries": 47,
+    "environment": {
+      "pnpm_config_verify_deps_before_run": "false",
+      "pinnedPnpm": "12.16.1",
+      "cliGuard": "--config.verify-deps-before-run=false",
+      "packageCallsOnlyPinned": true
+    },
+    "wrappersAreNotOperationSuccessProof": true,
+    "archivedCommandsExecutedDuringIntake": false
+  },
+  "preservation": {
+    "scope": "Producer receipts only, not fresh Git/index/source/dependency/process inspection",
+    "preflight": {
+      "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+      "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+      "branch": "ai/1692-app-wide-ui-refresh",
+      "trackedCount": 18587,
+      "indexHash": "e9f85554bf943a846222a31df7931a394b2a1a4320aea226ae3a209f6a480bac",
+      "status": "",
+      "pins": {
+        "lock": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+        "license": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+        "guard": "6e0fa66590eba9bdded33cd6c9873ee3613bd74a6dc76091589808184f093df5",
+        "fixture": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077"
+      },
+      "internalLinkCount": 222,
+      "verifiedCommit": null
+    },
+    "final": {
+      "head": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+      "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+      "branch": "ai/1692-app-wide-ui-refresh",
+      "indexHash": "e9f85554bf943a846222a31df7931a394b2a1a4320aea226ae3a209f6a480bac",
+      "status": "",
+      "trackedCount": 18587,
+      "changedTracked": [],
+      "internalLinksAll": 222,
+      "rootAppInternalLinks": 158,
+      "changedInternalLinks": [],
+      "indexUnchanged": true,
+      "sourcePinsUnchanged": true,
+      "lockUnchanged": true,
+      "licenseUnchanged": true,
+      "licenseEntries": 125,
+      "rootDepsPhysical": true,
+      "appDepsPhysical": true,
+      "verifiedCommit": null
+    },
+    "processCleanup": {
+      "browserLive": 0,
+      "profilesRemaining": 0,
+      "nextLive": 0,
+      "nextListeners": 0,
+      "nextStoppedVerified": true
+    },
+    "resourcesFinal": {
+      "profilesLive": 0,
+      "canonicalCleanupExit": 0,
+      "controllerLive": 0,
+      "servicesLive": 0,
+      "nextLive": 0,
+      "browserLive": 0,
+      "ownedLiveResources": 0,
+      "verifiedExactServicesRemoved": 3,
+      "controllerListeners": 0
+    },
+    "leaseRelease": {
+      "status": "released",
+      "ownership": false,
+      "owner": "1692-1748-current-runtime-v1",
+      "releasedAt": "2026-11-18T00:53:20.550Z",
+      "ownedLiveResources": 0,
+      "verifiedCommit": null
+    }
+  },
+  "coordinationLease": {
+    "readOnlySnapshot": true,
+    "sha256": "314111cd9e70e57a676dfc240fc17febaebac673f87ce3e704306364f1b869e8",
+    "status": "released",
+    "ownership": false,
+    "ownedLiveResources": 0,
+    "releasedAt": "2026-11-18T00:53:20.550Z"
+  },
+  "limits": [
+    "No full route-readiness verdict; verifiedCommit remains null.",
+    "Original withdrawal sequences retain independently reviewed public-test evidence; these browser 503s are synthetic transport only, not live authorization revocation.",
+    "Late held-request retirement attempt did not reach required primary-tab content; no live retirement assertion.",
+    "Actual browser DOM fiber names identified TravelExpenseClaimDetail on approved claim; LegacyDraftConversionPanel tree name not obtained. Native agent-browser was not retried after prior policy block.",
+    "No axe-core package available; no installation; main axe acceptance unpassed.",
+    "Pending partial-approval/intermediate-only terminal fallback, held duplicate conversion, exhaustive account/org/Activity/revocation combinations and converted report editor reload are not newly proved here.",
+    "Legacy draft creation was business fixture seeding, not actual UI creation. Missing-object draft remained refused; a separate valid draft supplied the positive conversion.",
+    "No full production build/generation, catalogs, providers, devices or true zoom acceptance.",
+    "Early arrival and tooling failures are qualified in attempts; no unrelated symptom was silently fixed or labeled route P1."
+  ],
+  "captureLimits": "Current viewport main-region crops with fresh synthetic identities and visible overlays, no matched historical recapture; phone below-fold evidence and full keyboard coverage absent; CSS viewports only."
+}

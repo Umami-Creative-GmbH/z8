@@ -1,0 +1,16 @@
+{
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "actor": "canonical small-manager",
+  "steps": [
+    {
+      "name": "unknown coverage actual Publish tooltip",
+      "visible": true
+    }
+  ],
+  "rawActionResponses": false,
+  "grantsChanged": false,
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 30000ms exceeded"
+  }
+}

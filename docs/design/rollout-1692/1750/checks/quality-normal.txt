@@ -1,0 +1,2518 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+src\app\[locale]\(app)\travel-expenses\reports\[reportId]\page.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - import·{·randomUUID·}·from·"node:crypto";␍
+      2     │ - import·{·notFound·}·from·"next/navigation";␍
+      3     │ - import·{·Suspense·}·from·"react";␍
+      4     │ - import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";␍
+      5     │ - import·{·BackLink·}·from·"@/components/travel-expenses/back-link";␍
+      6     │ - import·{·ReportArrivalHeading·}·from·"@/components/travel-expenses/report/report-arrival-heading";␍
+      7     │ - import·{·ReportWorkspaceScope·}·from·"@/components/travel-expenses/report/report-workspace-scope";␍
+      8     │ - import·{·SubmittedTravelExpenseReport·}·from·"@/components/travel-expenses/report/submitted-report";␍
+      9     │ - import·{·TravelExpenseReportEditor·}·from·"@/components/travel-expenses/report/travel-expense-report-editor";␍
+     10     │ - import·{·LoadingRegion·}·from·"@/components/ui/loading-region";␍
+     11     │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     12     │ - import·{·Skeleton·}·from·"@/components/ui/skeleton";␍
+     13     │ - import·{·env·}·from·"@/env";␍
+     14     │ - import·{·getAuthContext·}·from·"@/lib/auth-helpers";␍
+     15     │ - import·{·financeActorReads,·loadFinanceActor·}·from·"@/lib/travel-expenses/finance-access";␍
+     16     │ - import·{·loadAuthorizedTravelExpenseReport·}·from·"@/lib/travel-expenses/report-read";␍
+     17     │ - import·{·getTranslate·}·from·"@/tolgee/server";␍
+     18     │ - ␍
+     19     │ - type·ReportPageProps·=·{␍
+     20     │ - → params:·Promise<{·reportId:·string·}>;␍
+     21     │ - → searchParams:·Promise<{·cycle?:·string·|·string[]·}>;␍
+     22     │ - };␍
+     23     │ - ␍
+     24     │ - /**·An·earlier·submission·cycle·named·by·`?cycle=`·(#603);·undefined·for·the·current·report.·*/␍
+     25     │ - function·requestedCycle(value:·string·|·string[]·|·undefined):·number·|·undefined·{␍
+     26     │ - → const·cycle·=·typeof·value·===·"string"·?·Number(value)·:·Number.NaN;␍
+     27     │ - → return·Number.isInteger(cycle)·&&·cycle·>·0·?·cycle·:·undefined;␍
+     28     │ - }␍
+     29     │ - ␍
+     30     │ - async·function·ReportContent({·params,·searchParams·}:·ReportPageProps)·{␍
+     31     │ - → const·[t,·actor,·{·reportId·},·search]·=·await·Promise.all([␍
+     32     │ - → → getTranslate(),␍
+     33     │ - → → getAuthContext(),␍
+     34     │ - → → params,␍
+     35     │ - → → searchParams,␍
+     36     │ - → ]);␍
+     37     │ - → const·cycle·=·requestedCycle(search.cycle);␍
+     38     │ - → if·(!actor?.employee)␍
+     39     │ - → → return·(␍
+     40     │ - → → → <div·className="mx-auto·w-full·max-w-3xl·space-y-4·px-4·py-6·lg:px-6">␍
+     41     │ - → → → → <PageHeader·title={t("travelExpenses.report.items.title",·"Expenses")}·/>␍
+     42     │ - → → → → <NoEmployeeError·feature={t("travelExpenses.feature",·"manage·travel·expenses")}·/>␍
+     43     │ - → → → </div>␍
+     44     │ - → → );␍
+     45     │ - → const·authorized·=·await·loadAuthorizedTravelExpenseReport(reportId);␍
+     46     │ - → if·(authorized.status·!==·"found")·notFound();␍
+     47     │ - → const·arrival·=·randomUUID();␍
+     48     │ - → const·scope·=·{␍
+     49     │ - → → userId:·actor.user.id,␍
+     50     │ - → → organizationId:·actor.employee.organizationId,␍
+     51     │ - → → employeeId:·actor.employee.id,␍
+     52     │ - → → arrival,␍
+     53     │ - → };␍
+     54     │ - → if·(authorized.access·!==·"owner")·{␍
+     55     │ - → → //·Reviewers·see·only·the·frozen·submission·the·Approvals·inbox·lets·them␍
+     56     │ - → → //·decide;·finance·(#612)·sees·the·approved·frozen·submission·and·its·settlement.␍
+     57     │ - → → //·An·approved·report·has·left·the·inbox,·so·its·reviewer·with·finance·access␍
+     58     │ - → → //·goes·back·to·expense·finance·too.␍
+     59     │ - → → const·financeReader·=␍
+     60     │ - → → → authorized.access·===·"finance"·||␍
+     61     │ - → → → (authorized.report.status·===·"approved"·&&␍
+     62     │ - → → → → (await·financeActorReads(await·loadFinanceActor(),·{␍
+     63     │ - → → → → → source:·{·type:·"report",·id:·authorized.report.id·},␍
+     64     │ - → → → → → employeeId:·authorized.report.employeeId,␍
+     65     │ - → → → → })));␍
+     66     │ - → → return·(␍
+     67     │ - → → → <ReportWorkspaceScope·key={arrival}·{...scope}>␍
+     68     │ - → → → → <div·className="mx-auto·w-full·max-w-3xl·space-y-4·px-4·py-4·md:py-6·lg:px-6">␍
+     69     │ - → → → → → {financeReader·?·(␍
+     70     │ - → → → → → → <BackLink·href="/travel-expenses/finance">␍
+     71     │ - → → → → → → → {t("travelExpenses.finance.back",·"Back·to·expense·finance")}␍
+     72     │ - → → → → → → </BackLink>␍
+     73     │ - → → → → → )·:·(␍
+     74     │ - → → → → → → <BackLink·href="/approvals/inbox">␍
+     75     │ - → → → → → → → {t("travelExpenses.report.backToApprovals",·"Back·to·approvals")}␍
+     76     │ - → → → → → → </BackLink>␍
+     77     │ - → → → → → )}␍
+     78     │ - → → → → → <SubmittedTravelExpenseReport␍
+     79     │ - → → → → → → reportId={reportId}␍
+     80     │ - → → → → → → cycle={cycle}␍
+     81     │ - → → → → → → maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}␍
+     82     │ - → → → → → />␍
+     83     │ - → → → → </div>␍
+     84     │ - → → → </ReportWorkspaceScope>␍
+     85     │ - → → );␍
+     86     │ - → }␍
+     87     │ - → return·(␍
+     88     │ - → → <ReportWorkspaceScope·key={arrival}·{...scope}>␍
+     89     │ - → → → <div·className="mx-auto·w-full·max-w-3xl·space-y-4·px-4·py-4·md:py-6·lg:px-6">␍
+     90     │ - → → → → {cycle·===·undefined·?·(␍
+     91     │ - → → → → → <>␍
+     92     │ - → → → → → → <BackLink·href="/travel-expenses">␍
+     93     │ - → → → → → → → {t("travelExpenses.report.backToTravelExpenses",·"Back·to·travel·expenses")}␍
+     94     │ - → → → → → → </BackLink>␍
+     95     │ - → → → → → → <TravelExpenseReportEditor␍
+     96     │ - → → → → → → → reportId={reportId}␍
+     97     │ - → → → → → → → maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}␍
+     98     │ - → → → → → → />␍
+     99     │ - → → → → → </>␍
+    100     │ - → → → → )·:·(␍
+    101     │ - → → → → → <>␍
+    102     │ - → → → → → → {/*·An·earlier·submission·is·reached·from·the·current·report,·so·it·leads·back·there.·*/}␍
+    103     │ - → → → → → → <BackLink·href={`/travel-expenses/reports/${reportId}`}>␍
+    104     │ - → → → → → → → {t("travelExpenses.report.backToCurrent",·"Back·to·the·current·report")}␍
+    105     │ - → → → → → → </BackLink>␍
+    106     │ - → → → → → → <SubmittedTravelExpenseReport␍
+    107     │ - → → → → → → → reportId={reportId}␍
+    108     │ - → → → → → → → cycle={cycle}␍
+    109     │ - → → → → → → → maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}␍
+    110     │ - → → → → → → />␍
+    111     │ - → → → → → </>␍
+    112     │ - → → → → )}␍
+    113     │ - → → → </div>␍
+    114     │ - → → </ReportWorkspaceScope>␍
+    115     │ - → );␍
+    116     │ - }␍
+    117     │ - ␍
+    118     │ - export·default·function·TravelExpenseReportPage(props:·ReportPageProps)·{␍
+    119     │ - → return·(␍
+    120     │ - → → <Suspense␍
+    121     │ - → → → fallback={␍
+    122     │ - → → → → <LoadingRegion␍
+    123     │ - → → → → → label={{␍
+    124     │ - → → → → → → labelKey:·"common.loadingRegions.travelExpenses",␍
+    125     │ - → → → → → → labelDefault:·"Loading·travel·expenses",␍
+    126     │ - → → → → → }}␍
+    127     │ - → → → → → role="status"␍
+    128     │ - → → → → → className="mx-auto·w-full·max-w-3xl·px-4·py-4·md:py-6·lg:px-6"␍
+    129     │ - → → → → >␍
+    130     │ - → → → → → <ReportArrivalHeading·/>␍
+    131     │ - → → → → → <Skeleton·aria-hidden="true"·className="h-96·w-full"·/>␍
+    132     │ - → → → → </LoadingRegion>␍
+    133     │ - → → → }␍
+    134     │ - → → >␍
+    135     │ - → → → <ReportContent·{...props}·/>␍
+    136     │ - → → </Suspense>␍
+    137     │ - → );␍
+    138     │ - }␍
+          1 │ + import·{·randomUUID·}·from·"node:crypto";
+          2 │ + import·{·notFound·}·from·"next/navigation";
+          3 │ + import·{·Suspense·}·from·"react";
+          4 │ + import·{·NoEmployeeError·}·from·"@/components/errors/no-employee-error";
+          5 │ + import·{·BackLink·}·from·"@/components/travel-expenses/back-link";
+          6 │ + import·{·ReportArrivalHeading·}·from·"@/components/travel-expenses/report/report-arrival-heading";
+          7 │ + import·{·ReportWorkspaceScope·}·from·"@/components/travel-expenses/report/report-workspace-scope";
+          8 │ + import·{·SubmittedTravelExpenseReport·}·from·"@/components/travel-expenses/report/submitted-report";
+          9 │ + import·{·TravelExpenseReportEditor·}·from·"@/components/travel-expenses/report/travel-expense-report-editor";
+         10 │ + import·{·LoadingRegion·}·from·"@/components/ui/loading-region";
+         11 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+         12 │ + import·{·Skeleton·}·from·"@/components/ui/skeleton";
+  142 more lines truncated
+src\components\travel-expenses\report\legacy-conversion-notice.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconArrowRight,·IconHistory·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useQuery·}·from·"@tanstack/react-query";␍
+      5     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      6     │ - import·{·useLocale·}·from·"next-intl";␍
+      7     │ - import·{·getLegacyTravelExpenseConversion·}·from·"@/app/[locale]/(app)/travel-expenses/legacy-draft-actions";␍
+      8     │ - import·{·Alert,·AlertDescription,·AlertTitle·}·from·"@/components/ui/alert";␍
+      9     │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+     10     │ - import·type·{·LegacyConversionFlag·}·from·"@/lib/travel-expenses/legacy-draft-conversion";␍
+     11     │ - import·type·{·LegacyConversionView·}·from·"@/lib/travel-expenses/legacy-draft-conversion-read";␍
+     12     │ - import·{·Link·}·from·"@/navigation";␍
+     13     │ - import·{·formatMoney,·formatPlainDateRange·}·from·"./format";␍
+     14     │ - import·{·useReportQueryKey·}·from·"./report-read-scope";␍
+     15     │ - ␍
+     16     │ - type·Translate·=·ReturnType<typeof·useTranslate>["t"];␍
+     17     │ - ␍
+     18     │ - /**·Why·a·field·of·the·continued·draft·is·empty,·in·the·employee's·terms.·*/␍
+     19     │ - function·legacyConversionFlagText(␍
+     20     │ - → t:·Translate,␍
+     21     │ - → flag:·LegacyConversionFlag,␍
+     22     │ - → legacy:·LegacyConversionView["legacy"],␍
+     23     │ - → locale:·string,␍
+     24     │ - ):·string·{␍
+     25     │ - → switch·(flag)·{␍
+     26     │ - → → case·"expense_date_unknown":␍
+     27     │ - → → → return·t(␍
+     28     │ - → → → → "travelExpenses.legacyDraft.flags.expenseDate",␍
+     29     │ - → → → → "The·draft·covered·{range}.·Choose·the·day·of·this·expense.",␍
+     30     │ - → → → → {·range:·formatPlainDateRange(locale,·legacy.tripStartDate,·legacy.tripEndDate)·??·""·},␍
+     31     │ - → → → );␍
+     32     │ - → → case·"trip_dates_not_recorded":␍
+     33     │ - → → → return·t(␍
+     34     │ - → → → → "travelExpenses.legacyDraft.flags.tripDates",␍
+     35     │ - → → → → "The·draft·was·created·before·travel·dates·were·recorded.·Enter·the·dates.",␍
+     36     │ - → → → );␍
+     37     │ - → → case·"destination_unmatched":␍
+     38     │ - → → → return·t(␍
+     39     │ - → → → → "travelExpenses.legacyDraft.flags.destination",␍
+     40     │ - → → → → 'The·destination·"{destination}"·could·not·be·matched·to·a·country.·Choose·it.',␍
+     41     │ - → → → → {␍
+     42     │ - → → → → → destination:·[legacy.destinationCity,·legacy.destinationCountry]␍
+     43     │ - → → → → → → .filter(Boolean)␍
+     44     │ - → → → → → → .join(",·"),␍
+     45     │ - → → → → },␍
+     46     │ - → → → );␍
+     47     │ - → → case·"amount_not_carried":␍
+     48     │ - → → → return·t(␍
+     49     │ - → → → → "travelExpenses.legacyDraft.flags.amount",␍
+     50     │ - → → → → "The·entered·amount·{amount}·is·not·a·valid·receipt·amount.·Enter·the·amount·and·currency·from·the·receipt.",␍
+     51     │ - → → → → {·amount:·`${legacy.originalAmount}·${legacy.originalCurrency}`·},␍
+     52     │ - → → → );␍
+     53     │ - → → case·"manual_total_not_used":␍
+     54     │ - → → → return·t(␍
+     55     │ - → → → → "travelExpenses.legacyDraft.flags.manualTotal",␍
+     56     │ - → → → → "The·draft·had·a·typed·total·of·{amount}.·It·is·not·used:·this·expense·is·now·calculated·from·what·you·enter·below.",␍
+     57     │ - → → → → {·amount:·formatMoney(locale,·legacy.calculatedAmount,·legacy.calculatedCurrency)·},␍
+     58     │ - → → → );␍
+     59     │ - → → case·"notes_not_carried":␍
+     60     │ - → → → return·t(␍
+     61     │ - → → → → "travelExpenses.legacyDraft.flags.notes",␍
+     62     │ - → → → → "Your·notes·are·shown·below;·copy·what·still·applies.",␍
+     63     │ - → → → );␍
+     64     │ - → → case·"project_eligibility_required":␍
+     65     │ - → → → return·t(␍
+     66     │ - → → → → "travelExpenses.legacyDraft.flags.project",␍
+     67     │ - → → → → "The·draft's·project·was·kept.·Unless·your·assignment·on·the·expense·date·is·on·record,·an·expense·administrator·must·authorize·it·before·you·can·submit.",␍
+     68     │ - → → → );␍
+     69     │ - → → case·"project_not_carried":␍
+     70     │ - → → → return·t(␍
+     71     │ - → → → → "travelExpenses.legacyDraft.flags.projectMissing",␍
+     72     │ - → → → → "The·draft's·project·no·longer·exists.·Choose·a·project·if·one·applies.",␍
+     73     │ - → → → );␍
+     74     │ - → → case·"conversion_required":␍
+     75     │ - → → → return·t(␍
+     76     │ - → → → → "travelExpenses.legacyDraft.flags.conversion",␍
+     77     │ - → → → → "The·receipt·is·in·a·foreign·currency.·The·draft·recorded·no·conversion,·so·add·how·it·was·converted·(card·charge·or·rate)·before·you·submit.",␍
+     78     │ - → → → );␍
+     79     │ - → }␍
+     80     │ - }␍
+     81     │ - ␍
+     82     │ - /**·The·legacy·draft·the·report·continues·(#616);·null·when·it·continues·none.·*/␍
+     83     │ - export·function·useLegacyConversion(reportId:·string)·{␍
+     84     │ - → return·useQuery({␍
+     85     │ - → → queryKey:·useReportQueryKey(queryKeys.travelExpenses.legacyConversion(reportId)),␍
+     86     │ - → → queryFn:·async·()·=>·{␍
+     87     │ - → → → const·result·=·await·getLegacyTravelExpenseConversion({·reportId·});␍
+     88     │ - → → → if·(!result.success)·throw·new·Error(result.error);␍
+     89     │ - → → → return·result.data;␍
+     90     │ - → → },␍
+     91     │ - → → staleTime:·Number.POSITIVE_INFINITY,␍
+     92     │ - → });␍
+     93     │ - }␍
+     94     │ - ␍
+     95     │ - /**␍
+     96     │ - ·*·On·a·report·continued·from·a·legacy·draft·(#616):·where·it·came·from,·what␍
+     97     │ - ·*·was·carried·over·and·why·some·fields·are·still·empty.␍
+     98     │ - ·*/␍
+     99     │ - export·function·LegacyConversionNotice({·reportId·}:·{·reportId:·string·})·{␍
+    100     │ - → const·{·t·}·=·useTranslate();␍
+    101     │ - → const·locale·=·useLocale();␍
+    102     │ - → const·{·data·}·=·useLegacyConversion(reportId);␍
+    103     │ - → if·(!data)·return·null;␍
+    104     │ - → const·{·legacy·}·=·data;␍
+    105     │ - → const·notes·=·legacy.notes?.trim();␍
+    106     │ - → return·(␍
+    107     │ - → → <Alert>␍
+    108     │ - → → → <IconHistory·aria-hidden="true"·className="size-4"·/>␍
+    109     │ - → → → <AlertTitle>␍
+    110     │ - → → → → {t("travelExpenses.legacyDraft.notice.title",·"Continued·from·an·earlier·claim·draft")}␍
+    111     │ - → → → </AlertTitle>␍
+    112     │ - → → → <AlertDescription·className="space-y-2">␍
+    113     │ - → → → → <p>␍
+    114     │ - → → → → → {t(␍
+    115     │ - → → → → → → "travelExpenses.legacyDraft.notice.description",␍
+    116     │ - → → → → → → "What·you·entered·was·carried·over·where·this·form·can·hold·it·exactly,·including·{count}·receipts.·Complete·the·remaining·fields·before·submitting.",␍
+    117     │ - → → → → → → {·count:·legacy.attachments.length·},␍
+    118     │ - → → → → → )}␍
+    119     │ - → → → → </p>␍
+    120     │ - → → → → {data.flags.length·>·0·&&·(␍
+    121     │ - → → → → → <ul·className="list-disc·space-y-1·pl-5·text-sm">␍
+    122     │ - → → → → → → {data.flags.map((flag)·=>·(␍
+    123     │ - → → → → → → → <li·key={flag}>{legacyConversionFlagText(t,·flag,·legacy,·locale)}</li>␍
+    124     │ - → → → → → → ))}␍
+    125     │ - → → → → → </ul>␍
+    126     │ - → → → → )}␍
+    127     │ - → → → → {notes·&&·data.flags.includes("notes_not_carried")·&&·(␍
+    128     │ - → → → → → <blockquote·className="whitespace-pre-wrap·break-words·border-l-2·pl-3·text-sm">␍
+    129     │ - → → → → → → {notes}␍
+    130     │ - → → → → → </blockquote>␍
+    131     │ - → → → → )}␍
+    132     │ - → → → → <Link␍
+    133     │ - → → → → → href={`/travel-expenses/${data.claimId}`}␍
+    134     │ - → → → → → className="inline-flex·items-center·gap-1·text-sm·font-medium·underline·underline-offset-4"␍
+    135     │ - → → → → >␍
+    136     │ - → → → → → {t("travelExpenses.legacyDraft.notice.original",·"View·the·original·draft")}␍
+    137     │ - → → → → → <IconArrowRight·aria-hidden="true"·className="size-4"·/>␍
+    138     │ - → → → → </Link>␍
+    139     │ - → → → </AlertDescription>␍
+    140     │ - → → </Alert>␍
+    141     │ - → );␍
+    142     │ - }␍
+          1 │ + "use·client";
+          2 │ +
+          3 │ + import·{·IconArrowRight,·IconHistory·}·from·"@tabler/icons-react";
+          4 │ + import·{·useQuery·}·from·"@tanstack/react-query";
+          5 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          6 │ + import·{·useLocale·}·from·"next-intl";
+          7 │ + import·{·getLegacyTravelExpenseConversion·}·from·"@/app/[locale]/(app)/travel-expenses/legacy-draft-actions";
+          8 │ + import·{·Alert,·AlertDescription,·AlertTitle·}·from·"@/components/ui/alert";
+  158 more lines truncated
+src\components\travel-expenses\report\mileage-item-editor.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconAlertTriangle·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useLocale·}·from·"next-intl";␍
+      6     │ - import·{·useState·}·from·"react";␍
+      7     │ - import·{·Alert,·AlertDescription,·AlertTitle·}·from·"@/components/ui/alert";␍
+      8     │ - import·type·{·Instant·}·from·"@/lib/datetime/temporal-core";␍
+      9     │ - import·{·withoutOverriddenRequirements·}·from·"@/lib/travel-expenses/allowance-override";␍
+     10     │ - import·{␍
+     11     │ - → type·MileageCalculation,␍
+     12     │ - → type·MileageItemDraft,␍
+     13     │ - → mileageItemMissingRequirements,␍
+     14     │ - → parseMileageItemDraft,␍
+     15     │ - }·from·"@/lib/travel-expenses/mileage";␍
+     16     │ - import·{·itemProjectChoice·}·from·"@/lib/travel-expenses/project-attribution";␍
+     17     │ - import·type·{·ReportItemView·}·from·"@/lib/travel-expenses/report-store";␍
+     18     │ - import·{·AllowanceOverrideNotice·}·from·"./allowance-override-notice";␍
+     19     │ - import·{·DraftSaveStatus·}·from·"./draft-save-status";␍
+     20     │ - import·{·ItemRequirementsSection·}·from·"./item-requirements-section";␍
+     21     │ - import·{·MileageBreakdown·}·from·"./mileage-breakdown";␍
+     22     │ - import·{·mileageDraftMatches·}·from·"./mileage-item-draft";␍
+     23     │ - import·{·MileageItemFields·}·from·"./mileage-item-fields";␍
+     24     │ - import·{␍
+     25     │ - → fieldErrorMessage,␍
+     26     │ - → type·MileageFieldName,␍
+     27     │ - → type·MileageFormValues,␍
+     28     │ - → toDraftInput,␍
+     29     │ - }·from·"./mileage-item-form";␍
+     30     │ - import·{·mileageRequirementLabel·}·from·"./mileage-labels";␍
+     31     │ - import·{·ItemProjectField·}·from·"./project-picker";␍
+     32     │ - import·{·RemoveExpenseButton·}·from·"./receipt-item-editor";␍
+     33     │ - import·{·useMileageItemDraft·}·from·"./use-mileage-item-draft";␍
+     34     │ - ␍
+     35     │ - /**␍
+     36     │ - ·*·Autosaving·editor·of·one·mileage·expense·(#606).·The·employee·enters·the␍
+     37     │ - ·*·date,·route,·distance·and·vehicle;·the·amount·is·always·the·server's␍
+     38     │ - ·*·calculation·with·the·organization's·rate·effective·on·that·date.␍
+     39     │ - ·*/␍
+     40     │ - export·function·MileageItemEditor(props:·Parameters<typeof·MileageItemEditorTask>[0])·{␍
+     41     │ - → return·<MileageItemEditorTask·key={`${props.reportId}:${props.item.id}`}·{...props}·/>;␍
+     42     │ - }␍
+     43     │ - ␍
+     44     │ - function·MileageItemEditorTask({␍
+     45     │ - → reportId,␍
+     46     │ - → item,␍
+     47     │ - → reimbursementCurrency,␍
+     48     │ - → onSaved,␍
+     49     │ - → onDraftChange,␍
+     50     │ - → removal,␍
+     51     │ - → project,␍
+     52     │ - → now,␍
+     53     │ - }:·{␍
+     54     │ - → reportId:·string;␍
+     55     │ - → /**·The·item·as·last·loaded;·later·loads·never·reset·entered·values.·*/␍
+     56     │ - → item:·ReportItemView;␍
+     57     │ - → reimbursementCurrency:·string;␍
+     58     │ - → onSaved?:·(item:·ReportItemView)·=>·void;␍
+     59     │ - → /**·The·entered·values·as·they·change;·null·while·any·of·them·is·malformed.·*/␍
+     60     │ - → onDraftChange?:·(draft:·MileageItemDraft·|·null)·=>·void;␍
+     61     │ - → removal?:·{·label:·string;·remove:·(expectedVersion:·number)·=>·Promise<boolean>·};␍
+     62     │ - → /**·Project·attribution·(#688),·as·receipts·have·it:·the·trip's·project·is·what·"inherit"·means.·*/␍
+     63     │ - → project?:·{·isTrip:·boolean;·tripProjectId:·string·|·null;·onSaved?:·()·=>·void·};␍
+     64     │ - → /**·The·report's·submission·clock·(`useSubmissionNow`):·a·future-dated·drive·waits·(#685).·*/␍
+     65     │ - → now:·Instant;␍
+     66     │ - })·{␍
+     67     │ - → const·{·t·}·=·useTranslate();␍
+     68     │ - → const·[removing,·setRemoving]·=·useState(false);␍
+     69     │ - → const·{·saver,·state,·form,·saved,·resolveWithTheirs·}·=·useMileageItemDraft({␍
+     70     │ - → → reportId,␍
+     71     │ - → → item,␍
+     72     │ - → → onSaved,␍
+     73     │ - → → onDraftChange,␍
+     74     │ - → });␍
+     75     │ - ␍
+     76     │ - → async·function·remove()·{␍
+     77     │ - → → if·(!removal)·return;␍
+     78     │ - → → setRemoving(true);␍
+     79     │ - → → //·Promise#finally·rather·than·try/finally:·the·React·Compiler·cannot␍
+     80     │ - → → //·compile·try·statements·without·a·catch·clause.␍
+     81     │ - → → await·saver␍
+     82     │ - → → → .flush()␍
+     83     │ - → → → .then(()·=>·removal.remove(saver.getState().version))␍
+     84     │ - → → → .then((removed)·=>·{␍
+     85     │ - → → → → if·(removed)·saver.discard();␍
+     86     │ - → → → })␍
+     87     │ - → → → .finally(()·=>·setRemoving(false));␍
+     88     │ - → }␍
+     89     │ - ␍
+     90     │ - → const·fieldError·=·(field:·MileageFieldName)·=>␍
+     91     │ - → → state.status·===·"invalid"␍
+     92     │ - → → → ?·fieldErrorMessage(t,·field,·state.fieldErrors?.[field])␍
+     93     │ - → → → :·undefined;␍
+     94     │ - ␍
+     95     │ - → return·(␍
+     96     │ - → → <div·className="space-y-6">␍
+     97     │ - → → → <div·className="flex·flex-wrap·items-start·justify-between·gap-2">␍
+     98     │ - → → → → <div·className="min-w-0·flex-1">␍
+     99     │ - → → → → → <DraftSaveStatus␍
+    100     │ - → → → → → → state={state}␍
+    101     │ - → → → → → → onRetry={()·=>·saver.retry()}␍
+    102     │ - → → → → → → onKeepMine={()·=>·saver.resolveConflict("keep_mine")}␍
+    103     │ - → → → → → → onUseTheirs={resolveWithTheirs}␍
+    104     │ - → → → → → />␍
+    105     │ - → → → → </div>␍
+    106     │ - → → → → {removal·&&·(␍
+    107     │ - → → → → → <RemoveExpenseButton␍
+    108     │ - → → → → → → label={removal.label}␍
+    109     │ - → → → → → → busy={removing}␍
+    110     │ - → → → → → → onConfirm={()·=>·void·remove()}␍
+    111     │ - → → → → → />␍
+    112     │ - → → → → )}␍
+    113     │ - → → → </div>␍
+    114     │ - ␍
+    115     │ - → → → {/*·Client-side·autosave:·submitting·only·flushes·the·draft·saver;·the·editor·needs·JS.·*/}␍
+    116     │ - → → → {/*·react-doctor-disable-next-line·react-doctor/no-prevent-default·*/}␍
+    117     │ - → → → <form␍
+    118     │ - → → → → noValidate␍
+    119     │ - → → → → onSubmit={(event)·=>·{␍
+    120     │ - → → → → → event.preventDefault();␍
+    121     │ - → → → → → void·saver.flush();␍
+    122     │ - → → → → }}␍
+    123     │ - → → → → className="grid·gap-4"␍
+    124     │ - → → → >␍
+    125     │ - → → → → <MileageItemFields·form={form}·fieldError={fieldError}·/>␍
+    126     │ - → → → → {project·&&·(␍
+    127     │ - → → → → → <form.Subscribe·selector={(formState)·=>·formState.values.expenseDate}>␍
+    128     │ - → → → → → → {(expenseDate)·=>·(␍
+    129     │ - → → → → → → → <ItemProjectField␍
+    130     │ - → → → → → → → → reportId={reportId}␍
+    131     │ - → → → → → → → → itemId={item.id}␍
+    132     │ - → → → → → → → → isTrip={project.isTrip}␍
+    133     │ - → → → → → → → → expenseDate={/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)·?·expenseDate·:·null}␍
+    134     │ - → → → → → → → → initialChoice={itemProjectChoice(item)}␍
+    135     │ - → → → → → → → → tripProjectId={project.tripProjectId}␍
+    136     │ - → → → → → → → → saver={saver}␍
+    137     │ - → → → → → → → → onSaved={project.onSaved}␍
+    138     │ - → → → → → → → />␍
+    139     │ - → → → → → → )}␍
+    140     │ - → → → → → </form.Subscribe>␍
+    141     │ - → → → → )}␍
+    142     │ - → → → </form>␍
+    143     │ - ␍
+    144     │ - → → → <form.Subscribe·selector={(formState)·=>·formState.values}>␍
+    145     │ - → → → → {(values)·=>·(␍
+    146     │ - → → → → → <MileageItemOutcome␍
+    147     │ - → → → → → → id={item.id}␍
+    148     │ - → → → → → → values={values}␍
+    149     │ - → → → → → → saved={saved}␍
+    150     │ - → → → → → → currency={reimbursementCurrency}␍
+  461 more lines truncated
+src\components\travel-expenses\report\per-diem-item-editor.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      4     │ - import·{·useLocale·}·from·"next-intl";␍
+      5     │ - import·{·useState·}·from·"react";␍
+      6     │ - import·type·{·Instant·}·from·"@/lib/datetime/temporal-core";␍
+      7     │ - import·{·withoutOverriddenRequirements·}·from·"@/lib/travel-expenses/allowance-override";␍
+      8     │ - import·{␍
+      9     │ - → type·PerDiemDraftField,␍
+     10     │ - → type·PerDiemItinerary,␍
+     11     │ - → parsePerDiemDraft,␍
+     12     │ - → perDiemMissingRequirements,␍
+     13     │ - }·from·"@/lib/travel-expenses/per-diem";␍
+     14     │ - import·type·{·ReportItemView·}·from·"@/lib/travel-expenses/report-store";␍
+     15     │ - import·{·AllowanceOverrideNotice·}·from·"./allowance-override-notice";␍
+     16     │ - import·{·DraftSaveStatus·}·from·"./draft-save-status";␍
+     17     │ - import·{·ItemRequirementsSection·}·from·"./item-requirements-section";␍
+     18     │ - import·{·PerDiemCalculationPanel·}·from·"./per-diem-calculation-panel";␍
+     19     │ - import·{·perDiemDraftMatches·}·from·"./per-diem-item-draft";␍
+     20     │ - import·{·PerDiemItemFields·}·from·"./per-diem-item-fields";␍
+     21     │ - import·{␍
+     22     │ - → fieldErrorMessage,␍
+     23     │ - → type·PerDiemFormValues,␍
+     24     │ - → type·PerDiemTrip,␍
+     25     │ - → toDraftInput,␍
+     26     │ - }·from·"./per-diem-item-form";␍
+     27     │ - import·{·perDiemRequirementLabel·}·from·"./per-diem-labels";␍
+     28     │ - import·{·RemoveExpenseButton·}·from·"./receipt-item-editor";␍
+     29     │ - import·{·usePerDiemItemDraft·}·from·"./use-per-diem-item-draft";␍
+     30     │ - ␍
+     31     │ - /**␍
+     32     │ - ·*·Autosaving·editor·of·the·trip's·per·diem·(#609).·The·employee·enters·when␍
+     33     │ - ·*·they·left·and·came·back·(local·date,·time·and·zone),·whether·they·stayed␍
+     34     │ - ·*·overnight,·and·the·meals·provided·on·each·travel·day;·the·allowance·is␍
+     35     │ - ·*·always·the·server's·daily·calculation·with·the·organization's·dated·rates.␍
+     36     │ - ·*/␍
+     37     │ - export·function·PerDiemItemEditor(props:·Parameters<typeof·PerDiemItemEditorTask>[0])·{␍
+     38     │ - → return·<PerDiemItemEditorTask·key={`${props.reportId}:${props.item.id}`}·{...props}·/>;␍
+     39     │ - }␍
+     40     │ - ␍
+     41     │ - function·PerDiemItemEditorTask({␍
+     42     │ - → reportId,␍
+     43     │ - → item,␍
+     44     │ - → reimbursementCurrency,␍
+     45     │ - → trip,␍
+     46     │ - → onSaved,␍
+     47     │ - → onDraftChange,␍
+     48     │ - → removal,␍
+     49     │ - → now,␍
+     50     │ - }:·{␍
+     51     │ - → reportId:·string;␍
+     52     │ - → /**·The·item·as·last·loaded;·later·loads·never·reset·entered·values.·*/␍
+     53     │ - → item:·ReportItemView;␍
+     54     │ - → reimbursementCurrency:·string;␍
+     55     │ - → /**·The·trip's·travel·dates·as·entered;·the·itinerary·must·match·them.·*/␍
+     56     │ - → trip:·PerDiemTrip;␍
+     57     │ - → onSaved?:·(item:·ReportItemView)·=>·void;␍
+     58     │ - → onDraftChange?:·(draft:·PerDiemItinerary·|·null)·=>·void;␍
+     59     │ - → removal?:·{·label:·string;·remove:·(expectedVersion:·number)·=>·Promise<boolean>·};␍
+     60     │ - → /**·The·report's·submission·clock·(`useSubmissionNow`):·a·per·diem·waits·for·its·return·(#685).·*/␍
+     61     │ - → now:·Instant;␍
+     62     │ - })·{␍
+     63     │ - → const·{·t·}·=·useTranslate();␍
+     64     │ - → const·[removing,·setRemoving]·=·useState(false);␍
+     65     │ - → const·{·saver,·state,·form,·saved,·resolveWithTheirs·}·=·usePerDiemItemDraft({␍
+     66     │ - → → reportId,␍
+     67     │ - → → item,␍
+     68     │ - → → trip,␍
+     69     │ - → → onSaved,␍
+     70     │ - → → onDraftChange,␍
+     71     │ - → });␍
+     72     │ - ␍
+     73     │ - → async·function·remove()·{␍
+     74     │ - → → if·(!removal)·return;␍
+     75     │ - → → setRemoving(true);␍
+     76     │ - → → //·Promise#finally·rather·than·try/finally:·the·React·Compiler·cannot␍
+     77     │ - → → //·compile·try·statements·without·a·catch·clause.␍
+     78     │ - → → await·saver␍
+     79     │ - → → → .flush()␍
+     80     │ - → → → .then(()·=>·removal.remove(saver.getState().version))␍
+     81     │ - → → → .then((removed)·=>·{␍
+     82     │ - → → → → if·(removed)·saver.discard();␍
+     83     │ - → → → })␍
+     84     │ - → → → .finally(()·=>·setRemoving(false));␍
+     85     │ - → }␍
+     86     │ - ␍
+     87     │ - → const·fieldError·=·(field:·PerDiemDraftField)·=>␍
+     88     │ - → → state.status·===·"invalid"␍
+     89     │ - → → → ?·fieldErrorMessage(t,·state.fieldErrors?.[field]·as·string·|·undefined)␍
+     90     │ - → → → :·undefined;␍
+     91     │ - ␍
+     92     │ - → return·(␍
+     93     │ - → → <div·className="space-y-6">␍
+     94     │ - → → → <div·className="flex·flex-wrap·items-start·justify-between·gap-2">␍
+     95     │ - → → → → <div·className="min-w-0·flex-1">␍
+     96     │ - → → → → → <DraftSaveStatus␍
+     97     │ - → → → → → → state={state}␍
+     98     │ - → → → → → → onRetry={()·=>·saver.retry()}␍
+     99     │ - → → → → → → onKeepMine={()·=>·saver.resolveConflict("keep_mine")}␍
+    100     │ - → → → → → → onUseTheirs={resolveWithTheirs}␍
+    101     │ - → → → → → />␍
+    102     │ - → → → → </div>␍
+    103     │ - → → → → {removal·&&·(␍
+    104     │ - → → → → → <RemoveExpenseButton␍
+    105     │ - → → → → → → label={removal.label}␍
+    106     │ - → → → → → → busy={removing}␍
+    107     │ - → → → → → → onConfirm={()·=>·void·remove()}␍
+    108     │ - → → → → → />␍
+    109     │ - → → → → )}␍
+    110     │ - → → → </div>␍
+    111     │ - ␍
+    112     │ - → → → {/*·Client-side·autosave:·submitting·only·flushes·the·draft·saver;·the·editor·needs·JS.·*/}␍
+    113     │ - → → → {/*·react-doctor-disable-next-line·react-doctor/no-prevent-default·*/}␍
+    114     │ - → → → <form␍
+    115     │ - → → → → noValidate␍
+    116     │ - → → → → onSubmit={(event)·=>·{␍
+    117     │ - → → → → → event.preventDefault();␍
+    118     │ - → → → → → void·saver.flush();␍
+    119     │ - → → → → }}␍
+    120     │ - → → → → className="grid·gap-6"␍
+    121     │ - → → → >␍
+    122     │ - → → → → <PerDiemItemFields␍
+    123     │ - → → → → → form={form}␍
+    124     │ - → → → → → fieldError={fieldError}␍
+    125     │ - → → → → → itemId={item.id}␍
+    126     │ - → → → → → destinations={trip.destinations}␍
+    127     │ - → → → → />␍
+    128     │ - → → → </form>␍
+    129     │ - ␍
+    130     │ - → → → <form.Subscribe·selector={(formState)·=>·formState.values}>␍
+    131     │ - → → → → {(values)·=>·(␍
+    132     │ - → → → → → <PerDiemItemOutcome␍
+    133     │ - → → → → → → id={item.id}␍
+    134     │ - → → → → → → values={values}␍
+    135     │ - → → → → → → saved={saved}␍
+    136     │ - → → → → → → trip={trip}␍
+    137     │ - → → → → → → currency={reimbursementCurrency}␍
+    138     │ - → → → → → → now={now}␍
+    139     │ - → → → → → />␍
+    140     │ - → → → → )}␍
+    141     │ - → → → </form.Subscribe>␍
+    142     │ - → → </div>␍
+    143     │ - → );␍
+    144     │ - }␍
+    145     │ - ␍
+    146     │ - /**·The·daily·calculation,·override·and·open·requirements·of·the·entered·values.·*/␍
+    147     │ - function·PerDiemItemOutcome({␍
+    148     │ - → id,␍
+    149     │ - → values,␍
+    150     │ - → saved,␍
+  276 more lines truncated
+src\components\travel-expenses\report\report-arrival-heading.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     4    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     5    │ - ␍
+     6    │ - /**·Non-sensitive·heading·while·an·authorized·record·is·not·yet·available.·*/␍
+     7    │ - export·function·ReportArrivalHeading()·{␍
+     8    │ - → const·{·t·}·=·useTranslate();␍
+     9    │ - → return·<PageHeader·title={t("travelExpenses.report.items.title",·"Expenses")}·/>;␍
+    10    │ - }␍
+        1 │ + "use·client";
+        2 │ +
+        3 │ + import·{·useTranslate·}·from·"@tolgee/react";
+        4 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        5 │ +
+        6 │ + /**·Non-sensitive·heading·while·an·authorized·record·is·not·yet·available.·*/
+        7 │ + export·function·ReportArrivalHeading()·{
+        8 │ + → const·{·t·}·=·useTranslate();
+        9 │ + → return·(
+       10 │ + → → <PageHeader·title={t("travelExpenses.report.items.title",·"Expenses")}·/>
+       11 │ + → );
+       12 │ + }
+    11 13 │
+src\components\travel-expenses\report\report-header.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+     4    │ - import·type·{·ReactNode·}·from·"react";␍
+     5    │ - import·{·PageHeader·}·from·"@/components/ui/page-header";␍
+     6    │ - import·type·{·TravelExpenseReportStatus·}·from·"@/db/schema/travel-expense";␍
+     7    │ - import·{·type·ReportNameSource,·reportKindLabel,·reportName·}·from·"../report-name";␍
+     8    │ - import·{·ReportStatusBadge·}·from·"./report-status";␍
+     9    │ - ␍
+    10    │ - /**␍
+    11    │ - ·*·The·one·header·of·every·expense·report·view·(#688):·the·kind·line,·the␍
+    12    │ - ·*·report's·name·as·the·page·heading·and·its·only·status·badge.·`actions`␍
+    13    │ - ·*·(such·as·deleting·a·draft)·sit·at·the·end·of·the·header·row.␍
+    14    │ - ·*/␍
+    15    │ - export·function·ReportHeader({␍
+    16    │ - → source,␍
+    17    │ - → status,␍
+    18    │ - → actions,␍
+    19    │ - }:·{␍
+    20    │ - → source:·ReportNameSource;␍
+    21    │ - → status?:·TravelExpenseReportStatus;␍
+    22    │ - → actions?:·ReactNode;␍
+    23    │ - })·{␍
+    24    │ - → const·{·t·}·=·useTranslate();␍
+    25    │ - → return·(␍
+    26    │ - → → <header>␍
+    27    │ - → → → <PageHeader␍
+    28    │ - → → → → title={reportName(t,·source)}␍
+    29    │ - → → → → scope={␍
+    30    │ - → → → → → <span·className="flex·flex-wrap·items-center·gap-3">␍
+    31    │ - → → → → → → {reportKindLabel(t,·source)}␍
+    32    │ - → → → → → → {status·&&·<ReportStatusBadge·status={status}·/>}␍
+    33    │ - → → → → → </span>␍
+    34    │ - → → → → }␍
+    35    │ - → → → → actions={actions}␍
+    36    │ - → → → />␍
+    37    │ - → → </header>␍
+    38    │ - → );␍
+    39    │ - }␍
+        1 │ + "use·client";
+        2 │ +
+        3 │ + import·{·useTranslate·}·from·"@tolgee/react";
+        4 │ + import·type·{·ReactNode·}·from·"react";
+        5 │ + import·{·PageHeader·}·from·"@/components/ui/page-header";
+        6 │ + import·type·{·TravelExpenseReportStatus·}·from·"@/db/schema/travel-expense";
+        7 │ + import·{
+        8 │ + → type·ReportNameSource,
+        9 │ + → reportKindLabel,
+       10 │ + → reportName,
+       11 │ + }·from·"../report-name";
+       12 │ + import·{·ReportStatusBadge·}·from·"./report-status";
+       13 │ +
+       14 │ + /**
+       15 │ + ·*·The·one·header·of·every·expense·report·view·(#688):·the·kind·line,·the
+       16 │ + ·*·report's·name·as·the·page·heading·and·its·only·status·badge.·`actions`
+       17 │ + ·*·(such·as·deleting·a·draft)·sit·at·the·end·of·the·header·row.
+       18 │ + ·*/
+       19 │ + export·function·ReportHeader({
+       20 │ + → source,
+       21 │ + → status,
+       22 │ + → actions,
+       23 │ + }:·{
+       24 │ + → source:·ReportNameSource;
+       25 │ + → status?:·TravelExpenseReportStatus;
+       26 │ + → actions?:·ReactNode;
+       27 │ + })·{
+       28 │ + → const·{·t·}·=·useTranslate();
+       29 │ + → return·(
+       30 │ + → → <header>
+       31 │ + → → → <PageHeader
+       32 │ + → → → → title={reportName(t,·source)}
+       33 │ + → → → → scope={
+       34 │ + → → → → → <span·className="flex·flex-wrap·items-center·gap-3">
+       35 │ + → → → → → → {reportKindLabel(t,·source)}
+       36 │ + → → → → → → {status·&&·<ReportStatusBadge·status={status}·/>}
+       37 │ + → → → → → </span>
+       38 │ + → → → → }
+       39 │ + → → → → actions={actions}
+       40 │ + → → → />
+       41 │ + → → </header>
+       42 │ + → );
+       43 │ + }
+    40 44 │
+src\components\travel-expenses\report\report-read-scope.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·createContext,·use·}·from·"react";␍
+     4    │ - ␍
+     5    │ - export·const·ReportReadScope·=·createContext<readonly·string[]>([]);␍
+     6    │ - ␍
+     7    │ - /**·Keep·existing·invalidation·prefixes·without·reusing·a·retired·RSC·arrival.·*/␍
+     8    │ - export·function·useReportQueryKey(key:·readonly·unknown[])·{␍
+     9    │ - → return·[...key,·...use(ReportReadScope)];␍
+    10    │ - }␍
+        1 │ + "use·client";
+        2 │ +
+        3 │ + import·{·createContext,·use·}·from·"react";
+        4 │ +
+        5 │ + export·const·ReportReadScope·=·createContext<readonly·string[]>([]);
+        6 │ +
+        7 │ + /**·Keep·existing·invalidation·prefixes·without·reusing·a·retired·RSC·arrival.·*/
+        8 │ + export·function·useReportQueryKey(key:·readonly·unknown[])·{
+        9 │ + → return·[...key,·...use(ReportReadScope)];
+       10 │ + }
+    11 11 │
+src\components\travel-expenses\report\report-reopen.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - ␍
+      3     │ - import·{·QueryClient,·QueryClientProvider·}·from·"@tanstack/react-query";␍
+      4     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor,·within·}·from·"@testing-library/react";␍
+      5     │ - import·{·Activity·}·from·"react";␍
+      6     │ - import·{·afterEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      7     │ - ␍
+      8     │ - const·reopenActions·=·vi.hoisted(()·=>·({␍
+      9     │ - → getTravelExpenseReportReopenState:·vi.fn(),␍
+     10     │ - → reopenTravelExpenseReportAction:·vi.fn(),␍
+     11     │ - }));␍
+     12     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/report-reopen-actions",·()·=>·reopenActions);␍
+     13     │ - const·toast·=·vi.hoisted(()·=>·({·success:·vi.fn(),·error:·vi.fn()·}));␍
+     14     │ - vi.mock("sonner",·()·=>·({·toast·}));␍
+     15     │ - vi.mock("@tolgee/react",·()·=>·({␍
+     16     │ - → useTranslate:·()·=>·({␍
+     17     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>␍
+     18     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·name)·=>·String(params?.[name]·??·match)),␍
+     19     │ - → }),␍
+     20     │ - }));␍
+     21     │ - vi.mock("next-intl",·()·=>·({·useLocale:·()·=>·"en"·}));␍
+     22     │ - vi.mock("@/navigation",·()·=>·({·Link:·()·=>·null,·useRouter:·()·=>·({·push:·vi.fn()·})·}));␍
+     23     │ - vi.mock("@/app/[locale]/(app)/travel-expenses/adjustment-actions",·()·=>·({␍
+     24     │ - → createTravelExpenseAdjustmentAction:·vi.fn(),␍
+     25     │ - → getTravelExpenseReportAdjustments:·vi.fn(),␍
+     26     │ - }));␍
+     27     │ - ␍
+     28     │ - import·{·ReopenedNotice,·ReopenReportPanel·}·from·"./report-reopen";␍
+     29     │ - ␍
+     30     │ - const·reportId·=·"6a140000-0000-4000-8000-000000000001";␍
+     31     │ - ␍
+     32     │ - function·mount()·{␍
+     33     │ - → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+     34     │ - → render(␍
+     35     │ - → → <QueryClientProvider·client={client}>␍
+     36     │ - → → → <ReopenReportPanel·reportId={reportId}·/>␍
+     37     │ - → → </QueryClientProvider>,␍
+     38     │ - → );␍
+     39     │ - }␍
+     40     │ - ␍
+     41     │ - afterEach(()·=>·{␍
+     42     │ - → cleanup();␍
+     43     │ - → vi.clearAllMocks();␍
+     44     │ - });␍
+     45     │ - ␍
+     46     │ - describe("reopening·an·approved·report·(#614)",·()·=>·{␍
+     47     │ - → it("reserves·native·activation·before·validation·and·blocks·duplicate·submit·and·pending·dismissal",·async·()·=>·{␍
+     48     │ - → → reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({␍
+     49     │ - → → → success:·true,␍
+     50     │ - → → → data:·{·status:·"available",·submissionCycle:·2·},␍
+     51     │ - → → });␍
+     52     │ - → → let·complete!:·(value:·unknown)·=>·void;␍
+     53     │ - → → reopenActions.reopenTravelExpenseReportAction.mockImplementationOnce(␍
+     54     │ - → → → ()·=>␍
+     55     │ - → → → → new·Promise((resolve)·=>·{␍
+     56     │ - → → → → → complete·=·resolve;␍
+     57     │ - → → → → }),␍
+     58     │ - → → );␍
+     59     │ - → → mount();␍
+     60     │ - → → fireEvent.click(await·screen.findByRole("button",·{·name:·"Reopen·for·correction"·}));␍
+     61     │ - → → const·dialog·=·await·screen.findByRole("dialog");␍
+     62     │ - → → fireEvent.change(within(dialog).getByLabelText(/Reason/),·{␍
+     63     │ - → → → target:·{·value:·"Exact·pending·reason"·},␍
+     64     │ - → → });␍
+     65     │ - → → const·form·=·within(dialog).getByRole("button",·{·name:·"Reopen·report"·}).closest("form");␍
+     66     │ - → → if·(!form)·throw·Error("Missing·native·form");␍
+     67     │ - → → fireEvent.submit(form);␍
+     68     │ - → → fireEvent.submit(form);␍
+     69     │ - → → fireEvent.keyDown(dialog,·{·key:·"Escape"·});␍
+     70     │ - → → await·waitFor(()·=>␍
+     71     │ - → → → expect(reopenActions.reopenTravelExpenseReportAction).toHaveBeenCalledTimes(1),␍
+     72     │ - → → );␍
+     73     │ - → → expect(screen.getByRole("dialog")).toBeTruthy();␍
+     74     │ - → → await·act(async·()·=>·complete({·success:·false,·error:·"refused"·}));␍
+     75     │ - → → expect(within(dialog).getByLabelText(/Reason/)).toHaveProperty("value",·"Exact·pending·reason");␍
+     76     │ - → });␍
+     77     │ - → it("retains·a·pending·reason·across·Activity·without·applying·a·retired·success",·async·()·=>·{␍
+     78     │ - → → reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({␍
+     79     │ - → → → success:·true,␍
+     80     │ - → → → data:·{·status:·"available",·submissionCycle:·2·},␍
+     81     │ - → → });␍
+     82     │ - → → let·complete!:·(value:·unknown)·=>·void;␍
+     83     │ - → → reopenActions.reopenTravelExpenseReportAction.mockImplementationOnce(␍
+     84     │ - → → → ()·=>␍
+     85     │ - → → → → new·Promise((resolve)·=>·{␍
+     86     │ - → → → → → complete·=·resolve;␍
+     87     │ - → → → → }),␍
+     88     │ - → → );␍
+     89     │ - → → const·client·=·new·QueryClient({·defaultOptions:·{·queries:·{·retry:·false·}·}·});␍
+     90     │ - → → const·view·=·(mode:·"visible"·|·"hidden")·=>·(␍
+     91     │ - → → → <QueryClientProvider·client={client}>␍
+     92     │ - → → → → <Activity·mode={mode}>␍
+     93     │ - → → → → → <ReopenReportPanel·reportId={reportId}·/>␍
+     94     │ - → → → → </Activity>␍
+     95     │ - → → → </QueryClientProvider>␍
+     96     │ - → → );␍
+     97     │ - → → const·rendered·=·render(view("visible"));␍
+     98     │ - → → fireEvent.click(await·screen.findByRole("button",·{·name:·"Reopen·for·correction"·}));␍
+     99     │ - → → const·dialog·=·await·screen.findByRole("dialog");␍
+    100     │ - → → fireEvent.change(within(dialog).getByLabelText(/Reason/),·{␍
+    101     │ - → → → target:·{·value:·"Activity·keeps·this·reason"·},␍
+    102     │ - → → });␍
+    103     │ - → → fireEvent.click(within(dialog).getByRole("button",·{·name:·"Reopen·report"·}));␍
+    104     │ - → → await·waitFor(()·=>␍
+    105     │ - → → → expect(reopenActions.reopenTravelExpenseReportAction).toHaveBeenCalledTimes(1),␍
+    106     │ - → → );␍
+    107     │ - → → rendered.rerender(view("hidden"));␍
+    108     │ - → → rendered.rerender(view("visible"));␍
+    109     │ - → → await·act(async·()·=>·complete({·success:·true,·data:·{·status:·"reopened"·}·}));␍
+    110     │ - → → expect(toast.success).not.toHaveBeenCalled();␍
+    111     │ - → → expect(await·screen.findByLabelText(/Reason/)).toHaveProperty(␍
+    112     │ - → → → "value",␍
+    113     │ - → → → "Activity·keeps·this·reason",␍
+    114     │ - → → );␍
+    115     │ - → });␍
+    116     │ - → it("keeps·the·exact·reason·and·dialog·after·a·rejected·transport,·then·retries",·async·()·=>·{␍
+    117     │ - → → reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({␍
+    118     │ - → → → success:·true,␍
+    119     │ - → → → data:·{·status:·"available",·submissionCycle:·2·},␍
+    120     │ - → → });␍
+    121     │ - → → reopenActions.reopenTravelExpenseReportAction␍
+    122     │ - → → → .mockRejectedValueOnce(new·Error("offline"))␍
+    123     │ - → → → .mockResolvedValueOnce({·success:·true,·data:·{·status:·"reopened"·}·});␍
+    124     │ - → → mount();␍
+    125     │ - → → fireEvent.click(await·screen.findByRole("button",·{·name:·"Reopen·for·correction"·}));␍
+    126     │ - → → const·dialog·=·await·screen.findByRole("dialog");␍
+    127     │ - → → fireEvent.change(within(dialog).getByLabelText(/Reason/),·{␍
+    128     │ - → → → target:·{·value:·"Keep·invoice·note·exactly"·},␍
+    129     │ - → → });␍
+    130     │ - → → fireEvent.click(within(dialog).getByRole("button",·{·name:·"Reopen·report"·}));␍
+    131     │ - → → expect(await·within(dialog).findByText(/The·report·could·not·be·reopened/)).toBeTruthy();␍
+    132     │ - → → expect(within(dialog).getByLabelText(/Reason/)).toHaveProperty(␍
+    133     │ - → → → "value",␍
+    134     │ - → → → "Keep·invoice·note·exactly",␍
+    135     │ - → → );␍
+    136     │ - → → fireEvent.click(within(dialog).getByRole("button",·{·name:·"Reopen·report"·}));␍
+    137     │ - → → await·waitFor(()·=>␍
+    138     │ - → → → expect(reopenActions.reopenTravelExpenseReportAction).toHaveBeenCalledTimes(2),␍
+    139     │ - → → );␍
+    140     │ - → });␍
+    141     │ - → it("asks·for·a·reason·and·reopens·the·current·approved·submission",·async·()·=>·{␍
+    142     │ - → → reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({␍
+    143     │ - → → → success:·true,␍
+    144     │ - → → → data:·{·status:·"available",·submissionCycle:·2·},␍
+    145     │ - → → });␍
+    146     │ - → → reopenActions.reopenTravelExpenseReportAction.mockResolvedValue({␍
+    147     │ - → → → success:·true,␍
+    148     │ - → → → data:·{·status:·"reopened"·},␍
+    149     │ - → → });␍
+    150     │ - → → mount();␍
+  336 more lines truncated
+src\components\travel-expenses\report\report-workspace-scope.test.tsx format ━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+     1    │ - /*·@vitest-environment·jsdom·*/␍
+     2    │ - import·{·QueryClient,·QueryClientProvider,·useQuery·}·from·"@tanstack/react-query";␍
+     3    │ - import·{·cleanup,·render,·screen·}·from·"@testing-library/react";␍
+     4    │ - import·{·afterEach,·expect,·it,·vi·}·from·"vitest";␍
+     5    │ - ␍
+     6    │ - const·display·=·vi.hoisted(()·=>·({␍
+     7    │ - → userId:·"actor-a",␍
+     8    │ - → activeOrganizationId:·"org-a",␍
+     9    │ - → employeeId:·"employee-a",␍
+    10    │ - }));␍
+    11    │ - vi.mock("@/components/providers/organization-context-provider",·()·=>·({␍
+    12    │ - → useOrganization:·()·=>·display,␍
+    13    │ - }));␍
+    14    │ - ␍
+    15    │ - import·{·useReportQueryKey·}·from·"./report-read-scope";␍
+    16    │ - import·{·ReportWorkspaceScope·}·from·"./report-workspace-scope";␍
+    17    │ - ␍
+    18    │ - afterEach(cleanup);␍
+    19    │ - ␍
+    20    │ - function·Evidence({·read·}:·{·read:·()·=>·Promise<string>·})·{␍
+    21    │ - → const·query·=·useQuery({·queryKey:·useReportQueryKey(["report",·"same-id"]),·queryFn:·read·});␍
+    22    │ - → return·<p>{query.data·??·"Loading"}</p>;␍
+    23    │ - }␍
+    24    │ - ␍
+    25    │ - it.each(["userId",·"activeOrganizationId",·"employeeId"]·as·const)(␍
+    26    │ - → "retires·an·old·arrival·across·a·%s·change·and·return",␍
+    27    │ - → async·(field)·=>·{␍
+    28    │ - → → Object.assign(display,·{␍
+    29    │ - → → → userId:·"actor-a",␍
+    30    │ - → → → activeOrganizationId:·"org-a",␍
+    31    │ - → → → employeeId:·"employee-a",␍
+    32    │ - → → });␍
+    33    │ - → → const·read·=·vi.fn(async·()·=>·"Authorized·report·evidence");␍
+    34    │ - → → const·client·=·new·QueryClient({␍
+    35    │ - → → → defaultOptions:·{·queries:·{·retry:·false,·staleTime:·Infinity·}·},␍
+    36    │ - → → });␍
+    37    │ - → → const·view·=·(arrival:·string)·=>·(␍
+    38    │ - → → → <QueryClientProvider·client={client}>␍
+    39    │ - → → → → <ReportWorkspaceScope␍
+    40    │ - → → → → → key={arrival}␍
+    41    │ - → → → → → userId="actor-a"␍
+    42    │ - → → → → → organizationId="org-a"␍
+    43    │ - → → → → → employeeId="employee-a"␍
+    44    │ - → → → → → arrival={arrival}␍
+    45    │ - → → → → >␍
+    46    │ - → → → → → <Evidence·read={read}·/>␍
+    47    │ - → → → → </ReportWorkspaceScope>␍
+    48    │ - → → → </QueryClientProvider>␍
+    49    │ - → → );␍
+    50    │ - → → const·rendered·=·render(view("arrival-1"));␍
+    51    │ - → → await·screen.findByText("Authorized·report·evidence");␍
+    52    │ - → → const·original·=·display[field];␍
+    53    │ - → → display[field]·=·"other";␍
+    54    │ - → → rendered.rerender(view("arrival-1"));␍
+    55    │ - → → expect(screen.queryByText("Authorized·report·evidence")).toBeNull();␍
+    56    │ - → → display[field]·=·original;␍
+    57    │ - → → rendered.rerender(view("arrival-1"));␍
+    58    │ - → → expect(screen.queryByText("Authorized·report·evidence")).toBeNull();␍
+    59    │ - → → rendered.rerender(view("arrival-2"));␍
+    60    │ - → → await·screen.findByText("Authorized·report·evidence");␍
+    61    │ - → → expect(read).toHaveBeenCalledTimes(2);␍
+    62    │ - → },␍
+    63    │ - );␍
+        1 │ + /*·@vitest-environment·jsdom·*/
+        2 │ + import·{
+        3 │ + → QueryClient,
+        4 │ + → QueryClientProvider,
+        5 │ + → useQuery,
+        6 │ + }·from·"@tanstack/react-query";
+        7 │ + import·{·cleanup,·render,·screen·}·from·"@testing-library/react";
+        8 │ + import·{·afterEach,·expect,·it,·vi·}·from·"vitest";
+        9 │ +
+       10 │ + const·display·=·vi.hoisted(()·=>·({
+       11 │ + → userId:·"actor-a",
+       12 │ + → activeOrganizationId:·"org-a",
+       13 │ + → employeeId:·"employee-a",
+       14 │ + }));
+       15 │ + vi.mock("@/components/providers/organization-context-provider",·()·=>·({
+       16 │ + → useOrganization:·()·=>·display,
+       17 │ + }));
+       18 │ +
+       19 │ + import·{·useReportQueryKey·}·from·"./report-read-scope";
+       20 │ + import·{·ReportWorkspaceScope·}·from·"./report-workspace-scope";
+       21 │ +
+       22 │ + afterEach(cleanup);
+       23 │ +
+       24 │ + function·Evidence({·read·}:·{·read:·()·=>·Promise<string>·})·{
+       25 │ + → const·query·=·useQuery({
+       26 │ + → → queryKey:·useReportQueryKey(["report",·"same-id"]),
+       27 │ + → → queryFn:·read,
+       28 │ + → });
+       29 │ + → return·<p>{query.data·??·"Loading"}</p>;
+       30 │ + }
+       31 │ +
+       32 │ + it.each(["userId",·"activeOrganizationId",·"employeeId"]·as·const)(
+       33 │ + → "retires·an·old·arrival·across·a·%s·change·and·return",
+       34 │ + → async·(field)·=>·{
+       35 │ + → → Object.assign(display,·{
+       36 │ + → → → userId:·"actor-a",
+       37 │ + → → → activeOrganizationId:·"org-a",
+       38 │ + → → → employeeId:·"employee-a",
+       39 │ + → → });
+       40 │ + → → const·read·=·vi.fn(async·()·=>·"Authorized·report·evidence");
+       41 │ + → → const·client·=·new·QueryClient({
+       42 │ + → → → defaultOptions:·{·queries:·{·retry:·false,·staleTime:·Infinity·}·},
+       43 │ + → → });
+       44 │ + → → const·view·=·(arrival:·string)·=>·(
+       45 │ + → → → <QueryClientProvider·client={client}>
+       46 │ + → → → → <ReportWorkspaceScope
+       47 │ + → → → → → key={arrival}
+       48 │ + → → → → → userId="actor-a"
+       49 │ + → → → → → organizationId="org-a"
+       50 │ + → → → → → employeeId="employee-a"
+       51 │ + → → → → → arrival={arrival}
+       52 │ + → → → → >
+       53 │ + → → → → → <Evidence·read={read}·/>
+       54 │ + → → → → </ReportWorkspaceScope>
+       55 │ + → → → </QueryClientProvider>
+       56 │ + → → );
+       57 │ + → → const·rendered·=·render(view("arrival-1"));
+       58 │ + → → await·screen.findByText("Authorized·report·evidence");
+       59 │ + → → const·original·=·display[field];
+       60 │ + → → display[field]·=·"other";
+       61 │ + → → rendered.rerender(view("arrival-1"));
+       62 │ + → → expect(screen.queryByText("Authorized·report·evidence")).toBeNull();
+       63 │ + → → display[field]·=·original;
+       64 │ + → → rendered.rerender(view("arrival-1"));
+       65 │ + → → expect(screen.queryByText("Authorized·report·evidence")).toBeNull();
+       66 │ + → → rendered.rerender(view("arrival-2"));
+       67 │ + → → await·screen.findByText("Authorized·report·evidence");
+       68 │ + → → expect(read).toHaveBeenCalledTimes(2);
+       69 │ + → },
+       70 │ + );
+    64 71 │
+src\components\travel-expenses\report\report-workspace-scope.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·type·ReactNode,·useState·}·from·"react";␍
+     4    │ - import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";␍
+     5    │ - ␍
+     6    │ - import·{·ReportReadScope·}·from·"./report-read-scope";␍
+     7    │ - ␍
+     8    │ - /**·Presentation·lifetime·only.·Every·read·and·command·still·authorizes·on·the·server.·*/␍
+     9    │ - export·function·ReportWorkspaceScope({␍
+    10    │ - → userId,␍
+    11    │ - → organizationId,␍
+    12    │ - → employeeId,␍
+    13    │ - → arrival,␍
+    14    │ - → children,␍
+    15    │ - }:·{␍
+    16    │ - → userId:·string;␍
+    17    │ - → organizationId:·string;␍
+    18    │ - → employeeId:·string;␍
+    19    │ - → arrival:·string;␍
+    20    │ - → children:·ReactNode;␍
+    21    │ - })·{␍
+    22    │ - → const·current·=·useOrganization();␍
+    23    │ - → const·[retired,·setRetired]·=·useState(false);␍
+    24    │ - → if·(␍
+    25    │ - → → current.userId·!==·userId·||␍
+    26    │ - → → current.activeOrganizationId·!==·organizationId·||␍
+    27    │ - → → current.employeeId·!==·employeeId␍
+    28    │ - → )·{␍
+    29    │ - → → if·(!retired)·setRetired(true);␍
+    30    │ - → → return·null;␍
+    31    │ - → }␍
+    32    │ - → if·(retired)·return·null;␍
+    33    │ - → return·(␍
+    34    │ - → → <ReportReadScope·value={[userId,·organizationId,·employeeId,·arrival]}>␍
+    35    │ - → → → {children}␍
+    36    │ - → → </ReportReadScope>␍
+    37    │ - → );␍
+    38    │ - }␍
+        1 │ + "use·client";
+        2 │ +
+        3 │ + import·{·type·ReactNode,·useState·}·from·"react";
+        4 │ + import·{·useOrganization·}·from·"@/components/providers/organization-context-provider";
+        5 │ +
+        6 │ + import·{·ReportReadScope·}·from·"./report-read-scope";
+        7 │ +
+        8 │ + /**·Presentation·lifetime·only.·Every·read·and·command·still·authorizes·on·the·server.·*/
+        9 │ + export·function·ReportWorkspaceScope({
+       10 │ + → userId,
+       11 │ + → organizationId,
+       12 │ + → employeeId,
+       13 │ + → arrival,
+       14 │ + → children,
+       15 │ + }:·{
+       16 │ + → userId:·string;
+       17 │ + → organizationId:·string;
+       18 │ + → employeeId:·string;
+       19 │ + → arrival:·string;
+       20 │ + → children:·ReactNode;
+       21 │ + })·{
+       22 │ + → const·current·=·useOrganization();
+       23 │ + → const·[retired,·setRetired]·=·useState(false);
+       24 │ + → if·(
+       25 │ + → → current.userId·!==·userId·||
+       26 │ + → → current.activeOrganizationId·!==·organizationId·||
+       27 │ + → → current.employeeId·!==·employeeId
+       28 │ + → )·{
+       29 │ + → → if·(!retired)·setRetired(true);
+       30 │ + → → return·null;
+       31 │ + → }
+       32 │ + → if·(retired)·return·null;
+       33 │ + → return·(
+       34 │ + → → <ReportReadScope·value={[userId,·organizationId,·employeeId,·arrival]}>
+       35 │ + → → → {children}
+       36 │ + → → </ReportReadScope>
+       37 │ + → );
+       38 │ + }
+    39 39 │
+src\components\travel-expenses\report\submitted-report-receipts.test.tsx format ━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - /*·@vitest-environment·jsdom·*/␍
+      2     │ - import·{·act,·cleanup,·fireEvent,·render,·screen,·waitFor·}·from·"@testing-library/react";␍
+      3     │ - import·{·afterEach,·describe,·expect,·it,·vi·}·from·"vitest";␍
+      4     │ - import·type·{·UseTusFileUploadOptions·}·from·"@/hooks/use-tus-file-upload";␍
+      5     │ - ␍
+      6     │ - vi.mock("@tolgee/react",·()·=>·({␍
+      7     │ - → useTranslate:·()·=>·({␍
+      8     │ - → → t:·(_key:·string,·fallback:·string,·params?:·Record<string,·unknown>)·=>␍
+      9     │ - → → → fallback.replace(/\{(\w+)\}/g,·(match,·name)·=>·String(params?.[name]·??·match)),␍
+     10     │ - → }),␍
+     11     │ - }));␍
+     12     │ - vi.mock("next-intl",·()·=>·({·useLocale:·()·=>·"en-US"·}));␍
+     13     │ - vi.mock("@/hooks/use-travel-expense-file-upload",·()·=>·({␍
+     14     │ - → useTravelExpenseFileUpload:·(options:·UseTusFileUploadOptions<unknown>)·=>·({␍
+     15     │ - → → addFile:·(file:·File)·=>·{␍
+     16     │ - → → → void·options␍
+     17     │ - → → → → .process({·tusFileKey:·"tus-upload",·fileName:·file.name·})␍
+     18     │ - → → → → .then((receipt)·=>·options.onSuccess?.(receipt))␍
+     19     │ - → → → → .catch((error:·Error)·=>·options.onError?.(error));␍
+     20     │ - → → },␍
+     21     │ - → → progress:·0,␍
+     22     │ - → → isUploading:·false,␍
+     23     │ - → → isProcessing:·false,␍
+     24     │ - → → reset:·vi.fn(),␍
+     25     │ - → }),␍
+     26     │ - }));␍
+     27     │ - ␍
+     28     │ - import·{·SubmittedReportReceipts·}·from·"./submitted-report-receipts";␍
+     29     │ - ␍
+     30     │ - const·reportId·=·"report-1";␍
+     31     │ - const·itemId·=·"item-1";␍
+     32     │ - const·fetchMock·=·vi.fn();␍
+     33     │ - function·mount(overrides:·Partial<React.ComponentProps<typeof·SubmittedReportReceipts>>·=·{})·{␍
+     34     │ - → const·onChanged·=·vi.fn();␍
+     35     │ - → render(␍
+     36     │ - → → <SubmittedReportReceipts␍
+     37     │ - → → → reportId={reportId}␍
+     38     │ - → → → itemId={itemId}␍
+     39     │ - → → → itemType="receipt"␍
+     40     │ - → → → submissionCycle={2}␍
+     41     │ - → → → canAddReceipt␍
+     42     │ - → → → receipts={[]}␍
+     43     │ - → → → onChanged={onChanged}␍
+     44     │ - → → → {...overrides}␍
+     45     │ - → → />,␍
+     46     │ - → );␍
+     47     │ - → return·{·onChanged·};␍
+     48     │ - }␍
+     49     │ - afterEach(()·=>·{␍
+     50     │ - → cleanup();␍
+     51     │ - → vi.clearAllMocks();␍
+     52     │ - → vi.unstubAllGlobals();␍
+     53     │ - });␍
+     54     │ - describe("adding·a·missing·receipt·during·review·(#1255)",·()·=>·{␍
+     55     │ - → it("suppresses·a·retired·receipt·completion",·async·()·=>·{␍
+     56     │ - → → vi.stubGlobal("fetch",·fetchMock);␍
+     57     │ - → → let·complete!:·(value:·unknown)·=>·void;␍
+     58     │ - → → fetchMock.mockImplementationOnce(␍
+     59     │ - → → → ()·=>␍
+     60     │ - → → → → new·Promise((resolve)·=>·{␍
+     61     │ - → → → → → complete·=·resolve;␍
+     62     │ - → → → → }),␍
+     63     │ - → → );␍
+     64     │ - → → const·{·onChanged·}·=·mount();␍
+     65     │ - → → fireEvent.change(screen.getByLabelText("Choose·receipt"),·{␍
+     66     │ - → → → target:·{·files:·[new·File(["receipt"],·"hotel.pdf",·{·type:·"application/pdf"·})]·},␍
+     67     │ - → → });␍
+     68     │ - → → await·waitFor(()·=>·expect(fetchMock).toHaveBeenCalledOnce());␍
+     69     │ - → → cleanup();␍
+     70     │ - → → await·act(async·()·=>·{␍
+     71     │ - → → → complete({·ok:·true·});␍
+     72     │ - → → });␍
+     73     │ - → → expect(onChanged).not.toHaveBeenCalled();␍
+     74     │ - → });␍
+     75     │ - → it("attaches·the·selected·file·to·the·viewed·submission·and·reloads·it",·async·()·=>·{␍
+     76     │ - → → vi.stubGlobal("fetch",·fetchMock);␍
+     77     │ - → → fetchMock.mockResolvedValue({␍
+     78     │ - → → → ok:·true,␍
+     79     │ - → → → json:·async·()·=>·({·receipt:·{·id:·"receipt-1"·}·}),␍
+     80     │ - → → });␍
+     81     │ - → → const·{·onChanged·}·=·mount();␍
+     82     │ - → → expect(screen.getByRole("button",·{·name:·"Add·receipt"·})).toBeTruthy();␍
+     83     │ - → → fireEvent.change(screen.getByLabelText("Choose·receipt"),·{␍
+     84     │ - → → → target:·{␍
+     85     │ - → → → → files:·[new·File(["receipt"],·"hotel.pdf",·{·type:·"application/pdf"·})],␍
+     86     │ - → → → },␍
+     87     │ - → → });␍
+     88     │ - → → await·waitFor(()·=>·expect(onChanged).toHaveBeenCalledOnce());␍
+     89     │ - → → expect(fetchMock).toHaveBeenCalledWith("/api/upload/travel-expense/report-receipt",·{␍
+     90     │ - → → → method:·"POST",␍
+     91     │ - → → → headers:·{·"Content-Type":·"application/json"·},␍
+     92     │ - → → → body:·JSON.stringify({␍
+     93     │ - → → → → reportId,␍
+     94     │ - → → → → itemId,␍
+     95     │ - → → → → submissionCycle:·2,␍
+     96     │ - → → → → tusFileKey:·"tus-upload",␍
+     97     │ - → → → → fileName:·"hotel.pdf",␍
+     98     │ - → → → }),␍
+     99     │ - → → });␍
+    100     │ - → });␍
+    101     │ - → it.each([␍
+    102     │ - → → {·canAddReceipt:·false·},␍
+    103     │ - → → {·itemType:·"mileage"·as·const·},␍
+    104     │ - → → {·itemType:·"per_diem"·as·const·},␍
+    105     │ - → → {·receipts:·[{·receiptId:·"existing",·fileName:·"original.pdf"·}]·},␍
+    106     │ - → ])("does·not·offer·upload·when·the·expense·is·ineligible:·%j",·(overrides)·=>·{␍
+    107     │ - → → mount(overrides);␍
+    108     │ - → → expect(screen.queryByRole("button",·{·name:·"Add·receipt"·})).toBeNull();␍
+    109     │ - → → expect(screen.queryByLabelText("Choose·receipt")).toBeNull();␍
+    110     │ - → });␍
+    111     │ - ␍
+    112     │ - → it("keeps·a·refused·upload·visible·without·reloading·or·exposing·server·details",·async·()·=>·{␍
+    113     │ - → → vi.stubGlobal("fetch",·fetchMock);␍
+    114     │ - → → fetchMock.mockResolvedValue({␍
+    115     │ - → → → ok:·false,␍
+    116     │ - → → → status:·409,␍
+    117     │ - → → → json:·async·()·=>·({·error:·"internal·evidence·details"·}),␍
+    118     │ - → → });␍
+    119     │ - → → const·{·onChanged·}·=·mount();␍
+    120     │ - → → fireEvent.change(screen.getByLabelText("Choose·receipt"),·{␍
+    121     │ - → → → target:·{␍
+    122     │ - → → → → files:·[new·File(["receipt"],·"hotel.pdf",·{·type:·"application/pdf"·})],␍
+    123     │ - → → → },␍
+    124     │ - → → });␍
+    125     │ - → → expect((await·screen.findByRole("alert")).textContent).toBe(␍
+    126     │ - → → → "A·receipt·was·already·supplied·or·the·report·changed.·Reload·the·report·before·trying·again.",␍
+    127     │ - → → );␍
+    128     │ - → → expect(onChanged).not.toHaveBeenCalled();␍
+    129     │ - → → expect(screen.getByRole("button",·{·name:·"Add·receipt"·})).toBeTruthy();␍
+    130     │ - → });␍
+    131     │ - ␍
+    132     │ - → it("rejects·unsupported·files·before·uploading",·()·=>·{␍
+    133     │ - → → vi.stubGlobal("fetch",·fetchMock);␍
+    134     │ - → → mount();␍
+    135     │ - → → fireEvent.change(screen.getByLabelText("Choose·receipt"),·{␍
+    136     │ - → → → target:·{␍
+    137     │ - → → → → files:·[new·File(["text"],·"notes.txt",·{·type:·"text/plain"·})],␍
+    138     │ - → → → },␍
+    139     │ - → → });␍
+    140     │ - → → expect(screen.getByRole("alert").textContent).toContain("Attach·a·PDF·or·an·image");␍
+    141     │ - → → expect(fetchMock).not.toHaveBeenCalled();␍
+    142     │ - → });␍
+    143     │ - ␍
+    144     │ - → it("marks·supplemental·evidence·with·the·actual·uploader·and·UTC·time·and·offers·no·replacement",·()·=>·{␍
+    145     │ - → → mount({␍
+    146     │ - → → → receipts:·[␍
+    147     │ - → → → → {␍
+    148     │ - → → → → → receiptId:·"supplement",␍
+    149     │ - → → → → → fileName:·"hotel.pdf",␍
+    150     │ - → → → → → addedAfterSubmission:·true,␍
+  302 more lines truncated
+src\components\travel-expenses\report\submitted-report-receipts.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·IconLoader2,·IconPaperclip·}·from·"@tabler/icons-react";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useLocale·}·from·"next-intl";␍
+      6     │ - import·{·useRef,·useState·}·from·"react";␍
+      7     │ - import·{·Button·}·from·"@/components/ui/button";␍
+      8     │ - import·{·Progress·}·from·"@/components/ui/progress";␍
+      9     │ - import·type·{·TravelExpenseReportItemType·}·from·"@/db/schema/travel-expense";␍
+     10     │ - import·{·useTravelExpenseFileUpload·}·from·"@/hooks/use-travel-expense-file-upload";␍
+     11     │ - import·{␍
+     12     │ - → ALLOWED_TRAVEL_EXPENSE_MIME_TYPES,␍
+     13     │ - → isAllowedTravelExpenseMime,␍
+     14     │ - }·from·"@/lib/travel-expenses/attachment-validation";␍
+     15     │ - import·type·{·SubmittedReportItemView·}·from·"@/lib/travel-expenses/report-read";␍
+     16     │ - import·{·formatRecordedInstant·}·from·"./format";␍
+     17     │ - import·{·useReportTask·}·from·"./use-report-task";␍
+     18     │ - ␍
+     19     │ - const·MAX_RECEIPT_SIZE·=·10·*·1024·*·1024;␍
+     20     │ - ␍
+     21     │ - type·Translate·=·ReturnType<typeof·useTranslate>["t"];␍
+     22     │ - class·ReceiptUploadError·extends·Error·{␍
+     23     │ - → constructor(readonly·status:·number)·{␍
+     24     │ - → → super("Receipt·upload·refused");␍
+     25     │ - → }␍
+     26     │ - }␍
+     27     │ - function·uploadFailureMessage(t:·Translate,·error:·Error,·maxReceiptBytes:·number):·string·{␍
+     28     │ - → const·status·=·error·instanceof·ReceiptUploadError·?·error.status·:·null;␍
+     29     │ - → if·(status·===·409)␍
+     30     │ - → → return·t(␍
+     31     │ - → → → "travelExpenses.report.receipts.supplementConflict",␍
+     32     │ - → → → "A·receipt·was·already·supplied·or·the·report·changed.·Reload·the·report·before·trying·again.",␍
+     33     │ - → → );␍
+     34     │ - → if·(status·===·400)␍
+     35     │ - → → return·t(␍
+     36     │ - → → → "travelExpenses.report.receipts.errors.unsupportedType",␍
+     37     │ - → → → "Attach·a·PDF·or·an·image·(JPEG,·PNG,·WebP,·GIF,·BMP·or·TIFF).",␍
+     38     │ - → → );␍
+     39     │ - → if·(status·===·413)␍
+     40     │ - → → return·t(␍
+     41     │ - → → → "travelExpenses.report.receipts.errors.tooLarge",␍
+     42     │ - → → → "The·file·is·too·large.·Attach·a·file·of·at·most·{size}·MB.",␍
+     43     │ - → → → {·size:·maxReceiptBytes·/·(1024·*·1024)·},␍
+     44     │ - → → );␍
+     45     │ - → return·t(␍
+     46     │ - → → "travelExpenses.report.receipts.supplementFailed",␍
+     47     │ - → → "The·receipt·was·not·attached.·Reload·the·report·and·try·again.",␍
+     48     │ - → );␍
+     49     │ - }␍
+     50     │ - ␍
+     51     │ - type·Props·=·{␍
+     52     │ - → reportId:·string;␍
+     53     │ - → itemId:·string;␍
+     54     │ - → itemType:·TravelExpenseReportItemType;␍
+     55     │ - → submissionCycle:·number;␍
+     56     │ - → canAddReceipt:·boolean;␍
+     57     │ - → receipts:·SubmittedReportItemView["receipts"];␍
+     58     │ - → onChanged:·()·=>·void;␍
+     59     │ - → maxReceiptBytes?:·number;␍
+     60     │ - };␍
+     61     │ - ␍
+     62     │ - /**·Supplemental·evidence·is·visibly·separate·from·the·frozen·submission·facts.·*/␍
+     63     │ - export·function·SubmittedReportReceipts(props:·Props)·{␍
+     64     │ - → const·{·t·}·=·useTranslate();␍
+     65     │ - → const·locale·=·useLocale();␍
+     66     │ - → return·(␍
+     67     │ - → → <div·className="mt-2·space-y-2">␍
+     68     │ - → → → {props.receipts␍
+     69     │ - → → → → .filter((receipt)·=>·receipt.addedAfterSubmission)␍
+     70     │ - → → → → .map((receipt)·=>·(␍
+     71     │ - → → → → → <p·key={receipt.receiptId}·className="break-words·text-sm·text-muted-foreground">␍
+     72     │ - → → → → → → {t(␍
+     73     │ - → → → → → → → "travelExpenses.report.receipts.addedAfterSubmission",␍
+     74     │ - → → → → → → → "{fileName}:·Added·after·submission·by·{name}·on·{date}.",␍
+     75     │ - → → → → → → → {␍
+     76     │ - → → → → → → → → fileName:·receipt.fileName,␍
+     77     │ - → → → → → → → → name:·receipt.uploadedByName·??·"—",␍
+     78     │ - → → → → → → → → date:·receipt.uploadedAt·?·formatRecordedInstant(locale,·receipt.uploadedAt)·:·"—",␍
+     79     │ - → → → → → → → },␍
+     80     │ - → → → → → → )}␍
+     81     │ - → → → → → </p>␍
+     82     │ - → → → → ))}␍
+     83     │ - → → → {props.canAddReceipt·&&·props.itemType·===·"receipt"·&&·props.receipts.length·===·0·?·(␍
+     84     │ - → → → → <MissingReceiptUpload␍
+     85     │ - → → → → → key={`${props.reportId}:${props.itemId}:${props.submissionCycle}`}␍
+     86     │ - → → → → → reportId={props.reportId}␍
+     87     │ - → → → → → itemId={props.itemId}␍
+     88     │ - → → → → → submissionCycle={props.submissionCycle}␍
+     89     │ - → → → → → onChanged={props.onChanged}␍
+     90     │ - → → → → → maxReceiptBytes={props.maxReceiptBytes}␍
+     91     │ - → → → → />␍
+     92     │ - → → → )·:·null}␍
+     93     │ - → → </div>␍
+     94     │ - → );␍
+     95     │ - }␍
+     96     │ - ␍
+     97     │ - function·MissingReceiptUpload({␍
+     98     │ - → reportId,␍
+     99     │ - → itemId,␍
+    100     │ - → submissionCycle,␍
+    101     │ - → onChanged,␍
+    102     │ - → maxReceiptBytes·=·MAX_RECEIPT_SIZE,␍
+    103     │ - }:·Pick<Props,·"reportId"·|·"itemId"·|·"submissionCycle"·|·"onChanged"·|·"maxReceiptBytes">)·{␍
+    104     │ - → const·{·t·}·=·useTranslate();␍
+    105     │ - → const·fileInput·=·useRef<HTMLInputElement>(null);␍
+    106     │ - → const·[error,·setError]·=·useState<string·|·null>(null);␍
+    107     │ - → const·task·=·useReportTask(`${reportId}:${itemId}:${submissionCycle}`);␍
+    108     │ - → const·processing·=·useRef<ReturnType<typeof·task.reserve>>(null);␍
+    109     │ - → const·upload·=·useTravelExpenseFileUpload({␍
+    110     │ - → → process:·async·({·tusFileKey,·fileName·})·=>·{␍
+    111     │ - → → → const·activation·=·task.reserve();␍
+    112     │ - → → → if·(!activation)·throw·new·Error("Receipt·task·unavailable");␍
+    113     │ - → → → processing.current·=·activation;␍
+    114     │ - → → → const·response·=·await·fetch("/api/upload/travel-expense/report-receipt",·{␍
+    115     │ - → → → → method:·"POST",␍
+    116     │ - → → → → headers:·{·"Content-Type":·"application/json"·},␍
+    117     │ - → → → → body:·JSON.stringify({␍
+    118     │ - → → → → → reportId,␍
+    119     │ - → → → → → itemId,␍
+    120     │ - → → → → → submissionCycle,␍
+    121     │ - → → → → → tusFileKey,␍
+    122     │ - → → → → → fileName,␍
+    123     │ - → → → → }),␍
+    124     │ - → → → });␍
+    125     │ - → → → if·(!response.ok)·throw·new·ReceiptUploadError(response.status);␍
+    126     │ - → → },␍
+    127     │ - → → onSuccess:·()·=>·{␍
+    128     │ - → → → const·activation·=·processing.current;␍
+    129     │ - → → → if·(!activation)·return;␍
+    130     │ - → → → if·(task.isCurrent(activation))·onChanged();␍
+    131     │ - → → → task.release(activation);␍
+    132     │ - → → },␍
+    133     │ - → → onError:·(error)·=>·{␍
+    134     │ - → → → const·activation·=·processing.current;␍
+    135     │ - → → → if·(!activation)·{␍
+    136     │ - → → → → if·(task.isActive())·setError(uploadFailureMessage(t,·error,·maxReceiptBytes));␍
+    137     │ - → → → → return;␍
+    138     │ - → → → }␍
+    139     │ - → → → if·(task.isCurrent(activation))·setError(uploadFailureMessage(t,·error,·maxReceiptBytes));␍
+    140     │ - → → → task.release(activation);␍
+    141     │ - → → },␍
+    142     │ - → → maxFileSize:·maxReceiptBytes,␍
+    143     │ - → });␍
+    144     │ - → function·chooseFile(event:·React.ChangeEvent<HTMLInputElement>)·{␍
+    145     │ - → → const·file·=·event.target.files?.[0];␍
+    146     │ - → → event.target.value·=·"";␍
+    147     │ - → → if·(!file)·return;␍
+    148     │ - → → if·(file.size·>·maxReceiptBytes)·{␍
+    149     │ - → → → setError(␍
+    150     │ - → → → → t(␍
+  318 more lines truncated
+src\components\travel-expenses\report\trip-details-editor.tsx format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      4     │ - import·{·TimezonePicker·}·from·"@/components/settings/timezone-picker";␍
+      5     │ - import·{·Card,·CardContent,·CardDescription,·CardHeader·}·from·"@/components/ui/card";␍
+      6     │ - import·{·DatePicker·}·from·"@/components/ui/date-picker";␍
+      7     │ - import·{·Input·}·from·"@/components/ui/input";␍
+      8     │ - import·{␍
+      9     │ - → TFormControl,␍
+     10     │ - → TFormDescription,␍
+     11     │ - → TFormItem,␍
+     12     │ - → TFormLabel,␍
+     13     │ - → TFormMessage,␍
+     14     │ - }·from·"@/components/ui/tanstack-form";␍
+     15     │ - import·type·{·TripDetailsView·}·from·"@/lib/travel-expenses/report-store";␍
+     16     │ - import·{·MAX_TRIP_PURPOSE_LENGTH,·type·TripDetailsDraft·}·from·"@/lib/travel-expenses/trip-report";␍
+     17     │ - import·{·DraftSaveStatus·}·from·"./draft-save-status";␍
+     18     │ - import·{·TripProjectField·}·from·"./project-picker";␍
+     19     │ - import·{·TripDestinationsField·}·from·"./trip-destinations-field";␍
+     20     │ - import·{·fieldErrorMessage,·type·TripDetailsFieldName·}·from·"./trip-details-form";␍
+     21     │ - import·{·useTripDetailsDraft·}·from·"./use-trip-details-draft";␍
+     22     │ - ␍
+     23     │ - /**·Autosaving·editor·of·the·travel·details·all·expenses·of·a·trip·share.·*/␍
+     24     │ - export·function·TripDetailsEditor(props:·Parameters<typeof·TripDetailsEditorTask>[0])·{␍
+     25     │ - → return·<TripDetailsEditorTask·key={props.reportId}·{...props}·/>;␍
+     26     │ - }␍
+     27     │ - ␍
+     28     │ - function·TripDetailsEditorTask({␍
+     29     │ - → reportId,␍
+     30     │ - → details,␍
+     31     │ - → onDetailsChange,␍
+     32     │ - → onSaved,␍
+     33     │ - → project,␍
+     34     │ - }:·{␍
+     35     │ - → reportId:·string;␍
+     36     │ - → /**·The·details·as·last·loaded;·later·loads·never·reset·entered·values.·*/␍
+     37     │ - → details:·TripDetailsView;␍
+     38     │ - → /**·The·entered·details·as·they·change;·null·while·any·of·them·is·malformed.·*/␍
+     39     │ - → onDetailsChange:·(details:·TripDetailsDraft·|·null)·=>·void;␍
+     40     │ - → onSaved?:·()·=>·void;␍
+     41     │ - → /**·The·trip's·project·(#605),·which·its·expenses·inherit.·*/␍
+     42     │ - → project?:·{·initialProjectId:·string·|·null;·onSaved:·(projectId:·string·|·null)·=>·void·};␍
+     43     │ - })·{␍
+     44     │ - → const·{·t·}·=·useTranslate();␍
+     45     │ - → const·{·saver,·state,·form,·changed,·resolveWithTheirs·}·=·useTripDetailsDraft({␍
+     46     │ - → → reportId,␍
+     47     │ - → → details,␍
+     48     │ - → → onDetailsChange,␍
+     49     │ - → → onSaved,␍
+     50     │ - → });␍
+     51     │ - ␍
+     52     │ - → const·fieldError·=·(field:·TripDetailsFieldName)·=>␍
+     53     │ - → → state.status·===·"invalid"·?·fieldErrorMessage(t,·state.fieldErrors?.[field])·:·undefined;␍
+     54     │ - ␍
+     55     │ - → return·(␍
+     56     │ - → → <section·aria-labelledby={`${reportId}-trip`}>␍
+     57     │ - → → → <Card>␍
+     58     │ - → → → → <CardHeader>␍
+     59     │ - → → → → → <h2·id={`${reportId}-trip`}·className="font-semibold·leading-none">␍
+     60     │ - → → → → → → {t("travelExpenses.report.trip.title",·"Trip·details")}␍
+     61     │ - → → → → → </h2>␍
+     62     │ - → → → → → <CardDescription>␍
+     63     │ - → → → → → → {t(␍
+     64     │ - → → → → → → → "travelExpenses.report.trip.description",␍
+     65     │ - → → → → → → → "Every·expense·of·this·trip·shares·these·details.",␍
+     66     │ - → → → → → → )}␍
+     67     │ - → → → → → </CardDescription>␍
+     68     │ - → → → → </CardHeader>␍
+     69     │ - → → → → <CardContent·className="space-y-4">␍
+     70     │ - → → → → → <DraftSaveStatus␍
+     71     │ - → → → → → → state={state}␍
+     72     │ - → → → → → → onRetry={()·=>·saver.retry()}␍
+     73     │ - → → → → → → onKeepMine={()·=>·saver.resolveConflict("keep_mine")}␍
+     74     │ - → → → → → → onUseTheirs={resolveWithTheirs}␍
+     75     │ - → → → → → />␍
+     76     │ - ␍
+     77     │ - → → → → → <form␍
+     78     │ - → → → → → → noValidate␍
+     79     │ - → → → → → → onSubmit={(event)·=>·{␍
+     80     │ - → → → → → → → event.preventDefault();␍
+     81     │ - → → → → → → → void·saver.flush();␍
+     82     │ - → → → → → → }}␍
+     83     │ - → → → → → → className="grid·gap-4"␍
+     84     │ - → → → → → >␍
+     85     │ - → → → → → → <form.Field·name="purpose">␍
+     86     │ - → → → → → → → {(field)·=>·(␍
+     87     │ - → → → → → → → → <TFormItem>␍
+     88     │ - → → → → → → → → → <TFormLabel·hasError={!!fieldError("purpose")}>␍
+     89     │ - → → → → → → → → → → {t("travelExpenses.report.trip.fields.purpose",·"Purpose·of·the·trip")}␍
+     90     │ - → → → → → → → → → </TFormLabel>␍
+     91     │ - → → → → → → → → → <TFormControl·hasError={!!fieldError("purpose")}>␍
+     92     │ - → → → → → → → → → → <Input␍
+     93     │ - → → → → → → → → → → → name="purpose"␍
+     94     │ - → → → → → → → → → → → autoComplete="off"␍
+     95     │ - → → → → → → → → → → → maxLength={MAX_TRIP_PURPOSE_LENGTH}␍
+     96     │ - → → → → → → → → → → → placeholder={t(␍
+     97     │ - → → → → → → → → → → → → "travelExpenses.report.trip.fields.purposePlaceholder",␍
+     98     │ - → → → → → → → → → → → → "e.g.·Customer·workshop·in·Hamburg",␍
+     99     │ - → → → → → → → → → → → )}␍
+    100     │ - → → → → → → → → → → → value={field.state.value}␍
+    101     │ - → → → → → → → → → → → onChange={(event)·=>·field.handleChange(event.target.value)}␍
+    102     │ - → → → → → → → → → → → onBlur={field.handleBlur}␍
+    103     │ - → → → → → → → → → → />␍
+    104     │ - → → → → → → → → → </TFormControl>␍
+    105     │ - → → → → → → → → → <TFormMessage>{fieldError("purpose")}</TFormMessage>␍
+    106     │ - → → → → → → → → </TFormItem>␍
+    107     │ - → → → → → → → )}␍
+    108     │ - → → → → → → </form.Field>␍
+    109     │ - ␍
+    110     │ - → → → → → → <div·className="grid·gap-4·sm:grid-cols-2">␍
+    111     │ - → → → → → → → <form.Field·name="startDate">␍
+    112     │ - → → → → → → → → {(field)·=>·(␍
+    113     │ - → → → → → → → → → <TFormItem>␍
+    114     │ - → → → → → → → → → → <TFormLabel·hasError={!!fieldError("startDate")}>␍
+    115     │ - → → → → → → → → → → → {t("travelExpenses.report.trip.fields.startDate",·"First·travel·day")}␍
+    116     │ - → → → → → → → → → → </TFormLabel>␍
+    117     │ - → → → → → → → → → → <TFormControl·hasError={!!fieldError("startDate")}>␍
+    118     │ - → → → → → → → → → → → <DatePicker␍
+    119     │ - → → → → → → → → → → → → name="startDate"␍
+    120     │ - → → → → → → → → → → → → value={field.state.value}␍
+    121     │ - → → → → → → → → → → → → onChange={field.handleChange}␍
+    122     │ - → → → → → → → → → → → → onBlur={field.handleBlur}␍
+    123     │ - → → → → → → → → → → → />␍
+    124     │ - → → → → → → → → → → </TFormControl>␍
+    125     │ - → → → → → → → → → → <TFormMessage>{fieldError("startDate")}</TFormMessage>␍
+    126     │ - → → → → → → → → → </TFormItem>␍
+    127     │ - → → → → → → → → )}␍
+    128     │ - → → → → → → → </form.Field>␍
+    129     │ - → → → → → → → <form.Subscribe·selector={(formState)·=>·formState.values.startDate}>␍
+    130     │ - → → → → → → → → {(startDate)·=>·(␍
+    131     │ - → → → → → → → → → <form.Field·name="endDate">␍
+    132     │ - → → → → → → → → → → {(field)·=>·(␍
+    133     │ - → → → → → → → → → → → <TFormItem>␍
+    134     │ - → → → → → → → → → → → → <TFormLabel·hasError={!!fieldError("endDate")}>␍
+    135     │ - → → → → → → → → → → → → → {t("travelExpenses.report.trip.fields.endDate",·"Last·travel·day")}␍
+    136     │ - → → → → → → → → → → → → </TFormLabel>␍
+    137     │ - → → → → → → → → → → → → <TFormControl·hasError={!!fieldError("endDate")}>␍
+    138     │ - → → → → → → → → → → → → → <DatePicker␍
+    139     │ - → → → → → → → → → → → → → → name="endDate"␍
+    140     │ - → → → → → → → → → → → → → → min={startDate·||·undefined}␍
+    141     │ - → → → → → → → → → → → → → → value={field.state.value}␍
+    142     │ - → → → → → → → → → → → → → → onChange={field.handleChange}␍
+    143     │ - → → → → → → → → → → → → → → onBlur={field.handleBlur}␍
+    144     │ - → → → → → → → → → → → → → />␍
+    145     │ - → → → → → → → → → → → → </TFormControl>␍
+    146     │ - → → → → → → → → → → → → <TFormMessage>{fieldError("endDate")}</TFormMessage>␍
+    147     │ - → → → → → → → → → → → </TFormItem>␍
+    148     │ - → → → → → → → → → → )}␍
+    149     │ - → → → → → → → → → </form.Field>␍
+    150     │ - → → → → → → → → )}␍
+  310 more lines truncated
+src\components\travel-expenses\report\use-draft-saver.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+     1     │ - "use·client";␍
+     2     │ - ␍
+     3     │ - import·{·useEffect,·useLayoutEffect,·useState,·useSyncExternalStore·}·from·"react";␍
+     4     │ - import·{␍
+     5     │ - → createDraftSaver,␍
+     6     │ - → type·DraftSaveOutcome,␍
+     7     │ - → type·DraftSaver,␍
+     8     │ - }·from·"@/lib/travel-expenses/draft-saver";␍
+     9     │ - ␍
+    10     │ - const·AUTOSAVE_DELAY_MS·=·800;␍
+    11     │ - ␍
+    12     │ - /**·Holds·the·latest·value·for·callbacks·that·outlive·the·render·that·created·them.·*/␍
+    13     │ - function·createLatestBox<T>(initial:·T)·{␍
+    14     │ - → let·current·=·initial;␍
+    15     │ - → let·arrival:·object·|·null·=·null;␍
+    16     │ - → return·{␍
+    17     │ - → → get:·()·=>·current,␍
+    18     │ - → → activate:·()·=>·{␍
+    19     │ - → → → arrival·=·{};␍
+    20     │ - → → },␍
+    21     │ - → → retire:·()·=>·{␍
+    22     │ - → → → arrival·=·null;␍
+    23     │ - → → },␍
+    24     │ - → → capture:·()·=>·{␍
+    25     │ - → → → const·captured·=·arrival;␍
+    26     │ - → → → return·()·=>·captured·!==·null·&&·captured·===·arrival;␍
+    27     │ - → → },␍
+    28     │ - → → set:·(next:·T)·=>·{␍
+    29     │ - → → → current·=·next;␍
+    30     │ - → → },␍
+    31     │ - → };␍
+    32     │ - }␍
+    33     │ - ␍
+    34     │ - /**␍
+    35     │ - ·*·Binds·one·draft·saver·to·the·component's·lifetime.·Pending·edits·are·saved␍
+    36     │ - ·*·when·the·page·is·hidden·(mobile·app·switch)·or·the·editor·unmounts,·and·the␍
+    37     │ - ·*·browser·warns·before·leaving·while·edits·or·uploads·are·unsaved.␍
+    38     │ - ·*/␍
+    39     │ - export·function·useDraftSaver<Values,·Item>(options:·{␍
+    40     │ - → version:·number;␍
+    41     │ - → save:·(␍
+    42     │ - → → values:·Values,␍
+    43     │ - → → expectedVersion:·number,␍
+    44     │ - → → isCurrent:·()·=>·boolean,␍
+    45     │ - → )·=>·Promise<DraftSaveOutcome<Item>>;␍
+    46     │ - → /**·Extra·work·that·must·finish·before·leaving,·e.g.·a·receipt·upload.·*/␍
+    47     │ - → isBusy?:·boolean;␍
+    48     │ - → /**·Reports·edits·that·could·not·be·saved·after·the·editor·was·closed.·*/␍
+    49     │ - → onUnsavedAfterClose:·()·=>·void;␍
+    50     │ - })·{␍
+    51     │ - → //·A·box·rather·than·refs:·the·saver·is·created·during·render,·and·the·React␍
+    52     │ - → //·Compiler·refuses·closures·over·refs·there.␍
+    53     │ - → const·[latest]·=·useState(()·=>·createLatestBox(options));␍
+    54     │ - → useLayoutEffect(()·=>·{␍
+    55     │ - → → latest.set(options);␍
+    56     │ - → });␍
+    57     │ - → useLayoutEffect(()·=>·{␍
+    58     │ - → → latest.activate();␍
+    59     │ - → → return·()·=>·latest.retire();␍
+    60     │ - → },·[latest]);␍
+    61     │ - → const·[saver]·=·useState<DraftSaver<Values,·Item>>(()·=>␍
+    62     │ - → → createDraftSaver<Values,·Item>({␍
+    63     │ - → → → version:·options.version,␍
+    64     │ - → → → delayMs:·AUTOSAVE_DELAY_MS,␍
+    65     │ - → → → save:·(values,·version)·=>·latest.get().save(values,·version,·latest.capture()),␍
+    66     │ - → → }),␍
+    67     │ - → );␍
+    68     │ - → const·state·=·useSyncExternalStore(saver.subscribe,·saver.getState,·saver.getState);␍
+    69     │ - ␍
+    70     │ - → useEffect(()·=>·{␍
+    71     │ - → → const·flushWhenHidden·=·()·=>·{␍
+    72     │ - → → → if·(document.visibilityState·===·"hidden")·void·saver.flush();␍
+    73     │ - → → };␍
+    74     │ - → → document.addEventListener("visibilitychange",·flushWhenHidden);␍
+    75     │ - → → return·()·=>·{␍
+    76     │ - → → → document.removeEventListener("visibilitychange",·flushWhenHidden);␍
+    77     │ - → → → //·Starts·any·pending·save·before·the·editor·goes·away.·With·no·editor␍
+    78     │ - → → → //·left·to·show·its·outcome,·a·failure·is·reported·as·a·notice.␍
+    79     │ - → → → void·saver.flush().then(()·=>·{␍
+    80     │ - → → → → const·{·status·}·=·saver.getState();␍
+    81     │ - → → → → if·(status·===·"failed"·||·status·===·"conflict")·latest.get().onUnsavedAfterClose();␍
+    82     │ - → → → });␍
+    83     │ - → → };␍
+    84     │ - → },·[latest,·saver]);␍
+    85     │ - ␍
+    86     │ - → const·unsaved·=·state.status·!==·"saved"·||·Boolean(options.isBusy);␍
+    87     │ - → useEffect(()·=>·{␍
+    88     │ - → → if·(!unsaved)·return;␍
+    89     │ - → → const·warn·=·(event:·BeforeUnloadEvent)·=>·{␍
+    90     │ - → → → event.preventDefault();␍
+    91     │ - → → };␍
+    92     │ - → → window.addEventListener("beforeunload",·warn);␍
+    93     │ - → → return·()·=>·window.removeEventListener("beforeunload",·warn);␍
+    94     │ - → },·[unsaved]);␍
+    95     │ - ␍
+    96     │ - → return·{·saver,·state·};␍
+    97     │ - }␍
+         1 │ + "use·client";
+         2 │ +
+         3 │ + import·{
+         4 │ + → useEffect,
+         5 │ + → useLayoutEffect,
+         6 │ + → useState,
+         7 │ + → useSyncExternalStore,
+         8 │ + }·from·"react";
+         9 │ + import·{
+        10 │ + → createDraftSaver,
+        11 │ + → type·DraftSaveOutcome,
+        12 │ + → type·DraftSaver,
+        13 │ + }·from·"@/lib/travel-expenses/draft-saver";
+        14 │ +
+        15 │ + const·AUTOSAVE_DELAY_MS·=·800;
+        16 │ +
+        17 │ + /**·Holds·the·latest·value·for·callbacks·that·outlive·the·render·that·created·them.·*/
+        18 │ + function·createLatestBox<T>(initial:·T)·{
+        19 │ + → let·current·=·initial;
+        20 │ + → let·arrival:·object·|·null·=·null;
+        21 │ + → return·{
+        22 │ + → → get:·()·=>·current,
+        23 │ + → → activate:·()·=>·{
+        24 │ + → → → arrival·=·{};
+        25 │ + → → },
+        26 │ + → → retire:·()·=>·{
+        27 │ + → → → arrival·=·null;
+        28 │ + → → },
+        29 │ + → → capture:·()·=>·{
+        30 │ + → → → const·captured·=·arrival;
+        31 │ + → → → return·()·=>·captured·!==·null·&&·captured·===·arrival;
+        32 │ + → → },
+        33 │ + → → set:·(next:·T)·=>·{
+        34 │ + → → → current·=·next;
+        35 │ + → → },
+        36 │ + → };
+        37 │ + }
+        38 │ +
+        39 │ + /**
+        40 │ + ·*·Binds·one·draft·saver·to·the·component's·lifetime.·Pending·edits·are·saved
+        41 │ + ·*·when·the·page·is·hidden·(mobile·app·switch)·or·the·editor·unmounts,·and·the
+        42 │ + ·*·browser·warns·before·leaving·while·edits·or·uploads·are·unsaved.
+        43 │ + ·*/
+        44 │ + export·function·useDraftSaver<Values,·Item>(options:·{
+        45 │ + → version:·number;
+        46 │ + → save:·(
+        47 │ + → → values:·Values,
+        48 │ + → → expectedVersion:·number,
+        49 │ + → → isCurrent:·()·=>·boolean,
+        50 │ + → )·=>·Promise<DraftSaveOutcome<Item>>;
+        51 │ + → /**·Extra·work·that·must·finish·before·leaving,·e.g.·a·receipt·upload.·*/
+        52 │ + → isBusy?:·boolean;
+        53 │ + → /**·Reports·edits·that·could·not·be·saved·after·the·editor·was·closed.·*/
+  56 more lines truncated
+src\components\travel-expenses\report\use-mileage-item-draft.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useForm·}·from·"@tanstack/react-form";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useLocale·}·from·"next-intl";␍
+      6     │ - import·{·useRef,·useState·}·from·"react";␍
+      7     │ - import·{·toast·}·from·"sonner";␍
+      8     │ - import·{·saveMileageItemDraftAction·}·from·"@/app/[locale]/(app)/travel-expenses/mileage-actions";␍
+      9     │ - import·type·{·DraftSaveOutcome·}·from·"@/lib/travel-expenses/draft-saver";␍
+     10     │ - import·{␍
+     11     │ - → type·MileageItemDraft,␍
+     12     │ - → type·MileageItemDraftInput,␍
+     13     │ - → parseMileageItemDraft,␍
+     14     │ - }·from·"@/lib/travel-expenses/mileage";␍
+     15     │ - import·type·{·ReportItemView·}·from·"@/lib/travel-expenses/report-store";␍
+     16     │ - import·{·mileageDraftOf·}·from·"./mileage-item-draft";␍
+     17     │ - import·{·type·MileageFieldName,·toDraftInput,·toFormValues·}·from·"./mileage-item-form";␍
+     18     │ - import·{·useDraftSaver·}·from·"./use-draft-saver";␍
+     19     │ - ␍
+     20     │ - /**␍
+     21     │ - ·*·The·mileage·editor's·autosaving·form:·entered·values·save·through·one·draft␍
+     22     │ - ·*·saver,·and·malformed·fields·keep·their·last·saved·value·so·valid·edits·still·save.␍
+     23     │ - ·*/␍
+     24     │ - export·function·useMileageItemDraft({␍
+     25     │ - → reportId,␍
+     26     │ - → item,␍
+     27     │ - → onSaved,␍
+     28     │ - → onDraftChange,␍
+     29     │ - }:·{␍
+     30     │ - → reportId:·string;␍
+     31     │ - → item:·ReportItemView;␍
+     32     │ - → onSaved?:·(item:·ReportItemView)·=>·void;␍
+     33     │ - → onDraftChange?:·(draft:·MileageItemDraft·|·null)·=>·void;␍
+     34     │ - })·{␍
+     35     │ - → const·{·t·}·=·useTranslate();␍
+     36     │ - → const·locale·=·useLocale();␍
+     37     │ - → //·The·latest·server·view:·its·calculation·is·shown·while·the·entries·match·it.␍
+     38     │ - → const·[saved,·setSaved]·=·useState(item);␍
+     39     │ - → const·[initialSaved]·=·useState(()·=>·toDraftInput(toFormValues(mileageDraftOf(item),·locale)));␍
+     40     │ - → const·lastSaved·=·useRef<MileageItemDraftInput>(initialSaved);␍
+     41     │ - ␍
+     42     │ - → const·{·saver,·state·}·=·useDraftSaver<MileageItemDraftInput,·ReportItemView>({␍
+     43     │ - → → version:·item.version,␍
+     44     │ - → → onUnsavedAfterClose:·()·=>␍
+     45     │ - → → → toast.error(␍
+     46     │ - → → → → t(␍
+     47     │ - → → → → → "travelExpenses.report.save.unsavedAfterClose",␍
+     48     │ - → → → → → "Your·latest·changes·to·an·expense·could·not·be·saved.·Open·it·again·to·check·it.",␍
+     49     │ - → → → → ),␍
+     50     │ - → → → ),␍
+     51     │ - → → save:·async·(values,·expectedVersion,·isCurrent):·Promise<DraftSaveOutcome<ReportItemView>>·=>·{␍
+     52     │ - → → → const·parsed·=·parseMileageItemDraft(values);␍
+     53     │ - → → → const·errors·=·parsed.ok·?·null·:·parsed.errors;␍
+     54     │ - → → → //·Malformed·fields·keep·their·last·saved·value·so·valid·edits·still·save.␍
+     55     │ - → → → const·saveable·=·{·...values·};␍
+     56     │ - → → → for·(const·field·of·Object.keys(errors·??·{})·as·MileageFieldName[])·{␍
+     57     │ - → → → → saveable[field]·=·lastSaved.current[field];␍
+     58     │ - → → → }␍
+     59     │ - → → → if·(errors·&&·!parseMileageItemDraft(saveable).ok)·return·{·status:·"invalid",·errors·};␍
+     60     │ - → → → const·result·=·await·saveMileageItemDraftAction({␍
+     61     │ - → → → → reportId,␍
+     62     │ - → → → → itemId:·item.id,␍
+     63     │ - → → → → expectedVersion,␍
+     64     │ - → → → → values:·saveable,␍
+     65     │ - → → → });␍
+     66     │ - → → → if·(!result.success)·return·{·status:·"failed",·error:·result.error·};␍
+     67     │ - → → → switch·(result.data.status)·{␍
+     68     │ - → → → → case·"saved":␍
+     69     │ - → → → → → lastSaved.current·=·toDraftInput(toFormValues(mileageDraftOf(result.data.item),·locale));␍
+     70     │ - → → → → → if·(isCurrent())·{␍
+     71     │ - → → → → → → setSaved(result.data.item);␍
+     72     │ - → → → → → → onSaved?.(result.data.item);␍
+     73     │ - → → → → → }␍
+     74     │ - → → → → → return·errors␍
+     75     │ - → → → → → → ?·{·status:·"invalid",·errors,·version:·result.data.item.version·}␍
+     76     │ - → → → → → → :·{·status:·"saved",·version:·result.data.item.version·};␍
+     77     │ - → → → → case·"conflict":␍
+     78     │ - → → → → → return·{·status:·"conflict",·version:·result.data.item.version,·item:·result.data.item·};␍
+     79     │ - → → → → case·"invalid":␍
+     80     │ - → → → → → return·{·status:·"invalid",·errors:·result.data.errors·};␍
+     81     │ - → → → }␍
+     82     │ - → → },␍
+     83     │ - → });␍
+     84     │ - ␍
+     85     │ - → const·[defaultValues]·=·useState(()·=>·toFormValues(mileageDraftOf(item),·locale));␍
+     86     │ - → const·form·=·useForm({␍
+     87     │ - → → defaultValues,␍
+     88     │ - → → listeners:·{␍
+     89     │ - → → → onChange:·({·formApi·})·=>·{␍
+     90     │ - → → → → const·values·=·toDraftInput(formApi.state.values);␍
+     91     │ - → → → → saver.change(values);␍
+     92     │ - → → → → const·parsed·=·parseMileageItemDraft(values);␍
+     93     │ - → → → → onDraftChange?.(parsed.ok·?·parsed.draft·:·null);␍
+     94     │ - → → → },␍
+     95     │ - → → },␍
+     96     │ - → });␍
+     97     │ - ␍
+     98     │ - → /**·Resolves·a·save·conflict·with·the·other·version·and·shows·its·values.·*/␍
+     99     │ - → function·resolveWithTheirs()·{␍
+    100     │ - → → const·theirs·=·state.conflict?.item;␍
+    101     │ - → → saver.resolveConflict("use_theirs");␍
+    102     │ - → → if·(theirs)·{␍
+    103     │ - → → → lastSaved.current·=·toDraftInput(toFormValues(mileageDraftOf(theirs),·locale));␍
+    104     │ - → → → setSaved(theirs);␍
+    105     │ - → → → form.reset(toFormValues(mileageDraftOf(theirs),·locale),·{·keepDefaultValues:·true·});␍
+    106     │ - → → → onDraftChange?.(mileageDraftOf(theirs));␍
+    107     │ - → → }␍
+    108     │ - → }␍
+    109     │ - ␍
+    110     │ - → return·{·saver,·state,·form,·saved,·resolveWithTheirs·};␍
+    111     │ - }␍
+          1 │ + "use·client";
+          2 │ +
+          3 │ + import·{·useForm·}·from·"@tanstack/react-form";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·useLocale·}·from·"next-intl";
+          6 │ + import·{·useRef,·useState·}·from·"react";
+          7 │ + import·{·toast·}·from·"sonner";
+          8 │ + import·{·saveMileageItemDraftAction·}·from·"@/app/[locale]/(app)/travel-expenses/mileage-actions";
+          9 │ + import·type·{·DraftSaveOutcome·}·from·"@/lib/travel-expenses/draft-saver";
+         10 │ + import·{
+         11 │ + → type·MileageItemDraft,
+         12 │ + → type·MileageItemDraftInput,
+         13 │ + → parseMileageItemDraft,
+         14 │ + }·from·"@/lib/travel-expenses/mileage";
+         15 │ + import·type·{·ReportItemView·}·from·"@/lib/travel-expenses/report-store";
+         16 │ + import·{·mileageDraftOf·}·from·"./mileage-item-draft";
+         17 │ + import·{
+         18 │ + → type·MileageFieldName,
+         19 │ + → toDraftInput,
+         20 │ + → toFormValues,
+         21 │ + }·from·"./mileage-item-form";
+         22 │ + import·{·useDraftSaver·}·from·"./use-draft-saver";
+         23 │ +
+         24 │ + /**
+         25 │ + ·*·The·mileage·editor's·autosaving·form:·entered·values·save·through·one·draft
+         26 │ + ·*·saver,·and·malformed·fields·keep·their·last·saved·value·so·valid·edits·still·save.
+         27 │ + ·*/
+         28 │ + export·function·useMileageItemDraft({
+         29 │ + → reportId,
+         30 │ + → item,
+         31 │ + → onSaved,
+         32 │ + → onDraftChange,
+         33 │ + }:·{
+         34 │ + → reportId:·string;
+         35 │ + → item:·ReportItemView;
+         36 │ + → onSaved?:·(item:·ReportItemView)·=>·void;
+         37 │ + → onDraftChange?:·(draft:·MileageItemDraft·|·null)·=>·void;
+         38 │ + })·{
+         39 │ + → const·{·t·}·=·useTranslate();
+  98 more lines truncated
+src\components\travel-expenses\report\use-per-diem-item-draft.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useForm·}·from·"@tanstack/react-form";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useEffect,·useState·}·from·"react";␍
+      6     │ - import·{·toast·}·from·"sonner";␍
+      7     │ - import·{·savePerDiemDraftAction·}·from·"@/app/[locale]/(app)/travel-expenses/per-diem-actions";␍
+      8     │ - import·type·{·DraftSaveOutcome·}·from·"@/lib/travel-expenses/draft-saver";␍
+      9     │ - import·{␍
+     10     │ - → type·PerDiemDraftInput,␍
+     11     │ - → type·PerDiemItinerary,␍
+     12     │ - → parsePerDiemDraft,␍
+     13     │ - }·from·"@/lib/travel-expenses/per-diem";␍
+     14     │ - import·type·{·ReportItemView·}·from·"@/lib/travel-expenses/report-store";␍
+     15     │ - import·{·perDiemDraftMatches,·perDiemDraftOf·}·from·"./per-diem-item-draft";␍
+     16     │ - import·{·type·PerDiemTrip,·toDraftInput,·toFormValues·}·from·"./per-diem-item-form";␍
+     17     │ - import·{·useDraftSaver·}·from·"./use-draft-saver";␍
+     18     │ - ␍
+     19     │ - /**␍
+     20     │ - ·*·The·per·diem·editor's·autosaving·form:·entered·values·save·through·one·draft␍
+     21     │ - ·*·saver,·and·a·new·per·diem·starts·on·the·trip's·travel·days·and·in·its·zone.␍
+     22     │ - ·*/␍
+     23     │ - export·function·usePerDiemItemDraft({␍
+     24     │ - → reportId,␍
+     25     │ - → item,␍
+     26     │ - → trip,␍
+     27     │ - → onSaved,␍
+     28     │ - → onDraftChange,␍
+     29     │ - }:·{␍
+     30     │ - → reportId:·string;␍
+     31     │ - → item:·ReportItemView;␍
+     32     │ - → trip:·PerDiemTrip;␍
+     33     │ - → onSaved?:·(item:·ReportItemView)·=>·void;␍
+     34     │ - → onDraftChange?:·(draft:·PerDiemItinerary·|·null)·=>·void;␍
+     35     │ - })·{␍
+     36     │ - → const·{·t·}·=·useTranslate();␍
+     37     │ - → const·[lastSaved,·setLastSaved]·=·useState(item);␍
+     38     │ - → //·The·latest·server·view.·A·reload·(e.g.·after·the·trip's·destinations·changed)␍
+     39     │ - → //·recalculates·the·same·version,·so·a·loaded·item·wins·a·tie·with·this·editor's·save.␍
+     40     │ - → const·saved·=·item.version·>=·lastSaved.version·?·item·:·lastSaved;␍
+     41     │ - ␍
+     42     │ - → const·{·saver,·state·}·=·useDraftSaver<PerDiemDraftInput,·ReportItemView>({␍
+     43     │ - → → version:·item.version,␍
+     44     │ - → → onUnsavedAfterClose:·()·=>␍
+     45     │ - → → → toast.error(␍
+     46     │ - → → → → t(␍
+     47     │ - → → → → → "travelExpenses.report.save.unsavedAfterClose",␍
+     48     │ - → → → → → "Your·latest·changes·to·an·expense·could·not·be·saved.·Open·it·again·to·check·it.",␍
+     49     │ - → → → → ),␍
+     50     │ - → → → ),␍
+     51     │ - → → save:·async·(values,·expectedVersion,·isCurrent):·Promise<DraftSaveOutcome<ReportItemView>>·=>·{␍
+     52     │ - → → → const·parsed·=·parsePerDiemDraft(values);␍
+     53     │ - → → → if·(!parsed.ok)·return·{·status:·"invalid",·errors:·parsed.errors·};␍
+     54     │ - → → → const·result·=·await·savePerDiemDraftAction({␍
+     55     │ - → → → → reportId,␍
+     56     │ - → → → → itemId:·item.id,␍
+     57     │ - → → → → expectedVersion,␍
+     58     │ - → → → → values,␍
+     59     │ - → → → });␍
+     60     │ - → → → if·(!result.success)·return·{·status:·"failed",·error:·result.error·};␍
+     61     │ - → → → switch·(result.data.status)·{␍
+     62     │ - → → → → case·"saved":␍
+     63     │ - → → → → → if·(isCurrent())·{␍
+     64     │ - → → → → → → setLastSaved(result.data.item);␍
+     65     │ - → → → → → → onSaved?.(result.data.item);␍
+     66     │ - → → → → → }␍
+     67     │ - → → → → → return·{·status:·"saved",·version:·result.data.item.version·};␍
+     68     │ - → → → → case·"conflict":␍
+     69     │ - → → → → → return·{·status:·"conflict",·version:·result.data.item.version,·item:·result.data.item·};␍
+     70     │ - → → → → case·"invalid":␍
+     71     │ - → → → → → return·{·status:·"invalid",·errors:·result.data.errors·};␍
+     72     │ - → → → }␍
+     73     │ - → → },␍
+     74     │ - → });␍
+     75     │ - ␍
+     76     │ - → const·[defaultValues]·=·useState(()·=>·{␍
+     77     │ - → → const·values·=·toFormValues(perDiemDraftOf(item));␍
+     78     │ - → → //·A·new·per·diem·starts·on·the·trip's·travel·days·and·in·its·zone.␍
+     79     │ - → → return·{␍
+     80     │ - → → → ...values,␍
+     81     │ - → → → startDate:·values.startDate·||·(trip.startDate·??·""),␍
+     82     │ - → → → endDate:·values.endDate·||·(trip.endDate·??·""),␍
+     83     │ - → → → startTimeZone:·values.startTimeZone·||·trip.timeZone,␍
+     84     │ - → → → endTimeZone:·values.endTimeZone·||·trip.timeZone,␍
+     85     │ - → → };␍
+     86     │ - → });␍
+     87     │ - → const·form·=·useForm({␍
+     88     │ - → → defaultValues,␍
+     89     │ - → → listeners:·{␍
+     90     │ - → → → onChange:·({·formApi·})·=>·{␍
+     91     │ - → → → → const·values·=·toDraftInput(formApi.state.values);␍
+     92     │ - → → → → saver.change(values);␍
+     93     │ - → → → → const·parsed·=·parsePerDiemDraft(values);␍
+     94     │ - → → → → onDraftChange?.(parsed.ok·?·parsed.itinerary·:·null);␍
+     95     │ - → → → },␍
+     96     │ - → → },␍
+     97     │ - → });␍
+     98     │ - ␍
+     99     │ - → //·A·new·per·diem·is·prefilled·with·the·trip's·days·and·zone:·save·that·right·away.␍
+    100     │ - → //·biome-ignore·lint/correctness/useExhaustiveDependencies:·runs·once·for·the·first·load␍
+    101     │ - → useEffect(()·=>·{␍
+    102     │ - → → const·prefilled·=·toDraftInput(defaultValues);␍
+    103     │ - → → const·parsed·=·parsePerDiemDraft(prefilled);␍
+    104     │ - → → if·(parsed.ok·&&·!perDiemDraftMatches(parsed.itinerary,·item))·{␍
+    105     │ - → → → saver.change(prefilled);␍
+    106     │ - → → → //·The·report·editor·counts·the·prefilled·draft·like·a·typed·one;·the·form·owns·the·values.␍
+    107     │ - → → → //·react-doctor-disable-next-line·react-doctor/no-pass-data-to-parent,·react-doctor/no-pass-live-state-to-parent␍
+    108     │ - → → → onDraftChange?.(parsed.itinerary);␍
+    109     │ - → → }␍
+    110     │ - → → //·Runs·once·for·the·first·load:·later·loads·never·reset·or·re-prefill·entered·values.␍
+    111     │ - → → //·react-doctor-disable-next-line·react-doctor/exhaustive-deps␍
+    112     │ - → },·[]);␍
+    113     │ - ␍
+    114     │ - → /**·Resolves·a·save·conflict·with·the·other·version·and·shows·its·values.·*/␍
+    115     │ - → function·resolveWithTheirs()·{␍
+    116     │ - → → const·theirs·=·state.conflict?.item;␍
+    117     │ - → → saver.resolveConflict("use_theirs");␍
+    118     │ - → → if·(theirs)·{␍
+    119     │ - → → → setLastSaved(theirs);␍
+    120     │ - → → → form.reset(toFormValues(perDiemDraftOf(theirs)),·{·keepDefaultValues:·true·});␍
+    121     │ - → → → onDraftChange?.(perDiemDraftOf(theirs));␍
+    122     │ - → → }␍
+    123     │ - → }␍
+    124     │ - ␍
+    125     │ - → return·{·saver,·state,·form,·saved,·resolveWithTheirs·};␍
+    126     │ - }␍
+          1 │ + "use·client";
+          2 │ +
+          3 │ + import·{·useForm·}·from·"@tanstack/react-form";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·useEffect,·useState·}·from·"react";
+          6 │ + import·{·toast·}·from·"sonner";
+          7 │ + import·{·savePerDiemDraftAction·}·from·"@/app/[locale]/(app)/travel-expenses/per-diem-actions";
+          8 │ + import·type·{·DraftSaveOutcome·}·from·"@/lib/travel-expenses/draft-saver";
+          9 │ + import·{
+         10 │ + → type·PerDiemDraftInput,
+         11 │ + → type·PerDiemItinerary,
+         12 │ + → parsePerDiemDraft,
+         13 │ + }·from·"@/lib/travel-expenses/per-diem";
+         14 │ + import·type·{·ReportItemView·}·from·"@/lib/travel-expenses/report-store";
+         15 │ + import·{·perDiemDraftMatches,·perDiemDraftOf·}·from·"./per-diem-item-draft";
+         16 │ + import·{
+         17 │ + → type·PerDiemTrip,
+         18 │ + → toDraftInput,
+         19 │ + → toFormValues,
+         20 │ + }·from·"./per-diem-item-form";
+         21 │ + import·{·useDraftSaver·}·from·"./use-draft-saver";
+         22 │ +
+         23 │ + /**
+         24 │ + ·*·The·per·diem·editor's·autosaving·form:·entered·values·save·through·one·draft
+  117 more lines truncated
+src\components\travel-expenses\report\use-report-project-issues.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·keepPreviousData,·useQuery,·useQueryClient·}·from·"@tanstack/react-query";␍
+     4    │ - import·{·useCallback·}·from·"react";␍
+     5    │ - import·{·getReportProjectIssuesAction·}·from·"@/app/[locale]/(app)/travel-expenses/report-project-actions";␍
+     6    │ - import·{·queryKeys·}·from·"@/lib/query/keys";␍
+     7    │ - import·{·useReportQueryKey·}·from·"./report-read-scope";␍
+     8    │ - ␍
+     9    │ - /**␍
+    10    │ - ·*·The·draft's·expenses·whose·project·(own·or·inherited·from·the·trip)·is·not␍
+    11    │ - ·*·proven·on·their·own·date·(#605·review).·A·trip·project·eligible·on·any·trip␍
+    12    │ - ·*·day·may·still·fail·another·expense's·day;·submission·refuses·those,·so·the␍
+    13    │ - ·*·editor·marks·them·before·the·employee·gets·there.·`fingerprint`·names·what␍
+    14    │ - ·*·the·answer·depends·on·(the·trip's·project,·dates·and·item·projects),·so·a␍
+    15    │ - ·*·change·re-checks;·`recheck`·runs·after·an·autosave·committed·a·new·date.␍
+    16    │ - ·*/␍
+    17    │ - export·function·useReportProjectIssues(reportId:·string,·fingerprint:·string)·{␍
+    18    │ - → const·queryClient·=·useQueryClient();␍
+    19    │ - → const·query·=·useQuery({␍
+    20    │ - → → queryKey:·useReportQueryKey(␍
+    21    │ - → → → queryKeys.travelExpenses.reportProjectIssues(reportId,·fingerprint),␍
+    22    │ - → → ),␍
+    23    │ - → → queryFn:·async·()·=>·{␍
+    24    │ - → → → const·result·=·await·getReportProjectIssuesAction({·reportId·});␍
+    25    │ - → → → if·(!result.success)·throw·new·Error(result.error);␍
+    26    │ - → → → return·result.data.ineligibleItemIds;␍
+    27    │ - → → },␍
+    28    │ - → → placeholderData:·keepPreviousData,␍
+    29    │ - → → refetchOnWindowFocus:·false,␍
+    30    │ - → });␍
+    31    │ - → const·recheck·=·useCallback(␍
+    32    │ - → → ()·=>␍
+    33    │ - → → → queryClient.invalidateQueries({␍
+    34    │ - → → → → queryKey:·["travel-expenses",·"reports",·reportId,·"project-issues"],␍
+    35    │ - → → → }),␍
+    36    │ - → → [queryClient,·reportId],␍
+    37    │ - → );␍
+    38    │ - → return·{·ineligibleItemIds:·new·Set(query.data·??·[]),·recheck·};␍
+    39    │ - }␍
+        1 │ + "use·client";
+        2 │ +
+        3 │ + import·{
+        4 │ + → keepPreviousData,
+        5 │ + → useQuery,
+        6 │ + → useQueryClient,
+        7 │ + }·from·"@tanstack/react-query";
+        8 │ + import·{·useCallback·}·from·"react";
+        9 │ + import·{·getReportProjectIssuesAction·}·from·"@/app/[locale]/(app)/travel-expenses/report-project-actions";
+       10 │ + import·{·queryKeys·}·from·"@/lib/query/keys";
+       11 │ + import·{·useReportQueryKey·}·from·"./report-read-scope";
+       12 │ +
+       13 │ + /**
+       14 │ + ·*·The·draft's·expenses·whose·project·(own·or·inherited·from·the·trip)·is·not
+       15 │ + ·*·proven·on·their·own·date·(#605·review).·A·trip·project·eligible·on·any·trip
+       16 │ + ·*·day·may·still·fail·another·expense's·day;·submission·refuses·those,·so·the
+       17 │ + ·*·editor·marks·them·before·the·employee·gets·there.·`fingerprint`·names·what
+       18 │ + ·*·the·answer·depends·on·(the·trip's·project,·dates·and·item·projects),·so·a
+       19 │ + ·*·change·re-checks;·`recheck`·runs·after·an·autosave·committed·a·new·date.
+       20 │ + ·*/
+       21 │ + export·function·useReportProjectIssues(reportId:·string,·fingerprint:·string)·{
+       22 │ + → const·queryClient·=·useQueryClient();
+       23 │ + → const·query·=·useQuery({
+       24 │ + → → queryKey:·useReportQueryKey(
+       25 │ + → → → queryKeys.travelExpenses.reportProjectIssues(reportId,·fingerprint),
+       26 │ + → → ),
+       27 │ + → → queryFn:·async·()·=>·{
+       28 │ + → → → const·result·=·await·getReportProjectIssuesAction({·reportId·});
+       29 │ + → → → if·(!result.success)·throw·new·Error(result.error);
+       30 │ + → → → return·result.data.ineligibleItemIds;
+       31 │ + → → },
+       32 │ + → → placeholderData:·keepPreviousData,
+       33 │ + → → refetchOnWindowFocus:·false,
+       34 │ + → });
+       35 │ + → const·recheck·=·useCallback(
+       36 │ + → → ()·=>
+       37 │ + → → → queryClient.invalidateQueries({
+       38 │ + → → → → queryKey:·["travel-expenses",·"reports",·reportId,·"project-issues"],
+       39 │ + → → → }),
+       40 │ + → → [queryClient,·reportId],
+       41 │ + → );
+       42 │ + → return·{·ineligibleItemIds:·new·Set(query.data·??·[]),·recheck·};
+       43 │ + }
+    40 44 │
+src\components\travel-expenses\report\use-report-task.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+     1    │ - "use·client";␍
+     2    │ - ␍
+     3    │ - import·{·useLayoutEffect,·useRef,·useState·}·from·"react";␍
+     4    │ - ␍
+     5    │ - /**·A·native·activation·owns·one·target·until·settled,·including·retained·Activity·hides.·*/␍
+     6    │ - export·function·useReportTask(scope:·string)·{␍
+     7    │ - → const·arrival·=·useRef<object·|·null>(null);␍
+     8    │ - → const·pending·=·useRef<{·arrival:·object;·scope:·string·}·|·null>(null);␍
+     9    │ - → const·[working,·setWorking]·=·useState(false);␍
+    10    │ - → useLayoutEffect(()·=>·{␍
+    11    │ - → → arrival.current·=·{·scope·};␍
+    12    │ - → → return·()·=>·{␍
+    13    │ - → → → arrival.current·=·null;␍
+    14    │ - → → };␍
+    15    │ - → },·[scope]);␍
+    16    │ - ␍
+    17    │ - → function·reserve()·{␍
+    18    │ - → → if·(!arrival.current·||·pending.current)·return·null;␍
+    19    │ - → → const·task·=·{·arrival:·arrival.current,·scope·};␍
+    20    │ - → → pending.current·=·task;␍
+    21    │ - → → setWorking(true);␍
+    22    │ - → → return·task;␍
+    23    │ - → }␍
+    24    │ - ␍
+    25    │ - → function·isCurrent(task:·NonNullable<typeof·pending.current>)·{␍
+    26    │ - → → return·arrival.current·===·task.arrival·&&·task.scope·===·scope;␍
+    27    │ - → }␍
+    28    │ - ␍
+    29    │ - → function·release(task:·NonNullable<typeof·pending.current>)·{␍
+    30    │ - → → if·(pending.current·!==·task)·return;␍
+    31    │ - → → pending.current·=·null;␍
+    32    │ - → → setWorking(false);␍
+    33    │ - → }␍
+    34    │ - ␍
+    35    │ - → return·{␍
+    36    │ - → → working,␍
+    37    │ - → → reserve,␍
+    38    │ - → → isCurrent,␍
+    39    │ - → → release,␍
+    40    │ - → → isPending:·()·=>·pending.current·!==·null,␍
+    41    │ - → → isActive:·()·=>·arrival.current·!==·null,␍
+    42    │ - → };␍
+    43    │ - }␍
+        1 │ + "use·client";
+        2 │ +
+        3 │ + import·{·useLayoutEffect,·useRef,·useState·}·from·"react";
+        4 │ +
+        5 │ + /**·A·native·activation·owns·one·target·until·settled,·including·retained·Activity·hides.·*/
+        6 │ + export·function·useReportTask(scope:·string)·{
+        7 │ + → const·arrival·=·useRef<object·|·null>(null);
+        8 │ + → const·pending·=·useRef<{·arrival:·object;·scope:·string·}·|·null>(null);
+        9 │ + → const·[working,·setWorking]·=·useState(false);
+       10 │ + → useLayoutEffect(()·=>·{
+       11 │ + → → arrival.current·=·{·scope·};
+       12 │ + → → return·()·=>·{
+       13 │ + → → → arrival.current·=·null;
+       14 │ + → → };
+       15 │ + → },·[scope]);
+       16 │ +
+       17 │ + → function·reserve()·{
+       18 │ + → → if·(!arrival.current·||·pending.current)·return·null;
+       19 │ + → → const·task·=·{·arrival:·arrival.current,·scope·};
+       20 │ + → → pending.current·=·task;
+       21 │ + → → setWorking(true);
+       22 │ + → → return·task;
+       23 │ + → }
+       24 │ +
+       25 │ + → function·isCurrent(task:·NonNullable<typeof·pending.current>)·{
+       26 │ + → → return·arrival.current·===·task.arrival·&&·task.scope·===·scope;
+       27 │ + → }
+       28 │ +
+       29 │ + → function·release(task:·NonNullable<typeof·pending.current>)·{
+       30 │ + → → if·(pending.current·!==·task)·return;
+       31 │ + → → pending.current·=·null;
+       32 │ + → → setWorking(false);
+       33 │ + → }
+       34 │ +
+       35 │ + → return·{
+       36 │ + → → working,
+       37 │ + → → reserve,
+       38 │ + → → isCurrent,
+       39 │ + → → release,
+       40 │ + → → isPending:·()·=>·pending.current·!==·null,
+       41 │ + → → isActive:·()·=>·arrival.current·!==·null,
+       42 │ + → };
+       43 │ + }
+    44 44 │
+src\components\travel-expenses\report\use-trip-details-draft.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - "use·client";␍
+      2     │ - ␍
+      3     │ - import·{·useForm·}·from·"@tanstack/react-form";␍
+      4     │ - import·{·useTranslate·}·from·"@tolgee/react";␍
+      5     │ - import·{·useRef,·useState·}·from·"react";␍
+      6     │ - import·{·toast·}·from·"sonner";␍
+      7     │ - import·{·saveTripDetailsDraftAction·}·from·"@/app/[locale]/(app)/travel-expenses/report-actions";␍
+      8     │ - import·type·{·DraftSaveOutcome·}·from·"@/lib/travel-expenses/draft-saver";␍
+      9     │ - import·type·{·TripDetailsView·}·from·"@/lib/travel-expenses/report-store";␍
+     10     │ - import·{␍
+     11     │ - → parseTripDetailsDraft,␍
+     12     │ - → type·TripDetailsDraft,␍
+     13     │ - → type·TripDetailsDraftInput,␍
+     14     │ - }·from·"@/lib/travel-expenses/trip-report";␍
+     15     │ - import·{·toDraftInput,·toFormValues,·withSavedValues·}·from·"./trip-details-form";␍
+     16     │ - import·{·useDraftSaver·}·from·"./use-draft-saver";␍
+     17     │ - ␍
+     18     │ - /**␍
+     19     │ - ·*·The·trip·details·editor's·autosaving·form:·entered·details·save·through·one␍
+     20     │ - ·*·draft·saver,·and·malformed·fields·keep·their·last·saved·value·so·valid·edits·still·save.␍
+     21     │ - ·*/␍
+     22     │ - export·function·useTripDetailsDraft({␍
+     23     │ - → reportId,␍
+     24     │ - → details,␍
+     25     │ - → onDetailsChange,␍
+     26     │ - → onSaved,␍
+     27     │ - }:·{␍
+     28     │ - → reportId:·string;␍
+     29     │ - → details:·TripDetailsView;␍
+     30     │ - → onDetailsChange:·(details:·TripDetailsDraft·|·null)·=>·void;␍
+     31     │ - → onSaved?:·()·=>·void;␍
+     32     │ - })·{␍
+     33     │ - → const·{·t·}·=·useTranslate();␍
+     34     │ - → const·[initialSaved]·=·useState(()·=>·toDraftInput(toFormValues(details)));␍
+     35     │ - → const·lastSaved·=·useRef<TripDetailsDraftInput>(initialSaved);␍
+     36     │ - ␍
+     37     │ - → const·{·saver,·state·}·=·useDraftSaver<TripDetailsDraftInput,·TripDetailsView>({␍
+     38     │ - → → version:·details.version,␍
+     39     │ - → → onUnsavedAfterClose:·()·=>␍
+     40     │ - → → → toast.error(␍
+     41     │ - → → → → t(␍
+     42     │ - → → → → → "travelExpenses.report.trip.unsavedAfterClose",␍
+     43     │ - → → → → → "Your·latest·changes·to·the·trip·details·could·not·be·saved.·Open·the·trip·again·to·check·them.",␍
+     44     │ - → → → → ),␍
+     45     │ - → → → ),␍
+     46     │ - → → save:·async·(␍
+     47     │ - → → → values,␍
+     48     │ - → → → expectedVersion,␍
+     49     │ - → → → isCurrent,␍
+     50     │ - → → ):·Promise<DraftSaveOutcome<TripDetailsView>>·=>·{␍
+     51     │ - → → → const·parsed·=·parseTripDetailsDraft(values);␍
+     52     │ - → → → const·errors·=·parsed.ok·?·null·:·parsed.errors;␍
+     53     │ - → → → const·saveable·=·errors·?·withSavedValues(values,·errors,·lastSaved.current)·:·values;␍
+     54     │ - → → → if·(errors·&&·!parseTripDetailsDraft(saveable).ok)·return·{·status:·"invalid",·errors·};␍
+     55     │ - → → → const·result·=·await·saveTripDetailsDraftAction({␍
+     56     │ - → → → → reportId,␍
+     57     │ - → → → → expectedVersion,␍
+     58     │ - → → → → values:·saveable,␍
+     59     │ - → → → });␍
+     60     │ - → → → if·(!result.success)·return·{·status:·"failed",·error:·result.error·};␍
+     61     │ - → → → switch·(result.data.status)·{␍
+     62     │ - → → → → case·"saved":␍
+     63     │ - → → → → → lastSaved.current·=·toDraftInput(toFormValues(result.data.details));␍
+     64     │ - → → → → → if·(isCurrent())·onSaved?.();␍
+     65     │ - → → → → → return·errors␍
+     66     │ - → → → → → → ?·{·status:·"invalid",·errors,·version:·result.data.details.version·}␍
+     67     │ - → → → → → → :·{·status:·"saved",·version:·result.data.details.version·};␍
+     68     │ - → → → → case·"conflict":␍
+     69     │ - → → → → → return·{␍
+     70     │ - → → → → → → status:·"conflict",␍
+     71     │ - → → → → → → version:·result.data.details.version,␍
+     72     │ - → → → → → → item:·result.data.details,␍
+     73     │ - → → → → → };␍
+     74     │ - → → → → case·"invalid":␍
+     75     │ - → → → → → return·{·status:·"invalid",·errors:·result.data.errors·};␍
+     76     │ - → → → }␍
+     77     │ - → → },␍
+     78     │ - → });␍
+     79     │ - ␍
+     80     │ - → const·[defaultValues]·=·useState(()·=>·toFormValues(details));␍
+     81     │ - → const·form·=·useForm({␍
+     82     │ - → → defaultValues,␍
+     83     │ - → → listeners:·{·onChange:·()·=>·changed()·},␍
+     84     │ - → });␍
+     85     │ - ␍
+     86     │ - → /**·Saves·the·entered·details·and·reports·them;·also·for·changes·outside·listeners.·*/␍
+     87     │ - → function·changed()·{␍
+     88     │ - → → const·values·=·toDraftInput(form.state.values);␍
+     89     │ - → → saver.change(values);␍
+     90     │ - → → const·parsed·=·parseTripDetailsDraft(values);␍
+     91     │ - → → onDetailsChange(parsed.ok·?·parsed.draft·:·null);␍
+     92     │ - → }␍
+     93     │ - ␍
+     94     │ - → /**·Resolves·a·save·conflict·with·the·other·version·and·shows·its·details.·*/␍
+     95     │ - → function·resolveWithTheirs()·{␍
+     96     │ - → → const·theirs·=·state.conflict?.item;␍
+     97     │ - → → saver.resolveConflict("use_theirs");␍
+     98     │ - → → if·(theirs)·{␍
+     99     │ - → → → lastSaved.current·=·toDraftInput(toFormValues(theirs));␍
+    100     │ - → → → form.reset(toFormValues(theirs),·{·keepDefaultValues:·true·});␍
+    101     │ - → → → onDetailsChange(theirs);␍
+    102     │ - → → }␍
+    103     │ - → }␍
+    104     │ - ␍
+    105     │ - → return·{·saver,·state,·form,·changed,·resolveWithTheirs·};␍
+    106     │ - }␍
+          1 │ + "use·client";
+          2 │ +
+          3 │ + import·{·useForm·}·from·"@tanstack/react-form";
+          4 │ + import·{·useTranslate·}·from·"@tolgee/react";
+          5 │ + import·{·useRef,·useState·}·from·"react";
+          6 │ + import·{·toast·}·from·"sonner";
+          7 │ + import·{·saveTripDetailsDraftAction·}·from·"@/app/[locale]/(app)/travel-expenses/report-actions";
+          8 │ + import·type·{·DraftSaveOutcome·}·from·"@/lib/travel-expenses/draft-saver";
+          9 │ + import·type·{·TripDetailsView·}·from·"@/lib/travel-expenses/report-store";
+         10 │ + import·{
+         11 │ + → parseTripDetailsDraft,
+         12 │ + → type·TripDetailsDraft,
+         13 │ + → type·TripDetailsDraftInput,
+         14 │ + }·from·"@/lib/travel-expenses/trip-report";
+         15 │ + import·{
+         16 │ + → toDraftInput,
+         17 │ + → toFormValues,
+         18 │ + → withSavedValues,
+         19 │ + }·from·"./trip-details-form";
+         20 │ + import·{·useDraftSaver·}·from·"./use-draft-saver";
+         21 │ +
+         22 │ + /**
+         23 │ + ·*·The·trip·details·editor's·autosaving·form:·entered·details·save·through·one
+         24 │ + ·*·draft·saver,·and·malformed·fields·keep·their·last·saved·value·so·valid·edits·still·save.
+         25 │ + ·*/
+         26 │ + export·function·useTripDetailsDraft({
+         27 │ + → reportId,
+         28 │ + → details,
+         29 │ + → onDetailsChange,
+         30 │ + → onSaved,
+         31 │ + }:·{
+         32 │ + → reportId:·string;
+         33 │ + → details:·TripDetailsView;
+         34 │ + → onDetailsChange:·(details:·TripDetailsDraft·|·null)·=>·void;
+         35 │ + → onSaved?:·()·=>·void;
+         36 │ + })·{
+         37 │ + → const·{·t·}·=·useTranslate();
+         38 │ + → const·[initialSaved]·=·useState(()·=>·toDraftInput(toFormValues(details)));
+         39 │ + → const·lastSaved·=·useRef<TripDetailsDraftInput>(initialSaved);
+         40 │ +
+         41 │ + → const·{·saver,·state·}·=·useDraftSaver<
+         42 │ + → → TripDetailsDraftInput,
+         43 │ + → → TripDetailsView
+         44 │ + → >({
+  77 more lines truncated
+src\lib\navigation\route-metadata.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Formatter would have printed the following content:
+      1     │ - import·{·z·}·from·"zod";␍
+      2     │ - import·{·SETTINGS_ENTRIES·}·from·"@/components/settings/settings-config";␍
+      3     │ - import·{·ALL_LANGUAGES·}·from·"@/tolgee/catalog-config";␍
+      4     │ - ␍
+      5     │ - export·type·AppRouteMetadata·=·{␍
+      6     │ - → id:·string;␍
+      7     │ - → href:·string;␍
+      8     │ - → titleKey:·string;␍
+      9     │ - → titleDefault:·string;␍
+     10     │ - };␍
+     11     │ - ␍
+     12     │ - export·const·APP_ROUTE_METADATA:·readonly·AppRouteMetadata[]·=·[␍
+     13     │ - → {␍
+     14     │ - → → id:·"dashboard",␍
+     15     │ - → → href:·"/",␍
+     16     │ - → → titleKey:·"nav.dashboard",␍
+     17     │ - → → titleDefault:·"Dashboard",␍
+     18     │ - → },␍
+     19     │ - → {·id:·"today",·href:·"/today",·titleKey:·"nav.today",·titleDefault:·"Today"·},␍
+     20     │ - → //·Covers·the·employee·and·assignment·pages·below·it·(#1572).·Both·equipment␍
+     21     │ - → //·titles·show·their·English·default·until·`tolgee·sync`·adds·the·`nav`·keys.␍
+     22     │ - → {␍
+     23     │ - → → id:·"equipment",␍
+     24     │ - → → href:·"/equipment",␍
+     25     │ - → → titleKey:·"nav.equipment",␍
+     26     │ - → → titleDefault:·"Equipment",␍
+     27     │ - → },␍
+     28     │ - → {␍
+     29     │ - → → id:·"my-equipment",␍
+     30     │ - → → href:·"/my-equipment",␍
+     31     │ - → → titleKey:·"nav.my-equipment",␍
+     32     │ - → → titleDefault:·"My·equipment",␍
+     33     │ - → },␍
+     34     │ - → {␍
+     35     │ - → → id:·"notifications",␍
+     36     │ - → → href:·"/notifications",␍
+     37     │ - → → titleKey:·"notifications.title",␍
+     38     │ - → → titleDefault:·"Notifications",␍
+     39     │ - → },␍
+     40     │ - → {␍
+     41     │ - → → id:·"calendar",␍
+     42     │ - → → href:·"/calendar",␍
+     43     │ - → → titleKey:·"nav.calendar",␍
+     44     │ - → → titleDefault:·"Calendar",␍
+     45     │ - → },␍
+     46     │ - → {␍
+     47     │ - → → id:·"time-tracking",␍
+     48     │ - → → href:·"/time-tracking",␍
+     49     │ - → → titleKey:·"nav.time-tracking",␍
+     50     │ - → → titleDefault:·"Time·Tracking",␍
+     51     │ - → },␍
+     52     │ - → {␍
+     53     │ - → → id:·"my-requests",␍
+     54     │ - → → href:·"/my-requests",␍
+     55     │ - → → titleKey:·"nav.my-requests",␍
+     56     │ - → → titleDefault:·"My·Requests",␍
+     57     │ - → },␍
+     58     │ - → {␍
+     59     │ - → → id:·"org-explorer",␍
+     60     │ - → → href:·"/organization",␍
+     61     │ - → → titleKey:·"nav.org-explorer",␍
+     62     │ - → → titleDefault:·"Org·Explorer",␍
+     63     │ - → },␍
+     64     │ - → {␍
+     65     │ - → → id:·"absences",␍
+     66     │ - → → href:·"/absences",␍
+     67     │ - → → titleKey:·"nav.absences",␍
+     68     │ - → → titleDefault:·"Absences",␍
+     69     │ - → },␍
+     70     │ - → {␍
+     71     │ - → → id:·"travel-expenses",␍
+     72     │ - → → href:·"/travel-expenses",␍
+     73     │ - → → titleKey:·"nav.travel-expenses",␍
+     74     │ - → → titleDefault:·"Travel·Expenses",␍
+     75     │ - → },␍
+     76     │ - → //·Formerly·a·settings·entry·(#1420).·Route·titles·must·exist·in·the·synced·catalogs,·so·this␍
+     77     │ - → //·keeps·the·existing·key·until·`nav.driving-licence`·is·synced·from·Tolgee.␍
+     78     │ - → {␍
+     79     │ - → → id:·"driving-licence",␍
+     80     │ - → → href:·"/driving-licence",␍
+     81     │ - → → titleKey:·"drivingLicence.myTitle",␍
+     82     │ - → → titleDefault:·"My·driving·authorization",␍
+     83     │ - → },␍
+     84     │ - → {␍
+     85     │ - → → id:·"reports-projects",␍
+     86     │ - → → href:·"/reports/projects",␍
+     87     │ - → → titleKey:·"reports.projects.title",␍
+     88     │ - → → titleDefault:·"Project·Reports",␍
+     89     │ - → },␍
+     90     │ - → {␍
+     91     │ - → → id:·"reports-vehicles",␍
+     92     │ - → → href:·"/reports/vehicles",␍
+     93     │ - → → titleKey:·"reports.vehicles.title",␍
+     94     │ - → → titleDefault:·"Distance·per·Vehicle",␍
+     95     │ - → },␍
+     96     │ - → {␍
+     97     │ - → → id:·"reports",␍
+     98     │ - → → href:·"/reports",␍
+     99     │ - → → titleKey:·"nav.reports",␍
+    100     │ - → → titleDefault:·"Reports",␍
+    101     │ - → },␍
+    102     │ - → {␍
+    103     │ - → → id:·"team-absences",␍
+    104     │ - → → href:·"/team/absences",␍
+    105     │ - → → titleKey:·"nav.teamAbsences",␍
+    106     │ - → → titleDefault:·"Team·Absences",␍
+    107     │ - → },␍
+    108     │ - → {␍
+    109     │ - → → id:·"team-presence",␍
+    110     │ - → → href:·"/team/presence",␍
+    111     │ - → → titleKey:·"nav.teamPresence",␍
+    112     │ - → → titleDefault:·"Who·Is·In",␍
+    113     │ - → },␍
+    114     │ - → {␍
+    115     │ - → → id:·"team-period-submissions",␍
+    116     │ - → → href:·"/team/period-submissions",␍
+    117     │ - → → titleKey:·"nav.teamPeriodSubmissions",␍
+    118     │ - → → titleDefault:·"Period·Submissions",␍
+    119     │ - → },␍
+    120     │ - → {␍
+    121     │ - → → id:·"team-driving",␍
+    122     │ - → → href:·"/team/driving",␍
+    123     │ - → → titleKey:·"nav.teamDriving",␍
+    124     │ - → → titleDefault:·"Driving·Details",␍
+    125     │ - → },␍
+    126     │ - → {·id:·"team",·href:·"/team",·titleKey:·"nav.team",·titleDefault:·"Team"·},␍
+    127     │ - → {␍
+    128     │ - → → id:·"approvals",␍
+    129     │ - → → href:·"/approvals",␍
+    130     │ - → → titleKey:·"nav.approvals",␍
+    131     │ - → → titleDefault:·"Approvals",␍
+    132     │ - → },␍
+    133     │ - → {␍
+    134     │ - → → id:·"analytics",␍
+    135     │ - → → href:·"/analytics",␍
+    136     │ - → → titleKey:·"nav.analytics",␍
+    137     │ - → → titleDefault:·"Analytics",␍
+    138     │ - → },␍
+    139     │ - → {␍
+    140     │ - → → id:·"payroll",␍
+    141     │ - → → href:·"/payroll",␍
+    142     │ - → → titleKey:·"nav.payroll",␍
+    143     │ - → → titleDefault:·"Payroll",␍
+    144     │ - → },␍
+    145     │ - → {␍
+    146     │ - → → id:·"scheduling",␍
+    147     │ - → → href:·"/scheduling",␍
+    148     │ - → → titleKey:·"nav.scheduling",␍
+    149     │ - → → titleDefault:·"Scheduling",␍
+    150     │ - → },␍
+  387 more lines truncated
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 11.
+Checked 31 files in 17ms. No fixes applied.
+Found 31 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  × Some errors were emitted while running checks.

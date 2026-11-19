@@ -96,11 +96,12 @@
         "year": "An"
       },
       "history": {
-        "description": "Vizualizați și descărcați exporturile DATEV anterioare",
+        "descriptionAllFormats": "Vizualizați și descărcați exporturile anterioare de salarizare",
         "download": "Descarcă exportul",
         "downloadError": "Nu s-a putut obține adresa URL de descărcare",
         "employees": "angajați",
         "noExports": "Niciun export încă",
+        "noExportsHint": "Porniți un export de salarizare din fila Export. Exporturile finalizate apar aici pentru descărcare.",
         "payrollRun": "{count, plural, one {Rulare de salarii: # decont de cheltuieli} other {Rulare de salarii: # deconturi de cheltuieli}}",
         "periods": "perioade",
         "status": {
@@ -110,6 +111,7 @@
           "processing": "În procesare"
         },
         "table": {
+          "actions": "Acțiuni",
           "createdAt": "Creat",
           "dateRange": "Interval de date",
           "records": "Înregistrări",
@@ -151,7 +153,8 @@
         "configureFirst": "Vă rugăm să configurați cel puțin un format de export pentru salarii (DATEV, Lexware sau Sage) înainte de a configura mapările.",
         "deleteDescription": "Sigur doriți să ștergeți această mapare a tipului de salariu?",
         "deleteError": "Nu s-a putut șterge maparea",
-        "deleteMapping": "Șterge maparea",
+        "deleteMappingNamed": "Ștergeți maparea pentru {name}",
+        "deleteNamedDescription": "Ștergeți maparea tipului de salariu pentru \"{name}\"?",
         "deleteSuccess": "Mapare ștearsă",
         "deleteTitle": "Șterge maparea",
         "description": "Descriere",
@@ -335,7 +338,8 @@
         "name": "Angajat",
         "noNumber": "Nesetat",
         "personnelIdentifier": "Identificator de personal",
-        "personnelNumber": "Număr de personal"
+        "personnelNumber": "Număr de personal",
+        "unnamed": "Angajat fără nume"
       },
       "checks": {
         "count": "Număr",
@@ -364,6 +368,13 @@
       },
       "description": "Verificați dacă o perioadă de salarizare este pregătită înainte de a exporta datele de pontaj, absențe și salarizare.",
       "openPayrollExport": "Deschide exportul de salarii",
+      "period": {
+        "currentMonth": "Luna curentă",
+        "navLabel": "Perioadă de salarizare",
+        "previousMonth": "Luna anterioară",
+        "scope": "Perioadă de salarizare: {period} (UTC)",
+        "showMonth": "Afișează {month}"
+      },
       "status": {
         "blocked": "Blocat",
         "ready": "Pregătit pentru salarizare",

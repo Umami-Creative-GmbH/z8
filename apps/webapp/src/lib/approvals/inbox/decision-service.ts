@@ -1,12 +1,7 @@
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { type Effect, Exit } from "effect";
 import { db } from "@/db";
-import {
-	approvalRequest,
-	approvalStageAssignment,
-	timeEntry,
-	workPeriod,
-} from "@/db/schema";
+import { approvalRequest, approvalStageAssignment, workPeriod } from "@/db/schema";
 import {
 	isDeputyDecisionEntityType,
 	isDeputyDecisionRefusal,
@@ -21,10 +16,8 @@ import {
 	isOwnRequestDecisionRefusal,
 	ownRequestDecisionError,
 } from "@/lib/approvals/policies/self-decision";
-import {
-	classifyTimeApprovalRequest,
-	type TimeApprovalKind,
-} from "@/lib/approvals/time-request-kind";
+import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
+import type { TimeApprovalKind } from "@/lib/approvals/time-request-kind";
 import type { ApprovalWorkflowType } from "@/lib/approvals/workflow/types";
 import { failureOfCause } from "@/lib/effect/cause-failure";
 import { NotFoundError } from "@/lib/effect/errors";
@@ -1091,8 +1084,8 @@ async function toPersistedDecisionRequest(
 		approverId: string;
 		requestedBy: string;
 		status: string;
-		metadata?: unknown;
-		reason?: string | null;
+		metadata: unknown;
+		reason: string | null;
 	},
 	database: typeof db,
 ): Promise<PersistedApprovalRequestForDecision> {
@@ -1112,59 +1105,12 @@ async function toPersistedDecisionRequest(
 			},
 		});
 		workflowKind = period
-			? classifyTimeApprovalRequest({
-					metadata: request.metadata,
-					reason: request.reason,
-					pendingChanges: period.pendingChanges,
+			? await classifyPersistedTimeApprovalRequest(database, {
+					organizationId: request.organizationId,
+					request,
+					period,
 				})
 			: "unclassified";
-		if (period && workflowKind === "unclassified") {
-			const endpointIds = [period.clockInId, period.clockOutId].filter(
-				(id): id is string => Boolean(id),
-			);
-			const correctionEvidence = endpointIds.length
-				? await database.query.timeEntry.findMany({
-						where: and(
-							eq(timeEntry.organizationId, request.organizationId),
-							eq(timeEntry.employeeId, request.requestedBy),
-							eq(timeEntry.type, "correction"),
-							eq(timeEntry.isSuperseded, false),
-							or(
-								inArray(timeEntry.id, endpointIds),
-								inArray(timeEntry.replacesEntryId, endpointIds),
-							),
-						),
-						columns: { id: true, replacesEntryId: true },
-					})
-				: [];
-			const verifiedRelationalCorrectionIds: string[] = [];
-			const verifiedRelationalCorrectionIdsByEndpoint: {
-				clockIn: string[];
-				clockOut: string[];
-			} = { clockIn: [], clockOut: [] };
-			for (const entry of correctionEvidence) {
-				verifiedRelationalCorrectionIds.push(entry.id);
-				if (
-					entry.id === period.clockInId ||
-					entry.replacesEntryId === period.clockInId
-				) {
-					verifiedRelationalCorrectionIdsByEndpoint.clockIn.push(entry.id);
-				}
-				if (
-					entry.id === period.clockOutId ||
-					entry.replacesEntryId === period.clockOutId
-				) {
-					verifiedRelationalCorrectionIdsByEndpoint.clockOut.push(entry.id);
-				}
-			}
-			workflowKind = classifyTimeApprovalRequest({
-				metadata: request.metadata,
-				reason: request.reason,
-				pendingChanges: period.pendingChanges,
-				verifiedRelationalCorrectionIds,
-				verifiedRelationalCorrectionIdsByEndpoint,
-			});
-		}
 	}
 	return {
 		id: request.id,

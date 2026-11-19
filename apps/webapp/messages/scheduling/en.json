@@ -6,9 +6,13 @@
       "gapCount": "{count} staff shortage",
       "gaps": "gaps",
       "hideOverlay": "Hide coverage overlay",
+      "lastLoaded": "Last loaded coverage",
+      "loading": "Loading coverage…",
       "metSlots": "{count} adequate",
       "overSlots": "{count} overstaffed",
       "overstaffed": "Overstaffed",
+      "readFailed": "Coverage could not be loaded. Retry to check staffing.",
+      "refreshing": "Refreshing coverage…",
       "showOverlay": "Show coverage targets overlay",
       "summary": "Coverage Summary:",
       "toggleLabel": "Coverage",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Your published shifts, week by week",
       "employeeTitle": "My Schedule",
-      "managerDescription": "Manage and plan employee shifts",
+      "planningDescription": "Plan and publish shifts. Planned shifts do not record working time.",
       "title": "Shift Schedule"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Cancel",
       "complianceAcknowledgmentRequired": "Compliance Acknowledgment Required",
       "complianceWarnings": "{count, plural, one {Compliance checks found # warning; you will need to acknowledge it before publishing.} other {Compliance checks found # warnings; you will need to acknowledge them before publishing.}}",
+      "coverageLoading": "Coverage is loading",
+      "coverageRulesCheckedOnPublish": "Publishing will apply the current staffing rules.",
+      "coverageUnavailable": "Coverage is unavailable",
+      "coverageUnloaded": "Coverage has not been checked",
       "coverageWarning": "Some time blocks don't meet minimum staffing requirements.",
       "maxHours": "Max hours: {count}",
       "notifyEmployees": "{count, plural, one {Publish # draft shift and notify employees} other {Publish # draft shifts and notify employees}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Warnings detected before publish"
     },
     "scheduler": {
+      "assigned": "Assigned",
       "complianceBanner": {
         "findingsDetected": "{count} finding(s) detected before publish.",
         "maxHours": "Max hours: {count}",
@@ -59,18 +68,24 @@
         "employee": "Showing shifts for {name}",
         "showAll": "Show all shifts"
       },
+      "loadFailed": "Shifts could not be refreshed. Loaded shifts are retained.",
       "loading": "Loading schedule...",
+      "open": "Open Shift",
       "publish": {
         "failed": "Failed to publish shifts",
         "published": "Published {count} shift(s)"
       },
+      "retry": "Retry",
+      "shiftList": "Shift list",
       "shiftUpdate": {
         "failed": "Failed to update shift",
         "overlapDescription": "This shift overlaps with {count} other shift(s)",
         "overlapWarning": "Shift saved with overlap warning",
         "skillOverrideReasonRequired": "The employee lacks a required skill on this day. Open the shift to give a reason.",
         "updated": "Shift updated"
-      }
+      },
+      "supportFailed": "Templates or compliance information could not be refreshed. Check again before publishing.",
+      "templatesUnavailable": "Shift templates could not be loaded."
     },
     "shiftDetails": {
       "close": "Close",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Drag a template onto the calendar to create a shift",
       "empty": "No templates available. Create templates in Settings to quickly add shifts.",
+      "selectHint": "Choose a template, then set the shift date and assignment.",
       "title": "Shift Templates"
     }
   }

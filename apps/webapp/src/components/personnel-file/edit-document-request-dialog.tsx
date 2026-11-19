@@ -15,20 +15,13 @@ import {
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
-import {
-	TFormControl,
-	TFormDescription,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
-import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	DOCUMENT_REQUEST_TEXT_MAX_LENGTH,
 	type DocumentRequestView,
 } from "@/lib/personnel-file/document-request.types";
+import { DocumentRequestDeadline } from "./document-request-deadline";
 import { useDocumentRequestErrorMessage } from "./document-request-labels";
 
 /**
@@ -114,26 +107,14 @@ export function EditDocumentRequestDialog({
 							}}
 						>
 							{(field) => (
-								<TFormItem>
-									<TFormLabel hasError={fieldHasError(field)} required>
-										{t("settings.personnelFiles.requests.create.deadline", "Deadline")}
-									</TFormLabel>
-									<TFormControl hasError={fieldHasError(field)}>
-										<DatePicker
-											value={field.state.value}
-											onChange={(value) => field.handleChange(value)}
-											min={today}
-											required
-										/>
-									</TFormControl>
-									<TFormDescription>
-										{t(
-											"settings.personnelFiles.requests.edit.deadlineHint",
-											"A new deadline cannot be in the past. Moving it restarts the deadline reminders.",
-										)}
-									</TFormDescription>
-									<TFormMessage field={field} />
-								</TFormItem>
+								<DocumentRequestDeadline
+									field={field}
+									today={today}
+									description={t(
+										"settings.personnelFiles.requests.edit.deadlineHint",
+										"A new deadline cannot be in the past. Moving it restarts the deadline reminders.",
+									)}
+								/>
 							)}
 						</form.Field>
 						<form.Field name="note">

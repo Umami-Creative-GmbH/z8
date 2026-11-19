@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Abwesenheit für {name} erfassen"
       },
+      "allowances": "Jahreskontingente",
       "calendar": {
         "approved": "Genehmigt",
         "changeDeputy": "Vertretung ändern",
@@ -12,7 +13,6 @@
         "deputyMissing": "Vertretung fehlt",
         "description": "Genehmigte und ausstehende Abwesenheiten für das ausgewählte Team und Jahr.",
         "error": {
-          "description": "Bitte versuchen Sie es gleich noch einmal.",
           "title": "Kalender konnte nicht geladen werden"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Abwesenheit erfassen",
         "titleForEmployee": "Abwesenheit für {name} erfassen"
       },
+      "recordingUnavailable": "Optionen zur Abwesenheitserfassung konnten nicht geladen werden",
+      "retained": "Zuvor geladene Daten werden angezeigt. Versuchen Sie es erneut, um aktuelle Einträge abzurufen.",
+      "scopeChanged": "Teambereich wurde geändert. Laden Sie die Seite neu, um fortzufahren.",
+      "scopeLoading": "Aktueller Teambereich wird geladen…",
+      "scopeUnavailable": "Aktueller Teambereich konnte nicht geladen werden",
+      "sections": "Seitenabschnitte",
       "sort": {
         "ascending": "aufsteigend",
         "by": "Nach {label} sortieren",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Kein Guthaben"
     },
-    "description": "Anzeigen und Verwalten der Mitarbeiter, die Sie direkt betreuen",
+    "directory": {
+      "count": "{count, plural, one {# Mitglied in diesem Bereich} other {# Mitglieder in diesem Bereich}}",
+      "loading": "Teammitglieder werden geladen",
+      "retained": "Die zuletzt geladenen Mitglieder werden angezeigt. Versuchen Sie es erneut, um sie zu aktualisieren.",
+      "retry": "Erneut versuchen",
+      "retrying": "Wird erneut versucht…",
+      "scope": "Sie und die Mitarbeitenden, die Sie in der aktiven Organisation direkt führen.",
+      "scopeChanged": "Ihre Organisation oder Ihre Zugriffsrechte wurden geändert. Aktualisieren Sie die Ansicht, um Ihr Team zu laden."
+    },
     "driving": {
+      "clearFilters": "Filter zurücksetzen",
       "columns": {
         "calendar": "Kalender",
         "date": "Datum",
@@ -126,6 +141,8 @@
         "employee": "Mitarbeiter",
         "team": "Team"
       },
+      "guidance": "Öffnen Sie den Kalender eines Mitarbeitenden, um die Zuordnung der Arbeitszeiträume zu vervollständigen. Fehlende Angaben blockieren die Zeiterfassung nicht und begründen keine Fahrerlaubnis.",
+      "loadFailed": "Fahrdetails konnten nicht geladen werden.",
       "loading": "Fahrtdetails werden geladen",
       "missing": {
         "endReading": "Kein Endkilometerstand",
@@ -133,10 +150,18 @@
         "startReading": "Kein Startkilometerstand",
         "vehicle": "Kein Fahrzeug"
       },
+      "noMatch": "Keine fehlenden Fahrdetails entsprechen diesen Filtern.",
       "openCalendar": "Kalender",
       "openCalendarOf": "Kalender von {name} öffnen",
+      "refreshFailed": "Fahrdetails konnten nicht aktualisiert werden. Zuvor geladene Einträge werden angezeigt.",
+      "restricted": "Fahrdetails sind in Ihrem aktuellen Bereich nicht verfügbar.",
+      "scopeAll": "Alle Mitarbeitenden in dieser Organisation",
+      "scopeFailed": "Der aktuelle Fahrbereich konnte nicht geladen werden.",
+      "scopeLoading": "Aktueller Fahrbereich wird geladen…",
+      "scopeManaged": "Von Ihnen verwaltete Mitarbeitende",
       "title": "Fahrtdetails fehlen",
-      "truncated": "Die neuesten {count} Arbeitszeiträume werden angezeigt. Filtern Sie nach Team oder Mitarbeiter, um den Rest zu sehen."
+      "truncated": "Die neuesten {count} Arbeitszeiträume werden angezeigt. Filtern Sie nach Team oder Mitarbeiter, um den Rest zu sehen.",
+      "updating": "Fahrdetails werden aktualisiert…"
     },
     "empty": {
       "action": "Zu den Mitarbeitereinstellungen gehen",
@@ -148,9 +173,9 @@
       "title": "Etwas ist schief gelaufen"
     },
     "feature": "Ihr Team anzeigen",
-    "member": "Mitglied",
-    "members": "Mitglieder",
-    "member.you": "Du",
+    "member": {
+      "you": "Du"
+    },
     "noResults": {
       "action": "Suche löschen",
       "description": "Keine Teammitglieder entsprechen \"{query}\"",
@@ -169,8 +194,8 @@
         "period": "Zeitraum",
         "status": "Status"
       },
-      "descriptionAll": "Wer den ausgewählten Zeitraum eingereicht hat. Genehmigen oder lehnen Sie Einreichungen im Genehmigungspostfach ab.",
-      "descriptionManaged": "Wer der von Ihnen verwalteten Mitarbeiter den ausgewählten Zeitraum eingereicht hat. Genehmigen oder lehnen Sie Einreichungen im Genehmigungspostfach ab.",
+      "confirmationContext": "Einreichungen bestätigen Einträge, ohne sie zu sperren. Geänderte Einträge müssen erneut eingereicht werden. Prüfen Sie Entscheidungen im Genehmigungsposteingang.",
+      "contextFailed": "Ihr aktueller Zugriff konnte nicht überprüft werden.",
       "empty": "Von niemandem, den Sie sehen können, wird erwartet, diesen Zeitraum einzureichen.",
       "loading": "Zeitraumeinreichungen werden geladen",
       "notSubmitted": "Nicht eingereicht",
@@ -180,7 +205,12 @@
       "openInbox": "Genehmigungspostfach öffnen",
       "owing": "{count, plural, one {# Mitarbeiter hat diesen Zeitraum noch nicht eingereicht.} other {# Mitarbeiter haben diesen Zeitraum noch nicht eingereicht.}}",
       "period": "Einreichungszeitraum",
+      "readFailed": "Zeitraum-Einreichungen konnten nicht geladen werden. Zuvor geladene Einträge sind möglicherweise veraltet.",
+      "records": "Mitarbeitereinreichungen",
+      "refresh": "Einreichungen aktualisieren",
       "running": "Dieser Zeitraum läuft noch. Mitarbeiter können ihn ab dem letzten Tag einreichen.",
+      "scopeAll": "Alle erfassten Mitarbeitenden",
+      "scopeManaged": "Von Ihnen verwaltete Mitarbeitende",
       "status": {
         "approved": "Genehmigt",
         "awaiting": "Wartet auf Einreichung",
@@ -189,10 +219,13 @@
         "submitted": "Eingereicht"
       },
       "summary": "Status",
-      "title": "Zeitraumeinreichungen"
+      "title": "Zeitraumeinreichungen",
+      "unavailable": "Periodeneinreichungen sind mit Ihrem aktuellen Zugriff nicht verfügbar. Aktualisieren Sie, um den Zugriff erneut zu prüfen."
     },
     "presence": {
       "allLocations": "Alle Standorte",
+      "assignmentContext": "Die Standortzuweisung ist kein Nachweis der Geräteposition. Zeiten verwenden die bei Beginn der Arbeit oder Pause erfasste Zeitzone. Die Anwesenheit wird jede Minute aktualisiert.",
+      "chooseLocation": "Standort auswählen",
       "columns": {
         "name": "Name",
         "since": "Seit",
@@ -202,9 +235,19 @@
       "descriptionAll": "Diesem Standort zugewiesene Mitarbeitende, die eingestempelt sind oder Pause machen.",
       "descriptionManaged": "Von Ihnen verwaltete Mitarbeitende, die diesem Standort zugewiesen und eingestempelt sind oder Pause machen.",
       "empty": "Derzeit ist an diesem Standort niemand eingestempelt, den Sie sehen können.",
+      "loadFailed": "Die Anwesenheit für diesen Standort konnte nicht geladen werden. Versuchen Sie es erneut oder wählen Sie erneut einen Standort aus.",
+      "loading": "Standortanwesenheit wird geladen…",
+      "loadingLocations": "Standorte für die aktuelle Organisation werden geladen…",
       "locationTitle": "Wer ist anwesend: {location}",
+      "locationUnavailable": "Standort nicht verfügbar",
+      "locationUnavailableDescription": "Dieser Standort ist in Ihrer aktuellen Organisation nicht verfügbar. Wählen Sie einen aktiven Standort, um die Anwesenheit anzuzeigen.",
       "noLocations": "Ihre Organisation hat noch keine aktiven Standorte.",
-      "title": "Wer ist anwesend"
+      "refreshFailed": "Standorte konnten nicht aktualisiert werden. Es werden die zuletzt geladenen Standorte angezeigt.",
+      "refreshingLocations": "Standorte werden aktualisiert…",
+      "scopeChanged": "Die Anwesenheit muss für das aktuelle Konto oder die aktuelle Organisation neu geladen werden.",
+      "title": "Wer ist anwesend",
+      "unavailable": "Anwesenheit nicht verfügbar",
+      "viewPresence": "Anwesenheit anzeigen"
     },
     "primaryManager": "Sie sind der Hauptmanager",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Mitarbeiter",
       "position": "Position",
+      "region": "Tabelle der Teammitglieder",
       "role": "Rolle",
       "sort": {
         "ascending": "aufsteigend",

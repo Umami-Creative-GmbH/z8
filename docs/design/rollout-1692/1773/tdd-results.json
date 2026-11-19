@@ -1,0 +1,120 @@
+{
+  "finalSourceSha": "b7d89c7b25e6e79327b2cee79a33791e47ace51b",
+  "note": "Working-tree red states, not independently committed source pins. Final source/test code is pinned by green reports. Setup-only failures and already-green preservation checks are not claimed as red regressions. Names/reasons only; no raw responses.",
+  "redReports": [
+    {
+      "privateReport": ".tmp/1773-red-read.json",
+      "reportedCases": 6,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "Public API discovery in API Keys retains its same-organization records after a failed refresh and recovers with Retry",
+          "reason": "Error: Unable to find role=\"alert\""
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773-red-heading-public.json",
+      "reportedCases": 1,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "assembles one Developer Access heading with the real SiteHeader and preserves deep owners",
+          "reason": "AssertionError: expected [ <h1 \u2026(2)></h1>, <h1 \u2026(1)></h1> ] to have a length of 1 but got 2"
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773-red-create.json",
+      "reportedCases": 2,
+      "failed": 2,
+      "failures": [
+        {
+          "fullName": "owns queued activation before TanStack validation and ignores a duplicate submit and Cancel",
+          "reason": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "fullName": "retires a pending one-time result after Activity hides and shows the same form",
+          "reason": "AssertionError: expected \"vi.fn()\" to not be called at all, but actually been called 1 times"
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773-red-revoke.json",
+      "reportedCases": 7,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "Public API discovery in API Keys retains revoke confirmation while pending and after refusal, preventing duplicate commands",
+          "reason": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773-red-webhook-command.json",
+      "reportedCases": 1,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "keeps the actual delete confirmation pending and retains it after an owner refusal",
+          "reason": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773-red-edit.json",
+      "reportedCases": 3,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "owns edit activation before validation and keeps the panel through queued Cancel and duplicate submit",
+          "reason": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773-red-refusal.json",
+      "reportedCases": 8,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "Public API discovery in API Keys removes the retained snapshot after an authoritative read refusal",
+          "reason": "AssertionError: expected <a \u2026(1)></a> to be null"
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773/alias-red.json",
+      "reportedCases": 2,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "retains locale and repeated query values while forcing the canonical webhooks tab",
+          "reason": "AssertionError: expected null to be 'retained' // Object.is equality"
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773/red-root-strict-reveal.json",
+      "reportedCases": 3,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "shows a new one-time key during the development StrictMode effect probe",
+          "reason": "TestingLibraryElementError: Unable to find an element with the text: public-test-dummy-first. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+        }
+      ]
+    },
+    {
+      "privateReport": ".tmp/1773/red-capacity.json",
+      "reportedCases": 9,
+      "failed": 1,
+      "failures": [
+        {
+          "fullName": "Public API discovery in API Keys does not present unknown first-load capacity as an empty available list",
+          "reason": "AssertionError: expected <button \u2026(2)>\u2026(1)</button> to have property \"disabled\" with value true"
+        }
+      ]
+    }
+  ]
+}

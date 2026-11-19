@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {createWriteStream} from 'node:fs';
+import {readFile} from 'node:fs/promises';
+import {once} from 'node:events';
+import {join} from 'node:path';
+const dir=process.argv[2],repo=process.cwd();
+const runtime=JSON.parse(await readFile(join(dir,'runtime-private.json'),'utf8'));
+const fixture=JSON.parse(await readFile(join(dir,'fixture-private.json'),'utf8'));
+assert.equal(fixture.kind,'disposable');assert.equal(runtime.env.POSTGRES_HOST,'127.0.0.1');assert.match(runtime.env.POSTGRES_DB,/^approval_workflow_repository_test_perf_[a-f0-9]{12}$/);
+const allowed=/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA|PNPM_HOME|NUMBER_OF_PROCESSORS|PROCESSOR_ARCHITECTURE)$/i;
+const env={...Object.fromEntries(Object.entries(process.env).filter(([key])=>allowed.test(key))),...runtime.env,NODE_ENV:'test',CI:'true',BILLING_ENABLED:'false',TELEMETRY_ENABLED:'false'};
+const log=createWriteStream(join(dir,'integration-private.log'),{mode:0o600});await once(log,'open');
+const child=spawn(process.execPath,[join(repo,'apps/webapp/node_modules/vitest/vitest.mjs'),'run','--project','integration','src/lib/auth/organization-joining.integration.test.ts','src/lib/employee-lifecycle/joining/joining.integration.test.ts'],{cwd:join(repo,'apps/webapp'),env,windowsHide:true,stdio:['ignore',log,log]});
+const [code]=await once(child,'exit');log.end();console.log(`Joining and auth transaction integration exit code: ${code}. Inspect integration-private.log.`);process.exitCode=code??1;

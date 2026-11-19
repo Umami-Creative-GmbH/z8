@@ -8,6 +8,7 @@ import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
 import { displayEntryNotes } from "@/lib/time-tracking/system-notes";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
+import { formatUtcOffset } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { DurationCell } from "./time-entries-table-duration-cell";
@@ -102,6 +103,9 @@ export function getTimeEntriesColumns({
 							},
 						)}
 					</span>
+					<span className="text-xs text-muted-foreground tabular-nums">
+						{formatUtcOffset(row.original.clockIn.utcOffsetMinutes)}
+					</span>
 					{row.original.clockIn?.isSuperseded ? (
 						<Badge variant="outline" className="w-fit text-xs">
 							{t("timeTracking.table.corrected", "Corrected")}
@@ -129,6 +133,9 @@ export function getTimeEntriesColumns({
 					);
 				}
 
+				const clockOut = row.original.clockOut;
+				if (!clockOut) return t("common.unavailable", "Unavailable");
+
 				return (
 					<div className="flex flex-col gap-1">
 						<span>
@@ -137,10 +144,13 @@ export function getTimeEntriesColumns({
 								{
 									locale,
 									timeFormat,
-									offsetMinutes: row.original.clockOut!.utcOffsetMinutes,
+									offsetMinutes: clockOut.utcOffsetMinutes,
 									preset: "time",
 								},
 							)}
+						</span>
+						<span className="text-xs text-muted-foreground tabular-nums">
+							{formatUtcOffset(clockOut.utcOffsetMinutes)}
 						</span>
 						{row.original.clockOut?.isSuperseded ? (
 							<Badge variant="outline" className="w-fit text-xs">
@@ -169,9 +179,11 @@ export function getTimeEntriesColumns({
 					<span className="text-muted-foreground">-</span>
 				);
 				const billable = showBillable && row.original.isBillable;
-				const drivingDetailsMissing = isDrivingDetailsMissing?.(row.original.id) ?? false;
+				const drivingDetailsMissing =
+					isDrivingDetailsMissing?.(row.original.id) ?? false;
 				const missingTask = row.original.missingTask === true;
-				if (!billable && !drivingDetailsMissing && !missingTask) return description;
+				if (!billable && !drivingDetailsMissing && !missingTask)
+					return description;
 				return (
 					<div className="flex flex-col gap-1">
 						{description}
@@ -185,7 +197,10 @@ export function getTimeEntriesColumns({
 								variant="outline"
 								className="w-fit border-amber-500/50 text-amber-700 text-xs dark:text-amber-300"
 							>
-								{t("timeTracking.table.drivingDetailsMissing", "Driving details missing")}
+								{t(
+									"timeTracking.table.drivingDetailsMissing",
+									"Driving details missing",
+								)}
 							</Badge>
 						) : null}
 						{missingTask ? (
@@ -206,7 +221,11 @@ export function getTimeEntriesColumns({
 		},
 		{
 			id: "actions",
-			header: "",
+			header: () => (
+				<span className="sr-only">
+					{t("timeTracking.table.rowActions", "Time entry actions")}
+				</span>
+			),
 			cell: ({ row }) => {
 				const period = row.original;
 				if (!period.endTime) {

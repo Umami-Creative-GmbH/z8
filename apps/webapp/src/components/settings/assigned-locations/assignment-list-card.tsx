@@ -74,9 +74,9 @@ export function AssignmentListCard({
 			</CardHeader>
 			<CardContent className="space-y-4">
 				{isLoading ? (
-					<div className="space-y-2">
-						<Skeleton className="h-12 w-full" />
-						<Skeleton className="h-10 w-full" />
+					<div className="space-y-2" aria-busy="true">
+						<Skeleton aria-hidden="true" className="h-12 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
 					</div>
 				) : (
 					<>
@@ -89,15 +89,19 @@ export function AssignmentListCard({
 										key={row.id}
 										className="flex items-center justify-between gap-3 rounded-lg border p-3"
 									>
-										<div className="min-w-0">
-											<div className="flex flex-wrap items-center gap-2">
-												<p className="truncate text-sm font-medium">{row.label}</p>
+										<div className="min-w-0 flex-1">
+											<div className="flex min-w-0 flex-wrap items-center gap-2">
+												<p className="min-w-0 max-w-full truncate text-sm font-medium" title={row.label}>
+													{row.label}
+												</p>
 												{row.inactive && (
 													<Badge variant="secondary">{t("common.inactive", "Inactive")}</Badge>
 												)}
 											</div>
 											{row.detail && (
-												<p className="truncate text-xs text-muted-foreground">{row.detail}</p>
+												<p className="truncate text-xs text-muted-foreground" title={row.detail}>
+													{row.detail}
+												</p>
 											)}
 										</div>
 										<Button

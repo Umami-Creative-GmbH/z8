@@ -1,0 +1,72 @@
+{
+  "dimensions": [
+    {
+      "mode": "before",
+      "name": "desktop-light",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "mode": "after",
+      "name": "desktop-light",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "mode": "before",
+      "name": "phone-light",
+      "width": 390,
+      "height": 1000
+    },
+    {
+      "mode": "after",
+      "name": "phone-light",
+      "width": 390,
+      "height": 1000
+    },
+    {
+      "mode": "before",
+      "name": "wide-dark",
+      "width": 2400,
+      "height": 1200
+    },
+    {
+      "mode": "after",
+      "name": "wide-dark",
+      "width": 2400,
+      "height": 1200
+    }
+  ],
+  "parsedDownloads": {
+    "rows": 8,
+    "headers": [
+      "Employee",
+      "Allocated",
+      "Taken",
+      "Remaining",
+      "Utilization %"
+    ],
+    "allocated": 28,
+    "taken": 416,
+    "remaining": -388,
+    "person1": [
+      28,
+      52,
+      -24,
+      185.71
+    ],
+    "source": "After explicit post-comparison stored allowance setup; original first stored allowance formulas and five export columns unchanged."
+  },
+  "verified": [
+    "original eight-person before/after scope",
+    "one exact task heading",
+    "viewport widths",
+    "real role/security outcomes",
+    "sticky identity during local phone scroll",
+    "parsed numeric CSV and XLSX parity",
+    "configured zero vs missing source",
+    "native React zone/read state",
+    "connected Next compilation/errors"
+  ],
+  "limits": "PNG viewport heights are recorded individually; no physical-device or true browser zoom claim. Clean final Next probes do not settle transition-log baseline versus regression."
+}

@@ -1,0 +1,23 @@
+{
+  "ownedResourcesRemaining": 0,
+  "ownNextBrowserControllerAndLaunchersAbsent": true,
+  "temporaryBridgeAbsent": true,
+  "privateIgnoredHistoryPreserved": true,
+  "allocatedListenerCount": 5,
+  "containers": [
+    {
+      "absent": true,
+      "name": "z8_perf_6d4f7cb0136a_postgres"
+    },
+    {
+      "absent": true,
+      "name": "z8_perf_6d4f7cb0136a_redis"
+    },
+    {
+      "absent": true,
+      "name": "z8_perf_6d4f7cb0136a_storage"
+    }
+  ],
+  "dependencyDirectoriesPreserved": true,
+  "allocatedListenersAbsent": true
+}

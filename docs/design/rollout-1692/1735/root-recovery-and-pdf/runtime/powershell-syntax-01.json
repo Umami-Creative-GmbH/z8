@@ -1,0 +1,26 @@
+{
+  "files": [
+    {
+      "errors": 0,
+      "path": "cleanup-probes-01-private.ps1"
+    },
+    {
+      "errors": 0,
+      "path": "cleanup-probes-02-private.ps1"
+    },
+    {
+      "errors": 0,
+      "path": "stop-next-01-private.ps1"
+    },
+    {
+      "errors": 0,
+      "path": "stop-next-03-private.ps1"
+    },
+    {
+      "errors": 0,
+      "path": "stop-next-04-private.ps1"
+    }
+  ],
+  "count": 5,
+  "errors": 0
+}

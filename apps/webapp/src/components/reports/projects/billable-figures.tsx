@@ -265,6 +265,37 @@ export function BillableFiguresCard({ figures, context, description }: BillableF
 	);
 }
 
+export function BillableFigureTableHeader({
+	rowLabel,
+	showMargin,
+}: {
+	rowLabel: string;
+	showMargin: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<TableHeader>
+			<TableRow>
+				<TableHead>{rowLabel}</TableHead>
+				<TableHead className="text-right">
+					{t("reports.projects.billable.billableHours", "Billable hours")}
+				</TableHead>
+				<TableHead className="text-right">
+					{t("reports.projects.billable.nonBillableHours", "Non-billable hours")}
+				</TableHead>
+				<TableHead className="text-right">
+					{t("reports.projects.billable.revenue", "Revenue")}
+				</TableHead>
+				{showMargin && (
+					<TableHead className="text-right">
+						{t("reports.projects.billable.margin", "Margin")}
+					</TableHead>
+				)}
+			</TableRow>
+		</TableHeader>
+	);
+}
+
 /**
  * One table row's Billable Time cells: billable and non-billable hours, revenue
  * (flagged when some work is unpriced) and, when shown, margin.
@@ -320,25 +351,10 @@ export function BillableEmployeeTable({ employees }: { employees: ProjectTeamMem
 			</CardHeader>
 			<CardContent className="overflow-x-auto">
 				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead>{t("reports.projects.billable.employee", "Employee")}</TableHead>
-							<TableHead className="text-right">
-								{t("reports.projects.billable.billableHours", "Billable hours")}
-							</TableHead>
-							<TableHead className="text-right">
-								{t("reports.projects.billable.nonBillableHours", "Non-billable hours")}
-							</TableHead>
-							<TableHead className="text-right">
-								{t("reports.projects.billable.revenue", "Revenue")}
-							</TableHead>
-							{showMargin && (
-								<TableHead className="text-right">
-									{t("reports.projects.billable.margin", "Margin")}
-								</TableHead>
-							)}
-						</TableRow>
-					</TableHeader>
+					<BillableFigureTableHeader
+						rowLabel={t("reports.projects.billable.employee", "Employee")}
+						showMargin={showMargin}
+					/>
 					<TableBody>
 						{rows.map((employee) => (
 							<TableRow key={employee.employeeId}>

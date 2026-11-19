@@ -1,0 +1,282 @@
+{
+  "scope": "Read-only classification; no archived code execution or blanket fresh syntax acceptance.",
+  "freshSyntaxCheck": "New verify.cjs only; historical driver syntax outcomes remain producer/native receipts.",
+  "preservedPython": [
+    {
+      "path": "commit-candidate.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "make-classification.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "prepare-attempt1.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "prepare-attempt2.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "prepare-attempt3.py",
+      "astParse": "fail",
+      "line": 60,
+      "message": "invalid syntax. Is this intended to be part of the string?",
+      "documentedFailedAttempt": true
+    },
+    {
+      "path": "prepare.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "preserve-and-clean-attempt1.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "preserve-and-clean.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "run-package.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "seal.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "VERIFY-SEAL.py",
+      "astParse": "pass"
+    },
+    {
+      "path": "write-report.py",
+      "astParse": "pass"
+    }
+  ],
+  "historicalCode": [
+    {
+      "path": "payload/inherited-stop/bridges/r165-review-classification.test.tsx",
+      "bytes": 6301,
+      "sha256": "e343741076f020cdb17bb07b7dfd1b2227cb7d35b4ba8e97ce7f86867118b672",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/bridges/r165-review-priority.test.tsx",
+      "bytes": 5989,
+      "sha256": "c8c3980dac0b7e0d8e2430a0deb8a6a708ea75c73e573de347f58919709298fa",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/bridges/r165-root-expense-history.tsx",
+      "bytes": 14641,
+      "sha256": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/bridges/r165-root-management.tsx",
+      "bytes": 1707,
+      "sha256": "9c004df1e35d65788121cdaa5f807f9f40e8a97f696ae2050e78f654a180779d",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/bridges/r165-root-new-buttons.tsx",
+      "bytes": 2760,
+      "sha256": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/commit-candidate.py",
+      "bytes": 985,
+      "sha256": "b1e250d5a0b1ec750d908302b8ea76ca142a048244c6ac0fe2e3a7435e20cb2d",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/make-classification.py",
+      "bytes": 4039,
+      "sha256": "23ea0a6269eb4bffe7512aff21b5fa8efd123a745f50870d47273df74692ccab",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/prepare-attempt1.py",
+      "bytes": 4241,
+      "sha256": "f4b5a9459e29daa9d877b107c4c28f16fd2cd248bc4ddd5b6a59e89c16d0c1f5",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/prepare-attempt2.py",
+      "bytes": 4269,
+      "sha256": "563eb5991aea91e1c022ad84f7d43761a01cba16b491224e0cc72e40e6df9f71",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/prepare-attempt3.py",
+      "bytes": 4413,
+      "sha256": "f993a340e477c6ed9a9cfe229a2c68337bcc349031dd32a642ff8fc184776b60",
+      "classification": "Preserved known failed Python parse at line60; never executed."
+    },
+    {
+      "path": "payload/inherited-stop/prepare.py",
+      "bytes": 4475,
+      "sha256": "22258da5ea40b6982bf2e904c646e229a76de9f8af997beb32169a93e4c399cf",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/preserve-and-clean-attempt1.py",
+      "bytes": 6770,
+      "sha256": "4fbb6498acfc004fb9b2523cdb08c430de518b189fc9bad7b7010df7c9637c18",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/preserve-and-clean.py",
+      "bytes": 6767,
+      "sha256": "2065cf22f8f4fd1df8979ff3e64b96ae9db1d1550b68aafbdfed48c0e566c256",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/r165-review-classification.test.tsx",
+      "bytes": 6301,
+      "sha256": "e343741076f020cdb17bb07b7dfd1b2227cb7d35b4ba8e97ce7f86867118b672",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/r165-review-priority.test.tsx",
+      "bytes": 5989,
+      "sha256": "c8c3980dac0b7e0d8e2430a0deb8a6a708ea75c73e573de347f58919709298fa",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/resolved-route-metadata.ts",
+      "bytes": 7674,
+      "sha256": "731c8cd6359af7eec20ba12a2d456e7c5d4cdc46e4efab7f573ae743ab7fdb6c",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/root-expense-history.tsx",
+      "bytes": 14641,
+      "sha256": "7b1f9b8d833e4faa96cc3fb51c573f36e5dcd4ab6affb2cde9306b3050964b29",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/root-new-receipt-expense-button.tsx",
+      "bytes": 2760,
+      "sha256": "851a52c04322ea8f34d44272e9bf47a8dbdc5b7cb970d0cef53fc96035498ff0",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/root-travel-expense-management.tsx",
+      "bytes": 1702,
+      "sha256": "90777b2798983cd9a1a062a2f031c1c144c5b0044451fe01dd03406613fee5e2",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/run-package.py",
+      "bytes": 944,
+      "sha256": "df5d50ccc86dd4a74f447c24eaa74cfa8cdc312f45c4d0897f72039a51333a01",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/seal.py",
+      "bytes": 2273,
+      "sha256": "8b96dff38c29a611722eb24863423f210001d43bff2235ab95f8566adaa76d89",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/VERIFY-SEAL.py",
+      "bytes": 688,
+      "sha256": "61ecfa92b6352cb5c19fb71cf2d1e0b1dde00443205c22bb016d12ac22094d97",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/inherited-stop/write-report.py",
+      "bytes": 18996,
+      "sha256": "287e4c699499617cd5e8af8f3facabdd3f09758a27c10d5ad95e74b395ea97e3",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/audit.cjs",
+      "bytes": 7311,
+      "sha256": "61f7d81871cd5bc8c9d45df62aa00c02ad20e6c78fb8722b35347bde27454d97",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/bin/pnpm",
+      "bytes": 156,
+      "sha256": "78073d4af76b5b7847f6471520d272d61e09b972b5829739a664cb4aa8c20a2b",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/bridge-source-7bc9f3a093d3dd12f7730b37b98ed1e73730f419ed70037572ef9f4757bd0512.tsx",
+      "bytes": 14950,
+      "sha256": "7bc9f3a093d3dd12f7730b37b98ed1e73730f419ed70037572ef9f4757bd0512",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/fixture-audit-attempt1.cjs",
+      "bytes": 2241,
+      "sha256": "b6b7cdbf5e3ae091c96f3cda3012f5a26031930051cbbab5a4cacb6801e01636",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/fixture-audit.cjs",
+      "bytes": 2575,
+      "sha256": "e189e1f414f14ac172efb67d5ac69793ea41a088ed55a853d4a7a4ed9e890be5",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/handoff.cjs",
+      "bytes": 10142,
+      "sha256": "c7475c0e7131683b9e8f05a5b4a04da975d73bd063d34a7da25fe4ddb8c35dff",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/multiset.cjs",
+      "bytes": 2589,
+      "sha256": "c50d90bfe2425f225ab472890170e85b62ec9f1cec3b5422474d0d05865e386f",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/priority-attempt1-source.tsx",
+      "bytes": 14950,
+      "sha256": "d0dccdf4431034176b1d62ba8b87112d68d62e8e97e0000be1cf39765f9fa674",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/priority.test.tsx",
+      "bytes": 17924,
+      "sha256": "68b3b4d6df8c4752fbb254ca756b5f1fca8faafab0d72ad392c9316c68a61ec0",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/run.cjs",
+      "bytes": 4942,
+      "sha256": "82b9f954c86b471fda3a1cc15b6f65d655a0fddbe621f1c2b424c27a47c8a146",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/seal.cjs",
+      "bytes": 1773,
+      "sha256": "4bbecb3d2f389501ec2f30c9cc3587f1e6572aa9fc72ea3bad35d67e8da138ef",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/independent/verify-safe.cjs",
+      "bytes": 2619,
+      "sha256": "2ce9fe00fcfe4d29989359c939b6a4b23174a620d5b8a4922b5f4366ce2f3a0d",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/root/transport/transport-probe.mjs",
+      "bytes": 695,
+      "sha256": "3c323e68c536855814b7de1c6aacb546d70408bb4a3a7dbc9f4b60265aeef9d0",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    },
+    {
+      "path": "payload/root/transport/transport-probe-default.mjs",
+      "bytes": 703,
+      "sha256": "785c555aa098851fca63c620bb9eac95fc36568a620c8138878f81f61e859428",
+      "classification": "Inert archived source/driver; strict text decoding only in publication. No fresh syntax or execution pass claimed."
+    }
+  ],
+  "sourceClones": "Twenty newly copied .txt files are raw inert Git blobs; no application execution."
+}

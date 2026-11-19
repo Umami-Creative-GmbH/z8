@@ -1,0 +1,22 @@
+{
+  "ownedManifestProcessesAbsent": true,
+  "operationalResourcesRemaining": 0,
+  "privateFixtureManifestsPreserved": true,
+  "exactServiceCount": 3,
+  "ownedPortsAbsent": true,
+  "services": [
+    {
+      "absent": true,
+      "alias": "postgres"
+    },
+    {
+      "absent": true,
+      "alias": "redis"
+    },
+    {
+      "absent": true,
+      "alias": "storage"
+    }
+  ],
+  "profilesAbsent": true
+}

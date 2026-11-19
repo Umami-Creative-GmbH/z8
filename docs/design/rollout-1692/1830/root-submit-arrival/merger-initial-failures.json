@@ -1,0 +1,11 @@
+{
+  "failures": [
+    {"command":"git merge-tree --write-tree 1fb2263e97bf266522f1cf50be957889383701cd df375cecd17c6d28e2621ee630a8bc19edb91f09","result":"Insufficient permission adding object to shared Git database; normal accepted sandbox escalation computed tree and performed authorized no-ff merge."},
+    {"command":". ./.tmp/merge1830-audit/run-checks.ps1 exact","result":"Local PowerShell script execution policy rejected dot-source; task launcher used powershell -NoProfile -ExecutionPolicy Bypass -File afterward."},
+    {"command":"powershell -NoProfile -ExecutionPolicy Bypass -File .tmp/merge1830-audit/run-checks.ps1 exact","result":"Guarded pnpm engine-store lock access denied before tests; log/command preserved as exact-unit-engine-lock-failed. Accepted escalation ran tests without install or dependency changes."},
+    {"command":"initial private adversarial harness","result":"First unresolved react-dom, then next-intl context due private test root resolution. Both failed JSON/logs retained; app-local aliases corrected only .tmp harness."},
+    {"command":"exact-unit accepted launch","result":"252 of 253 pass; extractor assertion hit 5s timeout. Same assertion passed in all-green 174-file compatibility run. No aggregate green exact-run claim."},
+    {"command":"initial independent artifact driver","result":"Stopped only identity-verified owned driver and child after unnecessary complete historical pin scan; final audit uses exact declared/baseline/implementation commits and passes. No tracked output written."},
+    {"command":"Get-CimInstance Win32_Process","result":"Initial unprivileged read denied; accepted normal escalation identified owned audit process. No unrelated process touched."}
+  ]
+}

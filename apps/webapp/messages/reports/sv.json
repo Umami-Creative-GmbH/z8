@@ -13,9 +13,11 @@
       "yes": "Ja"
     },
     "description": "Generera omfattande rapporter över arbetstimmar och frånvaro med skatterelaterade uppgifter om hemarbete",
+    "employeeNumber": "Anställningsnummer",
     "employeeSelector": {
       "error": "Det gick inte att läsa in teammedlemmar",
       "label": "Anställd",
+      "loading": "Läser in teammedlemmar",
       "placeholder": "Välj anställd..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Läser in organisationsinställningar innan förinställningar aktiveras.",
       "period": "Period",
-      "selectPeriod": "Välj period"
+      "selectPeriod": "Välj period",
+      "settingsError": "Organisationsinställningar är inte tillgängliga",
+      "settingsRequired": "Organisationsinställningar krävs för att använda förinställningar.",
+      "title": "Generera en medarbetarrapport"
     },
     "generate": "Generera rapport",
     "generating": "Genererar rapport…",
@@ -62,6 +67,7 @@
       "month": "Månad",
       "noHomeOfficeDays": "Inga hemarbetsdagar har registrerats under denna period.",
       "overtime": "Övertid",
+      "title": "Förhandsgranskning av rapport",
       "total": "Totalt",
       "totalHomeOfficeDays": "Totalt antal hemarbetsdagar",
       "totalHomeOfficeHours": "Totalt antal arbetade timmar hemifrån",
@@ -266,6 +272,9 @@
         "noPermission": "Du har inte behörighet att visa projektrapporter.",
         "title": "Projektrapporter"
       },
+      "refreshFailed": "Kunde inte uppdatera projektrapporter",
+      "scopeLoading": "Läser in aktuellt rapportomfång…",
+      "scopeUnavailable": "Det aktuella rapportomfånget kunde inte läsas in.",
       "status": {
         "active": "Aktiv",
         "archived": "Arkiverad",
@@ -324,7 +333,6 @@
         "failedGenerate": "Kunde inte generera rapport",
         "failedPortfolio": "Kunde inte generera portföljrapport",
         "failedProject": "Kunde inte generera projektrapport",
-        "failedProjectReport": "Kunde inte generera projektrapport",
         "portfolioGenerated": "Portföljrapport har skapats",
         "projectGenerated": "Rapport har skapats för {name}",
         "unexpectedError": "Ett oväntat fel uppstod"
@@ -376,6 +384,8 @@
         "loading": "Läser in delningslänkar…",
         "revokedAutomatically": "Återkallades automatiskt den {date}: skaparen ser inte längre alla projekt i den",
         "revokedBy": "Återkallades av {name} den {date}",
+        "scopeLoading": "Läser in aktuellt omfång för delningslänkar…",
+        "scopeUnavailable": "Det aktuella omfånget för delningslänkar kunde inte läsas in.",
         "someone": "någon",
         "title": "Länkar till denna rapport",
         "views": "{count, plural, one {# visning} other {# visningar}}",
@@ -398,7 +408,8 @@
         "description": "Länken slutar omedelbart att fungera och dess ögonblicksbild raderas. Dess post och visningslogg behålls.",
         "done": "Länken har återkallats",
         "failed": "Länken kunde inte återkallas",
-        "title": "Vill du återkalla den här länken?"
+        "titleDeletedReport": "Vill du återkalla delningslänken för en borttagen rapport, {period}?",
+        "titleNamed": "Vill du återkalla delningslänken för {report}, {period}?"
       },
       "status": {
         "active": "Aktiv",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "arkiverad",
       "archivedBadge": "Arkiverad",
+      "comparison": "Månatlig körsträcka per fordon och anställd",
       "empty": {
         "description": "Inget slutfört arbete med körsträcka registrerades under denna period.",
         "title": "Ingen körning under denna period"
@@ -457,6 +469,7 @@
         "period": "Period"
       },
       "generate": "Generera rapport",
+      "generated": "Genererad {time}",
       "generating": "Genererar rapport…",
       "kilometres": "{distance} km",
       "noReportYet": "Ingen rapport har genererats ännu",
@@ -465,7 +478,11 @@
         "description": "Körda kilometer i tjänsten per fordon och anställd, per månad",
         "feature": "visa rapporten över sträcka per fordon"
       },
+      "scope": "Medarbetare som är tillgängliga för dig i den här organisationen",
+      "scopeLoading": "Bekräftar aktuell organisation och medarbetare…",
+      "scopeUnavailable": "Det aktuella omfånget för fordonsrapporter kunde inte läsas in.",
       "selectPeriod": "Välj en period och generera rapporten.",
+      "staged": "Perioden har ändrats. Generera rapporten för att uppdatera resultat och hämtningar.",
       "table": {
         "employee": "Anställd",
         "licencePlate": "Registreringsnummer",
@@ -473,8 +490,7 @@
         "vehicle": "Fordon",
         "vehicleAndEmployee": "Fordon / anställd"
       },
-      "title": "Sträcka per fordon",
-      "totalDriven": "{distance} körda"
+      "title": "Sträcka per fordon"
     }
   }
 }

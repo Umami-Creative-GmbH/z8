@@ -1,0 +1,33 @@
+{
+  "freshIndependentPublic": {
+    "distinctLogicalCases": 8,
+    "files": 1,
+    "allAttemptInstances": 22,
+    "passInstances": 20,
+    "harnessFailInstances": 2,
+    "rootPermanentEightCasesNotAdded": true
+  },
+  "freshCanonicalPG": {
+    "distinctCases": 45,
+    "files": 7,
+    "pass": 45
+  },
+  "boundedFreshAutomatedCaseUnion": {
+    "cases": 53,
+    "files": 8,
+    "qualification": "Synthetic-transport public assembly and real PostgreSQL are separate evidence classes; runtime journeys are not added to this test count"
+  },
+  "runtimeFailure": {
+    "logicalBlocker": 1,
+    "currentPointerRepetitions": 2,
+    "expandedCollapsedControl": 1,
+    "noTestCountAdded": true
+  },
+  "rootInherited": {
+    "units": 298,
+    "files": 47,
+    "allTypes": true,
+    "lintFormatDoctor": "sealed root evidence; not rerun or added"
+  },
+  "noBroaderReadiness": true
+}

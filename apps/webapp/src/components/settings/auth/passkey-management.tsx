@@ -1,10 +1,10 @@
 "use client";
 
-import { IconTrash } from "@tabler/icons-react";
+import { IconLoader2, IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useRef, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -17,7 +17,15 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardAction,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
@@ -28,11 +36,21 @@ interface Passkey {
 	createdAt: Date;
 }
 
-export function PasskeyManagement() {
+type BaseUIPreventableEvent = { preventBaseUIHandler?: () => void };
+
+export function PasskeyManagement({
+	variant = "inline",
+}: {
+	/**
+	 * `card` renders a page section (Card with an h2 title), like the other
+	 * sections of the security settings page. `inline` (default) renders an h3
+	 * block for hosts that already provide the section heading, such as /mfa.
+	 */
+	variant?: "card" | "inline";
+} = {}) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const passkeyToDelete = useRef<string | null>(null);
+	const [passkeyToDelete, setPasskeyToDelete] = useState<Passkey | null>(null);
 
 	// Query for passkeys list
 	const passkeysQuery = useQuery({
@@ -100,8 +118,7 @@ export function PasskeyManagement() {
 		},
 		onSuccess: () => {
 			toast.success(t("settings.passkeys.deleteSuccess", "Passkey deleted successfully"));
-			setDeleteDialogOpen(false);
-			passkeyToDelete.current = null;
+			setPasskeyToDelete(null);
 			queryClient.invalidateQueries({ queryKey: queryKeys.auth.passkeys() });
 		},
 		onError: (error) => {
@@ -114,113 +131,182 @@ export function PasskeyManagement() {
 		},
 	});
 
-	const handleDeletePasskey = () => {
-		if (!passkeyToDelete.current) return;
-		deletePasskeyMutation.mutate(passkeyToDelete.current);
-	};
-
-	const confirmDelete = (passkeyId: string) => {
-		passkeyToDelete.current = passkeyId;
-		setDeleteDialogOpen(true);
-	};
-
-	const passkeys = passkeysQuery.data || [];
+	const passkeyName = (passkey: Passkey) =>
+		passkey.name || t("settings.passkeys.unnamed", "Unnamed Passkey");
+	const passkeys = passkeysQuery.data ?? [];
 	const isPending = passkeysQuery.isLoading || deletePasskeyMutation.isPending;
+	const title = t("settings.passkeys.title", "Passkeys");
+	const description = t(
+		"settings.passkeys.description",
+		"Manage passkeys for passwordless authentication",
+	);
+	const addButton = (
+		<Button
+			onClick={() => addPasskeyMutation.mutate()}
+			disabled={addPasskeyMutation.isPending || isPending}
+		>
+			{addPasskeyMutation.isPending
+				? t("common.adding", "Adding…")
+				: t("settings.passkeys.add", "Add Passkey")}
+		</Button>
+	);
+
+	let list: ReactNode;
+	if (passkeysQuery.isLoading) {
+		list = (
+			<div
+				role="status"
+				aria-label={t("settings.passkeys.loading", "Loading passkeys")}
+				className="space-y-2"
+			>
+				<Skeleton aria-hidden="true" className="h-16 w-full rounded-lg" />
+				<Skeleton aria-hidden="true" className="h-16 w-full rounded-lg" />
+			</div>
+		);
+	} else if (passkeysQuery.isError) {
+		list = (
+			<div
+				role="alert"
+				className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 p-4"
+			>
+				<p className="min-w-0 text-sm text-destructive">
+					{passkeysQuery.error instanceof Error
+						? passkeysQuery.error.message
+						: t("settings.passkeys.loadError", "Failed to load passkeys")}
+				</p>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={() => passkeysQuery.refetch()}
+					disabled={passkeysQuery.isFetching}
+				>
+					{passkeysQuery.isFetching ? (
+						<IconLoader2 aria-hidden="true" className="motion-safe:animate-spin" />
+					) : (
+						<IconRefresh aria-hidden="true" />
+					)}
+					{t("common.retry", "Retry")}
+				</Button>
+			</div>
+		);
+	} else if (passkeys.length === 0) {
+		list = (
+			<div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+				<p>{t("settings.passkeys.empty", "No passkeys configured")}</p>
+				<p>
+					{t(
+						"settings.passkeys.emptyDescription",
+						"Add a passkey to enable passwordless authentication",
+					)}
+				</p>
+			</div>
+		);
+	} else {
+		list = (
+			<ul className="divide-y rounded-lg border">
+				{passkeys.map((passkey) => (
+					<li key={passkey.id} className="flex items-center justify-between gap-3 p-3">
+						<div className="min-w-0">
+							<p className="truncate text-sm font-medium" title={passkeyName(passkey)}>
+								{passkeyName(passkey)}
+							</p>
+							<p className="text-sm text-muted-foreground">
+								{t("settings.passkeys.addedOn", "Added on {date}", {
+									date: DateTime.fromJSDate(passkey.createdAt).toLocaleString(
+										DateTime.DATE_MED,
+									),
+								})}
+							</p>
+						</div>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => setPasskeyToDelete(passkey)}
+							aria-label={`${t("common.delete", "Delete")}: ${passkeyName(passkey)}`}
+							disabled={isPending}
+						>
+							<IconTrash aria-hidden="true" className="size-4 text-destructive" />
+						</Button>
+					</li>
+				))}
+			</ul>
+		);
+	}
+
+	const deleteDialog = (
+		<AlertDialog
+			open={passkeyToDelete !== null}
+			onOpenChange={(open) => {
+				// Keep the dialog while the deletion runs so its result stays in context.
+				if (!open && !deletePasskeyMutation.isPending) setPasskeyToDelete(null);
+			}}
+		>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{t("settings.passkeys.deleteDialogTitle", "Delete Passkey?")}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{passkeyToDelete ? (
+							<span className="mb-2 block break-words font-medium text-foreground">
+								{passkeyName(passkeyToDelete)}
+							</span>
+						) : null}
+						{t(
+							"settings.passkeys.deleteDialogDescription",
+							"This passkey will no longer be able to access your account. This action cannot be undone.",
+						)}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={deletePasskeyMutation.isPending}>
+						{t("common.cancel", "Cancel")}
+					</AlertDialogCancel>
+					<AlertDialogAction
+						onClick={(event) => {
+							event.preventDefault();
+							(event as unknown as BaseUIPreventableEvent).preventBaseUIHandler?.();
+							if (!passkeyToDelete || deletePasskeyMutation.isPending) return;
+							deletePasskeyMutation.mutate(passkeyToDelete.id);
+						}}
+						disabled={deletePasskeyMutation.isPending}
+						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+					>
+						{deletePasskeyMutation.isPending ? (
+							<IconLoader2 aria-hidden="true" className="motion-safe:animate-spin" />
+						) : null}
+						{t("common.delete", "Delete")}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	);
+
+	if (variant === "card") {
+		return (
+			<Card>
+				<CardHeader>
+					<CardTitle as="h2">{title}</CardTitle>
+					<CardDescription>{description}</CardDescription>
+					<CardAction>{addButton}</CardAction>
+				</CardHeader>
+				<CardContent>{list}</CardContent>
+				{deleteDialog}
+			</Card>
+		);
+	}
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h3 className="text-lg font-medium">{t("settings.passkeys.title", "Passkeys")}</h3>
-					<p className="text-sm text-muted-foreground">
-						{t("settings.passkeys.description", "Manage passkeys for passwordless authentication")}
-					</p>
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div className="min-w-0">
+					<h3 className="text-lg font-medium">{title}</h3>
+					<p className="text-sm text-muted-foreground">{description}</p>
 				</div>
-				<Button
-					onClick={() => addPasskeyMutation.mutate()}
-					disabled={addPasskeyMutation.isPending || isPending}
-				>
-					{addPasskeyMutation.isPending
-						? t("common.adding", "Adding…")
-						: t("settings.passkeys.add", "Add Passkey")}
-				</Button>
+				{addButton}
 			</div>
-
-			{passkeys.length === 0 ? (
-				<Card>
-					<CardContent className="flex flex-col items-center justify-center py-12">
-						<p className="text-sm text-muted-foreground text-center">
-							{t("settings.passkeys.empty", "No passkeys configured")}
-							<br />
-							{t(
-								"settings.passkeys.emptyDescription",
-								"Add a passkey to enable passwordless authentication",
-							)}
-						</p>
-					</CardContent>
-				</Card>
-			) : (
-				<div className="space-y-2">
-					{passkeys.map((passkey) => (
-						<Card key={passkey.id}>
-							<CardHeader className="pb-3">
-								<div className="flex items-center justify-between">
-									<div>
-										<CardTitle className="text-base">
-											{passkey.name || t("settings.passkeys.unnamed", "Unnamed Passkey")}
-										</CardTitle>
-										<CardDescription>
-											{t("settings.passkeys.addedOn", "Added on {date}", {
-												date: DateTime.fromJSDate(passkey.createdAt).toLocaleString(
-													DateTime.DATE_MED,
-												),
-											})}
-										</CardDescription>
-									</div>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={() => confirmDelete(passkey.id)}
-										aria-label={`${t("common.delete", "Delete")}: ${passkey.name || t("settings.passkeys.unnamed", "Unnamed Passkey")}`}
-										disabled={isPending}
-									>
-										<IconTrash className="size-4 text-destructive" />
-									</Button>
-								</div>
-							</CardHeader>
-						</Card>
-					))}
-				</div>
-			)}
-
-			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.passkeys.deleteDialogTitle", "Delete Passkey?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.passkeys.deleteDialogDescription",
-								"This passkey will no longer be able to access your account. This action cannot be undone.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deletePasskeyMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeletePasskey}
-							disabled={deletePasskeyMutation.isPending}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			{list}
+			{deleteDialog}
 		</div>
 	);
 }

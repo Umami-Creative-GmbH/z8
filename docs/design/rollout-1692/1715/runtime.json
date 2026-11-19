@@ -1,0 +1,138 @@
+{
+  "results": [
+    {
+      "name": "exactly one main title",
+      "actual": [
+        "Driving licence"
+      ]
+    },
+    {
+      "name": "explicitly granted admin has all three role tabs",
+      "actual": [
+        "My licence",
+        "Checks",
+        "Planning"
+      ]
+    },
+    {
+      "name": "verifier excludes self from worklist",
+      "actual": true
+    },
+    {
+      "name": "worklist opens actual authorized check",
+      "actual": true
+    },
+    {
+      "name": "self-check is unavailable",
+      "actual": true
+    },
+    {
+      "name": "planner-only role has no tab bar",
+      "actual": true
+    },
+    {
+      "name": "operational view has restrictions and no inspection",
+      "actual": true
+    },
+    {
+      "name": "failed operational read withdraws roster",
+      "actual": true
+    },
+    {
+      "name": "planning Retry recovers actual GET",
+      "actual": true
+    },
+    {
+      "name": "ungranted role sees no licence controls",
+      "actual": true
+    },
+    {
+      "name": "driver-only view omits Checks and Planning",
+      "actual": true
+    },
+    {
+      "name": "uncertain reminder remains uncertain",
+      "actual": true
+    },
+    {
+      "name": "actual own evidence PDF",
+      "actual": {
+        "status": 200,
+        "type": "application/pdf",
+        "prefix": "%PDF-"
+      }
+    },
+    {
+      "name": "failed report keeps retry available",
+      "actual": true
+    },
+    {
+      "name": "real report returns suspension guidance",
+      "actual": true
+    },
+    {
+      "name": "suspension persists through authorized record reload",
+      "actual": true
+    },
+    {
+      "name": "retry created exactly one report",
+      "actual": 1
+    },
+    {
+      "name": "verifier worklist reflects suspension",
+      "actual": true
+    },
+    {
+      "name": "permission loss withdraws inspection form",
+      "actual": true
+    },
+    {
+      "name": "collapse preference persisted",
+      "actual": "false"
+    },
+    {
+      "name": "dark theme persisted",
+      "actual": true
+    },
+    {
+      "name": "wide dark fits",
+      "actual": {
+        "document": 2400,
+        "viewport": 2400
+      }
+    },
+    {
+      "name": "font preference persisted",
+      "actual": {
+        "saved": "large",
+        "size": "18px"
+      }
+    },
+    {
+      "name": "phone large dark fits",
+      "actual": {
+        "document": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "drawer Escape actual observation",
+      "actual": false
+    },
+    {
+      "name": "enlarged reduced-motion phone fits",
+      "actual": {
+        "document": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "zoom equivalent fits",
+      "actual": {
+        "document": 800,
+        "viewport": 800
+      }
+    }
+  ],
+  "errors": []
+}

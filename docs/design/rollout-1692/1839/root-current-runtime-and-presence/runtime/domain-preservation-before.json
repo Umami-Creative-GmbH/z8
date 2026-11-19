@@ -1,0 +1,5 @@
+{
+  "workPeriods": 261,
+  "sha256": "dd3dc10f9aafce226d6163b8f52ab1811bf867549d6345b0d40f9603fc06e3f6",
+  "mutations": "one public-UI location creation and one own employee location assignment; no SQL writes"
+}

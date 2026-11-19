@@ -1,0 +1,79 @@
+{
+  "geometry": {
+    "permission": "denied",
+    "viewport": 390,
+    "documentWidth": 390,
+    "tableWidth": 352,
+    "firstCell": "{\"x\":29,\"y\":262.875,\"width\":332,\"height\":138.25,\"top\":262.875,\"right\":361,\"bottom\":401.125,\"left\":29}",
+    "lastCell": "{\"x\":29,\"y\":622.359375,\"width\":332,\"height\":78.75,\"top\":622.359375,\"right\":361,\"bottom\":701.109375,\"left\":29}",
+    "recordButtons": [
+      {
+        "label": "Sort by Employee (ascending)",
+        "rect": "{\"x\":23.5,\"y\":153.875,\"width\":114.75,\"height\":22.5,\"top\":153.875,\"right\":138.25,\"bottom\":176.375,\"left\":23.5}"
+      },
+      {
+        "label": "Sort by Team or Position",
+        "rect": "{\"x\":151.75,\"y\":153.875,\"width\":163.984375,\"height\":22.5,\"top\":153.875,\"right\":315.734375,\"bottom\":176.375,\"left\":151.75}"
+      },
+      {
+        "label": "Sort by Allowance",
+        "rect": "{\"x\":23.5,\"y\":189.875,\"width\":118.3125,\"height\":22.5,\"top\":189.875,\"right\":141.8125,\"bottom\":212.375,\"left\":23.5}"
+      },
+      {
+        "label": "Sort by Used",
+        "rect": "{\"x\":155.3125,\"y\":189.875,\"width\":80.734375,\"height\":22.5,\"top\":189.875,\"right\":236.046875,\"bottom\":212.375,\"left\":155.3125}"
+      },
+      {
+        "label": "Sort by Pending",
+        "rect": "{\"x\":249.546875,\"y\":189.875,\"width\":103.53125,\"height\":22.5,\"top\":189.875,\"right\":353.078125,\"bottom\":212.375,\"left\":249.546875}"
+      },
+      {
+        "label": "Sort by Left",
+        "rect": "{\"x\":23.5,\"y\":225.875,\"width\":72.484375,\"height\":22.5,\"top\":225.875,\"right\":95.984375,\"bottom\":248.375,\"left\":23.5}"
+      },
+      {
+        "label": "Sort by Sick",
+        "rect": "{\"x\":109.484375,\"y\":225.875,\"width\":73.375,\"height\":22.5,\"top\":225.875,\"right\":182.859375,\"bottom\":248.375,\"left\":109.484375}"
+      },
+      {
+        "label": "Record absence for Person 3",
+        "rect": "{\"x\":186.328125,\"y\":656.109375,\"width\":161.171875,\"height\":36,\"top\":656.109375,\"right\":347.5,\"bottom\":692.109375,\"left\":186.328125}"
+      },
+      {
+        "label": "Record absence for Person 5",
+        "rect": "{\"x\":186.328125,\"y\":1109.84375,\"width\":161.171875,\"height\":36,\"top\":1109.84375,\"right\":347.5,\"bottom\":1145.84375,\"left\":186.328125}"
+      },
+      {
+        "label": "Record absence for Person 7",
+        "rect": "{\"x\":186.328125,\"y\":1563.578125,\"width\":161.171875,\"height\":36,\"top\":1563.578125,\"right\":347.5,\"bottom\":1599.578125,\"left\":186.328125}"
+      }
+    ],
+    "blockingDialogs": 0
+  },
+  "accessibility": {
+    "axeVersion": "4.12.1",
+    "counts": {
+      "inapplicable": 54,
+      "incomplete": 0,
+      "passes": 34,
+      "violations": 0
+    },
+    "incomplete": [],
+    "lifecycle": {
+      "effectiveLaunch": {
+        "browserLaunched": true,
+        "engine": "chrome",
+        "launchHash": 4759075326389112000
+      },
+      "launched": false,
+      "relaunchedBrowser": false,
+      "restartedBackground": false,
+      "restoreStatus": "not_configured",
+      "reused": true,
+      "saveStatus": "not_attempted"
+    },
+    "url": "http://localhost:51523/en/team/absences?year=2026#team-absence-allowances",
+    "violations": []
+  },
+  "status": "observed"
+}

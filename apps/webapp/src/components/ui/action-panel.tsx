@@ -22,7 +22,10 @@ const actionPanelSizes = {
 
 type ActionPanelSize = keyof typeof actionPanelSizes;
 
-type ActionPanelContentProps = Omit<React.ComponentProps<typeof SheetContent>, "side"> & {
+type ActionPanelContentProps = Omit<
+	React.ComponentProps<typeof SheetContent>,
+	"side"
+> & {
 	size?: ActionPanelSize;
 	showCloseButton?: boolean;
 };
@@ -31,11 +34,15 @@ function ActionPanel({ ...props }: React.ComponentProps<typeof Sheet>) {
 	return <Sheet data-slot="action-panel" {...props} />;
 }
 
-function ActionPanelTrigger({ ...props }: React.ComponentProps<typeof SheetTrigger>) {
+function ActionPanelTrigger({
+	...props
+}: React.ComponentProps<typeof SheetTrigger>) {
 	return <SheetTrigger data-slot="action-panel-trigger" {...props} />;
 }
 
-function ActionPanelClose({ ...props }: React.ComponentProps<typeof SheetClose>) {
+function ActionPanelClose({
+	...props
+}: React.ComponentProps<typeof SheetClose>) {
 	return <SheetClose data-slot="action-panel-close" {...props} />;
 }
 
@@ -63,10 +70,16 @@ function ActionPanelContent({
 	);
 }
 
-function ActionPanelHeader({ className, ...props }: React.ComponentProps<typeof SheetHeader>) {
+function ActionPanelHeader({
+	className,
+	...props
+}: React.ComponentProps<typeof SheetHeader>) {
 	return (
 		<SheetHeader
-			className={cn("border-b px-6 py-5 pr-12 text-left", className)}
+			className={cn(
+				"min-w-0 shrink-0 border-b px-6 py-5 pr-12 text-left",
+				className,
+			)}
 			data-slot="action-panel-header"
 			{...props}
 		/>
@@ -76,18 +89,24 @@ function ActionPanelHeader({ className, ...props }: React.ComponentProps<typeof 
 function ActionPanelBody({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
-			className={cn("min-h-0 flex-1 overflow-y-auto px-6 py-5", className)}
+			className={cn(
+				"min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5",
+				className,
+			)}
 			data-slot="action-panel-body"
 			{...props}
 		/>
 	);
 }
 
-function ActionPanelFooter({ className, ...props }: React.ComponentProps<typeof SheetFooter>) {
+function ActionPanelFooter({
+	className,
+	...props
+}: React.ComponentProps<typeof SheetFooter>) {
 	return (
 		<SheetFooter
 			className={cn(
-				"mt-0 flex-col-reverse border-t px-4 py-4 sm:flex-row sm:justify-end sm:px-6 *:w-full sm:*:w-auto",
+				"mt-0 shrink-0 flex-col-reverse border-t px-4 py-4 sm:flex-row sm:flex-wrap sm:justify-end sm:px-6 *:w-full sm:*:w-auto",
 				className,
 			)}
 			data-slot="action-panel-footer"
@@ -96,10 +115,16 @@ function ActionPanelFooter({ className, ...props }: React.ComponentProps<typeof 
 	);
 }
 
-function ActionPanelTitle({ className, ...props }: React.ComponentProps<typeof SheetTitle>) {
+function ActionPanelTitle({
+	className,
+	...props
+}: React.ComponentProps<typeof SheetTitle>) {
 	return (
 		<SheetTitle
-			className={cn("text-lg font-semibold leading-none", className)}
+			className={cn(
+				"break-words text-lg font-semibold leading-snug",
+				className,
+			)}
 			data-slot="action-panel-title"
 			{...props}
 		/>

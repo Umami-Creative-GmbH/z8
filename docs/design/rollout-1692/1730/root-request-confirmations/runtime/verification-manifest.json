@@ -1,0 +1,713 @@
+{
+  "head": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+  "branch": "fix/1730-request-arrivals-and-confirmations",
+  "sourceStart": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+  "sourceEnd": "a4e2d21f5ab0256bb072af2ef13b7982808f7570",
+  "trackedClean": true,
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+      "raw": "b642e250d5a5a794b1efa0c2ee47fc59877ef1ccdb61525d0174442f61961125",
+      "lf": "b4704d05f25ddab4d5c4b4916c445e3df7bd14aa38bbc524130e7a353151a5cb"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "raw": "df4aef7a8010c93cf0e98fb92245b6699fc293c7205c424a6ca656be7045b1ee",
+      "lf": "93d836f470f7784d1396eb9fbcd79006ddd58af621acba5c8f00433fb5f8158b"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.tsx",
+      "raw": "0c1e51b4ce91c19aea533d13b6c40219e68d0aaf0379757d2e9bce5791f55f78",
+      "lf": "d0305022a3022e321ce1abcc4f90bacc849b929c2095d396d80d1dfc08c5445e"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/cancel-document-request-dialog.tsx",
+      "raw": "d45edc7023e21bf75b53748de693831dde789980913dba2e455f1f80913d1286",
+      "lf": "91f240c17ed0865fbf066e7c805f1c8448178f150c7144da01d9a5a9275cdebd"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "raw": "43b5c357cc8d0dc9163ac917b1de6969acf85391fb7b022b1b28ad4dafdc8768",
+      "lf": "94fe2bb25e27968327f22fdc016215392e1f26dfff9dacf83bb3375d24f8dcbe"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-request-decision.tsx",
+      "raw": "8f6cb4e20f508ec92e52b814b710931a73b34dc195257535e0a996ed14d2b207",
+      "lf": "6a189dc6e744f7ee28b3752d2d28e29cc3a15b4de89bf29d3b8079d601990269"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-overview.tsx",
+      "raw": "2484d3ef5b8b96acb7105ea4763f5bceaba11ae0c4614885d3fb7f5defe992b8",
+      "lf": "e0ceeff89c1919e2e933d94b5755c60deeb3cc069518cf5ab87d85d5fdfc13c4"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "raw": "dba29a2a17356f38e59fba8f8f617a0c6c94a3bc40639e2402638acadd9f835e",
+      "lf": "abcd121fad74d2cb015d185bfce43f7b9112edd910c8ad88ed8b5a9b105284bf"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/document-requests-workspace.tsx",
+      "raw": "59c65f0ef1068e590631fd48f8af6bdb9075ad2e7e48a0310b1bc5895fac0a50",
+      "lf": "f979e6658a3756c1da2bc5a12983e6b72dda42947526ca75121dc49edbf39169"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/use-document-request-confirmation.ts",
+      "raw": "2656d090cf08a66cf5f122f17e6f738d74a6b3df4d402a887d8e75c27c014b38",
+      "lf": "14739c3a5db6f0848dda4760396cb15722fcc8c525ee22fe6f0b8c43671576ca"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "raw": "ed95ad623ff4739ccb1ce2c25bc069c5c3dc0beba48e1c8ea32967b061b5f33d",
+      "lf": "9bfd0a989ca673cc73ac019ef2e239779dfeb95a44d6cad132ba20683993c46b"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "raw": "8209c9e04bb3a8e1ad7e1bee9e8f6fe258286e49fd15ad66440d4b44485671aa",
+      "lf": "8feaa418f83e13fe882164d601b0c9e284cb212f0c5cdea79605c31bd77ea4ce"
+    },
+    {
+      "path": "apps/webapp/src/lib/personnel-file/document-request-officer.integration.test.ts",
+      "raw": "4278b66a976ae5f60e31909863a071b2522eb283510a3cf4b900eb474ce4f2b4",
+      "lf": "65fe67e2be6cce4e82aa91204972e2a25597866ed93569935f6a0c4cf0c28fee"
+    }
+  ],
+  "configuration": [
+    {
+      "path": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "path": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+    }
+  ],
+  "trackedPreservation": {
+    "count": 12506,
+    "digest": "ed131b177f7420e289bac21cb382d5b8762a8cd312f4649f5538fca5a4fd9aa5",
+    "unchanged": true,
+    "scope": "apps/webapp/src, packages and docs/design/rollout-1692 tracked raw bytes, including all prior tracked source/evidence. Root independently audits prior group counts after RELEASE."
+  },
+  "dependencies": {
+    "physicalParents": 3,
+    "internalLeaves": 158,
+    "unchanged": true,
+    "noInstall": true,
+    "approvedLock": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799"
+  },
+  "fresh": {
+    "postgres": {
+      "physicalFiles": 6,
+      "uniqueCases": 99,
+      "passed": 99,
+      "failed": 0,
+      "skipped": 0,
+      "canonicalSetup": true
+    },
+    "functional": [
+      {
+        "file": "actions-03.json",
+        "assertions": 35,
+        "passed": 35
+      },
+      {
+        "file": "recovery-03.json",
+        "assertions": 8,
+        "passed": 8
+      },
+      {
+        "file": "roles-03.json",
+        "assertions": 11,
+        "passed": 11
+      },
+      {
+        "file": "uploads-02.json",
+        "assertions": 15,
+        "passed": 15
+      }
+    ],
+    "matched": {
+      "current": "matched-current-05.json",
+      "before": "matched-before-06.json",
+      "restored": "matched-restored-06.json",
+      "currentAssertions": 19,
+      "beforeAssertions": 14,
+      "restoredAssertions": 4,
+      "captures": 11,
+      "existingConsumerFiles": 6,
+      "partialApplication": true,
+      "byteExactRestore": true,
+      "sameActorFixtureFiltersAndTenRecordTitleDigest": "e67936c9dda9af1cdb346021fce9f959177dd751e8a3aebc4f374fbb6bc4ec0e",
+      "beforeVisibleHeadings": [
+        [
+          "Z8",
+          "Document requests"
+        ],
+        [
+          "Z8",
+          "Document requests"
+        ],
+        [
+          "Z8",
+          "Document requests"
+        ],
+        [
+          "Z8",
+          "Document requests"
+        ],
+        [
+          "Z8",
+          "Document requests"
+        ]
+      ],
+      "currentVisibleHeadings": [
+        [
+          "Document requests"
+        ],
+        [
+          "Document requests"
+        ],
+        [
+          "Document requests"
+        ],
+        [
+          "Document requests"
+        ],
+        [
+          "Document requests"
+        ]
+      ]
+    },
+    "native": [
+      "native-public.json",
+      "native-restored-public.json"
+    ],
+    "next": [
+      {
+        "name": "get_project_metadata",
+        "result": [
+          {
+            "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+            "devServerUrl": "http://localhost:50964"
+          }
+        ]
+      },
+      {
+        "name": "get_routes",
+        "result": [
+          {
+            "appRouter": [
+              "/[locale]",
+              "/[locale]/absences",
+              "/[locale]/accept-invitation/[invitationId]",
+              "/[locale]/analytics",
+              "/[locale]/analytics/overtime-burn-down",
+              "/[locale]/analytics/team-performance",
+              "/[locale]/analytics/vacation-trends",
+              "/[locale]/analytics/work-hours",
+              "/[locale]/approvals",
+              "/[locale]/approvals/deputy-decisions/[absenceId]",
+              "/[locale]/approvals/inbox",
+              "/[locale]/approvals/review/[organizationId]/[kind]/[id]",
+              "/[locale]/billing/suspended",
+              "/[locale]/calendar",
+              "/[locale]/calendar/[employeeId]",
+              "/[locale]/compliance",
+              "/[locale]/driving-licence",
+              "/[locale]/driving-licence/checks/[employee]",
+              "/[locale]/equipment",
+              "/[locale]/equipment/assignments/[assignmentId]",
+              "/[locale]/equipment/employees/[employeeId]",
+              "/[locale]/forgot-password",
+              "/[locale]/init",
+              "/[locale]/join/[code]",
+              "/[locale]/kiosk",
+              "/[locale]/licenses",
+              "/[locale]/mfa",
+              "/[locale]/my-documents",
+              "/[locale]/my-equipment",
+              "/[locale]/my-requests",
+              "/[locale]/notifications",
+              "/[locale]/onboarding/complete",
+              "/[locale]/onboarding/notifications",
+              "/[locale]/onboarding/organization",
+              "/[locale]/onboarding/profile",
+              "/[locale]/onboarding/vacation-policy",
+              "/[locale]/onboarding/welcome",
+              "/[locale]/onboarding/wellness",
+              "/[locale]/onboarding/work-schedule",
+              "/[locale]/onboarding/work-templates",
+              "/[locale]/organization",
+              "/[locale]/payroll",
+              "/[locale]/payroll/work-balances",
+              "/[locale]/payroll/work-balances/[employeeId]",
+              "/[locale]/personnel-files",
+              "/[locale]/personnel-files/[employeeId]",
+              "/[locale]/personnel-files/document-requests",
+              "/[locale]/personnel-files/due-for-deletion",
+              "/[locale]/personnel-files/payslip-batches",
+              "/[locale]/personnel-files/payslip-batches/[batchId]",
+              "/[locale]/personnel-files/sick-leave",
+              "/[locale]/platform-admin",
+              "/[locale]/platform-admin/analytics",
+              "/[locale]/platform-admin/billing",
+              "/[locale]/platform-admin/diagnostics",
+              "/[locale]/platform-admin/organizations",
+              "/[locale]/platform-admin/settings",
+              "/[locale]/platform-admin/system-email-templates",
+              "/[locale]/platform-admin/users",
+              "/[locale]/platform-admin/worker-queue",
+              "/[locale]/reports",
+              "/[locale]/reports/projects",
+              "/[locale]/reports/vehicles",
+              "/[locale]/reset-password",
+              "/[locale]/scheduling",
+              "/[locale]/settings",
+              "/[locale]/settings/approval-escalation",
+              "/[locale]/settings/approval-policies",
+              "/[locale]/settings/audit-export",
+              "/[locale]/settings/audit-log",
+              "/[locale]/settings/avv",
+              "/[locale]/settings/billable-time",
+              "/[locale]/settings/billable-time/accounting",
+              "/[locale]/settings/billable-time/cost-rates",
+              "/[locale]/settings/billable-time/hand-off",
+              "/[locale]/settings/billable-time/rates",
+              "/[locale]/settings/billing",
+              "/[locale]/settings/calendar",
+              "/[locale]/settings/change-policies",
+              "/[locale]/settings/clocking",
+              "/[locale]/settings/clockodo-import",
+              "/[locale]/settings/closed-months",
+              "/[locale]/settings/compliance",
+              "/[locale]/settings/compliance/works-council",
+              "/[locale]/settings/coverage-rules",
+              "/[locale]/settings/custom-fields",
+              "/[locale]/settings/customers",
+              "/[locale]/settings/demo",
+              "/[locale]/settings/discord",
+              "/[locale]/settings/driving-licence",
+              "/[locale]/settings/email-templates",
+              "/[locale]/settings/employees",
+              "/[locale]/settings/employees/[employeeId]",
+              "/[locale]/settings/employees/new",
+              "/[locale]/settings/enterprise",
+              "/[locale]/settings/enterprise/api-keys",
+              "/[locale]/settings/enterprise/api-keys/[keyId]",
+              "/[locale]/settings/enterprise/audit-log",
+              "/[locale]/settings/enterprise/branding",
+              "/[locale]/settings/enterprise/domains",
+              "/[locale]/settings/enterprise/email",
+              "/[locale]/settings/enterprise/identity-setup",
+              "/[locale]/settings/enterprise/sso",
+              "/[locale]/settings/equipment",
+              "/[locale]/settings/export",
+              "/[locale]/settings/export-operations",
+              "/[locale]/settings/export/history/[organizationId]",
+              "/[locale]/settings/holidays",
+              "/[locale]/settings/implementation-checklist",
+              "/[locale]/settings/import",
+              "/[locale]/settings/import/[batchId]",
+              "/[locale]/settings/kiosks",
+              "/[locale]/settings/locations",
+              "/[locale]/settings/locations/[locationId]",
+              "/[locale]/settings/my-data",
+              "/[locale]/settings/notification-channels",
+              "/[locale]/settings/notifications",
+              "/[locale]/settings/organization",
+              "/[locale]/settings/organizations",
+              "/[locale]/settings/payroll-access",
+              "/[locale]/settings/payroll-export",
+              "/[locale]/settings/payroll-readiness",
+              "/[locale]/settings/permissions",
+              "/[locale]/settings/personnel-files",
+              "/[locale]/settings/position-capture",
+              "/[locale]/settings/position-stamps",
+              "/[locale]/settings/profile",
+              "/[locale]/settings/projects",
+              "/[locale]/settings/report-share-links",
+              "/[locale]/settings/roles",
+              "/[locale]/settings/scheduled-exports",
+              "/[locale]/settings/security",
+              "/[locale]/settings/shifts",
+              "/[locale]/settings/skills",
+              "/[locale]/settings/slack",
+              "/[locale]/settings/statistics",
+              "/[locale]/settings/surcharges",
+              "/[locale]/settings/teams",
+              "/[locale]/settings/teams-notifications",
+              "/[locale]/settings/teams/[teamId]",
+              "/[locale]/settings/telegram",
+              "/[locale]/settings/travel-expenses",
+              "/[locale]/settings/vacation",
+              "/[locale]/settings/vacation/employees",
+              "/[locale]/settings/vacation/employees/[employeeId]",
+              "/[locale]/settings/vehicle-use",
+              "/[locale]/settings/vehicles",
+              "/[locale]/settings/webhooks",
+              "/[locale]/settings/wellness",
+              "/[locale]/settings/work-categories",
+              "/[locale]/settings/work-diagnostics",
+              "/[locale]/settings/work-policies",
+              "/[locale]/setup",
+              "/[locale]/share/[token]",
+              "/[locale]/sign-in",
+              "/[locale]/sign-up",
+              "/[locale]/team",
+              "/[locale]/team/absences",
+              "/[locale]/team/driving",
+              "/[locale]/team/period-submissions",
+              "/[locale]/team/presence",
+              "/[locale]/team/presence/[locationId]",
+              "/[locale]/time-tracking",
+              "/[locale]/today",
+              "/[locale]/travel-expenses",
+              "/[locale]/travel-expenses/[claimId]",
+              "/[locale]/travel-expenses/finance",
+              "/[locale]/travel-expenses/reports/[reportId]",
+              "/[locale]/verify-2fa",
+              "/[locale]/verify-email",
+              "/[locale]/verify-email-pending",
+              "/[locale]/works-council",
+              "/[locale]/works-council/export",
+              "/api/analytics/export",
+              "/api/app-version",
+              "/api/approvals/inbox",
+              "/api/approvals/inbox/[id]",
+              "/api/approvals/inbox/[id]/approve",
+              "/api/approvals/inbox/[id]/reject",
+              "/api/approvals/inbox/bulk-approve",
+              "/api/approvals/inbox/bulk-reject",
+              "/api/approvals/inbox/counts",
+              "/api/audit-export/public-key",
+              "/api/audit-export/verify",
+              "/api/auth/[...all]",
+              "/api/auth/app-exchange",
+              "/api/auth/app-login",
+              "/api/auth/app-sign-in",
+              "/api/auth/callback/social-org/[provider]",
+              "/api/auth/context",
+              "/api/auth/desktop-login",
+              "/api/auth/providers",
+              "/api/auth/session-expired",
+              "/api/auth/social-org/[provider]",
+              "/api/auth/verify-turnstile",
+              "/api/billing/checkout",
+              "/api/billing/portal",
+              "/api/billing/subscription",
+              "/api/billing/webhook",
+              "/api/calendar/conflicts",
+              "/api/calendar/connections",
+              "/api/calendar/connections/[id]",
+              "/api/calendar/events",
+              "/api/calendar/ics-feeds",
+              "/api/calendar/ics-feeds/[id]",
+              "/api/calendar/ics-feeds/[id]/regenerate",
+              "/api/calendar/ics/[secret]",
+              "/api/calendar/oauth/[provider]",
+              "/api/calendar/oauth/callback/[provider]",
+              "/api/cron/[jobName]",
+              "/api/cron/status/[executionId]",
+              "/api/dashboard/layout",
+              "/api/dashboard/widgets/[widget]",
+              "/api/desktop/context",
+              "/api/desktop/open",
+              "/api/desktop/organizations",
+              "/api/desktop/vehicle-use-warnings",
+              "/api/discord/interactions/[token]",
+              "/api/discord/link",
+              "/api/discord/setup",
+              "/api/driving-licence/evidence",
+              "/api/driving-licence/operational-employees",
+              "/api/driving-licence/status",
+              "/api/health",
+              "/api/jobs/[jobId]/status",
+              "/api/kiosk/board",
+              "/api/kiosk/clock",
+              "/api/kiosk/clock/outcome",
+              "/api/kiosk/commands",
+              "/api/kiosk/commands/[operationId]",
+              "/api/kiosk/employee-status",
+              "/api/kiosk/employees",
+              "/api/kiosk/fob",
+              "/api/kiosk/fob/registration",
+              "/api/kiosk/pair",
+              "/api/kiosk/session",
+              "/api/location/countries",
+              "/api/location/regions",
+              "/api/location/states",
+              "/api/mcp",
+              "/api/notifications",
+              "/api/notifications/count",
+              "/api/notifications/preferences",
+              "/api/notifications/push/native-token",
+              "/api/notifications/push/subscribe",
+              "/api/notifications/push/subscriptions",
+              "/api/notifications/push/unsubscribe",
+              "/api/notifications/push/vapid-key",
+              "/api/org-admin/holiday-categories",
+              "/api/org-admin/holiday-categories/[id]",
+              "/api/org-admin/holiday-presets",
+              "/api/org-admin/holiday-presets/[id]",
+              "/api/org-admin/holidays",
+              "/api/org-admin/holidays/[id]",
+              "/api/org-admin/holidays/import",
+              "/api/org-admin/holidays/preview",
+              "/api/organization-mfa/policy",
+              "/api/organization/vehicles/[vehicleId]/photos/[photoId]",
+              "/api/organizations/list",
+              "/api/organizations/sso",
+              "/api/organizations/switch",
+              "/api/payroll/comparisons/[resultId]",
+              "/api/personnel-files/documents/[documentId]",
+              "/api/personnel-files/employees/[employeeId]/zip",
+              "/api/platform-admin/billing",
+              "/api/session/organization-status",
+              "/api/settings/employees/read/[dataset]",
+              "/api/settings/skills",
+              "/api/setup/authorize",
+              "/api/slack/commands",
+              "/api/slack/events",
+              "/api/slack/interactions",
+              "/api/slack/link",
+              "/api/slack/oauth/authorize",
+              "/api/slack/oauth/callback",
+              "/api/slack/setup",
+              "/api/teams/messages",
+              "/api/teams/setup",
+              "/api/telegram/link",
+              "/api/telegram/setup",
+              "/api/telegram/webhook/[token]",
+              "/api/time-clock",
+              "/api/time-clock/status",
+              "/api/time-entries",
+              "/api/time-entries/[entryId]",
+              "/api/time-entries/clock-out-on-behalf",
+              "/api/time-entries/commands",
+              "/api/time-entries/commands/[operationId]",
+              "/api/time-entries/corrections",
+              "/api/time-entries/diagnostics",
+              "/api/time-entries/diagnostics/proposals",
+              "/api/time-entries/diagnostics/repair",
+              "/api/time-entries/offline-context",
+              "/api/time-entries/status",
+              "/api/time-entries/verify",
+              "/api/travel-expenses/[claimId]",
+              "/api/travel-expenses/[claimId]/receipts/[attachmentId]",
+              "/api/travel-expenses/exports/[batchId]",
+              "/api/travel-expenses/reports/[reportId]/receipts/[receiptId]",
+              "/api/tus/[[...path]]",
+              "/api/upload/personnel-file",
+              "/api/upload/personnel-file/payslip-batch",
+              "/api/upload/process",
+              "/api/upload/travel-expense/process",
+              "/api/upload/travel-expense/report-receipt",
+              "/api/user/onboarding-status",
+              "/api/v1/[...path]",
+              "/api/v1/absences",
+              "/api/v1/customers",
+              "/api/v1/customers/custom-fields",
+              "/api/v1/employees",
+              "/api/v1/employees/custom-fields",
+              "/api/v1/openapi.json",
+              "/api/v1/projects",
+              "/api/v1/projects/custom-fields",
+              "/api/v1/work-periods",
+              "/api/wellness/water-action",
+              "/api/wellness/water-reminder"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_page_metadata",
+        "result": [
+          {
+            "sessions": [
+              {
+                "url": "/en/personnel-files/document-requests?status=all&pageSize=10&retained=1730",
+                "routerType": "app",
+                "segments": [
+                  {
+                    "path": "app/[locale]/(app)/layout.tsx",
+                    "type": "layout",
+                    "isBoundary": false,
+                    "isBuiltin": false
+                  },
+                  {
+                    "path": "app/[locale]/(app)/personnel-files/layout.tsx",
+                    "type": "layout",
+                    "isBoundary": false,
+                    "isBuiltin": false
+                  },
+                  {
+                    "path": "app/[locale]/layout.tsx",
+                    "type": "layout",
+                    "isBoundary": false,
+                    "isBuiltin": false
+                  },
+                  {
+                    "path": "global-error.js",
+                    "type": "boundary:global-error",
+                    "isBoundary": true,
+                    "isBuiltin": true
+                  },
+                  {
+                    "path": "not-found.js",
+                    "type": "boundary:not-found",
+                    "isBoundary": true,
+                    "isBuiltin": true
+                  },
+                  {
+                    "path": "app/[locale]/(app)/error.tsx",
+                    "type": "boundary:error",
+                    "isBoundary": true,
+                    "isBuiltin": false
+                  },
+                  {
+                    "path": "app/[locale]/(app)/not-found.tsx",
+                    "type": "boundary:not-found",
+                    "isBoundary": true,
+                    "isBuiltin": false
+                  },
+                  {
+                    "path": "app/[locale]/error.tsx",
+                    "type": "boundary:error",
+                    "isBoundary": true,
+                    "isBuiltin": false
+                  },
+                  {
+                    "path": "app/[locale]/not-found.tsx",
+                    "type": "boundary:not-found",
+                    "isBoundary": true,
+                    "isBuiltin": false
+                  },
+                  {
+                    "path": "app/[locale]/(app)/personnel-files/document-requests/page.tsx",
+                    "type": "page",
+                    "isBoundary": false,
+                    "isBuiltin": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "get_compilation_issues",
+        "result": [
+          {
+            "issues": []
+          }
+        ]
+      },
+      {
+        "name": "get_errors",
+        "result": [
+          {
+            "configErrors": [],
+            "sessionErrors": []
+          }
+        ]
+      }
+    ],
+    "artifactChecks": {
+      "allOwnPngsFullyDecoded": 58,
+      "jsonParsedBeforeSeal": 38,
+      "driversSyntaxChecked": 33
+    }
+  },
+  "inheritedRootChecks": {
+    "unit": "335/335 across52physicalfiles at a4e2, supplied by root; not rerun",
+    "types": "All3typeprojects+typegen pass supplied by root; not rerun",
+    "biome": "Root8explicit100-columnCRLF pass; all13lint/import pass;2inherited metadata default-format errors; not rerun",
+    "doctor": "13files0errors/3reviewed preventDefault falsepositives supplied by root; not rerun"
+  },
+  "failedAttempts": [
+    "attempt-01-engine-lock.txt: normal C: engine lock denied in sandbox; authorized escalation succeeded, no install",
+    "discover-public.json (contact-redacted clone): wrong button label after actual queue readiness",
+    "actions-01.json: successful Bulk followed by footer pointer obstruction",
+    "actions-02.json: successful Bulk; next pointer submit did not activate, no aborted transport claim",
+    "recovery.json and recovery-02.json: harness counted hidden Activity DOM or hidden heading; current-route visible predicates corrected",
+    "roles.json: Enter in cmdk picker did not confirm; roles-02.json: pointer point obstructed; roles-03 awaited unobstructed native point and passed",
+    "uploads.json: first activation did not reach visible usable upload panel; bounded visible target/native Space retry passed",
+    "matched-current.json: assumed aria-label despite actual sr-only accessible name; focused actual trigger",
+    "matched-current-02.json: preliminary checks passed but visual QA found streamed-shell captures; excluded from final matched acceptance",
+    "compare-03-syntax-failure.txt: driver parse failure before browser startup",
+    "matched-current-04.json: theme-menu timeout before capture; enabled-control predicate corrected; read-only reload probe passed",
+    "matched-before-05.json: current-only calendar-label wait absent from exact historical source",
+    "cleanup-audit-preparation-failure.txt: preparation parse failure before any audit/process action"
+  ],
+  "limits": [
+    "Consumer-only historical comparison, not whole historical app or pixel-perfect equivalence. Current shared source/dependencies and unused new helpers remain.",
+    "Saved preferences use actual UI owners; native viewports are not true browser zoom or physical device certification.",
+    "Next Rendering/Pets overlays retained; some lower-right pixels are obstructed and some controls required keyboard or a verified free pointer point. Wide historical header includes Loading clock status. No global-transition/performance claim.",
+    "No live acceptance-only linked-document/skill renewal branch; fresh six-suite PG covers authoritative retention and renewal semantics.",
+    "Synthetic initial request/former-employee prerequisites are not public request creation, offboarding or lifecycle authority proof. Real Bulk creation and genuine employee uploads/submissions/decisions are distinct.",
+    "No browser account/org ABA matrix or exhaustive late Activity/revision combinations; no all-role/all-race claim. Actual failed navigation return and one held public grant-revocation command were checked.",
+    "No broad current-roster guard rerun; inherited unresolved global guard remains unresolved. Metadata UPDATE/DELETE expectedRevision absence and earliest AuthenticatedShell no-h1 remain source-only unrelated gaps.",
+    "No full production build/static generation/catalog sync/provider/customer/payment/device/store-shell/screen-reader/truezoom acceptance. No backend/API/schema/policy change."
+  ],
+  "cleanup": {
+    "processInventory": "Exact task PIDs and descendants only; no broad process enumeration",
+    "nativeSessionsClosed": 2,
+    "puppeteerPolicy": "Every driver awaited browser.close() in finally; all driver/wrapper sessions completed",
+    "privateFixtureManifestsPreserved": true,
+    "cacheMoved": false,
+    "nativeDaemonsAbsent": true,
+    "ownedProcessesRemaining": 0,
+    "ownedNextPortClosed": true,
+    "exactManifestContainersAbsent": 3,
+    "verifiedStoppedPidCount": 49
+  },
+  "commands": [
+    "$env:pnpm_config_verify_deps_before_run='false' (each shell and child env)",
+    "agent-browser.cmd skills get core",
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs prepare <OWN_GENERATED_TEMP>",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/pin.mjs",
+    "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project integration --maxWorkers 1 src/lib/personnel-file/document-request-officer.integration.test.ts src/lib/personnel-file/document-request-bulk.integration.test.ts src/lib/personnel-file/document-request-review.integration.test.ts src/lib/personnel-file/document-request-skill-link.integration.test.ts src/lib/personnel-file/document-requests.integration.test.ts src/lib/personnel-file/officer-grants.integration.test.ts --reporter=json --outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1730-root-checks\\runtime\\postgres.json",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/seed.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/dev.mjs dev . <OWN_GENERATED_TEMP>",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/discover.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/actions.mjs actions-01",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/actions.mjs actions-02",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/actions.mjs actions-03",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/recovery.mjs (three source-pinned attempts)",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/roles.mjs (three source-pinned attempts)",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/uploads.mjs (two source-pinned attempts)",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/native.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/reload-probe.mjs",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/compare.mjs current 01 (implicit initial name)",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/compare.mjs current 02",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/compare.mjs current 03 (parse failure)",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/compare.mjs current 04",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/compare.mjs current 05",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/compare.mjs before 05",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/compare.mjs before 06",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/compare.mjs restored 06",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/native-restored.mjs",
+    "& .tmp/1730-root-checks/runtime/stop-next.ps1 -FixturePointer <OWN_PRIVATE_FIXTURE_POINTER> -RecordPath .tmp/1730-root-checks/runtime/stop-current-before-overlay.json",
+    "& .tmp/1730-root-checks/runtime/stop-next.ps1 -FixturePointer <OWN_PRIVATE_FIXTURE_POINTER> -RecordPath .tmp/1730-root-checks/runtime/stop-historical-before-restore.json",
+    "& .tmp/1730-root-checks/runtime/stop-next.ps1 -FixturePointer <OWN_PRIVATE_FIXTURE_POINTER> -RecordPath .tmp/1730-root-checks/runtime/stop-final.json",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/overlay.mjs apply",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/overlay.mjs restore",
+    "pnpm --config.verify-deps-before-run=false node scripts/performance/fixture.mjs cleanup <OWN_GENERATED_TEMP>",
+    "& .tmp/1730-root-checks/runtime/cleanup-audit.ps1",
+    "pnpm --config.verify-deps-before-run=false node .tmp/1730-root-checks/runtime/seal.mjs"
+  ],
+  "privatePolicy": "Fixture pointer, tracked-path detail inventory, raw fixture/auth/TEMP command outputs, raw PostgreSQL log, failure DOM, raw native JSON and full-contact picker PNGs are ignored and excluded from public allowlist and all public hashes, including hash-only copying. Generated contact strings redacted from public native clones. No saved/copied/minted/restored cookies, session or storage; normal transient development auth only.",
+  "sealedUtc": "2026-11-16T10:54:51.179Z",
+  "publicationQualification": "Category-redacted public clone: only unnecessary private pointer path text in command prose and the public discovery-clone label were changed. Source pins, results, failures and cleanup contracts retain released values. Generic operational basename literals in approved public harness code are preserved; no private input artifact was opened or hashed by archive publication."
+}

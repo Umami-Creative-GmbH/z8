@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "OBRIŠI"
       },
       "description": "Generirajte ogledne podatke za testiranje ili očistite postojeće podatke vezane uz radno vrijeme",
+      "employeesLoadError": {
+        "description": "Demo podaci generiraju se za vaše zaposlenike, pa generiranje nije dostupno dok se oni ne učitaju.",
+        "retrying": "Ponovni pokušaj…",
+        "title": "Nije moguće učitati zaposlenike"
+      },
       "errors": {
-        "generationFailed": "Generiranje nije uspjelo. Pokušajte ponovno.",
-        "noOrganization": "Nijedna organizacija nije odabrana"
+        "generationFailed": "Generiranje nije uspjelo. Pokušajte ponovno."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Svi zaposlenici ({count})",
+          "allCountUnavailable": "Svi zaposlenici",
           "label": "Zaposlenici",
           "selectSpecific": "Odaberite određene zaposlenike"
         }

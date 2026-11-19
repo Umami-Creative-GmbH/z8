@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Aprovar",
       "approveLabel": "Aprovar {title}",
+      "decided": "Decisão salva. Atualize para carregar a fila atual.",
       "description": "Solicitações aguardando decisão do gerente.",
       "empty": "Não há aprovações pendentes.",
       "openInbox": "Abrir caixa de entrada",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Aprovações pendentes",
       "reject": "Rejeitar",
       "rejectLabel": "Rejeitar {title}",
+      "retry": "Tentar aprovações novamente",
       "title": "Aprovações",
       "toast": {
         "approved": "Solicitação aprovada",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Hoje",
-      "description": "Revise os itens que precisam de ação hoje e, em seguida, vá diretamente para o fluxo de trabalho correto.",
+      "accessUnavailable": "Este resumo não está disponível para o funcionário e organização atuais.",
+      "contextFailed": "Não foi possível verificar seu acesso atual. Tente novamente.",
+      "drivingUnavailable": "Não foi possível verificar os detalhes de condução.",
+      "incomplete": "Algumas verificações estão indisponíveis. Revise os erros da seção; estes resultados estão incompletos.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Períodos de trabalho de seus funcionários sem veículo ou leitura do odômetro.",
           "title": "Detalhes de condução ausentes ({count})"
         }
       },
+      "loadFailed": "Não foi possível carregar o resumo. Tente novamente.",
       "needsAction": {
         "description": "Comece aqui para o acompanhamento operacional mais urgente.",
-        "empty": "Tudo limpo. Nenhuma ação do gerente é necessária no momento.",
+        "noExceptions": "Nenhum acompanhamento operacional detectado neste instantâneo. Isso não confirma a presença do funcionário.",
         "title": "Requer ação"
       },
+      "partial": "Parcial",
+      "refreshFailed": "Não foi possível atualizar. Os resultados anteriores são exibidos; tente novamente antes de agir.",
+      "refreshing": "Atualizando resumo. Os resultados anteriores permanecem visíveis.",
+      "retainedSection": "Resultados anteriores exibidos. Tente novamente para verificar alterações.",
+      "retry": "Tentar carregar o resumo novamente",
+      "retrySection": "Tentar {title} novamente",
+      "scope": "Acompanhamento operacional dos funcionários que você pode supervisionar na organização ativa.",
       "sections": {
         "empty": "Nenhum problema detectado."
       },
@@ -41,10 +53,11 @@
         "info": "Informação",
         "warning": "Aviso"
       },
+      "snapshot": "Instantâneo atualizado em {time}. Use Atualizar dados para verificar alterações.",
       "summaryAriaLabel": "Resumo de hoje",
       "supportingSectionsAriaLabel": "Seções de suporte",
       "title": "Resumo diário do gerente",
-      "updatedAt": "{date} - Atualizado às {time}"
+      "unavailable": "Indisponível"
     }
   }
 }

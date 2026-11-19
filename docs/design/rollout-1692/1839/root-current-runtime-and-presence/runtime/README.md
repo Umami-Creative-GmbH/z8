@@ -1,0 +1,13 @@
+# Bounded current-source runtime verification
+
+No confirmed P1. Frozen HEAD bc4010825c1fd94d634b7f4774b6f895bfac26f4; app tree 138aab92cde099756c13347827a90112763def68; verifiedCommit:null; readiness:null.
+
+- #1839: 20/20 explicitly listed actual runtime assertions pass. Normal development email sign-in returned200, reached the intended presence callback, and same-browser canonical session/user/org booleans matched. Desktop1600 and phone390 unfilled composition and keyboard focus passed. Deliberate authentication refusal, draft retention after refusal, explicit widget reset and retry remain unpassed: automatic review rejected that command before execution because of possible lockout/rate-limit state.
+- #1744: 32/32 explicitly listed actual runtime assertions pass. A public-UI-created disposable location/assignment and new own clocking period produced one canonical matching row/link/state/Since text. Mobile dark theme/reduced motion/sidebar, real employee-link destination, departure/return retirement, new authorized Retry read and unavailable-location recovery passed. Authority races and injected read-error/loading matrices remain unpassed.
+- Fresh unit cases0 and PostgreSQL suite cases0. R155310/31 and R1744135/14 remain inherited; prior43PG/15PG are unadded. Prepared fixture migration/factory success is root-owned setup, not added route or suite cases.
+- Final connected Next MCP reported compilation/config/session errors0 and one browser session; page errors0. A Retry screenshot has a visible Next1 Issue badge whose panel was not inspected. Do not claim zero development/request-insight issues. Ancillary storage404/equipment-access refusal logs remain qualified.
+- One diagnostic inadvertently returned a synthetic fixture email username. No password, token, auth header or session state was output/exported. It is excluded from curated artifacts. See qualifications.json.
+- New own period was closed through public UI. Both events retain UTC instants with Europe/Berlin/+60 browser captures. All261 historical own work periods remain byte-equal under canonical JSON readback. No Calendar attribution or SQL writes.
+- All18,422 tracked files, index, eight dependency/license pins, internal links, old stopped preflight seal, original38 R155/150 R1744 files, 63 anchors and baseline are preserved. Root is clean. Next's37 exact owned processes, Chromium, residual driver and exact3 label-verified services are absent; four own ports are closed. Ephemeral browser profile removed.
+
+RELEASE ALL ROOT checkout/package/runtime ownership. Root owns publication/readiness. No source/Git/config/docs/tracker/ledger edits. Raw logs, profiles, private manifests/inputs, credentials and raw Next results are excluded from SAFE allowlist.

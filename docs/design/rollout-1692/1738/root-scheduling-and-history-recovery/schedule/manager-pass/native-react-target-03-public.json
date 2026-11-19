@@ -1,0 +1,13 @@
+{
+  "componentPresence": [],
+  "actualAdmittedTarget": false,
+  "waitExit": 1,
+  "inspectExit": null,
+  "inspectSuccess": false,
+  "exactPlannerShiftSchedulerTarget": false,
+  "treeColumnSelection": "Second numerical column is fiber ID; first is depth",
+  "inspectDataKeys": [],
+  "rawTreeSha256": null,
+  "rawInspectSha256": null,
+  "qualification": "Only structure/names/outcomes exposed; props and hook values remain private. No render/performance audit claim."
+}

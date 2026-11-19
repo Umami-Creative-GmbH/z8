@@ -75,8 +75,10 @@
         "title": "Analitik trendleri",
         "viewFull": "Tüm analitiği görüntüle"
       },
+      "scope": "Platform genelinde raporlama",
       "sectionDescription": "Seçilen aralık ve grup için güncel platform verilerinden güncellenmiştir.",
       "sectionTitle": "Analitik Trendleri",
+      "seriesValues": "Seri değerlerini görüntüle",
       "title": "Platform Analitiği",
       "values": {
         "notAvailable": "Mevcut değil"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Platform erişimi doğrulanamadı.",
       "analytics": {
         "title": "Analitik Trendleri"
       },
-      "description": "Platform metrikleri ve hızlı işlemler",
+      "analyticsUnavailable": "Platform analizleri kullanılamıyor. Tekrar deneyin.",
+      "confirmingAccess": "Platform erişimi doğrulanıyor",
+      "groups": {
+        "access": "Erişim yönetimi",
+        "billing": "Faturalandırma ve abonelikler",
+        "operations": "Platform işlemleri"
+      },
+      "loadingAnalytics": "Platform analizleri yükleniyor",
+      "loadingMetrics": "Platform metrikleri yükleniyor",
       "metrics": {
         "bannedUsers": "Yasaklı Kullanıcılar",
         "bannedUsersDescription": "Erişimi kısıtlandı",
@@ -295,6 +306,9 @@
         "totalUsers": "Toplam Kullanıcı",
         "totalUsersDescription": "Kayıtlı platform hesapları"
       },
+      "metricsUnavailable": "Platform metrikleri kullanılamıyor. Tekrar deneyin.",
+      "platformDescription": "Platform genelindeki hesapları, çalışma alanlarını ve etkinlikleri inceleyin, ardından bir yönetim çalışma alanı açın.",
+      "platformTitle": "Platforma genel bakış",
       "quickActions": {
         "billing": {
           "description": "Gelir metrikleri ve abonelik durumu",
@@ -318,7 +332,7 @@
           "title": "Kullanıcı Yönetimi"
         }
       },
-      "title": "Genel Bakış"
+      "refreshAccess": "Devam etmeden önce platform erişimini doğrulamak için genel bakışı yenileyin."
     },
     "settings": {
       "actions": {

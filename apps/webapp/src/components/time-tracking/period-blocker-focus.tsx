@@ -109,7 +109,7 @@ function BlockerFocusArrival({
 
 	if (outcome !== "resolved" && outcome !== "not_shown") return null;
 	return (
-		<div className="px-4 lg:px-6">
+		<div>
 			<ArrivalNotice>
 				{outcome === "resolved"
 					? t(

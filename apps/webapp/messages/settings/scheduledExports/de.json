@@ -35,7 +35,6 @@
         "previousWeekDesc": "Daten der vorherigen Woche exportieren (Mo-So)"
       },
       "deleteDialog": {
-        "cancel": "Abbrechen",
         "confirm": "Löschen",
         "description": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Dieser Vorgang kann nicht rückgängig gemacht werden.",
         "title": "Geplanten Export löschen"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Löschen fehlgeschlagen",
         "loadFailed": "Laden der geplanten Exporte fehlgeschlagen",
-        "toggleFailed": "Umschalten fehlgeschlagen"
+        "retry": "Erneut versuchen"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Der Eigentümer des Zeitplans, {owner}, ist kein Organisationsadministrator mehr. Machen Sie zuerst sich selbst oder einen anderen Organisationsadministrator zum Eigentümer."
       },
       "filters": {
         "allEmployees": "Alle Mitarbeiter",
@@ -284,8 +286,9 @@
         "paused": "Pausiert",
         "schedule": "Zeitplan",
         "status": "Status",
-        "title": "Aktive Zeitpläne",
-        "type": "Typ"
+        "titleAll": "Zeitpläne",
+        "type": "Typ",
+        "unknownOwner": "Unbekannter Eigentümer"
       },
       "title": "Geplante Exporte",
       "toast": {

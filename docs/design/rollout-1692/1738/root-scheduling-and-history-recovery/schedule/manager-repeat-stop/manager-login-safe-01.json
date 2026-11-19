@@ -1,0 +1,10 @@
+{
+  "sourceSha256": "e1d083acd3cd090056566e72aa723bdfc7a875883c6f3238b8b8c890f156e09a",
+  "normalLoginSubmittedOnce": true,
+  "postLoginExecutionContextError": "init navigation destroyed wrapper context; settled UI read confirms authenticated dashboard",
+  "visiblePath": "/en",
+  "notifications": "denied",
+  "policy": "Only path/permission exported; raw dashboard text excluded",
+  "authSecretsPrintedOrAuthStateCopiedSavedRestored": false,
+  "privateLimit": "An earlier UI state output included generated synthetic roster emails; it is excluded from the safe allowlist. No password, token or auth cookie was printed."
+}

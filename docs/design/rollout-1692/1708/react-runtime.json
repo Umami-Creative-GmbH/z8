@@ -1,0 +1,17 @@
+{
+  "session": "next-dev-loop-c4b9346ae852",
+  "version": "0.39.1",
+  "treeSucceeded": true,
+  "treeRelevantLines": [
+    "202 3083 3081 Prerender(Prefetch(DeputyDecisionsPage))",
+    "204 3085 3084 Prefetch(Server(DeputyDecisionsContent))",
+    "205 3086 3085 Server(DeputyDecisionsView)",
+    "207 3088 3087 Server(DeputyDecisionsHeader)",
+    "208 3109 3108 Forget(Table)"
+  ],
+  "inspectSucceeded": true,
+  "inspect": "Forget(Table) #3109\nprops:\n  mobileLayout: \"stacked\"\n  aria-label: \"Decided by your deputy\"\n  children: [<Lazy />, <Lazy />]\nhooks:\n  [0] Ref: <table />\n  [1] ImperativeHandle: undefined\n  [2] LayoutEffect: Table[useLayoutEffect()]() {}\nrendered by: DeputyDecisionsView > DeputyDecisionsContent > DeputyDecisionsPage",
+  "rendersStartSucceeded": true,
+  "rendersStopSucceeded": true,
+  "limitation": "Brief dev instrumentation is not a performance benchmark. Later phone probes met an optional notification panel; only the documented native tree/inspect/profile are accepted."
+}

@@ -1,0 +1,14 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+DOMException: SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.
+    at #evaluate (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:402:19)
+    at async ExecutionContext.evaluate (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:288:16)
+    at async IsolatedWorld.evaluate (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/IsolatedWorld.js:104:16)
+    at async CdpFrame.evaluate (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:364:20)
+    at async CdpPage.evaluate (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:837:20)
+    at async capture (file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:29:42)
+    at async file:///X:/t3-code/worktrees/z8/t3-e6b2a943-63dbdfdd0a9cec85/docs/design/rollout-1692/1835/verify-runtime.mjs:39:2
+
+Node.js v26.9.0

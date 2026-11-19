@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Générer des données d'exemple pour les tests ou effacer les données temporelles existantes",
+      "employeesLoadError": {
+        "description": "Les données de démonstration sont générées pour vos employés, la génération est donc indisponible tant qu'ils ne sont pas chargés.",
+        "retrying": "Nouvelle tentative…",
+        "title": "Impossible de charger les employés"
+      },
       "errors": {
-        "generationFailed": "La génération a échoué. Veuillez réessayer.",
-        "noOrganization": "Aucune organisation sélectionnée"
+        "generationFailed": "La génération a échoué. Veuillez réessayer."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Tous les employés ({count})",
+          "allCountUnavailable": "Tous les employés",
           "label": "Employés",
           "selectSpecific": "Sélectionner des employés spécifiques"
         }

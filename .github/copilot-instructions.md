@@ -2,17 +2,18 @@
 applyTo: "**/*.{ts,tsx,js,jsx}"
 ---
 
-# Ultracite Code Standards
+# Code Standards
 
-This project uses **Ultracite**, a zero-config Biome preset that enforces strict code quality standards through automated formatting and linting.
+This project uses **oxlint** for JavaScript/TypeScript linting and **oxfmt** for formatting. The root configuration files define the rules for webapp and marketing.
 
 ## Quick Reference
 
-- **Format code**: `npx ultracite fix`
-- **Check for issues**: `npx ultracite check`
-- **Diagnose setup**: `npx ultracite doctor`
+- **Format code**: `pnpm format`
+- **Check formatting**: `pnpm format:check`
+- **Lint code**: `pnpm lint`
+- **Fix lint issues**: `pnpm lint:fix`
 
-Biome (the underlying engine) provides extremely fast Rust-based linting and formatting. Most issues are automatically fixable.
+Run these commands from the repository root. For a focused change, pass file paths to `pnpm exec oxlint` and `pnpm exec oxfmt`.
 
 ---
 
@@ -111,11 +112,11 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 - Don't use `.only` or `.skip` in committed code
 - Keep test suites reasonably flat - avoid excessive `describe` nesting
 
-## When Biome Can't Help
+## Manual Review
 
-Biome's linter will catch most issues automatically. Focus your attention on:
+Automated checks complement review of:
 
-1. **Business logic correctness** - Biome can't validate your algorithms
+1. **Business logic correctness** - the linter cannot validate your algorithms
 2. **Meaningful naming** - Use descriptive names for functions, variables, and types
 3. **Architecture decisions** - Component structure, data flow, and API design
 4. **Edge cases** - Handle boundary conditions and error states
@@ -124,4 +125,4 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 
 ---
 
-Most formatting and common issues are automatically fixed by Biome. Run `npx ultracite fix` before committing to ensure compliance.
+Run lint and formatting checks on the files you changed before committing.

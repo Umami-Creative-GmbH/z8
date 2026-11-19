@@ -2,6 +2,9 @@
   "settings": {
     "apiKeys": {
       "active": "Aktiv",
+      "contextRetry": "Aktualisieren Sie Ihren Organisationskontext, um fortzufahren.",
+      "contextUnavailable": "Organisationskontext nicht verfügbar",
+      "copyFailed": "Schlüssel konnte nicht kopiert werden. Versuchen Sie es erneut.",
       "copyKey": "API-Schlüssel kopieren",
       "copyPrefix": "Präfix kopieren",
       "create": "Schlüssel erstellen",
@@ -9,6 +12,7 @@
       "createdBy": "von {name}",
       "createDescription": "Erstellen Sie einen neuen API-Schlüssel für den programmatischen Zugriff. Der Schlüssel wird nur einmal angezeigt.",
       "createdOn": "Erstellt am {date}",
+      "createFailed": "Schlüsselerstellung konnte nicht bestätigt werden. Aktualisieren Sie die Liste, bevor Sie es erneut versuchen.",
       "createTitle": "API-Schlüssel erstellen",
       "creatorDeparted": "Ausgeschieden",
       "deleted": "API-Schlüssel gelöscht",
@@ -24,6 +28,8 @@
         "creator": "Erstellt von",
         "creatorDeparted": "{name} (ausgeschieden)",
         "ip": "IP-Adresse",
+        "kind": "API-Schlüssel",
+        "loading": "API-Schlüssel wird geladen",
         "noRateLimit": "Aus",
         "noRequests": "Keine Anfragen in den letzten 90 Tagen.",
         "rateLimit": "Ratenbegrenzung",
@@ -80,13 +86,19 @@
         "scopes": "Berechtigungen",
         "scopesRequired": "Wählen Sie mindestens eine Berechtigung aus"
       },
+      "hideKey": "Schlüssel ausblenden",
       "keyCopied": "API-Schlüssel in die Zwischenablage kopiert",
+      "keyHidden": "Schlüssel ausgeblendet",
       "lastUsed": "Zuletzt verwendet",
+      "loading": "API-Schlüssel werden geladen",
       "name": "Name",
       "neverExpires": "Läuft nie ab",
       "noPermissions": "Keine Berechtigungen",
       "prefix": "Schlüssel-Präfix",
       "prefixCopied": "Schlüssel-Präfix kopiert",
+      "retryHelp": "Aktualisieren Sie diese Liste, um die aktuellen Schlüssel zu bestätigen. Zuvor geladene Datensätze bleiben erhalten.",
+      "revealKey": "Schlüssel anzeigen",
+      "revokeUnknown": "Widerruf konnte nicht bestätigt werden. Aktualisieren Sie die Liste, bevor Sie es erneut versuchen.",
       "scopeLabel": {
         "absencesRead": "Abwesenheiten lesen",
         "absencesReadHealth": "Gesundheitsdetails zu Abwesenheiten lesen",
@@ -120,8 +132,12 @@
       "showWarningTitle": "Wichtig:",
       "status": "Status",
       "title": "API-Schlüssel",
+      "unavailable": "API-Schlüssel nicht verfügbar",
+      "unavailableDescription": "Ihre Einstellungen konnten nicht geladen werden. Versuchen Sie es erneut, um diese Seite zu aktualisieren.",
+      "unavailableTitle": "Entwicklerzugriff nicht verfügbar",
       "unknownCreator": "ein ehemaliger Administrator",
       "updated": "API-Schlüssel aktualisiert",
+      "updateUnknown": "Aktualisierung konnte nicht bestätigt werden. Aktualisieren Sie diesen Schlüssel, bevor Sie es erneut versuchen.",
       "usage": "{count} von {max} Schlüsseln verwendet"
     },
     "branding": {
@@ -201,6 +217,7 @@
         "defaultUrls": "Standard-URLs",
         "defaultUrlsDescription": "Diese plattformverwalteten URLs funktionieren automatisch ohne benutzerdefinierte DNS-Einrichtung.",
         "deleteAria": "Benutzerdefinierte Domain {domain} löschen",
+        "deleteConfirm": "Domain löschen",
         "deleted": "Domain gelöscht",
         "deleteDescription": "Sind Sie sicher, dass Sie \"{domain}\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden. Benutzer können sich dann nicht mehr über diese benutzerdefinierte Domain anmelden.",
         "deleteFailed": "Fehler beim Löschen der Domain",
@@ -263,9 +280,10 @@
         "apiKeyHint": "Leer lassen, um den bestehenden Schlüssel beizubehalten. Erhalten Sie Ihren API-Schlüssel von resend.com",
         "create": "Konfiguration erstellen",
         "delete": "Konfiguration löschen",
-        "deleteConfirm": "Sind Sie sicher, dass Sie diese E-Mail-Konfiguration löschen möchten?",
+        "deleteConfirmNamed": "E-Mail-Konfiguration für {fromEmail} löschen? Organisations-E-Mails verwenden dann wieder den Standardabsender des Systems.",
         "deleted": "E-Mail-Konfiguration gelöscht",
         "deleteFailed": "Löschen fehlgeschlagen",
+        "deleteTitle": "E-Mail-Konfiguration löschen?",
         "description": "Konfigurieren Sie einen benutzerdefinierten E-Mail-Anbieter für Ihre Organisation. Alle E-Mails der Organisation verwenden diese Konfiguration anstelle des Systemstandards.",
         "fromEmail": "Absender-E-Mail",
         "fromName": "Absendername",
@@ -356,10 +374,9 @@
           "title": "Domäne"
         },
         "hero": {
-          "description": "Konfigurieren Sie SSO, SCIM und Durchsetzung für die Organisation {organizationId} mit geschützter Aktivierung.",
-          "eyebrow": "Unternehmensidentität",
           "title": "Checkliste für operative Befehle"
         },
+        "progress": "{completed} von {total} Schritten abgeschlossen",
         "provider": {
           "action": {
             "save": "Anbieter speichern"
@@ -453,7 +470,6 @@
           },
           "description": "Die SCIM-Verifizierung wird aktualisiert, nachdem Ihr Identitätsanbieter eine Testbenutzer- oder Gruppenänderung gesendet hat.",
           "dialog": {
-            "cancel": "Abbrechen",
             "decommission": {
               "description": "Dies nimmt die SCIM-Bereitstellung dauerhaft außer Betrieb und kann nicht rückgängig gemacht werden.",
               "title": "SCIM außer Betrieb nehmen"
@@ -602,6 +618,7 @@
         "deleteError": "Fehler beim Löschen der OAuth-Konfiguration",
         "description": "Konfigurieren Sie Ihre eigenen OAuth-Anmeldedaten für den Social-Login. Dies ermöglicht es Ihren Benutzern, sich mit den OAuth-Apps Ihrer Organisation anstelle von geteilten Anmeldedaten anzumelden.",
         "developerConsole": "{provider} Entwicklerkonsole",
+        "editAria": "{provider}-Anmeldung bearbeiten",
         "editDescription": "Aktualisieren Sie Ihre OAuth-Anmeldedaten.",
         "editTitle": "{provider} OAuth bearbeiten",
         "empty": "Keine benutzerdefinierten Social-OAuth-Anbieter konfiguriert.",
@@ -616,9 +633,11 @@
         "keyId": "Key-ID",
         "pasteYourP8PrivateKeyContents": "Inhalt des privaten .p8-Schlüssels einfügen",
         "privateKey": "Privater Schlüssel (.p8)",
+        "removeAria": "{provider}-Anmeldung entfernen",
         "removed": "{provider} OAuth entfernt",
         "removeDialogDescription": "Sind Sie sicher, dass Sie diese OAuth-Konfiguration entfernen möchten? Benutzer werden auf die geteilten OAuth-Anmeldedaten zurückgreifen (falls verfügbar).",
         "removeDialogTitle": "Social-OAuth-Anbieter entfernen",
+        "removeDialogTitleNamed": "{provider}-Anmeldung entfernen?",
         "teamId": "Team-ID",
         "title": "Social-Login-Anbieter",
         "unverified": "Nicht verifiziert",
@@ -629,8 +648,9 @@
         "addError": "Fehler beim Hinzufügen des SSO-Anbieters",
         "addSuccess": "SSO-Anbieter erfolgreich hinzugefügt",
         "addTitle": "SSO-Anbieter hinzufügen",
+        "deleteConfirm": "Anbieter löschen",
         "deleteDialogDescription": "Sind Sie sicher, dass Sie diesen SSO-Anbieter löschen möchten? Benutzer können sich dann nicht mehr über diesen Identitätsanbieter anmelden.",
-        "deleteDialogTitle": "SSO-Anbieter löschen",
+        "deleteDialogTitleNamed": "SSO-Anbieter {provider} löschen?",
         "deleteError": "Fehler beim Löschen des SSO-Anbieters",
         "deleteProviderAria": "SSO-Anbieter {provider} löschen",
         "deleteSuccess": "SSO-Anbieter gelöscht",
@@ -641,6 +661,7 @@
         "emailDomainHelp": "Benutzer mit dieser E-Mail-Domain können SSO verwenden",
         "empty": "Noch keine SSO-Anbieter konfiguriert.",
         "emptyDescription": "Fügen Sie einen OIDC-Anbieter hinzu, um Enterprise Single Sign-On zu aktivieren.",
+        "generateToken": "TXT-Token generieren",
         "guide": {
           "addDescription": "Befolgen Sie die Einrichtungsanweisungen Ihres Anbieters und verbinden Sie ihn anschließend mit Ihrer Organisation.",
           "afterSave": "Bestätigen Sie nach dem Speichern Ihre E-Mail-Domain mit dem DNS-TXT-Eintrag in Z8. Testen Sie die Anmeldung mit einem vorgesehenen Testbenutzer, während Ihre aktuelle Administratorsitzung geöffnet bleibt. Speichern Sie in der geführten Einrichtung dieselbe Anbieter-ID und E-Mail-Domain, die in der Anbieterliste angezeigt werden, und erfassen Sie das beobachtete Anmeldeergebnis manuell, bevor Sie „SSO vorschreiben“ in Betracht ziehen. Das Speichern und die DNS-Verifizierung belegen keine erfolgreiche Anmeldung.",
@@ -735,7 +756,6 @@
         "providerIdHelp": "Ein eindeutiger Bezeichner für diesen Anbieter (kleingeschrieben, keine Leerzeichen)",
         "providerIdInvalid": "Die Provider-ID darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
         "title": "Identitätsanbieter",
-        "token": "Token",
         "tokenError": "Fehler beim Generieren des Domain-Verifizierungstokens",
         "tokenGenerated": "Verifizierungstoken generiert",
         "txtToken": "TXT-Token:",

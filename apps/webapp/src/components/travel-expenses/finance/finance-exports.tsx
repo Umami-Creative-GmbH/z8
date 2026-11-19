@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import {
 	IconCash,
 	IconDownload,
@@ -11,7 +12,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	type CreateTravelExpenseExportResult,
@@ -39,7 +40,14 @@ import {
 	type BulkReimbursementItem,
 	type BulkReimbursementSkippedItem,
 } from "./bulk-reimbursement-dialog";
+import { FinanceReadBoundary } from "./finance-read-boundary";
+import { readFinanceResult } from "./finance-read-result";
 import { settlementTitle } from "./settlement-title";
+import {
+	type FinanceSubmission,
+	useFinanceCommand,
+	useFinanceReadScope,
+} from "./use-finance-command";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -169,10 +177,13 @@ function ExportSelection({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const attempt = useRef<{ selection: string; key: string } | null>(null);
+	const command = useFinanceCommand(JSON.stringify(rows.map((row) => row.revisionId)));
 	const [problem, setProblem] = useState<string | null>(null);
 	const form = useForm({
+		onSubmitMeta: { submission: null as FinanceSubmission | null },
 		defaultValues: { revisionIds: [] as string[] },
-		onSubmit: async ({ value, formApi }) => {
+		onSubmit: async ({ value, formApi, meta }) => {
+			if (!meta.submission || !command.isCurrent(meta.submission)) return;
 			setProblem(null);
 			const chosen = new Set(value.revisionIds);
 			const selection = rows
@@ -187,6 +198,7 @@ function ExportSelection({
 				idempotencyKey: attempt.current.key,
 				selection,
 			});
+			if (!command.isCurrent(meta.submission)) return;
 			if (!result.success) {
 				// Keep the key: sending the same selection again is a safe retry.
 				setProblem(
@@ -223,12 +235,24 @@ function ExportSelection({
 
 	return (
 		// Client-side TanStack Form submit (docs/refs/forms.md); the finance page needs JS.
-		// react-doctor-disable-next-line react-doctor/no-prevent-default
-		<form
+		<ClientForm
 			noValidate
-			onSubmit={(event) => {
-				event.preventDefault();
-				void form.handleSubmit();
+			stopPropagation
+			onSubmit={() => {
+				const submission = command.reserve();
+				if (!submission) return;
+				void form
+					.handleSubmit({ submission })
+					.catch(() => {
+						if (command.isCurrent(submission))
+							setProblem(
+								t(
+									"travelExpenses.finance.exports.errors.failed",
+									"The export could not be created. Please retry.",
+								),
+							);
+					})
+					.finally(() => command.release(submission));
 			}}
 			className="space-y-3"
 			aria-label={t("travelExpenses.finance.exports.form.label", "Create an export")}
@@ -345,7 +369,7 @@ function ExportSelection({
 				})}
 			>
 				{({ isSubmitting, count }) => (
-					<Button type="submit" disabled={isSubmitting || count === 0}>
+					<Button type="submit" disabled={isSubmitting || command.busy || count === 0}>
 						{isSubmitting ? (
 							<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 						) : (
@@ -355,7 +379,7 @@ function ExportSelection({
 					</Button>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }
 
@@ -395,10 +419,23 @@ function MarkBatchReimbursed({
 	const queryClient = useQueryClient();
 	const [loading, setLoading] = useState(false);
 	const [reimbursement, setReimbursement] = useState<BatchReimbursement | null>(null);
+	const arrival = useRef<symbol | null>(null);
+	const pendingRead = useRef<symbol | null>(null);
+	useLayoutEffect(() => {
+		arrival.current = Symbol(batch.id);
+		return () => {
+			arrival.current = null;
+		};
+	}, [batch.id]);
 
 	const open = async () => {
+		const activation = arrival.current;
+		if (!activation || pendingRead.current) return;
+		pendingRead.current = activation;
 		setLoading(true);
 		const result = await getTravelExpenseExportReimbursement(batch.id).catch(() => null);
+		if (pendingRead.current === activation) pendingRead.current = null;
+		if (arrival.current !== activation) return;
 		setLoading(false);
 		if (!result?.success || result.data.status !== "ready") {
 			toast.error(
@@ -458,22 +495,29 @@ function BatchItem({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const [busy, setBusy] = useState(false);
+	const command = useFinanceCommand(`export-batch:${batch.id}`);
+	const busy = command.busy;
 
 	const run = async (
 		action: () => Promise<{ success: boolean }>,
 		failure: string,
 	): Promise<void> => {
-		setBusy(true);
+		const submission = command.reserve();
+		if (!submission) return;
 		// Promise#finally rather than try/finally: the React Compiler cannot
 		// compile try statements without a catch clause.
-		await action()
+		await Promise.resolve()
+			.then(() => (command.isCurrent(submission) ? action() : { success: false }))
 			.then((result) => {
-				if (!result.success) toast.error(failure);
+				if (command.isCurrent(submission) && !result.success) toast.error(failure);
+			})
+			.catch(() => {
+				if (command.isCurrent(submission)) toast.error(failure);
 			})
 			.finally(() => {
-				setBusy(false);
-				onChanged();
+				const current = command.isCurrent(submission);
+				command.release(submission);
+				if (current) onChanged();
 			});
 	};
 
@@ -591,16 +635,25 @@ function BatchItem({
  * the export permission; an export never records a reimbursement.
  */
 export function FinanceExports() {
+	return (
+		<FinanceReadBoundary>
+			<FinanceExportsArrival />
+		</FinanceReadBoundary>
+	);
+}
+
+function FinanceExportsArrival() {
+	const scope = useFinanceReadScope();
+	return <FinanceExportsContent key={scope} scope={scope} />;
+}
+
+function FinanceExportsContent({ scope }: { scope: string | null }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const queryKey = queryKeys.travelExpenses.financeExports();
+	const queryKey = [...queryKeys.travelExpenses.financeExports(), scope];
 	const { data, isError, isFetching, isLoading, refetch } = useQuery({
 		queryKey,
-		queryFn: async () => {
-			const result = await getTravelExpenseExports();
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
+		queryFn: () => readFinanceResult(getTravelExpenseExports()),
 		placeholderData: (previous) => previous,
 		// Follow running jobs until they finish.
 		refetchInterval: (query) =>
@@ -613,6 +666,19 @@ export function FinanceExports() {
 	const refresh = () => {
 		void queryClient.invalidateQueries({ queryKey });
 	};
+	if (data === null)
+		return isError ? (
+			<TravelExpenseLoadError
+				message={t(
+					"travelExpenses.finance.exports.errors.load",
+					"Unable to load exports. Please retry.",
+				)}
+				retry={() => {
+					void refetch();
+				}}
+				isRetrying={isFetching}
+			/>
+		) : null;
 
 	return (
 		<section aria-labelledby="travel-expense-exports-heading" className="space-y-4">
@@ -627,7 +693,7 @@ export function FinanceExports() {
 					)}
 				</p>
 			</div>
-			{isError && !data ? (
+			{isError && (
 				<TravelExpenseLoadError
 					message={t(
 						"travelExpenses.finance.exports.errors.load",
@@ -638,20 +704,25 @@ export function FinanceExports() {
 					}}
 					isRetrying={isFetching}
 				/>
-			) : isLoading || !data ? (
-				<div>
-					<p className="sr-only">
-						{t("travelExpenses.finance.exports.loading", "Loading exports…")}
-					</p>
-					<Skeleton aria-hidden="true" className="h-48 w-full" />
-				</div>
+			)}
+			{isLoading || !data ? (
+				isError ? null : (
+					<div>
+						<p className="sr-only">
+							{t("travelExpenses.finance.exports.loading", "Loading exports…")}
+						</p>
+						<Skeleton aria-hidden="true" className="h-48 w-full" />
+					</div>
+				)
 			) : (
 				<>
-					<ExportSelection
-						rows={data.exportable}
-						maxRevisions={data.maxRevisions}
-						onChanged={refresh}
-					/>
+					<fieldset disabled={isError || isFetching} className="min-w-0">
+						<ExportSelection
+							rows={data.exportable}
+							maxRevisions={data.maxRevisions}
+							onChanged={refresh}
+						/>
+					</fieldset>
 					{data.batches.length > 0 && (
 						<div className="space-y-2">
 							<h3 className="text-base font-medium">
@@ -664,7 +735,7 @@ export function FinanceExports() {
 											<BatchItem
 												key={batch.id}
 												batch={batch}
-												canSettle={data.canSettle}
+												canSettle={data.canSettle && !isError && !isFetching}
 												onChanged={refresh}
 											/>
 										))}

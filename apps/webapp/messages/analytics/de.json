@@ -39,11 +39,13 @@
       "byCostCenter": "Nach Kostenstelle",
       "byManager": "Nach Manager",
       "byTeam": "Nach Team",
+      "chartValues": "Wochenwerte anzeigen",
       "costCenter": "Kostenstelle",
       "currentOvertime": "Aktuelle Überstunden",
       "description": "Verfolgen Sie den wöchentlichen Überstundenabbau in den Teams.",
       "errors": {
-        "loadData": "Daten zum Überstundenabbau konnten nicht geladen werden"
+        "loadData": "Daten zum Überstundenabbau konnten nicht geladen werden",
+        "retryDescription": "Überstundendaten konnten nicht geladen werden. Versuchen Sie es für den ausgewählten Zeitraum und die Filter erneut."
       },
       "filters": {
         "allCostCenters": "Alle Kostenstellen",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Verbesserung der Gruppen",
       "improvingGroupsDescription": "Gruppen mit sinkenden Überstunden",
+      "loading": "Überstundendaten werden geladen",
       "manager": "Manager",
       "previousOvertime": "Vorherige Überstunden",
       "previousPeriodDescription": "Im Vergleich zum vorherigen Zeitraum",
+      "refreshing": "Überstundendaten werden aktualisiert",
       "selectedRangeDescription": "Für den ausgewählten Datumsbereich und die Filter",
       "title": "Überstundenabbau",
       "trendDirection": "Trendrichtung",
@@ -92,6 +96,10 @@
         "title": "Genehmigungsengpässe",
         "unavailable": "Genehmigungsengpässe konnten nicht geladen werden"
       },
+      "chartValues": "Diagrammwerte anzeigen",
+      "errors": {
+        "retryDescription": "Einige Analysedaten konnten nicht geladen werden. Zuvor geladene Werte sind, falls angezeigt, möglicherweise veraltet."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Von entschiedenen Anfragen genehmigt",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Analysedaten werden geladen",
+      "refreshing": "Analysen werden aktualisiert…",
       "workHoursByTeam": {
         "description": "Gesamte protokollierte Arbeitsstunden pro Team",
         "title": "Arbeitsstunden nach Team"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Fehler beim Laden der Teamleistungsdaten"
       },
+      "loading": "Teamleistungsdaten werden geladen",
       "onTrack": "Im Plan",
+      "refreshFailed": "Aktualisierung fehlgeschlagen. Es werden zuvor geladene Daten für diesen Zeitraum angezeigt. Der Export ist nicht verfügbar, bis ein erneuter Versuch erfolgreich ist.",
+      "refreshing": "Teamleistungsdaten werden aktualisiert",
       "variance": {
         "description": "Abweichung der Stunden von den erwarteten Arbeitsstunden",
         "empty": "Keine Abweichungsdaten verfügbar",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Zugewiesen",
+      "allowanceMissing": "Urlaubsanspruch nicht konfiguriert",
+      "allowanceSource": "Für einige Mitarbeitende ist kein Urlaubsanspruch hinterlegt. Die Summen berücksichtigen nur die vorhandenen hinterlegten Ansprüche.",
       "balance": {
         "description": "Zugewiesene, genommene und verbleibende Tage pro Mitarbeiter",
         "title": "Urlaubssaldo"
       },
-      "daysRemaining": "{count} Tage verbleibend",
-      "daysTaken": "{count} Tage genommen",
+      "dayValue": "{count} Tage",
+      "description": "Vergleichen Sie die Urlaubsnutzung und Urlaubssalden der Mitarbeitenden für den ausgewählten Organisationszeitraum.",
       "errors": {
-        "loadData": "Fehler beim Laden der Urlaubstrenddaten"
+        "loadData": "Fehler beim Laden der Urlaubstrenddaten",
+        "retryDescription": "Urlaubsdaten konnten nicht geladen werden. Versuchen Sie es für den ausgewählten Zeitraum erneut."
       },
+      "loading": "Urlaubsdaten werden geladen",
       "monthlyUsage": {
         "description": "Genommene Urlaubstage pro Monat",
         "empty": "Keine monatlichen Nutzungsdaten verfügbar",
         "title": "Monatliche Urlaubsnutzung"
       },
+      "monthlyValues": "Monatswerte anzeigen",
       "peakMonths": {
         "description": "Monate mit der höchsten Urlaubsaktivität",
         "empty": "Keine Daten zu Spitzenmonaten verfügbar",
         "title": "Urlaubs-Spitzenmonate"
       },
+      "refreshing": "Urlaubsdaten werden aktualisiert",
       "remaining": "Verbleibend",
       "taken": "Genommen",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Keine Daten zu täglichen Stunden verfügbar",
         "title": "Tägliche Arbeitsstunden"
       },
+      "dailyStatus": "Tagesstatus anzeigen",
+      "dailyValues": "Tagesstunden anzeigen",
       "distribution": {
         "description": "Vergleich der Arbeitsstunden von Mitarbeitern (horizontales Balkendiagramm)",
         "empty": "Keine Verteilungsdaten verfügbar",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Erwartete Stunden",
       "hoursPerWeekAbbreviation": "Std./Wo.",
+      "loading": "Analysedaten zu Arbeitszeiten werden geladen",
+      "refreshFailed": "Aktualisierung fehlgeschlagen. Es werden zuvor geladene Daten für diesen Zeitraum angezeigt. Der Export ist nicht verfügbar, bis ein erneuter Versuch erfolgreich ist.",
+      "refreshing": "Analysedaten zu Arbeitszeiten werden aktualisiert",
       "variance": "Abweichung",
       "varianceTrend": {
         "description": "Abweichung der Arbeitsstunden von den erwarteten Stunden im Zeitverlauf",
         "empty": "Keine Trenddaten verfügbar",
-        "title": "Trend bei Über- und Unterstunden"
+        "title": "Trend bei Über- und Unterstunden",
+        "unavailable": "Tägliche Stundenwerte für Über- und Minusstunden sind in diesem Bericht nicht verfügbar. Der erfasste Tagesstatus wird unten angezeigt."
       }
     }
   }

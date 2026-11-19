@@ -1,0 +1,159 @@
+{
+  "phase": "historical",
+  "head": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+      "rawSha256": "9794a721cfb9b787727a28dd5293087a1500a72d800fcff836794f65ad5ae3d4",
+      "lfSha256": "9794a721cfb9b787727a28dd5293087a1500a72d800fcff836794f65ad5ae3d4"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+      "rawSha256": "ff740dfa2d89e1b9fab7edbde1f4f294f5b80829ceb03f42b9cb7e643f62a342",
+      "lfSha256": "ff740dfa2d89e1b9fab7edbde1f4f294f5b80829ceb03f42b9cb7e643f62a342"
+    }
+  ],
+  "sourceBoundary": "Only the exact a904 page and overview consumers overlaid; current shared shell, heading opt-ins, providers, children and domain owners retained. This is not the complete historical app.",
+  "fixture": "Own generated small admin,12 synthetic absences, first10 of12, range2026-11-01..15, one shared linked68byte note; unchanged same fixture throughout matched captures",
+  "rows": [
+    {
+      "name": "desktop-expanded-light-18px",
+      "image": "historical-desktop-expanded-light-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 1600,
+      "documentWidth": 1600,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "sidebar": "expanded",
+      "sidebarWidth": 288,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": null,
+      "recordScroll": null,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0,
+      "savedReload": true,
+      "originalReportedRecordViewport": 1600,
+      "originalReportedRecordScroll": 1600,
+      "recordMeasurementLimit": "No overflowing ancestor was found, so this helper fell back to document body on historical desktop. Original values are body widths, not certified local record widths."
+    },
+    {
+      "name": "desktop-collapsed-light-18px",
+      "image": "historical-desktop-collapsed-light-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 1600,
+      "documentWidth": 1600,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "sidebar": "collapsed",
+      "sidebarWidth": 63,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": null,
+      "recordScroll": null,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0,
+      "savedReload": true,
+      "originalReportedRecordViewport": 1600,
+      "originalReportedRecordScroll": 1600,
+      "recordMeasurementLimit": "No overflowing ancestor was found, so this helper fell back to document body on historical desktop. Original values are body widths, not certified local record widths."
+    },
+    {
+      "name": "phone-light-18px",
+      "image": "historical-phone-light-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 390,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": 352,
+      "recordScroll": 851,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0
+    },
+    {
+      "name": "phone-record-right-18px",
+      "image": "historical-phone-record-right-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 390,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": 352,
+      "recordScroll": 851,
+      "recordLeft": 499,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0,
+      "localHorizontalScroll": true
+    },
+    {
+      "name": "wide-expanded-dark-18px",
+      "image": "historical-wide-expanded-dark-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 2400,
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": true,
+      "sidebar": "expanded",
+      "sidebarWidth": 288,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": null,
+      "recordScroll": null,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0,
+      "originalReportedRecordViewport": 2400,
+      "originalReportedRecordScroll": 2400,
+      "recordMeasurementLimit": "No overflowing ancestor was found, so this helper fell back to document body on historical desktop. Original values are body widths, not certified local record widths."
+    }
+  ],
+  "limits": [
+    "96px bottom crop in public images; full raw private viewports retained",
+    "Default shared Pets and development/Rendering overlays may remain outside or at crop boundary",
+    "18px saved application preference, not true browser zoom",
+    "Long translations, physical device/wrapper and exhaustive navigation variants not certified"
+  ]
+}

@@ -20,6 +20,8 @@ interface EmailTemplateListProps {
 	}>;
 	selectedKey: string;
 	onSelect: (key: string) => void;
+	/** The level of the category headings, one below the surrounding heading. */
+	headingLevel?: "h2" | "h3";
 }
 
 function getCategoryLabels(
@@ -43,6 +45,7 @@ export function EmailTemplateList({
 	templates,
 	selectedKey,
 	onSelect,
+	headingLevel: CategoryHeading = "h2",
 }: EmailTemplateListProps) {
 	const { t } = useTranslate();
 	const groups = templates.reduce<Record<string, typeof templates>>(
@@ -69,12 +72,12 @@ export function EmailTemplateList({
 					className="space-y-2"
 					aria-labelledby={`email-template-${category}`}
 				>
-					<h2
+					<CategoryHeading
 						id={`email-template-${category}`}
 						className="px-1 font-medium text-muted-foreground text-xs uppercase tracking-wide"
 					>
 						{getCategoryLabels(t)[category] ?? category}
-					</h2>
+					</CategoryHeading>
 					<div className="space-y-2">
 						{entries.map(({ definition, override }) => {
 							const selected = definition.key === selectedKey;

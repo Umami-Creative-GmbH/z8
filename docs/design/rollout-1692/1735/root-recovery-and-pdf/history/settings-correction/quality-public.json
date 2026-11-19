@@ -1,0 +1,132 @@
+{
+  "kind": "Derived public quality metadata; original executable path removed",
+  "original": {
+    "path": ".tmp/1735-root-checks/quality.json",
+    "bytes": 4628,
+    "sha256": "e11b804a1300c14f4cfe9c42fc4579ab3d37da2c8f67a67fb10a6622b56a9717"
+  },
+  "data": {
+    "base": "5715cc1f8dabd78a79a8c256b137c430ebfe98d5",
+    "executable": "[LOCAL PNPM EXECUTABLE]",
+    "files": [
+      "src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "src/app/[locale]/(app)/reports/page.tsx",
+      "src/components/reports/date-range-picker.test.tsx",
+      "src/components/reports/date-range-picker.tsx",
+      "src/components/reports/export-buttons.tsx",
+      "src/components/reports/report-employee-selector.tsx",
+      "src/components/reports/report-filters.tsx",
+      "src/components/reports/report-preview-table.tsx",
+      "src/components/reports/report-summary-cards.tsx",
+      "src/components/reports/reports-container.tsx",
+      "src/hooks/use-report-employees.ts"
+    ],
+    "checks": [
+      {
+        "name": "format-explicit",
+        "args": [
+          "--config.verify-deps-before-run=false",
+          "--dir",
+          "apps/webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=./biome.jsonc",
+          "--line-width=100",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+          "src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+          "src/app/[locale]/(app)/reports/page-ui.test.tsx",
+          "src/app/[locale]/(app)/reports/page.tsx",
+          "src/components/reports/date-range-picker.test.tsx",
+          "src/components/reports/date-range-picker.tsx",
+          "src/components/reports/export-buttons.tsx",
+          "src/components/reports/report-employee-selector.tsx",
+          "src/components/reports/report-filters.tsx",
+          "src/components/reports/report-preview-table.tsx",
+          "src/components/reports/report-summary-cards.tsx",
+          "src/components/reports/reports-container.tsx",
+          "src/hooks/use-report-employees.ts"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "format-ordinary",
+        "args": [
+          "--config.verify-deps-before-run=false",
+          "--dir",
+          "apps/webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+          "src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+          "src/app/[locale]/(app)/reports/page-ui.test.tsx",
+          "src/app/[locale]/(app)/reports/page.tsx",
+          "src/components/reports/date-range-picker.test.tsx",
+          "src/components/reports/date-range-picker.tsx",
+          "src/components/reports/export-buttons.tsx",
+          "src/components/reports/report-employee-selector.tsx",
+          "src/components/reports/report-filters.tsx",
+          "src/components/reports/report-preview-table.tsx",
+          "src/components/reports/report-summary-cards.tsx",
+          "src/components/reports/reports-container.tsx",
+          "src/hooks/use-report-employees.ts"
+        ],
+        "exit": 1
+      },
+      {
+        "name": "lint",
+        "args": [
+          "--config.verify-deps-before-run=false",
+          "--dir",
+          "apps/webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=./biome.jsonc",
+          "--formatter-enabled=false",
+          "src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+          "src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+          "src/app/[locale]/(app)/reports/page-ui.test.tsx",
+          "src/app/[locale]/(app)/reports/page.tsx",
+          "src/components/reports/date-range-picker.test.tsx",
+          "src/components/reports/date-range-picker.tsx",
+          "src/components/reports/export-buttons.tsx",
+          "src/components/reports/report-employee-selector.tsx",
+          "src/components/reports/report-filters.tsx",
+          "src/components/reports/report-preview-table.tsx",
+          "src/components/reports/report-summary-cards.tsx",
+          "src/components/reports/reports-container.tsx",
+          "src/hooks/use-report-employees.ts"
+        ],
+        "exit": 0
+      },
+      {
+        "name": "doctor",
+        "args": [
+          "--config.verify-deps-before-run=false",
+          "exec",
+          "react-doctor",
+          "apps/webapp",
+          "--verbose",
+          "--scope",
+          "changed",
+          "--base",
+          "5715cc1f8dabd78a79a8c256b137c430ebfe98d5",
+          "--include-untracked",
+          "--no-score",
+          "--no-parallel",
+          "--no-supply-chain",
+          "--no-telemetry",
+          "--max-duration",
+          "90"
+        ],
+        "exit": 0
+      }
+    ]
+  }
+}

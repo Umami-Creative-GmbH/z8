@@ -1,0 +1,36 @@
+{
+  "candidate": "d18b3877bc9c0233860e84a71568a1b9454b727a",
+  "actor": "canonical small-manager",
+  "steps": [
+    {
+      "name": "unknown coverage actual Publish tooltip",
+      "visible": true
+    },
+    {
+      "name": "Coverage local Retry",
+      "heldReads": [
+        "getTargetHeatmapData"
+      ],
+      "pendingUi": {
+        "alerts": [
+          {
+            "text": "Templates or compliance information could not be refreshed. Check again before publishing.\n\nRetry",
+            "disabled": false
+          }
+        ],
+        "statuses": [
+          "Loading coverage…"
+        ],
+        "matchingRetry": null
+      },
+      "secondPointerDuplicateReads": 0,
+      "writeActions": 0
+    }
+  ],
+  "rawActionResponses": false,
+  "grantsChanged": false,
+  "failure": {
+    "name": "AssertionError",
+    "message": "The expression evaluated to a falsy value:\n\n  assert(a.held>=names.length)\n"
+  }
+}

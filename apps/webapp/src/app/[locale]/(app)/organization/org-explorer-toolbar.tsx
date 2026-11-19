@@ -2,7 +2,7 @@
 
 import { IconCheck, IconFilter, IconSearch, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -158,10 +158,19 @@ export function EmployeeSearch({
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState<OrgExplorerSearchResult[]>([]);
 	const [isSearching, setIsSearching] = useState(false);
+	const [failed, setFailed] = useState(false);
 	const requestSequence = useRef(0);
+	useEffect(
+		() => () => {
+			requestSequence.current += 1;
+		},
+		[],
+	);
 
 	async function handleChange(value: string) {
 		setQuery(value);
+		setFailed(false);
+		setResults([]);
 		const trimmed = value.trim();
 		const sequence = requestSequence.current + 1;
 		requestSequence.current = sequence;
@@ -172,11 +181,15 @@ export function EmployeeSearch({
 		}
 
 		setIsSearching(true);
-		const result = await searchOrgEmployees(trimmed);
+		const result = await searchOrgEmployees(trimmed).catch(() => ({
+			success: false as const,
+			error: undefined,
+		}));
 		if (sequence !== requestSequence.current) return;
 		setIsSearching(false);
 
 		if (!result.success) {
+			setFailed(true);
 			toast.error(
 				result.error ||
 					t(
@@ -199,12 +212,25 @@ export function EmployeeSearch({
 	}
 
 	return (
-		<div className="relative w-full md:max-w-xs">
+		<search
+			className="relative w-full min-w-0 sm:w-64"
+			onKeyDown={(event) => {
+				if (event.key === "Escape" && query) {
+					event.stopPropagation();
+					requestSequence.current += 1;
+					setQuery("");
+					setResults([]);
+					setIsSearching(false);
+					setFailed(false);
+				}
+			}}
+		>
 			<IconSearch
 				aria-hidden="true"
 				className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
 			/>
 			<input
+				aria-busy={isSearching || undefined}
 				aria-label={t("organization.orgChart.searchLabel", "Search employees")}
 				autoComplete="off"
 				className="h-9 w-full rounded-md border bg-background pr-3 pl-9 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
@@ -255,13 +281,21 @@ export function EmployeeSearch({
 							</button>
 						);
 					})}
-					{!isSearching && results.length === 0 ? (
+					{failed ? (
+						<p role="alert" className="px-3 py-2 text-sm">
+							{t(
+								"organization.orgChart.searchFailed",
+								"Could not search employees.",
+							)}
+						</p>
+					) : null}
+					{!isSearching && !failed && results.length === 0 ? (
 						<p className="px-3 py-2 text-sm text-muted-foreground">
 							{t("organization.orgChart.noSearchResults", "No employees found")}
 						</p>
 					) : null}
 				</div>
 			) : null}
-		</div>
+		</search>
 	);
 }

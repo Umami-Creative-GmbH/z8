@@ -9,6 +9,16 @@ const weeklySimpleSchedule = {
 };
 
 describe("calculateAdjustedExpectedHoursForRange", () => {
+	it("preserves the legacy calendar-prorated November target instead of replacing it with weekday requirements", () => {
+		expect(
+			calculateAdjustedExpectedHoursForRange({
+				schedule: weeklySimpleSchedule,
+				start: DateTime.fromISO("2026-11-01T00:00:00Z"),
+				end: DateTime.fromISO("2026-11-30T23:59:59Z"),
+				excludedDates: new Set(),
+			}),
+		).toBe(171.43);
+	});
 	it("subtracts scheduled work hours for holidays and approved absences", () => {
 		const expected = calculateAdjustedExpectedHoursForRange({
 			schedule: weeklySimpleSchedule,

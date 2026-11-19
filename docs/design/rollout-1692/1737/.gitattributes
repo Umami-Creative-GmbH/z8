@@ -1,0 +1,3 @@
+# Preserve actual downloaded CSV and raw command logs exactly across checkouts.
+*.csv -text
+*.log -text

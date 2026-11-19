@@ -1,0 +1,8 @@
+const{join}=await import('node:path'),{readFile}=await import('node:fs/promises');
+const rows=(await db.query('select file_name,match_kind,storage_key,storage_bucket,document_id from payslip_batch_file where organization_id=$1 and batch_id=$2 order by file_name',[org,initialId])).rows;
+globalThis.s3sdk=h.req('@aws-sdk/client-s3');globalThis.s3=new s3sdk.S3Client({endpoint:h.r.env.S3_PUBLIC_ENDPOINT,region:h.r.env.S3_PUBLIC_REGION,forcePathStyle:true,credentials:{accessKeyId:h.r.env.S3_PUBLIC_ACCESS_KEY_ID,secretAccessKey:h.r.env.S3_PUBLIC_SECRET_ACCESS_KEY}});
+const original=await readFile(join(h.directory,'inputs','100.pdf'));const proofs=[];
+for(const row of [...results.identicalFile.first,...results.identicalFile.second]){const data=await s3.send(new s3sdk.GetObjectCommand({Bucket:h.r.env.S3_PUBLIC_BUCKET,Key:row.storage_key}));const bytes=Buffer.from(await data.Body.transformToByteArray());check('real staged object exact bytes '+row.id,bytes.equals(original));proofs.push({bytes:bytes.length,sha256:h.sha(bytes),matchesOriginal:true});}
+check('five staged PDF records include matched ambiguous and unmatched states',rows.length===5&&rows.some(x=>x.match_kind==='ambiguous')&&rows.some(x=>x.match_kind==='unmatched'));
+check('unassigned included files honestly gate Save',await p.$eval('main',e=>[...e.querySelectorAll('button')].find(e=>e.textContent.trim()==='Save 3 payslips')?.disabled===true));
+results.initial={path:initialPath,batchId:initialId,staged:5,documents:0,actor:'fresh small-admin',payPeriod:'2026-11',source:await h.source(),matches:rows.map(x=>({name:x.file_name,kind:x.match_kind})),samePhysicalPdfStoredBytes:proofs};return{initialStaged:5,matches:results.initial.matches,exactObjectBytes:proofs};

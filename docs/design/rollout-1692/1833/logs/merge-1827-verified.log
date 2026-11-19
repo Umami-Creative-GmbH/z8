@@ -1,0 +1,252 @@
+Merge made by the 'ort' strategy.
+ .../complete/actions.integration.test.ts           |  65 +++
+ .../[locale]/onboarding/complete/page-client.tsx   | 439 ++++++++------
+ .../app/[locale]/onboarding/complete/page.test.tsx | 399 +++++++------
+ docs/design/rollout-1692/1827.md                   | 125 ++++
+ docs/design/rollout-1692/1827/accessibility.txt    |   0
+ .../rollout-1692/1827/after-completion-failed.png  | Bin 0 -> 123056 bytes
+ .../rollout-1692/1827/after-completion-pending.png | Bin 0 -> 136808 bytes
+ .../rollout-1692/1827/after-desktop-light.png      | Bin 0 -> 545311 bytes
+ docs/design/rollout-1692/1827/after-employee.png   | Bin 0 -> 99089 bytes
+ .../rollout-1692/1827/after-keyboard-focus.png     | Bin 0 -> 110183 bytes
+ .../rollout-1692/1827/after-phone-dark-large.png   | Bin 0 -> 106056 bytes
+ .../design/rollout-1692/1827/after-phone-light.png | Bin 0 -> 97265 bytes
+ docs/design/rollout-1692/1827/after-runtime.json   | 647 +++++++++++++++++++++
+ .../rollout-1692/1827/after-summary-failed.png     | Bin 0 -> 84914 bytes
+ .../rollout-1692/1827/after-wide-dark-large.png    | Bin 0 -> 301166 bytes
+ .../rollout-1692/1827/agent-browser-guide.txt      | 582 ++++++++++++++++++
+ .../1827/attempt1/after-desktop-light.png          | Bin 0 -> 201724 bytes
+ .../1827/attempt1/after-phone-dark-large.png       | Bin 0 -> 103152 bytes
+ .../1827/attempt1/after-phone-light.png            | Bin 0 -> 87815 bytes
+ .../rollout-1692/1827/attempt1/after-runtime.json  | 259 +++++++++
+ .../1827/attempt1/after-wide-dark-large.png        | Bin 0 -> 845764 bytes
+ .../1827/attempt2/after-desktop-light.png          | Bin 0 -> 354206 bytes
+ .../1827/attempt2/after-phone-dark-large.png       | Bin 0 -> 108218 bytes
+ .../1827/attempt2/after-phone-light.png            | Bin 0 -> 106650 bytes
+ .../rollout-1692/1827/attempt2/after-runtime.json  | 526 +++++++++++++++++
+ .../1827/attempt2/after-wide-dark-large.png        | Bin 0 -> 1409345 bytes
+ .../rollout-1692/1827/attempt3/after-runtime.json  | 315 ++++++++++
+ .../rollout-1692/1827/attempt4/after-runtime.json  | 315 ++++++++++
+ .../rollout-1692/1827/attempt5/after-runtime.json  | 315 ++++++++++
+ .../rollout-1692/1827/attempt6/after-runtime.json  | 315 ++++++++++
+ .../rollout-1692/1827/attempt7/after-runtime.json  | 315 ++++++++++
+ .../rollout-1692/1827/before-desktop-light.png     | Bin 0 -> 659953 bytes
+ docs/design/rollout-1692/1827/before-final.txt     |   0
+ .../rollout-1692/1827/before-keyboard-focus.png    | Bin 0 -> 139012 bytes
+ .../rollout-1692/1827/before-phone-dark-large.png  | Bin 0 -> 143072 bytes
+ .../rollout-1692/1827/before-phone-light.png       | Bin 0 -> 225210 bytes
+ docs/design/rollout-1692/1827/before-runtime.json  | 355 +++++++++++
+ .../rollout-1692/1827/before-wide-dark-large.png   | Bin 0 -> 395621 bytes
+ docs/design/rollout-1692/1827/biome-explicit.txt   |   1 +
+ docs/design/rollout-1692/1827/biome-final.txt      |   1 +
+ docs/design/rollout-1692/1827/biome-format.txt     | 189 ++++++
+ docs/design/rollout-1692/1827/biome-layout.txt     |   1 +
+ docs/design/rollout-1692/1827/biome-postgres.txt   |  21 +
+ docs/design/rollout-1692/1827/biome-strict.txt     |   1 +
+ docs/design/rollout-1692/1827/biome-tests.txt      |   1 +
+ docs/design/rollout-1692/1827/cleanup.json         |   9 +
+ docs/design/rollout-1692/1827/cleanup.mjs          |  18 +
+ docs/design/rollout-1692/1827/compare.mjs          |  14 +
+ docs/design/rollout-1692/1827/contrast.json        | 148 +++++
+ docs/design/rollout-1692/1827/doctor-final.txt     |  48 ++
+ docs/design/rollout-1692/1827/doctor-final2.txt    |  44 ++
+ docs/design/rollout-1692/1827/doctor-initial.txt   |  58 ++
+ .../rollout-1692/1827/evidence-verification.json   |   8 +
+ .../rollout-1692/1827/green-finalization.txt       |  12 +
+ docs/design/rollout-1692/1827/green-flow-fixed.txt |  41 ++
+ docs/design/rollout-1692/1827/green-flow-run3.txt  |  12 +
+ docs/design/rollout-1692/1827/green-flow.txt       |  41 ++
+ .../rollout-1692/1827/handoff-validation.txt       |   1 +
+ .../rollout-1692/1827/license-generation.txt       |  11 +
+ .../rollout-1692/1827/merger-adversarial-unit.json |   1 +
+ .../rollout-1692/1827/merger-adversarial-unit.log  |   4 +
+ .../rollout-1692/1827/merger-adversarial.test.tsx  |  26 +
+ .../1827/merger-archive-whitespace.log             | Bin 0 -> 11774 bytes
+ .../rollout-1692/1827/merger-artifact-audit.json   | 637 ++++++++++++++++++++
+ .../design/rollout-1692/1827/merger-biome-crlf.log | Bin 0 -> 51718 bytes
+ .../rollout-1692/1827/merger-biome-default.log     | Bin 0 -> 59026 bytes
+ .../1827/merger-biome-explicit-crlf.log            | Bin 0 -> 924 bytes
+ .../1827/merger-biome-explicit-lint.log            | Bin 0 -> 926 bytes
+ .../rollout-1692/1827/merger-biome-explicit.log    | Bin 0 -> 52774 bytes
+ .../rollout-1692/1827/merger-biome-lint-import.log | Bin 0 -> 7134 bytes
+ .../rollout-1692/1827/merger-check-commands.json   | 148 +++++
+ .../1827/merger-compatibility-selection.txt        |  87 +++
+ .../1827/merger-compatibility-unit.json            |   1 +
+ .../1827/merger-compatibility-unit.log             | Bin 0 -> 1866 bytes
+ docs/design/rollout-1692/1827/merger-doctor.json   | 239 ++++++++
+ .../rollout-1692/1827/merger-exact-unit.json       |   1 +
+ .../design/rollout-1692/1827/merger-exact-unit.log | Bin 0 -> 1850 bytes
+ docs/design/rollout-1692/1827/merger-handoff.json  | 293 ++++++++++
+ .../1827/merger-integration-preservation.json      |  18 +
+ .../1827/merger-process-release-final.json         |  27 +
+ .../rollout-1692/1827/merger-quality-commands.json | 135 +++++
+ .../design/rollout-1692/1827/merger-run-checks.ps1 |  23 +
+ .../rollout-1692/1827/merger-run-quality.ps1       |  18 +
+ .../1827/merger-source-prose-script-whitespace.log | Bin 0 -> 464 bytes
+ .../rollout-1692/1827/merger-source-whitespace.log |   0
+ .../rollout-1692/1827/merger-test-summary.json     |  44 ++
+ docs/design/rollout-1692/1827/merger-types.log     | Bin 0 -> 1378 bytes
+ .../rollout-1692/1827/merger-verify-artifacts.mjs  |  56 ++
+ .../rollout-1692/1827/merger-vitest.config.mts     |   6 +
+ .../rollout-1692/1827/merger-whitespace.json       |   4 +
+ .../rollout-1692/1827/native-auth-result.json      |   5 +
+ .../rollout-1692/1827/native-final-close.json      |   5 +
+ docs/design/rollout-1692/1827/native-final.txt     |   1 +
+ .../rollout-1692/1827/native-first-close.txt       |   2 +
+ docs/design/rollout-1692/1827/native-open.txt      |   3 +
+ .../rollout-1692/1827/native-second-open.json      |   5 +
+ docs/design/rollout-1692/1827/native-source.json   |   4 +
+ .../rollout-1692/1827/native-tree-result.json      |   5 +
+ docs/design/rollout-1692/1827/next-runtime.json    | 192 ++++++
+ docs/design/rollout-1692/1827/postgres-final.txt   |  22 +
+ docs/design/rollout-1692/1827/postgres.txt         |  22 +
+ docs/design/rollout-1692/1827/quality.json         |  41 ++
+ docs/design/rollout-1692/1827/red-finalization.txt | 303 ++++++++++
+ .../rollout-1692/1827/red-scope-sensitivity.txt    | 362 ++++++++++++
+ docs/design/rollout-1692/1827/runtime-attempt1.txt |  35 ++
+ docs/design/rollout-1692/1827/runtime-attempt2.txt |  17 +
+ docs/design/rollout-1692/1827/runtime-final.txt    |  17 +
+ docs/design/rollout-1692/1827/runtime-final2.txt   |  23 +
+ docs/design/rollout-1692/1827/runtime-final3.txt   |  22 +
+ docs/design/rollout-1692/1827/runtime-final4.txt   |  19 +
+ docs/design/rollout-1692/1827/runtime-final5.txt   |  19 +
+ docs/design/rollout-1692/1827/runtime-final6.txt   |  19 +
+ docs/design/rollout-1692/1827/runtime-final7.txt   |  18 +
+ docs/design/rollout-1692/1827/runtime-helper.mjs   |  51 ++
+ docs/design/rollout-1692/1827/types-final.txt      |   3 +
+ docs/design/rollout-1692/1827/types.txt            |  10 +
+ docs/design/rollout-1692/1827/unit-final.txt       |  12 +
+ docs/design/rollout-1692/1827/unit-final2.txt      |  12 +
+ docs/design/rollout-1692/1827/unit.txt             |  12 +
+ .../rollout-1692/1827/verify-accessibility.mjs     |  25 +
+ docs/design/rollout-1692/1827/verify-evidence.mjs  |  19 +
+ docs/design/rollout-1692/1827/verify-handoff.mjs   |  14 +
+ docs/design/rollout-1692/1827/verify-native.mjs    |  28 +
+ docs/design/rollout-1692/1827/verify-postgres.mjs  |  14 +
+ docs/design/rollout-1692/1827/verify-runtime.mjs   |  85 +++
+ docs/design/rollout-1692/README.md                 |   7 +-
+ docs/design/rollout-1692/integration.json          |   9 +-
+ 127 files changed, 8519 insertions(+), 363 deletions(-)
+ create mode 100644 apps/webapp/src/app/[locale]/onboarding/complete/actions.integration.test.ts
+ create mode 100644 docs/design/rollout-1692/1827.md
+ create mode 100644 docs/design/rollout-1692/1827/accessibility.txt
+ create mode 100644 docs/design/rollout-1692/1827/after-completion-failed.png
+ create mode 100644 docs/design/rollout-1692/1827/after-completion-pending.png
+ create mode 100644 docs/design/rollout-1692/1827/after-desktop-light.png
+ create mode 100644 docs/design/rollout-1692/1827/after-employee.png
+ create mode 100644 docs/design/rollout-1692/1827/after-keyboard-focus.png
+ create mode 100644 docs/design/rollout-1692/1827/after-phone-dark-large.png
+ create mode 100644 docs/design/rollout-1692/1827/after-phone-light.png
+ create mode 100644 docs/design/rollout-1692/1827/after-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/after-summary-failed.png
+ create mode 100644 docs/design/rollout-1692/1827/after-wide-dark-large.png
+ create mode 100644 docs/design/rollout-1692/1827/agent-browser-guide.txt
+ create mode 100644 docs/design/rollout-1692/1827/attempt1/after-desktop-light.png
+ create mode 100644 docs/design/rollout-1692/1827/attempt1/after-phone-dark-large.png
+ create mode 100644 docs/design/rollout-1692/1827/attempt1/after-phone-light.png
+ create mode 100644 docs/design/rollout-1692/1827/attempt1/after-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/attempt1/after-wide-dark-large.png
+ create mode 100644 docs/design/rollout-1692/1827/attempt2/after-desktop-light.png
+ create mode 100644 docs/design/rollout-1692/1827/attempt2/after-phone-dark-large.png
+ create mode 100644 docs/design/rollout-1692/1827/attempt2/after-phone-light.png
+ create mode 100644 docs/design/rollout-1692/1827/attempt2/after-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/attempt2/after-wide-dark-large.png
+ create mode 100644 docs/design/rollout-1692/1827/attempt3/after-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/attempt4/after-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/attempt5/after-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/attempt6/after-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/attempt7/after-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/before-desktop-light.png
+ create mode 100644 docs/design/rollout-1692/1827/before-final.txt
+ create mode 100644 docs/design/rollout-1692/1827/before-keyboard-focus.png
+ create mode 100644 docs/design/rollout-1692/1827/before-phone-dark-large.png
+ create mode 100644 docs/design/rollout-1692/1827/before-phone-light.png
+ create mode 100644 docs/design/rollout-1692/1827/before-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/before-wide-dark-large.png
+ create mode 100644 docs/design/rollout-1692/1827/biome-explicit.txt
+ create mode 100644 docs/design/rollout-1692/1827/biome-final.txt
+ create mode 100644 docs/design/rollout-1692/1827/biome-format.txt
+ create mode 100644 docs/design/rollout-1692/1827/biome-layout.txt
+ create mode 100644 docs/design/rollout-1692/1827/biome-postgres.txt
+ create mode 100644 docs/design/rollout-1692/1827/biome-strict.txt
+ create mode 100644 docs/design/rollout-1692/1827/biome-tests.txt
+ create mode 100644 docs/design/rollout-1692/1827/cleanup.json
+ create mode 100644 docs/design/rollout-1692/1827/cleanup.mjs
+ create mode 100644 docs/design/rollout-1692/1827/compare.mjs
+ create mode 100644 docs/design/rollout-1692/1827/contrast.json
+ create mode 100644 docs/design/rollout-1692/1827/doctor-final.txt
+ create mode 100644 docs/design/rollout-1692/1827/doctor-final2.txt
+ create mode 100644 docs/design/rollout-1692/1827/doctor-initial.txt
+ create mode 100644 docs/design/rollout-1692/1827/evidence-verification.json
+ create mode 100644 docs/design/rollout-1692/1827/green-finalization.txt
+ create mode 100644 docs/design/rollout-1692/1827/green-flow-fixed.txt
+ create mode 100644 docs/design/rollout-1692/1827/green-flow-run3.txt
+ create mode 100644 docs/design/rollout-1692/1827/green-flow.txt
+ create mode 100644 docs/design/rollout-1692/1827/handoff-validation.txt
+ create mode 100644 docs/design/rollout-1692/1827/license-generation.txt
+ create mode 100644 docs/design/rollout-1692/1827/merger-adversarial-unit.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-adversarial-unit.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-adversarial.test.tsx
+ create mode 100644 docs/design/rollout-1692/1827/merger-archive-whitespace.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-artifact-audit.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-biome-crlf.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-biome-default.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-biome-explicit-crlf.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-biome-explicit-lint.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-biome-explicit.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-biome-lint-import.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-check-commands.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-compatibility-selection.txt
+ create mode 100644 docs/design/rollout-1692/1827/merger-compatibility-unit.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-compatibility-unit.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-doctor.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-exact-unit.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-exact-unit.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-handoff.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-integration-preservation.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-process-release-final.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-quality-commands.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-run-checks.ps1
+ create mode 100644 docs/design/rollout-1692/1827/merger-run-quality.ps1
+ create mode 100644 docs/design/rollout-1692/1827/merger-source-prose-script-whitespace.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-source-whitespace.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-test-summary.json
+ create mode 100644 docs/design/rollout-1692/1827/merger-types.log
+ create mode 100644 docs/design/rollout-1692/1827/merger-verify-artifacts.mjs
+ create mode 100644 docs/design/rollout-1692/1827/merger-vitest.config.mts
+ create mode 100644 docs/design/rollout-1692/1827/merger-whitespace.json
+ create mode 100644 docs/design/rollout-1692/1827/native-auth-result.json
+ create mode 100644 docs/design/rollout-1692/1827/native-final-close.json
+ create mode 100644 docs/design/rollout-1692/1827/native-final.txt
+ create mode 100644 docs/design/rollout-1692/1827/native-first-close.txt
+ create mode 100644 docs/design/rollout-1692/1827/native-open.txt
+ create mode 100644 docs/design/rollout-1692/1827/native-second-open.json
+ create mode 100644 docs/design/rollout-1692/1827/native-source.json
+ create mode 100644 docs/design/rollout-1692/1827/native-tree-result.json
+ create mode 100644 docs/design/rollout-1692/1827/next-runtime.json
+ create mode 100644 docs/design/rollout-1692/1827/postgres-final.txt
+ create mode 100644 docs/design/rollout-1692/1827/postgres.txt
+ create mode 100644 docs/design/rollout-1692/1827/quality.json
+ create mode 100644 docs/design/rollout-1692/1827/red-finalization.txt
+ create mode 100644 docs/design/rollout-1692/1827/red-scope-sensitivity.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-attempt1.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-attempt2.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-final.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-final2.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-final3.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-final4.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-final5.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-final6.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-final7.txt
+ create mode 100644 docs/design/rollout-1692/1827/runtime-helper.mjs
+ create mode 100644 docs/design/rollout-1692/1827/types-final.txt
+ create mode 100644 docs/design/rollout-1692/1827/types.txt
+ create mode 100644 docs/design/rollout-1692/1827/unit-final.txt
+ create mode 100644 docs/design/rollout-1692/1827/unit-final2.txt
+ create mode 100644 docs/design/rollout-1692/1827/unit.txt
+ create mode 100644 docs/design/rollout-1692/1827/verify-accessibility.mjs
+ create mode 100644 docs/design/rollout-1692/1827/verify-evidence.mjs
+ create mode 100644 docs/design/rollout-1692/1827/verify-handoff.mjs
+ create mode 100644 docs/design/rollout-1692/1827/verify-native.mjs
+ create mode 100644 docs/design/rollout-1692/1827/verify-postgres.mjs
+ create mode 100644 docs/design/rollout-1692/1827/verify-runtime.mjs

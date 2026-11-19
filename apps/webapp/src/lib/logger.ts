@@ -7,6 +7,7 @@ const hasRemoteOtel = Boolean(env.OTEL_EXPORTER_OTLP_ENDPOINT);
 
 const transport = isDev
 	? {
+			// Let Pino resolve the package at runtime. Turbopack emits a module ID for require.resolve.
 			target: "pino-pretty",
 			options: {
 				colorize: true,
@@ -16,7 +17,8 @@ const transport = isDev
 		}
 	: hasRemoteOtel
 		? {
-				target: "pino-opentelemetry-transport",
+				// Resolve statically so standalone tracing follows this worker's dependencies.
+				target: require.resolve("pino-opentelemetry-transport"),
 			}
 		: undefined;
 

@@ -1,0 +1,4 @@
+*.log -text
+*.json -text
+*.txt -text
+*.png binary

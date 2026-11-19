@@ -274,6 +274,7 @@
       "formatAccessCheck": "Verificare acces format",
       "nobodyEmployedInPeriod": "Nicio persoană din accesul dvs. la salarizare nu a fost angajată în această perioadă.",
       "noConfiguredTarget": "Nicio destinație de export pentru salarizare configurată",
+      "notPayment": "Exportul pregătește datele de salarizare. Nu efectuează o plată.",
       "queued": "Exportul pentru salarizare a fost pus în coadă",
       "selectFormat": "Selectează formatul",
       "target": "Destinație export salarizare",
@@ -374,6 +375,7 @@
       "blockers": "Blocaje",
       "employees": "Angajați",
       "ready": "Gata",
+      "title": "Rezumatul pregătirii pentru salarizare",
       "workedHours": "Ore lucrate"
     },
     "title": "Salarizare",
@@ -383,6 +385,7 @@
       "title": "Salarizarea este temporar indisponibilă"
     },
     "workBalances": {
+      "accessChanged": "Acest sold de ore lucrate nu mai este disponibil în domeniul dvs. de salarizare.",
       "back": "Solduri de lucru",
       "backToPayroll": "Salarizare",
       "description": "Înregistrați și anulați plățile pentru ore suplimentare pentru angajații acoperiți de accesul dvs. la salarizare, inclusiv pentru angajații care au plecat.",
@@ -391,6 +394,13 @@
       "loading": "Se încarcă soldurile de lucru",
       "loadingEmployee": "Se încarcă soldul de lucru",
       "open": "Solduri de lucru",
+      "openEmployee": "Deschideți soldul angajatului",
+      "projectionUnavailable": "Proiecția soldului nu este disponibilă. Înregistrările de ajustare rămân mai jos.",
+      "refresh": "Reîmprospătează soldul de lucru",
+      "refreshing": "Se reîmprospătează soldul de lucru…",
+      "retry": "Reîncearcă soldul de lucru",
+      "scopeChanged": "Se încarcă domeniul curent de salarizare…",
+      "stale": "Nu s-a putut reîmprospăta. Sunt afișate înregistrările încărcate anterior; reîmprospătați înainte de a efectua modificări.",
       "title": "Solduri de lucru"
     }
   }

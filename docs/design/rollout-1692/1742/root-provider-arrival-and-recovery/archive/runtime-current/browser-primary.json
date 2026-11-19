@@ -1,0 +1,46 @@
+{
+  "source": "d28f5bc9a0722b9e5d3f32e30c9ca0f12fe363fc",
+  "results": [
+    {
+      "check": "admin-all",
+      "rows": 8,
+      "h1": 1,
+      "calendarDate": "2026-11-02"
+    },
+    {
+      "check": "actual-read-failure",
+      "retainedRows": 8,
+      "sameCalendarNode": true
+    },
+    {
+      "check": "pending-local-retry",
+      "coalesced": true,
+      "retainedRows": 8,
+      "transportReads": 2
+    },
+    {
+      "check": "actual-header-refresh",
+      "rows": 8,
+      "periodPreserved": true,
+      "transportReads": 6
+    },
+    {
+      "check": "picker-first-escape",
+      "focusReturned": true
+    },
+    {
+      "check": "native-picker-url-and-read",
+      "selected": "2026-10-05",
+      "rows": 8
+    },
+    {
+      "check": "calendar-navigation",
+      "canonicalEmployeeAndLocalDate": true
+    },
+    {
+      "check": "inbox-navigation",
+      "path": "/en/approvals/inbox"
+    }
+  ],
+  "pickerHarnessQualification": "Native explicit option selection passed; combined Puppeteer attempts failed to reach an offscreen option. No product failure classified."
+}

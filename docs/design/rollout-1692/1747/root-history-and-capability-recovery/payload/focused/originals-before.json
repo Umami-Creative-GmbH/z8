@@ -1,0 +1,59 @@
+{
+  "at": "2026-11-18T04:20:14.425Z",
+  "creator-draft": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "8257b1bb50620aaba654823826e8b0516149b6c169a3749d72ccf626ac286169"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "4d370add01a120b283a4374dd6c89403f77fa4017d295857491097d683ab8824"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "creator-approved": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "1029ba4ae52758821c0b62c5ee01df97697711080ab44a3e0e0aaf3c5e7a8241"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "67f7fe12f818a7219ecd4a12f8e947415a78832e039e68830b3e4615fb276a35"
+    },
+    "travel_expense_decision_log": {
+      "count": 1,
+      "sha256": "b0575915295eaccf43155f44f1cc1984e10f8d0c26feacecc4afe5db600d5cbf"
+    }
+  },
+  "peer-draft": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "b1d39a0c20758860b4f858ae817d06b6c7d686a7c14d6b76189d7274a46080da"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "56e8630f66c05ed46344a58b8849eb3b9a5e618856eb04194d7f02f7d1fcd69c"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "foreign-draft": {
+    "travel_expense_claim": {
+      "count": 1,
+      "sha256": "5704457f6dfac69515a4eaf70236a883a1ea10ee83dc4abf1f42b45f30f21f8d"
+    },
+    "travel_expense_attachment": {
+      "count": 1,
+      "sha256": "974304c4db3e3cf3e2dafc5799032cbc98325f327ec27fbbabca0d4a91077288"
+    },
+    "travel_expense_decision_log": {
+      "count": 0,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  }
+}

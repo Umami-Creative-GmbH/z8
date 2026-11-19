@@ -89,7 +89,13 @@
       "slugLabel": "Slug i organizatës",
       "title": "Ndrysho organizatën",
       "updateError": "Përditësimi i organizatës dështoi",
-      "updateSuccess": "Organizata u përditësua me sukses"
+      "updateSuccess": "Organizata u përditësua me sukses",
+      "validation": {
+        "nameMax": "Emri nuk mund të kalojë 100 karaktere",
+        "nameMin": "Emri duhet të ketë të paktën 2 karaktere",
+        "slugMax": "Slug-u nuk mund të kalojë 50 karaktere",
+        "slugMin": "Slug-u duhet të ketë të paktën 2 karaktere"
+      }
     },
     "error": {
       "description": "Organigrama nuk mund të ngarkohej. Ju lutemi provoni përsëri.",
@@ -395,6 +401,7 @@
     "switchTo": "Ndërro organizatën",
     "teams": {
       "card": {
+        "actionsFor": "Veprimet për {name}",
         "deleteTeam": "Fshij ekipin",
         "editTeam": "Ndrysho ekipin",
         "fallbackManager": "Menaxher rezervë",
@@ -406,10 +413,10 @@
       "delete": "Fshij ekipin",
       "deleteDialogDescription": "Kjo do të fshijë përgjithmonë ekipin \"{teamName}\".",
       "deleteDialogMembersWarning": "Paralajmërim: Ky ekip ka {count} anëtar(ë). Ata do të hiqen nga ekipi.",
+      "deleteDialogNamedTitle": "Të fshihet ekipi {name}?",
       "deleteDialogTitle": "A jeni të sigurt?",
       "deleteError": "Dështoi fshirja e ekipit",
       "deleteSuccess": "Ekipi u fshi me sukses",
-      "description": "Organizoni punonjësit tuaj në ekipe për bashkëpunim më të mirë",
       "edit": {
         "description": "Përditëso emrin dhe përshkrimin e ekipit",
         "descriptionLabel": "Përshkrimi (Opsionale)",
@@ -437,8 +444,7 @@
         "removeSuccess": "Anëtari u hoq nga ekipi",
         "selectEmployee": "Zgjidhni një punonjës për të shtuar",
         "title": "{teamName} - Anëtarët e ekipit"
-      },
-      "title": "Ekipet"
+      }
     },
     "timezone": {
       "balances-recalculating": "Bilancet e punës po rillogariten për zonën e re kohore dhe qëndrojnë të fshehura derisa të jenë gati.",

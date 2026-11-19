@@ -1,0 +1,35 @@
+{
+  "results": [
+    {
+      "name": "sidebar collapsed without losing form draft",
+      "passed": true
+    },
+    {
+      "name": "real shell refresh keeps form draft",
+      "passed": true
+    },
+    {
+      "name": "sidebar collapse persists reload",
+      "passed": true
+    },
+    {
+      "name": "real large text preference applied",
+      "passed": true
+    },
+    {
+      "name": "large text and dark preferences persist reload",
+      "passed": true
+    },
+    {
+      "name": "phone large text no document overflow",
+      "passed": true
+    },
+    {
+      "name": "phone drawer closes with one Escape and returns focus",
+      "passed": true
+    },
+    {
+      "failure": "Waiting failed: 30000ms exceeded"
+    }
+  ]
+}

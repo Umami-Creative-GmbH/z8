@@ -110,8 +110,12 @@ describe("AuditPackGeneratorCard", () => {
 			/>,
 		);
 		const downloadButton = await screen.findByRole("button", {
-			name: "Download",
+			name: /^Download audit pack for /,
 		});
+		// The name repeats the period shown in the row's Range cell.
+		const period = downloadButton.closest("tr")?.querySelectorAll("td")[1]?.textContent;
+		expect(period).toMatch(/2026/);
+		expect(downloadButton.textContent).toBe(`Download audit pack for ${period}`);
 		fireEvent.click(downloadButton);
 
 		await waitFor(() =>

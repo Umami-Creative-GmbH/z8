@@ -1,0 +1,6 @@
+{
+  "source": "apps/webapp/src/components/settings/work-balance/opening-balance-upload-dialog.tsx",
+  "base": "19862ee6586b4e07831c6f5a8b7e06d0f698cedd",
+  "before": "60ddaef5e6936b72e9d4dec579492191404bef34196cc69824b3642bdcc232f3",
+  "after": "956eac6117a1a6458b3bc0448251e6b49199f551bcfa11d870ff2eed539dc57b"
+}

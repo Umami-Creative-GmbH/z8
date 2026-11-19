@@ -1,0 +1,33 @@
+{
+  "candidate": "a85fec346084fa576b77d34f7f654928d2d957b3",
+  "criticalBlocker": "Standard canonical small-manager returns from /en/scheduling to dashboard after real normal-development login and normal reads",
+  "reproducedAttempts": 2,
+  "expected": "Remain on Shift Schedule with scoped planning controls and truthful unavailable supporting read/Retry",
+  "actual": "Both independent navigations land on /en/ with Good day, Person. heading",
+  "conditions": {
+    "normalDevelopment": true,
+    "widgetAndForm": true,
+    "freshDisposableCanonicalFixture": true,
+    "notifications": "denied",
+    "extraAuthorityChanges": false,
+    "requestInterference": false,
+    "writeRequests": 0,
+    "rawActionResponseCaptured": false
+  },
+  "metadata": "All five relevant actions emitted HTTP200 with no x-action-redirect. HTTP200 does not establish action success. The pendingActionCount is a raw event-tracking remainder and is not proof of settled scheduling reads: the route exited before acceptance.",
+  "sourceSupportedHypothesis": {
+    "chain": [
+      "getTargetHeatmapData requires scopedManager; coverageRuleSubareaScope refuses a manager without subarea assignments with AuthorizationError message Unauthorized",
+      "toServerActionResult returns the failure message as result.error",
+      "useCoverageHeatmap throws new Error(result.error)",
+      "QueryProvider uses isUnauthorizedError; message Unauthorized triggers router.replace(/sign-in)",
+      "Authenticated sign-in proxy can return the user to dashboard"
+    ],
+    "boundary": "This fresh browser result confirms dashboard return, not a captured action body or proven runtime attribution to one action. The remaining coverage chain is source-supported. Template-only assembled correction test holds coverage successful and therefore does not cover this refusal combination.",
+    "introducedRegressionClaim": false
+  },
+  "writesAndRecordedWork": "No writes observed; all12 seeded own/foreign shifts and both organizations full time_entry/work_period counts and digests unchanged",
+  "stop": true,
+  "verifiedCommit": null,
+  "rootOwnsReadiness": true
+}

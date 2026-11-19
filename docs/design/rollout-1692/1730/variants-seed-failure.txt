@@ -1,0 +1,14 @@
+Preserved excerpt from the first variants.mjs tool execution (before fixture user lookup correction):
+
+error: null value in column "created_by" of relation "personnel_file_officer_grant" violates not-null constraint
+    at async file:///X:/t3-code/worktrees/z8/t3-abec2f0c-e8d469008a3d13b5/docs/design/rollout-1692/1730/variants.mjs:11:22
+  severity: 'ERROR',
+  code: '23502',
+  schema: 'public',
+  table: 'personnel_file_officer_grant',
+  column: 'created_by',
+  file: 'execMain.c',
+  line: '2057',
+  routine: 'ExecConstraints'
+
+This was a fixture assumption error: generated actor records do not expose userId. The corrected seed reads employee.user_id. No grant was inserted by this failed statement. Request fixture seeding initially used the same undefined userId in the nullable request.created_by field, resulting in no named creator; existing captured seeded requests retain that data. The corrected reusable seed now supplies the actual synthetic user id. Real bulk-created requests use the actual authenticated application actor.

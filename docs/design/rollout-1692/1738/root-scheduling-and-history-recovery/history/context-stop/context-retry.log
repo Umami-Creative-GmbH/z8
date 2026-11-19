@@ -1,0 +1,100 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp
+
+stderr | src/test/.tmp/merge1739-audit/context-retry.test.tsx > healthy real provider admits the public team directory and its employee link
+Base UI: A component that acts as a button expected a non-<button> because the `nativeButton` prop is false. Rendering a <button> keeps native behavior while Base UI applies non-native attributes and handlers, which can add unintended extra attributes (such as `role` or `aria-disabled`). Use a non-<button> in the `render` prop, or set `nativeButton` to `true`.
+    at DialogTrigger (X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/ui/dialog.tsx:59:57)
+    at BalanceAdjustmentHistoryDialog (X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/work-balance/balance-adjustment-history-button.tsx:64:62)
+    at TimeBalanceBadge (X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx:68:58)
+    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx:459:58
+    at Array.map (<anonymous>)
+    at TeamMemberCards (X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx:345:23)
+    at TeamMembersList (X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/team/team-members-list.tsx:164:117)
+    at TeamDirectoryRecords (X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/app/[locale]/(app)/team/team-directory-records.tsx:133:64)
+
+stderr | src/test/.tmp/merge1739-audit/context-retry.test.tsx > local Retry refetches failed canonical context and admits records after successful RSC refresh
+A suspended resource finished loading inside a test, but the event was not wrapped in act(...).
+
+When testing, code that resolves suspended data should be wrapped into act(...):
+
+act(() => {
+  /* finish loading suspended data */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stdout | src/test/.tmp/merge1739-audit/context-retry.test.tsx > local Retry refetches failed canonical context and admits records after successful RSC refresh
+MERGE1739_CONTEXT_RETRY {"contextFetches":1,"successfulRscRefreshes":1,"managedReads":2,"scopeFeedbackVisible":true,"employeeVisible":false}
+
+ ❯ |unit| src/test/.tmp/merge1739-audit/context-retry.test.tsx (2 tests | 1 failed) 1143ms
+   ✓ healthy real provider admits the public team directory and its employee link 78ms
+   × local Retry refetches failed canonical context and admits records after successful RSC refresh 1063ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/test/.tmp/merge1739-audit/context-retry.test.tsx > local Retry refetches failed canonical context and admits records after successful RSC refresh
+AssertionError: expected "vi.fn()" to be called 2 times, but got 1 times
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body>
+    <div>
+      <div
+        class="@container/main flex flex-1 flex-col gap-6 p-4 lg:p-6"
+      >
+        <div
+          class="flex flex-wrap items-end justify-between gap-4"
+        >
+          <div
+            class="min-w-0 flex-[1_1_18rem] space-y-2 break-words"
+          >
+            <h1
+              class="text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
+            >
+              Your Team
+            </h1>
+          </div>
+        </div>
+        <p
+          class="text-sm text-muted-foreground"
+          role="status"
+        >
+          Your organization or access changed. Refresh to load your team.
+        </p>
+        <div>
+          <button
+            class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+            data-slot="button"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>...
+ ❯ src/test/.tmp/merge1739-audit/context-retry.test.tsx:56:43
+
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  05:05:42
+   Duration  4.14s (import 43%, tests 28%, transform 20%, environment 9%, setup 1%)
+
+JSON report written to X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1739-audit/context-retry-results.json
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-36de3f4a-
+  │ 69b59b59b97cbc3d\apps\webapp
+

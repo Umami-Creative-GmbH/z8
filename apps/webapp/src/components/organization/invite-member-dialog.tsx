@@ -4,6 +4,7 @@ import { IconLoader2, IconMail } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	type CreateKioskOnlyEmployeeActionInput,
@@ -33,6 +34,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useSession } from "@/lib/auth-client";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	meetsSettingsAccess,
@@ -50,6 +52,82 @@ interface InviteMemberDialogProps {
 	onOpenChange: (open: boolean) => void;
 }
 
+type InvitationActivation = { arrival: object };
+const defaultSubmitMeta: { activation: InvitationActivation | null } = { activation: null };
+
+function useInvitationLifetime(identity: string | null) {
+	const arrival = useRef<object | null>(null);
+	const pending = useRef<InvitationActivation | null>(null);
+	const [isPending, setIsPending] = useState(false);
+	useLayoutEffect(() => {
+		arrival.current = identity ? {} : null;
+		return () => {
+			arrival.current = null;
+			// A dispatched command cannot be cancelled. Keep its lock until settlement,
+			// including while Activity disposes and restores this component's effects.
+		};
+	}, [identity]);
+	return {
+		isPending,
+		canDismiss: () => !pending.current,
+		begin: () => {
+			if (!arrival.current || pending.current) return null;
+			const activation = { arrival: arrival.current };
+			pending.current = activation;
+			setIsPending(true);
+			return activation;
+		},
+		isCurrent: (activation: InvitationActivation) =>
+			arrival.current === activation.arrival && pending.current === activation,
+		finish: (activation: InvitationActivation) => {
+			if (pending.current !== activation) return;
+			pending.current = null;
+			setIsPending(false);
+		},
+	};
+}
+
+function useMemberMutations(
+	organizationId: string,
+	lifetime: ReturnType<typeof useInvitationLifetime>,
+) {
+	const queryClient = useQueryClient();
+	const inviteMutation = useMutation({
+		mutationFn: ({
+			input,
+		}: {
+			activation: InvitationActivation;
+			input: Parameters<typeof sendInvitation>[0];
+		}) => sendInvitation(input),
+		onSuccess: async (result, { activation }) => {
+			if (!result.success || !lifetime.isCurrent(activation)) return;
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) }),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.employees.organization(organizationId),
+				}),
+			]);
+		},
+	});
+
+	const kioskOnlyMutation = useMutation({
+		mutationFn: ({
+			input,
+		}: {
+			activation: InvitationActivation;
+			input: CreateKioskOnlyEmployeeActionInput;
+		}) => createKioskOnlyEmployeeAction(input),
+		onSuccess: async (result, { activation }) => {
+			if (!result.success || !lifetime.isCurrent(activation)) return;
+			await queryClient.invalidateQueries({
+				queryKey: queryKeys.employees.organization(organizationId),
+			});
+		},
+	});
+
+	return { inviteMutation, kioskOnlyMutation };
+}
+
 export function InviteMemberDialog({
 	organizationId,
 	organizationName,
@@ -59,58 +137,33 @@ export function InviteMemberDialog({
 }: InviteMemberDialogProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
-	const queryClient = useQueryClient();
+	const session = useSession();
+	const actorId = session.data?.user.id;
+	const activeOrganizationId = session.data?.session.activeOrganizationId;
+	const available =
+		open &&
+		!session.isPending &&
+		!!actorId &&
+		activeOrganizationId === organizationId &&
+		meetsSettingsAccess(settingsAccess, "orgAdmin");
+	const lifetime = useInvitationLifetime(
+		available ? JSON.stringify([actorId, organizationId, settingsAccess]) : null,
+	);
 
 	const { data: teamsResult } = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: () => listTeams(),
-		enabled: open,
+		enabled: open && available,
 	});
 	const teams = teamsResult?.success ? teamsResult.data : [];
 	const { data: locationsResult } = useQuery({
 		queryKey: ["kioskOnlyEmployeeLocations", organizationId],
 		queryFn: () => getKioskOnlyEmployeeLocationsAction(),
-		enabled: open,
+		enabled: open && available,
 	});
 	const kioskLocations = locationsResult?.success ? locationsResult.data : [];
 
-	const inviteMutation = useMutation({
-		mutationFn: (data: {
-			email: string;
-			role: "owner" | "admin" | "member";
-			canCreateOrganizations: boolean;
-			targetTeamId: string | null;
-		}) => sendInvitation(data),
-		onSuccess: async (result) => {
-			if (result.success) {
-				await Promise.all([
-					queryClient.invalidateQueries({
-						queryKey: queryKeys.invitations.list(organizationId),
-					}),
-					queryClient.invalidateQueries({
-						queryKey: queryKeys.employees.organization(organizationId),
-					}),
-				]);
-			}
-		},
-		onError: () => {
-			toast.error(t("organization.invite.error", "Failed to send invitation"));
-		},
-	});
-
-	const kioskOnlyMutation = useMutation({
-		mutationFn: (data: CreateKioskOnlyEmployeeActionInput) => createKioskOnlyEmployeeAction(data),
-		onSuccess: async (result) => {
-			if (result.success) {
-				await queryClient.invalidateQueries({
-					queryKey: queryKeys.employees.organization(organizationId),
-				});
-			}
-		},
-		onError: () => {
-			toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS));
-		},
-	});
+	const { inviteMutation, kioskOnlyMutation } = useMemberMutations(organizationId, lifetime);
 
 	const form = useForm({
 		defaultValues: {
@@ -124,16 +177,28 @@ export function InviteMemberDialog({
 			lastName: "",
 			locationIds: [] as string[],
 		},
-		onSubmit: async ({ value }) => {
+		onSubmitMeta: defaultSubmitMeta,
+		onSubmit: async ({ value, meta }) => {
+			const activation = meta.activation;
+			if (!activation || !lifetime.isCurrent(activation)) return;
+			const current = () => lifetime.isCurrent(activation);
 			if (value.kioskOnly) {
 				const created = await kioskOnlyMutation
 					.mutateAsync({
-						firstName: value.firstName,
-						lastName: value.lastName,
-						teamId: value.targetTeamId === "none" ? null : value.targetTeamId,
-						locationIds: value.locationIds,
+						activation,
+						input: {
+							firstName: value.firstName,
+							lastName: value.lastName,
+							teamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+							locationIds: value.locationIds,
+						},
 					})
-					.catch(() => null);
+					.catch(() => {
+						if (current())
+							toast.error(actionErrorMessage(t, { code: "failed" }, KIOSK_PIN_REFUSALS));
+						return null;
+					});
+				if (!current()) return;
 				if (!created) return;
 				if (created.success) {
 					toast.success(t("organization.invite.kioskOnly.success", "Kiosk-only employee created"));
@@ -148,14 +213,20 @@ export function InviteMemberDialog({
 
 			const result = await inviteMutation
 				.mutateAsync({
-					email: value.email,
-					role: value.role,
-					canCreateOrganizations: value.canCreateOrganizations,
-					targetTeamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+					activation,
+					input: {
+						email: value.email,
+						role: value.role,
+						canCreateOrganizations: value.canCreateOrganizations,
+						targetTeamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+					},
 				})
-				.catch(() => null);
+				.catch(() => {
+					if (current()) toast.error(t("organization.invite.error", "Failed to send invitation"));
+					return null;
+				});
 
-			if (!result) {
+			if (!current() || !result) {
 				return;
 			}
 
@@ -170,10 +241,20 @@ export function InviteMemberDialog({
 		},
 	});
 
-	const isPending = inviteMutation.isPending || kioskOnlyMutation.isPending;
+	const isPending = lifetime.isPending;
+	function handleOpenChange(nextOpen: boolean) {
+		if (!nextOpen && !lifetime.canDismiss()) return;
+		onOpenChange(nextOpen);
+	}
+	function handleSubmit() {
+		const activation = lifetime.begin();
+		if (activation) {
+			void form.handleSubmit({ activation }).finally(() => lifetime.finish(activation));
+		}
+	}
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={available} onOpenChange={handleOpenChange}>
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle>{t("organization.invite.title", "Invite Member")}</ActionPanelTitle>
@@ -185,10 +266,10 @@ export function InviteMemberDialog({
 				</ActionPanelHeader>
 
 				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						void form.handleSubmit();
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						handleSubmit();
 					}}
 					className="flex min-h-0 flex-1 flex-col"
 				>
@@ -460,7 +541,7 @@ export function InviteMemberDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
+							onClick={() => handleOpenChange(false)}
 							disabled={isPending}
 						>
 							{t("common.cancel", "Cancel")}

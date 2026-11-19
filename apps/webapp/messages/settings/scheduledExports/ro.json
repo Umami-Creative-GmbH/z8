@@ -35,7 +35,6 @@
         "previousWeekDesc": "Exportă datele din săptămâna anterioară (Lun-Dum)"
       },
       "deleteDialog": {
-        "cancel": "Anulează",
         "confirm": "Șterge",
         "description": "Sigur doriți să ștergeți „{name}”? Această acțiune nu poate fi anulată.",
         "title": "Șterge exportul programat"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Ștergerea a eșuat",
         "loadFailed": "Încărcarea exporturilor programate a eșuat",
-        "toggleFailed": "Comutarea a eșuat"
+        "retry": "Încercați din nou"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Proprietarul programării, {owner}, nu mai este administrator al organizației. Desemnați-vă pe dvs. sau pe un alt administrator ca proprietar mai întâi."
       },
       "filters": {
         "allEmployees": "Toți angajații",
@@ -284,8 +286,9 @@
         "paused": "În pauză",
         "schedule": "Programare",
         "status": "Stare",
-        "title": "Programări active",
-        "type": "Tip"
+        "titleAll": "Programări",
+        "type": "Tip",
+        "unknownOwner": "Proprietar necunoscut"
       },
       "title": "Exporturi programate",
       "toast": {

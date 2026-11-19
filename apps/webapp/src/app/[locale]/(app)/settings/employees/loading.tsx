@@ -1,0 +1,38 @@
+"use client";
+
+import { useTranslate } from "@tolgee/react";
+import { Suspense } from "react";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
+import { PageHeader } from "@/components/ui/page-header";
+import { normalizeAppPath } from "@/lib/navigation/route-metadata";
+import { usePathname } from "@/navigation";
+
+function EmployeesLoadingHeading() {
+	const { t } = useTranslate();
+	const ownsHeading = normalizeAppPath(usePathname()) === "/settings/employees";
+
+	return ownsHeading ? (
+		<PageHeader title={t("settings.employees.title", "Employees")} />
+	) : null;
+}
+
+export default function EmployeesLoading() {
+	return (
+		<div
+			data-testid="employees-shell"
+			className="page-frame flex min-w-0 flex-1 flex-col gap-6 overflow-hidden"
+		>
+			<Suspense fallback={null}>
+				<EmployeesLoadingHeading />
+			</Suspense>
+			<SettingsPageSkeleton
+				framed={false}
+				variant="list"
+				label={{
+					labelKey: "common.loadingRegions.employees",
+					labelDefault: "Loading employees",
+				}}
+			/>
+		</div>
+	);
+}

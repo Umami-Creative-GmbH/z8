@@ -2,13 +2,11 @@ import { loadTeamSettingsPageData } from "@/app/[locale]/(app)/settings/teams/te
 import { TeamsTab } from "@/components/organization/teams-tab";
 import { getCurrentSettingsRouteContext, getPrincipalContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
-import { getTranslate } from "@/tolgee/server";
 
 export default async function TeamsPage() {
-	const [settingsRouteContext, principalContext, t] = await Promise.all([
+	const [settingsRouteContext, principalContext] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		getPrincipalContext(),
-		getTranslate(),
 	]);
 
 	if (!settingsRouteContext || !principalContext) {
@@ -31,20 +29,9 @@ export default async function TeamsPage() {
 		principalContext,
 	});
 
+	// TeamsTab renders the page heading so its Create Team action sits beside the title.
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div>
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.teams.title", "Teams")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.teams.description",
-						"Organize employees into teams and manage team assignments",
-					)}
-				</p>
-			</div>
-
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<TeamsTab
 				teams={teamSurface.teams}
 				members={scopedMembers}

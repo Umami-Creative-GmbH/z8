@@ -7,7 +7,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import { StrictMode } from "react";
+import { Activity, StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -19,6 +19,7 @@ const {
 	skipOrganizationSetupMock,
 	toastErrorMock,
 	toastSuccessMock,
+	sessionState,
 } = vi.hoisted(() => ({
 	createOrganizationOnboardingMock: vi.fn(),
 	checkSlugAvailabilityMock: vi.fn(),
@@ -28,6 +29,7 @@ const {
 	skipOrganizationSetupMock: vi.fn(),
 	toastErrorMock: vi.fn(),
 	toastSuccessMock: vi.fn(),
+	sessionState: { account: "a", organization: "" },
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -49,6 +51,18 @@ vi.mock("@/app/[locale]/(app)/organization-actions", () => ({
 
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push: pushMock, replace: replaceMock }),
+}));
+
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: {
+			user: { id: sessionState.account },
+			session: {
+				id: sessionState.account,
+				activeOrganizationId: sessionState.organization,
+			},
+		},
+	}),
 }));
 
 vi.mock("@/components/onboarding/progress-indicator", () => ({
@@ -76,6 +90,8 @@ function deferred<T>() {
 describe("OrganizationPageClient", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		sessionState.account = "a";
+		sessionState.organization = "";
 		getOnboardingSummaryMock.mockReset();
 		skipOrganizationSetupMock.mockReset();
 		createOrganizationOnboardingMock.mockReset();
@@ -85,6 +101,281 @@ describe("OrganizationPageClient", () => {
 
 	afterEach(() => {
 		vi.useRealTimers();
+	});
+
+	it("keeps one organization task heading while a membership read settles", async () => {
+		const summary = deferred<{
+			success: true;
+			data: { hasOrganization: false };
+		}>();
+		getOnboardingSummaryMock.mockReturnValue(summary.promise);
+		render(<OrganizationPageClient canCreateOrganizations />);
+
+		expect(
+			screen.getByRole("status", { name: "Checking organization membership" }),
+		).toBeTruthy();
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(
+			screen.getByRole("heading", {
+				level: 1,
+				name: "Set up your organization",
+			}),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "Create Organization" }),
+		).toBeNull();
+		expect(skipOrganizationSetupMock).not.toHaveBeenCalled();
+
+		await act(async () =>
+			summary.resolve({ success: true, data: { hasOrganization: false } }),
+		);
+
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+		expect(
+			screen.getByRole("heading", {
+				level: 1,
+				name: "Set up your organization",
+			}),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Create Organization" }),
+		).toBeTruthy();
+	});
+
+	it("keeps existing members on this step when the automatic skip is refused", async () => {
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: true },
+		});
+		skipOrganizationSetupMock.mockResolvedValue({
+			success: false,
+			error: "Please retry",
+		});
+		render(<OrganizationPageClient canCreateOrganizations />);
+		await waitFor(() =>
+			expect(skipOrganizationSetupMock).toHaveBeenCalledOnce(),
+		);
+		expect(replaceMock).not.toHaveBeenCalled();
+		expect(
+			await screen.findByRole("button", { name: "Skip for now" }),
+		).toBeTruthy();
+	});
+
+	it("discards a successful creation reply after unmount", async () => {
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: false },
+		});
+		const request = deferred<{ success: true }>();
+		createOrganizationOnboardingMock.mockReturnValue(request.promise);
+		const { unmount } = render(
+			<OrganizationPageClient canCreateOrganizations />,
+		);
+		fireEvent.change(await screen.findByLabelText("Organization Name"), {
+			target: { value: "Acme Inc" },
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "Create Organization" }),
+		);
+		await waitFor(() =>
+			expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce(),
+		);
+		unmount();
+		await act(async () => request.resolve({ success: true }));
+		expect(pushMock).not.toHaveBeenCalled();
+		expect(toastSuccessMock).not.toHaveBeenCalled();
+	});
+
+	it.each(["account", "organization"] as const)(
+		"discards late creation across %s A to B to A without losing the new draft",
+		async (scope) => {
+			getOnboardingSummaryMock.mockResolvedValue({
+				success: true,
+				data: { hasOrganization: false },
+			});
+			const request = deferred<{ success: true }>();
+			createOrganizationOnboardingMock.mockReturnValue(request.promise);
+			const { rerender } = render(
+				<OrganizationPageClient canCreateOrganizations />,
+			);
+			fireEvent.change(await screen.findByLabelText("Organization Name"), {
+				target: { value: "Original draft" },
+			});
+			fireEvent.click(
+				screen.getByRole("button", { name: "Create Organization" }),
+			);
+			await waitFor(() =>
+				expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce(),
+			);
+			for (const value of ["b", scope === "account" ? "a" : ""]) {
+				sessionState[scope] = value;
+				rerender(<OrganizationPageClient canCreateOrganizations />);
+				await screen.findByLabelText("Organization Name");
+			}
+			fireEvent.change(screen.getByLabelText("Organization Name"), {
+				target: { value: "New draft" },
+			});
+			await act(async () => request.resolve({ success: true }));
+			expect(pushMock).not.toHaveBeenCalled();
+			expect(toastSuccessMock).not.toHaveBeenCalled();
+			expect(screen.getByLabelText("Organization Name")).toHaveProperty(
+				"value",
+				"New draft",
+			);
+		},
+	);
+
+	it("invalidates a pending skip during Activity hide and resume", async () => {
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: false },
+		});
+		const request = deferred<{ success: true }>();
+		skipOrganizationSetupMock.mockReturnValue(request.promise);
+		const { rerender } = render(
+			<Activity mode="visible">
+				<OrganizationPageClient canCreateOrganizations />
+			</Activity>,
+		);
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Skip for now" }),
+		);
+		rerender(
+			<Activity mode="hidden">
+				<OrganizationPageClient canCreateOrganizations />
+			</Activity>,
+		);
+		rerender(
+			<Activity mode="visible">
+				<OrganizationPageClient canCreateOrganizations />
+			</Activity>,
+		);
+		await screen.findByRole("button", { name: "Skip for now" });
+		await act(async () => request.resolve({ success: true }));
+		expect(pushMock).not.toHaveBeenCalled();
+	});
+
+	it("keeps the duplicate lock during Activity resume until the original creation settles", async () => {
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: false },
+		});
+		const request = deferred<{ success: true }>();
+		createOrganizationOnboardingMock.mockReturnValue(request.promise);
+		const { rerender } = render(
+			<Activity mode="visible">
+				<OrganizationPageClient canCreateOrganizations />
+			</Activity>,
+		);
+		fireEvent.change(await screen.findByLabelText("Organization Name"), {
+			target: { value: "Original draft" },
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "Create Organization" }),
+		);
+		await waitFor(() =>
+			expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce(),
+		);
+		rerender(
+			<Activity mode="hidden">
+				<OrganizationPageClient canCreateOrganizations />
+			</Activity>,
+		);
+		rerender(
+			<Activity mode="visible">
+				<OrganizationPageClient canCreateOrganizations />
+			</Activity>,
+		);
+		const button = await screen.findByRole("button", {
+			name: "Create Organization",
+		});
+		expect(button).toHaveProperty("disabled", true);
+		fireEvent.click(button);
+		expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce();
+		await act(async () => request.resolve({ success: true }));
+		expect(pushMock).not.toHaveBeenCalled();
+		await waitFor(() => expect(button).toHaveProperty("disabled", false));
+	});
+
+	it("rejects held slug A to B to A responses from an earlier visit", async () => {
+		vi.useFakeTimers();
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: false },
+		});
+		const first = deferred<boolean>(),
+			second = deferred<boolean>(),
+			current = deferred<boolean>();
+		checkSlugAvailabilityMock
+			.mockReturnValueOnce(first.promise)
+			.mockReturnValueOnce(second.promise)
+			.mockReturnValueOnce(current.promise);
+		render(<OrganizationPageClient canCreateOrganizations />);
+		await act(async () => {});
+		for (const value of ["alpha", "bravo", "alpha"]) {
+			fireEvent.change(screen.getByLabelText("Organization Slug"), {
+				target: { value },
+			});
+			await act(async () => vi.advanceTimersByTime(500));
+		}
+		await act(async () => first.resolve(false));
+		expect(
+			screen.queryByText(
+				"This slug is already taken. Please choose a different one.",
+			),
+		).toBeNull();
+		await act(async () => current.resolve(false));
+		await act(async () => second.resolve(true));
+		expect(
+			screen.getByText(
+				"This slug is already taken. Please choose a different one.",
+			),
+		).toBeTruthy();
+	});
+
+	it("prevents repeated creation while pending and retains all input for retry", async () => {
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: false },
+		});
+		const request = deferred<{ success: false; error: string }>();
+		createOrganizationOnboardingMock
+			.mockReturnValueOnce(request.promise)
+			.mockResolvedValueOnce({ success: true });
+		render(
+			<OrganizationPageClient
+				canCreateOrganizations
+				trackingSuggestedAt="2026-05-20T23:30:00Z"
+			/>,
+		);
+		fireEvent.change(await screen.findByLabelText("Organization Name"), {
+			target: { value: "Retained draft" },
+		});
+		fireEvent.change(screen.getByLabelText("Time tracking start date"), {
+			target: { value: "2026-05-22" },
+		});
+		const button = screen.getByRole("button", { name: "Create Organization" });
+		fireEvent.click(button);
+		fireEvent.click(button);
+		await waitFor(() =>
+			expect(createOrganizationOnboardingMock).toHaveBeenCalledOnce(),
+		);
+		await act(async () =>
+			request.resolve({ success: false, error: "Please retry" }),
+		);
+		expect(screen.getByRole("alert").textContent).toBe("Please retry");
+		expect(screen.getByLabelText("Organization Name")).toHaveProperty(
+			"value",
+			"Retained draft",
+		);
+		expect(screen.getByLabelText("Time tracking start date")).toHaveProperty(
+			"value",
+			"2026-05-22",
+		);
+		await waitFor(() => expect(button).toHaveProperty("disabled", false));
+		fireEvent.click(button);
+		await waitFor(() => expect(pushMock).toHaveBeenCalledOnce());
+		expect(createOrganizationOnboardingMock).toHaveBeenCalledTimes(2);
 	});
 
 	it("preserves a manually edited slug when the organization name changes", async () => {
@@ -102,6 +393,23 @@ describe("OrganizationPageClient", () => {
 		fireEvent.change(slugInput, { target: { value: "custom-slug" } });
 		fireEvent.change(nameInput, { target: { value: "Different Name" } });
 		expect(slugInput).toHaveProperty("value", "custom-slug");
+	});
+
+	it("connects the slug help and live status to the labeled input", async () => {
+		getOnboardingSummaryMock.mockResolvedValue({
+			success: true,
+			data: { hasOrganization: false },
+		});
+		render(<OrganizationPageClient canCreateOrganizations />);
+		const slug = await screen.findByLabelText("Organization Slug");
+		const descriptions = slug
+			.getAttribute("aria-describedby")
+			?.split(" ")
+			.map((id) => document.getElementById(id));
+		expect(descriptions?.every(Boolean)).toBe(true);
+		expect(descriptions?.map((node) => node?.textContent).join(" ")).toContain(
+			"Used in URLs. Auto-generated from name.",
+		);
 	});
 
 	it("keeps the current slug request loading when an older response resolves", async () => {

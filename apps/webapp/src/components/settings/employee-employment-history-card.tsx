@@ -1,11 +1,20 @@
 "use client";
 
-import { IconCash, IconPlus } from "@tabler/icons-react";
+import { IconCash, IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	AlertDialog,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
@@ -21,6 +30,8 @@ import type {
 } from "./employee-employment-history/types";
 import {
 	defaultFormValues,
+	formatDate,
+	formatWeeklyHours,
 	isCurrentConfirmed,
 	isFutureConfirmed,
 	toDateTime,
@@ -103,24 +114,33 @@ export function EmployeeEmploymentHistoryCard({
 			]),
 		);
 	};
+	// Cancelling removes a scheduled or draft change, so it is confirmed first.
+	// The dialog stays open while the cancellation runs and shows a failure inline.
+	const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
+	const [isCancelling, setIsCancelling] = useState(false);
+	const [cancelError, setCancelError] = useState<string | null>(null);
+	const pendingCancelEntry = pendingCancelId
+		? sortedHistory.find((entry) => entry.id === pendingCancelId)
+		: undefined;
+	const pendingCancelDate = pendingCancelEntry ? formatDate(pendingCancelEntry.validFrom) : null;
+	const requestCancel = (historyId: string) => {
+		setCancelError(null);
+		setPendingCancelId(historyId);
+	};
 	const handleCancel = async (historyId: string) => {
-		if (
-			!window.confirm(
-				t(
-					"settings.employmentHistory.cancelConfirm",
-					"Cancel this employment change? This removes the scheduled or draft employment change.",
-				),
-			)
-		)
-			return;
+		if (isCancelling) return;
+		setIsCancelling(true);
+		setCancelError(null);
 		const result = await onCancel(historyId).catch(() => null);
+		setIsCancelling(false);
 		if (result?.success) {
+			setPendingCancelId(null);
 			toast.success(
 				t("settings.employmentHistory.cancelSuccess", "Employment history change canceled"),
 			);
 			return;
 		}
-		toast.error(
+		setCancelError(
 			actionErrorMessage(t, result, {}, [
 				"settings.employmentHistory.cancelError",
 				"Failed to cancel employment history change",
@@ -217,12 +237,114 @@ export function EmployeeEmploymentHistoryCard({
 					isMutating={isMutating}
 					now={now}
 					onConfirm={handleConfirm}
-					onCancel={handleCancel}
+					onCancel={requestCancel}
 					t={t}
 					policyNameById={policyNameById}
 				/>
 				{lifecycleEvents}
 			</CardContent>
+			<CancelEmploymentChangeDialog
+				pendingCancelId={pendingCancelId}
+				isCancelling={isCancelling}
+				setPendingCancelId={setPendingCancelId}
+				setCancelError={setCancelError}
+				pendingCancelEntry={pendingCancelEntry}
+				pendingCancelDate={pendingCancelDate}
+				cancelError={cancelError}
+				handleCancel={handleCancel}
+			/>
 		</Card>
+	);
+}
+
+function CancelEmploymentChangeDialog({
+	pendingCancelId,
+	isCancelling,
+	setPendingCancelId,
+	setCancelError,
+	pendingCancelEntry,
+	pendingCancelDate,
+	cancelError,
+	handleCancel,
+}: {
+	pendingCancelId: string | null;
+	isCancelling: boolean;
+	setPendingCancelId: (id: null) => void;
+	setCancelError: (error: null) => void;
+	pendingCancelEntry: EmployeeEmploymentHistoryCardProps["history"][number] | undefined | null;
+	pendingCancelDate: string | null;
+	cancelError: string | null;
+	handleCancel: (id: string) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<AlertDialog
+			open={pendingCancelId !== null}
+			onOpenChange={(open) => {
+				// Escape or an outside press must not hide a cancellation that is still running.
+				if (!open && !isCancelling) {
+					setPendingCancelId(null);
+					setCancelError(null);
+				}
+			}}
+		>
+			<AlertDialogContent aria-busy={isCancelling}>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{pendingCancelEntry && pendingCancelDate
+							? t(
+									"settings.employmentHistory.cancelConfirmNamedTitle",
+									"Cancel {contractType} change effective {date}?",
+									{
+										contractType: pendingCancelEntry.contractType,
+										date: pendingCancelDate,
+									},
+								)
+							: t("settings.employmentHistory.cancelConfirmTitle", "Cancel employment change?")}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{t(
+							"settings.employmentHistory.cancelConfirm",
+							"Cancel this employment change? This removes the scheduled or draft employment change.",
+						)}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				{pendingCancelEntry && (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.employmentHistory.cancelConfirmSummary",
+							"{hours} / week · {workModel} · {reviewState}",
+							{
+								hours: formatWeeklyHours(pendingCancelEntry.weeklyContractMinutes),
+								workModel: pendingCancelEntry.workModel,
+								reviewState: pendingCancelEntry.reviewState,
+							},
+						)}
+					</p>
+				)}
+				{cancelError && (
+					<p role="alert" className="text-sm text-destructive">
+						{cancelError}
+					</p>
+				)}
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={isCancelling}>
+						{t("settings.employmentHistory.keepChange", "Keep change")}
+					</AlertDialogCancel>
+					<Button
+						variant="destructive"
+						disabled={isCancelling}
+						onClick={() => {
+							if (pendingCancelId) void handleCancel(pendingCancelId);
+						}}
+					>
+						{isCancelling ? (
+							<IconLoader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+						) : null}
+						{t("settings.employmentHistory.cancelChange", "Cancel change")}
+					</Button>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }

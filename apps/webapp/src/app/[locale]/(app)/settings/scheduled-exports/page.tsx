@@ -1,23 +1,31 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ScheduledExportsTable } from "@/components/settings/scheduled-exports/scheduled-exports-table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 import {
 	getFilterOptionsAction,
 	getPayrollConfigsAction,
 	getScheduledExportsAction,
 } from "./actions";
 
-export const metadata = {
-	title: "Scheduled Exports",
-	description:
-		"Configure recurring exports for payroll, data, and audit reports",
-};
+export async function generateMetadata(): Promise<Metadata> {
+	const t = await getTranslate();
+
+	return {
+		title: t("settings.scheduledExports.title", "Scheduled Exports"),
+		description: t(
+			"settings.scheduledExports.description",
+			"Configure recurring exports for payroll, data, and audit reports.",
+		),
+	};
+}
 
 async function ScheduledExportsContent() {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
+	const { organizationId, authContext } = await requireOrgAdminSettingsAccess();
 
 	// Fetch initial data in parallel after the org access guard.
 	// eslint-disable-next-line react-doctor/server-sequential-independent-await
@@ -37,9 +45,10 @@ async function ScheduledExportsContent() {
 		: [];
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="page-frame flex flex-1 flex-col gap-6">
 			<ScheduledExportsTable
 				organizationId={organizationId}
+				currentUserId={authContext.user.id}
 				initialSchedules={schedules}
 				initialFilterOptions={filterOptions}
 				initialPayrollConfigs={payrollConfigs}
@@ -51,7 +60,7 @@ async function ScheduledExportsContent() {
 function ScheduledExportsLoading() {
 	return (
 		<LoadingRegion
-			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="page-frame flex flex-1 flex-col gap-6"
 			role="status"
 			label={{
 				labelKey: "common.loadingRegions.scheduledExports",

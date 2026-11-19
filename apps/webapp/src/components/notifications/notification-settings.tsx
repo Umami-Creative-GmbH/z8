@@ -16,6 +16,7 @@ import {
 	IconLoader2,
 	IconMail,
 	IconReceipt,
+	IconRefresh,
 	IconShield,
 	IconUsers,
 } from "@tabler/icons-react";
@@ -387,8 +388,15 @@ const CHANNEL_CONFIG: Record<
 
 function useNotificationSettingsViewModel() {
 	const { t } = useTranslate();
-	const { matrix, availableChannels, isLoading, updatePreference, isUpdating } =
-		useNotificationPreferences();
+	const {
+		matrix,
+		availableChannels,
+		isLoading,
+		updatePreference,
+		isUpdating,
+		refetch: retryLoad,
+		isRefetching: isRetryingLoad,
+	} = useNotificationPreferences();
 
 	const {
 		isSupported: isPushSupported,
@@ -659,10 +667,6 @@ function useNotificationSettingsViewModel() {
 		return success;
 	};
 
-	const _handleEnablePush = async () => {
-		await subscribeToPush();
-	};
-
 	const handleToggle = async (
 		type: NotificationType,
 		channel: NotificationChannel,
@@ -725,10 +729,12 @@ function useNotificationSettingsViewModel() {
 		isPushLoading,
 		isPushSubscribed,
 		isPushSupported,
+		isRetryingLoad,
 		isUpdating,
 		matrix,
 		pendingToggle,
 		pushPermission,
+		retryLoad,
 		setShowPermissionModal,
 		showPermissionModal,
 		t,
@@ -751,10 +757,12 @@ function NotificationSettingsView({
 		isPushLoading,
 		isPushSubscribed,
 		isPushSupported,
+		isRetryingLoad,
 		isUpdating,
 		matrix,
 		pendingToggle,
 		pushPermission,
+		retryLoad,
 		setShowPermissionModal,
 		showPermissionModal,
 		t,
@@ -768,13 +776,26 @@ function NotificationSettingsView({
 	if (!matrix) {
 		return (
 			<Card>
-				<CardContent className="py-8 text-center">
-					<p className="text-muted-foreground">
+				<CardContent className="flex flex-col items-start gap-3">
+					<p className="text-sm" role="alert">
 						{t(
 							"common:notifications.preferences.loadFailed",
 							"Unable to load notification preferences",
 						)}
 					</p>
+					<Button
+						variant="outline"
+						onClick={() => void retryLoad()}
+						disabled={isRetryingLoad}
+					>
+						<IconRefresh
+							className={
+								isRetryingLoad ? "size-4 motion-safe:animate-spin" : "size-4"
+							}
+							aria-hidden="true"
+						/>
+						{t("common.retry", "Retry")}
+					</Button>
 				</CardContent>
 			</Card>
 		);
@@ -784,11 +805,11 @@ function NotificationSettingsView({
 		<div className="space-y-6">
 			{/* Push notification setup card - show when supported but not subscribed */}
 			{isPushSupported && !isPushSubscribed && pushPermission !== "denied" && (
-				<Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
+				<Card className="border-primary/30 bg-primary/5">
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
 							<IconDeviceMobile
-								className="size-5 text-blue-600 dark:text-blue-400"
+								className="size-5 shrink-0 text-primary"
 								aria-hidden="true"
 							/>
 							<CardTitle className="text-base">
@@ -828,13 +849,10 @@ function NotificationSettingsView({
 
 			{/* Push blocked warning - show when permission is denied */}
 			{isPushSupported && pushPermission === "denied" && (
-				<Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20">
+				<Card className="border-warning/40 bg-warning/5">
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
-							<IconExclamationCircle
-								className="size-5 text-amber-600 dark:text-amber-400"
-								aria-hidden="true"
-							/>
+							<IconExclamationCircle className="size-5 text-warning" aria-hidden="true" />
 							<CardTitle className="text-base">
 								{t(
 									"common:notifications.preferences.push.blockedTitle",
@@ -862,21 +880,19 @@ function NotificationSettingsView({
 
 			{/* Push enabled indicator */}
 			{isPushSubscribed && (
-				<div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50/50 p-3 dark:border-green-900 dark:bg-green-950/20">
+				<div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-3">
 					<IconDeviceMobile
-						className="size-4 text-green-600 dark:text-green-400"
+						className="size-4 shrink-0 text-primary"
 						aria-hidden="true"
 					/>
-					<span className="text-sm text-green-700 dark:text-green-300">
+					<span className="text-sm">
 						{t(
 							"common:notifications.preferences.push.enabledIndicator",
 							"Push notifications are enabled",
 						)}
 					</span>
-					<Badge
-						variant="outline"
-						className="ml-auto border-green-300 text-green-700"
-					>
+					<Badge variant="secondary" className="ml-auto">
+						<IconCheck aria-hidden="true" />
 						{t("common:common.active", "Active")}
 					</Badge>
 				</div>

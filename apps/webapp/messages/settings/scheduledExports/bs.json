@@ -35,7 +35,6 @@
         "previousWeekDesc": "Izvezi podatke iz prethodne sedmice (pon-ned)"
       },
       "deleteDialog": {
-        "cancel": "Otkaži",
         "confirm": "Izbriši",
         "description": "Jeste li sigurni da želite izbrisati \"{name}\"? Ova radnja se ne može poništiti.",
         "title": "Izbriši zakazani izvoz"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Brisanje nije uspjelo",
         "loadFailed": "Učitavanje zakazanih izvoza nije uspjelo",
-        "toggleFailed": "Prebacivanje nije uspjelo"
+        "retry": "Pokušajte ponovo"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Vlasnik rasporeda, {owner}, više nije administrator organizacije. Prvo postavite sebe ili drugog administratora organizacije kao vlasnika."
       },
       "filters": {
         "allEmployees": "Svi zaposlenici",
@@ -284,8 +286,9 @@
         "paused": "Pauzirano",
         "schedule": "Raspored",
         "status": "Status",
-        "title": "Aktivni rasporedi",
-        "type": "Tip"
+        "titleAll": "Rasporedi",
+        "type": "Tip",
+        "unknownOwner": "Nepoznat vlasnik"
       },
       "title": "Zakazani izvozi",
       "toast": {

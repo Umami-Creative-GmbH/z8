@@ -1,15 +1,16 @@
-import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { formatPresenceSince } from "@/lib/time-tracking/who-is-in/format";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
-import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import { LocationPresenceList, type LocationPresenceRow } from "../location-presence-list";
+import { LocationPresenceView } from "../location-presence-view";
 import { getLocationPresence } from "../presence-data";
+import { AllLocationsLink } from "./all-locations-link";
+import { LocationPresenceLoading } from "./location-presence-loading";
 
 interface LocationPresencePageProps {
 	params: Promise<{ locale: string; locationId: string }>;
@@ -36,57 +37,44 @@ async function LocationPresencePageContent({ params }: LocationPresencePageProps
 	}));
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<div className="space-y-2 px-4 lg:px-6">
-				<Link
-					href="/team/presence"
-					className="inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
-				>
-					<IconArrowLeft className="size-4" aria-hidden="true" />
-					{t("team.presence.allLocations", "All locations")}
-				</Link>
-				<h1 className="text-pretty text-2xl font-semibold">
-					{t("team.presence.locationTitle", "Who is in: {location}", {
+		<LocationPresenceView
+			view={{ userId: result.viewer.userId, organizationId: result.viewer.organizationId }}
+		>
+			<div className="@container/main page-frame flex min-w-0 flex-1 flex-col gap-6">
+				<PageHeader
+					scope={<AllLocationsLink />}
+					title={t("team.presence.locationTitle", "Who is in: {location}", {
 						location: result.location.name,
 					})}
-				</h1>
-				<p className="text-muted-foreground">
-					{result.viewer.scope.kind === "all"
-						? t(
-								"team.presence.descriptionAll",
-								"Employees assigned to this location who are clocked in or on a break.",
-							)
-						: t(
-								"team.presence.descriptionManaged",
-								"Employees you manage who are assigned to this location and clocked in or on a break.",
-							)}
-				</p>
+					description={
+						result.viewer.scope.kind === "all"
+							? t(
+									"team.presence.descriptionAll",
+									"Employees assigned to this location who are clocked in or on a break.",
+								)
+							: t(
+									"team.presence.descriptionManaged",
+									"Employees you manage who are assigned to this location and clocked in or on a break.",
+								)
+					}
+				/>
+				<section aria-label={t("team.presence.title", "Who is in")} className="min-w-0 space-y-3">
+					<LocationPresenceList rows={rows} />
+					<p className="max-w-3xl text-pretty text-sm text-muted-foreground">
+						{t(
+							"team.presence.assignmentContext",
+							"Location assignment is not evidence of device position. Times use the zone captured when work or the break began. Presence refreshes every minute.",
+						)}
+					</p>
+				</section>
 			</div>
-			<div className="px-4 lg:px-6">
-				<LocationPresenceList rows={rows} />
-			</div>
-		</div>
-	);
-}
-
-function LocationPresencePageLoading() {
-	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<div className="space-y-2 px-4 lg:px-6">
-				<Skeleton className="h-4 w-28" />
-				<Skeleton className="h-8 w-64" />
-				<Skeleton className="h-5 w-full max-w-xl" />
-			</div>
-			<div className="px-4 lg:px-6">
-				<Skeleton className="h-64 w-full" />
-			</div>
-		</div>
+		</LocationPresenceView>
 	);
 }
 
 export default function LocationPresencePage({ params }: LocationPresencePageProps) {
 	return (
-		<Suspense fallback={<LocationPresencePageLoading />}>
+		<Suspense fallback={<LocationPresenceLoading />}>
 			<LocationPresencePageContent params={params} />
 		</Suspense>
 	);

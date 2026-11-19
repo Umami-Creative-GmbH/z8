@@ -28,6 +28,7 @@ import {
 	useSickNoteDefaults,
 } from "./sick-note-files-field";
 import {
+	StagedSickNoteUploadCancelledError,
 	StagedSickNoteUploadError,
 	type UploadedSickNote,
 	useStagedSickNoteUploads,
@@ -117,6 +118,7 @@ export function AttachSickNoteDialog({
 				attached = (await uploads.stage(resolveStagedSickNoteFiles(value.sickNotes, defaults)))
 					.length;
 			} catch (error) {
+				if (error instanceof StagedSickNoteUploadCancelledError) return;
 				// Notes attached so far stay; the rest of the files are not sent.
 				if (error instanceof StagedSickNoteUploadError && error.completed.length > 0) onAttached();
 				const message =

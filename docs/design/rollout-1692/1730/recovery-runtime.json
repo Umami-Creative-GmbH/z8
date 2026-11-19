@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "Actual failed same-filter RSC refresh retains request records",
+    "Stale officer decision targets are disabled after read failure",
+    "Native Retry recovers actual server records and decisions",
+    "Real aborted transport retains title, selection and deadline with inline uncertain-outcome retry",
+    "Real retry after transport abort creates requests and displays actual summary"
+  ]
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { IconArrowBackUp, IconChevronRight, IconLoader2 } from "@tabler/icons-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useState } from "react";
@@ -29,7 +29,9 @@ import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatRecordedInstant } from "./format";
 import { itemTitle, removedItemTitle } from "./item-title";
+import { useReportLifecycleRefresh, useReportQueryKey } from "./report-read-scope";
 import { ReopenedNotice } from "./report-reopen";
+import { useReportTask } from "./use-report-task";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -194,54 +196,69 @@ export function WithdrawReportButton({
 	submissionCycle: number;
 }) {
 	const { t } = useTranslate();
-	const queryClient = useQueryClient();
 	const [pending, setPending] = useState(false);
+	const [settled, setSettled] = useState(false);
+	const [open, setOpen] = useState(false);
+	const task = useReportTask(`${reportId}:${submissionCycle}`);
+	const refreshLifecycle = useReportLifecycleRefresh(reportId);
 
 	async function withdraw() {
+		if (settled) return;
+		const activation = task.reserve();
+		if (!activation) return;
 		setPending(true);
 		// No `finally`: the React Compiler cannot compile try statements with one.
 		try {
 			const result = await withdrawTravelExpenseReportAction({ reportId, submissionCycle });
-			if (!result.success) {
+			if (result.success) {
+				if (task.isCurrent(activation)) {
+					if (result.data.status === "not_pending") {
+						toast.error(
+							t(
+								"travelExpenses.report.withdraw.notPending",
+								"This submission was already decided or returned, so it can no longer be withdrawn.",
+							),
+						);
+					} else {
+						toast.success(
+							t("travelExpenses.report.withdraw.done", "Report withdrawn. You can edit it again."),
+						);
+					}
+				}
+				setSettled(true);
+				setOpen(false);
+				await refreshLifecycle();
+			} else if (task.isCurrent(activation)) {
 				toast.error(
 					t(
 						"travelExpenses.report.withdraw.failed",
 						"The report could not be withdrawn. Please retry.",
 					),
 				);
-			} else {
-				if (result.data.status === "not_pending") {
-					toast.error(
-						t(
-							"travelExpenses.report.withdraw.notPending",
-							"This submission was already decided or returned, so it can no longer be withdrawn.",
-						),
-					);
-				} else {
-					toast.success(
-						t("travelExpenses.report.withdraw.done", "Report withdrawn. You can edit it again."),
-					);
-				}
-				await Promise.all([
-					queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) }),
-					queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.history() }),
-				]);
 			}
 		} catch {
-			toast.error(
-				t(
-					"travelExpenses.report.withdraw.failed",
-					"The report could not be withdrawn. Please retry.",
-				),
-			);
+			if (task.isCurrent(activation)) {
+				toast.error(
+					t(
+						"travelExpenses.report.withdraw.failed",
+						"The report could not be withdrawn. Please retry.",
+					),
+				);
+			}
 		}
 		setPending(false);
+		task.release(activation);
 	}
 
 	return (
-		<AlertDialog>
+		<AlertDialog
+			open={open}
+			onOpenChange={(next) => {
+				if (!task.isPending()) setOpen(next);
+			}}
+		>
 			<AlertDialogTrigger asChild>
-				<Button type="button" variant="outline" disabled={pending}>
+				<Button type="button" variant="outline" disabled={pending || settled}>
 					{pending ? (
 						<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
 					) : (
@@ -263,8 +280,14 @@ export function WithdrawReportButton({
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction onClick={() => void withdraw()}>
+					<AlertDialogCancel disabled={pending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+					<AlertDialogAction
+						disabled={pending || settled}
+						onClick={(event) => {
+							event.preventDefault();
+							void withdraw();
+						}}
+					>
 						{t("travelExpenses.report.withdraw.confirm", "Withdraw")}
 					</AlertDialogAction>
 				</AlertDialogFooter>
@@ -290,7 +313,7 @@ export function ReportReviewFeedback({
 }) {
 	const { t } = useTranslate();
 	const { data, isError, isFetching, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.reportSubmission(reportId),
+		queryKey: useReportQueryKey(queryKeys.travelExpenses.reportSubmission(reportId)),
 		queryFn: async (): Promise<SubmittedReportView> => {
 			const result = await getTravelExpenseReportSubmission(reportId);
 			if (!result.success) throw new Error(result.error);

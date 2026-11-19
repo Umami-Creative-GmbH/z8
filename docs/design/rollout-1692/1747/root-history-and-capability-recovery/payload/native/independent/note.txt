@@ -1,0 +1,13 @@
+Read-only intake of R165 independent SAFE
+
+All 60 payloads / 632,791 bytes match the expected 9,999-byte index and its SHA256. Seventeen JSON files and one UTF16LE JSON verifier log parse; thirteen TS/TSX clones/probes parse statically.
+
+Exact recount: 20 independent + 183 committed unit + 50 PostgreSQL = 253 distinct file/fullName/occurrence identities in 20 files, all saved passing. Overlap with frozen1748 is159 unit +13 PostgreSQL =172, not additive. Prior13-case reruns and the one failed harness attempt are excluded.
+
+Own assertion comparison confirms72 original assertions retained, one enabled-button expectation added; declared test names unchanged. Probes use actual providers/controllers/query/refresh and adapt only external edges. Main TS is qualified solely by missing ignored licenses.json; workflow/smoke/typegen/lint/explicit formatting and Doctor0/0 receipts pass; ordinary formatting retains4 findings.
+
+All10 source/materialization/clone pins and65 anchor occurrences match frozen cab95aa79/app52a1d437. Mode/type/blob preservation independently matches18,780 root and82 incoming nonoverlap paths. The202-path frozen1748 archive is unchanged in Git; its two expected current-source differences remain explicit.
+
+Minor packaging caveat: commands-extra.json references docker-release.log, which is not indexed. Sealed pg6.log records verified label-owned removal; the later exact docker-ps empty readback is only a summary receipt. No missing artifact was inspected or reconstructed. OS absence/source-index cleanup remain producer receipts; no fresh runtime inventory performed.
+
+No repository/index/runtime mutation or archived execution. Only these TEMP outputs were written. No readiness decision.

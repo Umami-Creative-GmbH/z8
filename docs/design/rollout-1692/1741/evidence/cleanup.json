@@ -1,0 +1,25 @@
+{
+  "privateEvidenceRetained": true,
+  "next": {
+    "portClosed": true,
+    "ownedNextIdentityVerified": true,
+    "port": 53372,
+    "ownedNextStopped": true,
+    "filteredProcessInventory": true,
+    "cacheMoved": false
+  },
+  "services": {
+    "label": "z8-performance-fixture-1450",
+    "removedExactNames": [
+      "z8_perf_d4d2e48222f7_postgres",
+      "z8_perf_d4d2e48222f7_redis",
+      "z8_perf_d4d2e48222f7_storage"
+    ],
+    "allThreeAbsent": true
+  },
+  "browser": {
+    "ownedBrowserClosed": true,
+    "sessionStateSaved": false,
+    "endpointScopeVerified": true
+  }
+}

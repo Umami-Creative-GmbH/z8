@@ -1,0 +1,93 @@
+{
+  "phase": "before",
+  "source": {
+    "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+    "sha256": "eb788e7b5dcdd5839ed6ebcc8aee242d929a4518efcdb00e3fe53b1801e352d6",
+    "canonicalSha256": "eb788e7b5dcdd5839ed6ebcc8aee242d929a4518efcdb00e3fe53b1801e352d6"
+  },
+  "checks": [
+    {
+      "name": "Actual membership summary request is held while the route retains its safe task heading",
+      "headings": [],
+      "noCreationFields": true,
+      "heldSummaryRequests": 1
+    }
+  ],
+  "captures": [
+    {
+      "name": "before-pending-desktop.png",
+      "path": "/en/onboarding/organization",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [],
+      "creationFields": 0,
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "f55baea98fd29b635efad41509e9030341d65e0aed76680e8e76286e7e68220f"
+      },
+      "source": {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "eb788e7b5dcdd5839ed6ebcc8aee242d929a4518efcdb00e3fe53b1801e352d6",
+        "canonicalSha256": "eb788e7b5dcdd5839ed6ebcc8aee242d929a4518efcdb00e3fe53b1801e352d6"
+      }
+    },
+    {
+      "name": "before-pending-phone.png",
+      "path": "/en/onboarding/organization",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "font": "16px",
+      "fontStatus": "loaded",
+      "h1": [],
+      "creationFields": 0,
+      "png": {
+        "width": 390,
+        "height": 844,
+        "sha256": "4b519194f39c5eba7ab18467a42c57300f834f4d46b0a6fe5d43d29beb130165"
+      },
+      "source": {
+        "path": "apps/webapp/src/app/[locale]/onboarding/organization/organization-page-client.tsx",
+        "sha256": "eb788e7b5dcdd5839ed6ebcc8aee242d929a4518efcdb00e3fe53b1801e352d6",
+        "canonicalSha256": "eb788e7b5dcdd5839ed6ebcc8aee242d929a4518efcdb00e3fe53b1801e352d6"
+      }
+    }
+  ],
+  "summaryResponses": [
+    {
+      "status": 200
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "heldSummaryRequests": 1,
+  "navigations": [
+    "/en/onboarding/organization",
+    "/en/onboarding/organization",
+    "/en/onboarding/profile"
+  ],
+  "action": {
+    "id": "003b7efede98afe034f01c75075e090fe56c2f76a2",
+    "exportedName": "getOnboardingSummary",
+    "workers": [
+      "app/[locale]/onboarding/organization/page"
+    ]
+  },
+  "failure": "Waiting failed: 45000ms exceeded"
+}

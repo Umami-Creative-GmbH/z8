@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {execFileSync,spawnSync} from 'node:child_process';
+import {readFile,writeFile} from 'node:fs/promises';
+const file='apps/webapp/src/lib/effect/services/onboarding.service.ts',current=await readFile(file,'utf8'),normalize=s=>s.replaceAll('\r\n','\n');
+const formatted=normalize(current),base=execFileSync('git',['show','699a1a782ca8f0ab2def50b31e4921fd6d17a073:'+file],{encoding:'utf8'});
+let result=base;
+const replaceRegion=(start,end,change)=>{const a=result.indexOf(start),b=result.indexOf(end,a);assert.ok(a>=0&&b>a);result=result.slice(0,a)+change(result.slice(a,b))+result.slice(b);};
+const importAnchor='import { withOrganizationTrackingSetup } from "@/lib/organization/tracking-setup";\n';assert.ok(result.includes(importAnchor));result=result.replace(importAnchor,importAnchor+'import {\n\tmeetsSettingsAccess,\n\tresolveCallerSettingsAccess,\n} from "@/lib/organization-action/settings-access";\n');
+replaceRegion('\t\t// Admin setup - Vacation Policy','\t\t// Admin setup - Work Schedule Templates',s=>s.replaceAll('AuthenticationError | DatabaseError','AuthenticationError | AuthorizationError | DatabaseError'));
+const helperStart=formatted.indexOf('\t\tconst settingsCaller ='),helperEnd=formatted.indexOf('\t\tconst requireWorkTemplateAdmin =',helperStart);assert.ok(helperStart>=0&&helperEnd>helperStart);result=result.replace('\t\tconst requireWorkTemplateAdmin =',formatted.slice(helperStart,helperEnd)+'\t\tconst requireWorkTemplateAdmin =');
+replaceRegion('\t\t\t// Admin setup - Create vacation policy','\t\t\t// Skip vacation policy setup',s=>{
+ const old='\t\t\t\t\tconst session = yield* authService.getSession();\n\t\t\t\t\tconst activeOrgId = session.session.activeOrganizationId;';assert.ok(s.includes(old));s=s.replace(old,'\t\t\t\t\tconst caller = yield* requireVacationPolicyAdmin();\n\t\t\t\t\tconst activeOrgId = caller.organizationId;');
+ const pattern=/^\t{6}if \(!activeOrgId\) \{[\s\S]*?^\t{6}\}\n\n/m;assert.ok(pattern.test(s));return s.replace(pattern,'').replaceAll('session.user.id','caller.userId');
+});
+replaceRegion('\t\t\t// Skip vacation policy setup','\t\t\t// Admin setup - Create work schedule template',s=>s.replace('const session = yield* authService.getSession();','const caller = yield* requireVacationPolicyAdmin();').replaceAll('session.user.id','caller.userId'));
+const adminStart=formatted.indexOf('\t\t\t// Check if user is admin of their organization'),adminEnd=formatted.indexOf('\t\t\t// Get onboarding summary',adminStart);assert.ok(adminStart>=0&&adminEnd>adminStart);replaceRegion('\t\t\t// Check if user is admin of their organization','\t\t\t// Get onboarding summary',()=>formatted.slice(adminStart,adminEnd));
+const cli=process.env.npm_execpath,args=['--config.verify-deps-before-run=false','--filter','webapp','exec','biome','format','--config-path=./biome.jsonc','--line-ending=lf','--stdin-file-path=src/lib/effect/services/onboarding.service.ts'];
+const check=spawnSync(cli.endsWith('.exe')?cli:process.execPath,cli.endsWith('.exe')?args:[cli,...args],{input:result,encoding:'utf8',windowsHide:true,env:{...process.env,pnpm_config_verify_deps_before_run:'false'},maxBuffer:8*1024*1024});
+assert.equal(check.status,0);assert.equal(normalize(check.stdout),formatted,'Reconstructed source must format identically to the tested semantic correction.');
+await writeFile('.tmp/1831-root-checks/service-format-intermediate.ts.txt',current);
+await writeFile(file,result.replaceAll('\n','\r\n'));
+console.log('Removed only our unrelated service-format churn; Biome canonical output is byte-identical to the tested semantic patch.');

@@ -2,8 +2,8 @@
 
 import {
 	IconBuilding,
-	IconLoader2,
 	IconPlus,
+	IconRefresh,
 	IconTag,
 	IconTrash,
 	IconUser,
@@ -19,16 +19,7 @@ import {
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
 import { AssignmentLevelCardHeader } from "@/components/settings/assignment-level-card-header";
 import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/settings/confirm-action-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
@@ -94,6 +85,7 @@ function useWorkCategoryAssignmentDeletion(organizationId: string) {
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedAssignment, setSelectedAssignment] = useState<AssignmentData | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	const deleteMutation = useMutation({
 		mutationFn: (assignmentId: string) => deleteSetAssignment(assignmentId),
@@ -104,9 +96,9 @@ function useWorkCategoryAssignmentDeletion(organizationId: string) {
 					queryKey: queryKeys.workCategorySetAssignments.list(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				setSelectedAssignment(null);
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the removal can be retried.
+				setDeleteError(
 					actionErrorMessage(t, result, {}, [
 						"settings.workCategories.assignmentDeleteFailed",
 						"Failed to remove assignment",
@@ -115,7 +107,7 @@ function useWorkCategoryAssignmentDeletion(organizationId: string) {
 			}
 		},
 		onError: () => {
-			toast.error(
+			setDeleteError(
 				t("settings.workCategories.assignmentDeleteFailed", "Failed to remove assignment"),
 			);
 		},
@@ -123,30 +115,44 @@ function useWorkCategoryAssignmentDeletion(organizationId: string) {
 
 	const handleDeleteClick = (assignment: AssignmentData) => {
 		setSelectedAssignment(assignment);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (selectedAssignment) {
+		if (selectedAssignment && !deleteMutation.isPending) {
+			setDeleteError(null);
 			deleteMutation.mutate(selectedAssignment.id);
 		}
 	};
 
+	const handleOpenChange = (open: boolean) => {
+		setDeleteDialogOpen(open);
+		if (!open) setDeleteError(null);
+	};
+
 	return {
 		deleteDialogOpen,
-		setDeleteDialogOpen,
+		setDeleteDialogOpen: handleOpenChange,
 		selectedAssignment,
+		deleteError,
 		isDeleting: deleteMutation.isPending,
 		handleDeleteClick,
 		handleDeleteConfirm,
 	};
 }
 
+function formatAssignmentEmployeeName(employee: AssignmentData["employee"]) {
+	return [employee?.firstName, employee?.lastName].filter(Boolean).join(" ");
+}
+
 function RemoveAssignmentButton({
 	canManage,
+	label,
 	onClick,
 }: {
 	canManage: boolean;
+	label: string;
 	onClick: () => void;
 }) {
 	const { t } = useTranslate();
@@ -155,11 +161,13 @@ function RemoveAssignmentButton({
 		<Button
 			variant="ghost"
 			size="icon"
-			className="size-8 text-muted-foreground hover:text-destructive"
+			className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
 			onClick={onClick}
-			aria-label={t("common.remove", "Remove")}
+			aria-label={t("settings.workCategories.removeAssignmentFor", "Remove assignment for {name}", {
+				name: label,
+			})}
 		>
-			<IconTrash className="size-4" />
+			<IconTrash className="size-4" aria-hidden="true" />
 		</Button>
 	) : null;
 }
@@ -183,30 +191,35 @@ function OrganizationAssignmentCard({
 				)}
 			/>
 			<CardContent>
-				<div className="flex items-center justify-between mb-2">
+				<div className="mb-2 flex flex-wrap items-center justify-between gap-2">
 					<h4 className="text-sm font-medium text-muted-foreground">
 						{t("settings.workCategories.defaultSet", "Default Category Set")}
 					</h4>
 					{canManage && !assignment && (
 						<Button onClick={onAssignClick} size="sm" variant="outline">
-							<IconPlus className="mr-2 size-4" />
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
 							{t("settings.workCategories.setDefault", "Set Default")}
 						</Button>
 					)}
 				</div>
 				{assignment ? (
-					<div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
-						<div className="flex items-center gap-3">
-							<IconTag className="size-4 text-muted-foreground" />
-							<div>
-								<span className="font-medium">{assignment.set.name}</span>
+					<div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+						<div className="flex min-w-0 items-center gap-3">
+							<IconTag className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+							<div className="min-w-0">
+								<span className="block truncate font-medium" title={assignment.set.name}>
+									{assignment.set.name}
+								</span>
 								{assignment.set.description && (
-									<p className="text-sm text-muted-foreground">{assignment.set.description}</p>
+									<p className="break-words text-sm text-muted-foreground">
+										{assignment.set.description}
+									</p>
 								)}
 							</div>
 						</div>
 						<RemoveAssignmentButton
 							canManage={canManage}
+							label={t("settings.workCategories.orgLevel", "Organization Default")}
 							onClick={() => onDeleteClick(assignment)}
 						/>
 					</div>
@@ -272,18 +285,23 @@ function TeamAssignmentsCard({
 						{assignments.map((assignment) => (
 							<div
 								key={assignment.id}
-								className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+								className="flex items-center justify-between gap-3 rounded-lg border p-3"
 							>
-								<div className="flex items-center gap-3">
-									<IconUsers className="size-4 text-muted-foreground" />
-									<div>
-										<span className="font-medium">{assignment.team?.name}</span>
-										<span className="text-muted-foreground mx-2">→</span>
+								<div className="flex min-w-0 items-center gap-3">
+									<IconUsers className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+									<div className="min-w-0 break-words">
+										<span className="font-medium">
+											{assignment.team?.name ?? t("common.unknownTeam", "Unknown Team")}
+										</span>
+										<span className="mx-2 text-muted-foreground" aria-hidden="true">
+											→
+										</span>
 										<span className="text-sm">{assignment.set.name}</span>
 									</div>
 								</div>
 								<RemoveAssignmentButton
 									canManage={canManage}
+									label={assignment.team?.name ?? t("common.unknownTeam", "Unknown Team")}
 									onClick={() => onDeleteClick(assignment)}
 								/>
 							</div>
@@ -329,20 +347,27 @@ function EmployeeAssignmentsCard({
 						{assignments.map((assignment) => (
 							<div
 								key={assignment.id}
-								className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+								className="flex items-center justify-between gap-3 rounded-lg border p-3"
 							>
-								<div className="flex items-center gap-3">
-									<IconUser className="size-4 text-muted-foreground" />
-									<div>
+								<div className="flex min-w-0 items-center gap-3">
+									<IconUser className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+									<div className="min-w-0 break-words">
 										<span className="font-medium">
-											{assignment.employee?.firstName} {assignment.employee?.lastName}
+											{formatAssignmentEmployeeName(assignment.employee) ||
+												t("common.unknownEmployee", "Unknown Employee")}
 										</span>
-										<span className="text-muted-foreground mx-2">→</span>
+										<span className="mx-2 text-muted-foreground" aria-hidden="true">
+											→
+										</span>
 										<span className="text-sm">{assignment.set.name}</span>
 									</div>
 								</div>
 								<RemoveAssignmentButton
 									canManage={canManage}
+									label={
+										formatAssignmentEmployeeName(assignment.employee) ||
+										t("common.unknownEmployee", "Unknown Employee")
+									}
 									onClick={() => onDeleteClick(assignment)}
 								/>
 							</div>
@@ -363,66 +388,55 @@ function DeleteAssignmentDialog({
 	onOpenChange,
 	selectedAssignment,
 	isDeleting,
+	error,
 	onConfirm,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	selectedAssignment: AssignmentData | null;
 	isDeleting: boolean;
+	error: string | null;
 	onConfirm: () => void;
 }) {
 	const { t } = useTranslate();
 
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>
-						{t("settings.workCategories.deleteAssignmentTitle", "Remove Assignment?")}
-					</AlertDialogTitle>
-					<AlertDialogDescription>
-						{selectedAssignment?.assignmentType === "organization" &&
-							t(
-								"settings.workCategories.deleteOrgAssignment",
-								"This will remove the organization default. Employees will not have work categories available unless assigned individually.",
-							)}
-						{selectedAssignment?.assignmentType === "team" &&
-							t(
-								"settings.workCategories.deleteTeamAssignment",
-								'This will remove the category set from team "{team}". They will use the organization default.',
-								{ team: selectedAssignment.team?.name },
-							)}
-						{selectedAssignment?.assignmentType === "employee" &&
-							t(
-								"settings.workCategories.deleteEmployeeAssignment",
-								'This will remove the override for "{name}". They will use their team or organization default.',
-								{
-									name: `${selectedAssignment?.employee?.firstName} ${selectedAssignment?.employee?.lastName}`,
-								},
-							)}
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel disabled={isDeleting}>
-						{t("common.cancel", "Cancel")}
-					</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={onConfirm}
-						disabled={isDeleting}
-						className="bg-destructive hover:bg-destructive/90"
-					>
-						{isDeleting ? (
-							<>
-								<IconLoader2 className="mr-2 size-4 animate-spin" />
-								{t("common.removing", "Removing...")}
-							</>
-						) : (
-							t("common.remove", "Remove")
+		<ConfirmActionDialog
+			open={open}
+			onOpenChange={onOpenChange}
+			title={t("settings.workCategories.deleteAssignmentTitle", "Remove Assignment?")}
+			description={
+				<>
+					{selectedAssignment?.assignmentType === "organization" &&
+						t(
+							"settings.workCategories.deleteOrgAssignmentNamed",
+							'This will remove "{set}" as the organization default. Employees will not have work categories available unless assigned individually.',
+							{ set: selectedAssignment.set.name },
 						)}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+					{selectedAssignment?.assignmentType === "team" &&
+						t(
+							"settings.workCategories.deleteTeamAssignment",
+							'This will remove the category set from team "{team}". They will use the organization default.',
+							{ team: selectedAssignment.team?.name },
+						)}
+					{selectedAssignment?.assignmentType === "employee" &&
+						t(
+							"settings.workCategories.deleteEmployeeAssignment",
+							'This will remove the override for "{name}". They will use their team or organization default.',
+							{
+								name:
+									formatAssignmentEmployeeName(selectedAssignment.employee) ||
+									t("common.unknownEmployee", "Unknown Employee"),
+							},
+						)}
+				</>
+			}
+			confirmLabel={t("common.remove", "Remove")}
+			pendingLabel={t("common.removing", "Removing...")}
+			isPending={isDeleting}
+			error={error}
+			onConfirm={onConfirm}
+		/>
 	);
 }
 
@@ -432,7 +446,12 @@ export function WorkCategoryAssignmentManager({
 	onAssignClick,
 }: WorkCategoryAssignmentManagerProps) {
 	const { t } = useTranslate();
-	const { data: assignments, isLoading, error } = useWorkCategoryAssignments(organizationId);
+	const {
+		data: assignments,
+		isLoading,
+		error,
+		refetch,
+	} = useWorkCategoryAssignments(organizationId);
 	const deletion = useWorkCategoryAssignmentDeletion(organizationId);
 
 	if (isLoading) {
@@ -442,10 +461,14 @@ export function WorkCategoryAssignmentManager({
 	if (error) {
 		return (
 			<Card>
-				<CardContent className="py-8 text-center">
-					<p className="text-destructive">
+				<CardContent className="flex flex-col items-center gap-4 py-8 text-center">
+					<p role="alert" className="text-destructive">
 						{t("settings.workCategories.assignmentsLoadError", "Failed to load assignments")}
 					</p>
+					<Button variant="outline" onClick={() => refetch()}>
+						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+						{t("common.retry", "Retry")}
+					</Button>
 				</CardContent>
 			</Card>
 		);
@@ -485,6 +508,7 @@ export function WorkCategoryAssignmentManager({
 				onOpenChange={deletion.setDeleteDialogOpen}
 				selectedAssignment={deletion.selectedAssignment}
 				isDeleting={deletion.isDeleting}
+				error={deletion.deleteError}
 				onConfirm={deletion.handleDeleteConfirm}
 			/>
 		</>

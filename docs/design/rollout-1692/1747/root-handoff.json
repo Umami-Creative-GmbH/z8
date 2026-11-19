@@ -1,0 +1,70 @@
+{
+  "issue": 1747,
+  "scope": "Root-owned bounded R165 dependency handoff verified after source-compatible correction, independent unit/PG review, current runtime and staged proof audit. Final global/user acceptance remains pending.",
+  "proofCommit": "378e269bc6f70d905c39ff50d5513ab9469aeca0",
+  "sourceHead": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+  "archive": {
+    "directory": "docs/design/rollout-1692/1747/root-history-and-capability-recovery",
+    "files": 327,
+    "bytes": 8537591,
+    "payloadFiles": 288,
+    "payloadBytes": 8002638,
+    "sourceClones": 20,
+    "primaryIndexes": 5,
+    "sealSha256": "4a72e845493568373989cb8ec0f13d5a6de92e92491fc0ca54e1e9ec2c3c4544"
+  },
+  "unitPostgres": {
+    "unit": 203,
+    "unitFiles": 14,
+    "pg": 50,
+    "pgFiles": 6,
+    "distinct": 253,
+    "files": 20,
+    "overlapFrozen1748": 172,
+    "rerunsNonadditive": true
+  },
+  "runtime": "v1:0P/22U. v2:15P/7U. FocusedF1-F7:7narrowP, optionalF8+6broader/tooling/pixelU. Do not sum as one coverage total.",
+  "coreSupported": [
+    "Current distinct receipt/mileage/trip creation and exact canonical draft readback.",
+    "Personal mixed history, filter/count/no-match/empty/failed-read distinction and local/global read recovery.",
+    "Initial route-committed client history loading; not earliest shared-shell fallback.",
+    "Durable canonical refusal withdrawal proven at real-provider/QueryClient public seam, with current normal-read runtime recovery.",
+    "Real held creation completion retired after separately recorded pre-release away-navigation; trusted second-pointer while disabled yields one request/graph.",
+    "Normal public read-only grant gives finance-only destination; actual queue click. Public revoke yields inactive grant and direct fresh rendered denial.",
+    "Fresh foreign/peer readers show own populated scopes and exclude creator drafts.",
+    "Current settled main-region desktop/wide/phone, geometry, keyboard/preferences, names-onlyCDPReact and connectedNext checks."
+  ],
+  "qualifications": [
+    "Read-only queue control absence overlaps own-expense exclusion; no other-person settlement API admission proof.",
+    "Revocation direct denial streamsHTTP200. Raw404expectationpassfalse retained. No separately timestamped listing-path receipt proves Finance banner disappearance.",
+    "Synthetic creation network recovery is not natural domain refusal.",
+    "Four current accepted images are main-region crops, sidebar evidence geometric. Focused clipped image pixelUNPASSED; old expanded historical captures remain unsettled.",
+    "Source-only pins do not verify configuration contents. Historical OS cleanup/fullpreservation remain producerreceipts.",
+    "Main isolatedTS missingignoredlicense; rootall3passwithgenuineartifact. Ordinary4formatfindings; rawarchivewhitespaceexit2/198808diagnostics/82paths remainsunpassed.",
+    "Fullaccounting/exportpayrollunpaidlive/naturalrefusal/earliestshell/exhaustiveauthority/directobject/nativeextension/axe/fullproduction/catalog/providers/devices/truezoom/global157/finaluserreviewremainunpassed."
+  ],
+  "frontierBefore": {
+    "integrated": 64,
+    "awaiting-integration": 40,
+    "pending": 53
+  },
+  "issueDisposition": "OPEN for finaluserreview; no dev merge or deploy",
+  "status": "bounded-dependency-handoff-verified",
+  "verifiedCommit": "378e269bc6f70d905c39ff50d5513ab9469aeca0",
+  "frontierAfter": {
+    "integrated": 65,
+    "awaiting-integration": 39,
+    "pending": 53
+  },
+  "gitBlobAudit": {
+    "path": "docs/design/rollout-1692/1747/root-proof-git-blob-audit.json",
+    "sha256": "b0a04a007b1011d1df28b23382fc5080132a48a51d21ba1db32e8d7be2da8e7a",
+    "stagedInitialPaths": 328,
+    "committedWithAuxiliary": 329,
+    "archiveRawFiles": 327,
+    "independentAuditSha256": "4b20c26f37a78d13097ea4c19eff8524af4cf7e2075926d4d1472755fe4d2f2a",
+    "reportGitPrefixPreserved": true
+  },
+  "formalReadinessLimit": "This supplies the bounded R165 dependency handoff only. Issues stay OPEN,PR1854 draft;no dev merge/deploy or full157review."
+}

@@ -96,21 +96,27 @@
       "rejectTitle": "Antrag ablehnen"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Aktuelle Organisation und Mitarbeiter werden bestätigt…",
       "created": "Erstellt",
       "decisionRecorded": "Entscheidung erfasst",
       "destination": "Reiseziel",
       "history": "Entscheidungsverlauf",
       "historyDescription": "Jeder Schritt dieser Abrechnung, älteste zuerst. Zeiten werden in UTC angezeigt.",
       "intermediateApproval": "Genehmigung erfasst — weitere Genehmigung ausstehend",
+      "legacyClaim": "Altantrag",
       "legacyReceiptIdentity": "Altsystem-Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
       "loading": "Antrag wird geladen…",
       "noReceipts": "Keine Belege erfasst",
       "notRecorded": "Nicht erfasst",
       "originalAmount": "Ursprünglicher Betrag",
       "receipts": "Belege",
+      "receiptVersion": "Erfasste Version",
       "refreshing": "Antrag wird aktualisiert…",
+      "scopeUnavailable": "Aktualisieren Sie diesen Antrag, um Ihren aktuellen Zugriff zu bestätigen.",
       "submitted": "Eingereicht",
       "title": "Reisekostenabrechnung",
+      "unavailable": "Antrag nicht gefunden oder Zugriff nicht mehr verfügbar.",
       "unknownDates": "Reisedatumskontext nicht erfasst (Altantrag)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "{name} auswählen",
         "selectAll": "Alle Ausgaben auf dieser Seite auswählen, die auf Erstattung warten",
         "selected": "{count} ausgewählt",
+        "selectionChanged": "Mindestens eine ausgewählte Ausgabe wurde geändert. Schließen Sie dieses Dialogfeld und überprüfen Sie die aktuellen Ausgaben, bevor Sie eine weitere Zahlung starten.",
         "skipped": "Nicht enthalten ({count})",
         "submit": "{count} als erstattet markieren",
         "title": "Als erstattet markieren"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Kein aktiver Spesenbeauftragter, der Erstattungen erfassen kann, hat diese im Zuständigkeitsbereich. Eigentümer und Administratoren können sie dennoch erfassen oder den Zuständigkeitsbereich eines Beauftragten erweitern.",
         "empty": "Ein Spesenbeauftragter deckt jede genehmigte Ausgabe ab, die auf Erstattung wartet.",
+        "failed": "Die Abdeckung konnte nicht überprüft werden. Bitte versuchen Sie es erneut.",
         "queueFilter": "Genehmigte Ausgaben, die auf Erstattung warten und von keinem Spesenbeauftragten abgedeckt werden.",
         "show": "Diese Ausgaben anzeigen",
         "showAll": "Alle genehmigten Ausgaben anzeigen",
@@ -237,6 +245,7 @@
           "none": "Kein Mitarbeiter gefunden.",
           "search": "Mitarbeiter suchen…"
         },
+        "failed": "Filteroptionen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
         "label": "Ausgaben anzeigen",
         "notExported": "Noch nicht exportiert",
         "open": "Offen",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Diese Abrechnungsläufe enthalten Spesenabrechnungen, die auf Erstattung warten. Sobald die Lohnabrechnung einen Lauf ausgezahlt hat, bestätigen Sie ihn, um die Erstattungen zu erfassen.",
+        "failed": "Lohnabrechnungsbestätigungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
         "reports": "{count, plural, one {# Spesenabrechnung von Ihnen zu bestätigen, {amount}} other {# Spesenabrechnungen von Ihnen zu bestätigen, {amount}}}",
         "title": "Auf Bestätigung wartende Abrechnungsläufe"
       },
       "queue": {
         "description": "Öffnen Sie eine Ausgabe, um deren Abrechnung einzusehen und eine Erstattung zu erfassen.",
+        "failed": "Die Finanzwarteschlange konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
         "title": "Genehmigte Ausgaben"
+      },
+      "scope": {
+        "failed": "Ihr aktueller Finanzzugriff konnte nicht bestätigt werden. Bitte versuchen Sie es erneut.",
+        "loading": "Finanzzugriff wird bestätigt…"
       },
       "title": "Ausgaben-Finanzen"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Unbenannte Fahrtstrecke"
     },
     "legacyDraft": {
+      "checking": "Fortsetzung des Entwurfs wird überprüft…",
       "continue": "Als Abrechnung fortsetzen",
       "converted": "Sie haben diesen Entwurf als Abrechnung fortgesetzt. Dieser Antrag bleibt hier als Referenz unverändert erhalten.",
       "description": "Entwürfe aus dem früheren Antragsformular werden jetzt als Abrechnungen fertiggestellt. Ihr Betrag, Ihre Daten, Notizen und Belege werden übernommen; alles, was das neue Formular benötigt und in diesem Entwurf nicht erfasst wurde, können Sie noch vervollständigen. Dieser Antrag selbst bleibt unverändert.",
@@ -367,6 +383,7 @@
         "title": "Aus einem früheren Antragsentwurf fortgesetzt"
       },
       "openReport": "Abrechnung öffnen",
+      "readRefused": "Die Fortsetzung des Entwurfs ist für den aktuellen Leser nicht verfügbar.",
       "receipt": {
         "mismatch": "die gespeicherte Datei stimmt nicht mehr mit der hochgeladenen überein",
         "unreadable": "die gespeicherte Datei kann derzeit nicht gelesen werden",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Für diese Ausgabe ist kein Betrag ausstehend.",
         "ownExpense": "Sie können keine Zahlungen für Ihre eigenen Ausgaben erfassen.",
         "referenceRequired": "Geben Sie die Zahlungsreferenz ein, z. B. die Referenz der Banküberweisung.",
+        "refresh": "Der Saldo konnte nicht aktualisiert werden. Zuvor geladene Datensätze werden angezeigt; versuchen Sie es erneut, bevor Sie eine Zahlung erfassen.",
         "refused": "Diese Zahlung kann für diese Ausgabe nicht erfasst werden.",
         "staleBalance": "Der Saldo hat sich geändert, während Sie diese Zahlung eingegeben haben. Prüfen Sie den aktualisierten Saldo und erfassen Sie ihn erneut.",
         "tooLong": "Dieser Text ist zu lang."
@@ -1149,7 +1167,13 @@
     },
     "title": "Reisekosten",
     "workspace": {
-      "description": "Erfassen Sie Reise- und Einzelausgaben, reichen Sie diese zur Prüfung ein und verfolgen Sie deren Erstattung."
+      "create": "Spesenabrechnung erstellen",
+      "description": "Erfassen Sie Reise- und Einzelausgaben, reichen Sie diese zur Prüfung ein und verfolgen Sie deren Erstattung.",
+      "mileageDescription": "Dienstfahrt außerhalb einer Reise erfassen.",
+      "otherWork": "Prüfen und finanzieren",
+      "receiptDescription": "Eine Ausgabe mit Beleg erfassen.",
+      "reconciling": "Ihre Ausgaben für die aktuelle Organisation werden geladen…",
+      "tripDescription": "Ausgaben mit gemeinsamen Reisedetails sammeln."
     }
   }
 }

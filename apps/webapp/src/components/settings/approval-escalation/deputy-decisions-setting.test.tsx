@@ -56,4 +56,16 @@ describe("DeputyDecisionsSetting", () => {
 		);
 		expect(toggle().getAttribute("aria-checked")).toBe("false");
 	});
+
+	it("restores the switch and reports a failure when the request does not complete", async () => {
+		const user = userEvent.setup();
+		vi.mocked(saveDeputyDecisionsEnabledAction).mockRejectedValue(new Error("offline"));
+		render(<DeputyDecisionsSetting enabled />);
+
+		await user.click(toggle());
+
+		await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+		expect(toggle().getAttribute("aria-checked")).toBe("true");
+		expect(toast.success).not.toHaveBeenCalled();
+	});
 });

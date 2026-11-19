@@ -33,7 +33,7 @@ describe("DateRangePicker", () => {
 		expect((screen.getByRole("combobox", { name: "Period" }) as HTMLButtonElement).disabled).toBe(
 			true,
 		);
-		expect(screen.getByText("Loading organization settings before enabling presets.")).toBeTruthy();
+		expect(screen.getByText("Organization settings are required to use presets.")).toBeTruthy();
 	});
 
 	it("keeps picker selections as local calendar strings", () => {

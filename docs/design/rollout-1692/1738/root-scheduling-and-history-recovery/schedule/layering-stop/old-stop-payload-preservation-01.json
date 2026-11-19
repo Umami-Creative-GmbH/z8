@@ -1,0 +1,137 @@
+{
+  "oldSeal": "026a64195a5f9ef69815c3836847834eb30a10a21cffa617e3965fc9a0063874",
+  "files": [
+    {
+      "path": "attempt03-04-harness.test.tsx",
+      "unchanged": true,
+      "sha256": "89e07c03c08327cd8a8fc152e8631644b68fa7d77e9bd32800126248885e7914"
+    },
+    {
+      "path": "attempt03-popup-text-command.json",
+      "unchanged": true,
+      "sha256": "8567182ab602d86f0576f06026f8a2c6843bdc6f827d49aa57ffbf282e1043b7"
+    },
+    {
+      "path": "attempt03-popup-text-coverage-failure.json",
+      "unchanged": true,
+      "sha256": "a2f07f02143447099f1d5d321611accd2c52c155c422bc4f3a85f3b1142535fa"
+    },
+    {
+      "path": "attempt03-popup-text-healthy-empty.json",
+      "unchanged": true,
+      "sha256": "b53130a06d7bdaf72022edc395eefb60e8696f0271d06a2348de8ba5756ea6dc"
+    },
+    {
+      "path": "attempt03-popup-text-healthy-gap.json",
+      "unchanged": true,
+      "sha256": "d15a1684841ccbc74535adb2205f09f87f47100b6b9c10a8cbd57c42b38f4628"
+    },
+    {
+      "path": "attempt03-popup-text-vitest.json",
+      "unchanged": true,
+      "sha256": "c6a19f23fd80e33c6e50d9b3d99c71342949d7d1cf1a3824dd43f52cb5348739"
+    },
+    {
+      "path": "attempt04-repeat-failure-command.json",
+      "unchanged": true,
+      "sha256": "11a96e8da996a6b869f8fdff3fd8b19a4e1ecabed418fbd12fdc9a59468400fb"
+    },
+    {
+      "path": "attempt04-repeat-failure-coverage-failure.json",
+      "unchanged": true,
+      "sha256": "a2f07f02143447099f1d5d321611accd2c52c155c422bc4f3a85f3b1142535fa"
+    },
+    {
+      "path": "attempt04-repeat-failure-vitest.json",
+      "unchanged": true,
+      "sha256": "cca6eac04a9e74904fabf73bbed80fa9f55e25bbcb971991f9c09b04f3bc1657"
+    },
+    {
+      "path": "attempt06-premerge-settled-command.json",
+      "unchanged": true,
+      "sha256": "56b8ba85b0a301eecb2e91d03be13f5cc5063351db689c2dc1b2e9c8f041470b"
+    },
+    {
+      "path": "attempt06-premerge-settled-coverage-failure.json",
+      "unchanged": true,
+      "sha256": "4bbab033c89fb22b2cf10714173986995e7432d93b80687eb27cfe87e1c0f88a"
+    },
+    {
+      "path": "attempt06-premerge-settled-healthy-empty.json",
+      "unchanged": true,
+      "sha256": "c8cb71f8525cf02ce8f8c9e0a6373b65f61f129b06caca6d91b5f9c0bab4696c"
+    },
+    {
+      "path": "attempt06-premerge-settled-healthy-gap.json",
+      "unchanged": true,
+      "sha256": "f95ddaa744e36930cef222c04d64a9299be5c2c7504f9fe6d2d1cc7dd8ad1d5d"
+    },
+    {
+      "path": "attempt06-premerge-settled-vitest.json",
+      "unchanged": true,
+      "sha256": "9735bc10d24deb8a3cc229214b727d4bd196e0030cf2d36abe261bc377ce48ba"
+    },
+    {
+      "path": "cleanup.json",
+      "unchanged": true,
+      "sha256": "6b4a9c061c821db891232b0f0dcc5e2d0119cfdd3ead2efb7099056d12dba61f"
+    },
+    {
+      "path": "dependency-check.json",
+      "unchanged": true,
+      "sha256": "d932a70d187b3cbfff709b379ae4d671d3378885d9aa9a1422b5819ed70ed669"
+    },
+    {
+      "path": "dependency-summary.json",
+      "unchanged": true,
+      "sha256": "34a0becb8a858106d2f424fd8974aa1d24a2b8a35acb4b8eb3eb6c362c7e4f4a"
+    },
+    {
+      "path": "failed-attempts.md",
+      "unchanged": true,
+      "sha256": "be3f27ee54354838f35ffa2d24e8695e3c5ecc99e2baaf8f18e70adbfc5fbd08"
+    },
+    {
+      "path": "merge-audit.json",
+      "unchanged": true,
+      "sha256": "aa18de95a28e8ea9666365de46ba32c46230dee65d2c3d0ebe16b08115645dc2"
+    },
+    {
+      "path": "pins.json",
+      "unchanged": true,
+      "sha256": "2faffbae131a5cea46feec2124a38052e04718e8e322d707b1f32500218e2898"
+    },
+    {
+      "path": "premerge-shift-scheduler.tsx",
+      "unchanged": true,
+      "sha256": "950c021f3965e8758c7180400d9bcdbeadd844f5341596d7054aad6d83e7464d"
+    },
+    {
+      "path": "public-probe.test.tsx",
+      "unchanged": true,
+      "sha256": "7cde4332f15f7113bbd3505e87705c203996b0461be6738268b4ebc39924e6e9"
+    },
+    {
+      "path": "source-boundaries.json",
+      "unchanged": true,
+      "sha256": "2ed4ed15094b6669d03d126205c0b4ed945aaa8b8339933d620714d4dd4f7238"
+    },
+    {
+      "path": "STOP.md",
+      "unchanged": true,
+      "sha256": "49c3c3d48174bddc2b850b24a7ca7c89a48dbd49d705b457c0bcd8fd0912c26d"
+    },
+    {
+      "path": "test-accounting.json",
+      "unchanged": true,
+      "sha256": "9898c4862d587635ae448d796f344fc0e20a798c6365b9225a1c6a79f6aed17c"
+    },
+    {
+      "path": "whitespace.json",
+      "unchanged": true,
+      "sha256": "224e96d911c791820b91252f993609eac500dab1a51004a8a8c0798169d52782"
+    }
+  ],
+  "count": 26,
+  "allUnchanged": true
+}

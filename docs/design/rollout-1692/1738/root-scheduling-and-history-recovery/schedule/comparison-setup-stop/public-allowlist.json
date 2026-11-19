@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "bytes": 2694,
+      "sha256": "846a4c57ab8d3b82ef0b41002122d30ada54679d5d04dc0867217ecbed2ac117"
+    },
+    {
+      "path": "blocker.json",
+      "bytes": 1539,
+      "sha256": "6631c03a87c7f0e66e39c74ce43ceaa92498c442d625987362c912f292757150"
+    },
+    {
+      "path": "cleanup.json",
+      "bytes": 553,
+      "sha256": "ca6cc0fa9633024501468e3f72708847a6b0a3261fe46ee7d79bf6f5e474ce8a"
+    },
+    {
+      "path": "counts-limits.json",
+      "bytes": 1265,
+      "sha256": "6dd0b73c6f3cd437df79eb948330b93dda04a82dbeb9e7d8d9acb9aa8cf7543d"
+    },
+    {
+      "path": "inherited-evidence-integrity.json",
+      "bytes": 536,
+      "sha256": "987063ad86397d3df400c8445aed592a6c781e6af3e289f9c661a23f43854e15"
+    },
+    {
+      "path": "provenance.json",
+      "bytes": 1299,
+      "sha256": "6ce4bfdddb0362cc2bc9412cddcd810e159b8ea3bbdff85c8e0ffb30803dc203"
+    },
+    {
+      "path": "source-config-pins.json",
+      "bytes": 3600,
+      "sha256": "06955ee59378341b510078988451f27b08e5cd5d509c30bc1d0efac36ecf0571"
+    }
+  ],
+  "sealSha256": "dcc7f5ac477fb4e9eee920d733928fb4465b491794229fe3d1c21cc51e120bf6"
+}

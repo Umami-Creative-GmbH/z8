@@ -1,0 +1,377 @@
+{
+    "qualification":  "ZIP stores original working-tree raw log bytes; Git may normalize readable log text line endings.",
+    "entries":  [
+                    {
+                        "sha256":  "ECD2DCFEB3E10E48449296FC7F0B71B978F3481EE4B83A02E2A7103B67B4C523",
+                        "name":  "actions-attempt1.log",
+                        "bytes":  1548
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "actions-attempt2.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "after.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "EB69EFA71CE98FE85AAD7E497BCEBEB427AB752C510275A98E338320126B3C23",
+                        "name":  "auth.log",
+                        "bytes":  186
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "before-attempt2.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "32B505FCF83678A9DCF103B58F96DB12D793D9572CA7B7DC054F15A883963399",
+                        "name":  "before.log",
+                        "bytes":  509
+                    },
+                    {
+                        "sha256":  "135503C68A653E9E2055C1BADFD413DF725088A75627094F6D0CA6B145330DFB",
+                        "name":  "biome-crlf-exe-attempt.log",
+                        "bytes":  1184
+                    },
+                    {
+                        "sha256":  "135503C68A653E9E2055C1BADFD413DF725088A75627094F6D0CA6B145330DFB",
+                        "name":  "biome-crlf-lint-exe-attempt.log",
+                        "bytes":  1184
+                    },
+                    {
+                        "sha256":  "A8BBC2F891F9FDFB3794410E3AFBC5E2AE88080E20539B54375C0B9CD720651F",
+                        "name":  "biome-crlf-lint.log",
+                        "bytes":  43
+                    },
+                    {
+                        "sha256":  "697C2BE3EF0525B95760DA4321C29AF4102D607AA082A6C8AE598D6D29B7AA6A",
+                        "name":  "biome-crlf.log",
+                        "bytes":  110703
+                    },
+                    {
+                        "sha256":  "135503C68A653E9E2055C1BADFD413DF725088A75627094F6D0CA6B145330DFB",
+                        "name":  "biome-lint-exe-attempt.log",
+                        "bytes":  1184
+                    },
+                    {
+                        "sha256":  "A8BBC2F891F9FDFB3794410E3AFBC5E2AE88080E20539B54375C0B9CD720651F",
+                        "name":  "biome-lint.log",
+                        "bytes":  43
+                    },
+                    {
+                        "sha256":  "135503C68A653E9E2055C1BADFD413DF725088A75627094F6D0CA6B145330DFB",
+                        "name":  "biome-normal-exe-attempt.log",
+                        "bytes":  1184
+                    },
+                    {
+                        "sha256":  "BEFD06FC63886D0323CB151C4143914B8DB7098D226D1BB46E25D7C8E9156388",
+                        "name":  "biome-normal.log",
+                        "bytes":  44
+                    },
+                    {
+                        "sha256":  "15519F30AEA57657CEBF812DC8D1B8DB7AAF2E3C497E018718186825AA3511F8",
+                        "name":  "cleanup-fixture.log",
+                        "bytes":  97
+                    },
+                    {
+                        "sha256":  "20E0D5B054C9FE0F42F252F79B68EE2EEEBE5E46349C99D2685F22C71E82616A",
+                        "name":  "delete-green-attempt1.log",
+                        "bytes":  627
+                    },
+                    {
+                        "sha256":  "FF4D05DBCBEB3F7EEAACE309702A68B48D9B4008ED98A3FE3632DB460F711852",
+                        "name":  "delete-red.log",
+                        "bytes":  2907
+                    },
+                    {
+                        "sha256":  "7292DA5F736789C074222ADF9EB6620371739806430E906417DB6EE2B079A2CD",
+                        "name":  "doctor-committed-source.json",
+                        "bytes":  7048
+                    },
+                    {
+                        "sha256":  "FCE7C365037A1119C2B4EB62FA5F43DF11934217ECEC4C3D033F9779C996CEC8",
+                        "name":  "doctor-final.json",
+                        "bytes":  7045
+                    },
+                    {
+                        "sha256":  "6338CF1D4AF75379D04D9DBAB07733FCEE1528835E6FD6C2853ADCD17BC4C22B",
+                        "name":  "doctor-final2.json",
+                        "bytes":  4322
+                    },
+                    {
+                        "sha256":  "C9E13335CDD46979D05EA5F366BE6B2122678488F55CB701D580F75F6FFD6BE1",
+                        "name":  "doctor-final3.json",
+                        "bytes":  4323
+                    },
+                    {
+                        "sha256":  "7F802895DD2B02055A44C800D1874484D1F370EEB17E551482BA88ECA2C8221B",
+                        "name":  "doctor.json",
+                        "bytes":  9425
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "final-captures.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "final-current.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "final-shipped.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "0AA6D5DE7B32B696D0C990CC80F92E7F955C997D767AA5F6DE79464E6F54FAA4",
+                        "name":  "fixture-prepare-escalated.log",
+                        "bytes":  139
+                    },
+                    {
+                        "sha256":  "32CAF93AC376EF90A8292505FE648AAC28151168F6A991E796DD9F14F2C9C911",
+                        "name":  "fixture-prepare.log",
+                        "bytes":  1258
+                    },
+                    {
+                        "sha256":  "4901B02B7AD700B065ADF2AA6C5E3F2F8D4F46B88AA92B292409BF10CB545D46",
+                        "name":  "format-failure.log",
+                        "bytes":  39
+                    },
+                    {
+                        "sha256":  "0A34B733881EA8A53C0ED82FE479652A302F6D92832CC921B7614525CFCD5B2E",
+                        "name":  "format-final.log",
+                        "bytes":  41
+                    },
+                    {
+                        "sha256":  "83276AA00921BDBDE9995E6160307A4CF0DE4AEE8BD23C43E84959CF56A2D239",
+                        "name":  "format-last.log",
+                        "bytes":  981
+                    },
+                    {
+                        "sha256":  "5D80604171A819096E8A165394F9FDC4FDEFFCFA714AC94AD480B79E1D85BC13",
+                        "name":  "format-tools.log",
+                        "bytes":  898
+                    },
+                    {
+                        "sha256":  "787D492AB0A8F2CAEAA9FDE86FAED11A0D3B9EB086851BD014321155AB7D4D8B",
+                        "name":  "format.log",
+                        "bytes":  41
+                    },
+                    {
+                        "sha256":  "E370B0BDBB206AF9DD2DA7DFC5E6E10489821DEBDF9695AEB2C03F05E2E11307",
+                        "name":  "heading-red.log",
+                        "bytes":  1971
+                    },
+                    {
+                        "sha256":  "25926349171F1EA3A0FE75C0AEDD08DFFCCF5969AF0E5B3F6A48E16AF0C894C0",
+                        "name":  "install-escalated.log",
+                        "bytes":  6278
+                    },
+                    {
+                        "sha256":  "EE88B0AA111BB434E6DE836F6AB96CD88365E9717428540A5D00A883A2ACE452",
+                        "name":  "install.log",
+                        "bytes":  1260
+                    },
+                    {
+                        "sha256":  "1F7C25F656E649A3731CD08299C0E6DD9E960F3D816028E14A8172CFE1D4F24F",
+                        "name":  "licenses.log",
+                        "bytes":  227
+                    },
+                    {
+                        "sha256":  "3C4D31D979D1F0C51D54FFD59074E6325BBAF1ACE76E460C35ECB1935397254C",
+                        "name":  "native-final.log",
+                        "bytes":  56
+                    },
+                    {
+                        "sha256":  "3C4D31D979D1F0C51D54FFD59074E6325BBAF1ACE76E460C35ECB1935397254C",
+                        "name":  "native-shipped.log",
+                        "bytes":  56
+                    },
+                    {
+                        "sha256":  "3C4D31D979D1F0C51D54FFD59074E6325BBAF1ACE76E460C35ECB1935397254C",
+                        "name":  "native.log",
+                        "bytes":  56
+                    },
+                    {
+                        "sha256":  "967F4D75E2357B487941429D9600CF57375F3DFCF377C3628493A6F0C474AEE2",
+                        "name":  "outer-pending.log",
+                        "bytes":  1900
+                    },
+                    {
+                        "sha256":  "C4655D08340B4FA74E02B27B1CEBA9F720CDB9F570099DE83DA3854C583DDC29",
+                        "name":  "panel-green.log",
+                        "bytes":  627
+                    },
+                    {
+                        "sha256":  "66BBE836B66F2B66394505C4A7DB36C778A3C068DAA3DE3D8AB72FFAE6AEE01F",
+                        "name":  "panel-red.log",
+                        "bytes":  22435
+                    },
+                    {
+                        "sha256":  "A41A1FF105D72C647FE4D0E7EDE34CC70A983C5231BEAB61213B991A3DD6A1ED",
+                        "name":  "pg-launch.log",
+                        "bytes":  11
+                    },
+                    {
+                        "sha256":  "1E70D25CB07519CACA846BA9B6B9EEE1E99165EAF16F74C7E19AC890EC796A2D",
+                        "name":  "pg-result.json",
+                        "bytes":  435
+                    },
+                    {
+                        "sha256":  "CC88C1E348F3A0AD1FA6663C9A3E8AF72B40F6A146AFEE4434CF888E6254831A",
+                        "name":  "pg-tools-launch.log",
+                        "bytes":  17
+                    },
+                    {
+                        "sha256":  "81C0B474A3F785FE1B51E6C8D1CD0AEDEA06AC88BEB98B7CE45B37340EF903AE",
+                        "name":  "pg-tools-result.json",
+                        "bytes":  512
+                    },
+                    {
+                        "sha256":  "ABC13114CF94205054E858E4879A7B423D4DFB9E7EAF64D8919EB531A4A023F0",
+                        "name":  "pg-tools.log",
+                        "bytes":  1552
+                    },
+                    {
+                        "sha256":  "736B6B0B529A99D2A47CF77E91183D5D8906F3434F94BEBC5BDFEFBD46FCC069",
+                        "name":  "pg.log",
+                        "bytes":  3071
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "phones-attempt1.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "7DB25F1F1D3C8BA2B348B487DAD1BF8E7A52415E074A8D09980E7B5F688D319A",
+                        "name":  "quality-final.log",
+                        "bytes":  43
+                    },
+                    {
+                        "sha256":  "B49C22BA164D3227B7C0B310A82F8F06B4D36159BED4DEF0328D17C66853685B",
+                        "name":  "quality-launch.log",
+                        "bytes":  43
+                    },
+                    {
+                        "sha256":  "7DB25F1F1D3C8BA2B348B487DAD1BF8E7A52415E074A8D09980E7B5F688D319A",
+                        "name":  "quality-shipped.log",
+                        "bytes":  43
+                    },
+                    {
+                        "sha256":  "9985E25372729F5AAA80B70B4463B4E50938C596A1D17C974D15510651397712",
+                        "name":  "recovery-attempt1.log",
+                        "bytes":  434
+                    },
+                    {
+                        "sha256":  "772295F8AFB777BD8794EA75AC6FADE4A3545C4D90F909D0046BEEE04CE54D92",
+                        "name":  "recovery-attempt2.log",
+                        "bytes":  74
+                    },
+                    {
+                        "sha256":  "772295F8AFB777BD8794EA75AC6FADE4A3545C4D90F909D0046BEEE04CE54D92",
+                        "name":  "recovery-final.log",
+                        "bytes":  74
+                    },
+                    {
+                        "sha256":  "772295F8AFB777BD8794EA75AC6FADE4A3545C4D90F909D0046BEEE04CE54D92",
+                        "name":  "recovery-shipped.log",
+                        "bytes":  74
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "reset-title.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "F19959144F1587BDAC80C64F3B68C6F1EA230D3522E33E57D51A2F0121CDA907",
+                        "name":  "roles-attempt1.log",
+                        "bytes":  1546
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "roles-attempt2.log",
+                        "bytes":  0
+                    },
+                    {
+                        "sha256":  "E56BDAC6E54E9493A62D8D7BF8BEABEBFFECDCD1C7F4B56FFE076CD2EA669613",
+                        "name":  "tools-green.log",
+                        "bytes":  638
+                    },
+                    {
+                        "sha256":  "335E4E6BB32BAB37A722295DAA5CEA335CDF4E7BEDCF1985E9AA6462DD9A1322",
+                        "name":  "types-committed-source-launch.log",
+                        "bytes":  14
+                    },
+                    {
+                        "sha256":  "335E4E6BB32BAB37A722295DAA5CEA335CDF4E7BEDCF1985E9AA6462DD9A1322",
+                        "name":  "types-final-launch.log",
+                        "bytes":  14
+                    },
+                    {
+                        "sha256":  "335E4E6BB32BAB37A722295DAA5CEA335CDF4E7BEDCF1985E9AA6462DD9A1322",
+                        "name":  "types-launch.log",
+                        "bytes":  14
+                    },
+                    {
+                        "sha256":  "21ACE10E20B04320F2E7B00C5B066592CC5778FBE224766F1583DFB1C808B395",
+                        "name":  "types-result.json",
+                        "bytes":  137
+                    },
+                    {
+                        "sha256":  "80A6369094C4E192CBFB532326483DE2951762042CFC9D56BDE7E8F6C19B83E3",
+                        "name":  "types.log",
+                        "bytes":  289
+                    },
+                    {
+                        "sha256":  "3FF35814CCA72D195A9AD2A348B63680E09DF97AD35B9620ED702732791854BB",
+                        "name":  "unit-committed-source.log",
+                        "bytes":  632
+                    },
+                    {
+                        "sha256":  "CBD6BF5282499CDBC9BB20F2BC8B1A5F50D994791198D8247334F8E1C82418C1",
+                        "name":  "unit-final-attempt1.log",
+                        "bytes":  632
+                    },
+                    {
+                        "sha256":  "C94F1B0162E533771F2E1B0F686D13AC82A43C037350BF8716A131F377F9B947",
+                        "name":  "unit-final.log",
+                        "bytes":  632
+                    },
+                    {
+                        "sha256":  "72D754C6FA157C8791B60B3FEBCB19C62BBC0C809B83A719987DD584D9D488AF",
+                        "name":  "unit.log",
+                        "bytes":  633
+                    },
+                    {
+                        "sha256":  "270CA62C31D9ED1B7542FEAB499C5357DE6270ACF6665C3E6E5B777BB0DFBD9E",
+                        "name":  "unlink-red.log",
+                        "bytes":  3816
+                    },
+                    {
+                        "sha256":  "663DA2534B21579616A9C567AE4590A22E8DA683BA45EF3D8F2955A7EA181249",
+                        "name":  "verify-evidence.log",
+                        "bytes":  91
+                    },
+                    {
+                        "sha256":  "23DA4FE9D9491AB6602977CBADCAA3ED9DD5E2AD905EC0B8CE4F76BAB0A752CD",
+                        "name":  "workspace-green.log",
+                        "bytes":  637
+                    },
+                    {
+                        "sha256":  "0D62A0815F57AA23144898809822CD561C1085526FD9B00E73140ECB89073F53",
+                        "name":  "workspace-red.log",
+                        "bytes":  2967
+                    },
+                    {
+                        "sha256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+                        "name":  "zip-actions.log",
+                        "bytes":  0
+                    }
+                ],
+    "entryCount":  74,
+    "archive":  "raw-logs.zip"
+}

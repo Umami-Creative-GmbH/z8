@@ -13,6 +13,7 @@ import {
 	updateSlackNotificationChannelSettings,
 	updateTeamsNotificationChannelSettings,
 } from "./actions";
+import { SlackConnectButton } from "./slack-connect-button";
 import { TelegramPanel } from "./telegram-panel";
 
 async function ChatSettingsContent() {
@@ -44,15 +45,13 @@ async function ChatSettingsContent() {
 						"settings.notifications.slack.description",
 						"Configure Slack notifications for your organization.",
 					),
+					measure: true,
 					panel: (
 						<NotificationChannelSettings
 							channelName="Slack"
-							description={t(
-								"settings.notifications.slack.description",
-								"Configure Slack notifications for your organization.",
-							)}
 							config={slack.success ? slack.data : null}
 							updateAction={updateSlackNotificationChannelSettings}
+							connectAction={<SlackConnectButton organizationId={organizationId} />}
 						/>
 					),
 				},
@@ -63,15 +62,20 @@ async function ChatSettingsContent() {
 						"settings.notifications.teams.description",
 						"Configure Microsoft Teams notifications for your organization.",
 					),
+					measure: true,
 					panel: (
 						<NotificationChannelSettings
 							channelName="Microsoft Teams"
-							description={t(
-								"settings.notifications.teams.description",
-								"Configure Microsoft Teams notifications for your organization.",
-							)}
 							config={teams.success ? teams.data : null}
 							updateAction={updateTeamsNotificationChannelSettings}
+							connectAction={
+								<p className="text-sm">
+									{t(
+										"settings.notifications.teams.setupInstructions",
+										"To connect Microsoft Teams, add the Z8 app to your Microsoft 365 tenant. The Z8 bot then sends a setup link that an organization admin opens to link the tenant to this organization.",
+									)}
+								</p>
+							}
 						/>
 					),
 				},
@@ -82,6 +86,7 @@ async function ChatSettingsContent() {
 						"settings.telegram.description",
 						"Configure Telegram bot integration for notifications and commands",
 					),
+					measure: true,
 					panel: <TelegramPanel />,
 				},
 				{
@@ -91,15 +96,20 @@ async function ChatSettingsContent() {
 						"settings.notifications.discord.description",
 						"Configure Discord notifications for your organization.",
 					),
+					measure: true,
 					panel: (
 						<NotificationChannelSettings
 							channelName="Discord"
-							description={t(
-								"settings.notifications.discord.description",
-								"Configure Discord notifications for your organization.",
-							)}
 							config={discord.success ? discord.data : null}
 							updateAction={updateDiscordNotificationChannelSettings}
+							connectAction={
+								<p className="text-sm">
+									{t(
+										"settings.notifications.discord.setupInstructions",
+										"Connecting Discord from this page is not available yet. The connection needs your Discord application's bot token, application ID and public key.",
+									)}
+								</p>
+							}
 						/>
 					),
 				},

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "verifiedCommit": null,
+  "frozenHead": "3a3c1243147d92213ffde7ffe423e3da67ecd011",
+  "frozenAppTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+  "contractSha256": "2e38a63847ac02cbb506d2c8316fbc4e5e4fd8510f274250b1ce9c4e8390c05e",
+  "fileIndex": {
+    "bytes": 34272,
+    "sha256": "d9318fe1dfed4362ab39846797a34f4cc29badf672fb04b5c807f28cee4861af"
+  },
+  "payloadIndex": {
+    "bytes": 58041,
+    "sha256": "73e962a2b7b03311239229a489049f11f61cc8f4a626ba262d2be205cd2b7339"
+  },
+  "sourcePins": {
+    "bytes": 10723,
+    "sha256": "591048394c3a749a34dd5b526eace0e8afa26bbf757994a17c83d6cfdfca4a6b"
+  },
+  "reportPrefix": {
+    "bytes": 28273,
+    "sha256": "45195fecf57d160a27984699ffdc0fdf2f88c2ecd574f30152236804f08d9438",
+    "gitBytes": 28008,
+    "gitSha256": "5e6ff4426c433630f18e5cad901142c1be4cdd313510a081346a7a7c4b101455"
+  },
+  "reportAppendix": {
+    "bytes": 7666,
+    "sha256": "c1235f538de8720b0edc01d165c223af33cdb70358b0478f3faa50c9d375a8b7"
+  },
+  "fullReportAtPublication": {
+    "bytes": 35939,
+    "sha256": "a249d72c8c406ca183545da0f6248e56ecfec21b9702fa1305cad2598de9c35c"
+  },
+  "indexAtPublication": {
+    "bytes": 2480092,
+    "sha256": "e9f85554bf943a846222a31df7931a394b2a1a4320aea226ae3a209f6a480bac"
+  },
+  "selfHashCycles": false,
+  "integrityNotSignature": true,
+  "currentHeadEqualityRequired": false,
+  "rootOwnsStagedBlobAuditCommitAndReadiness": true
+}

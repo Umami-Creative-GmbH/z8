@@ -17,6 +17,7 @@ import {
 	type CorrectionTarget,
 } from "./equipment-corrections";
 import { CloseReturnForm, ReceiveExceptionForm } from "./equipment-exceptions";
+import { EquipmentFormErrorContext } from "./equipment-form-error-context";
 import {
 	HistoricalEquipmentForm,
 	IssueEquipmentForm,
@@ -49,8 +50,9 @@ function savedMessage(kind: EquipmentChange["kind"], t: Translate) {
 }
 
 /**
- * Runs one equipment command: the outcome is a toast, and a recorded command
- * refreshes the server read. It resolves `true` only when the command was recorded,
+ * Runs one equipment command: direct callers keep toast feedback, while a form may
+ * present its own error. A recorded command refreshes the server read.
+ * It resolves `true` only when the command was recorded,
  * so a refused or uncertain command leaves its form open with the same values (and
  * the same request identity) for review or retry.
  */
@@ -58,10 +60,13 @@ export function useEquipmentSubmit() {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [pending, setPending] = useState(false);
-	const submit: SubmitHandover = useCallback(
-		async (change) => {
+	const submit = useCallback(
+		async (
+			change: EquipmentChange,
+			onError: (message: string) => void = toast.error,
+		) => {
 			const failed = () =>
-				toast.error(
+				onError(
 					t(
 						"settings.equipment.handover.failed",
 						"The handover could not be confirmed. Retry the unchanged form or reload equipment to check its history.",
@@ -75,7 +80,13 @@ export function useEquipmentSubmit() {
 				if (!result.success) {
 					failed();
 				} else if (!result.data.ok) {
-					toast.error(actionErrorMessage(t, { refusal: result.data.reason }, EQUIPMENT_REFUSALS));
+					onError(
+						actionErrorMessage(
+							t,
+							{ refusal: result.data.reason },
+							EQUIPMENT_REFUSALS,
+						),
+					);
 				} else {
 					toast.success(savedMessage(change.kind, t));
 					router.refresh();
@@ -143,16 +154,25 @@ export function issuanceAvailability(data: EquipmentView, employeeId?: string) {
  */
 export function useEquipmentPanels(data: EquipmentView) {
 	const { submit, pending } = useEquipmentSubmit();
+	const [error, setError] = useState<string | null>(null);
 	const [selection, setSelection] = useState<EquipmentPanelSelection | null>(
 		null,
 	);
 	// Keep the closing form on screen while the panel animates out.
 	const [shown, setShown] = useState(selection);
 	if (selection && selection !== shown) setShown(selection);
-	const close = useCallback(() => setSelection(null), []);
+	const close = useCallback(() => {
+		setError(null);
+		setSelection(null);
+	}, []);
+	const open = useCallback((next: EquipmentPanelSelection | null) => {
+		setError(null);
+		setSelection(next);
+	}, []);
 	const run: SubmitHandover = useCallback(
 		async (change) => {
-			const saved = await submit(change);
+			setError(null);
+			const saved = await submit(change, setError);
 			if (saved) setSelection(null);
 			return saved;
 		},
@@ -166,19 +186,21 @@ export function useEquipmentPanels(data: EquipmentView) {
 			}}
 		>
 			<ActionPanelContent size={shown ? panelSize(shown) : "default"}>
-				{shown ? (
-					<PanelForm
-						data={data}
-						selection={shown}
-						submit={run}
-						pending={pending}
-						onCancel={close}
-					/>
-				) : null}
+				<EquipmentFormErrorContext value={error}>
+					{shown ? (
+						<PanelForm
+							data={data}
+							selection={shown}
+							submit={run}
+							pending={pending}
+							onCancel={close}
+						/>
+					) : null}
+				</EquipmentFormErrorContext>
 			</ActionPanelContent>
 		</ActionPanel>
 	);
-	return { open: setSelection, panel, pending, submit };
+	return { open, panel, pending, submit };
 }
 
 function panelSize(selection: EquipmentPanelSelection) {

@@ -1,0 +1,171 @@
+{
+  "schema": 1,
+  "issue": 1773,
+  "verifiedCommit": null,
+  "readiness": null,
+  "base": "bc4010825c1fd94d634b7f4774b6f895bfac26f4",
+  "correctionCommit": "acd6ceedd22c70bcbb43847432373dadae4265c5",
+  "integrationCommit": "d6a8863ddf6c9450848a85f88411825101ae13d6",
+  "tree": "123f9306dba45e13c9fd2f5eacf3d367f1a84c23",
+  "appTree": "f3666bb7c8ff4b752eb316a78d02cfaeb895e51f",
+  "finding": {
+    "classification": "Previous root snapshot helper missed a pre-effect hidden arrival. No historical variant or live authorization bypass was established.",
+    "independent": {
+      "cases": 9,
+      "passed": 8,
+      "failed": 1,
+      "physicalFiles": 1,
+      "duplicates": 0,
+      "reportedObservation": "refusalPreserved:false; other fields abbreviated in the failure reporter"
+    },
+    "rootRed": {
+      "cases": 9,
+      "passed": 8,
+      "failed": 1,
+      "reproSHA256": "72c6d55815d3cbea5bec616004f6f5034c598891d835bedfc178f63622a31c8c"
+    },
+    "expandedRed": {
+      "cases": 14,
+      "passed": 10,
+      "failed": 4,
+      "productFailures": 3,
+      "harnessFailures": 1,
+      "note": "API-key empty list has two legitimate Create Key buttons. Its first locator was ambiguous; fixed with scoped findAllByRole. The other three failures were hidden reveal, hidden role remount and counter reset."
+    }
+  },
+  "intake": {
+    "payloads": 10,
+    "manifestSHA256": "3e012a1c1e3e84dcbb6c1457fdb3997ce16ad40cc589df0827a3ce2b623832c1",
+    "sizesAndHashesMatch": true,
+    "sourceConfigPinsMatch": 15,
+    "archivedCodeExecuted": false
+  },
+  "correction": [
+    "Record first observation idempotently in weak QueryClient/server-array/scoped-key metadata, before passive effects, so a never-committed hidden tree cannot recapture a later cache state after remount.",
+    "QueryCache-lifetime generation tokens advance on scoped data success, error, setState, addition and removal. Fetch-start and observer bookkeeping do not advance them. Reset/removal cannot create a version ABA.",
+    "Both initialData and committed seeding check the captured generation. Superseded sources are consumed. First query construction from the exact same server array does not require another write; genuinely later server arrays can still recover.",
+    "Arrival records are immutable. Consumption is held in a separate weak set, avoiding the compiler finding about modifying a render-observed local object.",
+    "Exactly one metadata listener exists per QueryClient lifetime. Stored versions contain only scoped tuple strings and tokens; source keys and arrival consumption are weak. No endpoint/key values or Query objects are retained by this metadata. No query data is mutated by registration during render."
+  ],
+  "fresh": {
+    "unit": {
+      "cases": 148,
+      "physicalFiles": 11,
+      "passed": 148,
+      "failed": 0,
+      "skipped": 0,
+      "uniqueFileFullNameLabels": 148,
+      "caseMultisetSHA256": "dc39d02ebc0c30c3bb5682a52f74cc12f4f5ce260b4525dda87873b35080d1f5",
+      "prior133Included": true,
+      "newCases": 15,
+      "publicSubset": {
+        "cases": 54,
+        "physicalFiles": 3,
+        "additive": false
+      }
+    },
+    "typegen": "passed",
+    "fullTypeProjects": 3,
+    "explicit100CRLF": {
+      "files": 2,
+      "result": "passed"
+    },
+    "lintImport": {
+      "files": 2,
+      "result": "passed"
+    },
+    "ordinary": {
+      "files": 2,
+      "result": "failed",
+      "summary": [
+        "Found 2 errors.\r"
+      ]
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "bc4010825c1fd94d634b7f4774b6f895bfac26f4",
+      "files": 2,
+      "errors": 0,
+      "warnings": 0,
+      "complete": true,
+      "score": null,
+      "suppressed": 0
+    }
+  },
+  "sourcePins": [
+    {
+      "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts",
+      "gitBlob": "4432fc2327c3ed76e71f21d34f9e03d5eb54c74f",
+      "gitLfSHA256": "105c138208299523e92ef5ce12d0e815fbfb4c3d9f093bdd9e8343006f0d7931"
+    },
+    {
+      "file": "apps/webapp/src/components/webhooks/webhooks-server-arrival.test.tsx",
+      "gitBlob": "69beff95e12a817063852a966627b5b15f86b5c7",
+      "gitLfSHA256": "e6fdcd65fe41d80373bff08afbb1f54fb404040533ee19124e19ff0ba9a2c019"
+    }
+  ],
+  "selection": [
+    "src/components/webhooks/webhooks-refusal.test.tsx",
+    "src/components/webhooks/webhooks-edit-refusal.test.tsx",
+    "src/components/webhooks/webhook-form-dialog.test.tsx",
+    "src/components/webhooks/webhook-lifetime.test.tsx",
+    "src/components/webhooks/webhook-endpoint-card.test.tsx",
+    "src/components/enterprise/api-key-lifetime.test.tsx",
+    "src/components/enterprise/api-key-page-client.test.tsx",
+    "src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx",
+    "src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/components/webhooks/webhooks-server-arrival.test.tsx"
+  ],
+  "preservation": {
+    "featureMergedWithExactTree": true,
+    "onlyTwoApplicationPathsChanged": [
+      "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts",
+      "apps/webapp/src/components/webhooks/webhooks-server-arrival.test.tsx"
+    ],
+    "oldRootProofsUnchanged": [
+      "docs/design/rollout-1692/1773/root-webhook-refusal-checks.json",
+      "docs/design/rollout-1692/1773/root-endpoint-completion-checks.json",
+      "docs/design/rollout-1692/1773/root-snapshot-and-refusal-checks.json"
+    ],
+    "reportPrefix": {
+      "filesystemBytes": 27844,
+      "filesystemSHA256": "be80f1eba33af272630943a3b2a5ef83780642db72c724c9692c3827b3d2dfaa",
+      "gitLfBytes": 27606,
+      "gitLfSHA256": "db8ddfa5a04b28161531b29b5754278b355006c5b80f82d2fbfbd90fa6e98006"
+    },
+    "authCredentialValidationSigningSSRFDeliveryDatabaseOwnersChanged": false,
+    "R155AndR1744ApplicationSourcesChanged": false
+  },
+  "attempts": [
+    "Before the runtime lease released, only ignored proposals and exact sanitized repro copies were prepared; no source edits or root package commands were run.",
+    "Read-only audit refuted local-state-only proposal A: an uncommitted hidden source can remount before its first effect and lose its earliest arrival. It remains an unexecuted discarded hypothesis.",
+    "The first API-key locator was ambiguous; a scoped list of legitimate buttons fixed the harness without changing cache assertions.",
+    "Biome treated the test-only role prop as an invalid ARIA role; renamed it employeeRole, preserving the real organization role payload.",
+    "Initial compiler scan found one arrival-object immutability error. Replaced mutable consumed property with external weak-set consumption; full units/types/Doctor then passed."
+  ],
+  "commands": {
+    "unit": "pnpm --config.verify-deps-before-run=false --filter webapp exec vitest run --project unit --maxWorkers 1 src/components/webhooks/webhooks-refusal.test.tsx src/components/webhooks/webhooks-edit-refusal.test.tsx src/components/webhooks/webhook-form-dialog.test.tsx src/components/webhooks/webhook-lifetime.test.tsx src/components/webhooks/webhook-endpoint-card.test.tsx src/components/enterprise/api-key-lifetime.test.tsx src/components/enterprise/api-key-page-client.test.tsx 'src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx' 'src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx' src/lib/navigation/route-metadata.test.ts src/components/webhooks/webhooks-server-arrival.test.tsx --reporter=json --outputFile=../../.tmp/1773-hidden-arrival-root-checks/unit-immutable-final.json",
+    "types": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+    "explicit": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check --config-path=biome.jsonc --line-ending=crlf 'src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts' src/components/webhooks/webhooks-server-arrival.test.tsx",
+    "lint": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check --formatter-enabled=false 'src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts' src/components/webhooks/webhooks-server-arrival.test.tsx",
+    "ordinary": "pnpm --config.verify-deps-before-run=false --filter webapp exec biome check 'src/app/[locale]/(app)/settings/enterprise/api-keys/use-developer-server-snapshot.ts' src/components/webhooks/webhooks-server-arrival.test.tsx",
+    "doctor": "REACT_DOCTOR_PARALLEL=1 pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base bc4010825c1fd94d634b7f4774b6f895bfac26f4 --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1773-hidden-arrival-root-checks/doctor-final.json",
+    "environment": "Both pnpm_config_verify_deps_before_run=false and CLI guard on every call; pinned pnpm12.16.1, bounded workers, no dependency or policy repair."
+  },
+  "resources": {
+    "rootNext": false,
+    "browser": false,
+    "native": false,
+    "postgres": false,
+    "provider": false,
+    "newRuntimeAssertions": 0
+  },
+  "limits": [
+    "Fresh independent correction recheck and authenticated R096 acceptance remain pending; verifiedCommit is null.",
+    "First hook observation records client arrival, not actual server/network response ordering before the child is rendered.",
+    "The prior133 selection is included. Worker553/100PG and old runtime receipts are inherited and unadded. No fresh R096 PostgreSQL/browser/provider run.",
+    "Scope metadata lasts for the QueryClient lifetime and is not server permission authority or cross-instance idempotency.",
+    "Ordinary formatting, full generation/catalog/provider/native/device/zoom and exhaustive authority matrices remain unpassed."
+  ]
+}

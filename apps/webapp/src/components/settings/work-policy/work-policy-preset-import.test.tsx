@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
@@ -17,7 +17,12 @@ import { WorkPolicyPresetImport } from "./work-policy-preset-import";
 import { WorkPolicyPresetReviewDialog } from "./work-policy-preset-review-dialog";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+			fallback.replace(/\{(\w+)\}/g, (match, name: string) =>
+				params?.[name] === undefined ? match : String(params[name]),
+			),
+	}),
 }));
 
 vi.mock("sonner", () => ({
@@ -206,12 +211,88 @@ describe("WorkPolicyPresetImport", () => {
 
 		expect(archiveWorkPolicyPreset).not.toHaveBeenCalled();
 		expect(
-			screen.getByRole("alertdialog", { name: "Archive custom preset?" }),
+			screen.getByRole("alertdialog", { name: "Archive the preset “Retail 38h”?" }),
 		).toBeTruthy();
 
 		await user.click(screen.getByRole("button", { name: "Archive preset" }));
 
 		expect(archiveWorkPolicyPreset).toHaveBeenCalledWith("custom-1");
+	});
+
+	it("keeps the archive confirmation open until the archive settles", async () => {
+		const user = userEvent.setup();
+		let settle: (value: Awaited<ReturnType<typeof archiveWorkPolicyPreset>>) => void = () => {};
+		vi.mocked(archiveWorkPolicyPreset).mockReturnValue(
+			new Promise((resolve) => {
+				settle = resolve;
+			}),
+		);
+
+		renderWithQueryClient(
+			<WorkPolicyPresetImport
+				organizationId="org-1"
+				onImportSuccess={vi.fn()}
+			/>,
+		);
+
+		await screen.findByText("Retail 38h");
+		await user.click(screen.getByRole("button", { name: "Archive" }));
+		await user.click(screen.getByRole("button", { name: "Archive preset" }));
+
+		const dialog = screen.getByRole("alertdialog", {
+			name: "Archive the preset “Retail 38h”?",
+		});
+		await waitFor(() =>
+			expect(
+				within(dialog).getByRole("button", { name: "Archive preset" }),
+			).toHaveProperty("disabled", true),
+		);
+		expect(archiveWorkPolicyPreset).toHaveBeenCalledTimes(1);
+
+		settle({ success: true, data: {} } as Awaited<
+			ReturnType<typeof archiveWorkPolicyPreset>
+		>);
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+	});
+
+	it("offers a retry when the presets fail to load", async () => {
+		const user = userEvent.setup();
+		vi.mocked(getWorkPolicyPresets)
+			.mockResolvedValueOnce({ success: false, error: "boom" } as Awaited<
+				ReturnType<typeof getWorkPolicyPresets>
+			>)
+			.mockResolvedValue({
+				success: true,
+				data: [systemPreset],
+			} as Awaited<ReturnType<typeof getWorkPolicyPresets>>);
+
+		renderWithQueryClient(
+			<WorkPolicyPresetImport
+				organizationId="org-1"
+				onImportSuccess={vi.fn()}
+			/>,
+		);
+
+		expect(await screen.findByText("Failed to load presets")).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		expect(await screen.findByText("German Labor Law")).toBeTruthy();
+	});
+
+	it("ties each card action to its preset name", async () => {
+		renderWithQueryClient(
+			<WorkPolicyPresetImport
+				organizationId="org-1"
+				onImportSuccess={vi.fn()}
+			/>,
+		);
+
+		await screen.findByText("Retail 38h");
+		const editButton = screen.getByRole("button", { name: "Edit preset" });
+		const describedBy = editButton.getAttribute("aria-describedby");
+		expect(describedBy).toBeTruthy();
+		expect(document.getElementById(describedBy ?? "")?.textContent).toBe("Retail 38h");
+		expect(screen.getByRole("heading", { level: 3, name: "Retail 38h" })).toBeTruthy();
 	});
 });
 
@@ -376,6 +457,55 @@ describe("WorkPolicyPresetReviewDialog", () => {
 			}),
 			setAsDefault: false,
 		});
+	});
+
+	it("shows a missing name beside the field instead of saving", async () => {
+		const user = userEvent.setup();
+
+		renderWithQueryClient(
+			<WorkPolicyPresetReviewDialog
+				open
+				onOpenChange={vi.fn()}
+				organizationId="org-1"
+				mode="createCustom"
+				onSuccess={vi.fn()}
+			/>,
+		);
+
+		await user.type(screen.getByLabelText("Name"), "   ");
+		await user.click(
+			screen.getByRole("button", { name: "Save custom preset" }),
+		);
+
+		expect(await screen.findByText("Enter a name")).toBeTruthy();
+		expect(screen.getByLabelText("Name").getAttribute("aria-invalid")).toBe("true");
+		expect(createWorkPolicyPreset).not.toHaveBeenCalled();
+	});
+
+	it("names the break rule a remove button deletes", async () => {
+		await renderUseAsPolicyReview();
+
+		expect(
+			screen.getByRole("button", { name: "Remove break rule 1" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Remove option 1 of break rule 1" }),
+		).toBeTruthy();
+	});
+
+	it("keeps focus in a break-rule field while its value is typed", async () => {
+		const user = userEvent.setup();
+
+		await renderUseAsPolicyReview();
+
+		const threshold = screen.getByLabelText("After working hours");
+		await user.clear(threshold);
+		await user.type(threshold, "7.5");
+
+		expect(document.activeElement).toBe(screen.getByLabelText("After working hours"));
+		expect((screen.getByLabelText("After working hours") as HTMLInputElement).value).toBe(
+			"7.5",
+		);
 	});
 
 	it("shows duplicate-name server errors inline", async () => {

@@ -1,0 +1,43 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-1d3ddad0-a8c3c14087dbaeee/apps/webapp
+
+ ❯ |unit| src/app/[locale]/onboarding/profile/page.test.tsx (12 tests | 2 failed) 400ms
+   ❯ ProfilePage (12)
+     × discards held save responses after Activity hides and resumes the page 34ms
+     × discards held skip responses after Activity hides and resumes the page 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/app/[locale]/onboarding/profile/page.test.tsx > ProfilePage > discards held save responses after Activity hides and resumes the page
+ FAIL  |unit| src/app/[locale]/onboarding/profile/page.test.tsx > ProfilePage > discards held skip responses after Activity hides and resumes the page
+AssertionError: expected <button …(4)></button> to have property "disabled" with value false
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/app/[locale]/onboarding/profile/page.test.tsx:217:64
+    215|   expect(toastSuccessMock).not.toHaveBeenCalled();
+    216|   expect(screen.getByLabelText("First Name")).toHaveProperty("value", …
+    217|   expect(screen.getByRole("button", { name: "Skip for now" })).toHaveP…
+       |                                                                ^
+    218|  });
+    219|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  15:05:02
+   Duration  1.28s (tests 35%, environment 29%, import 28%, transform 5%, setup 2%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-1d3ddad0-
+  │ a8c3c14087dbaeee\apps\webapp

@@ -35,9 +35,20 @@ Production and support images now build from explicit Dockerfiles under `docker/
 | `docker/Dockerfile.docs` | z8-docs | Next.js documentation site |
 | `docker/Dockerfile.marketing` | z8-marketing | Marketing site |
 
-> **Note:** Images are larger than standalone mode (~300MB) because Next.js 16's
-> `cacheComponents` feature is not compatible with `output: "standalone"`.
-> The standard build includes full node_modules but ensures full compatibility.
+The webapp uses Next.js standalone output with the repository root as its tracing
+root. Its runtime contains the traced server dependency tree, `public` and
+`.next/static`; it does not carry a second production install, application source,
+or migration tooling. Cache Components remains enabled. Worker, migration and seed
+jobs continue to use their separate images.
+
+The image build runs `docker/scripts/verify-standalone.mjs` against the assembled
+runtime. It rejects dependencies resolved outside that artifact, checks the public
+PDF fonts and static assets, and encodes an image with Sharp for the target
+architecture. Pino's runtime-selected transports have explicit tracing anchors.
+This offline check does not replace authenticated route, upload, email/PDF/Excel,
+custom-domain, telemetry, cancellation or health smoke tests on a configured image.
+Qualify those journeys on both native architectures before rollout and compare
+image size, transfer/startup time and RSS before claiming packaging savings.
 
 ## GitHub Actions: GHCR Publishing
 
@@ -54,12 +65,41 @@ Workflow details:
 - Publishes multi-arch manifests for `z8-webapp`, `z8-worker`, and `z8-migration` from those target-specific digests
 - Passes the `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` repository secret to the webapp build as the `next_server_actions_encryption_key` build secret. Next.js salts server action IDs with it at build time. Keep the value stable across releases: if it changes or is missing, action IDs change every deploy, and tabs opened before the deploy fail their next server action call. Generate it with `openssl rand -base64 32`.
 
+### Build cache experiment
+
+Docker layer caching is always retained. Persisting BuildKit's pnpm/Next cache
+mounts is a separate opt-in: set the manual `persist_build_cache` input, or the
+`NEXT_BUILD_CACHE_ENABLED` repository variable to `true`. The workflow restores
+architecture/dependency-specific GHA cache entries, imports them into the same
+Buildx builder, and exports them after a successful webapp image build. Exports
+larger than 512 MiB are not saved. This bounds uploaded archive inputs, not temporary
+runner disk use: the mount export is materialized before its size is checked.
+No new cache mount storage is written by default.
+
+The trusted `docker/scripts/cache-mounts.mjs` helper copies only the two explicit
+mounts; Server Actions secrets and the source tree are not export inputs. Each
+transfer bypasses layer reuse so it actually reads/writes the live mounts. Cache
+misses keep the ordinary cold-build path. Record cold/warm build time, RSS, export
+size and cache hit behavior; keep active storage inside the repository's
+[CI resource policy](../docs/refs/ci-resource-policy.md). Stop the experiment if
+transfer/storage costs exceed its benefit. Turbopack's filesystem build cache
+remains disabled until that comparison justifies changing it.
+
+For local/root builds, use `pnpm build` or `pnpm build:webapp`. The build wrapper
+retains Turbo caching normally and forces execution when PostHog sourcemap upload
+credentials are configured, so an output-cache hit cannot skip the upload/delete
+side effect. Deployment identity, Server Actions keys and the isolated navigation
+test-build flag participate in the Turbo hash; the upload credential passes
+through without being part of the artifact identity. Direct `turbo build` bypasses
+this upload-side-effect guard and is not the supported upload command.
+
 ### Runtime Images
 
-- `webapp` runs as user `app`, starts through `tini`, exposes port `3000`, uses `pnpm start`, and keeps the HTTP `/api/health` probe.
+- `webapp` runs as user `app`, starts through `tini` using the emitted `apps/webapp/server.js`, exposes port `3000`, and keeps the HTTP `/api/health` probe. Its working directory remains `/app/apps/webapp` so public PDF fonts and relative runtime assets resolve consistently.
 - `worker` runs as user `app`, starts through `tini`, uses `tsx --import ./src/worker-preload.mjs src/worker.ts` (the preload lets modules marked `server-only` load outside Next.js), and keeps the Redis connectivity healthcheck in image metadata.
 - `migration` keeps the shared filesystem and sets the image default command to `node ./scripts/migrate-with-lock.js`.
 - `db-seed` runs `tsx src/db/seed/do-seed.ts` for one-shot bootstrap data when needed.
+- `marketing` uses the supported Node runtime and starts the installed Next CLI directly, without invoking a package resolver on startup.
 
 ### Triggers
 

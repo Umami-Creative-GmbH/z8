@@ -1,6 +1,12 @@
 import { DateTime } from "luxon";
 import { hasAttemptedOrdinaryTimeApprovalEvidence } from "@/lib/approvals/time-request-kind";
-import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { formatTimeInZone } from "@/lib/time-tracking/timezone-utils";
 import { formatTimeStringForPreference, type TimeFormat } from "@/lib/user-preferences/time-format";
@@ -81,7 +87,16 @@ export function normalizeWorkdayTimeline({
 	absences,
 	pendingRequests,
 }: NormalizeWorkdayTimelineInput): WorkdayTimelineData {
-	const dayWarnings = workPeriods.flatMap((period) => getWorkPeriodWarnings(period));
+	const dayWarnings = workPeriods.flatMap((period) =>
+		getWorkPeriodWarnings(period, {
+			// The open period of today is the live session, not a forgotten clock-out.
+			startedBeforeToday:
+				comparePlainDates(
+					plainDateAt(instantFromDate(period.startTime), timezone),
+					parsePlainDate(selectedDate.todayDateKey),
+				) < 0,
+		}),
+	);
 	const absenceItems = absences.map<WorkdayTimelineItem>((absence) => ({
 		id: `absence:${absence.id}`,
 		type: "absence",
@@ -170,7 +185,10 @@ export function normalizeWorkdayTimeline({
 	};
 }
 
-function getWorkPeriodWarnings(period: WorkdayWorkPeriodSource): WorkdayTimelineWarningItem[] {
+function getWorkPeriodWarnings(
+	period: WorkdayWorkPeriodSource,
+	{ startedBeforeToday }: { startedBeforeToday: boolean },
+): WorkdayTimelineWarningItem[] {
 	const warnings: WorkdayTimelineWarningItem[] = [];
 
 	if (period.approvalStatus === "pending" || period.pendingChanges) {
@@ -194,7 +212,7 @@ function getWorkPeriodWarnings(period: WorkdayWorkPeriodSource): WorkdayTimeline
 		});
 	}
 
-	if (period.endTime === null) {
+	if (period.endTime === null && startedBeforeToday) {
 		warnings.push({
 			id: `warning:missing-clock-out:${period.id}`,
 			type: "warning",

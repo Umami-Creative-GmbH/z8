@@ -25,7 +25,7 @@ export function MissingRequiredValuesBadge({ className }: { className?: string }
 	const { t } = useTranslate();
 	return (
 		<Badge variant="outline" className={className}>
-			<IconAlertTriangle aria-hidden="true" className="size-3.5 text-amber-600" />
+			<IconAlertTriangle aria-hidden="true" className="size-3.5 text-warning" />
 			{t("settings.customFields.values.missingRequired", "Missing required values")}
 		</Badge>
 	);

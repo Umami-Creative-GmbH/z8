@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "kind": "historical read-only SAFE intake",
+  "createdAt": "2026-11-17T23:05:05.191Z",
+  "scope": {
+    "inputRoot": "X:/t3-code/worktrees/z8/t3-ef083329-83fb3c23a4ea5691/.tmp/review1748",
+    "allowedPayloads": 11,
+    "onlyNewSystemTempWrites": true,
+    "noRepositoryGitPackageRuntimeTrackerMutation": true,
+    "noTestsOrArchivedScriptsExecuted": true,
+    "noChildren": true
+  },
+  "inputIndex": {
+    "path": "X:\\t3-code\\worktrees\\z8\\t3-ef083329-83fb3c23a4ea5691\\.tmp\\review1748\\SAFE-index.json",
+    "sha256": "649fd83ba7378d7c087466887f7f67159f09d52988e16161825c644b788cc197",
+    "expectedSha256": "649fd83ba7378d7c087466887f7f67159f09d52988e16161825c644b788cc197",
+    "match": true
+  },
+  "payloadVerification": {
+    "files": 11,
+    "bytes": 103566,
+    "allSuppliedBytesAndHashesMatch": true,
+    "parsedPayloadJson": 4,
+    "handoffSha256": "d7bd4aa8653ab8bd4efe9aebf0c9f3ce91a417e29b4ef4f2987bb958aa55f98b",
+    "expectedHandoffSha256": "d7bd4aa8653ab8bd4efe9aebf0c9f3ce91a417e29b4ef4f2987bb958aa55f98b"
+  },
+  "syntax": [
+    {
+      "path": "predict.cjs",
+      "parser": "vm.Script syntax compilation only",
+      "pass": true
+    },
+    {
+      "path": "finalize.cjs",
+      "parser": "vm.Script syntax compilation only",
+      "pass": true
+    },
+    {
+      "path": "refusal-review.test.tsx",
+      "parser": "installed Next bundled Babel parser factory, parse only",
+      "pass": true
+    },
+    {
+      "path": "baseline-control.test.tsx",
+      "parser": "installed Next bundled Babel parser factory, parse only",
+      "pass": true
+    },
+    {
+      "path": "resolved-metadata.txt",
+      "parser": "installed Next bundled Babel parser factory, parse only",
+      "pass": true
+    },
+    {
+      "path": "resolved-test.txt",
+      "parser": "installed Next bundled Babel parser factory, parse only",
+      "pass": true
+    }
+  ],
+  "accounting": {
+    "distinctCases": 32,
+    "passesAtLatestOccurrence": 31,
+    "failuresAtLatestOccurrence": 1,
+    "totalRecordedTestInstances": 35,
+    "repeatedRecordedInstances": 3,
+    "runs": [
+      {
+        "name": "priority-existing",
+        "declaredPassed": 28,
+        "declaredFailed": 0,
+        "computedPassed": 28,
+        "computedFailed": 0,
+        "tests": 28
+      },
+      {
+        "name": "refusal-review",
+        "declaredPassed": 1,
+        "declaredFailed": 2,
+        "computedPassed": 1,
+        "computedFailed": 2,
+        "tests": 3
+      },
+      {
+        "name": "refusal-confirmed",
+        "declaredPassed": 3,
+        "declaredFailed": 1,
+        "computedPassed": 3,
+        "computedFailed": 1,
+        "tests": 4
+      }
+    ]
+  },
+  "accountingMatchesDeclared": true,
+  "countQualifications": [
+    "28 existing priority cases overlap worker124 and are not added to it.",
+    "Initial confirmation attempt had a positive-control React Query notification timing failure; final await corrected the harness only.",
+    "35 recorded instances reduce to32 distinct cases by file/fullName/occurrence, with3 repeat instances.",
+    "No independent test execution occurred in this intake."
+  ],
+  "findingReview": {
+    "sequence": [
+      200,
+      404,
+      503
+    ],
+    "after404": {
+      "notesVisible": false,
+      "downloadVisible": false
+    },
+    "after503": {
+      "notesVisible": true,
+      "downloadVisible": true
+    },
+    "predicate": "A prior successful claim read must stay withdrawn after canonical404 when the only later result is transient503; no renewed success occurs.",
+    "seams": "Actual detail component, OrganizationContextProvider and QueryClient; synthetic HTTP/session/navigation/i18n adapters.",
+    "controls": [
+      "200→503→200 retains authorized evidence and recovers.",
+      "Initial404 exposes no notes or receipt link.",
+      "Pinned baseline85d6 retains evidence through both404 and503."
+    ],
+    "classification": "Incomplete new withdrawal guarantee atop inherited cache retention; no live authorization bypass or receipt-byte access proved.",
+    "classificationSupportedByAllowlistedSourcesAndReceipts": true
+  },
+  "candidate": {
+    "sha": "df0fafc4d827969d37482df69cfe2abb92fee599",
+    "tree": "9482b7c7b76665c1c303c4cb9a73cd52d745cf00",
+    "appTree": "860abb81d474927d8b49ddc521dc33d008a1d8ef",
+    "orderedParents": [
+      "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+      "6144dbb54f4398436ec6b95ad37ef32fd6ab0ca8"
+    ],
+    "predictionTreeEqualsReceipt": true,
+    "predictionAppEqualsReceipt": true
+  },
+  "mergeRecipeReview": {
+    "recipe": "Root map plus incoming base delta, except metadata = root with incoming z import and exact UUID predicate; metadata tests = root plus incoming additive suffix. Full root tree algorithm control passed before merge.",
+    "rootTreeAlgorithmControl": "Reported as passed by prediction receipt; algorithm statically inspected only.",
+    "composedPaths": [
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "declaredRootPaths": 18506,
+    "declaredCandidatePaths": 18582,
+    "declaredRootNonoverlapPreserved": 18499,
+    "declaredIncomingNonoverlapPreserved": 81,
+    "declaredBlobModeMismatches": [],
+    "declaredUnpredictedPaths": [],
+    "independentGitObjectsOrTreeReconstructionByThisIntake": false,
+    "receiptLimit": "Input map and full excluded inventories are not independently recertified. Static recipe and sealed prediction/result equality are internally consistent."
+  },
+  "cleanupReview": {
+    "declaredRemovedBridges": 3,
+    "declaredOwnedRuntimeProcesses": 0,
+    "declaredOwnedListeners": 0,
+    "declaredOwnedContainers": 0,
+    "receiptLimit": "Historical producer receipts only; no live process/filesystem inventory was run."
+  },
+  "unpassed": [
+    "Broad unit/static/type/lint/format/Doctor acceptance afterSTOP.",
+    "PostgreSQL, Next, browser/native and live authorization acceptance.",
+    "Broad incoming artifact content, images, links or excluded raw-log audit.",
+    "Independent Git-object preservation and current root adoption/readiness."
+  ],
+  "toolingQualifications": [
+    "Initial direct TypeScript parser path was unavailable; no install or mutation attempted.",
+    "Initial Babel factory API was invoked incorrectly; final factory().parse checks passed on all4 TS/TSX texts.",
+    "CJS sources compiled with vm.Script only; neither compiled script executed.",
+    "Installed parser tooling was loaded; no package manager or archived script ran."
+  ],
+  "discrepancies": [],
+  "readiness": {
+    "verifiedCommit": null,
+    "rootOwnsSourceFixAndReadiness": true,
+    "historicalIntakeOnly": true
+  }
+}

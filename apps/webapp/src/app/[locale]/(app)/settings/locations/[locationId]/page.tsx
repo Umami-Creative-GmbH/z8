@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { LocationDetail } from "@/components/settings/location-detail";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LocationDetailSkeleton } from "@/components/settings/location-detail-skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 
@@ -33,21 +33,9 @@ async function LocationDetailPageContent({ params }: LocationDetailPageProps) {
 	);
 }
 
-function LocationDetailPageLoading() {
-	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
-				<Skeleton className="h-8 w-56" />
-				<Skeleton className="h-5 w-80" />
-				<Skeleton className="h-[420px] w-full" />
-			</div>
-		</div>
-	);
-}
-
 export default function LocationDetailPage({ params }: LocationDetailPageProps) {
 	return (
-		<Suspense fallback={<LocationDetailPageLoading />}>
+		<Suspense fallback={<LocationDetailSkeleton />}>
 			<LocationDetailPageContent params={params} />
 		</Suspense>
 	);

@@ -1,0 +1,20 @@
+{
+  "container": "z8_approval_workflow_repository_test_1794907005659449700_24522",
+  "label": "approval-workflow-repository-test",
+  "exit": 0,
+  "logSha256": "af0d3ca2ab052de74d68026932ef202219f018213876fab9b59a6c62c2f59422",
+  "safeLines": [
+    "Started label-owned PostgreSQL 16 container: z8_approval_workflow_repository_test_1794907005659449700_24522",
+    "PostgreSQL 16 is ready: z8_approval_workflow_repository_test_1794907005659449700_24522",
+    "Verifying approval migration incident recovery, retry, and fresh chain",
+    "Migration recovery verification: probing custom schema refusal",
+    "Migration recovery verification: recreating incident state",
+    "Migration recovery verification: applying recovery migration",
+    "Migration recovery verification: checking retry idempotency",
+    "Migration recovery verification: checking anchor-present index recovery",
+    "Migration recovery verification: checking fresh migration chain",
+    "Migration recovery verification: passed",
+    "Verified container ownership label: z8.agent-owned=approval-workflow-repository-test",
+    "Removed disposable PostgreSQL container: z8_approval_workflow_repository_test_1794907005659449700_24522"
+  ]
+}

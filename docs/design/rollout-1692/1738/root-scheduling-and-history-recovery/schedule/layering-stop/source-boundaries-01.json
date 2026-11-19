@@ -1,0 +1,62 @@
+{
+  "candidate": "9afe127e43f686675da1ed025b87eaf8dfd9ca63",
+  "sources": [
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+      "gitBlob": "46702517352e3bd91e7d9e95e02daf0891eb199c",
+      "sha256": "fe0f64e33984017d31da551960f44ac8875fe60ffe28dac108eecdfa7e232a48"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/schedule-shift-list.tsx",
+      "gitBlob": "8a68955196364614b8f964a7df275ce3b6195edf",
+      "sha256": "7c372cba4d5155cdb903f3990bafd8a291c169934f7beca04de40cc75b168ca8"
+    },
+    {
+      "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+      "gitBlob": "a94f81ab64b6624afb664d5a78cca781a127752f",
+      "sha256": "6d6355a7ec428be6e51159ec6d3e3415ce37c4d6480fe4a16324c506d39417f5"
+    }
+  ],
+  "locations": {
+    "calendarIsolation": "shift-scheduler.tsx:345",
+    "publishInsideCalendar": "shift-scheduler.tsx:363",
+    "newFollowingList": "shift-scheduler.tsx:377",
+    "fixedPublishNoExplicitZIndex": "publish-fab.tsx:46",
+    "listPaintContainment": "schedule-shift-list.tsx:32"
+  },
+  "actualComputed": {
+    "viewport": [
+      1600,
+      1100
+    ],
+    "bodyPointer": "auto",
+    "publish": {
+      "text": "Publish (2)",
+      "disabled": false,
+      "rect": {
+        "x": 1440.78125,
+        "y": 1020,
+        "width": 135.21875,
+        "height": 56
+      },
+      "zIndex": "auto"
+    },
+    "top": {
+      "tag": "BUTTON",
+      "text": "Fixture Person 2Independent scheduling office · Independent receptionMon, Nov 16 · 09:00 – 17:00Published",
+      "isPublish": false,
+      "isShiftListRecord": true
+    },
+    "listExpanded": true
+  },
+  "mechanism": "Inference from source and actual hit-test: the fixed z-auto Publish remains in the calendar isolation context; later content-visibility list records paint/hit above it. Collapsing that list changes the actual top hit to Publish at the identical rect.",
+  "historicalSourceControl": {
+    "commit": "83a3b30f648e74416d628c96509dcee4c765cdba",
+    "oldSchedulerGitBlob": "4591e5db4368b5866ede1c3c57b308a30b795846",
+    "oldHasCalendarIsolation": true,
+    "oldHasPublish": true,
+    "oldHasFollowingScheduleShiftList": false
+  },
+  "historicalRuntimeRestored": false,
+  "classification": "New list composition makes the primary Publish pointer target inaccessible in the confirmed expanded/scrolled state; no claim of server publication/auth bypass, all-position failure or whole historical app equivalence"
+}

@@ -50,6 +50,7 @@
       "retry": "{choice} nomol probiere",
       "unavailable": "{choice} nöd verfüegbar"
     },
+    "clockedIn": "Eingestempelt",
     "clockedOutSuccess": "Du häsch usgstämplet!",
     "clockIn": "Iistämple",
     "clockingIn": "Am Iistämple…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Usstämple uf däm Grät gspycheret, aber nid gschickt. Überprüef die gspycherete Iiträg.",
     "clockOutSuccess": "Erfolgriich usgstämplet",
     "clockStatus": {
+      "clockedOut": "Nicht eingestempelt",
       "loading": "Stämpelstatus wird glade",
       "retry": "Stämpelstatus nomol lade",
       "unavailable": "Stämpelstatus nöd verfüegbar"
@@ -301,6 +303,8 @@
         "wrong": "Dieser PIN ist nicht korrekt. Versuchen Sie es erneut."
       },
       "queue": {
+        "awaiting": "Stempelungen mit ausstehender Bestätigung: {count}",
+        "checking": "Übermittelte Aktionen werden geprüft: {count}",
         "dismiss": "Verwärfe",
         "reason": {
           "contact": "Di letscht Verbindig vom Kiosk hät nöd chönne bestätigt wärde.",
@@ -311,6 +315,7 @@
           "pin": "De PIN isch nöd akzeptiert worde.",
           "time": "D Ziit dervo hät nöd chönne akzeptiert wärde."
         },
+        "recovery": "Der Kiosk prüft automatisch erneut, sobald Z8 erreichbar ist. Wiederholen Sie keine Aktion, deren Ergebnis unbekannt ist.",
         "refused": "{name}: {action} um {time}, offline gspicheret, isch nöd akzeptiert worde. {reason}",
         "title": "Offline-Stämplige nöd akzeptiert"
       },
@@ -335,6 +340,9 @@
         "description": "Dieser Kiosk kann nicht mehr zum Stempeln verwendet werden. Bitte wenden Sie sich an Ihren Administrator.",
         "pairAgain": "Mit neuem Code koppeln",
         "title": "Kiosk widerrufen"
+      },
+      "scope": {
+        "zone": "Kiosk-Zeit: {zone}"
       },
       "state": {
         "clockedIn": "Eingestempelt seit {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Kei Kategorie (100%)",
     "noProject": "Kei Projekt",
+    "notClockedIn": "Nicht eingestempelt",
     "notesPlaceholder": "A was häsch gschaffet?",
     "notesSaved": "Notize gspicheret",
+    "onBreak": "In Pause",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "E Abwäseheitsafrag für {dates} isch no unentschide.",
@@ -497,6 +507,14 @@
       "withdrawn": "Einreichung zurückgezogen",
       "withdrawRefused": "Über diese Einreichung wurde bereits entschieden und sie kann nicht mehr zurückgezogen werden."
     },
+    "policy": {
+      "fixedDays": "Feste Bürotage: {days}",
+      "flexible": "Flexible Büroregelung für diese Periode",
+      "homeOfficeLeft": "Verbleibende Homeoffice-Tage",
+      "officeRequired": "Noch erforderliche Bürotage",
+      "requirementWarning": "Büropflicht übersteigt die verbleibenden Arbeitstage",
+      "unavailable": "Arbeitsplatzregelung ist nicht verfügbar."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Pause hinzuefüege",
@@ -535,6 +553,7 @@
       "title": "Sitzigs-Erinnerige"
     },
     "startedAt": "Gstartet am",
+    "statusUnavailable": "Stempelstatus ist nicht verfügbar. Aktualisieren Sie, um es erneut zu versuchen.",
     "summary": {
       "dayOfRequired": "{date}: {worked} vo {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} Zueschlag",
       "thisMonth": "Dä Monet",
       "thisWeek": "Die Wuche",
+      "title": "Arbeitszeitübersicht",
       "today": "Hüt",
       "todayOfRequired": "{worked} vo {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Jetzt: {worked} gschafft vo bishär {required} verlangt. Denn: {previousWorked} gschafft vo {previousRequired} verlangt.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Gesamtzeit wird aktualisiert… Verwenden Sie «Aktualisieren», um es erneut zu versuchen, falls sie weiterhin nicht verfügbar ist.",
       "vsLastMonth": "vs. letschte Monet",
       "vsLastWeek": "vs. letschti Wuche"
     },
+    "systemNote": {
+      "breakEnforcement": "Automatisch angepasst: Pausenpflicht"
+    },
     "table": {
       "active": "Aktiv",
+      "allEntries": "Alle Einträge",
       "approved": "Ziitiitrag isch freigää",
       "approveEntry": "Iitrag freigä",
       "approveFailed": "Iitrag hät nöd chönne freigää wärde",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Fahrtdetails fähled",
       "duration": "Duur",
       "emptyState": "Kei Ziit-Iiträg für die Wuche gfunde.",
+      "entryCount": "{count, plural, one {# Eintrag} other {# Einträge}}",
+      "groupedByDay": "Nach Tag gruppiert",
+      "incompleteDay": "Enthält aktive oder unvollständige Einträge",
       "missingTask": "Fählendi Ufgab",
       "missingTaskHint": "Das Projekt bruucht en Ufgab: Fueg dere Buechig im Kaländer eini hinzue.",
+      "offsetContext": "Endpunktzeiten verwenden den erfassten lokalen UTC-Versatz jedes Eintrags. Tagesüberschriften folgen Ihrer Kalenderzeitzone: {timezone}.",
       "recordedLocalTime": "Erfassti Lokalziit",
       "rowActions": "Aktione für Ziitiiträg",
       "title": "Ziit-Iiträg",
@@ -586,62 +615,64 @@
       "search": "Ufgabe sueche…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Nachmittag",
+        "fullDay": "Ganzer Tag",
+        "morning": "Vormittag"
+      },
       "dayPicker": "Zytstrahl-Tagesuuswahl",
       "emptyDescription": "Es git no keini Schichte, Abweseheite oder Ziit-Iiträg für de gwählti Tag.",
       "emptyTitle": "Kei Aktivität für de Tag ufgzeichnet.",
+      "link": {
+        "reviewRequest": "Antrag prüfen",
+        "viewAbsence": "Absenz anzeigen"
+      },
+      "monthPicker": "Kalendertag auswählen",
       "nextDay": "Nächschte Tag",
       "previousDay": "Vorherige Tag",
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Absenzantrag"
+        },
+        "timeCorrection": {
+          "subtitle": "Korrektur für einen Zeiteintrag",
+          "title": "Antrag auf Zeitkorrektur"
+        }
+      },
+      "shift": {
+        "title": "Geplante Schicht"
+      },
+      "status": {
+        "active": "Aktiv",
+        "approved": "Gnämigt",
+        "cancelled": "Storniert",
+        "draft": "Entwurf",
+        "pending": "Pendent",
+        "published": "Veröffentlicht",
+        "rejected": "Abglehnt"
+      },
       "title": "Arbeitstag-Timeline",
       "today": "Hüt",
       "unavailableDescription": "D'Ziiterfassig funktioniert no. Versuech spöter, die Aasicht z'aktualisiere.",
       "unavailableTitle": "Timeline nöd verfügbar",
-      "workPeriod": {
-        "title": "Erfassti Arbeit"
-      },
-      "shift": {
-        "title": "Planti Schicht"
-      },
-      "status": {
-        "approved": "Gnehmigt",
-        "pending": "Usstehend",
-        "rejected": "Abgleh",
-        "cancelled": "Storniert",
-        "published": "Veröffentlicht",
-        "draft": "Entwurf",
-        "active": "Aktiv"
-      },
-      "absence": {
-        "fullDay": "Ganze Tag",
-        "morning": "Vormittag",
-        "afternoon": "Nammittag"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Zitkorrektur-Aatrag",
-          "subtitle": "Korrektur vomene Zitiitrag"
-        },
-        "absence": {
-          "title": "Abwäseheits-Aatrag",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Abwäseheit aazeige",
-        "reviewRequest": "Aatrag prüefe"
-      },
       "warning": {
-        "pendingEdit": {
-          "title": "Änderigs-Aatrag usstehend",
-          "description": "Für dä Arbeitsziitruum warted Änderige uf Gnehmigung."
+        "autoAdjusted": {
+          "description": "Pause- oder Compliance-Regle händ die Arbetszyt aapasset.",
+          "title": "Automatisch aapasste Iitrag"
         },
         "missingClockOut": {
-          "title": "Fählends Usstämple",
-          "description": "Dä Arbeitsziitruum isch na aktiv."
+          "description": "Die Arbetszyt isch no aktiv.",
+          "title": "Fählends Usstämple"
         },
-        "autoAdjusted": {
-          "title": "Automatisch aapasste Iitrag",
-          "description": "Pause- oder Compliance-Regle händ dä Arbeitsziitruum aapasst."
+        "pendingEdit": {
+          "description": "Die Arbetszyt hät Änderige, wo no uf e Gnämigung warted.",
+          "title": "Pendenti Änderigsaafraag"
         }
+      },
+      "weekPicker": "E Wochentag uswähle",
+      "workPeriod": {
+        "title": "Erfassti Arbet"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Bitte überprüfen Sie die Fahrzeugnutzung"
       }
     },
-    "welcomeBack": "Willkomme zrugg, {name}",
     "workCategory": "Arbetskategorie",
     "workLocation": "Arbetsort",
     "workLocationHome": "Dihei",
     "workLocationOffice": "Büro",
     "workLocationOther": "Anders",
-    "workLocationRemote": "Mobil",
-    "systemNote": {
-      "breakEnforcement": "Automatisch aapasst: Pauseregelig"
-    }
+    "workLocationRemote": "Mobil"
   },
   "wellness": {
     "water": {

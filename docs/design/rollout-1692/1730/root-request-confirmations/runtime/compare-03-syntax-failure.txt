@@ -1,0 +1,1 @@
+Driver parse failure before browser startup: PowerShell replacement emitted escaped dollar signs in p.$$eval. No product behavior was exercised. Original malformed driver retained in compare-03-syntax-failed.txt.

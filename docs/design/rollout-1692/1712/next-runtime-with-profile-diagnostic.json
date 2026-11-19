@@ -1,0 +1,32 @@
+[
+  {
+    "name": "get_compilation_issues",
+    "result": {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"issues\":[]}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1
+    }
+  },
+  {
+    "name": "get_errors",
+    "result": {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"configErrors\":[],\"sessionErrors\":[{\"url\":\"/en/settings/profile\",\"buildError\":null,\"runtimeErrors\":[{\"type\":\"console\",\"errorName\":\"Error\",\"message\":\"Route \\\"/[locale]/settings/profile\\\": Next.js encountered uncached data during prerendering or a navigation.\\n\\n`fetch(...)` or `connection()` accessed outside of `<Suspense>` prevents the route from being prerendered or the navigation from being instant, leading to a slower user experience.\\n\\nWays to fix this:\\n  - [stream] Provide a placeholder with `<Suspense fallback={...}>` around the data access\\n  - [cache] Cache the data access with `\\\"use cache\\\"` (does not apply to `connection()`)\\n  - [block] Set `export const instant = false` to allow a blocking route\\n\\nLearn more: https://nextjs.org/docs/messages/blocking-prerender-dynamic\",\"stack\":[{\"file\":\"src\\\\lib\\\\effect\\\\result.ts\",\"methodName\":\"runServerActionSafe\",\"line\":99,\"column\":29},{\"file\":\"src\\\\lib\\\\organization-action\\\\organization-action.ts\",\"methodName\":\"<anonymous>\",\"line\":120,\"column\":47},{\"file\":\"src\\\\lib\\\\organization-action\\\\organization-action.ts\",\"methodName\":\"action\",\"line\":115,\"column\":5},{\"file\":\"src\\\\app\\\\[locale]\\\\(app)\\\\settings\\\\profile\\\\page.tsx\",\"methodName\":\"ProfilePage\",\"line\":33,\"column\":27}]}]}]}"
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 1
+    }
+  }
+]

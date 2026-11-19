@@ -82,9 +82,13 @@
         "typeDeletePlaceholder": "DELETE"
       },
       "description": "Test için örnek veriler oluşturun veya mevcut zamanla ilgili verileri temizleyin",
+      "employeesLoadError": {
+        "description": "Demo verileri çalışanlarınız için oluşturulur, bu nedenle çalışanlar yüklenene kadar veri oluşturma kullanılamaz.",
+        "retrying": "Yeniden deneniyor…",
+        "title": "Çalışanlar yüklenemedi"
+      },
       "errors": {
-        "generationFailed": "Oluşturma başarısız oldu. Lütfen tekrar deneyin.",
-        "noOrganization": "Kuruluş seçilmedi"
+        "generationFailed": "Oluşturma başarısız oldu. Lütfen tekrar deneyin."
       },
       "form": {
         "approvalsTesting": {
@@ -148,6 +152,7 @@
         },
         "employees": {
           "all": "Tüm çalışanlar ({count})",
+          "allCountUnavailable": "Tüm çalışanlar",
           "label": "Çalışanlar",
           "selectSpecific": "Belirli çalışanları seçin"
         }

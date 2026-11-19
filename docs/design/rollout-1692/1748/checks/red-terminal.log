@@ -1,0 +1,622 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-2a184f7c-c55e0704d64f87a8/apps/webapp
+
+ ❯ |unit| src/components/travel-expenses/travel-expense-claim-detail.test.tsx (12 tests | 1 failed) 1526ms
+   ❯ stored travel claim detail (8)
+     × keeps a terminal timestamp when only intermediate approval evidence survived 1027ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/travel-expense-claim-detail.test.tsx > stored travel claim detail > keeps a terminal timestamp when only intermediate approval evidence survived
+TestingLibraryElementError: Unable to find an element with the text: Decision recorded. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-4"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h2
+            class="font-semibold leading-none"
+          >
+            Receipt
+             ·
+             
+            Approved
+          </h2>
+        </div>
+        <div
+          class="min-w-0 px-6 space-y-4"
+          data-slot="card-content"
+        >
+          <dl
+            class="grid gap-4 sm:grid-cols-2"
+          >
+            <div>
+              <dt
+                class="text-sm text-muted-foreground"
+              >
+                Date Range
+              </dt>
+              <dd>
+                <span>
+                  Trip date context not recorded (legacy claim)
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt
+                class="text-sm text-muted-foreground"
+              >
+                Amount
+              </dt>
+              <dd>
+                120,50 €
+              </dd>
+            </div>
+            <div>
+              <dt
+                class="text-sm text-muted-foreground"
+              >
+                Original amount
+              </dt>
+              <dd>
+                120,50 €
+              </dd>
+            </div>
+            <div>
+              <dt
+                class="text-sm text-muted-foreground"
+              >
+                Destination
+              </dt>
+              <dd
+                class="break-words"
+              >
+                Hamburg, DE
+              </dd>
+            </div>
+          </dl>
+          <div>
+            <h3
+              class="text-sm text-muted-foreground"
+            >
+              Notes
+            </h3>
+            <p
+              class="whitespace-pre-wrap break-words"
+            >
+              Original context
+            </p>
+          </div>
+        </div>
+      </div>
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h2
+            class="font-semibold leading-none"
+          >
+            Receipts
+          </h2>
+        </div>
+        <div
+          class="min-w-0 px-6 space-y-3"
+          data-slot="card-content"
+        >
+          <ul
+            class="space-y-3"
+          >
+            <li
+              class="space-y-2 rounded-lg border p-3"
+            >
+              <p
+                class="break-all font-medium"
+              >
+                hotel.pdf
+              </p>
+              <p
+                class="text-sm text-muted-foreground"
+              >
+                Legacy receipt: content checksum was not recorded.
+              </p>
+              <div
+                class="flex flex-wrap gap-4 text-sm"
+              >
+                <a
+                  aria-label="Preview hotel.pdf"
+                  class="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+                  href="/api/travel-expenses/old-claim/receipts/receipt"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Preview
+                </a>
+                <a
+                  aria-label="Download hotel.pdf"
+                  class="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+                  href="/api/travel-expenses/old-claim/receipts/receipt?download=1"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Download
+                </a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h2
+            class="font-semibold leading-none"
+          >
+            Decision history
+          </h2>
+          <div
+            class="text-muted-foreground text-sm"
+            data-slot="card-description"
+          >
+            Every step of this claim, oldest first. Times are shown in UTC.
+          </div>
+        </div>
+        <div
+          class="min-w-0 px-6"
+          data-slot="card-content"
+        >
+          <ol
+            class="grid"
+            data-slot="timeline"
+          >
+            <li
+              class="group/timeline-item relative grid grid-cols-[0.625rem_minmax(0,1fr)] gap-x-3 pb-5 last:pb-0"
+              data-slot="timeline-item"
+              data-state="done"
+            >
+              <span
+                aria-hidden="true"
+                class="absolute top-5 bottom-1 left-[calc(0.3125rem-0.5px)] w-px bg-border group-last/timeline-item:hidden"
+              />
+              <span
+                aria-hidden="true"
+                class="mt-1.5 size-2.5 rounded-full bg-muted-foreground/70"
+              />
+              <div
+                class="min-w-0"
+              >
+                <div
+                  class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+                >
+                  <p
+                    class="min-w-0 break-words text-sm font-medium"
+                  >
+                    Created
+                  </p>
+                  <time
+                    class="shrink-0 text-xs text-muted-foreground tabular-nums"
+                    datetime="2026-03-28T10:00:00Z"
+                  >
+                    28.03.2026, 10:00 UTC
+                  </time>
+                </div>
+              </div>
+            </li>
+            <li
+              class="group/timeline-item relative grid grid-cols-[0.625rem_minmax(0,1fr)] gap-x-3 pb-5 last:pb-0"
+              data-slot="timeline-item"
+              data-state="done"
+            >
+              <span
+                aria-hidden="true"
+                class="absolute top-5 bottom-1 left-[calc(0.3125rem-0.5px)] w-px bg-border group-last/timeline-item:hidden"
+              />
+              <span
+                aria-hidden="true"
+                class="mt-1.5 size-2.5 rounded-full bg-muted-foreground/70"
+              />
+              <div
+                class="min-w-0"
+              >
+                <div
+                  class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+                >
+                  <p
+                    class="min-w-0 break-words text-sm font-medium"
+                  >
+                    Submitted
+                  </p>
+                  <time
+                    class="shrink-0 text-xs text-muted-foreground tabular-nums"
+                    datetime="2026-03-29T10:00:00Z"
+                  >
+                    29.03.2026, 10:00 UTC
+                  </time>
+                </div>
+              </div>
+            </li>
+            <li
+              aria-current="step"
+              class="group/timeline-item relative grid grid-cols-[0.625rem_minmax(0,1fr)] gap-x-3 pb-5 last:pb-0"
+              data-slot="timeline-item"
+              data-state="current"
+            >
+              <span
+                aria-hidden="true"
+                class="absolute top-5 bottom-1 left-[calc(0.3125rem-0.5px)] w-px bg-border group-last/timeline-item:hidden"
+              />
+              <span
+                aria-hidden="true"
+                class="mt-1.5 size-2.5 rounded-full bg-primary ring-4 ring-primary/15"
+              />
+              <div
+                class="min-w-0"
+              >
+                <div
+                  class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+                >
+                  <p
+                    class="min-w-0 break-words text-sm font-medium"
+                  >
+                    Approval recorded — awaiting further approval
+                  </p>
+                  <time
+                    class="shrink-0 text-xs text-muted-foreground tabular-nums"
+                    datetime="2026-03-30T10:00:00Z"
+                  >
+                    30.03.2026, 10:00 UTC
+                  </time>
+                </div>
+                <div
+                  class="mt-1 break-words text-sm text-muted-foreground"
+                >
+                  <div
+                    class="space-y-1"
+                  >
+                    <p>
+                      By First reviewer
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="space-y-4"
+    >
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h2
+            class="font-semibold leading-none"
+          >
+            Receipt
+             ·
+             
+            Approved
+          </h2>
+        </div>
+        <div
+          class="min-w-0 px-6 space-y-4"
+          data-slot="card-content"
+        >
+          <dl
+            class="grid gap-4 sm:grid-cols-2"
+          >
+            <div>
+              <dt
+                class="text-sm text-muted-foreground"
+              >
+                Date Range
+              </dt>
+              <dd>
+                <span>
+                  Trip date context not recorded (legacy claim)
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt
+                class="text-sm text-muted-foreground"
+              >
+                Amount
+              </dt>
+              <dd>
+                120,50 €
+              </dd>
+            </div>
+            <div>
+              <dt
+                class="text-sm text-muted-foreground"
+              >
+                Original amount
+              </dt>
+              <dd>
+                120,50 €
+              </dd>
+            </div>
+            <div>
+              <dt
+                class="text-sm text-muted-foreground"
+              >
+                Destination
+              </dt>
+              <dd
+                class="break-words"
+              >
+                Hamburg, DE
+              </dd>
+            </div>
+          </dl>
+          <div>
+            <h3
+              class="text-sm text-muted-foreground"
+            >
+              Notes
+            </h3>
+            <p
+              class="whitespace-pre-wrap break-words"
+            >
+              Original context
+            </p>
+          </div>
+        </div>
+      </div>
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h2
+            class="font-semibold leading-none"
+          >
+            Receipts
+          </h2>
+        </div>
+        <div
+          class="min-w-0 px-6 space-y-3"
+          data-slot="card-content"
+        >
+          <ul
+            class="space-y-3"
+          >
+            <li
+              class="space-y-2 rounded-lg border p-3"
+            >
+              <p
+                class="break-all font-medium"
+              >
+                hotel.pdf
+              </p>
+              <p
+                class="text-sm text-muted-foreground"
+              >
+                Legacy receipt: content checksum was not recorded.
+              </p>
+              <div
+                class="flex flex-wrap gap-4 text-sm"
+              >
+                <a
+                  aria-label="Preview hotel.pdf"
+                  class="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+                  href="/api/travel-expenses/old-claim/receipts/receipt"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Preview
+                </a>
+                <a
+                  aria-label="Download hotel.pdf"
+                  class="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+                  href="/api/travel-expenses/old-claim/receipts/receipt?download=1"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Download
+                </a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div
+        class="flex min-w-0 flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h2
+            class="font-semibold leading-none"
+          >
+            Decision history
+          </h2>
+          <div
+            class="text-muted-foreground text-sm"
+            data-slot="card-description"
+          >
+            Every step of this claim, oldest first. Times are shown in UTC.
+          </div>
+        </div>
+        <div
+          class="min-w-0 px-6"
+          data-slot="card-content"
+        >
+          <ol
+            class="grid"
+            data-slot="timeline"
+          >
+            <li
+              class="group/timeline-item relative grid grid-cols-[0.625rem_minmax(0,1fr)] gap-x-3 pb-5 last:pb-0"
+              data-slot="timeline-item"
+              data-state="done"
+            >
+              <span
+                aria-hidden="true"
+                class="absolute top-5 bottom-1 left-[calc(0.3125rem-0.5px)] w-px bg-border group-last/timeline-item:hidden"
+              />
+              <span
+                aria-hidden="true"
+                class="mt-1.5 size-2.5 rounded-full bg-muted-foreground/70"
+              />
+              <div
+                class="min-w-0"
+              >
+                <div
+                  class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+                >
+                  <p
+                    class="min-w-0 break-words text-sm font-medium"
+                  >
+                    Created
+                  </p>
+                  <time
+                    class="shrink-0 text-xs text-muted-foreground tabular-nums"
+                    datetime="2026-03-28T10:00:00Z"
+                  >
+                    28.03.2026, 10:00 UTC
+                  </time>
+                </div>
+              </div>
+            </li>
+            <li
+              class="group/timeline-item relative grid grid-cols-[0.625rem_minmax(0,1fr)] gap-x-3 pb-5 last:pb-0"
+              data-slot="timeline-item"
+              data-state="done"
+            >
+              <span
+                aria-hidden="true"
+                class="absolute top-5 bottom-1 left-[calc(0.3125rem-0.5px)] w-px bg-border group-last/timeline-item:hidden"
+              />
+              <span
+                aria-hidden="true"
+                class="mt-1.5 size-2.5 rounded-full bg-muted-foreground/70"
+              />
+              <div
+                class="min-w-0"
+              >
+                <div
+                  class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+                >
+                  <p
+                    class="min-w-0 break-words text-sm font-medium"
+                  >
+                    Submitted
+                  </p>
+                  <time
+                    class="shrink-0 text-xs text-muted-foreground tabular-nums"
+                    datetime="2026-03-29T10:00:00Z"
+                  >
+                    29.03.2026, 10:00 UTC
+                  </time>
+                </div>
+              </div>
+            </li>
+            <li
+              aria-current="step"
+              class="group/timeline-item relative grid grid-cols-[0.625rem_minmax(0,1fr)] gap-x-3 pb-5 last:pb-0"
+              data-slot="timeline-item"
+              data-state="current"
+            >
+              <span
+                aria-hidden="true"
+                class="absolute top-5 bottom-1 left-[calc(0.3125rem-0.5px)] w-px bg-border group-last/timeline-item:hidden"
+              />
+              <span
+                aria-hidden="true"
+                class="mt-1.5 size-2.5 rounded-full bg-primary ring-4 ring-primary/15"
+              />
+              <div
+                class="min-w-0"
+              >
+                <div
+                  class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5"
+                >
+                  <p
+                    class="min-w-0 break-words text-sm font-medium"
+                  >
+                    Approval recorded — awaiting further approval
+                  </p>
+                  <time
+                    class="shrink-0 text-xs text-muted-foreground tabular-nums"
+                    datetime="2026-03-30T10:00:00Z"
+                  >
+                    30.03.2026, 10:00 UTC
+                  </time>
+                </div>
+                <div
+                  class="mt-1 break-words text-sm text-muted-foreground"
+                >
+                  <div
+                    class="space-y-1"
+                  >
+                    <p>
+                      By First reviewer
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/travel-expenses/travel-expense-claim-detail.test.tsx:109:23
+    107|   })));
+    108|   const client = mount();
+    109|   expect(await screen.findByText("Decision recorded")).toBeTruthy();
+       |                       ^
+    110|   expect(screen.getByText(/First reviewer/)).toBeTruthy();
+    111|   client.clear();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  07:51:00
+   Duration  2.30s (tests 69%, environment 17%, import 8%, transform 5%, setup 1%)
+

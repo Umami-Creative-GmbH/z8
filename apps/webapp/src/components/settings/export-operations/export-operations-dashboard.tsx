@@ -40,7 +40,7 @@ export function ExportOperationsDashboard({ t, data }: ExportOperationsDashboard
 				</Alert>
 			) : null}
 
-			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+			<dl className="grid gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-2 xl:grid-cols-4">
 				<SummaryCard
 					title={t("settings.exportOperations.summary.activeSchedules", "Active schedules")}
 					value={String(data.summary.activeSchedules)}
@@ -83,7 +83,7 @@ export function ExportOperationsDashboard({ t, data }: ExportOperationsDashboard
 						"Most recent audit package generation.",
 					)}
 				/>
-			</div>
+			</dl>
 
 			<div className="grid gap-6 xl:grid-cols-2">
 				<AlertsCard t={t} alerts={data.alerts} error={data.errors.alerts} />
@@ -104,16 +104,13 @@ function SummaryCard({
 	value: ReactNode;
 	description: string;
 }) {
+	// One shared summary surface rather than a card around every number.
 	return (
-		<Card>
-			<CardHeader>
-				<CardDescription>{description}</CardDescription>
-				<CardTitle>{title}</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<p className="text-2xl font-semibold tracking-tight">{value}</p>
-			</CardContent>
-		</Card>
+		<div className="min-w-0 space-y-1 bg-card p-4">
+			<dt className="font-medium text-sm">{title}</dt>
+			<dd className="text-2xl font-semibold tracking-tight tabular-nums">{value}</dd>
+			<dd className="text-muted-foreground text-xs">{description}</dd>
+		</div>
 	);
 }
 
@@ -154,8 +151,10 @@ function AlertsCard({
 						{alerts.map((alert) => (
 							<Alert key={alert.id}>
 								<AlertTitle className="flex items-center justify-between gap-3">
-									<span>{alert.title}</span>
-									<Badge>{getSeverityLabel(alert.severity, t)}</Badge>
+									<span className="min-w-0 break-words">{alert.title}</span>
+									<Badge variant={alert.severity === "error" ? "destructive" : "outline"}>
+										{getSeverityLabel(alert.severity, t)}
+									</Badge>
 								</AlertTitle>
 								<AlertDescription>
 									<div className="space-y-2">
@@ -304,7 +303,9 @@ function RecentActivityCard({
 										</div>
 									</TableCell>
 									<TableCell>
-										<Badge>{getStatusLabel(item.status, t)}</Badge>
+										<Badge variant={getStatusVariant(item.status)}>
+											{getStatusLabel(item.status, t)}
+										</Badge>
 									</TableCell>
 									<TableCell>
 										<ExportOperationsDateTime value={item.occurredAt} />
@@ -350,6 +351,18 @@ function getSeverityLabel(severity: ExportOperationsAlert["severity"], t: Transl
 			return t("settings.exportOperations.severity.error", "Error");
 		case "warning":
 			return t("settings.exportOperations.severity.warning", "Warning");
+	}
+}
+
+/** Failure stands out; completion and in-flight states stay calm. The label carries the meaning. */
+function getStatusVariant(status: ExportOperationsActivityItem["status"]) {
+	switch (status) {
+		case "failed":
+			return "destructive" as const;
+		case "completed":
+			return "secondary" as const;
+		default:
+			return "outline" as const;
 	}
 }
 

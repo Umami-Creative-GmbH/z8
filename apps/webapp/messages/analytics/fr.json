@@ -39,11 +39,13 @@
       "byCostCenter": "Par centre de coûts",
       "byManager": "Par gestionnaire",
       "byTeam": "Par équipe",
+      "chartValues": "Afficher les valeurs hebdomadaires",
       "costCenter": "Centre de coûts",
       "currentOvertime": "Heures supplémentaires actuelles",
       "description": "Suivez la réduction hebdomadaire des heures supplémentaires au sein des équipes.",
       "errors": {
-        "loadData": "Échec du chargement des données de réduction des heures supplémentaires"
+        "loadData": "Échec du chargement des données de réduction des heures supplémentaires",
+        "retryDescription": "Impossible de charger les données des heures supplémentaires. Réessayez avec la période et les filtres sélectionnés."
       },
       "filters": {
         "allCostCenters": "Tous les centres de coûts",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "Groupes en amélioration",
       "improvingGroupsDescription": "Groupes avec une diminution des heures supplémentaires",
+      "loading": "Chargement des données des heures supplémentaires",
       "manager": "Gestionnaire",
       "previousOvertime": "Heures supplémentaires précédentes",
       "previousPeriodDescription": "Comparé à la période précédente",
+      "refreshing": "Actualisation des données des heures supplémentaires",
       "selectedRangeDescription": "Pour la plage de dates et les filtres sélectionnés",
       "title": "Réduction des heures supplémentaires",
       "trendDirection": "Direction de la tendance",
@@ -92,6 +96,10 @@
         "title": "Goulots d'étranglement d'approbation",
         "unavailable": "Les goulots d'étranglement d'approbation n'ont pas pu être chargés"
       },
+      "chartValues": "Afficher les valeurs du graphique",
+      "errors": {
+        "retryDescription": "Certaines analyses n'ont pas pu être chargées. Les valeurs précédemment chargées, si elles sont affichées, peuvent être obsolètes."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Parmi les demandes traitées, approuvées",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Chargement des données d'analyse",
+      "refreshing": "Actualisation des analyses…",
       "workHoursByTeam": {
         "description": "Total des heures de travail enregistrées par équipe",
         "title": "Heures de travail par équipe"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Échec du chargement des données de performance de l'équipe"
       },
+      "loading": "Chargement des données de performance de l'équipe",
       "onTrack": "Sur la bonne voie",
+      "refreshFailed": "Échec de l'actualisation. Affichage des données précédemment chargées pour cette période. L'exportation est indisponible tant qu'une nouvelle tentative n'a pas réussi.",
+      "refreshing": "Actualisation des données de performance de l'équipe",
       "variance": {
         "description": "Écart d'heures par rapport aux heures de travail attendues",
         "empty": "Aucune donnée d'écart disponible",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Alloué",
+      "allowanceMissing": "Quota non configuré",
+      "allowanceSource": "Certains employés n'ont aucun quota enregistré. Les totaux utilisent uniquement les quotas enregistrés existants.",
       "balance": {
         "description": "Jours alloués, pris et restants par employé",
         "title": "Solde de congés"
       },
-      "daysRemaining": "{count} jours restants",
-      "daysTaken": "{count} jours pris",
+      "dayValue": "{count} jours",
+      "description": "Comparez l'utilisation des congés et les soldes des employés pour la période d'organisation sélectionnée.",
       "errors": {
-        "loadData": "Échec du chargement des données de tendances des congés"
+        "loadData": "Échec du chargement des données de tendances des congés",
+        "retryDescription": "Impossible de charger les données de congés. Réessayez avec la période sélectionnée."
       },
+      "loading": "Chargement des données de congés",
       "monthlyUsage": {
         "description": "Jours de congés pris par mois",
         "empty": "Aucune donnée d'utilisation mensuelle disponible",
         "title": "Utilisation mensuelle des congés"
       },
+      "monthlyValues": "Afficher les valeurs mensuelles",
       "peakMonths": {
         "description": "Mois avec la plus forte activité de congés",
         "empty": "Aucune donnée de mois de pointe disponible",
         "title": "Mois de pointe des congés"
       },
+      "refreshing": "Actualisation des données de congés",
       "remaining": "Restant",
       "taken": "Pris",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Aucune donnée d'heures quotidiennes disponible",
         "title": "Heures de travail quotidiennes"
       },
+      "dailyStatus": "Afficher le statut quotidien",
+      "dailyValues": "Afficher les heures quotidiennes",
       "distribution": {
         "description": "Comparaison des heures de travail des employés (barre horizontale)",
         "empty": "Aucune donnée de distribution disponible",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Heures attendues",
       "hoursPerWeekAbbreviation": "h/sem.",
+      "loading": "Chargement des données d'analyse des heures de travail",
+      "refreshFailed": "Échec de l'actualisation. Affichage des données précédemment chargées pour cette période. L'exportation est indisponible tant qu'une nouvelle tentative n'a pas réussi.",
+      "refreshing": "Actualisation des données d'analyse des heures de travail",
       "variance": "Écart",
       "varianceTrend": {
         "description": "Écart des heures par rapport aux heures de travail attendues au fil du temps",
         "empty": "Aucune donnée de tendance disponible",
-        "title": "Tendance des heures supplémentaires et sous-heures"
+        "title": "Tendance des heures supplémentaires et sous-heures",
+        "unavailable": "Les valeurs quotidiennes des heures supplémentaires et insuffisantes sont indisponibles dans ce rapport. Le statut quotidien enregistré est affiché ci-dessous."
       }
     }
   }

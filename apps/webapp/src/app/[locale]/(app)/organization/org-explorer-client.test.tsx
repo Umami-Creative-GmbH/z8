@@ -7,7 +7,7 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { type ReactNode, useMemo, useSyncExternalStore } from "react";
+import { Activity, type ReactNode, useMemo, useSyncExternalStore } from "react";
 import {
 	afterEach,
 	beforeAll,
@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => ({
 	setCenter: vi.fn(),
 	fitView: vi.fn(),
 	isMobile: false,
+	refresh: null as null | (() => Promise<void>),
 }));
 
 vi.mock("./actions", () => ({
@@ -46,7 +47,9 @@ vi.mock("./actions", () => ({
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => mocks.isMobile }));
 
 vi.mock("@/components/providers/view-refresh-provider", () => ({
-	useViewRefresh: () => {},
+	useViewRefresh: (read: () => Promise<void>) => {
+		mocks.refresh = read;
+	},
 }));
 
 vi.mock("@/navigation", () => ({
@@ -237,16 +240,18 @@ async function renderExplorer(
 		initialData?: OrgExplorerData;
 		canManage?: boolean;
 		search?: string;
+		strict?: boolean;
 	} = {},
 ) {
 	window.history.replaceState(null, "", `/organization${options.search ?? ""}`);
 	const { OrgExplorerClient } = await import("./org-explorer-client");
-	return render(
+	const explorer = (
 		<OrgExplorerClient
 			canManage={options.canManage ?? false}
 			initialData={options.initialData ?? data}
-		/>,
+		/>
 	);
+	return render(explorer, { reactStrictMode: options.strict });
 }
 
 function card(employeeId: string) {
@@ -276,6 +281,7 @@ beforeEach(() => {
 	mocks.setCenter.mockReset();
 	mocks.fitView.mockReset();
 	mocks.isMobile = false;
+	mocks.refresh = null;
 });
 
 afterEach(() => {
@@ -620,6 +626,37 @@ describe("OrgExplorerClient", () => {
 	});
 
 	describe("search", () => {
+		it("dismisses search with the first Escape and ignores the in-flight response", async () => {
+			let resolveSearch: (value: unknown) => void = () => {};
+			mocks.search.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						resolveSearch = resolve;
+					}),
+			);
+			await renderExplorer();
+			const input = screen.getByLabelText("Search employees");
+			fireEvent.change(input, { target: { value: "Deb" } });
+			fireEvent.keyDown(input, { key: "Escape" });
+			await act(async () =>
+				resolveSearch({
+					success: true,
+					data: [
+						{
+							employeeId: "deb",
+							name: "Deb Dev",
+							email: "d",
+							pronouns: null,
+							image: null,
+							position: null,
+						},
+					],
+				}),
+			);
+			expect(screen.queryByRole("button", { name: "Deb Dev d" })).toBeNull();
+			expect((input as HTMLInputElement).value).toBe("");
+			expect(query().get("employee")).toBeNull();
+		});
 		it("opens the path to the chosen person, centres on them and selects them", async () => {
 			mocks.search.mockResolvedValueOnce({
 				success: true,
@@ -739,6 +776,147 @@ describe("OrgExplorerClient", () => {
 			noTeamCount: 120,
 		};
 
+		it("recovers a failed deep-linked person without losing the selected URL or showing a different person", async () => {
+			mocks.people.mockResolvedValueOnce({
+				success: false,
+				error: "Unavailable",
+			});
+			await renderExplorer({ initialData: partial, search: "?employee=deb" });
+			const panel = await screen.findByRole("dialog");
+			expect(await within(panel).findByRole("alert")).toBeTruthy();
+			expect(
+				within(panel).queryByRole("heading", { name: "Ada Analyst" }),
+			).toBeNull();
+			expect(query().get("employee")).toBe("deb");
+			mocks.people.mockResolvedValue({ success: true, data: [people[4]] });
+			fireEvent.click(within(panel).getByRole("button", { name: "Retry" }));
+			expect(
+				await within(panel).findByRole("heading", { name: "Deb Dev" }),
+			).toBeTruthy();
+			expect(query().get("employee")).toBe("deb");
+		});
+
+		it("refreshes a selected person whose first read is still pending", async () => {
+			let finish: (value: unknown) => void = () => {};
+			mocks.people
+				.mockImplementationOnce(
+					() =>
+						new Promise((resolve) => {
+							finish = resolve;
+						}),
+				)
+				.mockResolvedValue({ success: true, data: [people[4]] });
+			mocks.data.mockResolvedValue({ success: true, data: partial });
+			await renderExplorer({ initialData: partial, search: "?employee=deb" });
+			expect(mocks.people).toHaveBeenCalledTimes(1);
+			await act(async () => {
+				await mocks.refresh?.();
+			});
+			await act(async () => {
+				finish({ success: true, data: [{ ...people[4], name: "Stale Deb" }] });
+			});
+			expect(
+				await screen.findByRole("heading", { name: "Deb Dev" }),
+			).toBeTruthy();
+			expect(screen.queryByRole("heading", { name: "Stale Deb" })).toBeNull();
+			expect(query().get("employee")).toBe("deb");
+		});
+
+		it("refreshes a filtered team's pending member read without changing its URL", async () => {
+			let finish: (value: unknown) => void = () => {};
+			let finishCurrent: (value: unknown) => void = () => {};
+			const filteredData = {
+				...partial,
+				teams: [{ ...teams[2], memberCount: 3 }],
+			};
+			mocks.teamMembers
+				.mockImplementationOnce(
+					() =>
+						new Promise((resolve) => {
+							finish = resolve;
+						}),
+				)
+				.mockImplementationOnce(
+					() =>
+						new Promise((resolve) => {
+							finishCurrent = resolve;
+						}),
+				);
+			mocks.data.mockResolvedValue({ success: true, data: filteredData });
+			await renderExplorer({
+				initialData: filteredData,
+				search: "?view=teams&team=hr",
+			});
+			await act(async () => {
+				await mocks.refresh?.();
+			});
+			await act(async () => {
+				finish({
+					success: true,
+					data: {
+						people: [{ ...people[5], name: "Stale Lou", teamIds: ["hr"] }],
+						nextOffset: null,
+					},
+				});
+			});
+			expect(
+				within(screen.getByTestId("team-card-hr"))
+					.getByRole("button", { name: "Show 2 people" })
+					.getAttribute("disabled"),
+			).not.toBeNull();
+			await act(async () => {
+				finishCurrent({
+					success: true,
+					data: {
+						people: [{ ...people[5], teamIds: ["hr"] }],
+						nextOffset: null,
+					},
+				});
+			});
+			expect(
+				await within(screen.getByTestId("team-card-hr")).findByRole("button", {
+					name: /Lou Loner/,
+				}),
+			).toBeTruthy();
+			expect(screen.queryByRole("button", { name: /Stale Lou/ })).toBeNull();
+			expect(query().get("view")).toBe("teams");
+			expect(query().get("team")).toBe("hr");
+		});
+
+		it("recovers a failed expanded branch after a cached Activity return", async () => {
+			mocks.people.mockRejectedValueOnce(new Error("Network unavailable"));
+			const { OrgExplorerClient } = await import("./org-explorer-client");
+			const tree = (mode: "visible" | "hidden") => (
+				<Activity mode={mode}>
+					<OrgExplorerClient initialData={partial} canManage={false} />
+				</Activity>
+			);
+			const view = render(tree("visible"));
+			fireEvent.click(
+				within(card("ada")).getByRole("button", { name: "1 direct report" }),
+			);
+			expect(await screen.findByRole("alert")).toBeTruthy();
+			view.rerender(tree("hidden"));
+			view.rerender(tree("visible"));
+			mocks.people.mockResolvedValue({ success: true, data: [people[4]] });
+			fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+			expect(await screen.findByTestId("org-person-deb")).toBeTruthy();
+			expect(screen.queryByRole("alert")).toBeNull();
+		});
+
+		it("settles a lazy deep link when the mounted app replays effects", async () => {
+			mocks.people.mockResolvedValue({ success: true, data: [people[4]] });
+			await renderExplorer({
+				initialData: partial,
+				search: "?employee=deb",
+				strict: true,
+			});
+			expect(
+				await screen.findByRole("heading", { name: "Deb Dev" }),
+			).toBeTruthy();
+			expect(query().get("employee")).toBe("deb");
+		});
+
 		it("loads a subtree on demand when it is expanded", async () => {
 			mocks.people.mockResolvedValueOnce({ success: true, data: [people[4]] });
 			await renderExplorer({ initialData: partial });
@@ -749,6 +927,21 @@ describe("OrgExplorerClient", () => {
 
 			expect(mocks.people).toHaveBeenCalledWith(["deb"]);
 			expect(await screen.findByTestId("org-person-deb")).toBeTruthy();
+		});
+
+		it("retains the roster and recovers a failed expanded branch after a transport error", async () => {
+			mocks.people.mockRejectedValueOnce(new Error("Network unavailable"));
+			await renderExplorer({ initialData: partial });
+			fireEvent.click(
+				within(card("ada")).getByRole("button", { name: "1 direct report" }),
+			);
+			expect(await screen.findByRole("alert")).toBeTruthy();
+			expect(card("ceo")).toBeTruthy();
+			expect(screen.queryByTestId("org-person-deb")).toBeNull();
+			mocks.people.mockResolvedValue({ success: true, data: [people[4]] });
+			fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+			expect(await screen.findByTestId("org-person-deb")).toBeTruthy();
+			expect(screen.queryByRole("alert")).toBeNull();
 		});
 
 		it("loads the path to a person chosen in search", async () => {

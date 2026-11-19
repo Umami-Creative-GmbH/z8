@@ -11,7 +11,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { toast } from "sonner";
 import { EmployeeSingleSelect } from "@/components/employee-select";
 import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
@@ -61,6 +61,15 @@ interface FeatureAssignment<Value extends string> {
 	employeeId: string | null;
 	value: Value;
 }
+interface AssignmentRemoval<Value extends string> {
+	assignmentId: string;
+	/** The team or employee the override was for. */
+	name: string;
+	/** True for the organization default row, which is not an override. */
+	organizationDefault?: boolean;
+	/** How to re-add the override; absent when it cannot be offered again. */
+	restore?: { target: FeatureAssignmentTarget; value: Value };
+}
 interface ScopedFeatureAssignmentsProps<Value extends string> {
 	assignments: FeatureAssignment<Value>[];
 	teams: { id: string; name: string }[];
@@ -74,6 +83,7 @@ interface ScopedFeatureAssignmentsProps<Value extends string> {
 	organizationLabel: string;
 	description: string;
 	onSave: (target: FeatureAssignmentTarget, value: Value) => Promise<boolean>;
+	/** Reports failures itself; the success toast (with Undo) comes from this component. */
 	onRemove: (assignmentId: string) => Promise<boolean>;
 }
 
@@ -120,10 +130,13 @@ export function ScopedFeatureAssignments<Value extends string>({
 	const [scope, setScope] = useState<AssignmentScope>("organization");
 	const [panelOpen, setPanelOpen] = useState(false);
 	const [pending, setPending] = useState(false);
+	// Guards changes started outside the disabled controls, such as a toast's Undo.
+	const changeInFlight = useRef<Promise<boolean> | null>(null);
 	const sections = assignmentSections(t);
 	const runChange = (change: () => Promise<boolean>) => {
+		if (changeInFlight.current) return Promise.resolve(false);
 		setPending(true);
-		return change()
+		const running = change()
 			.catch(() => {
 				toast.error(
 					t(
@@ -133,7 +146,51 @@ export function ScopedFeatureAssignments<Value extends string>({
 				);
 				return false;
 			})
-			.finally(() => setPending(false));
+			.finally(() => {
+				changeInFlight.current = null;
+				setPending(false);
+			});
+		changeInFlight.current = running;
+		return running;
+	};
+	// An Undo clicked while another change runs is applied once that change ends,
+	// rather than dropped after its toast has closed.
+	const runAfterCurrentChange = (change: () => Promise<boolean>) => {
+		const current = changeInFlight.current;
+		return current ? current.then(() => runChange(change)) : runChange(change);
+	};
+	// This component owns the success feedback for every removal, so onRemove
+	// callers report only failures. A removed team or employee override can be
+	// re-added with the same value.
+	const removeAssignment = async (removal: AssignmentRemoval<Value>) => {
+		const removed = await runChange(() => onRemove(removal.assignmentId));
+		if (!removed) return removed;
+		if (removal.organizationDefault) {
+			toast.success(
+				t(
+					"settings.featureAssignments.organizationDefaultRemoved",
+					"Organization default removed",
+				),
+			);
+			return removed;
+		}
+		const message = t(
+			"settings.featureAssignments.removedFor",
+			"Override removed for {name}",
+			{ name: removal.name },
+		);
+		if (!removal.restore) {
+			toast.success(message);
+			return removed;
+		}
+		const { target, value } = removal.restore;
+		toast.success(message, {
+			action: {
+				label: t("common.undo", "Undo"),
+				onClick: () => void runAfterCurrentChange(() => onSave(target, value)),
+			},
+		});
+		return removed;
 	};
 	const form = useForm({
 		defaultValues: { targetId: "", value: String(options[0].value) },
@@ -202,7 +259,7 @@ export function ScopedFeatureAssignments<Value extends string>({
 				}}
 				onAdd={openPanel}
 				onSave={(target, value) => runChange(() => onSave(target, value))}
-				onRemove={(id) => runChange(() => onRemove(id))}
+				onRemove={removeAssignment}
 			/>
 			<ActionPanel
 				open={panelOpen}
@@ -407,8 +464,8 @@ type FeatureAssignmentSectionsProps<Value extends string> = Pick<
 	| "valueLabel"
 	| "organizationLabel"
 	| "onSave"
-	| "onRemove"
 > & {
+	onRemove: (removal: AssignmentRemoval<Value>) => Promise<boolean>;
 	pending: boolean;
 	remainingTargets: { team: number; employee: number };
 	onAdd: (scope: AssignmentScope) => void;
@@ -442,7 +499,6 @@ function FeatureAssignmentSections<Value extends string>({
 	);
 	return (
 		<>
-			{" "}
 			{sections.map((section) => {
 				const rows = assignments.filter(
 					(assignment) => assignment.assignmentType === section.type,
@@ -592,7 +648,18 @@ function FeatureAssignmentSections<Value extends string>({
 														size="icon"
 														className="shrink-0 text-destructive hover:text-destructive"
 														disabled={pending}
-														onClick={() => void onRemove(assignment.id)}
+														onClick={() =>
+															void onRemove({
+																assignmentId: assignment.id,
+																name: label,
+																organizationDefault: section.type === "organization",
+																// Former employees are never offered as a new target.
+																restore:
+																	section.type === "organization" || former
+																		? undefined
+																		: { target, value: assignment.value },
+															})
+														}
 														aria-label={t(
 															"settings.featureAssignments.remove",
 															"Remove {target}",

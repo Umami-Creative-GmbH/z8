@@ -1,0 +1,133 @@
+{
+  "observations": [
+    {
+      "scope": "small-admin / 2025",
+      "rows": [
+        "Fixture team 1\t8,352.0h\t2,088.0h\t4\tOn Track",
+        "Fixture team 0\t8,352.0h\t2,088.0h\t4\tOn Track"
+      ]
+    },
+    {
+      "export": "CSV",
+      "data": [
+        {
+          "teamId": "2d982a4b-db77-4161-94f3-4b96b6a09f9c",
+          "teamName": "Fixture team 1",
+          "totalHours": 8352,
+          "avgHoursPerEmployee": 2088,
+          "employeeCount": 4
+        },
+        {
+          "teamId": "fb0a7fa0-e8e1-4b5f-84c1-9854397928d4",
+          "teamName": "Fixture team 0",
+          "totalHours": 8352,
+          "avgHoursPerEmployee": 2088,
+          "employeeCount": 4
+        }
+      ],
+      "headers": [
+        {
+          "key": "teamName",
+          "label": "Team"
+        },
+        {
+          "key": "totalHours",
+          "label": "Total Hours"
+        },
+        {
+          "key": "avgHoursPerEmployee",
+          "label": "Avg per Employee"
+        },
+        {
+          "key": "employeeCount",
+          "label": "Employee Count"
+        }
+      ],
+      "filename": "team-performance-2024-12-31",
+      "bytes": 128
+    },
+    {
+      "export": "Excel",
+      "data": [
+        {
+          "teamId": "2d982a4b-db77-4161-94f3-4b96b6a09f9c",
+          "teamName": "Fixture team 1",
+          "totalHours": 8352,
+          "avgHoursPerEmployee": 2088,
+          "employeeCount": 4
+        },
+        {
+          "teamId": "fb0a7fa0-e8e1-4b5f-84c1-9854397928d4",
+          "teamName": "Fixture team 0",
+          "totalHours": 8352,
+          "avgHoursPerEmployee": 2088,
+          "employeeCount": 4
+        }
+      ],
+      "headers": [
+        {
+          "key": "teamName",
+          "label": "Team"
+        },
+        {
+          "key": "totalHours",
+          "label": "Total Hours"
+        },
+        {
+          "key": "avgHoursPerEmployee",
+          "label": "Avg per Employee"
+        },
+        {
+          "key": "employeeCount",
+          "label": "Employee Count"
+        }
+      ],
+      "filename": "team-performance-2024-12-31",
+      "bytes": 6595
+    },
+    {
+      "refresh": "Held real 2025 read retained rows/range, disabled export; abort exposed stale warning; real Retry recovered"
+    },
+    {
+      "periodFailure": "New failed period removed old comparison and export; retry used new period"
+    },
+    {
+      "preferences": "Real Dark/Large saved and retained (18px); reduced motion; Ctrl+B persisted collapse; phone drawer Escape; zoom-equivalent viewport",
+      "comparisonScroll": {
+        "width": 298,
+        "scrollWidth": 756,
+        "scrollLeft": 458,
+        "identityLeft": 46,
+        "regionLeft": 46
+      }
+    },
+    {
+      "actor": "small-manager",
+      "h1": [
+        "Team Performance"
+      ],
+      "restricted": false,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "actor": "small-employee",
+      "h1": [
+        "Team Performance"
+      ],
+      "restricted": true,
+      "width": 390,
+      "documentWidth": 390
+    },
+    {
+      "actor": "small-restricted",
+      "h1": [
+        "Team Performance"
+      ],
+      "restricted": true,
+      "width": 390,
+      "documentWidth": 390
+    }
+  ],
+  "errors": []
+}

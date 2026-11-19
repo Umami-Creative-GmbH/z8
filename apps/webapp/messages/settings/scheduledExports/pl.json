@@ -35,7 +35,6 @@
         "previousWeekDesc": "Eksportuj dane z poprzedniego tygodnia (pon.-niedz.)"
       },
       "deleteDialog": {
-        "cancel": "Anuluj",
         "confirm": "Usuń",
         "description": "Czy na pewno chcesz usunąć \"{name}\"? Tej akcji nie można cofnąć.",
         "title": "Usuń zaplanowany eksport"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Usuwanie nie powiodło się",
         "loadFailed": "Nie udało się załadować zaplanowanych eksportów",
-        "toggleFailed": "Przełączanie nie powiodło się"
+        "retry": "Spróbuj ponownie"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Właściciel harmonogramu, {owner}, nie jest już administratorem organizacji. Najpierw ustaw siebie lub innego administratora organizacji jako właściciela."
       },
       "filters": {
         "allEmployees": "Wszyscy pracownicy",
@@ -284,8 +286,9 @@
         "paused": "Wstrzymany",
         "schedule": "Harmonogram",
         "status": "Status",
-        "title": "Aktywne harmonogramy",
-        "type": "Typ"
+        "titleAll": "Harmonogramy",
+        "type": "Typ",
+        "unknownOwner": "Nieznany właściciel"
       },
       "title": "Zaplanowane eksporty",
       "toast": {

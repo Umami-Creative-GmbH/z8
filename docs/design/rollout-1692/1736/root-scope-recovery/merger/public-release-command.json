@@ -1,0 +1,25 @@
+{
+  "name": "public-release",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp",
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "vitest",
+    "run",
+    "--config",
+    ".tmp/1736-merger/vitest.config.ts",
+    "--project",
+    "public-audit",
+    "--maxWorkers",
+    "1",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1736-merger/public-release.json"
+  ],
+  "environment": {
+    "pnpm_config_verify_deps_before_run": "false"
+  },
+  "startedAt": "2026-11-16T02:27:05.2880145+01:00",
+  "finishedAt": "2026-11-16T02:27:12.4510556+01:00",
+  "exitCode": 1
+}

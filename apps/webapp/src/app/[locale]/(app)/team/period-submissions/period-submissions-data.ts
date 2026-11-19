@@ -11,7 +11,26 @@ import {
 
 export type PeriodSubmissionOverviewResult =
 	| { status: "ok"; scope: "all" | "managed"; overview: PeriodSubmissionOverview }
-	| { status: "forbidden" };
+	| { status: "forbidden" }
+	| { status: "unavailable" };
+
+export interface PeriodSubmissionsAccess {
+	userId: string;
+	organizationId: string;
+	scope: "all" | "managed";
+}
+
+export async function getPeriodSubmissionsAccess(): Promise<PeriodSubmissionsAccess | null> {
+	const context = await getCurrentSettingsRouteContext();
+	const organizationId = context?.authContext.session.activeOrganizationId;
+	if (!context || !organizationId) return null;
+	const scope = periodSubmissionOverviewScope({
+		accessTier: context.accessTier,
+		organizationId,
+		employee: context.authContext.employee ?? null,
+	});
+	return scope ? { userId: context.authContext.user.id, organizationId, scope: scope.kind } : null;
+}
 
 /**
  * The period submission status overview (#1063) for the session's active organization. Owners
@@ -20,10 +39,13 @@ export type PeriodSubmissionOverviewResult =
  */
 export async function getPeriodSubmissionOverview(
 	requestedPeriod: string | null,
+	expected: Pick<PeriodSubmissionsAccess, "userId" | "organizationId">,
 ): Promise<PeriodSubmissionOverviewResult> {
 	const context = await getCurrentSettingsRouteContext();
 	const organizationId = context?.authContext.session.activeOrganizationId;
 	if (!context || !organizationId) return { status: "forbidden" };
+	if (expected.userId !== context.authContext.user.id || expected.organizationId !== organizationId)
+		return { status: "forbidden" };
 	const scope = periodSubmissionOverviewScope({
 		accessTier: context.accessTier,
 		organizationId,

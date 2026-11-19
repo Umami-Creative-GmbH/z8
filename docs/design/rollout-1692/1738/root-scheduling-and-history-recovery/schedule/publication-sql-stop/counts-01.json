@@ -1,0 +1,38 @@
+{
+  "fresh": {
+    "unitCases": 0,
+    "postgreSqlCases": 0,
+    "canonicalFixturePrepares": 1,
+    "initialDomainSeeds": 1,
+    "normalPublicDevelopmentLogins": 1,
+    "pointerRegressionFamilies": 1,
+    "finalReviewedOperationalScreenshots": 5,
+    "userPublishActivations": 2,
+    "publishRequestAttempts": 4,
+    "successfulCreates": 0,
+    "successfulEdits": 0,
+    "successfulDeletes": 0,
+    "successfulPublications": 0
+  },
+  "nonadditive": {
+    "pointerHarnessAttempts": 3,
+    "earlyStopsBeforeWrites": 2,
+    "refusalConfirmationActivations": 1,
+    "inheritedPublicAssemblyCases": 8,
+    "inheritedCanonicalPostgreSqlCases": 45,
+    "inheritedCanonicalPostgreSqlFiles": 7,
+    "inheritedRootUnitCases": 30,
+    "inheritedRootUnitFiles": 5,
+    "inheritedTypes": "all3/typegen",
+    "inheritedLint": "explicit2file100CRLF",
+    "inheritedDoctor": "zero changed diagnostics"
+  },
+  "harnessLimits": [
+    "First pnpm sandbox call denied ordinary engine-store lock; ordinary escalation approved.",
+    "Initial pinning helper exceeded Node default Git buffer before pins; bounded maxBuffer copy passed.",
+    "First login command failed JSON shell argument parsing before request; argument-safe helper passed form submit but its postlogin wait crossed initialization navigation; sanitized actual dashboard then scheduling admission confirmed.",
+    "Pointer attempt01 stopped on Next development portal during wide resize; no publish. Attempt02 passed wide but inspected Cancel during panel animation; no publish. Attempt03 waits for actual Cancel center hit and proves trusted intended Publish, then fails success expectation on real server DB error.",
+    "Raw-server-action-response capture helper was automatically rejected and never executed; safe visible-UI-only refusal helper approved and used. No raw action responses were saved."
+  ],
+  "retriesAndOverlapsAddedToUniqueCaseTotal": false
+}

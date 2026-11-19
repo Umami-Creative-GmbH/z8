@@ -1,0 +1,47 @@
+[
+  { id: 'email', type: 'email', name: 'email' },
+  { id: 'password', type: 'password', name: 'password' },
+  {
+    id: 'cf-chl-widget-6vrxo_response',
+    type: 'hidden',
+    name: 'cf-turnstile-response'
+  }
+]
+Normal UI login completed
+Skip to content
+Performance small
+Admin
+Search
+Ctrl+K
+WORKPLACE
+Dashboard
+Time Tracking
+Calendar
+Absences
+Travel Expenses
+Finance
+My Requests
+Reports
+Org Explorer
+TEAM & ORGANIZATION
+Team
+Team Absences
+Approvals
+Compliance
+Settings
+Get Help
+Feedback
+Person 0
+perf-small-0-8b04d0c3c930@example.test
+Toggle Sidebar
+Z8
+21:18
+UTC+01:00
+Loading clock status
+Toggle theme
+404
+Page not found
+The page may have moved, the link may be outdated, or the address may be incorrect.
+Go to Dashboard
+Settings
+Back

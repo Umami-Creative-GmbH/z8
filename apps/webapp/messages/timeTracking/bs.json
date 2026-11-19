@@ -50,6 +50,7 @@
       "retry": "Pokušaj ponovo: {choice}",
       "unavailable": "{choice} nije dostupno"
     },
+    "clockedIn": "Prijavljen",
     "clockedOutSuccess": "Evidentirali ste odlazak!",
     "clockIn": "Evidentiraj dolazak",
     "clockingIn": "Evidentiranje dolaska…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Odjava je spremljena na ovom uređaju, ali nije poslana. Pregledajte spremljene zapise.",
     "clockOutSuccess": "Odlazak je uspješno evidentiran",
     "clockStatus": {
+      "clockedOut": "Nije prijavljen",
       "loading": "Učitavanje statusa evidencije radnog vremena",
       "retry": "Pokušaj ponovo: status evidencije radnog vremena",
       "unavailable": "Status evidencije radnog vremena nije dostupan"
@@ -301,6 +303,8 @@
         "wrong": "Taj PIN nije tačan. Pokušajte ponovo."
       },
       "queue": {
+        "awaiting": "Evidencije koje čekaju potvrdu: {count}",
+        "checking": "Provjera poslanih radnji: {count}",
         "dismiss": "Odbaci",
         "reason": {
           "contact": "Posljednja veza kioska se nije mogla potvrditi.",
@@ -311,6 +315,7 @@
           "pin": "PIN nije prihvaćen.",
           "time": "Njegovo vrijeme se nije moglo prihvatiti."
         },
+        "recovery": "Kiosk ponovo provjerava automatski kada može stupiti u vezu sa Z8. Ne ponavljajte radnju čiji ishod nije poznat.",
         "refused": "{name}: {action} u {time}, sačuvano van mreže, nije prihvaćeno. {reason}",
         "title": "Evidentiranja van mreže nisu prihvaćena"
       },
@@ -335,6 +340,9 @@
         "description": "Ovaj kiosk se više ne može koristiti za evidenciju radnog vremena. Molimo obratite se svom administratoru.",
         "pairAgain": "Upari s novim kodom",
         "title": "Kiosk je opozvan"
+      },
+      "scope": {
+        "zone": "Vrijeme kioska: {zone}"
       },
       "state": {
         "clockedIn": "Prijavljeni od {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Bez kategorije (100%)",
     "noProject": "Nema projekta",
+    "notClockedIn": "Nije prijavljen",
     "notesPlaceholder": "Na čemu ste radili?",
     "notesSaved": "Bilješke sačuvane",
+    "onBreak": "Na pauzi",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Zahtjev za odsustvo za {dates} je neriješen.",
@@ -497,6 +507,14 @@
       "withdrawn": "Podnošenje je povučeno",
       "withdrawRefused": "O ovom podnošenju je već odlučeno i više se ne može povući."
     },
+    "policy": {
+      "fixedDays": "Fiksni dani u uredu: {days}",
+      "flexible": "Fleksibilna politika rada iz ureda za ovaj period",
+      "homeOfficeLeft": "Preostali dani rada od kuće",
+      "officeRequired": "Preostali potrebni dani u uredu",
+      "requirementWarning": "Zahtjev za rad iz ureda premašuje preostale radne dane",
+      "unavailable": "Politika radnog mjesta nije dostupna."
+    },
     "project": "Projekat",
     "quickBreak": {
       "addBreak": "Dodaj pauzu",
@@ -535,6 +553,7 @@
       "title": "Podsjetnici za sesiju"
     },
     "startedAt": "Započeto u",
+    "statusUnavailable": "Status evidencije rada nije dostupan. Osvježite da pokušate ponovo.",
     "summary": {
       "dayOfRequired": "{date}: {worked} od {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} dodatak",
       "thisMonth": "Ovaj mjesec",
       "thisWeek": "Ova sedmica",
+      "title": "Sažetak radnog vremena",
       "today": "Danas",
       "todayOfRequired": "{worked} od {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Sada: {worked} odrađeno od {required} obaveznih do sada. Tada: {previousWorked} odrađeno od {previousRequired} obaveznih.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Ažuriranje ukupnog vremena… Koristite Osvježi da pokušate ponovo ako ostane nedostupno.",
       "vsLastMonth": "u odnosu na prošli mjesec",
       "vsLastWeek": "u odnosu na prošlu sedmicu"
     },
+    "systemNote": {
+      "breakEnforcement": "Automatski prilagođeno: obavezna pauza"
+    },
     "table": {
       "active": "Aktivno",
+      "allEntries": "Svi unosi",
       "approved": "Vremenski unos je odobren",
       "approveEntry": "Odobri unos",
       "approveFailed": "Odobravanje unosa nije uspjelo",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Nedostaju detalji o vožnji",
       "duration": "Trajanje",
       "emptyState": "Nisu pronađeni vremenski unosi za ovu sedmicu.",
+      "entryCount": "{count, plural, one {# unos} other {# unosa}}",
+      "groupedByDay": "Grupisano po danu",
+      "incompleteDay": "Uključuje aktivne ili nepotpune unose",
       "missingTask": "Nedostaje zadatak",
       "missingTaskHint": "Ovaj projekt zahtijeva zadatak: dodajte ga ovom unosu u kalendaru.",
+      "offsetContext": "Krajnja vremena koriste zabilježeni lokalni UTC pomak svakog unosa. Naslovi dana prate vremensku zonu vašeg kalendara: {timezone}.",
       "recordedLocalTime": "Evidentirano lokalno vrijeme",
       "rowActions": "Radnje vremenskog unosa",
       "title": "Vremenski unosi",
@@ -586,62 +615,64 @@
       "search": "Pretraži zadatke…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "Poslijepodne",
+        "fullDay": "Cijeli dan",
+        "morning": "Prijepodne"
+      },
       "dayPicker": "Birač dana vremenske trake",
       "emptyDescription": "Još uvijek nema smjena, odsustava ili unosa radnog vremena za odabrani dan.",
       "emptyTitle": "Nema zabilježenih aktivnosti za ovaj dan.",
+      "link": {
+        "reviewRequest": "Pregledaj zahtjev",
+        "viewAbsence": "Prikaži odsustvo"
+      },
+      "monthPicker": "Odaberite dan u kalendaru",
       "nextDay": "Sljedeći dan",
       "previousDay": "Prethodni dan",
-      "title": "Vremenska traka radnog dana",
-      "today": "Danas",
-      "unavailableDescription": "Evidencija radnog vremena i dalje radi. Pokušajte osvježiti ovaj prikaz kasnije.",
-      "unavailableTitle": "Vremenska traka nije dostupna",
-      "workPeriod": {
-        "title": "Evidentirani rad"
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Zahtjev za odsustvo"
+        },
+        "timeCorrection": {
+          "subtitle": "Ispravka unosa vremena",
+          "title": "Zahtjev za ispravku vremena"
+        }
       },
       "shift": {
         "title": "Planirana smjena"
       },
       "status": {
+        "active": "Aktivno",
         "approved": "Odobreno",
-        "pending": "Na čekanju",
-        "rejected": "Odbijeno",
         "cancelled": "Otkazano",
-        "published": "Objavljeno",
         "draft": "Nacrt",
-        "active": "Aktivno"
+        "pending": "Na čekanju",
+        "published": "Objavljeno",
+        "rejected": "Odbijeno"
       },
-      "absence": {
-        "fullDay": "Cijeli dan",
-        "morning": "Prijepodne",
-        "afternoon": "Poslijepodne"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Zahtjev za ispravku vremena",
-          "subtitle": "Ispravka vremenskog unosa"
-        },
-        "absence": {
-          "title": "Zahtjev za odsustvo",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Prikaži odsustvo",
-        "reviewRequest": "Pregledaj zahtjev"
-      },
+      "title": "Vremenska traka radnog dana",
+      "today": "Danas",
+      "unavailableDescription": "Evidencija radnog vremena i dalje radi. Pokušajte osvježiti ovaj prikaz kasnije.",
+      "unavailableTitle": "Vremenska traka nije dostupna",
       "warning": {
-        "pendingEdit": {
-          "title": "Zahtjev za izmjenu na čekanju",
-          "description": "Ovaj radni period ima izmjene koje čekaju odobrenje."
+        "autoAdjusted": {
+          "description": "Pravila za pauze ili usklađenost su prilagodila ovaj radni period.",
+          "title": "Automatski prilagođen zapis"
         },
         "missingClockOut": {
-          "title": "Nedostaje odjava",
-          "description": "Ovaj radni period je još aktivan."
+          "description": "Ovaj radni period je još uvijek aktivan.",
+          "title": "Nedostaje odjava"
         },
-        "autoAdjusted": {
-          "title": "Automatski prilagođen zapis",
-          "description": "Pravila o pauzama ili usklađenosti prilagodila su ovaj radni period."
+        "pendingEdit": {
+          "description": "Ovaj radni period ima izmjene koje čekaju odobrenje.",
+          "title": "Zahtjev za izmjenu na čekanju"
         }
+      },
+      "weekPicker": "Odaberite dan u sedmici",
+      "workPeriod": {
+        "title": "Evidentirani rad"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Molimo provjerite korištenje vozila"
       }
     },
-    "welcomeBack": "Dobrodošli nazad, {name}",
     "workCategory": "Kategorija rada",
     "workLocation": "Lokacija rada",
     "workLocationHome": "Kuća",
     "workLocationOffice": "Kancelarija",
     "workLocationOther": "Ostalo",
-    "workLocationRemote": "Rad na daljinu",
-    "systemNote": {
-      "breakEnforcement": "Automatski prilagođeno: primjena pauza"
-    }
+    "workLocationRemote": "Rad na daljinu"
   },
   "wellness": {
     "water": {

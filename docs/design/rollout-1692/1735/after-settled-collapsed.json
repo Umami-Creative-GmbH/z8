@@ -1,0 +1,80 @@
+{
+  "route": "/en/reports",
+  "viewport": {
+    "width": 1600,
+    "height": 1100
+  },
+  "headings": [
+    {
+      "text": "Employee Reports",
+      "left": 278.89739990234375,
+      "right": 1372.8348999023438
+    }
+  ],
+  "main": {
+    "x": 254.8974151611328,
+    "y": 0,
+    "width": 1344,
+    "height": 1100,
+    "top": 0,
+    "right": 1598.8974151611328,
+    "bottom": 1100,
+    "left": 254.8974151611328
+  },
+  "fixed": [
+    {
+      "slot": "sidebar-container",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 256,
+        "height": 1100,
+        "top": 0,
+        "right": 256,
+        "bottom": 1100,
+        "left": 0
+      }
+    },
+    {
+      "slot": "select-positioner",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+      }
+    },
+    {
+      "slot": "sheet-overlay",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 1100,
+        "top": 0,
+        "right": 1600,
+        "bottom": 1100,
+        "left": 0
+      }
+    },
+    {
+      "slot": "action-panel-content",
+      "rect": {
+        "x": 1152.038818359375,
+        "y": 0,
+        "width": 448,
+        "height": 1100,
+        "top": 0,
+        "right": 1600.038818359375,
+        "bottom": 1100,
+        "left": 1152.038818359375
+      }
+    }
+  ],
+  "overflow": false,
+  "body": "Toggle Sidebar\n\nReports\n\n23:36\nUTC+01:00\nClock In\nToggle theme\nEmployee Reports\nGenerate comprehensive work hour and absence reports with tax-relevant home office data\nDistance per Vehicle\nGenerate an employee report\nEmployee\nFixture Person 0\nPeriod\nLast Year\nJan 1, 2025 - Dec 31, 2025\nGenerate Report\nPerson 0\n\nJan 1, 2025 - Dec 31, 2025\n\n2025-01-01 – 2025-12-31\n\nClosed months\nJanuary 2025\nOpen\nFebruary 2025\nOpen\nMarch 2025\nOpen\nApril 2025\nOpen\nMay 2025\nOpen\nJune 2025\nOpen\nJuly 2025\nOpen\nAugust 2025\nOpen\nSeptember 2025\nOpen\nOctober 2025\nOpen\nNovember 2025\nOpen\nDecember 2025\nOpen\nTotal Work Hours\n2088h\n\n261 work days\n\nAvg: 8h/day\n\nHome Office Days\n52\n\n416h worked from home\n\nTax relevant\n\nVacation Days\n0\n\n0 pending\n\nTotal Absences\n52\n\nSick: 0 days\n\nOther: 0 days\n\nWork Hours by Month\nMonth\tHours\tDays\n2025-01\t184h\t23\n2025-02\t160h\t20\n2025-03\t168h\t21\n2025-04\t176h\t22\n2025-05\t176h\t22\n2025-06\t168h\t21\n2025-07\t184h\t23\n2025-08\t168h\t21\n2025-09\t176h\t22\n2025-10\t184h\t23\n2025-11\t160h\t20\n2025-12\t184h\t23\nTotal\t2088h\t261\nAbsences by Category\nCategory\tDays\nFixture home office\t52\nTotal\t52\nHome Office Summary (Tax Relevant)\n\nImportant for German tax purposes - shows home office days and hours worked\n\nTotal Home Office Days\n\n52\n\nTotal Hours Worked from Home\n\n416h\n\nDate-by-Date Breakdown\nDate\tHours Worked\nJan 7, 2025\t8h\nJan 14, 2025\t8h\nJan 21, 2025\t8h\nJan 28, 2025\t8h\nFeb 4, 2025\t8h\nFeb 11, 2025\t8h\nFeb 18, 2025\t8h\nFeb 25, 2025\t8h\nMar 4, 2025\t8h\nMar 11, 2025\t8h\nMar 18, 2025\t8h\nMar 25, 2025\t8h\nApr 1, 2025\t8h\nApr 8, 2025\t8h\nApr 15, 2025\t8h\nApr 22, 2025\t8h\nApr 29, 2025\t8h\nMay 6, 2025\t8h\nMay 13, 2025\t8h\nMay 20, 2025\t8h\nMay 27, 2025\t8h\nJun 3, 2025\t8h\nJun 10, 2025\t8h\nJun 17, 2025\t8h\nJun 24, 2025\t8h\nJul 1, 2025\t8h\nJul 8, 2025\t8h\nJul 15, 2025\t8h\nJul 22, 2025\t8h\nJul 29, 2025\t8h\nAug 5, 2025\t8h\nAug 12, 2025\t8h\nAug 19, 2025\t8h\nAug 26, 2025\t8h\nSep 2, 2025\t8h\nSep 9, 2025\t8h\nSep 16, 2025\t8h\nSep 23, 2025\t8h\nSep 30, 2025\t8h\nOct 7, 2025\t8h\nOct 14, 2025\t8h\nOct 21, 2025\t8h\nOct 28, 2025\t8h\nNov 4, 2025\t8h\nNov 11, 2025\t8h\nNov 18, 2025\t8h\nNov 25, 2025\t8h\nDec 2, 2025\t8h\nDec 9, 2025\t8h\nDec 16, 2025\t8h\nDec 23, 2025\t8h\nDec 30, 2025\t8h\nTotal\t416h\nCompliance Metrics\nAttendance Percentage\n83%\nOvertime\n0h\nUndertime\n0h\nExport Report\n\nDownload this report in your preferred format\n\nExport PDF\nExport Excel\nExport CSV"
+}

@@ -3,26 +3,16 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "@/navigation";
 import { runOnboardingAction } from "../run-onboarding-action";
-import {
-	checkIsAdmin,
-	setWorkScheduleOnboarding,
-	skipWorkScheduleSetup,
-} from "./actions";
+import { checkIsAdmin, setWorkScheduleOnboarding, skipWorkScheduleSetup } from "./actions";
 import {
 	HoursPerWeekField,
 	type WorkClassification,
@@ -40,8 +30,22 @@ const defaultValues = {
  * Non-admins skip the step; failures fall back to the wellness step.
  */
 function useWorkScheduleAccess(replace: (href: string) => void) {
+	const { t } = useTranslate();
+	const skipFallback = t("onboarding.workSchedule.skipError", "Failed to skip work schedule setup");
+	const accessFallback = t(
+		"onboarding.workSchedule.accessUnavailable",
+		"Work schedule access could not be checked. Continuing to the next available step.",
+	);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+	const [skipError, setSkipError] = useState<string | null>(null);
+	const [attempt, setAttempt] = useState(0);
+	const automaticSkipPending = useRef(false);
+	const previousAttempt = t(
+		"onboarding.workSchedule.previousAttempt",
+		"A previous request is still finishing. Try again to continue.",
+	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: attempt explicitly retries a refused automatic skip.
 	useEffect(() => {
 		let cancelled = false;
 
@@ -53,12 +57,25 @@ function useWorkScheduleAccess(replace: (href: string) => void) {
 				}
 
 				if (!accessResult.success) {
+					toast.error(accessFallback);
 					replace("/onboarding/wellness");
 					return;
 				}
 
 				if (!accessResult.data) {
-					const skipResult = await skipWorkScheduleSetup();
+					if (automaticSkipPending.current) {
+						setSkipError(previousAttempt);
+						return;
+					}
+					automaticSkipPending.current = true;
+					const skipResult = await skipWorkScheduleSetup()
+						.catch(() => ({
+							success: false as const,
+							error: skipFallback,
+						}))
+						.finally(() => {
+							automaticSkipPending.current = false;
+						});
 					if (cancelled) {
 						return;
 					}
@@ -68,13 +85,14 @@ function useWorkScheduleAccess(replace: (href: string) => void) {
 						return;
 					}
 
-					replace("/onboarding/wellness");
+					setSkipError(skipResult.error || skipFallback);
 					return;
 				}
 
 				setIsAdmin(true);
 			} catch {
 				if (!cancelled) {
+					toast.error(accessFallback);
 					replace("/onboarding/wellness");
 				}
 			}
@@ -84,101 +102,131 @@ function useWorkScheduleAccess(replace: (href: string) => void) {
 
 		return () => {
 			cancelled = true;
+			setIsAdmin(null);
+			setSkipError(null);
 		};
-	}, [replace]);
+	}, [replace, attempt, skipFallback, accessFallback, previousAttempt]);
 
-	return isAdmin;
+	return { isAdmin, skipError, retry: () => setAttempt((value) => value + 1) };
 }
 
 function WorkScheduleLoading() {
 	const { t } = useTranslate();
 
 	return (
-		<div className="flex min-h-[50vh] items-center justify-center">
-			<div className="text-center">
-				<div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-				<p className="mt-4 text-muted-foreground">
-					{t("common.loading", "Loading...")}
-				</p>
+		<div className="mx-auto w-full max-w-3xl rounded-xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8">
+			<WorkScheduleHeading />
+			<div
+				role="status"
+				aria-label={t("onboarding.workSchedule.checkingAccess", "Checking work schedule access")}
+				className="flex min-h-[40vh] items-center justify-center text-center"
+			>
+				<div>
+					<IconLoader2
+						aria-hidden="true"
+						className="mx-auto size-8 animate-spin motion-reduce:animate-none"
+					/>
+					<p className="mt-4 text-muted-foreground">{t("common.loading", "Loading...")}</p>
+				</div>
 			</div>
 		</div>
 	);
 }
 
 export default function WorkSchedulePage() {
+	const { data: session, isPending } = useSession();
+	if (isPending || !session) return <WorkScheduleLoading />;
+	return (
+		<WorkScheduleForm
+			key={JSON.stringify([
+				session.user.id,
+				session.session.id,
+				session.session.activeOrganizationId,
+			])}
+		/>
+	);
+}
+
+function WorkScheduleForm() {
 	const { t } = useTranslate();
 	const { push, replace } = useRouter();
 	const [loading, setLoading] = useState(false);
-	const isAdmin = useWorkScheduleAccess(replace);
-	const [effectiveFrom] = useState(
-		() => new Date(Temporal.Now.instant().toString()),
-	);
+	const [error, setError] = useState<string | null>(null);
+	const arrival = useRef<symbol | null>(null);
+	const pending = useRef<symbol | null>(null);
+	useLayoutEffect(() => {
+		const identity = Symbol();
+		arrival.current = identity;
+		pending.current = null;
+		return () => {
+			arrival.current = null;
+			setLoading(false);
+		};
+	}, []);
+	const { isAdmin, skipError, retry } = useWorkScheduleAccess(replace);
+	const [effectiveFrom] = useState(() => new Date(Temporal.Now.instant().toString()));
 
-	const form = useForm({
-		defaultValues: { ...defaultValues, effectiveFrom },
-		onSubmit: async ({ value }) => {
-			await runOnboardingAction({
-				action: () => setWorkScheduleOnboarding(value),
-				onResult: (result) => {
-					if (!result.success) {
-						toast.error(
-							result.error ||
-								t(
-									"onboarding.workSchedule.error",
-									"Failed to set work schedule",
-								),
-						);
-						return;
-					}
-					toast.success(
-						t(
-							"onboarding.workSchedule.success",
-							"Work schedule set successfully!",
-						),
-					);
-					push(result.data.nextStep);
-					return true;
-				},
-				onRejected: () => {
-					toast.error(
-						t("onboarding.workSchedule.error", "Failed to set work schedule"),
-					);
-				},
-				setLoading,
-			});
-		},
-	});
-
-	async function handleSkip() {
+	async function runAction(action: typeof skipWorkScheduleSetup, kind: "save" | "skip") {
+		if (pending.current || !arrival.current || !isAdmin) return;
+		const identity = arrival.current;
+		const request = Symbol();
+		pending.current = request;
+		setError(null);
+		const current = () => arrival.current === identity && pending.current === request;
+		const fallback =
+			kind === "save"
+				? t("onboarding.workSchedule.error", "Failed to set work schedule")
+				: t("onboarding.workSchedule.skipError", "Failed to skip work schedule setup");
+		const fail = (message: string) => {
+			setError(message);
+			toast.error(message);
+		};
 		await runOnboardingAction({
-			action: skipWorkScheduleSetup,
+			action,
 			onResult: (result) => {
+				if (!current()) return;
 				if (!result.success) {
-					toast.error(
-						result.error ||
-							t(
-								"onboarding.workSchedule.skipError",
-								"Failed to skip work schedule setup",
-							),
-					);
+					fail(result.error || fallback);
 					return;
 				}
+				if (kind === "save")
+					toast.success(t("onboarding.workSchedule.progressSaved", "Onboarding progress saved."));
 				push(result.data.nextStep);
 				return true;
 			},
 			onRejected: () => {
-				toast.error(
-					t(
-						"onboarding.workSchedule.skipError",
-						"Failed to skip work schedule setup",
-					),
-				);
+				if (current()) fail(fallback);
 			},
-			setLoading,
+			setLoading: (value) => {
+				if (!current()) return;
+				setLoading(value);
+				if (!value) pending.current = null;
+			},
 		});
 	}
 
+	const form = useForm({
+		defaultValues: { ...defaultValues, effectiveFrom },
+		onSubmitMeta: { arrival: null as symbol | null },
+		onSubmit: async ({ value, meta }) => {
+			if (meta.arrival !== arrival.current) return;
+			await runAction(() => setWorkScheduleOnboarding(value), "save");
+		},
+	});
+
+	async function handleSkip() {
+		await runAction(skipWorkScheduleSetup, "skip");
+	}
+
 	if (isAdmin === null) {
+		if (skipError)
+			return (
+				<section className="mx-auto w-full max-w-2xl space-y-6 rounded-xl border bg-card p-6">
+					<WorkScheduleHeading />
+					<p role="alert">{skipError}</p>
+					<Button onClick={retry}>{t("common.tryAgain", "Try again")}</Button>
+				</section>
+			);
 		return <WorkScheduleLoading />;
 	}
 
@@ -186,28 +234,39 @@ export default function WorkSchedulePage() {
 		<>
 			<ProgressIndicator currentStep="work_schedule" isAdmin={isAdmin} />
 
-			<div className="mx-auto max-w-2xl">
+			<div className="mx-auto w-full max-w-3xl rounded-xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8">
 				<WorkScheduleHeading />
 
-				<Card>
-					<CardHeader>
-						<CardTitle>
+				<section className="space-y-6">
+					<div className="space-y-2 border-b pb-6">
+						<h2 className="text-base font-semibold">
 							{t("onboarding.workSchedule.scheduleTitle", "Work Schedule")}
-						</CardTitle>
-						<CardDescription>
+						</h2>
+						<p className="text-sm leading-relaxed text-muted-foreground">
 							{t(
-								"onboarding.workSchedule.scheduleDesc",
-								"Set your default working hours. You can adjust this later in settings.",
+								"onboarding.workSchedule.setupContext",
+								"Review weekly hours and how working hours are tracked together.",
 							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<form
-							action={() => {
-								void form.handleSubmit();
-							}}
-							className="space-y-6"
-						>
+							<span className="mt-2 block">
+								{t(
+									"onboarding.workSchedule.policyContext",
+									"Continuing saves your onboarding progress. Organization work policies remain in effect; the hours and classification entered here are not saved to a work policy.",
+								)}
+							</span>
+						</p>
+					</div>
+					<form
+						onSubmit={(event) => {
+							event.preventDefault();
+							void form.handleSubmit({ arrival: arrival.current });
+						}}
+						onInvalid={(event) => {
+							if (event.target instanceof HTMLElement) event.target.focus();
+						}}
+						aria-busy={loading}
+						className="space-y-6"
+					>
+						<div className="grid items-start gap-6 sm:grid-cols-2">
 							{/* Hours Per Week */}
 							<form.Field
 								name="hoursPerWeek"
@@ -253,7 +312,23 @@ export default function WorkSchedulePage() {
 							</form.Field>
 
 							{/* Action Buttons */}
-							<div className="flex gap-3 pt-4">
+						</div>
+						{error && (
+							<p
+								role="alert"
+								className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+							>
+								{error}
+							</p>
+						)}
+						<div className="border-t pt-5">
+							<p className="mb-4 text-sm text-muted-foreground">
+								{t(
+									"onboarding.workSchedule.laterContext",
+									"You can revisit work policies in settings after onboarding.",
+								)}
+							</p>
+							<div className="flex flex-col-reverse gap-3 sm:flex-row">
 								<Button
 									type="button"
 									variant="outline"
@@ -265,14 +340,17 @@ export default function WorkSchedulePage() {
 								</Button>
 								<Button type="submit" disabled={loading} className="flex-1">
 									{loading && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" />
+										<IconLoader2
+											aria-hidden="true"
+											className="mr-2 size-4 animate-spin motion-reduce:animate-none"
+										/>
 									)}
 									{t("onboarding.workSchedule.continue", "Continue")}
 								</Button>
 							</div>
-						</form>
-					</CardContent>
-				</Card>
+						</div>
+					</form>
+				</section>
 			</div>
 		</>
 	);

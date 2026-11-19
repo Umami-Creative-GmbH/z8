@@ -50,6 +50,7 @@
       "retry": "Reîncearcă {choice}",
       "unavailable": "{choice} indisponibil"
     },
+    "clockedIn": "Pontat",
     "clockedOutSuccess": "Ați pontat ieșirea!",
     "clockIn": "Pontează intrarea",
     "clockingIn": "Se pontează intrarea…",
@@ -64,6 +65,7 @@
     "clockOutSavedHeld": "Pontarea de ieșire a fost salvată pe acest dispozitiv, dar nu a fost trimisă. Examinați înregistrările salvate.",
     "clockOutSuccess": "Ieșire pontată cu succes",
     "clockStatus": {
+      "clockedOut": "Pontaj neînceput",
       "loading": "Se încarcă starea pontajului",
       "retry": "Reîncearcă starea pontajului",
       "unavailable": "Starea pontajului este indisponibilă"
@@ -301,6 +303,8 @@
         "wrong": "Codul PIN este incorect. Încearcă din nou."
       },
       "queue": {
+        "awaiting": "Pontări în așteptarea confirmării: {count}",
+        "checking": "Se verifică acțiunile trimise: {count}",
         "dismiss": "Închide",
         "reason": {
           "contact": "Ultima conexiune a chioșcului nu a putut fi confirmată.",
@@ -311,6 +315,7 @@
           "pin": "PIN-ul nu a fost acceptat.",
           "time": "Ora nu a putut fi acceptată."
         },
+        "recovery": "Chioșcul verifică automat din nou atunci când se poate conecta la Z8. Nu repeta o acțiune al cărei rezultat nu este cunoscut.",
         "refused": "{name}: {action} la {time}, salvat în modul offline, nu a fost acceptat. {reason}",
         "title": "Pontările offline nu sunt acceptate"
       },
@@ -335,6 +340,9 @@
         "description": "Acest kiosk nu mai poate fi utilizat pentru pontare. Vă rugăm să contactați administratorul.",
         "pairAgain": "Asociați cu un cod nou",
         "title": "Kiosk revocat"
+      },
+      "scope": {
+        "zone": "Ora chioșcului: {zone}"
       },
       "state": {
         "clockedIn": "Pontat de la {time}",
@@ -438,8 +446,10 @@
     },
     "noCategory": "Fără categorie (100%)",
     "noProject": "Niciun proiect",
+    "notClockedIn": "Pontaj neînceput",
     "notesPlaceholder": "La ce ați lucrat?",
     "notesSaved": "Note salvate",
+    "onBreak": "În pauză",
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "O cerere de absență pentru {dates} este în așteptarea unei decizii.",
@@ -497,6 +507,14 @@
       "withdrawn": "Trimitere retrasă",
       "withdrawRefused": "Această trimitere a fost deja decisă și nu mai poate fi retrasă."
     },
+    "policy": {
+      "fixedDays": "Zile fixe la birou: {days}",
+      "flexible": "Politică flexibilă de lucru la birou pentru această perioadă",
+      "homeOfficeLeft": "Zile de lucru de acasă rămase",
+      "officeRequired": "Zile la birou încă necesare",
+      "requirementWarning": "Numărul necesar de zile la birou depășește zilele lucrătoare rămase",
+      "unavailable": "Politica privind locul de muncă nu este disponibilă."
+    },
     "project": "Proiect",
     "quickBreak": {
       "addBreak": "Adăugare pauză",
@@ -535,6 +553,7 @@
       "title": "Mementouri sesiune"
     },
     "startedAt": "Început la",
+    "statusUnavailable": "Starea pontajului nu este disponibilă. Reîmprospătează pentru a încerca din nou.",
     "summary": {
       "dayOfRequired": "{date}: {worked} din {required}",
       "dayWorked": "{date}: {worked}",
@@ -546,16 +565,22 @@
       "surchargeFootnote": "+{surcharge} suprataxă",
       "thisMonth": "Luna aceasta",
       "thisWeek": "Săptămâna aceasta",
+      "title": "Rezumatul timpului de lucru",
       "today": "Astăzi",
       "todayOfRequired": "{worked} din {required}",
       "trend": "{difference} {comparedWith}",
       "trendDetail": "Acum: {worked} lucrat din {required} necesar până acum. Atunci: {previousWorked} lucrat din {previousRequired} necesar.",
       "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "updating": "Se actualizează totalul… Folosește Reîmprospătare pentru a reîncerca dacă rămâne indisponibil.",
       "vsLastMonth": "față de luna trecută",
       "vsLastWeek": "față de săptămâna trecută"
     },
+    "systemNote": {
+      "breakEnforcement": "Ajustat automat: aplicare pauză"
+    },
     "table": {
       "active": "Activ",
+      "allEntries": "Toate înregistrările",
       "approved": "Înregistrare de timp aprobată",
       "approveEntry": "Aprobați înregistrarea",
       "approveFailed": "Aprobarea înregistrării a eșuat",
@@ -569,8 +594,12 @@
       "drivingDetailsMissing": "Lipsesc detalii despre deplasare",
       "duration": "Durată",
       "emptyState": "Nu s-au găsit înregistrări de timp pentru această săptămână.",
+      "entryCount": "{count, plural, one {# înregistrare} few {# înregistrări} other {# de înregistrări}}",
+      "groupedByDay": "Grupate după zi",
+      "incompleteDay": "Include înregistrările active sau incomplete",
       "missingTask": "Sarcină lipsă",
       "missingTaskHint": "Acest proiect necesită o sarcină: adăugați una la această înregistrare în calendar.",
+      "offsetContext": "Orele limită folosesc decalajul UTC local înregistrat pentru fiecare înregistrare. Titlurile zilelor respectă fusul orar al calendarului tău: {timezone}.",
       "recordedLocalTime": "Ora locală înregistrată",
       "rowActions": "Acțiuni privind înregistrarea timpului",
       "title": "Înregistrări de timp",
@@ -586,62 +615,64 @@
       "search": "Caută sarcini…"
     },
     "timeline": {
+      "absence": {
+        "afternoon": "După-amiază",
+        "fullDay": "Toată ziua",
+        "morning": "Dimineață"
+      },
       "dayPicker": "Selector de zi pentru cronologie",
       "emptyDescription": "Nu există încă ture, absențe sau pontaje pentru ziua selectată.",
       "emptyTitle": "Nicio activitate înregistrată pentru această zi.",
+      "link": {
+        "reviewRequest": "Examinare cerere",
+        "viewAbsence": "Vizualizează absența"
+      },
+      "monthPicker": "Selectează o zi din calendar",
       "nextDay": "Ziua următoare",
       "previousDay": "Ziua precedentă",
+      "request": {
+        "absence": {
+          "dateRange": "{startDate} – {endDate}",
+          "title": "Cerere de absență"
+        },
+        "timeCorrection": {
+          "subtitle": "Corecție pentru o înregistrare de pontaj",
+          "title": "Cerere de corectare a pontajului"
+        }
+      },
+      "shift": {
+        "title": "Tură programată"
+      },
+      "status": {
+        "active": "Activ",
+        "approved": "Aprobat",
+        "cancelled": "Anulat",
+        "draft": "Ciornă",
+        "pending": "În așteptare",
+        "published": "Publicat",
+        "rejected": "Respins"
+      },
       "title": "Cronologia zilei de lucru",
       "today": "Astăzi",
       "unavailableDescription": "Pontajul funcționează în continuare. Încercați să reîmprospătați această vizualizare mai târziu.",
       "unavailableTitle": "Cronologie indisponibilă",
-      "workPeriod": {
-        "title": "Muncă înregistrată"
-      },
-      "shift": {
-        "title": "Tură planificată"
-      },
-      "status": {
-        "approved": "Aprobat",
-        "pending": "În așteptare",
-        "rejected": "Respins",
-        "cancelled": "Anulat",
-        "published": "Publicat",
-        "draft": "Ciornă",
-        "active": "Activ"
-      },
-      "absence": {
-        "fullDay": "Zi întreagă",
-        "morning": "Dimineață",
-        "afternoon": "După-amiază"
-      },
-      "request": {
-        "timeCorrection": {
-          "title": "Cerere de corectare a timpului",
-          "subtitle": "Corectarea unei înregistrări de timp"
-        },
-        "absence": {
-          "title": "Cerere de absență",
-          "dateRange": "{startDate} – {endDate}"
-        }
-      },
-      "link": {
-        "viewAbsence": "Vezi absența",
-        "reviewRequest": "Examinează cererea"
-      },
       "warning": {
-        "pendingEdit": {
-          "title": "Cerere de modificare în așteptare",
-          "description": "Această perioadă de lucru are modificări care așteaptă aprobarea."
+        "autoAdjusted": {
+          "description": "Regulile privind pauzele sau conformitatea au ajustat această perioadă de lucru.",
+          "title": "Înregistrare ajustată automat"
         },
         "missingClockOut": {
-          "title": "Lipsește pontajul de ieșire",
-          "description": "Această perioadă de lucru este încă activă."
+          "description": "Această perioadă de lucru este încă activă.",
+          "title": "Pontaj de ieșire lipsă"
         },
-        "autoAdjusted": {
-          "title": "Înregistrare ajustată automat",
-          "description": "Regulile privind pauzele sau conformitatea au ajustat această perioadă de lucru."
+        "pendingEdit": {
+          "description": "Această perioadă de lucru are modificări în așteptarea aprobării.",
+          "title": "Cerere de editare în așteptare"
         }
+      },
+      "weekPicker": "Selectați o zi a săptămânii",
+      "workPeriod": {
+        "title": "Muncă înregistrată"
       }
     },
     "timezoneMismatch": {
@@ -711,16 +742,12 @@
         "title": "Vă rugăm să verificați utilizarea vehiculului"
       }
     },
-    "welcomeBack": "Bine ați revenit, {name}",
     "workCategory": "Categorie de lucru",
     "workLocation": "Locație de desfășurare a activității",
     "workLocationHome": "Acasă",
     "workLocationOffice": "Birou",
     "workLocationOther": "Altul",
-    "workLocationRemote": "La distanță",
-    "systemNote": {
-      "breakEnforcement": "Ajustat automat: aplicarea pauzelor"
-    }
+    "workLocationRemote": "La distanță"
   },
   "wellness": {
     "water": {

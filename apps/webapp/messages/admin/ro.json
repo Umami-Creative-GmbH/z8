@@ -75,8 +75,10 @@
         "title": "Tendințe statistice",
         "viewFull": "Vizualizați toate datele statistice"
       },
+      "scope": "Raportare la nivel de platformă",
       "sectionDescription": "Actualizat pe baza datelor curente ale platformei pentru intervalul și gruparea selectate.",
       "sectionTitle": "Tendințe analitice",
+      "seriesValues": "Vizualizați valorile seriei",
       "title": "Statistici platformă",
       "values": {
         "notAvailable": "Indisponibil"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Accesul la platformă nu a putut fi confirmat.",
       "analytics": {
         "title": "Tendințe statistice"
       },
-      "description": "Metrici ale platformei și acțiuni rapide",
+      "analyticsUnavailable": "Datele de analiză ale platformei nu sunt disponibile. Încercați din nou.",
+      "confirmingAccess": "Se confirmă accesul la platformă",
+      "groups": {
+        "access": "Gestionarea accesului",
+        "billing": "Facturare și abonamente",
+        "operations": "Operațiuni de platformă"
+      },
+      "loadingAnalytics": "Se încarcă datele de analiză ale platformei",
+      "loadingMetrics": "Se încarcă indicatorii platformei",
       "metrics": {
         "bannedUsers": "Utilizatori blocați",
         "bannedUsersDescription": "Acces restricționat",
@@ -295,6 +306,9 @@
         "totalUsers": "Total utilizatori",
         "totalUsersDescription": "Conturi înregistrate pe platformă"
       },
+      "metricsUnavailable": "Indicatorii platformei nu sunt disponibili. Încercați din nou.",
+      "platformDescription": "Examinați conturile, spațiile de lucru și activitatea la nivel de platformă, apoi deschideți un spațiu de lucru de administrare.",
+      "platformTitle": "Prezentare generală a platformei",
       "quickActions": {
         "billing": {
           "description": "Metrici privind veniturile și starea abonamentelor",
@@ -318,7 +332,7 @@
           "title": "Gestionarea utilizatorilor"
         }
       },
-      "title": "Prezentare generală"
+      "refreshAccess": "Reîmprospătați prezentarea generală pentru a confirma accesul la platformă înainte de a continua."
     },
     "settings": {
       "actions": {

@@ -1,0 +1,979 @@
+{
+  "schemaVersion": 1,
+  "issue": 1748,
+  "status": "No new critical finding in independent bounded static/PostgreSQL review; fresh live acceptance pending.",
+  "verifiedCommit": null,
+  "frozen": {
+    "head": "16a914f4a4e9ef022552ff53d938b2c1f883517f",
+    "appTree": "1f82885d26e402a0d01556ea7005adba092e9cff",
+    "tree": "9d4eb6e64ab2950eaa16584da52204eec8bc7bae"
+  },
+  "reviewThread": "[Recheck #1748 conversion withdrawal and consumer lifetimes](t3-thread://v2/42f11bbd-1656-4e5c-9291-18d6f1563c86/thread:delegated-task:command%3Amcp%3A5d61c313-e255-4999-a7b3-61782d9516f4%3Adelegate-task%3A1692-1748-conversion-independent-v3)",
+  "safe": {
+    "indexSha256": "12fddeaa72049e4f604d723f6a3287068199808c90d123c5327f4ce3fa677118",
+    "payloads": 61,
+    "payloadBytes": 761942,
+    "reportSha256": "aa9e2a23a1179275279d8765d3be3fa06c2a8a0d56dcde98848a8b1c17764700",
+    "handoffSha256": "dca0a607dc5dc82d561d02c19a689aa405fecf57084cac3e16c74ba8103b388b",
+    "testMultisetSha256": "e5d44276261d00e41f4ee3a064125b802d7980f8777c60e1f6f522adb9e9db0a",
+    "archiveAuditSha256": "fea4df6c2f3cd0c7ce57a955c5e7f5727a62162077f770f810a0f67a87d14133",
+    "rootHashCheck": true,
+    "rootGitPinsChecked": 14,
+    "nativeIntake": {
+      "status": "Completed read-only intake; no material undisclosed discrepancy.",
+      "auditSha256": "c9764644fda2f6af25577b4ddfe39cb1e0cf50f3f162771ce3dce59462e5453b",
+      "payloads": 61,
+      "payloadBytes": 761942,
+      "jsonPayloads": 36,
+      "pythonAstFiles": 9,
+      "publicArchivePayloads": 73,
+      "publicLinks": 9,
+      "currentSourcePins": 14,
+      "historicalSourceHashes": 8,
+      "pngsDecoded": 18,
+      "freshVisualInspection": false,
+      "producerOnlyClaims": [
+        "cleanup/resource absence",
+        "before/after preservation vs actual historical state",
+        "ancestry64",
+        "Doctor zero diagnostics and main TS exact diagnostic content where raw outputs excluded",
+        "report prefixes",
+        "live historical acceptance"
+      ],
+      "qualification": "Hashes, Git objects, multiset and PNG structure independently checked. Historical preservation/cleanup, exact raw main-TS diagnostic and Doctor raw diagnostics remain producer receipts."
+    }
+  },
+  "results": {
+    "confirmedP1": 0,
+    "standardsFindings": 0,
+    "specFindings": 0,
+    "unit": {
+      "distinct": 545,
+      "physicalFiles": 48,
+      "passed": 545,
+      "failed": 0,
+      "finalSkipped": 0,
+      "rerunRootSelection": 518,
+      "additionalIndependentControlIdentities": 27,
+      "baselineControls": 3,
+      "identity": "physical file/full name/occurrence",
+      "semanticOverlap": "Independent controls overlap permanent behavior; 545 is not 545 independent feature guarantees. Root518 and prior runs are not added again.",
+      "independentSelections": {
+        "originalConversion": 6,
+        "originalDetail": 3,
+        "assembledObjections": 8,
+        "actualConsumers": 7,
+        "realHeaderRefreshAndProviderRecovery": 3
+      },
+      "reporterMetadataQualification": "Three earlier bailed harness-run summaries say pending0 while actual case arrays retain3 pending each. REPORT and attempts disclose those actual pending cases. Every final unit identity passes; earlier runs are not discarded or added."
+    },
+    "postgresql": {
+      "distinct": 51,
+      "physicalFiles": 4,
+      "passed": 51,
+      "failed": 0,
+      "defaultTimeouts": true,
+      "retry": false,
+      "suites": {
+        "claimRead": 8,
+        "legacyDraftConversion": 14,
+        "financeSettlement": 16,
+        "expenseOfficerAccess": 13
+      },
+      "runner": "Unmodified canonical test:integration plus migration verifier; maxWorkers1; own nested pnpm flag bridge removed. No custom SQL authority seed."
+    },
+    "typegen": {
+      "exit": 0
+    },
+    "workflowTypes": {
+      "exit": 0
+    },
+    "smokeTypes": {
+      "exit": 0
+    },
+    "mainTypes": {
+      "exit": 1,
+      "qualification": "Only TS2307 for missing ignored licenses.json; no copy or generation. Root full typecheck on the same app source with its existing genuine artifact remains a separate prior result."
+    },
+    "lint": {
+      "files": 10,
+      "exit": 0
+    },
+    "doctor": {
+      "version": "0.9.22",
+      "base": "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+      "files": 10,
+      "complete": true,
+      "errors": 0,
+      "warnings": 0,
+      "score": null
+    },
+    "format": {
+      "ownedExplicit": {
+        "files": 2,
+        "lineWidth": 100,
+        "lineEnding": "crlf",
+        "exit": 0
+      },
+      "ownedOrdinary": {
+        "files": 2,
+        "exit": 1
+      },
+      "wholeScopeExplicit": {
+        "exit": 1,
+        "findings": 2,
+        "paths": [
+          "apps/webapp/src/lib/navigation/route-metadata.ts",
+          "apps/webapp/src/lib/navigation/route-metadata.test.ts"
+        ]
+      }
+    },
+    "formalBabelSyntax": {
+      "files": 22,
+      "diagnostics": 0
+    },
+    "runtimeAssertions": 0
+  },
+  "publicControls": [
+    "Both original withdrawal reproductions and baseline/authorized controls pass.",
+    "Report and null conversion states survive repeated errors until fresh success through Retry.",
+    "Detail success cannot authorize an independently refused conversion read.",
+    "Detail refusal retires a held conversion and suppresses its late navigation.",
+    "Activity, displayed pending session, removal/new observer and actual header Refresh retire or preserve evidence as appropriate.",
+    "Actual personal history and retained list consumers pass the shared pending-session regression and positive once-only/current-navigation controls.",
+    "Actual organization-provider refusal removes private content; Retry still requires fresh conversion evidence."
+  ],
+  "originalArchive": {
+    "originalPaths": 75,
+    "manifestPayloads": 73,
+    "manifestAndReport": 2,
+    "pngs": 18,
+    "json": 9,
+    "logs": 45,
+    "commandTranscripts": 1,
+    "reportLinks": 9,
+    "reportedChecks": "Payload bytes or explicitly recorded LF canonical hashes match; JSON parses; PNG CRC/decompression/filter reconstruction and visual inspection; links resolve.",
+    "captureBoundary": "Historical cold four-consumer overlay, not whole historical checkout. Current runtime acceptance is separate.",
+    "sourceHashQualification": "Seven of eight before/after hashes reconcile; after conversion capture precedes the final shared lifetime correction, as disclosed by the original report.",
+    "imageQualifications": [
+      "Two large-font after images are byte-identical, not independent observations.",
+      "Phone/ordinary desktop are viewport crops; evidence or continuation can be below frame.",
+      "Development overlays remain visible.",
+      "Draft-before journey frame is a disclosed later arrival.",
+      "Settlement frame is not a fresh action assertion.",
+      "Native download timeout and separate browser download completion retain distinct provenance."
+    ]
+  },
+  "preservation": {
+    "recordedSourceConfigEvidencePaths": 101,
+    "sourceBlobs": 10,
+    "frozenOwnerBlobs": 4,
+    "verifiedAnchors": 63,
+    "baseline": true,
+    "headAppIndexUnchanged": true,
+    "originalReportPrefixes": [
+      {
+        "bytes": 19422,
+        "sha256": "6c6b9e7ec408c6a683923c5a18a6c277fb47ecdf9b1acd0d89350c1d4bafa00b"
+      },
+      {
+        "bytes": 22126,
+        "sha256": "acba4965d16261f8472d92327eefd627a4cd82d40b290561c4b42a476a5a022c"
+      }
+    ],
+    "dependencyLinksAfter": 158,
+    "dependencyQualification": "Physical own offline dependencies. Complete before-test package-link inventory absent; after-only internal topology is not a reconstructed unchanged inventory.",
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  "cleanup": {
+    "sourceBridgesRemoved": 7,
+    "nestedPnpmBridgeRemoved": true,
+    "exactOwnedPostgresRemoved": true,
+    "activeExactOwnedResources": 0,
+    "sourceIndexClean": true,
+    "qualification": "Producer cleanup/preservation receipts are not historical runtime acceptance."
+  },
+  "attemptQualifications": [
+    {
+      "attempt": "restricted GitHub issue/spec read",
+      "outcome": "Socket permission denial; escalated read succeeded; read-only"
+    },
+    {
+      "attempt": "restricted pnpm --version",
+      "outcome": "Engine-store permission denial printed fallback 12.21.0. No package execution used fallback. Elevated guard confirmed 12.16.1."
+    },
+    {
+      "attempt": "first Python pnpm launcher",
+      "outcome": "WinError 2 before package execution. Explicit pnpm.cmd lookup fixed only launcher."
+    },
+    {
+      "attempt": "priority-objections",
+      "outcome": "27 pass/1 failed assertion/3 bailed pending in actual records. Review test clicked Retry before its outage state committed; no product finding."
+    },
+    {
+      "attempt": "shell inline edit",
+      "outcome": "Quoting caused Python SyntaxError; no files changed. The following priority-objections-settled reran unchanged source: 4 pass/1 same failure/3 pending."
+    },
+    {
+      "attempt": "priority-objections-waited",
+      "outcome": "4 pass/1 harness failure/3 pending. Family refresh consumed finite conversion mock values concurrently. Preserved attempt2 source; persistent outage until deliberate recovery fixed the test seam. Final 8 objections pass."
+    },
+    {
+      "attempt": "restricted Docker availability probe",
+      "outcome": "Docker pipe permission denied; authorized canonical disposable runner then succeeded."
+    },
+    {
+      "attempt": "optional restricted CIM process inventory",
+      "outcome": "Permission denied. Final elevated exact checkout process check succeeded with zero matches."
+    },
+    {
+      "attempt": "optional Pillow availability probe",
+      "outcome": "Module absent. No installation. PNG CRC, decompression and scanline filter reconstruction used standard library; all18 visually inspected."
+    },
+    {
+      "attempt": "quality/types launcher console",
+      "outcome": "cp1252 UnicodeEncodeError after successful lint and typegen and after recorded explicit-format exit1. Completed receipts/logs retained. Console handling fixed; remaining commands resumed without rerunning completed checks."
+    },
+    {
+      "attempt": "main TypeScript",
+      "outcome": "Exit1, only missing ignored licenses.json TS2307. No artifact copied/generated; not accepted as green."
+    },
+    {
+      "attempt": "format profiles",
+      "outcome": "Explicit whole-scope two metadata findings; ordinary owned two findings. Separate two-file explicit100CRLF passes. No fixes or suppressions."
+    },
+    {
+      "attempt": "TypeScript JS parser API",
+      "outcome": "Installed TypeScript7 native package has no expected ScriptTarget/CreateSourceFile JS API. Failed before parsing; installed Babel TSX parser completed22files zero diagnostics."
+    },
+    {
+      "attempt": "report prefix check",
+      "outcome": "Initial assertion used LF Git blob against materialized CRLF byte receipt. Rechecked actual materialized bytes; both exact prefix hashes match. No report edit."
+    },
+    {
+      "attempt": "pnpm bridge cleanup guard",
+      "outcome": "First seal expected LF instead of the known Windows text-write CRLF bytes. Guard refused deletion. Exact expected materialized CRLF bytes then matched before deletion."
+    },
+    {
+      "attempt": "optional status reads",
+      "outcome": "A not-yet-written buffered log and a missing README/path probe printed read diagnostics. Later final receipts exist; no product/config mutation."
+    },
+    {
+      "attempt": "known Vite config warning",
+      "outcome": "Current native config-loader compatibility warning retained. No suppressing environment flag set."
+    }
+  ],
+  "limits": [
+    "Fresh browser, Next, native, receipt-download and conversion/settlement persistence acceptance pending.",
+    "Synthetic/public transition controls do not establish live revocation or authorization-bypass guarantees.",
+    "Main TS is qualified by the absent ignored artifact; formatting results are separate.",
+    "No full production generation, catalog/provider/device/true-zoom or whole157-node acceptance.",
+    "Excluded raw credentials, migration output, private inventories and failure images were not read or republished."
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "blob": "ae39cee22049ee4c83bd37e90a3e25811969385c",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "blob": "8e423d7b73f5570a45ea56134581825562d99ce1",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "blob": "ba19e9037e3e304b877091993f968a101f684b94",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+      "blob": "b6b904215b1d9801f0768d35eed520b7454b923a",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "blob": "6e0c1bc3df826c63d149ef97d21c8b63362b8327",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "blob": "13815fb8d7f51c4f80bc2e5d8a727ac0f40f3927",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "blob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "blob": "87470c7163182d88dcef21ac60f2e52eb4eafbc2",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "blob": "5f6f75f256c6899338b436d76248c26923ec8702",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "blob": "225e32211910e6e2a89504996134d7673e5d1ca4",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/legacy-draft-actions.ts",
+      "blob": "c64fa97f3e4a34fa8f84b983f7e7581aaabfa1d0",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-read.ts",
+      "blob": "502b9aa3e6336e7cef0885734c947170a15f5197",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/legacy-draft-conversion-store.ts",
+      "blob": "096299b778d5ab30e648fd13ebfc3a0979ad0b5c",
+      "match": true
+    },
+    {
+      "path": "apps/webapp/src/lib/travel-expenses/current-owner.ts",
+      "blob": "17a9e4b6ce95f93642a3c1d80a60a83d8d554751",
+      "match": true
+    }
+  ],
+  "commands": [
+    {
+      "label": "priority-original",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/review1748-original-conversion.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "--maxWorkers=1",
+        "--reporter=json",
+        "--outputFile",
+        "../../.tmp/review1748-both/priority-original.json"
+      ],
+      "exit": 0,
+      "seconds": 11.567,
+      "logBytes": 495,
+      "logSha256": "eaee0d592162909868cb010d75d4ec23a92a09e2def2bfa6e4f3281b3365cb2d"
+    },
+    {
+      "label": "priority-detail",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/review1748-original-detail.test.tsx",
+        "--maxWorkers=1",
+        "--reporter=json",
+        "--outputFile",
+        "../../.tmp/review1748-both/priority-detail.json"
+      ],
+      "exit": 0,
+      "seconds": 3.229,
+      "logBytes": 493,
+      "logSha256": "3a5c4af8dc57279106f84930499ecdb5a2b596eea5368226b4d569183415bb09"
+    },
+    {
+      "label": "priority-objections",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/review1748-assembled-objections.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "--maxWorkers=1",
+        "--bail=1",
+        "--reporter=json",
+        "--outputFile",
+        "../../.tmp/review1748-both/priority-objections.json"
+      ],
+      "exit": 1,
+      "seconds": 5.453,
+      "logBytes": 497,
+      "logSha256": "d43371869ed9d2831631c811175fec2f53462359c98b7890a6ef0551ecbba1a9"
+    },
+    {
+      "label": "priority-objections-settled",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/review1748-assembled-objections.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "--maxWorkers=1",
+        "--bail=1",
+        "--reporter=json",
+        "--outputFile",
+        "../../.tmp/review1748-both/priority-objections-settled.json"
+      ],
+      "exit": 1,
+      "seconds": 4.194,
+      "logBytes": 505,
+      "logSha256": "f2f56686efc7d3c91182d95f7afdb8ff2f09ca7411b59d0d0d2ebe89e69bbf84"
+    },
+    {
+      "label": "priority-objections-waited",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/review1748-assembled-objections.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "--maxWorkers=1",
+        "--bail=1",
+        "--reporter=json",
+        "--outputFile",
+        "../../.tmp/review1748-both/priority-objections-waited.json"
+      ],
+      "exit": 1,
+      "seconds": 4.973,
+      "logBytes": 504,
+      "logSha256": "1bc66a95220f8b7e8174f4227caa0beb8488f147f6f673ace110f27644c04c91"
+    },
+    {
+      "label": "priority-objections-controlled",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/review1748-assembled-objections.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "--maxWorkers=1",
+        "--bail=1",
+        "--reporter=json",
+        "--outputFile",
+        "../../.tmp/review1748-both/priority-objections-controlled.json"
+      ],
+      "exit": 0,
+      "seconds": 5.798,
+      "logBytes": 508,
+      "logSha256": "eef0a124d93ff2836c84951768b3dd62c5415ef68835c31b0bd2a85008ae8f5f"
+    },
+    {
+      "label": "actual-consumers",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/review1748-actual-consumers.test.tsx",
+        "--maxWorkers=1",
+        "--bail=1",
+        "--reporter=json",
+        "--outputFile",
+        "../../.tmp/review1748-both/actual-consumers.json"
+      ],
+      "exit": 0,
+      "seconds": 1.862,
+      "logBytes": 494,
+      "logSha256": "c6a03842547315b8f87a9ee8b62ea477223750d4dacae8bcad7135132bb192a9"
+    },
+    {
+      "label": "integration",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "run",
+        "test:integration",
+        "src/lib/travel-expenses/claim-read.integration.test.ts",
+        "src/lib/travel-expenses/legacy-draft-conversion.integration.test.ts",
+        "src/lib/travel-expenses/finance-settlement.integration.test.ts",
+        "src/lib/travel-expenses/expense-officer-access.integration.test.ts",
+        "--maxWorkers=1",
+        "--reporter=json",
+        "--outputFile",
+        "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\.tmp\\review1748-both\\integration.json"
+      ],
+      "exit": 0,
+      "seconds": 40.21,
+      "logBytes": 63560,
+      "logSha256": "f8394ed4a8b0ca372f9ac597c7f29b59c5ea63d204cf6c650022677778d48bff"
+    },
+    {
+      "label": "compatibility",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/proxy.public-origin.test.ts",
+        "src/proxy.saved-locale-query.test.tsx",
+        "src/proxy.share.test.ts",
+        "src/proxy.test.ts",
+        "src/components/site-header.test.tsx",
+        "src/tolgee/extracted-key-defaults.test.ts",
+        "src/components/dashboard/manager-today-widget.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "src/components/travel-expenses/travel-expense-list.test.tsx",
+        "src/components/travel-expenses/travel-expense-management.test.tsx",
+        "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+        "src/components/webhooks/webhook-endpoint-card.test.tsx",
+        "src/components/webhooks/webhook-form-dialog.test.tsx",
+        "src/components/webhooks/webhook-lifetime.test.tsx",
+        "src/components/webhooks/webhooks-edit-refusal.test.tsx",
+        "src/components/webhooks/webhooks-refusal.test.tsx",
+        "src/components/webhooks/webhooks-server-arrival.test.tsx",
+        "src/lib/navigation/locale-redirect.test.ts",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/app/[locale]/(app)/app-layout-content.test.tsx",
+        "src/components/travel-expenses/finance/settlement-panel.test.tsx",
+        "src/components/webhooks/webhook-delivery-logs-dialog/index.test.tsx",
+        "src/lib/manager-daily-briefing/__tests__/get-manager-daily-briefing.test.ts",
+        "src/lib/manager-daily-briefing/__tests__/logic.test.ts",
+        "src/lib/travel-expenses/__tests__/attachment-validation.test.ts",
+        "src/lib/travel-expenses/__tests__/claim-validation.test.ts",
+        "src/lib/travel-expenses/__tests__/expense-history.test.ts",
+        "src/lib/travel-expenses/__tests__/legacy-draft-conversion.test.ts",
+        "src/app/[locale]/(app)/today/today-approvals-panel.test.tsx",
+        "src/app/[locale]/(app)/today/today-briefing.test.tsx",
+        "src/app/[locale]/(app)/today/today-decision-arrival.test.tsx",
+        "src/app/[locale]/(app)/today/today-population-arrival.test.tsx",
+        "src/app/[locale]/(app)/today/today-producer-provenance.test.tsx",
+        "src/app/[locale]/(app)/today/today-provider-arrival.test.tsx",
+        "src/app/[locale]/(app)/today/today-workspace.test.tsx",
+        "src/app/api/approvals/inbox/[id]/approve/route.test.ts",
+        "src/app/api/approvals/inbox/[id]/reject/route.test.ts",
+        "src/app/[locale]/(app)/settings/enterprise/api-keys/actions.test.ts",
+        "src/app/[locale]/(app)/settings/enterprise/api-keys/heading.test.tsx",
+        "src/app/[locale]/(app)/settings/enterprise/api-keys/page-client.test.tsx",
+        "--maxWorkers=1",
+        "--bail=1",
+        "--reporter=json",
+        "--outputFile",
+        "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\.tmp\\review1748-both\\compatibility.json"
+      ],
+      "exit": 0,
+      "seconds": 87.749,
+      "logBytes": 3844,
+      "logSha256": "f6bc4d9dea7a65ea428b653d17219a79d105f9a025667f632adfac45cf801e30"
+    },
+    {
+      "label": "typegen",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "next",
+        "typegen"
+      ],
+      "exit": 0,
+      "seconds": 0.649,
+      "logBytes": 59,
+      "logSha256": "adba4af9194e10e47dda75ff0fd0f8c2b756474896d0eba5612799c527ff372a"
+    },
+    {
+      "label": "lint",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=biome.jsonc",
+        "--formatter-enabled=false",
+        "src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+        "src/components/site-header.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion.tsx",
+        "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-detail.tsx",
+        "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "exit": 0,
+      "seconds": 0.723,
+      "logBytes": 44,
+      "logSha256": "bf23302970f71286aa0aee1631965dcf915bfdd3c3df2414a68c2636c9ca0d0f"
+    },
+    {
+      "label": "explicit100crlf",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=biome.jsonc",
+        "--line-width=100",
+        "--line-ending=crlf",
+        "src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+        "src/components/site-header.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion.tsx",
+        "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+        "src/components/travel-expenses/travel-expense-claim-detail.tsx",
+        "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+        "src/lib/navigation/route-metadata.test.ts",
+        "src/lib/navigation/route-metadata.ts"
+      ],
+      "exit": 1,
+      "seconds": 1.146,
+      "logBytes": 14182,
+      "logSha256": "657736b589d310a8b6183234b60c94c770cd752d3595e2fc6e48007e26703508"
+    },
+    {
+      "label": "owned-explicit100crlf",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=biome.jsonc",
+        "--line-width=100",
+        "--line-ending=crlf",
+        "src/components/travel-expenses/legacy-draft-conversion.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx"
+      ],
+      "exit": 0,
+      "seconds": 0.415,
+      "logBytes": 42,
+      "logSha256": "ea8da84394d5ebdf969f7e609674657186a865817df5f1fb6313a14101b57d1e"
+    },
+    {
+      "label": "owned-ordinary",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "biome",
+        "check",
+        "--config-path=biome.jsonc",
+        "src/components/travel-expenses/legacy-draft-conversion.tsx",
+        "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx"
+      ],
+      "exit": 1,
+      "seconds": 0.696,
+      "logBytes": 19638,
+      "logSha256": "96263d9bacecd02a30124a9abd08712a7e758222c0ed3eaab1063b7c07634060"
+    },
+    {
+      "label": "doctor-version",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "react-doctor",
+        "--version"
+      ],
+      "exit": 0,
+      "seconds": 1.833,
+      "logBytes": 7,
+      "logSha256": "b092840e628fef3f3d89757723ea756d4f778c61175f24d99276ace077105eca"
+    },
+    {
+      "label": "doctor",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "react-doctor",
+        "apps/webapp",
+        "--scope",
+        "files",
+        "--base",
+        "85d6a75b4522e84fc701d0bf98f9dda5a9f8aaf4",
+        "--include-untracked",
+        "--no-score",
+        "--no-supply-chain",
+        "--no-parallel",
+        "--max-duration",
+        "90",
+        "--verbose",
+        "--json",
+        "--json-out",
+        "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347\\.tmp\\review1748-both\\doctor.json"
+      ],
+      "exit": 0,
+      "seconds": 7.647,
+      "logBytes": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "workflow-types",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "tsc",
+        "--project",
+        "tsconfig.workflow-contracts.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exit": 0,
+      "seconds": 14.037,
+      "logBytes": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "smoke-types",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "tsc",
+        "--project",
+        "tsconfig.smoke.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exit": 0,
+      "seconds": 1.38,
+      "logBytes": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "main-types",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "tsc",
+        "--project",
+        "tsconfig.typecheck.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exit": 1,
+      "seconds": 26.918,
+      "logBytes": 145,
+      "logSha256": "86ee5b0fa2e18d754caedc8a79c364d2d5638ce8711fa13dfd8a41920ca5c8e1"
+    },
+    {
+      "label": "static-syntax",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "node",
+        ".tmp/review1748-both/syntax.cjs"
+      ],
+      "exit": 1,
+      "seconds": 0.124,
+      "logBytes": 1043,
+      "logSha256": "c4c793d73bf4810b39f1bdad1e3a8ef81b17833e3705a4f307387d1eb63942ce"
+    },
+    {
+      "label": "static-syntax-babel",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "node",
+        ".tmp/review1748-both/syntax.cjs"
+      ],
+      "exit": 0,
+      "seconds": 0.18,
+      "logBytes": 29,
+      "logSha256": "1bc211a486d91798ff38f9c99a071ecb099dec562326137b130113b40e92e94e"
+    },
+    {
+      "label": "real-refresh",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "--dir",
+        "apps/webapp",
+        "exec",
+        "vitest",
+        "run",
+        "--project",
+        "unit",
+        "src/test/review1748-real-refresh.test.tsx",
+        "--maxWorkers=1",
+        "--bail=1",
+        "--reporter=json",
+        "--outputFile",
+        "../../.tmp/review1748-both/real-refresh.json"
+      ],
+      "exit": 0,
+      "seconds": 4.073,
+      "logBytes": 490,
+      "logSha256": "3079c9864c418fb5eea92f8a4531cb3a1cd0e174c501694e9f59e3ac2287fae7"
+    },
+    {
+      "label": "static-syntax-final",
+      "cwd": "X:\\t3-code\\worktrees\\z8\\t3-ff0de57a-a110a9c1a9fbe347",
+      "environment": {
+        "pnpm_config_verify_deps_before_run": "false"
+      },
+      "argv": [
+        "C:\\Users\\KaiHentschel\\AppData\\Local\\pnpm\\bin\\pnpm.cmd",
+        "--config.verify-deps-before-run=false",
+        "node",
+        ".tmp/review1748-both/syntax.cjs"
+      ],
+      "exit": 0,
+      "seconds": 0.167,
+      "logBytes": 29,
+      "logSha256": "9208528b54c4e84a59bac6198a61ac656640b9d736eb170be834dc62a6d154bc"
+    }
+  ]
+}

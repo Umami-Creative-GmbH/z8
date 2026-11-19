@@ -1,0 +1,19 @@
+{
+  "brief": {
+    "path": ".tmp/1738-isolated-comparison-brief.md",
+    "bytes": 8423,
+    "sha256": "22a70f7314bdb8f66f643804c5d3aecffca1d815bdb90a969046e7248ee3e287"
+  },
+  "initialAndFinalIdentity": "Read-only local Git rev-parse, branch --show-current and status --porcelain=v1.",
+  "configurationIdentity": "Exact git show bytes at both named commits plus SHA256 of own and parent manifests/lock; no source overlays.",
+  "inheritedIntegrity": "Only the explicitly authorized 50-file safe allowlist was hashed; no inherited private manifests, credentials or saved auth state were copied.",
+  "blockerSource": "Fresh exec_command output from one frozen offline copy-install attempt and one read-only pnpm version diagnostic.",
+  "cleanupSource": "Fresh preview_open/close tool results plus no fixture/server/native process ever launched and absent node_modules paths.",
+  "rawToSafe": "Only explicit command arguments, safe error code/message, version, counts, hashes and limits retained. No environment values other than required pnpm flag, response bodies, account data, private logs or screenshots captured.",
+  "helperSourcesCopied": [],
+  "script": {
+    "path": "seal-blocker.mjs",
+    "bytes": 12276,
+    "sha256": "8b7bbf01757033f71182165d61cc1537353a6d52d788238aba604881a88f1138"
+  }
+}

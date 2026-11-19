@@ -77,8 +77,8 @@ vi.mock("@/components/time-tracking/clock-vehicle-use", async () =>
 	).vehicleUseOffModule(),
 );
 
-import { ClockInOutWidget } from "../time-tracking/clock-in-out-widget";
 import { queryKeys } from "@/lib/query/keys";
+import { ClockInOutWidget } from "../time-tracking/clock-in-out-widget";
 import {
 	DrivingAuthorizationAdvisory,
 	OperationalDrivingStatusPanel,
@@ -349,4 +349,45 @@ it("lets a planner open only the minimal employee status without inspection cont
 	await waitFor(() =>
 		expect(remote.status).toHaveBeenCalledWith({ employeeId: "driver" }),
 	);
+});
+
+it("shows planning loading and a recoverable refusal instead of a blank panel, retaining search", async () => {
+	const pending = Promise.withResolvers<unknown>();
+	remote.employeeList.mockImplementationOnce(() => pending.promise);
+	render(
+		<QueryClientProvider client={client()}>
+			<OperationalDrivingStatusPanel />
+		</QueryClientProvider>,
+	);
+	expect(screen.getByText("Loading employees for planning…")).toBeTruthy();
+	await act(async () => pending.resolve({ success: false }));
+	expect(await screen.findByRole("alert")).toBeTruthy();
+	remote.employeeList.mockResolvedValue({
+		success: true,
+		data: [{ employeeId: "driver", name: "Driver One" }],
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+	expect(
+		await screen.findByRole("button", { name: "Driver One" }),
+	).toBeTruthy();
+	fireEvent.change(screen.getByRole("searchbox", { name: "Find employee" }), {
+		target: { value: "Driver" },
+	});
+	await waitFor(() =>
+		expect(remote.employeeList).toHaveBeenLastCalledWith({ search: "Driver" }),
+	);
+	await waitFor(() =>
+		expect(
+			screen.getByRole<HTMLButtonElement>("button", {
+				name: "Refresh planning employees",
+			}).disabled,
+		).toBe(false),
+	);
+	remote.employeeList.mockRejectedValue(new Error("Offline"));
+	fireEvent.click(
+		screen.getByRole("button", { name: "Refresh planning employees" }),
+	);
+	await screen.findByRole("alert");
+	expect(screen.getByRole<HTMLInputElement>("searchbox").value).toBe("Driver");
+	expect(screen.queryByRole("button", { name: "Driver One" })).toBeNull();
 });

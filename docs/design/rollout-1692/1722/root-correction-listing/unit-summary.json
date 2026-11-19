@@ -1,0 +1,9 @@
+{
+  "sourceCommit": "8ba550c282727aec4548a217daa673b38137c883",
+  "uniqueFiles": 48,
+  "uniqueCases": 1086,
+  "method": "One final combined unit selection; preserve fullName multiplicity. Repeated native/root runs add no coverage.",
+  "postgresFiles": 1,
+  "postgresCases": 35,
+  "postgresSkippedExistingCases": 217
+}

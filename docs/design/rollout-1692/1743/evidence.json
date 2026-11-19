@@ -1,0 +1,147 @@
+{
+  "implementationCommit": "de8fd32215902a10e8866ebe66c230cf0942e517",
+  "baselineCommit": "cf0203c822ac2837de2c02bc4da816dc741a63e9",
+  "verifiedProduct": "90a7e5bdb34099bf9452e9462109cdf86429d164",
+  "baselineQualification": "Stopped owned server; consumer-only byte-guarded overlay of page.tsx and exact heading metadata. New leaves remain on disk but are not imported by baseline page. Not a full historical application checkout.",
+  "fixture": "Owned disposable small organization; synthetic admin; 3 active identity-only locations; no live people counts added.",
+  "notificationPolicy": "Before and after capture: BrowserContext.setPermission(origin, notifications denied); native disable-notifications launch flag; no blocking dialog or overlay in recorded captures. Flag alone is not a granted permission.",
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/page.tsx",
+      "sha256": "699389bef9221ff28dd16bf987cac3f12ce0dcc0e4f4b1b1bcfdf24f9d7f27e8"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/location-selection.tsx",
+      "sha256": "9ada84815fd5d8455efdf313c2dee4487d25c8abcdfc16d6201adc1672fba386"
+    },
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/selection-actions.ts",
+      "sha256": "03f7d83d57edc545a33d2289ab205f667523e58a6ab87c8bb116a954c34f3952"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "sha256": "1aa34e135acd90020c4f983b8e301f107d3bfe1348054d8838371012831277c8"
+    }
+  ],
+  "baselineOverlay": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/team/presence/page.tsx",
+      "index": 0,
+      "current": "699389bef9221ff28dd16bf987cac3f12ce0dcc0e4f4b1b1bcfdf24f9d7f27e8",
+      "before": "9efa3342d6de1bd8b2af2b79a7fea8c5ef6f86afdb4a724c91f14c8191124eda"
+    },
+    {
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "index": 1,
+      "current": "1aa34e135acd90020c4f983b8e301f107d3bfe1348054d8838371012831277c8",
+      "before": "a669623dd19ab79fb0f80492596475b3eb56114d9a5276f47aa788280b40c72b"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "after-collapsed.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 55796,
+      "sha256": "75bce2ad3aa76ce823b281cc24fba871922cf8962b1349d1e16278baceb122c3"
+    },
+    {
+      "file": "after-dark.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 75295,
+      "sha256": "76109581db3b30879de6fdf3d1bd8c2b58aab5d4dfe17e01c25b2bf291f989a8"
+    },
+    {
+      "file": "after-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 76173,
+      "sha256": "e4a88ac1b72d349e574986ea6750a6713f44a5da4770fea1ea93bf667d8d327c"
+    },
+    {
+      "file": "after-large-reload.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 81079,
+      "sha256": "67db53f2d695eaf20b33fc17bbbf175f4603e17705581c6dfc98e3057c3b70f9"
+    },
+    {
+      "file": "after-phone-large.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 31814,
+      "sha256": "d7727f1226439ffb3dc7516a8c883dd32bf7acaef06270dde8d94a9267a9095e"
+    },
+    {
+      "file": "after-phone.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 29341,
+      "sha256": "801dca45d181cc29dfcc03a9139766db09366f3a3af45a9796ef7534ceb27a3c"
+    },
+    {
+      "file": "after-wide.png",
+      "width": 2400,
+      "height": 1100,
+      "bytes": 80658,
+      "sha256": "d2ec0c8e334ccc45e39ea6e0dc1a0b7f2f043ddcfba144cc36f0e1fdcb944c20"
+    },
+    {
+      "file": "before-collapsed.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 49534,
+      "sha256": "c34328770653d4b7e47aefed59ad2eef4826ca09d200e4bc743bc2f41d01d7f1"
+    },
+    {
+      "file": "before-dark.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 69574,
+      "sha256": "7f0ce7dfa7aa8db7032637a7b5650849645375dd4c7ee06a51a376a8dea0210e"
+    },
+    {
+      "file": "before-desktop.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 70425,
+      "sha256": "1015a33f4185ba59efe50be92e81f09883ea0d741938323871ab4e4453436a4c"
+    },
+    {
+      "file": "before-empty.png",
+      "width": 1264,
+      "height": 625,
+      "bytes": 47474,
+      "sha256": "350eb806bd99c8639cc3b3d31871941bb342d45656d4b336e92d967b9845319a"
+    },
+    {
+      "file": "before-large-reload.png",
+      "width": 1600,
+      "height": 1000,
+      "bytes": 74319,
+      "sha256": "39754ebf33d3042c39969271f172c069197280671ed85d1bcec3513ef0621cce"
+    },
+    {
+      "file": "before-phone-large.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 29483,
+      "sha256": "56090d727c639139c8eface243ad307e004e8907a683462fc6aa99dd821e1fee"
+    },
+    {
+      "file": "before-phone.png",
+      "width": 390,
+      "height": 844,
+      "bytes": 27258,
+      "sha256": "7f87df240084814a19f5e0775b9ff194ce2dc7056a242eb75bb0bd2f3cd77db1"
+    },
+    {
+      "file": "before-wide.png",
+      "width": 2400,
+      "height": 1100,
+      "bytes": 74159,
+      "sha256": "026eb5e8473dbfd6a2e62152dbb6fb7ef45ad0ccf96c2fb5baa7501d95e4b3c2"
+    }
+  ]
+}

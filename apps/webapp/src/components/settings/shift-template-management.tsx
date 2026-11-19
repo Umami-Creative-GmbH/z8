@@ -4,6 +4,7 @@ import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -20,6 +21,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +44,27 @@ import {
 	ShiftTemplateList,
 	ShiftTemplatePreview,
 } from "./shift-template-management-sections";
+import {
+	type ShiftTemplateFieldError,
+	shiftTemplateSubareaError,
+	shiftTemplateTimeError,
+} from "./shift-template-validation";
+
+/** The first message a field's validators returned. */
+function firstFieldError(errors: unknown[]): string | undefined {
+	return errors.find(
+		(error): error is string => typeof error === "string" && error.length > 0,
+	);
+}
+
+function FieldErrorText({ id, error }: { id: string; error?: string }) {
+	if (!error) return null;
+	return (
+		<p id={id} role="alert" className="text-sm text-destructive">
+			{error}
+		</p>
+	);
+}
 
 interface ShiftTemplateManagementProps {
 	organizationId: string;
@@ -49,12 +72,16 @@ interface ShiftTemplateManagementProps {
 	manageableSubareaIds: string[] | null;
 }
 
-// Helper to format time with translations
+// Formats a template's wall-clock time in the viewer's 12h/24h preference.
 function useFormatTime() {
 	const { t } = useTranslate();
+	const timeFormat = useTimeFormat();
 	return (time: string) => {
 		const [hours, minutes] = time.split(":");
 		const hour = parseInt(hours, 10);
+		if (timeFormat === "24h") {
+			return `${String(hour).padStart(2, "0")}:${minutes}`;
+		}
 		const ampm =
 			hour >= 12 ? t("common:time.pm", "PM") : t("common:time.am", "AM");
 		const hour12 = hour % 12 || 12;
@@ -110,6 +137,10 @@ export function ShiftTemplateManagement({
 			<ShiftTemplateList
 				templates={controller.templates}
 				isLoading={controller.isLoading}
+				// A failed background refresh keeps showing the templates already loaded.
+				isError={controller.isError && controller.templates.length === 0}
+				isRetrying={controller.isFetching}
+				onRetry={() => void controller.refetch()}
 				formatTime={formatTime}
 				calculateDuration={calculateDuration}
 				onCreate={() => {
@@ -158,7 +189,11 @@ export function ShiftTemplateManagement({
 			{/* Delete Confirmation AlertDialog */}
 			<AlertDialog
 				open={controller.deleteDialogOpen}
-				onOpenChange={controller.setDeleteDialogOpen}
+				onOpenChange={(open) => {
+					if (!controller.deleteMutation.isPending) {
+						controller.setDeleteDialogOpen(open);
+					}
+				}}
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
@@ -178,6 +213,7 @@ export function ShiftTemplateManagement({
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel
+							disabled={controller.deleteMutation.isPending}
 							onClick={() => controller.setDeleteDialogOpen(false)}
 						>
 							{t("common.cancel", "Cancel")}
@@ -185,12 +221,16 @@ export function ShiftTemplateManagement({
 						<AlertDialogAction asChild>
 							<Button
 								variant="destructive"
-								onClick={() =>
-									controller.templateToDelete &&
-									controller.deleteMutation.mutate(
-										controller.templateToDelete.id,
-									)
-								}
+								onClick={(event) => {
+									// Keep the dialog open until the deletion settles; Base UI's
+									// Close ignores preventDefault, so its handler is stopped.
+									keepAlertDialogOpen(event);
+									if (controller.templateToDelete && !controller.deleteMutation.isPending) {
+										controller.deleteMutation.mutate(
+											controller.templateToDelete.id,
+										);
+									}
+								}}
 								disabled={controller.deleteMutation.isPending}
 							>
 								{controller.deleteMutation.isPending ? (
@@ -262,6 +302,24 @@ function ShiftTemplateDialog({
 		},
 	});
 
+	// The messages of the checks the server also makes (shift-template-validation).
+	const errorText = (error: ShiftTemplateFieldError | undefined) => {
+		switch (error) {
+			case "invalidTime":
+				return t(
+					"settings.shiftTemplates.form.errors.invalidTime",
+					"Enter a time in 24-hour HH:mm format.",
+				);
+			case "subareaRequired":
+				return t(
+					"settings.shiftTemplates.form.errors.subareaRequired",
+					"Select one of your subareas.",
+				);
+			default:
+				return undefined;
+		}
+	};
+
 	const resetForm = () => {
 		const defaults = getDefaults();
 		form.setFieldValue("name", defaults.name);
@@ -295,9 +353,7 @@ function ShiftTemplateDialog({
 						<form.Field name="name">
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="name">
-										{t("settings.shiftTemplates.form.name", "Name")}
-									</Label>
+									<Label htmlFor="name">{t("settings.shiftTemplates.form.name", "Name")}</Label>
 									<Input
 										id="name"
 										placeholder={t(
@@ -313,39 +369,73 @@ function ShiftTemplateDialog({
 						</form.Field>
 
 						<div className="grid grid-cols-2 gap-4">
-							<form.Field name="startTime">
-								{(field) => (
-									<div className="space-y-2">
-										<Label htmlFor="startTime">
-											{t(
-												"settings.shiftTemplates.form.startTime",
-												"Start Time",
-											)}
-										</Label>
-										<TimeInput
-											id="startTime"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-										/>
-									</div>
-								)}
+							<form.Field
+								name="startTime"
+								validators={{
+									onChange: ({ value }) =>
+										errorText(shiftTemplateTimeError(value)),
+								}}
+							>
+								{(field) => {
+									const error = firstFieldError(field.state.meta.errors);
+									return (
+										<div className="space-y-2">
+											<Label htmlFor="startTime">
+												{t(
+													"settings.shiftTemplates.form.startTime",
+													"Start Time",
+												)}
+											</Label>
+											<TimeInput
+												id="startTime"
+												value={field.state.value}
+												aria-invalid={error ? true : undefined}
+												aria-describedby={
+													error ? "shift-template-start-time-error" : undefined
+												}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+											/>
+											<FieldErrorText
+												id="shift-template-start-time-error"
+												error={error}
+											/>
+										</div>
+									);
+								}}
 							</form.Field>
 
-							<form.Field name="endTime">
-								{(field) => (
-									<div className="space-y-2">
-										<Label htmlFor="endTime">
-											{t("settings.shiftTemplates.form.endTime", "End Time")}
-										</Label>
-										<TimeInput
-											id="endTime"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-										/>
-									</div>
-								)}
+							<form.Field
+								name="endTime"
+								validators={{
+									onChange: ({ value }) =>
+										errorText(shiftTemplateTimeError(value)),
+								}}
+							>
+								{(field) => {
+									const error = firstFieldError(field.state.meta.errors);
+									return (
+										<div className="space-y-2">
+											<Label htmlFor="endTime">
+												{t("settings.shiftTemplates.form.endTime", "End Time")}
+											</Label>
+											<TimeInput
+												id="endTime"
+												value={field.state.value}
+												aria-invalid={error ? true : undefined}
+												aria-describedby={
+													error ? "shift-template-end-time-error" : undefined
+												}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+											/>
+											<FieldErrorText
+												id="shift-template-end-time-error"
+												error={error}
+											/>
+										</div>
+									);
+								}}
 							</form.Field>
 						</div>
 
@@ -360,7 +450,18 @@ function ShiftTemplateDialog({
 						</form.Field>
 
 						{/* Default Subarea (Optional) */}
-						<form.Field name="subareaId">
+						<form.Field
+							name="subareaId"
+							validators={{
+								onChange: ({ value }) =>
+									errorText(
+										shiftTemplateSubareaError(
+											value,
+											requireScopedSubareaSelection,
+										),
+									),
+							}}
+						>
 							{(field) => (
 								<ShiftTemplateSubareaField
 									value={field.state.value}
@@ -368,6 +469,7 @@ function ShiftTemplateDialog({
 									locations={locations}
 									requireScopedSubareaSelection={requireScopedSubareaSelection}
 									getSubareaDisplay={getSubareaDisplay}
+									error={firstFieldError(field.state.meta.errors)}
 								/>
 							)}
 						</form.Field>
@@ -395,14 +497,17 @@ function ShiftTemplateDialog({
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<ShiftTemplateSubmitButton
-							isSubmitting={isSubmitting}
-							disabled={
-								isSubmitting ||
-								(requireScopedSubareaSelection && !form.state.values.subareaId)
-							}
-							isEditing={!!template}
-						/>
+						<form.Subscribe selector={(state) => state.canSubmit}>
+							{(canSubmit) => (
+								<ShiftTemplateSubmitButton
+									isSubmitting={isSubmitting}
+									// Invalid fields block the submit until corrected; a first
+									// submit validates every field and shows its message inline.
+									disabled={isSubmitting || !canSubmit}
+									isEditing={!!template}
+								/>
+							)}
+						</form.Subscribe>
 					</ActionPanelFooter>
 				</form>
 			</ActionPanelContent>

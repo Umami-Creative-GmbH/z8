@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Veprimet për {endpoint}",
+    "command-unknown": "Nuk mund të konfirmohej komanda. Rifreskoni këtë pikë fundore përpara se të provoni përsëri.",
     "copy-failed": "Kopjimi në kujtesën e fragmenteve dështoi",
     "create": "Shto Webhook",
     "create-failed": "Krijimi i webhook-ut dështoi",
     "delete-confirm": {
       "description": "Kjo do të fshijë përgjithmonë pikën fundore të webhook-ut dhe të gjithë historikun e dërgimit. Ky veprim nuk mund të zhbëhet.",
-      "title": "Të fshihet webhook-u?"
+      "title-named": "Të fshihet webhook-u {name}?"
     },
     "deleted": "Webhook-u u fshi",
-    "delete-failed": "Fshirja e webhook-ut dështoi",
     "deliveries": "Dërgesat",
-    "description": "Konfiguroni pikat përfundimtare të webhook-eve për të marrë njoftime në kohë reale kur ndodhin ngjarje në organizatën tuaj.",
     "disabled": "Webhook-u u çaktivizua",
     "empty": {
       "description": "Krijoni webhook-un tuaj të parë për të filluar marrjen e njoftimeve të ngjarjeve.",
@@ -57,10 +57,11 @@
       "status": "Statusi",
       "success": "Sukses",
       "time": "Koha",
-      "title": "Regjistrimet e dërgimit"
+      "title": "Regjistrimet e dërgimit",
+      "toggle-details": "Detajet për {event} në {time}"
     },
-    "regenerate-failed": "Rigjenerimi i çelësit sekret dështoi",
     "regenerate-secret": "Rigjenero çelësin sekret",
+    "retry-help": "Rifreskoni këtë listë për të konfirmuar pikat fundore aktuale. Të dhënat e ngarkuara më parë ruhen.",
     "secret-copied": "Çelësi sekret u kopjua në kujtesën e fragmenteve",
     "secret-dialog": {
       "copy-secret": "Kopjo çelësin sekret në kujtesën e fragmenteve",
@@ -78,14 +79,15 @@
       "degraded": "I degraduar",
       "failing": "Po dështon",
       "healthy": "Funksional",
-      "inactive": "Joaktiv"
+      "inactive": "Joaktiv",
+      "untried": "Ende nuk ka dërgime"
     },
     "success-rate": "Sukses",
     "test": "Dërgo provë",
-    "test-failed": "Dështoi dërgimi i webhook-ut të provës",
-    "test-sent": "Webhook-u i provës u dërgua",
+    "test-queued": "Webhook-u i testimit u vendos në radhë",
     "title": "Webhooks",
-    "toggle-active": "Aktivizo/çaktivizo webhook-un",
+    "toggle-active-named": "Aktiv: {endpoint}",
+    "unavailable": "Webhook-ët nuk janë të disponueshëm",
     "updated": "Webhook-u u përditësua",
     "update-failed": "Përditësimi i webhook-ut dështoi",
     "view-logs": "Shiko regjistrat"

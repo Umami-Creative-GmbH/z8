@@ -1,0 +1,151 @@
+{
+  "phase": "after",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+      "sha256": "f91b0f70cc4b114cd1d7aa8d4d7699f95173d6864288e6db7f88cc134803118a",
+      "canonicalSha256": "61d99d4004ea9b17ba3db95bebb6a13a087fc0f07305daa995bc3c0d3cfeec2a"
+    },
+    {
+      "path": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+      "sha256": "475edb8891ff5d187c55ef372b22244ec189c3fad3b08a2c344f4e9005404d2f",
+      "canonicalSha256": "fa50925207276d042dbb684787ea50006305a3ba21aa9682e1b56b9da0a8ee62"
+    },
+    {
+      "path": "apps/webapp/src/components/payroll/employee-balance-loading-heading.tsx",
+      "sha256": "ed49201ed6e2af61251d4974d23bca3eaaaf759fc09f311b76e6efccd1b647a9",
+      "canonicalSha256": "d15a3b96b625c4eedd370e09ec13cd240a41398b8e6dc33b3e3fcf4446d8d836"
+    }
+  ],
+  "checks": [
+    {
+      "name": "Actual admitted-route read is pending with the expected safe main heading",
+      "heldDatabaseReads": 1,
+      "headings": [
+        "Work balance"
+      ],
+      "tableLockOnlyNoBusinessWrite": true
+    },
+    {
+      "name": "Released actual coverage read reveals one authorized employee heading and existing action",
+      "headings": [
+        "Fixture Person 7"
+      ]
+    }
+  ],
+  "captures": [
+    {
+      "name": "after-pending.png",
+      "path": "/en/payroll/work-balances/41cf1960-b92f-4d39-aa9d-43f80a5f0f29",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Work balance"
+      ],
+      "status": [
+        "Loading the work balance"
+      ],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "a6e0afcd1e1d83b124bb829d009093e4635e0559ca40b5a8547c8be6731b177d"
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+          "sha256": "f91b0f70cc4b114cd1d7aa8d4d7699f95173d6864288e6db7f88cc134803118a",
+          "canonicalSha256": "61d99d4004ea9b17ba3db95bebb6a13a087fc0f07305daa995bc3c0d3cfeec2a"
+        },
+        {
+          "path": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+          "sha256": "475edb8891ff5d187c55ef372b22244ec189c3fad3b08a2c344f4e9005404d2f",
+          "canonicalSha256": "fa50925207276d042dbb684787ea50006305a3ba21aa9682e1b56b9da0a8ee62"
+        },
+        {
+          "path": "apps/webapp/src/components/payroll/employee-balance-loading-heading.tsx",
+          "sha256": "ed49201ed6e2af61251d4974d23bca3eaaaf759fc09f311b76e6efccd1b647a9",
+          "canonicalSha256": "d15a3b96b625c4eedd370e09ec13cd240a41398b8e6dc33b3e3fcf4446d8d836"
+        }
+      ]
+    },
+    {
+      "name": "after-settled.png",
+      "path": "/en/payroll/work-balances/41cf1960-b92f-4d39-aa9d-43f80a5f0f29",
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "documentWidth": 1600,
+      "font": "16px",
+      "fontFamily": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fontStatus": "loaded",
+      "h1": [
+        "Fixture Person 7"
+      ],
+      "status": [],
+      "png": {
+        "width": 1600,
+        "height": 1000,
+        "sha256": "62ec9b9c8b24d643a0df242283999d775833f040f1cf5f3d83dc095f07f9df6d"
+      },
+      "source": [
+        {
+          "path": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx",
+          "sha256": "f91b0f70cc4b114cd1d7aa8d4d7699f95173d6864288e6db7f88cc134803118a",
+          "canonicalSha256": "61d99d4004ea9b17ba3db95bebb6a13a087fc0f07305daa995bc3c0d3cfeec2a"
+        },
+        {
+          "path": "apps/webapp/src/components/payroll/employee-balance-workspace.tsx",
+          "sha256": "475edb8891ff5d187c55ef372b22244ec189c3fad3b08a2c344f4e9005404d2f",
+          "canonicalSha256": "fa50925207276d042dbb684787ea50006305a3ba21aa9682e1b56b9da0a8ee62"
+        },
+        {
+          "path": "apps/webapp/src/components/payroll/employee-balance-loading-heading.tsx",
+          "sha256": "ed49201ed6e2af61251d4974d23bca3eaaaf759fc09f311b76e6efccd1b647a9",
+          "canonicalSha256": "d15a3b96b625c4eedd370e09ec13cd240a41398b8e6dc33b3e3fcf4446d8d836"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "abortedSpeculativePrefetch": 0,
+  "employeeIdentity": "Fixture Person 7",
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

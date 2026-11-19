@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Cancelar",
+      "cancelled": "Solicitação cancelada",
       "cancelling": "Cancelando…",
+      "cancelRequest": "Cancelar solicitação",
       "cancelRequestConfirmation": "Cancelar esta solicitação?",
+      "cancelRequestDescription": "Ela é retirada da análise e não pode ser reaberta. Para pedir novamente, envie uma nova solicitação.",
       "cancelRequestError": "Não foi possível cancelar a solicitação.",
       "fix": "Corrigir",
-      "notAvailable": "Não disponível",
+      "keepRequest": "Manter solicitação",
       "view": "Visualizar"
     },
     "all": {
-      "description": "Analise solicitações de ausências, correções de ponto e despesas.",
       "title": "Todas as solicitações"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "As solicitações aparecerão aqui quando forem enviadas ou carregadas.",
+        "hint": "Tente outro termo de pesquisa, status ou tipo.",
         "title": "Nenhuma solicitação corresponde aos seus filtros"
       },
       "none": {
         "description": "As solicitações aparecerão aqui quando forem enviadas ou carregadas.",
         "title": "Nenhuma solicitação ainda"
+      },
+      "unavailable": {
+        "description": "Tente novamente nas fontes indisponíveis para verificar suas solicitações.",
+        "title": "Nenhuma solicitação carregada"
       }
     },
     "featureName": "visualizar suas solicitações",
     "filters": {
       "allStatuses": "Todos os status",
       "allTypes": "Todos os tipos",
-      "approvedRequests": "Solicitações aprovadas",
-      "cancelledRequests": "Solicitações canceladas",
-      "description": "Filtre cada seção de solicitação por texto, status ou tipo de solicitação.",
-      "pendingRequests": "Solicitações pendentes",
-      "rejectedRequests": "Solicitações rejeitadas",
+      "resultCount": "Exibindo {visible} de {total} solicitações",
       "search": "Pesquisar",
-      "searchPlaceholder": "Pesquisar por título…",
+      "searchRequestsPlaceholder": "Título, datas, valor ou motivo…",
       "status": "Status",
       "title": "Encontrar solicitações",
       "type": "Tipo"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Esta solicitação não está mais pendente ou não pode ser exibida aqui. A prontidão do período está sendo verificada novamente."
     },
+    "history": {
+      "request": "Solicitação"
+    },
     "inReview": {
-      "description": "Solicitações aguardando aprovação ou processamento.",
       "title": "Em análise"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Reembolso de despesas de viagem"
       }
     },
+    "scope": "Suas solicitações de ausência, ajuste de ponto e despesas legadas na organização ativa",
     "sourceError": {
       "absence": "Não foi possível carregar as solicitações de ausência.",
       "timeCorrection": "Não foi possível carregar as solicitações de correção de horas.",
       "title": "Não foi possível carregar algumas solicitações.",
       "travelExpense": "Não foi possível carregar as solicitações de despesas de viagem."
     },
-    "sourceTypes": {
-      "absence": "Ausência",
-      "timeCorrection": "Tempo",
-      "travelExpense": "Despesa"
-    },
     "status": {
       "approved": "Aprovado",
       "cancelled": "Cancelado",
       "inReview": "Em análise",
-      "pending": "Pendente",
       "rejected": "Rejeitado"
     },
-    "subtitle": "Acompanhe solicitações pendentes, correções necessárias e decisões recentes em um só lugar.",
     "summary": {
       "ariaLabel": "Resumo da solicitação",
-      "pending": "Pendente",
       "recentDecisions": "Decisões recentes",
+      "recentWindow": "Últimos 30 dias",
       "requiredFixes": "Correções necessárias",
       "totalLoaded": "Total carregado"
     },
     "title": "Minhas Solicitações",
+    "types": {
+      "absence": "Ausência",
+      "timeCorrection": "Ajuste de ponto",
+      "travelExpense": "Despesa de viagem"
+    },
     "unavailableTitle": "Solicitações indisponíveis"
   }
 }

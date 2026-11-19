@@ -1,0 +1,109 @@
+{
+  "uniqueFiles": 1,
+  "uniqueCases": 6,
+  "uniquePassed": 4,
+  "uniqueFailed": 2,
+  "runCount": 2,
+  "executedObservations": 12,
+  "cases": [
+    {
+      "run": "public-probes-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "current: healthy canonical context admits report generation",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "run": "public-probes-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "premerge: healthy canonical context admits report generation",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "run": "public-probes-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "current: initial canonical context error is visible with local Retry",
+      "occurrence": 1,
+      "status": "failed"
+    },
+    {
+      "run": "public-probes-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "premerge: initial canonical context error is visible with local Retry",
+      "occurrence": 1,
+      "status": "failed"
+    },
+    {
+      "run": "public-probes-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "current: unchanged provider recovers through its public refetch when a consumer offers it",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "run": "public-probes-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "premerge: unchanged provider recovers through its public refetch when a consumer offers it",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "run": "public-probes-repeat-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "current: healthy canonical context admits report generation",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "run": "public-probes-repeat-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "premerge: healthy canonical context admits report generation",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "run": "public-probes-repeat-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "current: initial canonical context error is visible with local Retry",
+      "occurrence": 1,
+      "status": "failed"
+    },
+    {
+      "run": "public-probes-repeat-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "premerge: initial canonical context error is visible with local Retry",
+      "occurrence": 1,
+      "status": "failed"
+    },
+    {
+      "run": "public-probes-repeat-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "current: unchanged provider recovers through its public refetch when a consumer offers it",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "run": "public-probes-repeat-result.json",
+      "file": "apps/webapp/src/test/merge1735-audit-bridge/public-probes.test.tsx",
+      "fullName": "premerge: unchanged provider recovers through its public refetch when a consumer offers it",
+      "occurrence": 1,
+      "status": "passed"
+    }
+  ],
+  "inheritedNotFresh": {
+    "childPost87Units": {
+      "files": 37,
+      "tests": 242
+    },
+    "childEarlierPostgres": {
+      "files": 2,
+      "tests": 14
+    },
+    "root1734Selection": {
+      "files": 74,
+      "tests": 594
+    }
+  },
+  "acceptance": "BLOCKED; these are diagnostic controls, not the broader ticket acceptance selection."
+}

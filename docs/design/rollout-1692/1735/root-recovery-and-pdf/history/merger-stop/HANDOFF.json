@@ -1,0 +1,161 @@
+{
+  "state": "BLOCKED_SOURCE_PROVISIONAL_MERGE",
+  "readiness": "Not verified; root owns correction, publication and scheduling.",
+  "head": "1513a20116706380dd65a93b35104ca4eeea6066",
+  "tree": "8b725570a8bb238489ff446bc2128ce52c337a09",
+  "applicationTree": "285d5ff2f665dc327c78a5f6df4f09a18dfe23b0",
+  "parents": [
+    "5715cc1f8dabd78a79a8c256b137c430ebfe98d5",
+    "7fc82645ae809bf4ee28d3c5edc32766703fc0cc"
+  ],
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "incoming": "7fc82645ae809bf4ee28d3c5edc32766703fc0cc",
+  "mergeBase": "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+  "independentMergeTree": "8b725570a8bb238489ff446bc2128ce52c337a09",
+  "independentTreeMatches": true,
+  "blocker": {
+    "kind": "Inherited report-level organization-context failure/recovery gap",
+    "trigger": "Actual OrganizationContextProvider with initialContext=null, valid matching session/employee props, real QueryClient and settings store; only fetch transport returns HTTP 503.",
+    "observed": "Generate disabled indefinitely under loading-settings copy, no visible context error and no local Retry.",
+    "currentAndParent": "Same red on merged current and pinned exact premerge consumer bundle from 5715cc1f; not claimed as a new regression.",
+    "controls": "Healthy initial context admits generation; same real provider recovers through public refetch supplied by a test-only consumer. Both pass for current and parent.",
+    "repeated": true,
+    "browserProof": false,
+    "authorityInference": false,
+    "seamLimits": "Public assembled display/recovery behavior only; no live revocation, server authorization, persisted data, real browser or full shell acceptance inference.",
+    "sourcePointers": [
+      "apps/webapp/src/components/reports/report-filters.tsx",
+      "apps/webapp/src/components/reports/reports-container.tsx",
+      "apps/webapp/src/components/providers/organization-context-provider.tsx"
+    ]
+  },
+  "freshTests": {
+    "uniqueFiles": 1,
+    "uniqueCases": 6,
+    "passed": 4,
+    "failed": 2,
+    "repeatRuns": 2,
+    "observations": 12,
+    "notAdditive": true
+  },
+  "preservation": {
+    "verifiedAnchors": 58,
+    "ledgerUnchanged": true,
+    "statusCounts": {
+      "integrated": 58,
+      "awaiting-integration": 25,
+      "implementing": 2,
+      "pending": 72
+    },
+    "trackedParentPaths": 16896,
+    "unchangedParentPaths": 16888,
+    "changedPaths": [
+      "apps/webapp/src/app/[locale]/(app)/reports/page.tsx",
+      "apps/webapp/src/components/reports/export-buttons.tsx",
+      "apps/webapp/src/components/reports/report-employee-selector.tsx",
+      "apps/webapp/src/components/reports/report-filters.tsx",
+      "apps/webapp/src/components/reports/report-preview-table.tsx",
+      "apps/webapp/src/components/reports/report-summary-cards.tsx",
+      "apps/webapp/src/components/reports/reports-container.tsx",
+      "apps/webapp/src/hooks/use-report-employees.ts"
+    ],
+    "addedPaths": 75,
+    "protectedProofFamilies": [
+      {
+        "prefix": "docs/design/rollout-1692/1734/root-unlink-lifetime/",
+        "count": 155,
+        "unchanged": true
+      },
+      {
+        "prefix": "docs/design/rollout-1692/1733/root-recovery-and-upload/",
+        "count": 280,
+        "unchanged": true
+      }
+    ],
+    "protectedAncestry": [
+      "9f2bd756833e85a33a97db496487afbc992c69ae",
+      "0778a51b8d58c8203943f394e43b0535147a683d",
+      "81a94f940b7b7fbd13a823665b993b616973b2ae",
+      "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+      "7cfbab79e202fffc17661f8eaefb8e5cce958834",
+      "c9a56648c81206527d1935bfcb46e0a959a4157f",
+      "90a7e5bdb34099bf9452e9462109cdf86429d164"
+    ],
+    "headingOptInsUnchanged": true,
+    "aliasesUnchanged": 19,
+    "routeTemplates": 172,
+    "configsByteExact": 116,
+    "dependencyParentsPhysical": 3,
+    "internalDependencyLinksUnchanged": 158,
+    "lockSHA256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "license": {
+      "path": "apps/webapp/src/data/licenses.json",
+      "count": 125,
+      "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+      "provenance": "Inherited; not regenerated"
+    }
+  },
+  "inheritedTests": {
+    "childPost87Units": {
+      "files": 37,
+      "tests": 242
+    },
+    "childEarlierPostgres": {
+      "files": 2,
+      "tests": 14
+    },
+    "root1734Selection": {
+      "files": 74,
+      "tests": 594
+    }
+  },
+  "skippedBecauseStopOnBlocker": [
+    "Broader public scope/lifetime/roster A-B-A/Activity and queued-submit/download probes; unresolved four-path roster guard remains unrun/unresolved",
+    "Combined report/shell/export/query compatibility units and current R049/R050/R051 focused controls",
+    "Own PostgreSQL report suites",
+    "Next typegen and app/workflow/smoke type projects",
+    "Scoped Biome/ordinary/100-column/CRLF checks and bounded React Doctor",
+    "Own disposable fixture, real reads/Retry/Refresh, browser role/refusal/preference/focus journeys",
+    "All emitted/parsed CSV/XLSX/PDF downloads: zero fresh completed browser exports",
+    "Native agent-browser and connected Next diagnostics",
+    "Matched desktop/phone/wide-dark/18px comparisons and historical consumer overlay",
+    "Full production generation, external providers, Tolgee sync, devices/true zoom/global roster acceptance"
+  ],
+  "mutations": {
+    "only": "Authorized provisional normal no-FF merge plus ignored audit artifacts and removed test bridge",
+    "productFix": false,
+    "ledger": false,
+    "readme": false,
+    "priorReportsProofsArchives": false,
+    "trackers": false,
+    "push": false,
+    "pr": false,
+    "closure": false,
+    "devMerge": false,
+    "deployment": false,
+    "dependencyInstallRepair": false,
+    "configOverlay": false
+  },
+  "cleanup": {
+    "bridge": {
+      "verifiedFilesRemoved": 31,
+      "absent": true
+    },
+    "overlays": {
+      "everApplied": false,
+      "trackedSourcesRestored": true
+    },
+    "ownedResources": {
+      "next": [],
+      "browser": [],
+      "nativeDaemons": [],
+      "listeners": [],
+      "fixtureServices": [],
+      "fixtureServiceCountCreated": 0
+    },
+    "runtime": "No runtime or service was started. All spawned foreground package/test commands have completed. No peer process/service was inspected, touched or stopped.",
+    "auth": "No auth/session state created, copied, saved, restored, exported or minted; no SQL, fixture or provider access occurred.",
+    "remainingOwnedServicesProcesses": 0
+  },
+  "ownership": "RELEASE ALL checkout/index/Git/package/runtime/process ownership"
+}

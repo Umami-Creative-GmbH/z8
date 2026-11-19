@@ -51,6 +51,7 @@ async function ClockingSettingsContent() {
 						"settings.navigation.clocking.trackingDescription",
 						"Set the start date used for your organization’s time tracking",
 					),
+					measure: true,
 					panel: (
 						<OrganizationTrackingCard
 							settings={trackingSettings}
@@ -66,6 +67,7 @@ async function ClockingSettingsContent() {
 						"settings.navigation.clocking.automaticDescription",
 						"Configure automatic clock-out for uninterrupted work",
 					),
+					measure: true,
 					panel: (
 						<OrganizationAutoClockOutCard
 							settings={autoClockOutSettings}
@@ -83,6 +85,7 @@ async function ClockingSettingsContent() {
 						"settings.navigation.clocking.remindersDescription",
 						"Configure reminders for clock-ins, clock-outs and breaks",
 					),
+					measure: true,
 					panel: (
 						<OrganizationClockingRemindersCard
 							settings={clockingReminderSettings}
@@ -100,6 +103,7 @@ async function ClockingSettingsContent() {
 						"settings.navigation.clocking.submissionsDescription",
 						"Configure when employees submit their work periods for review",
 					),
+					measure: true,
 					panel: (
 						<OrganizationPeriodSubmissionsCard
 							settings={periodSubmissionSettings}

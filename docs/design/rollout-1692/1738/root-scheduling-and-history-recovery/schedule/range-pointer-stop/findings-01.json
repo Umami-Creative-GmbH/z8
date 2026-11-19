@@ -1,0 +1,23 @@
+{
+  "candidate": "7e5cb41a2c3557399e2f3b0093890b822c8877f4",
+  "publicationQueryCorrection": "GREEN_THROUGH_REAL_ACTION_AND_SCOPED_PERSISTED_READBACK",
+  "findings": [
+    {
+      "severity": "critical acceptance blocker",
+      "name": "Read mapper drops the selected date range",
+      "source": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts:getEffectiveShiftQuery",
+      "evidence": "Selected Nov16–22 week lists six rows including Nov15/Nov23; Publish4 although actual server publishes2. Settled list retains both adjacent-day drafts and Publish2.",
+      "cause": "toServiceDateRange returns {start,endExclusive}; getEffectiveShiftQuery spreads those names into the ShiftService query, whose filters read {startDate,endDateExclusive}.",
+      "sourceCompared": "Action blob unchanged from08c26649; this is not attributed to the bound-ID fix."
+    },
+    {
+      "severity": "pending pointer acceptance blocker",
+      "name": "Disabled fixed Publish permits a pointer to reach the row beneath it",
+      "source": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx; apps/webapp/src/components/ui/button-variants.ts",
+      "evidence": "At the same actual enabled Publish4 center, first trusted pointer sends one publishShifts request. During observed disabled Publishing state, second pointer opens Edit Shift for the underlying Nov15 draft. No second publication or save occurs.",
+      "causeQualification": "The observed pass-through is consistent with inherited disabled:pointer-events-none. Computed pointer-events/second-hit target were not separately captured; do not overstate that as an independently instrumented CSS proof."
+    }
+  ],
+  "stopped": true,
+  "noProductFixes": true
+}

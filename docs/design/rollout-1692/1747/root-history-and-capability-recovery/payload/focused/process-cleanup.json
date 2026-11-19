@@ -1,0 +1,14 @@
+{
+  "qualification": "Original traversal stalled before mutation and exact owned script stopped. V2 verified and stopped owned Next tree, then Stop-Process controller raised NullReference. V3 exact controller PID/parent/creation/path verified, taskkill exact PID succeeded. No peer/global kills.",
+  "ownedNextSubtreeStopCompletedInV2": true,
+  "controllerAbsent": true,
+  "browserClosed": true,
+  "profilesRemoved": [
+    "fresh-chromium-profile",
+    "fresh-chromium-profile-v2"
+  ],
+  "at": "2026-11-18T04:30:46.8070311Z",
+  "ownedNextRootAndImmediateChildrenAbsent": true,
+  "ownedNextListenerAbsent": true,
+  "peerProcessesKilled": 0
+}

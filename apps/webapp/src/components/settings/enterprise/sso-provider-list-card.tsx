@@ -95,11 +95,13 @@ export function SsoProviderListCard({
 									<code translate="no">{provider.providerId}</code>
 								</p>
 							</TableCell>
-							<TableCell>{provider.domain}</TableCell>
+							<TableCell className="max-w-56 whitespace-normal break-all">
+								{provider.domain}
+							</TableCell>
 							<TableCell>
 								{provider.domainVerified ? (
-									<Badge variant="default" className="bg-green-600">
-										<IconCheck className="mr-1 size-3" />
+									<Badge variant="success">
+										<IconCheck className="size-3" aria-hidden="true" />
 										{t(
 											"settings.enterprise.sso.guide.domainVerified",
 											"Domain verified",
@@ -107,7 +109,7 @@ export function SsoProviderListCard({
 									</Badge>
 								) : (
 									<Badge variant="secondary">
-										<IconX className="mr-1 size-3" />
+										<IconX className="size-3" aria-hidden="true" />
 										{t(
 											"settings.enterprise.sso.guide.domainPending",
 											"Domain not verified",
@@ -115,7 +117,7 @@ export function SsoProviderListCard({
 									</Badge>
 								)}
 								{!provider.domainVerified && dnsToken ? (
-									<p className="mt-1 text-xs text-muted-foreground">
+									<p className="mt-1 max-w-56 whitespace-normal break-all text-xs text-muted-foreground">
 										{t("settings.enterprise.sso.txtToken", "TXT token:")}{" "}
 										<code className="bg-muted px-1 rounded">{dnsToken}</code>
 									</p>
@@ -126,16 +128,17 @@ export function SsoProviderListCard({
 									href={provider.issuer}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="flex items-center text-sm text-muted-foreground hover:text-foreground"
+									title={provider.issuer}
+									className="flex items-center rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 								>
 									<span className="max-w-[200px] truncate">
 										{provider.issuer}
 									</span>
-									<IconExternalLink className="ml-1 size-3" />
+									<IconExternalLink className="ml-1 size-3 shrink-0" aria-hidden="true" />
 								</a>
 							</TableCell>
 							<TableCell className="text-right">
-								<div className="flex justify-end gap-2">
+								<div className="flex flex-wrap justify-end gap-2">
 									{!provider.domainVerified ? (
 										<>
 											<Button
@@ -144,8 +147,8 @@ export function SsoProviderListCard({
 												disabled={busyProviderId === provider.id}
 												onClick={() => onRequestVerificationToken(provider)}
 											>
-												<IconKey className="mr-1 size-4" />
-												{t("settings.enterprise.sso.token", "Token")}
+												<IconKey className="size-4" aria-hidden="true" />
+												{t("settings.enterprise.sso.generateToken", "Generate TXT token")}
 											</Button>
 											<Button
 												variant="outline"
@@ -153,7 +156,7 @@ export function SsoProviderListCard({
 												disabled={busyProviderId === provider.id}
 												onClick={() => onVerifyDomain(provider)}
 											>
-												<IconRefresh className="mr-1 size-4" />
+												<IconRefresh className="size-4" aria-hidden="true" />
 												{t("settings.enterprise.sso.verify", "Verify")}
 											</Button>
 										</>

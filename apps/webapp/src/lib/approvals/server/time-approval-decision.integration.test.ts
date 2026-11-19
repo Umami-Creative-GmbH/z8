@@ -14,6 +14,7 @@
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "@/db";
 import {
 	type Instant,
 	instantFromDate,
@@ -22,7 +23,13 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
+import {
+	findTimeCorrectionsListedInMyRequests,
+	getSelfServiceRequests,
+} from "@/lib/self-service-requests/get-self-service-requests";
+import { findPeriodSubmissionBlockers } from "@/lib/time-tracking/period-submissions/submission-blockers";
 import { integrationAdminPool } from "@/test/integration-database";
+import { cancelPendingTimeCorrection } from "./time-correction-cancellation";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -165,13 +172,14 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", async (importOrigin
 
 const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
-const { requestTimeCorrection } = await import(
+const { requestTimeCorrection, requestTimeEntryDeletion } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions/corrections"
 );
 const { submitHistoricalPolicyClockOut } = await import(
 	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
 );
 const { processDueEscalations } = await import("@/lib/approvals/escalation/transfer");
+const { loadApprovalInboxDecisionTarget } = await import("@/lib/approvals/inbox/decision-service");
 const { approvalRolloutLockScope } = await import("@/lib/approvals/authority/gate");
 const { decideTimeApproval } = await import("./time-approval-decision");
 type DecisionInput = Parameters<typeof decideTimeApproval>[0];
@@ -722,6 +730,291 @@ describe("time approval decision (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
+	});
+
+	it("loads a pending legacy edit as a time correction for an inbox decision", async () => {
+		const { approval } = await submitted("time_correction", "legacy");
+
+		await expect(
+			loadApprovalInboxDecisionTarget({
+				approvalId: approval.id,
+				organizationId: ids.organization,
+			}),
+		).resolves.toMatchObject({ status: "pending", workflowKind: "time_correction" });
+	});
+
+	describe("requester correction listing", () => {
+		const scope = { organizationId: ids.organization, employeeId: ids.requester };
+		const bounds = {
+			...scope,
+			timezone: "UTC",
+			startDate: "2026-07-22",
+			endDate: "2026-07-22",
+			range: {
+				start: parseInstant("2026-07-22T00:00:00Z"),
+				end: parseInstant("2026-07-23T00:00:00Z"),
+			},
+		};
+
+		async function pendingRequests() {
+			const result = await getSelfServiceRequests({
+				...scope,
+				filters: { sourceType: "time_correction", status: "pending" },
+			});
+			expect(result.sourceErrors).toEqual([]);
+			return result.items;
+		}
+
+		function listedPeriods(workPeriodId: string) {
+			return findTimeCorrectionsListedInMyRequests(db, {
+				...scope,
+				workPeriodIds: [workPeriodId],
+			});
+		}
+
+		describe.each([...AUTHORITIES, "complete"] as const)("under %s mode", (mode) => {
+			it.each(["edit", "delete"] as const)(
+				"lists a submitted %s, its readiness destination and cancellation readback",
+				async (action) => {
+					await seed({ authority: mode === "complete" ? "canonical" : mode });
+					if (mode === "complete") {
+						await admin.query(
+							`update approval_workflow_rollout set lifecycle_mode = 'complete'
+							 where organization_id = $1 and workflow_type = 'time_correction'`,
+							[ids.organization],
+						);
+					}
+					const workPeriodId = await recordWork(
+						parseInstant("2026-07-22T08:00:00Z"),
+						parseInstant("2026-07-22T16:00:00Z"),
+						{ approval: false },
+					);
+					if (action === "edit") {
+						await requestEdit(workPeriodId);
+					} else {
+						actAs(ids.requesterUser);
+						await expect(
+							requestTimeEntryDeletion({
+								workPeriodId,
+								submissionId: randomUUID(),
+								reason: "Recorded work belongs to another day",
+							}),
+						).resolves.toMatchObject({ success: true });
+						actAs(null);
+					}
+					const [request] = await pendingRequests();
+					expect(request).toMatchObject({
+						...scope,
+						sourceId: workPeriodId,
+						status: "pending",
+						availableActions: ["cancel", "view"],
+					});
+					expect(await pendingRequests()).toHaveLength(1);
+					expect(await listedPeriods(workPeriodId)).toEqual(new Set([workPeriodId]));
+					expect(await findPeriodSubmissionBlockers(db, bounds)).toMatchObject([
+						{ kind: "time_correction", workPeriodId, listedInMyRequests: true },
+					]);
+					const cancel = () =>
+						cancelPendingTimeCorrection({
+							organizationId: ids.organization,
+							requesterEmployeeId: ids.requester,
+							requesterUserId: ids.requesterUser,
+							workPeriodId,
+						});
+					await expect(cancel()).resolves.toEqual({ replayed: false });
+					await expect(cancel()).resolves.toEqual({ replayed: true });
+					expect(await pendingRequests()).toEqual([]);
+					expect(await listedPeriods(workPeriodId)).toEqual(new Set());
+					expect(await findPeriodSubmissionBlockers(db, bounds)).toEqual([]);
+					const history = await getSelfServiceRequests({ ...scope });
+					expect(history.items).toMatchObject([
+						{ sourceId: workPeriodId, status: "cancelled", availableActions: ["view"] },
+					]);
+				},
+			);
+		});
+
+		describe.each(["legacy", "canonical"] as const)("under %s relational listing", (authority) => {
+			it.each([
+				"foreign requester",
+				"foreign employee endpoint",
+				"foreign organization endpoint",
+				"unrelated endpoint",
+				"missing endpoint",
+				"non-correction endpoint",
+				"replaced endpoint",
+				"malformed metadata",
+			] as const)("does not list %s evidence", async (invalid) => {
+				const { workPeriodId } = await submitted("time_correction", authority);
+				switch (invalid) {
+					case "foreign requester":
+						await admin.query(
+							"update approval_request set requested_by = $2 where organization_id = $1",
+							[ids.organization, ids.third],
+						);
+						break;
+					case "foreign employee endpoint":
+						await admin.query(
+							"update time_entry set employee_id = $2 where organization_id = $1 and type = 'correction'",
+							[ids.organization, ids.third],
+						);
+						break;
+					case "foreign organization endpoint":
+						await admin.query(
+							"insert into organization (id, name, slug, created_at) values ('t1722-foreign-org', 'Foreign', 't1722-foreign-org', now())",
+						);
+						try {
+							await admin.query(
+								"update time_entry set organization_id = 't1722-foreign-org' where organization_id = $1 and type = 'correction'",
+								[ids.organization],
+							);
+							// Both readers are checked before the fixture organization is removed.
+							expect(await pendingRequests()).toEqual([]);
+							expect(await listedPeriods(workPeriodId)).toEqual(new Set());
+						} finally {
+							await admin.query(
+								"update time_entry set organization_id = $1 where organization_id = 't1722-foreign-org'",
+								[ids.organization],
+							);
+							await admin.query("delete from organization where id = 't1722-foreign-org'");
+						}
+						return;
+					case "unrelated endpoint":
+						await admin.query(
+							"update time_entry set replaces_entry_id = null where organization_id = $1 and type = 'correction'",
+							[ids.organization],
+						);
+						break;
+					case "missing endpoint":
+						await admin.query(
+							`update approval_request set metadata = jsonb_set(jsonb_set(metadata,
+							 '{timeCorrection,clockInCorrectionId}', to_jsonb(gen_random_uuid()::text)),
+							 '{timeCorrection,clockOutCorrectionId}', to_jsonb(gen_random_uuid()::text))
+							 where organization_id = $1`,
+							[ids.organization],
+						);
+						break;
+					case "non-correction endpoint":
+						await admin.query(
+							"update time_entry set type = 'clock_in' where organization_id = $1 and type = 'correction'",
+							[ids.organization],
+						);
+						break;
+					case "replaced endpoint":
+						await admin.query(
+							`update time_entry set superseded_by_id =
+							 (select clock_in_id from work_period where id = $2)
+							 where organization_id = $1 and type = 'correction'`,
+							[ids.organization, workPeriodId],
+						);
+						break;
+					case "malformed metadata":
+						await admin.query(
+							'update approval_request set metadata = \'{"timeCorrection":{"action":"unknown"}}\'::jsonb where organization_id = $1',
+							[ids.organization],
+						);
+						break;
+				}
+				expect(await pendingRequests()).toEqual([]);
+				expect(await listedPeriods(workPeriodId)).toEqual(new Set());
+			});
+		});
+
+		it.each(["manual_time_submission", "policy_clock_out"] as const)(
+			"does not classify an ordinary %s as a correction",
+			async (kind) => {
+				const { workPeriodId } = await submitted(kind, "legacy");
+				expect(await pendingRequests()).toEqual([]);
+				expect(await listedPeriods(workPeriodId)).toEqual(new Set());
+			},
+		);
+
+		it.each([
+			"foreign workflow requester",
+			"foreign context requester",
+			"contradictory source",
+			"contradictory endpoints",
+			"unexpected display key",
+			"contradictory requested metadata",
+			"contradictory original metadata",
+		] as const)("excludes a complete-mode %s", async (invalid) => {
+			await seed({ authority: "canonical" });
+			await admin.query(
+				`update approval_workflow_rollout set lifecycle_mode = 'complete'
+				 where organization_id = $1 and workflow_type = 'time_correction'`,
+				[ids.organization],
+			);
+			const workPeriodId = await submit("time_correction");
+			const { rows } = await admin.query<{
+				id: string;
+				context_snapshot: Record<string, unknown>;
+				display_snapshot: { displayPayload: Record<string, unknown> };
+			}>(
+				"select id, context_snapshot, display_snapshot from approval_workflow where organization_id = $1 and source_id = $2",
+				[ids.organization, workPeriodId],
+			);
+			const workflow = only(rows);
+			const context = workflow.context_snapshot;
+			const display = workflow.display_snapshot;
+			if (invalid === "foreign workflow requester") {
+				await admin.query("update approval_workflow set requester_employee_id = $2 where id = $1", [
+					workflow.id,
+					ids.third,
+				]);
+			} else {
+				switch (invalid) {
+					case "foreign context requester":
+						context.requesterEmployeeId = ids.third;
+						break;
+					case "contradictory source":
+						context.source = { id: randomUUID(), type: "time_entry" };
+						break;
+					case "contradictory endpoints":
+						display.displayPayload.endpoints = ["Clock out", "Clock in"];
+						break;
+					case "unexpected display key":
+						display.displayPayload.privateField = "must not be displayed";
+						break;
+					case "contradictory requested metadata":
+						display.displayPayload.workMetadata = {
+							original: { workLocationType: "office", workCategoryId: null },
+							requested: { workLocationType: "home", workCategoryId: null },
+						};
+						break;
+					case "contradictory original metadata":
+						display.displayPayload.workMetadata = {
+							original: { workLocationType: "home", workCategoryId: null },
+							requested: { workLocationType: "office", workCategoryId: null },
+						};
+						break;
+				}
+				await admin.query(
+					"update approval_workflow set context_snapshot = $2::jsonb, display_snapshot = $3::jsonb where id = $1",
+					[workflow.id, JSON.stringify(context), JSON.stringify(display)],
+				);
+			}
+			expect(await pendingRequests()).toEqual([]);
+			expect(await listedPeriods(workPeriodId)).toEqual(new Set());
+		});
+
+		it("does not replace missing pending compatibility evidence with the workflow", async () => {
+			const { workPeriodId } = await submitted("time_correction", "canonical");
+			await admin.query("delete from approval_request where organization_id = $1", [
+				ids.organization,
+			]);
+			expect(await pendingRequests()).toEqual([]);
+			expect(await listedPeriods(workPeriodId)).toEqual(new Set());
+		});
+
+		it("keeps a finalized current correction visible as approved", async () => {
+			const { workPeriodId, approval } = await submitted("time_correction", "legacy");
+			await decide(actors.approver, approval.id, { as: "approver" });
+			const history = await getSelfServiceRequests(scope);
+			expect(history.items).toMatchObject([
+				{ sourceId: workPeriodId, status: "approved", availableActions: ["view"] },
+			]);
+			expect(await listedPeriods(workPeriodId)).toEqual(new Set());
+		});
 	});
 
 	describe.each(AUTHORITIES)("under %s authority", (authority) => {

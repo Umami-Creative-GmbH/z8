@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Відсутність",
-      "all-caught-up": "Усе переглянуто!",
-      "approved-recently": "{count} {request} нещодавно схвалено",
       "by": "від {name}",
       "description": "Останні схвалені запити",
       "description-count": "Останні {count} схвалені {request}",
@@ -123,11 +121,27 @@
       "title": "Нещодавно схвалені",
       "view-all": "Переглянути всі схвалення"
     },
+    "refresh": {
+      "activity": "Остання активність",
+      "attention": "Сьогодні коротко",
+      "balanceRetry": "Оновіть, щоб спробувати завантажити баланс знову.",
+      "balanceUnavailable": "Баланс недоступний",
+      "currentSession": "Поточний сеанс",
+      "dayUnavailable": "Підсумок за сьогодні недоступний. Оновіть, щоб спробувати знову.",
+      "employee": "Працівник",
+      "greeting": "Доброго дня, {name}.",
+      "noAbsences": "На сьогодні немає записів про відсутність.",
+      "openTimeTracking": "Перейти до обліку часу",
+      "overview": "Огляд вашої роботи",
+      "personalDay": "Ваш робочий день",
+      "status": "Статус",
+      "summary": "Підсумок",
+      "team": "Команда",
+      "todayTarget": "Сьогодні · потрібно {target}"
+    },
     "team-overview": {
       "avg-hours": "Сер. години",
       "current-employees": "Поточні співробітники",
-      "current-employees-description": "Усі, хто працює тут зараз",
-      "description": "Короткий огляд статистики команди",
       "employees-button": "Працівники",
       "per-week": "/тиждень",
       "teams": "Команди",
@@ -175,9 +189,6 @@
       "used": "{days} використано"
     },
     "whos-out": {
-      "everyone-in": "Сьогодні всі в офісі",
-      "everyones-in": "Усі присутні!",
-      "full-team": "Уся команда на місці!",
       "member": "учасник",
       "members": "учасники",
       "members-out": "{count} {member} команди відсутні",

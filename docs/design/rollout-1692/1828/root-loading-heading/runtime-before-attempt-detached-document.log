@@ -1,0 +1,17 @@
+file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/CallbackRegistry.js:108
+    #error = new ProtocolError();
+             ^
+
+ProtocolError: Protocol error (DOM.resolveNode): Node with given id does not belong to the document
+    at <instance_members_initializer> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/CallbackRegistry.js:108:14)
+    at new Callback (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/CallbackRegistry.js:112:16)
+    at CallbackRegistry.create (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/common/CallbackRegistry.js:27:26)
+    at Connection._rawSend (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/Connection.js:125:26)
+    at CdpCDPSession.send (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/CdpSession.js:72:14)
+    at IsolatedWorld.adoptBackendNode (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/IsolatedWorld.js:114:46)
+    at IsolatedWorld.adoptHandle (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/IsolatedWorld.js:131:28)
+    at async CdpElementHandle.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:126:52)
+    at async CdpElementHandle.$$ (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:433:20)
+    at async CdpElementHandle.$$eval (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:560:33)
+
+Node.js v26.9.0

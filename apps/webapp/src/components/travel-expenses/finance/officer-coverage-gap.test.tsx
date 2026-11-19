@@ -1,11 +1,18 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FinanceTestOrganization } from "@/test/finance-organization-fixture";
 
 const mocks = vi.hoisted(() => ({ getGap: vi.fn() }));
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: { user: { id: "finance" }, session: { activeOrganizationId: "org" } },
+		isPending: false,
+	}),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -20,6 +27,7 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
 	Link: ({ href, children }: { href: string; children: ReactNode }) => (
 		<a href={href}>{children}</a>
 	),
@@ -35,7 +43,9 @@ function mount() {
 		<QueryClientProvider
 			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
 		>
-			<OfficerCoverageGapNotice />
+			<FinanceTestOrganization>
+				<OfficerCoverageGapNotice />
+			</FinanceTestOrganization>
 		</QueryClientProvider>,
 	);
 }
@@ -43,6 +53,16 @@ function mount() {
 describe("officer coverage gap warning (#756)", () => {
 	beforeEach(() => mocks.getGap.mockReset());
 	afterEach(cleanup);
+
+	it("offers a local retry when coverage cannot be read instead of implying all accounts are covered", async () => {
+		mocks.getGap
+			.mockResolvedValueOnce({ success: false, error: "Unavailable" })
+			.mockResolvedValueOnce({ success: true, data: { uncovered: 1 } });
+		mount();
+		expect(await screen.findByRole("alert")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		expect(await screen.findByRole("link", { name: "Show these expenses" })).toBeTruthy();
+	});
 
 	it("counts the uncovered expenses and links to them in the finance queue", async () => {
 		mocks.getGap.mockResolvedValue({ success: true, data: { uncovered: 3 } });

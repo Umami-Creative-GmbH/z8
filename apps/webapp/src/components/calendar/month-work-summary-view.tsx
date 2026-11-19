@@ -21,7 +21,6 @@ import type {
 	DailyWorkHoursStatus,
 	DailyWorkHoursSummaries,
 } from "@/lib/calendar/types";
-import { formatSignedMinutes, formatTimeHours } from "@/lib/calendar/work-hours-summary";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
 import type { ViewMode } from "./schedule-x-calendar";
@@ -57,12 +56,14 @@ function getShortWeekdayFormatter(locale: string) {
 	return formatter;
 }
 
+/** Month cells are small: they keep the compact clock style, "8:00". */
 function formatHoursWithoutSuffix(minutes: number): string {
-	return formatTimeHours(minutes).replace(/h$/, "");
+	const safeMinutes = Math.max(0, Math.round(minutes));
+	return `${Math.floor(safeMinutes / 60)}:${String(safeMinutes % 60).padStart(2, "0")}`;
 }
 
 function formatSignedMinutesWithoutSuffix(minutes: number): string {
-	return formatSignedMinutes(minutes).replace(/h$/, "");
+	return `${minutes >= 0 ? "+" : "-"}${formatHoursWithoutSuffix(Math.abs(minutes))}`;
 }
 
 function getWeekdayNames(locale: string, weekStartDay: WeekStartDay): string[] {

@@ -1,0 +1,7 @@
+{
+  "checks": [],
+  "errors": [],
+  "limits": [
+    "Core pointer organization-switch attempt timed out; retained harness-failure.png. This run exercises trusted keyboard switch without changing UI owners."
+  ]
+}

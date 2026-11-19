@@ -86,6 +86,15 @@ describe("PayrollReadinessDashboard", () => {
 		expect(screen.getByRole("heading", { name: "Pending approvals", level: 2 })).toBeTruthy();
 	});
 
+	it("prefers the locale-formatted period label from the page", async () => {
+		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
+
+		render(<PayrollReadinessDashboard t={t} data={readyData} periodLabel="March 2026" />);
+
+		expect(screen.getByText("March 2026")).toBeTruthy();
+		expect(screen.queryByText("01 Mar 2026 - 31 Mar 2026")).toBeNull();
+	});
+
 	it("renders a payroll export link", async () => {
 		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
 

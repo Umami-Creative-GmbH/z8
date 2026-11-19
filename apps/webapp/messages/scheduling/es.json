@@ -6,9 +6,13 @@
       "gapCount": "{count} falta de personal",
       "gaps": "brechas",
       "hideOverlay": "Ocultar superposición de cobertura",
+      "lastLoaded": "Última cobertura cargada",
+      "loading": "Cargando cobertura…",
       "metSlots": "{count} adecuado",
       "overSlots": "{count} exceso de personal",
       "overstaffed": "Exceso de personal",
+      "readFailed": "No se pudo cargar la cobertura. Reintenta para comprobar la dotación de personal.",
+      "refreshing": "Actualizando cobertura…",
       "showOverlay": "Mostrar superposición de objetivos de cobertura",
       "summary": "Resumen de cobertura:",
       "toggleLabel": "Cobertura",
@@ -27,7 +31,7 @@
     "page": {
       "employeeScheduleDescription": "Tus turnos publicados, semana a semana",
       "employeeTitle": "Mi horario",
-      "managerDescription": "Gestione y planifique los turnos de los empleados",
+      "planningDescription": "Planifica y publica turnos. Los turnos planificados no registran tiempo de trabajo.",
       "title": "Programación de turnos"
     },
     "publish": {
@@ -37,6 +41,10 @@
       "cancel": "Cancelar",
       "complianceAcknowledgmentRequired": "Confirmación de cumplimiento requerida",
       "complianceWarnings": "{count, plural, one {Las comprobaciones de cumplimiento detectaron # advertencia; deberá confirmarla antes de publicar.} other {Las comprobaciones de cumplimiento detectaron # advertencias; deberá confirmarlas antes de publicar.}}",
+      "coverageLoading": "La cobertura se está cargando",
+      "coverageRulesCheckedOnPublish": "Al publicar se aplicarán las reglas de personal actuales.",
+      "coverageUnavailable": "La cobertura no está disponible",
+      "coverageUnloaded": "No se ha comprobado la cobertura",
       "coverageWarning": "Algunos bloques de tiempo no cumplen con los requisitos mínimos de personal.",
       "maxHours": "Horas máx.: {count}",
       "notifyEmployees": "{count, plural, one {Publicar # turno en borrador y notificar a los empleados} other {Publicar # turnos en borrador y notificar a los empleados}}",
@@ -47,6 +55,7 @@
       "warningsDetectedBeforePublish": "Advertencias detectadas antes de publicar"
     },
     "scheduler": {
+      "assigned": "Asignado",
       "complianceBanner": {
         "findingsDetected": "{count} hallazgo(s) detectado(s) antes de publicar.",
         "maxHours": "Horas máximas: {count}",
@@ -59,18 +68,24 @@
         "employee": "Mostrando turnos de {name}",
         "showAll": "Mostrar todos los turnos"
       },
+      "loadFailed": "No se pudieron actualizar los turnos. Se mantienen los turnos cargados.",
       "loading": "Cargando programación...",
+      "open": "Turno abierto",
       "publish": {
         "failed": "Error al publicar los turnos",
         "published": "Se han publicado {count} turno(s)"
       },
+      "retry": "Reintentar",
+      "shiftList": "Lista de turnos",
       "shiftUpdate": {
         "failed": "Error al actualizar el turno",
         "overlapDescription": "Este turno se solapa con otros {count} turno(s)",
         "overlapWarning": "Turno guardado con advertencia de solapamiento",
         "skillOverrideReasonRequired": "El empleado carece de una habilidad requerida para este día. Abra el turno para indicar un motivo.",
         "updated": "Turno actualizado"
-      }
+      },
+      "supportFailed": "No se pudieron actualizar las plantillas o la información de cumplimiento. Vuelve a comprobarlo antes de publicar.",
+      "templatesUnavailable": "No se pudieron cargar las plantillas de turnos."
     },
     "shiftDetails": {
       "close": "Cerrar",
@@ -195,8 +210,8 @@
       }
     },
     "templates": {
-      "dragHint": "Arrastra una plantilla al calendario para crear un turno",
       "empty": "No hay plantillas disponibles. Crea plantillas en Ajustes para añadir turnos rápidamente.",
+      "selectHint": "Elige una plantilla y luego establece la fecha y la asignación del turno.",
       "title": "Plantillas de turno"
     }
   }

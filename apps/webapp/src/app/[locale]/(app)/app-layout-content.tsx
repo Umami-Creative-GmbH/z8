@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
+import { AppSkipLink } from "@/components/app-skip-link";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OfflineBanner } from "@/components/offline";
@@ -48,9 +49,7 @@ const billingCheckFailedAccess: BillingAccessResult = {
 };
 
 /** Billing runs on the shared runtime; it is imported only once billing is enabled. */
-async function checkBillingAccess(
-	organizationId: string,
-): Promise<BillingAccessResult> {
+async function checkBillingAccess(organizationId: string): Promise<BillingAccessResult> {
 	const { BillingEnforcementService, BillingServicesLive } = await import(
 		"@/lib/effect/services/billing"
 	);
@@ -68,7 +67,7 @@ interface AuthenticatedAppContentProps {
 
 function SiteHeaderLoading() {
 	return (
-		<header className="box-content flex h-(--header-height) shrink-0 items-center border-b bg-white dark:bg-background px-4 pt-[env(safe-area-inset-top)] lg:px-6">
+		<header className="box-content flex h-(--header-height) shrink-0 items-center border-b bg-card px-4 pt-[env(safe-area-inset-top)] lg:px-6">
 			<Skeleton className="h-5 w-40" />
 			<div className="ml-auto flex items-center gap-2">
 				<Skeleton className="size-8 rounded-md" />
@@ -99,8 +98,7 @@ async function requireAppSession(
 			`/mfa?organizationId=${encodeURIComponent(mfaChallenge.organizationId)}`,
 		);
 	if ("ssoRequired" in session && session.ssoRequired === true) {
-		const callbackUrl =
-			headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+		const callbackUrl = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 		const query = new URLSearchParams({ callbackUrl });
 		const organizationId = session.session?.activeOrganizationId;
 		if (organizationId) query.set("organizationId", organizationId);
@@ -109,10 +107,7 @@ async function requireAppSession(
 	return session;
 }
 
-export async function AuthenticatedAppContent({
-	children,
-	params,
-}: AuthenticatedAppContentProps) {
+export async function AuthenticatedAppContent({ children, params }: AuthenticatedAppContentProps) {
 	// Auth database instrumentation uses random trace IDs and must run per request.
 	await connection();
 	// Centralized auth check protects all routes in the (app) group.
@@ -129,27 +124,18 @@ export async function AuthenticatedAppContent({
 		getRenderUserPreferences(session.user.id),
 		getRenderOrganizationDisplayContext(),
 	]);
-	const {
-		locale: dbLocale,
-		weekStartDay,
-		timeFormat,
-		timezone,
-		helpImproveProduct,
-	} = preferences;
+	const { locale: dbLocale, weekStartDay, timeFormat, timezone, helpImproveProduct } = preferences;
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL - redirect
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
 		const newPath = pathname.replace(`/${locale}`, `/${dbLocale}`);
-		redirect(newPath);
+		const search = headersList.get(DOMAIN_HEADERS.SEARCH) || "";
+		redirect(`${newPath}${search}`);
 	}
 
 	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
-	const {
-		billingAccess,
-		trialDaysRemaining,
-		canManageBilling,
-		showTrialBanner,
-	} = await loadAppBillingStatus(activeOrganizationId);
+	const { billingAccess, trialDaysRemaining, canManageBilling, showTrialBanner } =
+		await loadAppBillingStatus(activeOrganizationId);
 	const isBillingRecoveryPath =
 		pathname === `/${locale}/settings/billing` ||
 		pathname.startsWith(`/${locale}/settings/billing/`) ||
@@ -176,13 +162,15 @@ export async function AuthenticatedAppContent({
 						<SidebarProvider
 							style={
 								{
-									"--sidebar-width": "calc(var(--spacing) * 72)",
-									"--header-height": "calc(var(--spacing) * 12)",
+									"--sidebar-width": "16rem",
+									"--sidebar-width-icon": "3.5rem",
+									"--header-height": "4rem",
 								} as React.CSSProperties
 							}
 						>
+							<AppSkipLink />
 							<ServerSidebarRegion
-								variant="inset"
+								variant="sidebar"
 								showWorksCouncilNav={Boolean(activeOrganizationId)}
 							/>
 							<SidebarInset>
@@ -208,6 +196,8 @@ export async function AuthenticatedAppContent({
 								{/* Keeps the end of each page above the home indicator when drawn edge to edge, and above the get-the-app banner while it shows (#847). */}
 								<div
 									className={`flex flex-1 flex-col min-h-0 overflow-y-auto ${appBannerScrollPaddingClassName}`}
+									id="app-page-content"
+									tabIndex={-1}
 								>
 									{children}
 								</div>
@@ -248,9 +238,7 @@ function AppTrialBanner({
 	);
 }
 
-async function loadAppBillingStatus(
-	activeOrganizationId: string | null | undefined,
-) {
+async function loadAppBillingStatus(activeOrganizationId: string | null | undefined) {
 	const billingEnabled = env.BILLING_ENABLED === "true";
 	const billingAccess =
 		activeOrganizationId && billingEnabled
@@ -274,16 +262,13 @@ async function loadAppBillingStatus(
 			: [null, null];
 
 	const trialDaysRemaining =
-		typeof billingAccess.daysRemaining === "number" &&
-		billingAccess.daysRemaining > 0
+		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
 			? billingAccess.daysRemaining
 			: null;
 	const membershipRole = membershipRecord?.role;
-	const canManageBilling =
-		membershipRole === "owner" || membershipRole === "admin";
+	const canManageBilling = membershipRole === "owner" || membershipRole === "admin";
 	const hasPreparedTrialSubscription =
-		subscriptionRow?.status === "trialing" &&
-		Boolean(subscriptionRow?.stripeSubscriptionId);
+		subscriptionRow?.status === "trialing" && Boolean(subscriptionRow?.stripeSubscriptionId);
 	const showTrialBanner =
 		billingAccess.state === "trialing" &&
 		trialDaysRemaining !== null &&

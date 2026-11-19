@@ -1,0 +1,40 @@
+{
+  "selections": [
+    {
+      "name": "exact",
+      "files": 25,
+      "cases": 198,
+      "passed": 198,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 0,
+      "overlapCases": 0
+    },
+    {
+      "name": "compatibility",
+      "files": 50,
+      "cases": 386,
+      "passed": 386,
+      "failed": 0,
+      "skipped": 0,
+      "overlapFiles": 16,
+      "overlapCases": 166
+    }
+  ],
+  "uniqueFiles": 59,
+  "uniqueCases": 418,
+  "workerSelectionSubset": {
+    "files": 24,
+    "cases": 191
+  },
+  "rootCorrectionAddition": {
+    "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/organization-mfa/verification-lifetime.test.tsx",
+    "cases": 6
+  },
+  "documentsHeadingAddition": {
+    "fullName": "route metadata adopts the personal documents heading without officer descendants",
+    "cases": 1
+  },
+  "method": "File path plus fullName multisets; parameterized test multiplicity retained. Every repeated file fullName multiset must match exactly. Repeated tests do not add coverage.",
+  "inheritedComparison": "Worker24/191 passing subset retained; same exact filters now25/198 include root MFA lifetime6 cases plus documents heading1. Commit diff confirms these are the only changed unit files vs worker baseline. PostgreSQL10/118 and all runtime/native/Next are inherited and not added to fresh unit counts."
+}

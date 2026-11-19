@@ -265,7 +265,7 @@ describe("TravelExpenseClaimHandler", () => {
 						);
 						return {
 							returning: testState.insertReturning,
-							// biome-ignore lint/suspicious/noThenProperty: Drizzle's insert builder is intentionally awaitable
+							// oxlint-disable-next-line unicorn/no-thenable -- Drizzle's insert builder is intentionally awaitable
 							then: result.then.bind(result),
 						};
 					}),

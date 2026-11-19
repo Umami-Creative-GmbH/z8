@@ -1,0 +1,69 @@
+{
+  "identity": {
+    "head": "5f54631fd969e79a2a8655a060b0ff747daf2d28",
+    "branch": "fix/1718-equipment-panel",
+    "override": null,
+    "hashes": {
+      "apps/webapp/src/components/equipment/equipment-assignment-detail.tsx": "4554940be313de4b1eaeff09e0f19015eb7462c38638746b9e182beb2ec2d587",
+      "apps/webapp/src/components/equipment/equipment-loading.tsx": "4500b564074e4a95a00870581a19e1c7e3e225d7195f5f37544ef435b74f34c6",
+      "apps/webapp/src/lib/navigation/route-metadata.ts": "6fefe7e2366b8820027dbc1e8853bfff925f281fc633edce0cb6083ae60464b6",
+      "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx": "b6e15bade1407edb1266f6f97da0bac1a350d438274d3131782ac7d108815b0d"
+    }
+  },
+  "observation": {
+    "scope": "synthetic small-admin / Performance small / EQ-HELD",
+    "url": "/en/equipment/assignments/1632e9f1-9b63-421e-bb6e-0b0f2fc1520a",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "documentWidth": 390,
+    "dark": true,
+    "font": "22.5px",
+    "sidebar": "false",
+    "headings": [
+      "EQ-HELD"
+    ],
+    "record": "Back to equipment\nFixture Person 2\nPhysically received\nEQ-HELD\n\nFixture laptops · Serial SERIAL-EQ-HELD\n\nAs of Nov 15, 2026 (Europe/Berlin)\n\nIssued quantity\n1\nPhysically received quantity\n1\nOutstanding quantity\n0\nAgreed return terms\nReturn required\nEffective return deadline\nNov 1, 2026\nExplicit return deadline\nNov 1, 2026\nLatest recorded condition\nDamaged\n\nReturn fulfilled. Damaged receipt requires separate clearance before reissue; see current item availability.\n\nCorrect a record\nHandover history\n\nPhysical receipt\nAmended\n\nNov 14, 2026\n\nQuantity: 1 · Damaged\n\nR020 corrected evidence; damage remains\n\nRecorded by Person 0 · Nov 15, 2026, 8:19 AM Europe/Berlin\n\nIssuance\n\nOct 1, 2026\n\nQuantity: 1 · Good\n\nSynthetic baseline holding\n\nRecorded by Removed account · Nov 15, 2026, 8:09 AM Europe/Berlin\n\nOriginal records and amendments\n1 amendment\nRecord retention\nRetained\n\nClosed personal history follows the organization’s configured retention policy.\n\nLatest activity\nNov 15, 2026, 8:41 AM\nEligible for cleanup from\nNov 16, 2028, 12:00 AM\nCase hold\nNone\n\nEurope/Berlin\n\nCase hold history\nPlace case hold",
+    "holder": {
+      "x": 81.5625,
+      "y": 200.6875,
+      "width": 143.2578125,
+      "height": 28.125,
+      "bottom": 228.8125,
+      "right": 224.8203125
+    },
+    "receipt": null,
+    "history": {
+      "x": 57.25,
+      "y": 1322.25,
+      "width": 176.8984375,
+      "height": 22.5,
+      "bottom": 1344.75,
+      "right": 234.1484375
+    },
+    "buttons": [
+      {
+        "text": "",
+        "label": "Reload equipment",
+        "disabled": false
+      },
+      {
+        "text": "Correct a record",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Original records and amendments1 amendment",
+        "label": null,
+        "disabled": false
+      },
+      {
+        "text": "Place case hold",
+        "label": null,
+        "disabled": false
+      }
+    ],
+    "alerts": []
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "controller": {
+    "exit": 0,
+    "closeObserved": true,
+    "boundary": "Interactive controller catches each command separately; process exit0 does not mean every queued command passed.",
+    "completedCommandAttempts": 14,
+    "failedCommandAttempts": 11
+  },
+  "commands": [
+    {
+      "stage": "001-login-feature.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "002-enable-and-stream.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 45000ms exceeded"
+      },
+      "qualification": "Actual own history query blocked; harness incorrectly inspected LoadingRegion text instead of aria-label; finally rolled back."
+    },
+    {
+      "stage": "003-stream-continuation.mjs",
+      "status": "failed",
+      "error": {
+        "name": "AssertionError",
+        "message": "actual exported route streams safe one-h1 fallback while own history SELECT blocked"
+      },
+      "qualification": "Assertion ran before streamed DOM settled;004 own-lock observation after fonts/stable geometry established safe fallback;005 records accepted condition."
+    },
+    {
+      "stage": "004-stream-observation.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "005-context-recovery.mjs",
+      "status": "failed",
+      "error": {
+        "name": "AssertionError",
+        "message": "new local Retry invokes real organization refetch and re-admits protected children"
+      },
+      "qualification": "Actual error/retry recovered, but header expectation used absent synthetic manifest userId property;007 repeats with scoped employee.user_id and verifies both requests."
+    },
+    {
+      "stage": "006-context-continuation.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "007-context-verified-and-validation.mjs",
+      "status": "failed",
+      "error": {
+        "name": "Error",
+        "message": "Unknown key: \"Control+A\""
+      },
+      "qualification": "Context rerun completed before unsupported Puppeteer Control+A chord stopped validation.008 uses keyboard.down/press/up and completes validation/start."
+    },
+    {
+      "stage": "008-start-transport-pending.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "009-history-recovery-native.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "010-role-denials-grant.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 30000ms exceeded"
+      },
+      "qualification": "Independent manager/restricted denials completed; optional public employee picker pointer attempt did not select its target."
+    },
+    {
+      "stage": "011-role-inspect.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "012-grant-select-target.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "013-grant-target-keyboard.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "014-grant-revoke-held-start.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 45000ms exceeded"
+      },
+      "qualification": "Confirm Enter did not close actual picker;016 unobstructed trusted pointer closed it. No saved grant accepted."
+    },
+    {
+      "stage": "015-grant-safe-inspect.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "016-grant-confirm-native-pointer.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "017-grant-revoke-continuation.mjs",
+      "status": "failed",
+      "error": {
+        "name": "Error",
+        "message": "bounded poll timeout"
+      },
+      "qualification": "Exact saved-grant poll timed out; zero active saved grant later observed. No officer/revoke assertions accepted."
+    },
+    {
+      "stage": "018-grant-save-native-pointer.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 45000ms exceeded"
+      },
+      "qualification": "No enabled Save button was established in bounded attempt. Optional grant/revocation remains unaccepted."
+    },
+    {
+      "stage": "019-role-boundary-current-captures.mjs",
+      "status": "failed",
+      "error": {
+        "name": "AssertionError",
+        "message": "month first Escape closes retained options and returns focus"
+      },
+      "qualification": "Captures/phone drawer single Escape completed; immediate month-close focus assertion preceded settling.020 explicit open/Escape/settled focus succeeds."
+    },
+    {
+      "stage": "020-keyboard-prefs-menu.mjs",
+      "status": "failed",
+      "error": {
+        "name": "AssertionError",
+        "message": "desktop collapsed sidebar survives reload"
+      },
+      "qualification": "Keyboard and collapse/refresh draft completed; immediate reload sidebar state was SSR default.021 waits admitted client/settled state and observes persisted collapse."
+    },
+    {
+      "stage": "021-prefs-settled-menu.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "022-large-theme-capture.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "023-historical-matched-captures.mjs",
+      "status": "failed",
+      "error": {
+        "name": "TimeoutError",
+        "message": "Waiting failed: 45000ms exceeded"
+      },
+      "qualification": "Historical Input predates name attribute;024 uses existing inputmode=numeric and completes comparison."
+    },
+    {
+      "stage": "024-historical-selector-continuation.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    },
+    {
+      "stage": "025-restored-final-runtime.mjs",
+      "status": "complete",
+      "qualification": "Completed as observed; use specific retained observations, not an aggregate product-matrix pass."
+    }
+  ],
+  "setupAttempts": [
+    {
+      "operation": "First canonical pnpm prepare",
+      "exit": 1,
+      "reason": "Sandbox ordinary engine-store lock access denied before any fixture preparation; authorized normal escalation succeeded."
+    },
+    {
+      "operation": "Initial source fingerprint loop",
+      "exit": 1,
+      "reason": "Own per-path Git loop interrupted before snapshot completion; replaced by bounded bulk ls-tree. No source mutation."
+    },
+    {
+      "operation": "node_repl import of current common helper",
+      "toolError": true,
+      "reason": "Sandbox Docker pipe/config access denied; import stopped before browser launch. Same normal owned Docker validation later ran through escalated CLI."
+    },
+    {
+      "operation": "PTY controller launch",
+      "started": false,
+      "reason": "Host CreateProcessW access denied; ordinary pipe mode accepted."
+    },
+    {
+      "operation": "First pipe controller",
+      "exit": 0,
+      "reason": "Host closed stdin; own fresh browser opened and closed with no journeys."
+    },
+    {
+      "operation": "First file-queue parse",
+      "exit": 1,
+      "reason": "Illegal top-level return syntax before execution; corrected labeled break, then actual queue ran."
+    },
+    {
+      "operation": "Three owned Next launch sessions",
+      "exits": [
+        1,
+        1,
+        1
+      ],
+      "reason": "Expected after exact owned Next tree force-stop; each wrapper settled, no listener/tree remains."
+    }
+  ],
+  "priorFailures": "Earlier merger heading blocker and pending-control failed assumption remain in root checks/handoff; this runtime does not erase them.",
+  "noAutomaticReviewPolicyRejectionObserved": true
+}

@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Es wurden noch keine Produktionsdatensätze importiert.",
         "openReview": "Überprüfung öffnen",
-        "scanningDescription": "Überprüfungs-Batch {reviewBatchId} wird gescannt. Überprüfen und genehmigen Sie die Datensätze vor dem Übertragen.",
+        "scanningDescriptionWithoutId": "Der Prüfscan läuft. Prüfen und genehmigen Sie Datensätze, bevor sie importiert werden.",
         "startedTitle": "Import-Überprüfungsscan gestartet",
         "starting": "Starte Clockin-Import-Überprüfungsscan…",
         "startSuccess": "Import-Überprüfungsscan gestartet. Eine Überprüfung ist erforderlich, bevor Datensätze übertragen werden."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Überprüfungs-Batch {batchId} wird gescannt.",
         "description": "Eine Überprüfung ist erforderlich, bevor Clockodo-Datensätze in die Produktion übertragen werden.",
         "openReview": "Überprüfung öffnen",
+        "scanning": "Der Prüfscan läuft. Es werden keine Datensätze importiert, bis Sie sie in der Prüfung akzeptieren.",
         "successTitle": "Import-Überprüfungsscan gestartet"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Anmeldedaten",
         "import": "Überprüfung",
         "preview": "Vorschau",
+        "progressLabel": "Importschritte",
         "projectMapping": "Projektzuweisung",
         "selection": "Auswahl",
         "userMapping": "Benutzerzuordnung"
       },
       "userMapping": {
         "action": "Aktion",
+        "actionFor": "Aktion für {name}",
         "autoMatched": "{count} automatisch zugeordnet",
         "clockodoUser": "Clockodo-Benutzer",
         "continue": "Weiter",
@@ -248,14 +250,21 @@
       "linkError": "Link-Code konnte nicht generiert werden",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Verknüpfungscode kopiert",
+        "codeExpired": "Abgelaufen — neuen Code generieren",
+        "copyCode": "Verknüpfungscode kopieren",
+        "copyFailed": "Der Verknüpfungscode konnte nicht kopiert werden. Markieren Sie ihn und kopieren Sie ihn manuell.",
         "description": "Verknüpfen Sie Ihr Telegram-Konto, um persönliche Benachrichtigungen zu erhalten.",
+        "expiresIn": "{minutes, plural, one {Läuft in # Minute ab} other {Läuft in # Minuten ab}}",
         "generateCode": "Link-Code generieren",
         "instructions": "Senden Sie diesen Befehl an den Bot auf Telegram:",
         "linkedStatus": "Ihr Telegram-Konto ist verknüpft",
+        "regenerateCode": "Neuen Code generieren",
         "title": "Telegram-Konto"
       },
       "notConfigured": "Telegram ist für diese Organisation nicht konfiguriert. Kontaktieren Sie Ihren Administrator.",
       "saved": "Telegram-Einstellungen gespeichert",
+      "saveError": "Telegram-Einstellungen konnten nicht gespeichert werden. Versuchen Sie es erneut.",
       "status": {
         "active": "Aktiv"
       },

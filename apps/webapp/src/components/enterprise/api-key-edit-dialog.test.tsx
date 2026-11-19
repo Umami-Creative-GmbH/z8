@@ -75,8 +75,7 @@ function renderControlledDialog(selectedApiKey: ApiKeyResponse = apiKey) {
 
 	return {
 		onOpenChange,
-		rerenderWithApiKey: (nextApiKey: ApiKeyResponse) =>
-			view.rerender(renderComponent(nextApiKey)),
+		rerenderWithApiKey: (nextApiKey: ApiKeyResponse) => view.rerender(renderComponent(nextApiKey)),
 	};
 }
 
@@ -127,38 +126,24 @@ async function renderPendingDialog() {
 describe("ApiKeyEditDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.translate.mockImplementation(
-			(_key: string, fallback: string) => fallback,
-		);
+		mocks.translate.mockImplementation((_key: string, fallback: string) => fallback);
 		vi.mocked(updateApiKey).mockResolvedValue({ success: true });
 	});
 
 	it("uses the selected API key values as its initial values", () => {
 		renderDialog();
 
-		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty(
-			"value",
-			"Production API",
+		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty("value", "Production API");
+		expect(screen.getByRole("switch", { name: "Key Enabled" }).getAttribute("aria-checked")).toBe(
+			"false",
 		);
 		expect(
-			screen
-				.getByRole("switch", { name: "Key Enabled" })
-				.getAttribute("aria-checked"),
-		).toBe("false");
-		expect(
-			screen
-				.getByRole("checkbox", { name: "Read time entries" })
-				.getAttribute("aria-checked"),
+			screen.getByRole("checkbox", { name: "Read time entries" }).getAttribute("aria-checked"),
 		).toBe("true");
 		expect(
-			screen
-				.getByRole("checkbox", { name: "Read employees" })
-				.getAttribute("aria-checked"),
+			screen.getByRole("checkbox", { name: "Read employees" }).getAttribute("aria-checked"),
 		).toBe("true");
-		expect(screen.getByLabelText("Max requests")).toHaveProperty(
-			"value",
-			"250",
-		);
+		expect(screen.getByLabelText("Max requests")).toHaveProperty("value", "250");
 	});
 
 	it("restores the selected API key values after closing and reopening", async () => {
@@ -172,14 +157,9 @@ describe("ApiKeyEditDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Close" }));
 		await user.click(await screen.findByRole("button", { name: "Reopen" }));
 
-		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty(
-			"value",
-			"Production API",
-		);
+		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty("value", "Production API");
 		expect(
-			screen
-				.getByRole("checkbox", { name: "Read employees" })
-				.getAttribute("aria-checked"),
+			screen.getByRole("checkbox", { name: "Read employees" }).getAttribute("aria-checked"),
 		).toBe("true");
 	});
 
@@ -194,14 +174,9 @@ describe("ApiKeyEditDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Cancel" }));
 		await user.click(await screen.findByRole("button", { name: "Reopen" }));
 
-		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty(
-			"value",
-			"Production API",
-		);
+		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty("value", "Production API");
 		expect(
-			screen
-				.getByRole("checkbox", { name: "Read employees" })
-				.getAttribute("aria-checked"),
+			screen.getByRole("checkbox", { name: "Read employees" }).getAttribute("aria-checked"),
 		).toBe("true");
 	});
 
@@ -219,30 +194,18 @@ describe("ApiKeyEditDialog", () => {
 
 		rerenderWithApiKey(replacementApiKey);
 
-		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty(
-			"value",
-			"Reporting API",
-		);
+		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty("value", "Reporting API");
 		expect(screen.getByText("z8_org_reports")).toBeTruthy();
+		expect(screen.getByRole("switch", { name: "Key Enabled" }).getAttribute("aria-checked")).toBe(
+			"true",
+		);
 		expect(
-			screen
-				.getByRole("switch", { name: "Key Enabled" })
-				.getAttribute("aria-checked"),
-		).toBe("true");
-		expect(
-			screen
-				.getByRole("checkbox", { name: "Read time entries" })
-				.getAttribute("aria-checked"),
+			screen.getByRole("checkbox", { name: "Read time entries" }).getAttribute("aria-checked"),
 		).toBe("false");
 		expect(
-			screen
-				.getByRole("checkbox", { name: "Read customers" })
-				.getAttribute("aria-checked"),
+			screen.getByRole("checkbox", { name: "Read customers" }).getAttribute("aria-checked"),
 		).toBe("true");
-		expect(screen.getByLabelText("Max requests")).toHaveProperty(
-			"value",
-			"900",
-		);
+		expect(screen.getByLabelText("Max requests")).toHaveProperty("value", "900");
 	});
 
 	it("requires a three-character name and at least one permission", async () => {
@@ -252,22 +215,14 @@ describe("ApiKeyEditDialog", () => {
 		const name = screen.getByRole("textbox", { name: /Name/ });
 		await user.clear(name);
 		await user.type(name, "ab");
-		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-			"disabled",
-			true,
-		);
+		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", true);
 
 		await user.type(name, "c");
-		await user.click(
-			screen.getByRole("checkbox", { name: "Read time entries" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Read time entries" }));
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
 
 		expect(screen.getByText("Select at least one permission")).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-			"disabled",
-			true,
-		);
+		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", true);
 	});
 
 	it("rejects a whitespace-only name", async () => {
@@ -278,13 +233,8 @@ describe("ApiKeyEditDialog", () => {
 		await user.clear(name);
 		await user.type(name, "   ");
 
-		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-			"disabled",
-			true,
-		);
-		expect(screen.getByRole("alert").textContent).toBe(
-			"Name must be at least 3 characters",
-		);
+		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", true);
+		expect(screen.getByRole("alert").textContent).toBe("Name must be at least 3 characters");
 		expect(updateApiKey).not.toHaveBeenCalled();
 	});
 
@@ -297,10 +247,7 @@ describe("ApiKeyEditDialog", () => {
 		});
 
 		await waitFor(() =>
-			expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-				"disabled",
-				true,
-			),
+			expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", true),
 		);
 		expect(updateApiKey).not.toHaveBeenCalled();
 	});
@@ -309,9 +256,7 @@ describe("ApiKeyEditDialog", () => {
 		const user = userEvent.setup();
 		renderDialog();
 
-		await user.click(
-			screen.getByRole("checkbox", { name: "Read time entries" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Read time entries" }));
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
 
 		const group = screen.getByRole("group", { name: /Permissions/ });
@@ -330,14 +275,10 @@ describe("ApiKeyEditDialog", () => {
 		);
 		renderDialog();
 
-		await user.click(
-			screen.getByRole("checkbox", { name: "Read time entries" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Read time entries" }));
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
 
-		expect(screen.getByRole("alert").textContent).toBe(
-			"Mindestens eine Berechtigung auswählen",
-		);
+		expect(screen.getByRole("alert").textContent).toBe("Mindestens eine Berechtigung auswählen");
 		expect(mocks.translate).toHaveBeenCalledWith(
 			"settings.apiKeys.form.scopesRequired",
 			"Select at least one permission",
@@ -348,8 +289,7 @@ describe("ApiKeyEditDialog", () => {
 		const user = userEvent.setup();
 		mocks.translate.mockImplementation((key: string, fallback: string) => {
 			if (key === "settings.apiKeys.form.nameMin") return "Name ist zu kurz";
-			if (key === "settings.apiKeys.form.rateLimitRequired")
-				return "Anfragelimit ist erforderlich";
+			if (key === "settings.apiKeys.form.rateLimitRequired") return "Anfragelimit ist erforderlich";
 			return fallback;
 		});
 		renderDialog();
@@ -383,11 +323,7 @@ describe("ApiKeyEditDialog", () => {
 		["empty", "", "Rate limit is required"],
 		["fractional", "10.5", "Rate limit must be a whole number"],
 		["below the minimum", "9", "Rate limit must be at least 10 requests"],
-		[
-			"above the maximum",
-			"10001",
-			"Rate limit must be at most 10,000 requests",
-		],
+		["above the maximum", "10001", "Rate limit must be at most 10,000 requests"],
 	])("rejects a %s rate limit", async (_case, value, message) => {
 		const user = userEvent.setup();
 		renderDialog();
@@ -399,10 +335,7 @@ describe("ApiKeyEditDialog", () => {
 
 		expect(screen.getByRole("alert").textContent).toBe(message);
 		expect(rateLimit.getAttribute("aria-invalid")).toBe("true");
-		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-			"disabled",
-			true,
-		);
+		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", true);
 		expect(updateApiKey).not.toHaveBeenCalled();
 	});
 
@@ -412,13 +345,8 @@ describe("ApiKeyEditDialog", () => {
 		const rateLimit = screen.getByLabelText("Max requests");
 
 		await user.clear(rateLimit);
-		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-			"disabled",
-			true,
-		);
-		await user.click(
-			screen.getByRole("checkbox", { name: "Enable rate limiting" }),
-		);
+		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", true);
+		await user.click(screen.getByRole("checkbox", { name: "Enable rate limiting" }));
 		await user.click(screen.getByRole("button", { name: "Save" }));
 
 		await waitFor(() =>
@@ -444,9 +372,7 @@ describe("ApiKeyEditDialog", () => {
 		await user.click(screen.getByRole("switch", { name: "Key Enabled" }));
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
 		await user.click(screen.getByRole("checkbox", { name: "Read customers" }));
-		await user.click(
-			screen.getByRole("checkbox", { name: "Enable rate limiting" }),
-		);
+		await user.click(screen.getByRole("checkbox", { name: "Enable rate limiting" }));
 		await user.click(screen.getByRole("button", { name: "Save" }));
 
 		await waitFor(() =>
@@ -474,10 +400,7 @@ describe("ApiKeyEditDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Save" }));
 
 		await waitFor(() =>
-			expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-				"disabled",
-				true,
-			),
+			expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", true),
 		);
 		expect(document.querySelector(".animate-spin")).toBeTruthy();
 
@@ -487,10 +410,7 @@ describe("ApiKeyEditDialog", () => {
 	it("disables Cancel and hides the close control while updating", async () => {
 		const { resolveUpdate } = await renderPendingDialog();
 
-		expect(screen.getByRole("button", { name: "Cancel" })).toHaveProperty(
-			"disabled",
-			true,
-		);
+		expect(screen.getByRole("button", { name: "Cancel" })).toHaveProperty("disabled", true);
 		expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
 		expect(screen.getByRole("dialog")).toBeTruthy();
 
@@ -509,9 +429,7 @@ describe("ApiKeyEditDialog", () => {
 
 	it("ignores outside interaction while updating", async () => {
 		const { onOpenChange, resolveUpdate, user } = await renderPendingDialog();
-		const overlay = document.querySelector<HTMLElement>(
-			'[data-slot="sheet-overlay"]',
-		);
+		const overlay = document.querySelector<HTMLElement>('[data-slot="sheet-overlay"]');
 		expect(overlay).toBeTruthy();
 
 		await user.click(overlay as HTMLElement);
@@ -534,14 +452,10 @@ describe("ApiKeyEditDialog", () => {
 		rerenderWithApiKey(replacementApiKey);
 		resolveUpdate?.({ success: true });
 
-		await waitFor(() =>
-			expect(mocks.toastSuccess).toHaveBeenCalledWith("API key updated"),
-		);
+		await act(async () => {});
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(onOpenChange).not.toHaveBeenCalled();
-		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty(
-			"value",
-			"Reporting API",
-		);
+		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty("value", "Reporting API");
 	});
 
 	it("isolates an old completion when replacement commits before passive effects", async () => {
@@ -584,14 +498,10 @@ describe("ApiKeyEditDialog", () => {
 		await waitFor(() => expect(updateApiKey).toHaveBeenCalledTimes(1));
 		act(() => replaceSelectedKey?.());
 
-		await waitFor(() =>
-			expect(mocks.toastSuccess).toHaveBeenCalledWith("API key updated"),
-		);
+		await act(async () => {});
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(onOpenChange).not.toHaveBeenCalled();
-		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty(
-			"value",
-			"Reporting API",
-		);
+		expect(screen.getByRole("textbox", { name: /Name/ })).toHaveProperty("value", "Reporting API");
 	});
 
 	it("shows the update error and re-enables save", async () => {
@@ -604,13 +514,11 @@ describe("ApiKeyEditDialog", () => {
 
 		await user.click(screen.getByRole("button", { name: "Save" }));
 
-		await waitFor(() =>
-			expect(mocks.toastError).toHaveBeenCalledWith("Update denied"),
+		expect(await screen.findByRole("alert")).toHaveProperty(
+			"textContent",
+			"Something went wrong. Try again.",
 		);
-		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
-			"disabled",
-			false,
-		);
+		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", false);
 		expect(screen.getByRole("dialog")).toBeTruthy();
 	});
 });

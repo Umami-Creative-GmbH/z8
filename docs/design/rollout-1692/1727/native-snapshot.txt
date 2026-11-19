@@ -1,0 +1,5 @@
+- region "Notifications alt+T" [ref=e1]
+- button "Open Next.js Dev Tools" [expanded=false, ref=e5]
+- heading "Stay Updated" [level=2, ref=e2]
+- button "Enable Notifications" [ref=e3]
+- button "Not Now" [ref=e4]

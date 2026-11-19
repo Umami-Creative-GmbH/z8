@@ -88,7 +88,10 @@ export function OrganizationAutoClockOutCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("organization.autoClockOut.title", "Automatic clock-out")}</CardTitle>
+				{/* The tab already shows this name; keep it as the panel's heading for assistive tech only. */}
+				<CardTitle as="h2" className="sr-only">
+					{t("organization.autoClockOut.title", "Automatic clock-out")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"organization.autoClockOut.description",
@@ -157,6 +160,8 @@ export function OrganizationAutoClockOutCard({
 												>
 													<Input
 														type="number"
+														inputMode="numeric"
+														className="tabular-nums"
 														min={0}
 														step={1}
 														value={field.state.value}
@@ -178,6 +183,8 @@ export function OrganizationAutoClockOutCard({
 												>
 													<Input
 														type="number"
+														inputMode="numeric"
+														className="tabular-nums"
 														min={0}
 														max={59}
 														step={1}

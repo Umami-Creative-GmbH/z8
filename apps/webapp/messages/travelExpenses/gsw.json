@@ -96,21 +96,27 @@
       "rejectTitle": "Aaspruch ablehne"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Aktuelli Organisation und aagstellti Person wärded bestätigt…",
       "created": "Erstellt",
       "decisionRecorded": "Entscheidung erfasst",
       "destination": "Reiseziel",
       "history": "Entscheidungsverlauf",
       "historyDescription": "Jede Schritt vo dere Abrechnig, die älteschte zerscht. Ziite wärded in UTC aazeigt.",
       "intermediateApproval": "Genehmigung erfasst – wartet auf weitere Genehmigung",
+      "legacyClaim": "Alte Aaspruch",
       "legacyReceiptIdentity": "Altsystem-Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
       "loading": "Abrechnung wird geladen …",
       "noReceipts": "Keine Belege erfasst",
       "notRecorded": "Nicht erfasst",
       "originalAmount": "Ursprünglicher Betrag",
       "receipts": "Belege",
+      "receiptVersion": "Erfassti Version",
       "refreshing": "Abrechnung wird aktualisiert …",
+      "scopeUnavailable": "Dä Aaspruch aktualisiere, zum Ihre aktuell Zuegriff z bestätige.",
       "submitted": "Eingereicht",
       "title": "Spesenabrechnung",
+      "unavailable": "Aaspruch nid gfunde oder Zuegriff isch nüme verfüegbar.",
       "unknownDates": "Reisedatumskontext nicht erfasst (Altabrechnung)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "{name} auswählen",
         "selectAll": "Alle Spesen auf dieser Seite auswählen, die auf Rückerstattung warten",
         "selected": "{count} ausgewählt",
+        "selectionChanged": "Ei oder meh usgwählti Spese händ sich gänderet. Dä Dialog schliesse und die aktuelle Spese prüefe, bevor e wiiteri Zahlig gstartet wird.",
         "skipped": "Nicht enthalten ({count})",
         "submit": "{count} als zurückerstattet markieren",
         "title": "Als zurückerstattet markieren"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Kein aktiver Spesenverantwortlicher, der Rückerstattungen erfassen kann, hat diese im Zuständigkeitsbereich. Eigentümer und Admins können sie weiterhin erfassen oder den Zuständigkeitsbereich eines Verantwortlichen erweitern.",
         "empty": "Ein Spesenverantwortlicher deckt jede genehmigte Spese ab, die auf Rückerstattung wartet.",
+        "failed": "D Deckig hät nid chönne prüeft wärde. Bitte nomal probiere.",
         "queueFilter": "Genehmigte Spesen, die auf Rückerstattung warten und die kein Spesenverantwortlicher abdeckt.",
         "show": "Diese Spesen anzeigen",
         "showAll": "Alle genehmigten Spesen anzeigen",
@@ -237,6 +245,7 @@
           "none": "Kein Mitarbeiter gefunden.",
           "search": "Mitarbeitendi sueche…"
         },
+        "failed": "D Filteroptione händ nid chönne glade wärde. Bitte nomal probiere.",
         "label": "Spese aazeige",
         "notExported": "Nonig exportiert",
         "open": "Offe",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Diese Lohnläufe enthalten Spesenabrechnungen, die auf Rückerstattung warten. Sobald die Lohnbuchhaltung einen Lauf bezahlt hat, bestätigen Sie ihn, um die Rückerstattungen zu erfassen.",
+        "failed": "D Lohnabrechnigsbestätigunge händ nid chönne glade wärde. Bitte nomal probiere.",
         "reports": "{count, plural, one {# Spesenabrechnung für Sie zu bestätigen, {amount}} other {# Spesenabrechnungen für Sie zu bestätigen, {amount}}}",
         "title": "Lohnläufe, die auf Bestätigung warten"
       },
       "queue": {
         "description": "Öffne e Spese, zum d Abrechnig z gseh und e Rückerstattig z erfasse.",
+        "failed": "D Finanz-Warteschlange hät nid chönne glade wärde. Bitte nomal probiere.",
         "title": "Bewilligti Spese"
+      },
+      "scope": {
+        "failed": "Ihre aktuell Finanzzuegriff hät nid chönne bestätigt wärde. Bitte nomal probiere.",
+        "loading": "Finanzzuegriff wird bestätigt…"
       },
       "title": "Spesefinanze"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Kilometerstand ohni Titel"
     },
     "legacyDraft": {
+      "checking": "Entwurfsfortsetzig wird prüeft…",
       "continue": "Als Bricht wiitermache",
       "converted": "Du hesch dä Entwurf als Spesebricht wiitergfüehrt. Dä Aatrag bliibt da zur Referenz unveränderet stah.",
       "description": "Entwürf usem früenere Aatragsformular werdet jetzt als Spesebricht abgschlosse. Dä Betrag, d'Date, d'Notize und d'Beleg werdet übernaa; alles, was s'neue Formular bruucht, wo i däm Entwurf aber nie erfasst worde isch, chasch no ergänze. Dä Aatrag sälber bliibt unveränderet.",
@@ -367,6 +383,7 @@
         "title": "Wiitergfüehrt usemne früenere Aatragsentwurf"
       },
       "openReport": "Bricht öffne",
+      "readRefused": "D Entwurfsfortsetzig isch für die aktuell läsendi Person nid verfüegbar.",
       "receipt": {
         "mismatch": "die gspychereti Datei stimmt nümme mit däm überii, wo ufeeglade worde isch",
         "unreadable": "die gspychereti Datei cha grad nöd gläse werde",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Für diese Ausgabe ist nichts ausstehend.",
         "ownExpense": "Sie können keine Zahlungen für Ihre eigenen Ausgaben erfassen.",
         "referenceRequired": "Gib d Zahligsreferenz ii, z. B. d Referenz vo de Banküberwisig.",
+        "refresh": "De Saldo hät nid chönne aktualisiert wärde. Zvor gladeni Iiträg wärded aazeigt; vor em Erfasse vo nere Zahlig nomal probiere.",
         "refused": "Die Zahlig cha für die Usgab nöd erfasst werde.",
         "staleBalance": "De Saldo hät sich gänderet, während du die Zahlig erfasst häsch. Überprüf de aktualisierti Saldo und erfass si nomol.",
         "tooLong": "Dä Text isch z lang."
@@ -1149,7 +1167,13 @@
     },
     "title": "Reisekosten",
     "workspace": {
-      "description": "Sammle Reise- und Einzelausgabe, schick si zur Überprüfig und verfolg d Rückvergüetig."
+      "create": "E Speseabrechnig erstelle",
+      "description": "Sammle Reise- und Einzelausgabe, schick si zur Überprüfig und verfolg d Rückvergüetig.",
+      "mileageDescription": "E Gschäftsfahrt usserhalb vonere Reis erfasse.",
+      "otherWork": "Prüefe und finanziere",
+      "receiptDescription": "Erfass ei Uusgab mit em Beleg.",
+      "reconciling": "Dini Uusgabe für di aktuell Organisation werded glade…",
+      "tripDescription": "Sammle Uusgabe mit gmeinsame Reisedetails."
     }
   }
 }

@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Zatwierdź",
       "approveLabel": "Zatwierdź {title}",
+      "decided": "Decyzja została zapisana. Odśwież, aby załadować bieżącą kolejkę.",
       "description": "Wnioski oczekujące na decyzję menedżera.",
       "empty": "Brak oczekujących zatwierdzeń.",
       "openInbox": "Otwórz skrzynkę odbiorczą",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Oczekujące zatwierdzenia",
       "reject": "Odrzuć",
       "rejectLabel": "Odrzuć {title}",
+      "retry": "Ponów próby zatwierdzenia",
       "title": "Zatwierdzenia",
       "toast": {
         "approved": "Wniosek zatwierdzony",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Dzisiaj",
-      "description": "Przejrzyj elementy wymagające dzisiaj działania, a następnie przejdź bezpośrednio do odpowiedniego przepływu pracy.",
+      "accessUnavailable": "Ten briefing jest niedostępny dla bieżącego pracownika i organizacji.",
+      "contextFailed": "Nie udało się sprawdzić bieżącego dostępu. Spróbuj ponownie.",
+      "drivingUnavailable": "Nie udało się sprawdzić szczegółów przejazdu.",
+      "incomplete": "Niektóre kontrole są niedostępne. Przejrzyj błędy w sekcji; te wyniki są niekompletne.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Okresy pracy Twoich pracowników, w których brakuje pojazdu lub stanu licznika.",
           "title": "Brakujące szczegóły przejazdu ({count})"
         }
       },
+      "loadFailed": "Nie udało się załadować briefingu. Spróbuj ponownie.",
       "needsAction": {
         "description": "Zacznij tutaj, aby uzyskać najpilniejsze działania operacyjne.",
-        "empty": "Wszystko w porządku. W tej chwili nie jest wymagane żadne działanie menedżera.",
+        "noExceptions": "W tej migawce nie wykryto działań operacyjnych. Nie potwierdza to obecności pracownika.",
         "title": "Wymaga działania"
       },
+      "partial": "Częściowy",
+      "refreshFailed": "Nie udało się odświeżyć. Wyświetlane są poprzednie wyniki; spróbuj ponownie przed podjęciem działań.",
+      "refreshing": "Odświeżanie briefingu. Poprzednie wyniki pozostają widoczne.",
+      "retainedSection": "Wyświetlono poprzednie wyniki. Ponów próbę, aby sprawdzić zmiany.",
+      "retry": "Ponów ładowanie briefingu",
+      "retrySection": "Ponów: {title}",
+      "scope": "Działania operacyjne dotyczące pracowników, których możesz nadzorować w aktywnej organizacji.",
       "sections": {
         "empty": "Nie wykryto żadnych problemów."
       },
@@ -41,10 +53,11 @@
         "info": "Informacje",
         "warning": "Ostrzeżenie"
       },
+      "snapshot": "Migawka zaktualizowana o {time}. Użyj opcji Odśwież dane, aby sprawdzić zmiany.",
       "summaryAriaLabel": "Podsumowanie dnia",
       "supportingSectionsAriaLabel": "Sekcje pomocnicze",
       "title": "Codzienny briefing menedżera",
-      "updatedAt": "{date} - Zaktualizowano {time}"
+      "unavailable": "Niedostępne"
     }
   }
 }

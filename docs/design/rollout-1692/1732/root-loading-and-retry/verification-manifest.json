@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "state": "SEALED_PUBLIC",
+  "candidate": "571ef1fd32c720a62a838787f5f6f293d0e9da97",
+  "rootCorrection": "72b34589cb1d2fbc32a186b42b05758b22ff39ee",
+  "rootCorrectionIntegration": "25a23e58c0ca84e87ece89e8ac633b0a951bbb11",
+  "verifiedIntegrationCommit": "Root will record the actual integration commit in its ledger after publication; no future SHA invented.",
+  "counts": {
+    "unitCases": 440,
+    "unitPhysicalFiles": 62,
+    "unitDisjointGroups": [
+      {
+        "cases": 408,
+        "files": 58
+      },
+      {
+        "cases": 32,
+        "files": 4
+      }
+    ],
+    "freshPostgresCases": 20,
+    "freshPostgresPhysicalFiles": 1,
+    "distinctCaseInstances": 460,
+    "distinctPhysicalFiles": 63,
+    "browserObservationsAdditive": false,
+    "focusedAndEarlierMergerRunsAdditive": false
+  },
+  "quality": {
+    "typeProjects": 3,
+    "nextTypegen": true,
+    "rootExplicitCrlfFiles": 3,
+    "rootExplicitCrlfExit": 0,
+    "allLintFiles": 10,
+    "allLintExit": 0,
+    "allFormatExit": 1,
+    "existingFormattingFileBoundaries": 6,
+    "doctorFiles": 10,
+    "doctorErrors": 0,
+    "doctorReviewedWarnings": 2,
+    "doctorRawExcluded": true,
+    "doctorClone": "static/doctor.sanitized.log"
+  },
+  "runtime": {
+    "allowlistedFiles": 74,
+    "hashEntries": 73,
+    "fullyDecodedPngs": 19,
+    "scriptsSyntaxOnly": 33,
+    "powershellSyntaxOnly": 1,
+    "matchedPartialApplicationPairs": 3,
+    "completedCommandAttempts": 14,
+    "failedCommandAttempts": 11,
+    "officerGrantRevocationAccepted": false,
+    "liveAllABAAndRscFreshnessAccepted": false,
+    "ownedResourcesRemaining": 0
+  },
+  "sourceChecksHistoricalPending": "static/checks.json remains byte-identical; its runtime-pending wording is superseded only by the specific runtime/verification-manifest.json acceptance and limits.",
+  "sourceIntermediateStages": "Root red/green working stages were not separately committed or hash-sealed; no intermediate pin invented.",
+  "publicationDoesNotAdvanceReadiness": true,
+  "allOriginalReportBytesPreserved": true,
+  "unpassed": [
+    "Fresh saved officer grant/revocation",
+    "Actual all-ABA account/org/role/Activity and RSC freshness matrices",
+    "Full production/static generation and catalog/Tolgee synchronization",
+    "Provider/delivery/payment calls",
+    "Physical devices/store wrapper and true browser zoom",
+    "Broad four-path global guard and exhaustive role/feature/loading matrices",
+    "Existing six full-file formatting boundaries"
+  ],
+  "preservationBoundary": "Runtime public/preservation.json attests all 55 VERIFIED ancestors, 5822 prior proof paths, root1731 173 paths and root1730 201 paths preserved. Publication writes only this new proof and appends the report; no independent prior-proof or process rerun claimed."
+}

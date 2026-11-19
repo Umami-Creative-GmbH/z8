@@ -1,0 +1,87 @@
+{
+  "initialPublicPriorityRun": {
+    "resultFile": "public-contract-result.json",
+    "physicalFiles": 1,
+    "fullnameOccurrences": 7,
+    "passed": 6,
+    "failed": 1,
+    "entries": [
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "01 initial context failure plus independent read failure stays unknown; local Retry and header recover their actual owners",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "02 canonical five outcomes, clipped calendar ranges, same-scope DOM retention, pending/coalesced header and local refresh",
+        "occurrence": 2,
+        "status": "passed"
+      },
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "03 cadence-disabled all and managed guidance and healthy no-employee state remain distinct",
+        "occurrence": 3,
+        "status": "passed"
+      },
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "04 URL period selection invalidates queued old period responses",
+        "occurrence": 4,
+        "status": "passed"
+      },
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "05 retained pending session and account/org ABA suppress old success/refusal/rejection; Activity reactivation reads fresh",
+        "occurrence": 5,
+        "status": "passed"
+      },
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "06 narrower server access envelope drops wider records and authoritative refusal clears all destinations",
+        "occurrence": 6,
+        "status": "passed"
+      },
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "07 canonical display employee/role arrival invalidates a queued wider read before new server authorization",
+        "occurrence": 7,
+        "status": "failed"
+      }
+    ]
+  },
+  "focusedHeaderBlockerRun": {
+    "resultFile": "minimal-header-confirmed.json",
+    "physicalFiles": 1,
+    "fullnameOccurrences": 3,
+    "passed": 2,
+    "failed": 1,
+    "entries": [
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "control: unchanged employee and role accepts its current queued read",
+        "occurrence": 1,
+        "status": "passed"
+      },
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "control: changed canonical server scope replaces the workspace and refuses the old queued read",
+        "occurrence": 2,
+        "status": "passed"
+      },
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-43ae2b20-e06668fa9f9f50e6/apps/webapp/src/app/[locale]/(app)/team/period-submissions/merger-public-contract.test.tsx",
+        "fullname": "blocker: changed employee and role from actual provider still accepts wider queued success",
+        "occurrence": 3,
+        "status": "failed"
+      }
+    ]
+  },
+  "aggregation": "No cumulative sum across these harness revisions, reruns, controls or the same blocker. Names containing multiple scenarios count as one Vitest assertion occurrence. No describe-count totals.",
+  "excludedAttempts": [
+    "minimal-arrival-initial-result.json: harness missed wait for React notification; not a product verdict",
+    "minimal-arrival-confirmed.json: repeated blocker with direct QueryClient invalidation; replaced by stronger real Header Refresh reproduction"
+  ],
+  "selectedRouteUnits": "Not run after first-critical stop. Worker 126/13 is inherited, not fresh candidate evidence; metadata count reconciliation unperformed.",
+  "postgres": "Not run. Worker 35/6 is inherited, not fresh candidate evidence."
+}

@@ -1,0 +1,1 @@
+Fixture prepare sandbox attempt failed before launch: ERR_PNPM_STORE_DIR_OPEN_OPERATION_LOCK at normal C: engine lock (access denied). No installation. Retained as failed attempt.

@@ -3,6 +3,7 @@
     "approvals": {
       "approve": "Genehmigen",
       "approveLabel": "{title} genehmigen",
+      "decided": "Entscheidung gespeichert. Aktualisieren Sie die Ansicht, um die aktuelle Warteschlange zu laden.",
       "description": "Anfragen, die auf eine Entscheidung des Managers warten.",
       "empty": "Es warten keine Genehmigungen.",
       "openInbox": "Posteingang öffnen",
@@ -10,6 +11,7 @@
       "pendingAriaLabel": "Ausstehende Genehmigungen",
       "reject": "Ablehnen",
       "rejectLabel": "{title} ablehnen",
+      "retry": "Genehmigungen erneut versuchen",
       "title": "Genehmigungen",
       "toast": {
         "approved": "Anfrage genehmigt",
@@ -19,19 +21,29 @@
       }
     },
     "briefing": {
-      "badge": "Heute",
-      "description": "Überprüfen Sie die Elemente, die heute Aufmerksamkeit erfordern, und wechseln Sie dann direkt in den richtigen Workflow.",
+      "accessUnavailable": "Dieses Briefing ist für den aktuellen Mitarbeiter und die aktuelle Organisation nicht verfügbar.",
+      "contextFailed": "Ihr aktueller Zugriff konnte nicht überprüft werden. Versuchen Sie es erneut.",
+      "drivingUnavailable": "Fahrtdetails konnten nicht überprüft werden.",
+      "incomplete": "Einige Prüfungen sind nicht verfügbar. Überprüfen Sie die Abschnittsfehler; diese Ergebnisse sind unvollständig.",
       "items": {
         "drivingDetailsMissing": {
           "description": "Arbeitszeiträume Ihrer Mitarbeiter ohne Fahrzeug oder Kilometerstand.",
           "title": "Fahrtdetails fehlen ({count})"
         }
       },
+      "loadFailed": "Das Briefing konnte nicht geladen werden. Versuchen Sie es erneut.",
       "needsAction": {
         "description": "Starten Sie hier für die dringendsten operativen Nachverfolgungen.",
-        "empty": "Alles in Ordnung. Derzeit ist kein Eingreifen des Managers erforderlich.",
+        "noExceptions": "In dieser Momentaufnahme wurden keine betrieblichen Nachverfolgungen erkannt. Dies bestätigt nicht die Anwesenheit der Mitarbeiter.",
         "title": "Erfordert Handeln"
       },
+      "partial": "Teilweise",
+      "refreshFailed": "Aktualisierung fehlgeschlagen. Vorherige Ergebnisse werden angezeigt; versuchen Sie es erneut, bevor Sie handeln.",
+      "refreshing": "Briefing wird aktualisiert. Vorherige Ergebnisse bleiben sichtbar.",
+      "retainedSection": "Vorherige Ergebnisse werden angezeigt. Versuchen Sie es erneut, um nach Änderungen zu suchen.",
+      "retry": "Briefing erneut versuchen",
+      "retrySection": "{title} erneut versuchen",
+      "scope": "Betriebliche Nachverfolgung für die Mitarbeiter, die Sie in der aktiven Organisation beaufsichtigen dürfen.",
       "sections": {
         "empty": "Keine Probleme erkannt."
       },
@@ -41,10 +53,11 @@
         "info": "Info",
         "warning": "Warnung"
       },
+      "snapshot": "Momentaufnahme aktualisiert {time}. Verwenden Sie „Daten aktualisieren“, um nach Änderungen zu suchen.",
       "summaryAriaLabel": "Zusammenfassung für heute",
       "supportingSectionsAriaLabel": "Unterstützende Abschnitte",
       "title": "Tägliches Briefing für Manager",
-      "updatedAt": "{date} - Aktualisiert um {time}"
+      "unavailable": "Nicht verfügbar"
     }
   }
 }

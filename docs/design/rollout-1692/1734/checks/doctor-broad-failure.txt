@@ -1,0 +1,11 @@
+Scanning changes: feat/1734-sick-leave-overview → origin/dev
+
+  
+
+Something went wrong. Please check the error below for more details.
+If the problem persists, please open this prefilled issue: https://github.com/millionco/react-doctor/issues/new?title=CLI+error%3A+spawn+UNKNOWN&labels=bug&body=%23%23+Error%0A%0A%60%60%60text%0Aspawn+UNKNOWN%0A%60%60%60%0A%0A%23%23+Runtime%0A%0A-+react-doctor+version%3A+0.9.22%0A-+node%3A+v26.9.0%0A-+platform%3A+win32+x64%0A-+cwd%3A+X%3A%5Ct3-code%5Cworktrees%5Cz8%5Ct3-9b0f468b-151f714db384cc36%0A-+command%3A+C%3A%5CUsers%5CKaiHentschel%5CAppData%5CRoaming%5Cfnm%5Caliases%5Cdefault%5Cnode.exe+X%3A%5Ct3-code%5Cworktrees%5Cz8%5Ct3-9b0f468b-151f714db384cc36%5Cnode_modules%5Creact-doctor%5Cbin%5Creact-doctor.js+apps%2Fwebapp+--verbose+--scope+changed%0A-+Sentry+reference%3A+745231d866d04aacbf59577bc9cd1dbb%0A%0A%23%23+OpenTelemetry%0A%0A-+REACT_DOCTOR_OTLP_ENDPOINT+configured%3A+no%0A-+REACT_DOCTOR_OTLP_AUTH_HEADER+configured%3A+no+%28value+redacted%29%0A-+OTLP+exporter+enabled%3A+no%0A-+trace%2Fspan+link%2C+if+exported%3A+%0A%0A%23%23+Notes%0A%0APlease+add+reproduction+steps+and+any+relevant+repository+details.
+You can also ask for help in Discord: https://react.doctor/discord
+Reference (mention this when reporting): 745231d866d04aacbf59577bc9cd1dbb
+
+spawn UNKNOWN
+

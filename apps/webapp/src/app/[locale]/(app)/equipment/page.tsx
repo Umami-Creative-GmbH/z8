@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EquipmentRefreshButton } from "@/components/equipment/equipment-header-actions";
 import { parseEquipmentListQuery } from "@/components/equipment/equipment-list-state";
 import { EquipmentLoading } from "@/components/equipment/equipment-loading";
+import { EquipmentOverviewHeader } from "@/components/equipment/equipment-overview-header";
 import { EquipmentOverview } from "@/components/equipment/equipment-workspace";
 import { getEquipmentOverview } from "@/lib/organization/equipment/actions";
 import { getTranslate } from "@/tolgee/server";
@@ -26,24 +28,27 @@ async function EquipmentContent({
 	]);
 	if (!result.success && result.code === "AuthorizationError") notFound();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			{result.success ? (
 				<EquipmentOverview
 					data={result.data}
 					query={parseEquipmentListQuery(query)}
 				/>
 			) : (
-				<div className="space-y-2 px-4 lg:px-6">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.equipment.title", "Equipment")}
-					</h1>
-					<p role="alert" className="text-sm text-destructive">
-						{t(
-							"settings.equipment.overview.failed",
-							"Equipment could not be loaded. Reload the page to try again.",
-						)}
-					</p>
-				</div>
+				<>
+					<EquipmentOverviewHeader />
+					<div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-5">
+						<p role="alert" className="text-sm text-destructive">
+							{t(
+								"settings.equipment.overview.failed",
+								"Equipment could not be loaded. Reload the page to try again.",
+							)}
+						</p>
+						<EquipmentRefreshButton>
+							{t("settings.equipment.custody.reload", "Reload equipment")}
+						</EquipmentRefreshButton>
+					</div>
+				</>
 			)}
 		</div>
 	);

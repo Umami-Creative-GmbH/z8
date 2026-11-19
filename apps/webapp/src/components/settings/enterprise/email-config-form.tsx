@@ -25,13 +25,15 @@ import {
 	saveEmailConfig,
 	testEmailConfig,
 } from "@/app/[locale]/(app)/settings/enterprise/email/actions";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
-	CardDescription,
 	CardFooter,
 	CardHeader,
 	CardTitle,
@@ -51,11 +53,7 @@ interface EmailConfigFormProps {
 	secretStoreStatus: SecretStoreStatus;
 }
 
-function SecretStoreStatusAlert({
-	secretStoreStatus,
-}: {
-	secretStoreStatus: SecretStoreStatus;
-}) {
+function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: SecretStoreStatus }) {
 	const { t } = useTranslate();
 
 	if (secretStoreStatus.provider === "scaleway") {
@@ -139,9 +137,7 @@ function SecretStoreStatusAlert({
 		return (
 			<Alert variant="destructive" className="mb-4">
 				<IconAlertTriangle className="size-4" aria-hidden="true" />
-				<AlertTitle>
-					{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}
-				</AlertTitle>
+				<AlertTitle>{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}</AlertTitle>
 				<AlertDescription>
 					{t(
 						"settings.enterprise.email.vaultSealedDesc",
@@ -155,9 +151,7 @@ function SecretStoreStatusAlert({
 	return (
 		<Alert className="mb-4">
 			<IconShield className="size-4" aria-hidden="true" />
-			<AlertTitle>
-				{t("settings.enterprise.email.vaultConnected", "Vault Connected")}
-			</AlertTitle>
+			<AlertTitle>{t("settings.enterprise.email.vaultConnected", "Vault Connected")}</AlertTitle>
 			<AlertDescription>
 				{t(
 					"settings.enterprise.email.vaultConnectedDesc",
@@ -249,38 +243,38 @@ function useEmailConfigController({
 		setIsTesting(false);
 	};
 
-	const handleDelete = async () => {
-		if (
-			!confirm(
-				t(
-					"settings.enterprise.email.deleteConfirm",
-					"Are you sure you want to delete this email configuration?",
-				),
-			)
-		) {
-			return;
-		}
+	// The deletion stays open until it settles and keeps a failure visible inline.
+	const deletion = useConfirmedAction<"configuration">();
 
-		startTransition(async () => {
-			const result = await deleteEmailConfig();
-			if (result.success) {
-				toast.success(
-					t("settings.enterprise.email.deleted", "Email configuration deleted"),
-				);
-			} else {
-				toast.error(
-					actionErrorMessage(t, result, {}, ["settings.enterprise.email.deleteFailed", "Failed to delete"]),
-				);
-			}
-		});
-	};
+	const handleDelete = () =>
+		void deletion.confirm(
+			async () => {
+				const result = await deleteEmailConfig();
+				if (!result.success) {
+					throw new Error(
+						actionErrorMessage(t, result, {}, [
+							"settings.enterprise.email.deleteFailed",
+							"Failed to delete",
+						]),
+					);
+				}
+				toast.success(t("settings.enterprise.email.deleted", "Email configuration deleted"));
+			},
+			(failure) =>
+				describeFailure(failure, t("settings.enterprise.email.deleteFailed", "Failed to delete")),
+		);
 
 	return {
 		form,
+		deletion,
 		handleDelete,
 		handleTest,
 		initialConfig,
 		isPending,
+		setDeleteDialogOpen: (open: boolean) => {
+			if (open) deletion.request("configuration");
+			else deletion.onOpenChange(false);
+		},
 		isTesting,
 		locale,
 		secretStoreStatus,
@@ -303,12 +297,13 @@ function ProviderFieldsSection({
 	return (
 		<>
 			<div className="space-y-3">
-				<Label>
+				<Label id="email-transport-type-label">
 					{t("settings.enterprise.email.transportType", "Email Provider")}
 				</Label>
 				<form.Field name="transportType">
 					{(field) => (
 						<RadioGroup
+							aria-labelledby="email-transport-type-label"
 							value={field.state.value}
 							onValueChange={(value) =>
 								field.handleChange(value as "resend" | "smtp")
@@ -321,7 +316,7 @@ function ProviderFieldsSection({
 									htmlFor="resend"
 									className="flex items-center gap-2 cursor-pointer"
 								>
-									<IconSend className="size-4" />
+									<IconSend className="size-4" aria-hidden="true" />
 									Resend
 									<Badge variant="secondary" className="text-xs">
 										{t("settings.enterprise.email.recommended", "Recommended")}
@@ -334,7 +329,7 @@ function ProviderFieldsSection({
 									htmlFor="smtp"
 									className="flex items-center gap-2 cursor-pointer"
 								>
-									<IconServer className="size-4" />
+									<IconServer className="size-4" aria-hidden="true" />
 									{t("settings.enterprise.email.smtpServer", "SMTP Server")}
 								</Label>
 							</div>
@@ -435,11 +430,7 @@ function ProviderFieldsSection({
 	);
 }
 
-function SmtpConfigurationSection({
-	controller,
-}: {
-	controller: EmailConfigController;
-}) {
+function SmtpConfigurationSection({ controller }: { controller: EmailConfigController }) {
 	const { form, initialConfig, t } = controller;
 
 	return (
@@ -545,8 +536,7 @@ function SmtpConfigurationSection({
 								{(field) => (
 									<div className="space-y-2">
 										<Label htmlFor="smtpUsername">
-											{t("settings.enterprise.email.smtpUsername", "Username")}{" "}
-											*
+											{t("settings.enterprise.email.smtpUsername", "Username")} *
 										</Label>
 										<Input
 											id="smtpUsername"
@@ -640,11 +630,7 @@ function SmtpConfigurationSection({
 	);
 }
 
-function EmailStatusSection({
-	controller,
-}: {
-	controller: EmailConfigController;
-}) {
+function EmailStatusSection({ controller }: { controller: EmailConfigController }) {
 	const {
 		form,
 		handleTest,
@@ -680,21 +666,22 @@ function EmailStatusSection({
 			</form.Field>
 			{initialConfig?.lastTestAt && (
 				<div className="rounded-lg border p-4 space-y-2">
-					<h4 className="font-medium">
-						{t("settings.enterprise.email.lastTest", "Last Test")}
-					</h4>
-					<div className="flex items-center gap-2 text-sm">
+					<h4 className="font-medium">{t("settings.enterprise.email.lastTest", "Last Test")}</h4>
+					<div className="flex flex-wrap items-center gap-2 text-sm">
 						{initialConfig.lastTestSuccess ? (
 							<>
-								<IconCircleCheck className="size-4 text-green-500" />
-								<span className="text-green-600">
+								<IconCircleCheck
+									className="size-4 text-success"
+									aria-hidden="true"
+								/>
+								<span className="text-success">
 									{t("settings.enterprise.email.testSuccess", "Success")}
 								</span>
 							</>
 						) : (
 							<>
-								<IconCircleX className="size-4 text-red-500" />
-								<span className="text-red-600">
+								<IconCircleX className="size-4 text-destructive" aria-hidden="true" />
+								<span className="text-destructive">
 									{t("settings.enterprise.email.testFailure", "Failed")}
 								</span>
 							</>
@@ -707,9 +694,7 @@ function EmailStatusSection({
 						</span>
 					</div>
 					{initialConfig.lastTestError && (
-						<p className="text-sm text-red-600">
-							{initialConfig.lastTestError}
-						</p>
+						<p className="break-words text-sm text-destructive">{initialConfig.lastTestError}</p>
 					)}
 				</div>
 			)}
@@ -717,19 +702,20 @@ function EmailStatusSection({
 				<>
 					<Separator />
 					<div className="space-y-3">
-						<Label>
+						<Label htmlFor="testEmail">
 							{t(
 								"settings.enterprise.email.testSection",
 								"Send Test Email",
 							)}
 						</Label>
-						<div className="flex gap-2">
+						<div className="flex flex-col gap-2 sm:flex-row">
 							<Input
+								id="testEmail"
 								type="email"
 								placeholder="test@example.com"
 								value={testEmail}
 								onChange={(e) => setTestEmail(e.target.value)}
-								className="flex-1"
+								className="min-w-0 flex-1"
 							/>
 							<Button
 								type="button"
@@ -738,9 +724,9 @@ function EmailStatusSection({
 								disabled={isTesting || !testEmail}
 							>
 								{isTesting ? (
-									<IconLoader2 className="size-4 animate-spin" />
+									<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 								) : (
-									<IconSend className="size-4 mr-2" />
+									<IconSend className="size-4" aria-hidden="true" />
 								)}
 								{t("settings.enterprise.email.sendTest", "Send Test")}
 							</Button>
@@ -757,18 +743,18 @@ function EmailConfigFooter({
 }: {
 	controller: EmailConfigController;
 }) {
-	const { form, handleDelete, initialConfig, isPending, t } = controller;
+	const { form, initialConfig, isPending, setDeleteDialogOpen, t } = controller;
 
 	return (
-		<CardFooter className="flex justify-between">
+		<CardFooter className="flex flex-wrap justify-between gap-2">
 			{initialConfig && (
 				<Button
 					type="button"
 					variant="destructive"
-					onClick={handleDelete}
+					onClick={() => setDeleteDialogOpen(true)}
 					disabled={isPending}
 				>
-					<IconTrash className="size-4 mr-2" />
+					<IconTrash className="size-4" aria-hidden="true" />
 					{t("settings.enterprise.email.delete", "Delete Configuration")}
 				</Button>
 			)}
@@ -784,7 +770,7 @@ function EmailConfigFooter({
 						}
 					>
 						{(isPending || isSubmitting) && (
-							<IconLoader2 className="size-4 mr-2 animate-spin" />
+							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 						)}
 						{initialConfig
 							? t("settings.enterprise.email.save", "Save Changes")
@@ -799,34 +785,45 @@ function EmailConfigFooter({
 export function EmailConfigForm(props: EmailConfigFormProps) {
 	const controller = useEmailConfigController(props);
 
+	// The page heading already carries the delivery description; the card only names its section.
 	return (
-		<form action={() => controller.form.handleSubmit()}>
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<IconMail className="size-5" />
-						{controller.t(
-							"settings.enterprise.email.title",
-							"Email Configuration",
-						)}
-					</CardTitle>
-					<CardDescription>
-						{controller.t(
-							"settings.enterprise.email.description",
-							"Configure a custom email provider for your organization. All organization emails (notifications, auth, invitations) will use this configuration.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-6">
-					<SecretStoreStatusAlert
-						secretStoreStatus={controller.secretStoreStatus}
-					/>
-					<ProviderFieldsSection controller={controller} />
-					<SmtpConfigurationSection controller={controller} />
-					<EmailStatusSection controller={controller} />
-				</CardContent>
-				<EmailConfigFooter controller={controller} />
-			</Card>
-		</form>
+		<>
+			<form action={() => controller.form.handleSubmit()}>
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<IconMail className="size-5" aria-hidden="true" />
+							{controller.t(
+								"settings.enterprise.email.title",
+								"Email Configuration",
+							)}
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						<SecretStoreStatusAlert
+							secretStoreStatus={controller.secretStoreStatus}
+						/>
+						<ProviderFieldsSection controller={controller} />
+						<SmtpConfigurationSection controller={controller} />
+						<EmailStatusSection controller={controller} />
+					</CardContent>
+					<EmailConfigFooter controller={controller} />
+				</Card>
+			</form>
+			<DeleteConfirmDialog
+				open={controller.deletion.open}
+				onOpenChange={controller.deletion.onOpenChange}
+				title={controller.t("settings.enterprise.email.deleteTitle", "Delete email configuration?")}
+				description={controller.t(
+					"settings.enterprise.email.deleteConfirmNamed",
+					"Delete the email configuration for {fromEmail}? Organization emails will use the system default sender again.",
+					{ fromEmail: controller.initialConfig?.fromEmail ?? "" },
+				)}
+				confirmLabel={controller.t("settings.enterprise.email.delete", "Delete Configuration")}
+				isDeleting={controller.deletion.isPending}
+				error={controller.deletion.error}
+				onConfirm={controller.handleDelete}
+			/>
+		</>
 	);
 }

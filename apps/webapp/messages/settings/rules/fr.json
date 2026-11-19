@@ -23,6 +23,7 @@
       },
       "deleteDescription": "Êtes-vous sûr de vouloir supprimer \"{name}\" ? Les catégories utilisées par des absences existantes ne peuvent pas être supprimées et doivent être désactivées à la place.",
       "deleteFailed": "Impossible de supprimer la catégorie",
+      "deleteInUse": "Cette catégorie est toujours utilisée. Désactivez-la plutôt, ou supprimez d'abord ce qui en dépend.",
       "deleteTitle": "Supprimer la catégorie d'absence",
       "drawsOnWorkBalance": "Déduit du solde de travail",
       "editCategory": "Modifier \"{name}\"",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "Aucune déduction",
       "reactivate": "Réactiver",
       "saveFailed": "Impossible d'enregistrer la catégorie d'absence",
+      "saveInUse": "Cette catégorie est utilisée par des absences existantes. Créez une nouvelle catégorie pour d'autres règles, ou désactivez celle-ci.",
       "searchPlaceholder": "Rechercher des catégories…",
       "statusUpdateFailed": "Impossible de mettre à jour le statut de la catégorie",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Mettre à jour la catégorie"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Absence",
+        "absenceChange": "Modification d'absence",
+        "complianceException": "Exception de conformité",
+        "manualTimeSubmission": "Soumission manuelle du temps",
+        "periodSubmission": "Soumission de période",
+        "policyClockOut": "Dépointage selon la politique",
+        "shiftRequest": "Demande de quart",
+        "timeCorrection": "Correction de temps",
+        "travelExpense": "Frais de déplacement"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Remise",
+          "retirement": "Mise à jour du message",
+          "transfer": "Transfert"
+        },
+        "outcome": {
+          "ambiguous": "Résultat inconnu",
+          "delivered": "Remis",
+          "deliveredAfterPurge": "Remis après nettoyage",
+          "destinationInvalid": "Destination invalide",
+          "gone": "Le message n'est plus disponible",
+          "notCovering": "Le message n'est plus d'actualité",
+          "permanent": "Échec permanent",
+          "retryable": "Échec temporaire",
+          "unavailable": "Canal indisponible"
+        }
+      },
       "attention": {
         "alertedAt": "Administrateurs alertés le {date}",
         "approvalType": "Approbation",
@@ -116,6 +147,18 @@
         "recheck": "Revérifier",
         "resolved": "Résolu",
         "retryDelivery": "Réessayer la distribution",
+        "technical": {
+          "approvalRequestId": "ID de demande d'approbation",
+          "approvalType": "Code de type d'approbation",
+          "assignmentId": "ID d'affectation",
+          "attemptReference": "Référence de tentative",
+          "attentionId": "ID d'élément nécessitant attention",
+          "copied": "{label} copié",
+          "copy": "Copier {label}",
+          "copyFailed": "Impossible de copier la valeur. Sélectionnez-la et copiez-la manuellement.",
+          "title": "Détails techniques",
+          "workflowId": "ID du flux de travail"
+        },
         "title": "Attention requise",
         "transfer": "Transférer…",
         "unknownApprover": "Non enregistré"
@@ -155,6 +198,22 @@
         "disposed": "Traité",
         "raised": "Déclenché",
         "resolved": "Résolu"
+      },
+      "evidence": {
+        "actionableAt": "Actionnable depuis",
+        "actionableEvidence": "Actionnable depuis (source)",
+        "attemptCount": "Tentatives effectuées",
+        "cause": "Cause",
+        "code": "Code d'erreur",
+        "deadline": "Échéance",
+        "effect": "Action du message",
+        "error": "Erreur",
+        "outcome": "Résultat",
+        "policyRevision": "Révision de la politique",
+        "reason": "Code de motif",
+        "recovered": "Récupéré par",
+        "route": "Chemin de décision",
+        "workId": "Tâche de distribution"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Impossible de charger les paramètres d'escalade.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Modifié par",
+        "empty": "Aucune modification de politique n'a encore été enregistrée.",
         "migration": "Migration des paramètres",
         "policy": "Politique",
         "revision": "Révision",
@@ -217,8 +277,10 @@
       },
       "title": "Escalade de l'approbation",
       "toast": {
+        "conflict": "Cela a changé entre-temps. Rechargez pour voir l'état actuel.",
         "deliveryRetried": "Nouvelle tentative de distribution planifiée",
         "disposed": "Élément nécessitant une attention fermé",
+        "notFound": "Cet élément n'existe plus. Rechargez pour voir l'état actuel.",
         "rechecked": "{checked} éléments vérifiés, {resolved} résolus",
         "requestFailed": "La requête a échoué. Réessayez.",
         "reviewed": "Conflits marqués comme examinés",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Types d'approbation",
       "approver": "Approbateur",
-      "approverEmployeeId": "Identifiant employé de l'approbateur",
-      "approverEmployeeIdPlaceholder": "Exemple : employee_123…",
+      "approverEmployee": "Employé approbateur",
       "approverType": {
         "directManager": "Responsable direct",
         "managerManager": "Responsable du responsable",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Nombre de conditions",
       "createPolicy": "Créer une politique d'approbation",
+      "createPolicySubmit": "Créer une politique",
+      "deactivateConfirm": {
+        "confirm": "Désactiver",
+        "description": "Les nouvelles demandes ne correspondront plus à cette politique et seront acheminées selon la prochaine politique active correspondante ou le circuit d'approbation par défaut. Vous pouvez la réactiver en la modifiant.",
+        "title": "Désactiver « {name} » ?"
+      },
+      "deactivatePolicyNamed": "Désactiver {name}",
       "defaultStageLabel": "Examen par le manager",
       "description": "Configurer des chaînes d'approbation séquentielles pour les flux de travail opérationnels",
       "descriptionPlaceholder": "Exemple : Escalade les flux de travail sensibles vers les opérations…",
       "dialogDescription": "Définissez quand une chaîne d'approbation s'applique et quels approbateurs gèrent chaque étape séquentielle.",
-      "editPolicy": "Modifier la politique",
+      "editPolicyNamed": "Modifier {name}",
+      "editPolicyTitle": "Modifier la politique d'approbation",
       "empty": "Aucune politique d'approbation configurée pour le moment. Créez une politique pour définir votre première chaîne d'approbation.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Administrateur de l'organisation"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, one {Cette politique correspond également à # ancien type d'approbation qui ne peut pas être sélectionné ici. L'enregistrement {count, plural, one {le laisse inchangé} other {les laisse inchangés}}.} other {Cette politique correspond également à # anciens types d'approbation qui ne peuvent pas être sélectionnés ici. L'enregistrement {count, plural, one {le laisse inchangé} other {les laisse inchangés}}.}}",
       "loadFailed": "Les politiques d'approbation n'ont pas pu être chargées.",
       "loading": "Chargement des politiques…",
       "namePlaceholder": "Exemple : Escalade d'absence…",
       "noStages": "Aucune étape d'approbation n'a encore été configurée.",
+      "preservedConditions": "{count, plural, one {Cette politique comporte # autre condition qui ne peut pas être modifiée ici. L'enregistrement {count, plural, one {la laisse inchangée} other {les laisse inchangées}}.} other {Cette politique comporte # autres conditions qui ne peuvent pas être modifiées ici. L'enregistrement {count, plural, one {la laisse inchangée} other {les laisse inchangées}}.}}",
       "preview": {
         "ariaLabel": "Aperçu de la chaîne d'approbation",
-        "badge": "Shell d'aperçu",
-        "description": "Voyez comment les demandes correspondantes passeront par chaque étape d'approbation avant d'activer une politique.",
-        "footer": "L'aperçu complet du contexte de la demande résoudra les approbateurs en direct une fois que les conditions de la politique et les groupes d'employés seront connectés à l'éditeur.",
+        "chainDescription": "Façon dont une demande correspondante passe par les étapes configurées ci-dessus.",
+        "chainTitle": "Aperçu de la chaîne d'approbation",
+        "fallback": "Si aucun approbateur n'est trouvé : {fallback}",
+        "loadingEmployee": "Chargement de l'employé…",
+        "noEmployeeSelected": "Aucun employé sélectionné pour le moment",
+        "noStages": "Ajoutez une étape pour voir la chaîne d'approbation.",
         "stage": {
           "approved": "Approuvé",
-          "directManager": "Manager direct",
-          "operationsAdmin": "Administrateur des opérations",
           "requester": "Demandeur"
-        },
-        "title": "Résumé de la chaîne d'aperçu"
+        }
       },
       "priority": "Priorité",
-      "removeStage": "Supprimer l'étape",
+      "removeStageNumber": "Supprimer l'étape {number}",
+      "savePolicySubmit": "Enregistrer la politique",
+      "selectApproverEmployee": "Sélectionner un employé",
       "stageNumber": "Étape {number}",
       "stages": "Étapes d'approbation",
       "stagesCount": "Nombre d'étapes",
@@ -322,14 +395,19 @@
       "title": "Politiques d'approbation",
       "toast": {
         "created": "Politique d'approbation créée",
-        "saveFailed": "La politique d'approbation n'a pas pu être enregistrée."
+        "deactivated": "« {name} » désactivée",
+        "reactivated": "« {name} » est de nouveau active",
+        "saveFailed": "La politique d'approbation n'a pas pu être enregistrée.",
+        "updated": "Politique d'approbation enregistrée"
       },
+      "unknownEmployee": "Employé inconnu ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Les politiques actives nécessitent au moins une étape d'approbation.",
-        "specificEmployeeRequiresId": "Les étapes spécifiques aux employés nécessitent un identifiant d'employé approbateur."
+        "specificEmployeeRequired": "Choisissez l'employé approbateur pour chaque étape dédiée à un employé spécifique."
       }
     },
     "changePolicies": {
+      "actionsFor": "Actions pour {name}",
       "allManagers": "Tous les managers",
       "approvalDaysDescription": "Au-delà du libre-service, les employés peuvent demander des modifications dans cette fenêtre (nécessite une approbation). 0 = aucune fenêtre supplémentaire.",
       "approvalDaysLabel": "Fenêtre d'approbation (jours)",
@@ -363,6 +441,7 @@
       "deleted": "Politique supprimée",
       "deleteDescription": "Êtes-vous sûr de vouloir supprimer cette politique ? Toutes les affectations utilisant cette politique seront également supprimées. Les employés utilisant précédemment cette politique n'auront aucune restriction jusqu'à ce qu'une nouvelle politique soit affectée.",
       "deleteFailed": "Échec de la suppression de la politique",
+      "deleteNamedDescription": "Supprimer la politique de modification « {name} » ? Toutes les attributions utilisant cette politique seront également supprimées. Les employés qui utilisaient précédemment cette politique n'auront aucune restriction jusqu'à ce qu'une nouvelle politique leur soit attribuée.",
       "deleteTitle": "Supprimer la politique de modification",
       "description": "Contrôlez quand les employés peuvent modifier les entrées de temps et exigez l'approbation du responsable",
       "descriptionLabel": "Description",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "La politique par défaut appliquée à tous les employés qui n'ont pas de dérogation d'équipe ou individuelle.",
       "policySummary": "Résumé de la politique :",
       "primaryOnly": "Responsable principal uniquement",
+      "removeAssignmentFor": "Supprimer l'attribution pour {name}",
       "removeAssignmentTitle": "Supprimer l'affectation de la politique ?",
       "removeEmployeeDescription": "Cela supprimera la dérogation pour \"{name}\". Ils utiliseront leur équipe ou la valeur par défaut de l'organisation.",
       "removeOrgDescription": "Cela supprimera la politique par défaut de l'organisation. Les employés n'auront aucune restriction à moins d'avoir une dérogation d'équipe ou individuelle.",
+      "removeOrgNamedDescription": "Cela supprimera « {policy} » en tant que politique par défaut de l'organisation. Les employés n'auront aucune restriction, sauf s'ils disposent d'une dérogation d'équipe ou individuelle.",
       "removeTeamDescription": "Cela supprimera la politique de l'équipe \"{team}\". Ils utiliseront la valeur par défaut de l'organisation.",
       "sameDay": "Jour même uniquement",
       "sameDayFree": "Les modifications le jour même sont gratuites",
@@ -438,6 +519,13 @@
       "description": "Définir les exigences minimales de personnel par emplacement et par heure",
       "editRule": "Modifier la règle de couverture",
       "endTime": "Heure de fin",
+      "errors": {
+        "endNotAfterStart": "L'heure de fin doit être postérieure à l'heure de début le même jour.",
+        "invalidTime": "Saisissez une heure au format 24 heures HH:mm.",
+        "staffCountRange": "Saisissez un nombre entier compris entre 1 et 100.",
+        "subareaRequired": "Sélectionnez une sous-zone."
+      },
+      "loadFailed": "Impossible de charger les règles de couverture.",
       "loading": "Chargement des règles de couverture...",
       "minimumStaffCount": "Nombre minimal de personnel",
       "minimumStaffHint": "Le nombre minimal de personnel requis pendant ce bloc horaire.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Règle de couverture mise à jour",
       "selectSubarea": "Sélectionnez une sous-zone",
       "settingsFailed": "Échec de l'enregistrement des paramètres",
+      "settingsLoadFailed": "Impossible de charger les paramètres de publication.",
       "settingsSaved": "Paramètres enregistrés",
       "startTime": "Heure de début",
       "subarea": "Emplacement / Sous-zone",
@@ -493,6 +582,10 @@
         "colorSelection": "Sélection de la couleur",
         "defaultSubarea": "Sous-zone par défaut",
         "endTime": "Heure de fin",
+        "errors": {
+          "invalidTime": "Saisissez une heure au format 24 heures HH:mm.",
+          "subareaRequired": "Sélectionnez l'une de vos sous-zones."
+        },
         "name": "Nom",
         "namePlaceholder": "ex. : Quart du matin…",
         "noSubarea": "Aucune sous-zone par défaut",
@@ -508,6 +601,7 @@
         "description": "Gérez vos modèles de quarts de travail",
         "title": "Modèles"
       },
+      "loadError": "Les modèles de quarts n'ont pas pu être chargés.",
       "table": {
         "duration": "Durée",
         "name": "Nom",
@@ -544,7 +638,7 @@
       "deleteModel": "Supprimer le modèle de majoration",
       "deleteModelDescription": "Ceci désactivera le modèle et toutes ses assignations. Cette action est irréversible.",
       "deleteModelTitle": "Supprimer le modèle de majoration ?",
-      "deleteOrgAssignmentDescription": "Ceci supprimera le modèle par défaut de l'organisation. Les équipes et les employés sans assignation spécifique n'auront aucun modèle de majoration appliqué.",
+      "deleteOrgAssignmentNamedDescription": "Cela supprimera « {model} » en tant que valeur par défaut de l'organisation. Aucun modèle de majoration ne sera appliqué aux équipes et aux employés sans attribution spécifique.",
       "deleteTeamAssignmentDescription": "Ceci supprimera le modèle de majoration de l'équipe « {team} ». Ils utiliseront le modèle par défaut de l'organisation.",
       "description": "Configurez les majorations de temps pour les heures supplémentaires, le travail de nuit, les week-ends et les jours fériés.",
       "descriptionLabel": "Description",
@@ -605,9 +699,11 @@
           "loadTitle": "Impossible de charger les calculs"
         },
         "filters": {
+          "allEmployees": "Tous les employés",
           "apply": "Appliquer les filtres",
-          "employeeId": "ID employé",
+          "employee": "Employé",
           "endDate": "Date de fin",
+          "showAllEmployees": "Afficher tous les employés",
           "startDate": "Date de début"
         },
         "loading": "Chargement des calculs…",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Affichage des 500 premiers calculs correspondants. Affinez les filtres de date ou d'employé pour préciser les totaux.",
         "summary": {
           "baseHours": "Heures de base",
+          "calculationCount": "{count, plural, one {# calcul} other {# calculs}}",
           "calculations": "Calculs",
           "creditedHours": "Heures de majoration créditées",
           "qualifyingHours": "Heures de majoration admissibles"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Retirer d'abord des ensembles",
       "categories": "Catégories",
       "categoriesDescription": "Créez et gérez des catégories de travail pouvant être partagées entre plusieurs ensembles",
+      "categoriesLoadError": "Les catégories de travail n'ont pas pu être chargées",
       "categoriesTitle": "Catégories de travail",
       "categoryCreated": "Catégorie créée",
       "categoryCreateFailed": "Échec de la création de la catégorie",
@@ -709,6 +807,7 @@
       "categoryInUse": "Impossible de supprimer une catégorie utilisée dans {count} ensemble(s). Retirez-la d'abord de tous les ensembles.",
       "categoryName": "Nom",
       "categoryNamePlaceholder": "ex. : Trajet passif",
+      "categoryNameTaken": "Une catégorie portant ce nom existe déjà.",
       "categoryUpdated": "Catégorie mise à jour",
       "categoryUpdateFailed": "Échec de la mise à jour de la catégorie",
       "chooseColor": "Choisir une couleur",
@@ -722,22 +821,30 @@
       "createSetDescription": "Créez un nouvel ensemble de catégories et sélectionnez les catégories à inclure",
       "defaultSet": "Ensemble de catégories par défaut",
       "deleteAssignmentTitle": "Supprimer l'attribution ?",
+      "deleteCategoryDescription": "La catégorie « {name} » sera définitivement supprimée.",
+      "deleteCategoryNamed": "Supprimer la catégorie {name}",
+      "deleteCategoryTitle": "Supprimer la catégorie ?",
       "deleteEmployeeAssignment": "Ceci supprimera le remplacement pour « {name} ». Ils utiliseront la valeur par défaut de leur équipe ou de l'organisation.",
-      "deleteOrgAssignment": "Ceci supprimera la valeur par défaut de l'organisation. Les employés n'auront pas de catégories de travail disponibles, sauf s'ils sont attribués individuellement.",
+      "deleteOrgAssignmentNamed": "Cela supprimera « {set} » en tant que valeur par défaut de l'organisation. Les employés n'auront aucune catégorie de travail disponible, sauf attribution individuelle.",
       "deleteSetDescription": "Ceci supprimera définitivement l'ensemble de catégories « {name} » et toutes ses catégories. Toutes les attributions utilisant cet ensemble seront également supprimées.",
+      "deleteSetNamed": "Supprimer l'ensemble de catégories {name}",
       "deleteSetTitle": "Supprimer l'ensemble de catégories ?",
       "deleteTeamAssignment": "Ceci supprimera l'ensemble de catégories de l'équipe « {team} ». Ils utiliseront la valeur par défaut de l'organisation.",
       "description": "Définissez des catégories de travail avec des facteurs de temps pour un calcul efficace du temps",
       "descriptionPlaceholder": "Description facultative",
       "editCategory": "Modifier la catégorie",
       "editCategoryDescription": "Mettre à jour les détails de la catégorie",
+      "editCategoryNamed": "Modifier la catégorie {name}",
       "editSet": "Modifier l'ensemble de catégories",
       "editSetDescription": "Mettre à jour les détails de l'ensemble de catégories et gérer ses catégories",
+      "editSetNamed": "Modifier l'ensemble de catégories {name}",
       "employeeLevel": "Remplacements par employé",
       "employeeLevelDescription": "Remplacer les paramètres par défaut de l'équipe ou de l'organisation pour des employés spécifiques",
       "factor": "Facteur",
       "factorExplanation": "Le facteur détermine le temps effectif : 0,5 = 50 % (ex. : trajet passif), 1,0 = 100 % (travail normal), 1,5 = 150 % (heures supplémentaires)",
       "loadError": "Échec du chargement des ensembles de catégories",
+      "moveCategoryDown": "Déplacer {name} vers le bas",
+      "moveCategoryUp": "Déplacer {name} vers le haut",
       "noCategories": "Aucune catégorie pour le moment",
       "noCategoriesAvailable": "Aucune catégorie disponible",
       "noCategoriesHint": "Créez des catégories pour les affecter à des ensembles",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "Aucune équipe disponible.",
       "orgLevel": "Par défaut pour l'organisation",
       "orgLevelDescription": "Ensemble de catégories par défaut appliqué à tous les employés, sauf en cas de remplacement",
+      "removeAssignmentFor": "Supprimer l'attribution pour {name}",
+      "removeCategoryFromSet": "Retirer {name} de l'ensemble",
       "selectCategories": "Sélectionner les catégories",
-      "selectedCategories": "Catégories sélectionnées (faites glisser pour réorganiser)",
+      "selectedCategoriesOrder": "Catégories sélectionnées (utilisez les flèches pour réorganiser)",
       "selectEmployee": "Employé",
       "selectEmployeePlaceholder": "Sélectionner un employé",
       "selectSet": "Ensemble de catégories",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Description facultative pour cet ensemble de catégories",
       "setName": "Nom",
       "setNamePlaceholder": "ex. : Catégories de voyage",
+      "setNameTaken": "Un ensemble de catégories portant ce nom existe déjà.",
       "setUpdated": "Ensemble de catégories mis à jour",
       "setUpdateFailed": "Échec de la mise à jour de l'ensemble de catégories",
       "tab": {

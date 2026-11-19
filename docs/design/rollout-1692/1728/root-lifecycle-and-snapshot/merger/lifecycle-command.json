@@ -1,0 +1,19 @@
+{
+  "args": [
+    "--config.verify-deps-before-run=false",
+    "--dir",
+    "apps/webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/lib/personnel-file/__merge1728-lifecycle.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\merge1728-audit\\lifecycle.json"
+  ],
+  "exit": 1,
+  "bridgeRemoved": true
+}

@@ -1,0 +1,122 @@
+{
+  "phase": "before",
+  "sourceCommit": "6bded15a8d0221b670d4957275aa738eae06202c",
+  "scope": "Real same-user authorized organization change through Better Auth endpoint, followed by actual Next router.refresh without a full navigation. Router call is synthetic; server props and data are genuine.",
+  "checks": [
+    {
+      "name": "actual A payroll admission shows eight granted employees",
+      "passed": true
+    },
+    {
+      "name": "real Better Auth organization switch accepts the same user in B",
+      "passed": true
+    },
+    {
+      "name": "committed B server props expose exactly one employee in the real scope picker",
+      "passed": true
+    },
+    {
+      "name": "baseline keeps eight A records after genuine authorized B server props arrive",
+      "passed": true
+    },
+    {
+      "name": "real A return settles with eight authorized employee rows",
+      "passed": true
+    }
+  ],
+  "captures": [
+    {
+      "name": "before-authorized-b-arrival.png",
+      "sha256": "302b73b400805cb26e9f375326a28dce2ea34f942d57d808d4e0244aa977219d",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": "36dcca39b05e9b6c790a7fcffc609b34a48df9399549eb1fc9aa3332ec9bd1fa",
+        "apps/webapp/src/lib/payroll-workspace/types.ts": "3788bf6fbbda96832752cdb91ea7db34cc741986a65c4682aa1906a26061e819",
+        "apps/webapp/src/lib/payroll-workspace/summary.ts": "f365c73f1762a8aac3f0a94691e4ae5a9d8d77577f9ccd9fd6f90da2267d0ce1"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "rootFont": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "path": "/en/payroll",
+      "headings": [
+        "Payroll"
+      ]
+    },
+    {
+      "name": "before-authorized-b-records.png",
+      "sha256": "ae9b39ff9b9449c8e29569c66f9d76055cb32987b72dfe1eb3602b5592a6fd67",
+      "sources": {
+        "apps/webapp/src/components/payroll/payroll-workspace.tsx": "36dcca39b05e9b6c790a7fcffc609b34a48df9399549eb1fc9aa3332ec9bd1fa",
+        "apps/webapp/src/lib/payroll-workspace/types.ts": "3788bf6fbbda96832752cdb91ea7db34cc741986a65c4682aa1906a26061e819",
+        "apps/webapp/src/lib/payroll-workspace/summary.ts": "f365c73f1762a8aac3f0a94691e4ae5a9d8d77577f9ccd9fd6f90da2267d0ce1"
+      },
+      "png": {
+        "width": 1600,
+        "height": 1000
+      },
+      "css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "rootFont": "16px",
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", \"Noto Sans\", Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "fonts": "loaded",
+      "path": "/en/payroll",
+      "headings": [
+        "Payroll"
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "rsc": [
+    {
+      "status": 200,
+      "containsExpectedOrganization": true
+    },
+    {
+      "status": 200,
+      "containsExpectedOrganization": true
+    }
+  ],
+  "fixtureSetup": "Additional empty local organization, approved fixture membership, actual organization-switch joining owner and independent payroll grant/file configuration. No fabricated payroll records or action outcomes.",
+  "sameControlRetained": true,
+  "next": [
+    {
+      "name": "get_compilation_issues",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"issues\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "name": "get_errors",
+      "result": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"configErrors\":[],\"sessionErrors\":[]}"
+            }
+          ]
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    }
+  ]
+}

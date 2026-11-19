@@ -1,0 +1,1 @@
+await p.waitForSelector('[role=dialog]');return{options:await p.$$eval('[role=dialog] button,[role=dialog] [role=option]',es=>es.filter(e=>e.checkVisibility()).map(e=>({text:e.innerText,label:e.getAttribute('aria-label'),role:e.getAttribute('role')})))};

@@ -1,0 +1,70 @@
+{
+  "sources": [
+    {
+      "from": ".tmp/1738-independent-checks/fixture-helper-01.mjs",
+      "sha256": "e2f98f9acbd25ab07a724b89ca05897a5e007cd9943154145ac8517ce5f6671d",
+      "to": "fixture-helper-01.mjs",
+      "copySha256": "c0842bd12d98c61cbc6000c42df4686f006b684bfd870431547e8e2de3c39d01",
+      "adaptations": [
+        "own namespace, exact fresh service label, own temporary import bridge only"
+      ]
+    },
+    {
+      "from": ".tmp/1738-independent-checks/dev-01-private.mjs",
+      "sha256": "21553cc5de1103a0a589fa6dfc95a1ae06bcb98cb611a5db54195262264c027c",
+      "to": "dev-01-private.mjs",
+      "copySha256": "d81ea0edf544df6a30ddf32abd2148ecf17833aa04423e0601a387e5fae09bcd",
+      "adaptations": [
+        "own namespace, exact fresh service label, own temporary import bridge only"
+      ]
+    },
+    {
+      "from": ".tmp/1738-independent-checks/browser-controller-01.private.mjs",
+      "sha256": "cd5ea8b511e4a822d3dafd9014b49a8c75c45cd1836a317c3128cb68ee736a16",
+      "to": "browser-controller-01.private.mjs",
+      "copySha256": "bac0f480e49ab43608ecce25668a85adf6a4c964e3c716d7bb5fd729facad3b4",
+      "adaptations": [
+        "own namespace, exact fresh service label, own temporary import bridge only"
+      ]
+    },
+    {
+      "from": ".tmp/1738-independent-checks/start-browser-01.mjs",
+      "sha256": "3779dfc184ea4e1aad84d2c0e2b757ed561aa1b13951e83663996b30621f0717",
+      "to": "start-browser-01.mjs",
+      "copySha256": "cd618b292fd90eacbd6869dd519ae7e1cd188f2a82a4aa100ec2849efa890dac",
+      "adaptations": [
+        "own namespace, exact fresh service label, own temporary import bridge only"
+      ]
+    },
+    {
+      "from": ".tmp/1738-independent-checks/rpc-02.mjs",
+      "sha256": "ab4a013cac007bf7a183445efa8a71ac021dc01e093c56839ac41f0062a7f6f8",
+      "to": "rpc-02.mjs",
+      "copySha256": "f9369188f77283eb35344a1566d9fb7d1b21605f1892f84b386ad9bb6af45c8e",
+      "adaptations": [
+        "own namespace, exact fresh service label, own temporary import bridge only"
+      ]
+    },
+    {
+      "from": ".tmp/1738-independent-checks/scheduling-fixture-01.ts",
+      "sha256": "6fc991ee17c655d2b54308039ffcc31f666c50ca6d56b489ecf81b49a1fc094b",
+      "to": "scheduling-fixture-01.ts",
+      "copySha256": "b085f0c02ad73399cb28c46665e6c6c4cb401c251b01b8262229f7356d92a436",
+      "adaptations": [
+        "own namespace, exact fresh service label, own temporary import bridge only"
+      ]
+    },
+    {
+      "from": ".tmp/1738-independent-checks/run-fixture-tool-02.mjs",
+      "sha256": "1a379d662f533b9ebeb5975468b832db6ad0a729a5d9211e399a6577da077842",
+      "to": "run-fixture-tool-02.mjs",
+      "copySha256": "a66d9d62560443319e5d0b4cda44162d01ef47652b3cb94fdb79d20603268b49",
+      "adaptations": [
+        "own namespace, exact fresh service label, own temporary import bridge only"
+      ]
+    }
+  ],
+  "canonicalBootstrap": "scripts/performance/fixture.mjs and apps/webapp/scripts/performance-fixture.ts; fresh prepare only; fixture-auth command rejected by copied allowlist",
+  "login": "normal development public widget/form with private stdin, no auth state saved/read/copied/restored/minted",
+  "notifications": "denied"
+}

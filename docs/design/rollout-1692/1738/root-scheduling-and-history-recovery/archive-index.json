@@ -1,0 +1,262 @@
+{
+  "schema": 1,
+  "sourceCommit": "98bc0c4c82f32af17b0d6aee98fd7e42edc29a86",
+  "archives": [
+    {
+      "destination": "schedule/coverage-stop",
+      "index": "schedule/coverage-stop/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 7002,
+        "sha256": "d86b5b9079809ccc47b68e056bd265af171ee37fb0a2e60c2a352f6c5a47ce62",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 6862,
+          "sha256": "81a0790454796e72f400c3c5d5b50e9548ede10562bef176e782d53e699c1b8d"
+        },
+        "crlf": {
+          "bytes": 7002,
+          "sha256": "d86b5b9079809ccc47b68e056bd265af171ee37fb0a2e60c2a352f6c5a47ce62"
+        }
+      },
+      "payloadCount": 26,
+      "recipe": "sha-space-path-LF",
+      "sealSha256": "026a64195a5f9ef69815c3836847834eb30a10a21cffa617e3965fc9a0063874",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "schedule/layering-stop",
+      "index": "schedule/layering-stop/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 5089,
+        "sha256": "cacc6533ac36136538a665341139d21c612d2267d1643a7f33c6f8d529f7acf3",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 5089,
+          "sha256": "cacc6533ac36136538a665341139d21c612d2267d1643a7f33c6f8d529f7acf3"
+        },
+        "crlf": {
+          "bytes": 5238,
+          "sha256": "ed358976d17ae7d37decc18b406c74ccb4015bf0790c9ba78f7d1c80d01b2bb1"
+        }
+      },
+      "payloadCount": 28,
+      "recipe": "JSON.stringify(files)",
+      "sealSha256": "a88eca977956d70261e1820961ea1c98ae6fc73bb9ec5b67bfbda1da64e4aef9",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "schedule/publication-sql-stop",
+      "index": "schedule/publication-sql-stop/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 5067,
+        "sha256": "ecf51efccc9138aa84adc21048a34a7878a2079d37f354e0534db39a7f9d89f6",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 5067,
+          "sha256": "ecf51efccc9138aa84adc21048a34a7878a2079d37f354e0534db39a7f9d89f6"
+        },
+        "crlf": {
+          "bytes": 5222,
+          "sha256": "8887634411a4e9fc404ccbf9fb85167798ea6895c03f1d4959c2923489badcb4"
+        }
+      },
+      "payloadCount": 29,
+      "recipe": "path-TAB-bytes-TAB-sha-LF",
+      "sealSha256": "54ebb36cfb1d79d5e2a27609973fbb68f37c073001cba683e43ad19b51664dae",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "schedule/range-pointer-stop",
+      "index": "schedule/range-pointer-stop/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 5126,
+        "sha256": "2042511e9bdfac279064ee380147fe6f9dabc09314133a5a908bdbfc82693fc9",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 5126,
+          "sha256": "2042511e9bdfac279064ee380147fe6f9dabc09314133a5a908bdbfc82693fc9"
+        },
+        "crlf": {
+          "bytes": 5286,
+          "sha256": "ba83104471515f824b46dd84f97763f7d4b3fca02cae3e18a78ff2d641d23f20"
+        }
+      },
+      "payloadCount": 30,
+      "recipe": "path-TAB-bytes-TAB-sha-LF",
+      "sealSha256": "e4ed0ede248c77399706e504078d3d9299a99c66f8bcaa53d6ad5118daaab2d1",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "schedule/manager-stop",
+      "index": "schedule/manager-stop/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 4851,
+        "sha256": "7ab334bcd53117c15e4321c00778028668347e0bc3b5271d9f6b0b5aabbc4f6b",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 4851,
+          "sha256": "7ab334bcd53117c15e4321c00778028668347e0bc3b5271d9f6b0b5aabbc4f6b"
+        },
+        "crlf": {
+          "bytes": 5003,
+          "sha256": "d98c1f3dfe2c937b9ebdac386320482feb83b52d81f6a23d022b472c5aa53f2d"
+        }
+      },
+      "payloadCount": 29,
+      "recipe": "JSON.stringify(files)",
+      "sealSha256": "84d6047e7b9193dc249b169fa290e8d582305a16bb5ed8dbaf1f9358557472f1",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "schedule/manager-repeat-stop",
+      "index": "schedule/manager-repeat-stop/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 3872,
+        "sha256": "254e53b27994ee14e301f035ba5288d45c9a941c8c07d841d30f5bccf09938ea",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 3872,
+          "sha256": "254e53b27994ee14e301f035ba5288d45c9a941c8c07d841d30f5bccf09938ea"
+        },
+        "crlf": {
+          "bytes": 3994,
+          "sha256": "53515eedb5551c23a0f64cc349cacbe03ea64f940c9b54f294a3a36a737f2c12"
+        }
+      },
+      "payloadCount": 23,
+      "recipe": "JSON.stringify(files)",
+      "sealSha256": "bb2d4f9c27d0c4502b2280c4df0e70b7ed3fcfb47a58b76865b6acbbc1f03e17",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "schedule/manager-pass",
+      "index": "schedule/manager-pass/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 8160,
+        "sha256": "0c8bb5a2ebcc28b466712d54d2cc7c1dd2e9b4f982ae9c84199a3774123da0e9",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 8160,
+          "sha256": "0c8bb5a2ebcc28b466712d54d2cc7c1dd2e9b4f982ae9c84199a3774123da0e9"
+        },
+        "crlf": {
+          "bytes": 8417,
+          "sha256": "279259dde85fd301894fc5de74432ffd71013527b0acf098418002e47b1972eb"
+        }
+      },
+      "payloadCount": 50,
+      "recipe": "JSON.stringify(files)",
+      "sealSha256": "163d7072806a75e33a59fa9d2b7a3b8e12d235bbab8e1d47cfae63753589c637",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "schedule/comparison-setup-stop",
+      "index": "schedule/comparison-setup-stop/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 1185,
+        "sha256": "c0ead6386b456f1634c1fee2b3221eba8df762a030c561df492838a0ac50b373",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 1185,
+          "sha256": "c0ead6386b456f1634c1fee2b3221eba8df762a030c561df492838a0ac50b373"
+        },
+        "crlf": {
+          "bytes": 1226,
+          "sha256": "beb6174ca4be22d270d520e364f4023de4f04389bd4ce5e1d3f3271f2ed40e0f"
+        }
+      },
+      "payloadCount": 7,
+      "recipe": "JSON.stringify(files)",
+      "sealSha256": "dcc7f5ac477fb4e9eee920d733928fb4465b491794229fe3d1c21cc51e120bf6",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "schedule/isolated-final",
+      "index": "schedule/isolated-final/public-allowlist.json",
+      "indexMetrics": {
+        "bytes": 9319,
+        "sha256": "096bc040ebbee1647ac9c55445a14835537c1c2c92539b628480e6dc780311cc",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 9319,
+          "sha256": "096bc040ebbee1647ac9c55445a14835537c1c2c92539b628480e6dc780311cc"
+        },
+        "crlf": {
+          "bytes": 9611,
+          "sha256": "68f546848ef3aa620bc46f0818371f2f3e837a4ef77dd8d9150bf51e4c83c62e"
+        }
+      },
+      "payloadCount": 57,
+      "recipe": "JSON.stringify(files)",
+      "sealSha256": "f2c1bb6305c3ec9a140ca7c727db2e95e52f499ecc4374b15a58ea0186e2ddcb",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "history/context-stop",
+      "index": "history/context-stop/safe-allowlist.json",
+      "indexMetrics": {
+        "bytes": 2076,
+        "sha256": "dd1f2b8a2276c562b585af3afbfd123624f3c14d4ac513cbe150b2716712c28c",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 2076,
+          "sha256": "dd1f2b8a2276c562b585af3afbfd123624f3c14d4ac513cbe150b2716712c28c"
+        },
+        "crlf": {
+          "bytes": 2135,
+          "sha256": "9007dbd0714be125fa0cccf384cfd020475d543fda8ad4fd09afdfb85d73658d"
+        }
+      },
+      "payloadCount": 12,
+      "recipe": "derived-safe-binding",
+      "sealSha256": null,
+      "safeBinding": "history/context-stop/seal-safe.json",
+      "qualification": "Original private inventory seal is not published or recomputed. Root-derived receipt binds its original digest to this exact safe index.",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "history/cache-stop",
+      "index": "history/cache-stop/safe-allowlist.json",
+      "indexMetrics": {
+        "bytes": 9768,
+        "sha256": "2cf99690e8339530b8c2f253d8dbbb6ee3d0baa6c4dab05a68eccec75aa841dc",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 9768,
+          "sha256": "2cf99690e8339530b8c2f253d8dbbb6ee3d0baa6c4dab05a68eccec75aa841dc"
+        },
+        "crlf": {
+          "bytes": 9963,
+          "sha256": "eb9f10c41c21fa23ed4d104159967b3b9cd9e937edce1ab93286a19e51a03372"
+        }
+      },
+      "payloadCount": 30,
+      "recipe": "derived-safe-binding",
+      "sealSha256": null,
+      "safeBinding": "history/cache-stop/seal-safe.json",
+      "qualification": "Original private inventory seal is not published or recomputed. Root-derived receipt binds its original digest to this exact safe index.",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    },
+    {
+      "destination": "joint/current",
+      "index": "joint/current/safe-allowlist.json",
+      "indexMetrics": {
+        "bytes": 9508,
+        "sha256": "7612c3a98fdfb2b105053224fd39319c4f566d8b1c7812128ae7d4846633962a",
+        "normalization": "valid-utf8-no-nul",
+        "lf": {
+          "bytes": 9508,
+          "sha256": "7612c3a98fdfb2b105053224fd39319c4f566d8b1c7812128ae7d4846633962a"
+        },
+        "crlf": {
+          "bytes": 9797,
+          "sha256": "4ee61c9239ca5918ddff23719780099e061000a4b0b67e072b062022282cf3a8"
+        }
+      },
+      "payloadCount": 55,
+      "recipe": "JSON.stringify(files)",
+      "sealSha256": "405294e9263db67332570367a9826c85abae0f44da3a2a7804dfb0814645fe72",
+      "excludedReferences": "Original descriptive exclusions/absolute paths are historical metadata only; do not follow or copy."
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "direct": [
+    {
+      "safe": "manager-priority-01.json",
+      "source": "manager-priority-01.mjs",
+      "policy": "Visible URL/h1/alerts/controls/permission and action-name/HTTP-status/redirect-path metadata only; no request or response bodies; generated emails redacted. Each source makes actual unmodified navigation; no interception."
+    },
+    {
+      "safe": "manager-priority-02.json",
+      "source": "manager-priority-02.mjs",
+      "policy": "Visible URL/h1/alerts/controls/permission and action-name/HTTP-status/redirect-path metadata only; no request or response bodies; generated emails redacted. Each source makes actual unmodified navigation; no interception."
+    }
+  ],
+  "canonicalReadback": [
+    {
+      "safe": "scheduling-seed-01.json",
+      "source": "scheduling-fixture-bridge-03.ts + summarize-01.mjs",
+      "policy": "Canonical gated scoped domain rows; IDs absent, own-assignee/audit booleans, public synthetic notes/date/status/time and row/recorded-work digests only"
+    },
+    {
+      "safe": "scheduling-readback-01.json",
+      "source": "scheduling-fixture-bridge-03.ts + summarize-01.mjs",
+      "policy": "Canonical gated scoped domain rows; IDs absent, own-assignee/audit booleans, public synthetic notes/date/status/time and row/recorded-work digests only"
+    },
+    {
+      "safe": "readback-verdict-01.json",
+      "source": "scheduling-fixture-bridge-03.ts + summarize-01.mjs",
+      "policy": "Canonical gated scoped domain rows; IDs absent, own-assignee/audit booleans, public synthetic notes/date/status/time and row/recorded-work digests only"
+    }
+  ],
+  "login": {
+    "safe": "manager-login-safe-01.json",
+    "source": "manager-login-settled-01.raw-private.json",
+    "policy": "SHA/path/notification and init-navigation outcome only; full dashboard text excluded"
+  },
+  "images": {
+    "accepted": 0,
+    "failedInspected": 0,
+    "historicalOverlayAttempted": false
+  },
+  "excluded": [
+    "All *.private.*, *.raw-private.json, fixture inputs, logs, manifests, credentials, session material",
+    "manager-login-settled-01.json includes generated synthetic roster emails beyond actor-only redaction; excluded",
+    "All prior private images and raw action-response capture; none opened/retried"
+  ],
+  "rawSafeBoundary": "No action-response-body capture. Evidence does not prove which individual browser action failed. Source-supported coverage refusal chain is qualified as hypothesis."
+}

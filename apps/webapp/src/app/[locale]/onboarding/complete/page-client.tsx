@@ -1,226 +1,301 @@
 "use client";
 
-import { IconCalendarEvent, IconCheck, IconRocket } from "@tabler/icons-react";
+import { IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link, useRouter } from "@/navigation";
+import { useSession } from "@/lib/auth-client";
+import type { OnboardingSummary } from "@/lib/effect/services/onboarding.service";
+import { Link } from "@/navigation";
 import { completeOnboarding, getOnboardingSummary } from "./actions";
+
+type CompletionCache = Map<string, ReturnType<typeof completeOnboarding>>;
+type Outcome =
+	| { status: "finalizing" }
+	| { status: "completion-error" }
+	| { status: "summary-loading" }
+	| { status: "summary-error" }
+	| { status: "ready"; summary: OnboardingSummary };
 
 export default function CompletePage() {
 	const { t } = useTranslate();
-	const { push } = useRouter();
-	const [loading, setLoading] = useState(true);
-	const [summary, setSummary] = useState<{
-		hasOrganization: boolean;
-		isAdmin?: boolean;
-		holidayPresetCreated?: boolean;
-	} | null>(null);
-	const completionPromiseRef = useRef<ReturnType<
-		typeof completeOnboarding
-	> | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-		const completionPromise =
-			completionPromiseRef.current ?? completeOnboarding();
-		completionPromiseRef.current = completionPromise;
-
-		async function finishOnboarding() {
-			let completeResult: Awaited<ReturnType<typeof completeOnboarding>>;
-			try {
-				completeResult = await completionPromise;
-			} catch {
-				if (cancelled) return;
-				toast.error(
-					t(
-						"onboarding.complete.completeError",
-						"Failed to complete onboarding",
-					),
-				);
-				setLoading(false);
-				return;
-			}
-			if (cancelled) return;
-
-			if (!completeResult.success) {
-				toast.error(
-					completeResult.error ||
-						t(
-							"onboarding.complete.completeError",
-							"Failed to complete onboarding",
-						),
-				);
-				setLoading(false);
-				return;
-			}
-
-			let summaryResult: Awaited<ReturnType<typeof getOnboardingSummary>>;
-			try {
-				summaryResult = await getOnboardingSummary();
-			} catch {
-				if (cancelled) return;
-				toast.error(
-					t(
-						"onboarding.complete.summaryError",
-						"Failed to get onboarding summary",
-					),
-				);
-				setLoading(false);
-				return;
-			}
-			if (cancelled) return;
-
-			if (summaryResult.success) {
-				setSummary(summaryResult.data);
-			} else {
-				toast.error(
-					summaryResult.error ||
-						t(
-							"onboarding.complete.summaryError",
-							"Failed to get onboarding summary",
-						),
-				);
-			}
-
-			setLoading(false);
-		}
-
-		void finishOnboarding();
-		return () => {
-			cancelled = true;
-		};
-	}, [t]);
-
-	const handleGoToDashboard = () => {
-		push("/init");
-	};
-
-	if (loading) {
+	const session = useSession();
+	// Personal finalization survives organization changes and cached Activity effects.
+	// This cache never grants access: both actions still resolve their real session.
+	const [completions] = useState<CompletionCache>(() => new Map());
+	const actor = session.data?.user.id;
+	if (session.isPending || !actor) {
 		return (
-			<div className="flex min-h-[50vh] items-center justify-center">
-				<div className="text-center">
-					<div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-					<p className="mt-4 text-muted-foreground">
-						{t("onboarding.complete.loading", "Finalizing your setup...")}
+			<section className="mx-auto max-w-2xl rounded-xl border bg-card p-6 text-card-foreground sm:p-8">
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("onboarding.complete.task", "Finish personal setup")}
+				</h1>
+				{session.isPending ? (
+					<p role="status" className="mt-4">
+						{t("common.loading", "Loading…")}
 					</p>
-				</div>
-			</div>
+				) : (
+					<Link
+						href="/sign-in"
+						className="mt-4 inline-block rounded-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+					>
+						{t("auth.signIn", "Sign in")}
+					</Link>
+				)}
+			</section>
 		);
 	}
-
 	return (
-		<>
-			<ProgressIndicator currentStep="complete" />
+		<CompletionFlow
+			key={`${actor}:${session.data?.session.activeOrganizationId ?? "none"}`}
+			actor={actor}
+			completions={completions}
+		/>
+	);
+}
 
-			<div className="mx-auto max-w-2xl">
-				{/* Success Message */}
-				<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
-					<div className="mb-4 inline-flex size-20 items-center justify-center rounded-full bg-green-100 ring-1 ring-green-200 transition-transform dark:bg-green-950 dark:ring-green-800 animate-in zoom-in duration-500">
-						<IconCheck aria-hidden="true" className="size-10 text-green-700 dark:text-green-300" strokeWidth={2.5} />
-					</div>
-					<h1 className="mb-4 text-3xl font-bold tracking-tight transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700">
-						{t("onboarding.complete.title", "You're all set!")}
-					</h1>
-					<p className="text-lg text-muted-foreground transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-						{t(
-							"onboarding.complete.subtitle",
-							"Your account is ready to use. Welcome to the team!",
-						)}
+function useCompletionAttempt(actor: string, completions: CompletionCache, onRetry: () => void) {
+	const [outcome, setOutcome] = useState<Outcome>({ status: "finalizing" });
+	const busy = useRef(true);
+	useLayoutEffect(() => {
+		let current = true;
+		busy.current = true;
+		async function loadSummary() {
+			setOutcome({ status: "summary-loading" });
+			try {
+				const result = await getOnboardingSummary();
+				if (current) {
+					setOutcome(
+						result.success
+							? { status: "ready", summary: result.data }
+							: { status: "summary-error" },
+					);
+				}
+			} catch {
+				if (current) setOutcome({ status: "summary-error" });
+			}
+		}
+
+		async function finish() {
+			try {
+				let completion = completions.get(actor);
+				if (!completion) {
+					completion = completeOnboarding();
+					completions.set(actor, completion);
+				}
+				const result = await completion;
+				if (current) {
+					if (result.success) await loadSummary();
+					else setOutcome({ status: "completion-error" });
+				}
+			} catch {
+				if (current) setOutcome({ status: "completion-error" });
+			}
+		}
+		void finish().finally(() => {
+			if (current) busy.current = false;
+		});
+		return () => {
+			current = false;
+			setOutcome({ status: "finalizing" });
+			busy.current = true;
+		};
+	}, [actor, completions]);
+	const retry = () => {
+		if (busy.current) return;
+		busy.current = true;
+		if (outcome.status === "completion-error") completions.delete(actor);
+		onRetry();
+	};
+	return { outcome, retry };
+}
+
+function CompletionAttempt({
+	actor,
+	completions,
+	onRetry,
+}: {
+	actor: string;
+	completions: CompletionCache;
+	onRetry: () => void;
+}) {
+	const { t } = useTranslate();
+	const { outcome, retry } = useCompletionAttempt(actor, completions, onRetry);
+	const completed = outcome.status !== "finalizing" && outcome.status !== "completion-error";
+	const summary = outcome.status === "ready" ? outcome.summary : null;
+	return (
+		<section className="mx-auto max-w-2xl space-y-6 rounded-xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8">
+			<ProgressIndicator currentStep="complete" className="py-2" />
+			<header aria-live="polite" className="space-y-3 border-b pb-6">
+				<p className="flex items-center gap-2 text-sm font-medium text-primary">
+					{completed ? <IconCheck aria-hidden="true" className="size-5 shrink-0" /> : null}
+					{t("onboarding.complete.scope", "Personal onboarding")}
+				</p>
+				<h1 className="text-2xl font-semibold tracking-tight text-balance">
+					{completed
+						? t("onboarding.complete.confirmedTitle", "Personal setup complete")
+						: t("onboarding.complete.task", "Finish personal setup")}
+				</h1>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"onboarding.complete.accessContext",
+						"Initialization checks your organization access and any required security verification before opening your workspace.",
+					)}
+				</p>
+			</header>
+			{outcome.status === "finalizing" ? (
+				<p role="status" className="flex items-center gap-2">
+					<IconLoader2 aria-hidden="true" className="size-4 motion-safe:animate-spin" />
+					{t("onboarding.complete.loading", "Finalizing your setup…")}
+				</p>
+			) : null}
+			{outcome.status === "completion-error" ? (
+				<div className="space-y-4">
+					<p role="alert" className="text-destructive">
+						{t("onboarding.complete.completeError", "Failed to complete onboarding")}
 					</p>
-				</div>
-
-				{/* Next Steps */}
-				<Card className="mb-8 transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-					<CardHeader>
-						<CardTitle>
-							{t("onboarding.complete.nextStepsTitle", "Next Steps")}
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<div className="flex items-start gap-3">
-							<div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
-								<IconRocket className="size-4 text-primary" />
-							</div>
-							<div className="flex-1">
-								<p className="font-medium">
-									{t(
-										"onboarding.complete.exploreDashboard",
-										"Explore your dashboard",
-									)}
-								</p>
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"onboarding.complete.exploreDashboardDesc",
-										"Get started with time tracking and absence management",
-									)}
-								</p>
-							</div>
-						</div>
-
-						{summary?.hasOrganization && (
-							<div className="flex items-start gap-3">
-								<div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
-									<IconCheck className="size-4 text-primary" />
-								</div>
-								<div className="flex-1">
-									<p className="font-medium">
-										{t(
-											"onboarding.complete.inviteTeam",
-											"Invite your team members",
-										)}
-									</p>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"onboarding.complete.inviteTeamDesc",
-											"Add colleagues to collaborate and manage time together",
-										)}
-									</p>
-								</div>
-							</div>
-						)}
-
-						{summary?.isAdmin && summary.holidayPresetCreated === false && (
-							<div className="flex items-start gap-3">
-								<div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
-									<IconCalendarEvent className="size-4 text-primary" />
-								</div>
-								<div className="flex-1">
-									<Link
-										href="/settings/holidays"
-										className="font-medium underline-offset-4 hover:underline"
-									>
-										{t(
-											"onboarding.complete.setUpHolidays",
-											"Set up public holidays",
-										)}
-									</Link>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"onboarding.complete.setUpHolidaysDesc",
-											"Choose your country and region in the holiday settings",
-										)}
-									</p>
-								</div>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-
-				{/* CTA Button */}
-				<div className="text-center transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-					<Button
-						size="lg"
-						onClick={handleGoToDashboard}
-						className="w-full sm:w-auto"
-					>
-						{t("onboarding.complete.goToDashboard", "Go to Dashboard")}
+					<Button onClick={retry}>
+						{t("onboarding.complete.retryCompletion", "Retry completion")}
 					</Button>
 				</div>
-			</div>
-		</>
+			) : null}
+			{completed ? (
+				<>
+					<SetupSummary outcome={outcome} retry={retry} />
+					<section aria-labelledby="completion-next" className="space-y-3 border-t pt-5">
+						<h2 id="completion-next" className="font-semibold">
+							{t("onboarding.complete.nextStepsTitle", "Next Steps")}
+						</h2>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"onboarding.complete.exploreDashboardDesc",
+								"Get started with time tracking and absence management",
+							)}
+						</p>
+						{summary?.hasOrganization ? (
+							<div className="text-sm">
+								<p className="font-medium">
+									{t("onboarding.complete.inviteTeam", "Invite your team members")}
+								</p>
+								<p className="mt-1 text-muted-foreground">
+									{t(
+										"onboarding.complete.inviteTeamDesc",
+										"Add colleagues to collaborate and manage time together",
+									)}
+								</p>
+							</div>
+						) : null}
+						{summary?.isAdmin && summary.holidayPresetCreated === false ? (
+							<div className="text-sm">
+								<Link
+									href="/settings/holidays"
+									className="rounded-sm font-medium underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+								>
+									{t("onboarding.complete.setUpHolidays", "Set up public holidays")}
+								</Link>
+								<p className="mt-1 text-muted-foreground">
+									{t(
+										"onboarding.complete.setUpHolidaysDesc",
+										"Choose your country and region in the holiday settings",
+									)}
+								</p>
+							</div>
+						) : null}
+					</section>
+					{outcome.status !== "summary-loading" ? (
+						<div className="border-t pt-5">
+							<Link
+								href="/init"
+								className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:w-auto"
+							>
+								{t("onboarding.complete.continue", "Continue to workspace")}
+							</Link>
+						</div>
+					) : null}
+				</>
+			) : null}
+		</section>
+	);
+}
+
+function CompletionFlow({ actor, completions }: { actor: string; completions: CompletionCache }) {
+	const [attempt, setAttempt] = useState(0);
+	return (
+		<CompletionAttempt
+			key={attempt}
+			actor={actor}
+			completions={completions}
+			onRetry={() => setAttempt((value) => value + 1)}
+		/>
+	);
+}
+
+function SetupSummary({ outcome, retry }: { outcome: Outcome; retry: () => void }) {
+	const { t } = useTranslate();
+	const summary = outcome.status === "ready" ? outcome.summary : null;
+	return (
+		<section aria-labelledby="completion-summary" className="space-y-4">
+			<h2 id="completion-summary" className="font-semibold">
+				{t("onboarding.complete.contextTitle", "Your setup")}
+			</h2>
+			{outcome.status === "summary-loading" ? (
+				<p role="status">
+					{t("onboarding.complete.summaryLoading", "Loading your setup summary…")}
+				</p>
+			) : null}
+			{outcome.status === "summary-error" ? (
+				<div className="space-y-3">
+					<p role="alert" className="text-destructive">
+						{t(
+							"onboarding.complete.summaryUnavailable",
+							"Your personal setup is complete, but the setup summary is unavailable. Retry the summary or continue through initialization.",
+						)}
+					</p>
+					<Button variant="outline" onClick={retry}>
+						{t("onboarding.complete.retrySummary", "Retry summary")}
+					</Button>
+				</div>
+			) : null}
+			{summary ? (
+				<dl className="divide-y text-sm">
+					<div className="space-y-1 py-3 first:pt-0">
+						<dt className="text-muted-foreground">
+							{t("onboarding.complete.organizationContext", "Organization context")}
+						</dt>
+						<dd className="font-medium break-words">
+							{summary.organizationName ||
+								t("onboarding.complete.noOrganizationName", "No organization selected")}
+						</dd>
+					</div>
+					<div className="space-y-1 py-3">
+						<dt className="text-muted-foreground">
+							{t("onboarding.complete.profile", "Personal profile")}
+						</dt>
+						<dd>
+							{summary.profileCompleted
+								? t("onboarding.complete.profileComplete", "Profile completed")
+								: t(
+										"onboarding.complete.profileIncomplete",
+										"Profile details can be reviewed in your account settings",
+									)}
+						</dd>
+					</div>
+					<div className="space-y-1 py-3">
+						<dt className="text-muted-foreground">
+							{t("onboarding.steps.notifications", "Notifications")}
+						</dt>
+						<dd>
+							{summary.notificationsConfigured
+								? t("onboarding.complete.notificationsConfigured", "Preferences saved")
+								: t(
+										"onboarding.complete.notificationsDefault",
+										"Using default notification preferences",
+									)}
+						</dd>
+					</div>
+				</dl>
+			) : null}
+		</section>
 	);
 }

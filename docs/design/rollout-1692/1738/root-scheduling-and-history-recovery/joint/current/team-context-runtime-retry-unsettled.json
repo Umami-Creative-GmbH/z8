@@ -1,0 +1,14 @@
+{
+  "route": "/en/team",
+  "failure": "one deliberately aborted canonical context read after normal Refresh data",
+  "failedContextRequests": 1,
+  "pending": {
+    "held": 1,
+    "reads": 1,
+    "rscBeforeContextCompletion": 1,
+    "loading": false,
+    "oldMembersHidden": true
+  },
+  "recoveredMembers": 4,
+  "rscAfterContext": 2
+}

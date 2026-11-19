@@ -1,0 +1,41 @@
+const settle=()=>act(async()=>{await new Promise(r=>setTimeout(r,100))});
+function respond(xhr:XMLHttpRequest,status:number,headers:Record<string,string>){
+  Object.defineProperty(xhr,'status',{configurable:true,value:status});
+  Object.defineProperty(xhr,'responseText',{configurable:true,value:''});
+  vi.spyOn(xhr,'getResponseHeader').mockImplementation(name=>headers[name.toLowerCase()]??null);
+  xhr.dispatchEvent(new ProgressEvent('load'));
+}
+it.each(['steady','Activity'])('real staged-note recovery: %s',async(mode)=>{
+  const requests:XMLHttpRequest[]=[];
+  vi.spyOn(XMLHttpRequest.prototype,'send').mockImplementation(function(this:XMLHttpRequest){requests.push(this)});
+  const sick={...category,id:'sick',name:'Review sick leave',type:'sick'};
+  const dialog=<RecordAbsenceDialog open employee={{id:'review-target',name:'Review Person'}} categories={[category,sick]} sickNotesEnabled onOpenChange={()=>{}}/>;
+  const tree=(visibility:'visible'|'hidden')=><Providers><Activity mode={visibility}>{dialog}</Activity></Providers>;
+  const view=render(tree('visible'));await fillDialog();
+  const user=userEvent.setup();await user.click(screen.getByRole('combobox',{name:/Category/i}));await user.click(await screen.findByRole('option',{name:'Review sick leave'}));
+  await user.click(screen.getByRole('combobox',{name:/Sick detail/i}));await user.click(await screen.findByRole('option',{name:'Without certificate'}));
+  const file=new File(['%PDF-1.4 synthetic'],'review-note.pdf',{type:'application/pdf'});
+  fireEvent.change(screen.getByTestId('sick-note-file-input'),{target:{files:[file]}});
+  const getSubmit=()=>screen.getByRole('button',{name:/^(Record absence|Recording)/});
+  fireEvent.click(getSubmit());await waitFor(()=>expect(requests).toHaveLength(1));
+  expect(transport.record).toHaveBeenCalledTimes(0);expect(toast.error).not.toHaveBeenCalled();
+  if(mode==='steady'){
+    // Positive HTTP-only control proves the real browser uploader can finish.
+    await act(async()=>respond(requests[0],201,{location:'http://localhost:3000/api/tus/review-key','tus-resumable':'1.0.0'}));
+    await waitFor(()=>expect(requests).toHaveLength(2));
+    await act(async()=>respond(requests[1],204,{'upload-offset':String(file.size),'tus-resumable':'1.0.0'}));
+    await waitFor(()=>expect(transport.record).toHaveBeenCalledTimes(1));
+    await waitFor(()=>expect(toast.error).toHaveBeenCalledWith('Review refusal'));
+    expect(transport.record.mock.calls[0][0]).toMatchObject({employeeId:'review-target',categoryId:'sick',sickDetail:'without_certificate',notes:'Retain review input'});
+    expect(transport.record.mock.calls[0][1]).toEqual([expect.objectContaining({tusFileKey:'review-key',fileName:'review-note.pdf'})]);
+    console.info('1740 safe upload positive control: POST and PATCH completed; exactly one synthetic refusal command with staged evidence.');
+    return;
+  }
+  view.rerender(tree('hidden'));expect(screen.queryByRole('dialog')).toBeNull();view.rerender(tree('visible'));await settle();
+  expect(screen.getByRole('textbox',{name:/Notes/i})).toHaveProperty('value','Retain review input');expect(screen.getByText('review-note.pdf')).toBeTruthy();
+  const disabledBeforeRetry=(getSubmit() as HTMLButtonElement).disabled;
+  fireEvent.click(getSubmit());await settle();
+  console.info('1740 safe upload Activity observation',JSON.stringify({requests:requests.length,commandCalls:transport.record.mock.calls.length,errorNotifications:vi.mocked(toast.error).mock.calls.length,disabledBeforeRetry,draftRetained:true,fileRetained:true}));
+  await waitFor(()=>expect(requests).toHaveLength(2));
+  expect(toast.error).not.toHaveBeenCalled();
+});

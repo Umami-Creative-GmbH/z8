@@ -205,7 +205,7 @@ export function ReceiveExceptionForm({
 	const { t } = useTranslate();
 	const identity = useCommandIdentity();
 	const element = useRef<HTMLFormElement>(null);
-	const maximum = exception.quantity - exception.receivedQuantity;
+	const maximum = exception.receivableQuantity;
 	const form = useForm({
 		defaultValues: {
 			quantity: "1",

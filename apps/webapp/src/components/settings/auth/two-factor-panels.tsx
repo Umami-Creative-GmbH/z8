@@ -1,4 +1,6 @@
+import { IconLoader2 } from "@tabler/icons-react";
 import type { ComponentProps, ComponentType } from "react";
+import { keepAlertDialogOpen } from "@/components/settings/confirm-action-utils";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -258,8 +260,15 @@ export function DisableTwoFactorDialog({
 	t,
 }: DisableTwoFactorDialogProps) {
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent>
+		<AlertDialog
+			open={open}
+			onOpenChange={(nextOpen) => {
+				// Escape or an outside press must not hide a change that is still running.
+				if (!nextOpen && isPending) return;
+				onOpenChange(nextOpen);
+			}}
+		>
+			<AlertDialogContent aria-busy={isPending}>
 				<AlertDialogHeader>
 					<AlertDialogTitle>
 						{t("settings.security.twoFactor.disableTitle", "Disable Two-Factor Authentication?")}
@@ -300,11 +309,16 @@ export function DisableTwoFactorDialog({
 						<Button
 							variant="destructive"
 							onClick={(event) => {
-								event.preventDefault();
+								// Keep the dialog open until 2FA is disabled; the controller closes it on success.
+								keepAlertDialogOpen(event);
+								if (isPending) return;
 								onConfirm();
 							}}
 							disabled={isPending || !disablePassword}
 						>
+							{isPending ? (
+								<IconLoader2 className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+							) : null}
 							{t("settings.security.twoFactor.disable2fa", "Disable 2FA")}
 						</Button>
 					</AlertDialogAction>

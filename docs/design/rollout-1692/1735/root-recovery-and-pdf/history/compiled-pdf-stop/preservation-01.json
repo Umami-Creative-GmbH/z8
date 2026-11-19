@@ -1,0 +1,193 @@
+{
+  "head": "241a77742d3ecd69dfdb907a5eb013438cdddb34",
+  "tree": "22ed16c8a4612714cb3f8ab7e81d272282ca7edf",
+  "latestVerified": "9f2bd756833e85a33a97db496487afbc992c69ae",
+  "verifiedCommit1735": null,
+  "trackedStatus": "",
+  "source": "2e78c69a1531750bdd744fdaf99f4f78fc65550d",
+  "earlierSettingsCorrection": "9870df191c6b686106b38dcfa1bf6590ed611541",
+  "baselineRawPins": [
+    {
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "path": "pnpm-lock.yaml",
+      "matches": true
+    },
+    {
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+      "path": "package.json",
+      "matches": true
+    },
+    {
+      "sha256": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+      "path": "pnpm-workspace.yaml",
+      "matches": true
+    },
+    {
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+      "path": "apps/webapp/package.json",
+      "matches": true
+    },
+    {
+      "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "path": "apps/webapp/next.config.ts",
+      "matches": true
+    },
+    {
+      "sha256": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+      "path": "apps/webapp/vitest.config.ts",
+      "matches": true
+    },
+    {
+      "sha256": "1fa69df2e05fe0e67c669085b8b88cc2b7fdb4e1f8cda4ebbca4c2b44f28192b",
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/organization-recovery.test.tsx",
+      "matches": true
+    },
+    {
+      "sha256": "3c8cc9c589923c47485520e3a3817c5ae279343486c2333ef64a41625c6357d9",
+      "path": "apps/webapp/src/components/reports/report-employee-selector.tsx",
+      "matches": true
+    },
+    {
+      "sha256": "34a7586c2fffa1e2b177e072f7f6dcfe7fd7c2dba031b7fe5f4fdb85a674c16c",
+      "path": "apps/webapp/src/hooks/use-report-employees.ts",
+      "matches": true
+    },
+    {
+      "sha256": "a0a4599bf8c4a2a8c4ee46de372a06a318159b54665b7df3038ce72be4011c23",
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/employee-scope.test.tsx",
+      "matches": true
+    },
+    {
+      "sha256": "05e622ecfc5f6dfa48cfd6f06403e48c2f0bb5267ee6a2098c74d9ec9f270aa2",
+      "path": "apps/webapp/src/app/[locale]/(app)/reports/page-ui.test.tsx",
+      "matches": true
+    },
+    {
+      "sha256": "aa49daa170cd0fdc364f96517f3c6bb41850ec3310316199fa16bde9569a3247",
+      "path": "apps/webapp/src/components/reports/date-range-picker.test.tsx",
+      "matches": true
+    },
+    {
+      "sha256": "8617cbeb3bc2f01dbeac3b99dd0a972eed8722b2fd1ecc3ac94024de0d89aec8",
+      "path": "apps/webapp/src/components/reports/date-range-picker.tsx",
+      "matches": true
+    },
+    {
+      "sha256": "9e6487f1dabffde0eb115c688ba604b3845e22e25bd8b0a61e698cf69131d0ad",
+      "path": "apps/webapp/src/components/reports/report-filters.tsx",
+      "matches": true
+    },
+    {
+      "sha256": "cd7b19c4e03989ba2c7990166474b999709457ff2dfe0867a8a1381ce3d6878b",
+      "path": ".tmp/1735-independent-checks/seal-final.json",
+      "matches": true
+    },
+    {
+      "sha256": "c729a6743c7954db69f97f7858d670d0bde035e7eb117af70ef9b5164b2335c2",
+      "path": ".tmp/1735-independent-checks/safe-public-allowlist-final.json",
+      "matches": true
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/reports/reports-container.tsx",
+      "rawSha256": "a9d5c1794a903c90a9827f1514606bbcc83a199cfec2541b689d46d27a9faf5f",
+      "lfSha256": "8d4d0f5a4b386cb8171987ffd4f156e29cdc66b269b9e322d8ff21e992ca1a0c",
+      "gitBlob": "0212c7748f0c5b7dc69dcb85e92bd5042ff8965a"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-filters.tsx",
+      "rawSha256": "9e6487f1dabffde0eb115c688ba604b3845e22e25bd8b0a61e698cf69131d0ad",
+      "lfSha256": "b47dc52914dd7d7ce87a743568675b75d9a320c0ca82e400734d16ea5986a8cb",
+      "gitBlob": "e6f772a32ddec1c01e6b7be71c1badbd89ee881c"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/report-employee-selector.tsx",
+      "rawSha256": "3c8cc9c589923c47485520e3a3817c5ae279343486c2333ef64a41625c6357d9",
+      "lfSha256": "cc3508f0438671b2e8e6eb630c6f08acca06c9d0ed5a58329fbc000aedec1ccc",
+      "gitBlob": "2c50f9ac76fcc7ba2ad14195d35b2dcfdd7584e4"
+    },
+    {
+      "path": "apps/webapp/src/hooks/use-report-employees.ts",
+      "rawSha256": "34a7586c2fffa1e2b177e072f7f6dcfe7fd7c2dba031b7fe5f4fdb85a674c16c",
+      "lfSha256": "36494e47c29295144ea54c6ef51b4961c4b7a7697cbc47f81a867634e1e85c2b",
+      "gitBlob": "29dfa948c2219e1f5340c888dce85b99c8e93c63"
+    },
+    {
+      "path": "apps/webapp/src/components/reports/export-buttons.tsx",
+      "rawSha256": "89dfa0642632c54e4f3da9f07f0b8c0a9f80563a2e9a0288054199d5e5b2fd1f",
+      "lfSha256": "457b3abef7c5654686cc8ab7ca4b7cf47d9fc5ab8018bc5c794fd5ec1ea836d1",
+      "gitBlob": "11cbe067c5eff347efee9621ead21a8af0bed699"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.tsx",
+      "rawSha256": "8025d89b577bade8564ee4a8d8e726b971c2b30b8720379cc54b04399f823788",
+      "lfSha256": "c83ebd58295b16bc5d9e9c18fd23939c7e4fc01724a116d67c6a81eb550541fb",
+      "gitBlob": "1f535495ca763e3ee4d31a008d63e7410836e58c"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+      "rawSha256": "20f3b0d62859829021fecaae3b80a4e651ed3204722defec8d8d28e834278d9a",
+      "lfSha256": "0d5c9e60afd17e4b05335c0ea6581245b509475ed619f31166007ec9ab14ab52",
+      "gitBlob": "88667c729875fff50c2e7e2be143712336616d14"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+      "rawSha256": "47cad9ae99467b904a60cff4977807e8fd0e0ff974324217aeee7e30198a2ede",
+      "lfSha256": "e10babf67681056903dff34010a19341e3169ac2d2c74515b930959645561eb1",
+      "gitBlob": "d54b9ce7c98c45d5646d40aec1f613c9e84d9804"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/csv-exporter.ts",
+      "rawSha256": "894356b95544338e70c8a86e0ec1b6ab51a40e470bc61ae60ab0fc5723d6e515",
+      "lfSha256": "10862bc0d62ff88eb0784599c41893bc4dd6be159117f6bb0c556ab9b20b998c",
+      "gitBlob": "fa341f83d348d29808277ea83d2ea847674648a1"
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/excel-exporter.ts",
+      "rawSha256": "cc6963de3687005d517c0b1b41a8cfaaf97774d59a8a37714c27ece9f4df916b",
+      "lfSha256": "cfd3f46e07f781e90e5ab3ea423903a6c4aa38ff4f995729215b0c392b07a96c",
+      "gitBlob": "5df9babeb51edb3104b41fe708d3b5a8290d62e7"
+    },
+    {
+      "path": "apps/webapp/next.config.ts",
+      "rawSha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+      "lfSha256": "6e6d613828bac6b8de9c463f3633966aab5181b97ea0b688f28fae3e1ac2244e",
+      "gitBlob": "a7b74cfecbbf27e68026cfc2b89366e64d42906e"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "rawSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "lfSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+      "gitBlob": "04abfc145288bbae42bbaccdb88a5c012c4b186c"
+    }
+  ],
+  "verifiedAnchors": 58,
+  "allAncestors": true,
+  "immutableStoppedArchiveFilesHashVerified": 33,
+  "protectedProofFileCounts": {
+    "1733": 385,
+    "1734": 203
+  },
+  "dependencyParents": [
+    {
+      "path": "node_modules",
+      "physical": true
+    },
+    {
+      "path": "node_modules/.pnpm",
+      "physical": true
+    },
+    {
+      "path": "apps/webapp/node_modules",
+      "physical": true
+    }
+  ],
+  "internalDependencySymlinkLeavesObserved": 153,
+  "licenseArtifactSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+  "noPackageInstallOrRepair": true,
+  "noSourceOrConfigOrGitMutation": true,
+  "noHistoricalOverlay": true,
+  "bridgeHashCheckedAndRemoved": true,
+  "protectedCompiledPdfOwnerChanged": false
+}

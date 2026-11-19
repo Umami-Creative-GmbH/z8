@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "Inga produktionsposter har importerats ännu.",
         "openReview": "Öppna granskning",
-        "scanningDescription": "Granskningsbatch {reviewBatchId} skannas. Granska och godkänn poster innan de verkställs.",
+        "scanningDescriptionWithoutId": "Granskningsskanningen körs. Granska och godkänn poster innan de importeras.",
         "startedTitle": "Skanning för importgranskning har startat",
         "starting": "Startar skanning för Clockin-importgranskning…",
         "startSuccess": "Skanning för importgranskning har startat. Granskning krävs innan poster verkställs."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Granskningsbatch {batchId} skannas.",
         "description": "Granskning krävs innan Clockodo-poster verkställs till produktion.",
         "openReview": "Öppna granskning",
+        "scanning": "Granskningsskanningen körs. Inga poster importeras förrän du godkänner dem i granskningen.",
         "successTitle": "Skanning för importgranskning har startat"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Inloggningsuppgifter",
         "import": "Granskning",
         "preview": "Förhandsgranskning",
+        "progressLabel": "Importsteg",
         "projectMapping": "Projektkoppling",
         "selection": "Val",
         "userMapping": "Användarkoppling"
       },
       "userMapping": {
         "action": "Åtgärd",
+        "actionFor": "Åtgärd för {name}",
         "autoMatched": "{count} matchades automatiskt",
         "clockodoUser": "Clockodo-användare",
         "continue": "Fortsätt",
@@ -248,14 +250,21 @@
       "linkError": "Kunde inte generera länkkod",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Länkkod kopierad",
+        "codeExpired": "Utgången — generera en ny kod",
+        "copyCode": "Kopiera länkkod",
+        "copyFailed": "Länkkoden kunde inte kopieras. Markera den och kopiera manuellt.",
         "description": "Länka ditt Telegram-konto för att ta emot personliga aviseringar.",
+        "expiresIn": "{minutes, plural, one {Går ut om # minut} other {Går ut om # minuter}}",
         "generateCode": "Generera länkkod",
         "instructions": "Skicka det här kommandot till boten på Telegram:",
         "linkedStatus": "Ditt Telegram-konto är länkat",
+        "regenerateCode": "Generera ny kod",
         "title": "Telegram-konto"
       },
       "notConfigured": "Telegram är inte konfigurerat för den här organisationen. Kontakta din administratör.",
       "saved": "Telegram-inställningarna har sparats",
+      "saveError": "Telegram-inställningarna kunde inte sparas. Försök igen.",
       "status": {
         "active": "Aktiv"
       },

@@ -1,0 +1,9 @@
+{
+  "baseline": "37e46ce8bea19e69e112d11186e0c271d77e9738",
+  "overlay": [
+    "apps/webapp/src/components/payroll/payroll-workspace.tsx"
+  ],
+  "qualification": "Only the owned workspace presentation/lifetime file is overlaid. The new organization identity remains in the actual server summary in both phases; this is not a historical full-app execution.",
+  "beforeSha256": "36dcca39b05e9b6c790a7fcffc609b34a48df9399549eb1fc9aa3332ec9bd1fa",
+  "afterSha256": "2b33db09c7266be13475929a103a55fc7a6f92e7008e01cb0ae71691510d016a"
+}

@@ -315,6 +315,62 @@ describe("ProfileForm", () => {
 		});
 	});
 
+	it("selects gender from a labelled radio group", async () => {
+		getCurrentEmployeeMock.mockResolvedValue(null);
+		renderProfileForm();
+
+		const group = await screen.findByRole("radiogroup", { name: "Gender" });
+		const male = screen.getByRole("radio", { name: "Male" });
+		expect(group).toBeTruthy();
+		expect(male.getAttribute("aria-checked")).toBe("false");
+		expect(screen.queryByRole("button", { name: "Clear selection" })).toBeNull();
+
+		fireEvent.click(male);
+
+		await waitFor(() => expect(male.getAttribute("aria-checked")).toBe("true"));
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+		await waitFor(() => {
+			expect(updateProfileDetailsMock).toHaveBeenCalledWith(
+				expect.objectContaining({ gender: "male" }),
+			);
+		});
+	});
+
+	it("moves the gender selection with arrow keys", async () => {
+		renderProfileForm();
+
+		const female = await screen.findByRole("radio", { name: "Female" });
+		await waitFor(() => expect(female.getAttribute("aria-checked")).toBe("true"));
+		act(() => female.focus());
+		fireEvent.keyDown(female, { key: "ArrowRight" });
+
+		const other = screen.getByRole("radio", { name: "Other" });
+		await waitFor(() => expect(other.getAttribute("aria-checked")).toBe("true"));
+		expect(document.activeElement).toBe(other);
+	});
+
+	it("clears a selected gender and saves it as empty", async () => {
+		renderProfileForm();
+
+		const female = await screen.findByRole("radio", { name: "Female" });
+		await waitFor(() => expect(female.getAttribute("aria-checked")).toBe("true"));
+
+		fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+
+		await waitFor(() => expect(female.getAttribute("aria-checked")).toBe("false"));
+		expect(screen.queryByRole("button", { name: "Clear selection" })).toBeNull();
+		for (const radio of screen.getAllByRole("radio")) {
+			expect(radio.getAttribute("aria-checked")).toBe("false");
+		}
+
+		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
+		await waitFor(() => {
+			expect(updateProfileDetailsMock).toHaveBeenCalledWith(
+				expect.objectContaining({ gender: null }),
+			);
+		});
+	});
+
 	it("submits custom pronouns through updateProfileDetails", async () => {
 		renderProfileForm();
 
@@ -477,5 +533,17 @@ describe("ProfileForm", () => {
 		expect(screen.getByLabelText("Custom pronouns")).toHaveProperty("value", "she/her");
 	});
 
+	it("does not offer editing with empty personal fields when the first load fails", async () => {
+		getCurrentEmployeeMock.mockRejectedValueOnce(new Error("Offline"));
+		renderProfileForm();
 
+		const retry = await screen.findByRole("button", { name: "Retry" });
+		expect(screen.queryByRole("button", { name: "Update Profile" })).toBeNull();
+		expect(toastErrorMock).toHaveBeenCalledWith("Failed to load profile");
+
+		fireEvent.click(retry);
+
+		expect(await screen.findByRole("button", { name: "Update Profile" })).toBeTruthy();
+		expect(screen.getByLabelText("Custom pronouns")).toHaveProperty("value", "she/her");
+	});
 });

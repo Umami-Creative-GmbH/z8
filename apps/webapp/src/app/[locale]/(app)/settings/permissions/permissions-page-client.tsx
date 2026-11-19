@@ -8,6 +8,7 @@ import { loadPermissionsPageData } from "./actions";
 import {
 	PermissionEditorDialog,
 	PermissionsEmptyState,
+	PermissionsPageHeader,
 	PermissionsTableCard,
 } from "./page-sections";
 import {
@@ -27,7 +28,7 @@ export function PermissionsPageClient(props: {
 		permissionsPageReducer,
 		initialPermissionsPageState,
 	);
-	const requestSequence = useRef(0);
+	const currentRequest = useRef<symbol | null>(null);
 	const activeOrganizationId = useRef(props.organizationId);
 	const mounted = useRef(false);
 	const deniedOrganizationId = useRef<string | null>(null);
@@ -36,13 +37,13 @@ export function PermissionsPageClient(props: {
 		mounted.current = true;
 		return () => {
 			mounted.current = false;
-			requestSequence.current++;
+			currentRequest.current = null;
 		};
 	}, []);
 
 	useLayoutEffect(() => {
 		activeOrganizationId.current = props.organizationId;
-		requestSequence.current++;
+		currentRequest.current = null;
 	}, [props.organizationId]);
 
 	useEffect(() => {
@@ -74,7 +75,8 @@ export function PermissionsPageClient(props: {
 		}
 		deniedOrganizationId.current = null;
 		let cancelled = false;
-		const requestId = ++requestSequence.current;
+		const requestId = Symbol();
+		currentRequest.current = requestId;
 		dispatch({ type: "setLoading", value: true });
 		dispatch({ type: "setEmployees", employees: [] });
 		dispatch({ type: "setPermissions", permissions: {} });
@@ -86,7 +88,7 @@ export function PermissionsPageClient(props: {
 				result = await loadPermissionsPageData();
 			} catch {
 				if (cancelled) return;
-				if (requestSequence.current !== requestId) return;
+				if (currentRequest.current !== requestId) return;
 				toast.error(
 					t(
 						"settings.permissions.toast.loadEmployeesFailed",
@@ -103,6 +105,7 @@ export function PermissionsPageClient(props: {
 						},
 						isAdmin: props.isOrgAdmin,
 						noEmployee: false,
+						loadFailed: true,
 						employees: [],
 						teams: [],
 						permissions: {},
@@ -111,7 +114,7 @@ export function PermissionsPageClient(props: {
 				return;
 			}
 			if (cancelled) return;
-			if (requestSequence.current !== requestId) return;
+			if (currentRequest.current !== requestId) return;
 
 			if (
 				!result.success ||
@@ -135,6 +138,7 @@ export function PermissionsPageClient(props: {
 						},
 						isAdmin: props.isOrgAdmin,
 						noEmployee: false,
+						loadFailed: true,
 						employees: [],
 						teams: [],
 						permissions: {},
@@ -170,7 +174,8 @@ export function PermissionsPageClient(props: {
 		const organizationId = props.organizationId;
 		if (!mounted.current) return;
 		if (activeOrganizationId.current !== organizationId) return;
-		const requestId = ++requestSequence.current;
+		const requestId = Symbol();
+		currentRequest.current = requestId;
 		if (!background) dispatch({ type: "setLoading", value: true });
 
 		let result: Awaited<ReturnType<typeof loadPermissionsPageData>>;
@@ -179,7 +184,7 @@ export function PermissionsPageClient(props: {
 		} catch {
 			if (
 				!mounted.current ||
-				requestSequence.current !== requestId ||
+				currentRequest.current !== requestId ||
 				activeOrganizationId.current !== organizationId
 			)
 				return;
@@ -194,7 +199,7 @@ export function PermissionsPageClient(props: {
 		}
 		if (
 			!mounted.current ||
-			requestSequence.current !== requestId ||
+			currentRequest.current !== requestId ||
 			activeOrganizationId.current !== organizationId
 		)
 			return;
@@ -251,23 +256,12 @@ export function PermissionsPageClient(props: {
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.permissions.title", "Team Permissions")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.permissions.description",
-							"Manage employee permissions for team operations",
-						)}
-					</p>
-				</div>
-			</div>
+		<div className="page-frame flex flex-1 flex-col gap-6">
+			<PermissionsPageHeader />
 
 			<PermissionsTableCard
 				loading={state.loading || !isCurrentOrganization}
+				loadFailed={isCurrentOrganization && state.loadFailed}
 				searchQuery={state.searchQuery}
 				onSearchChange={(searchQuery) =>
 					dispatch({ type: "setSearchQuery", searchQuery })

@@ -1,0 +1,18 @@
+{
+  "started": "2026-11-16T01:43:48.480Z",
+  "finished": "2026-11-16T01:43:51.101Z",
+  "cwd": "X:\\t3-code\\worktrees\\z8\\t3-a83e6a27-7bf4f7950a71b256\\apps\\webapp",
+  "env": "generated disposable local runtime; CI=true pnpm_config_verify_deps_before_run=false",
+  "command": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "unit",
+    "src/components/scheduling/scheduler/shift-scheduler.test.tsx"
+  ],
+  "exit": 0,
+  "source": "ed0a30ce7172b96280efafce90e3f96f997408744dff8229abe9c959605251ff"
+}

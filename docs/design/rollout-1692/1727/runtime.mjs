@@ -1,0 +1,41 @@
+import {sourceIdentity} from "./identity.mjs";
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import puppeteer from 'puppeteer-core';
+import {prepareFixtureBrowserContext,clickVisible,waitVisible} from '../../../../scripts/performance/journey-steps.mjs';
+import {repo,dir,runtime,pool} from './fixture.mjs';
+const scope=JSON.parse(await readFile(join(dir,'r044-scope.json'),'utf8')),out=join(repo,'docs/design/rollout-1692/1727');
+const browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+const evidence={identity:await sourceIdentity(),checks:[],errors:[],failures:[]};let page,context;
+const save=()=>writeFile(join(out,'runtime.json'),JSON.stringify(evidence,null,2)+'\n');
+const check=async(name,actual,expected=true)=>{assert.deepEqual(actual,expected,name);evidence.checks.push({name,actual});await save();};
+const text=()=>page.evaluate(()=>document.querySelector('main')?.innerText??'');
+const wait=s=>page.waitForFunction(s=>document.body.innerText.includes(s),{timeout:90000},s);
+const click=s=>clickVisible(page,s,20000);
+const go=async(id=scope.target.employeeId)=>page.goto(runtime.origin+'/en/payroll/work-balances/'+id,{waitUntil:'networkidle2',timeout:120000});
+const snap=name=>page.screenshot({path:join(out,name+'.png'),fullPage:false});
+const field=async(name,value)=>{const selector=`[role="dialog"] [name="${name}"]`;await clickVisible(page,selector,20000);const el=await waitVisible(page,selector);await el.focus();await page.keyboard.down('Control');await page.keyboard.press('a');await page.keyboard.up('Control');await el.type(value);};
+try{
+ context=await browser.createBrowserContext();await prepareFixtureBrowserContext(context,runtime.origin);await context.setCookie(...JSON.parse(await readFile(join(dir,'r044-auth-private.json'),'utf8')));page=await context.newPage();page.on('pageerror',e=>evidence.errors.push(e.message));await page.setViewport({width:1600,height:1000});
+ await go();await wait('Balance adjustments');await check('one route-owned employee heading',(await page.$$eval('h1',ns=>ns.map(n=>n.textContent))).length,1);await check('covered former employee admitted',(await text()).includes('Former employee'));
+ await click('main button::-p-text(Set opening balance)');await wait('Balance as of the end of');
+ await check('opening uses actual contextual ActionPanel',await page.$eval('[role="dialog"]',n=>n.dataset.slot),'action-panel-content');
+ await field('hours','10');await field('reason','R044 browser original opening');
+ await click('[role="dialog"] button[name="day"]');
+ const days=await page.$$eval('button[data-day]',ns=>ns.map(n=>({day:n.getAttribute('data-day'),label:n.getAttribute('aria-label'),text:n.textContent})));evidence.calendar=days;await save();
+ const earlier=days.find(d=>d.day?.includes('2026-11-12')||d.day?.includes('11/12/2026'));assert.ok(earlier,'employee-local Nov 12 available');await click(`button[data-day="${earlier.day}"]`);
+ await snap('after-opening-ready');await click('[role="dialog"] button[type="submit"]');await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'),{timeout:90000});await wait('R044 browser original opening');
+ await check('real opening record readback',(await text()).includes('R044 browser original opening'));await snap('after-opening-readback');
+ await click('main button::-p-text(Set opening balance)');await wait('The opening balance in effect is cancelled');await field('hours','20');await field('reason','R044 browser replacement evidence');await click('[role="dialog"] button[name="day"]');await click(`button[data-day="${earlier.day}"]`);await click('[role="dialog"] button[type="submit"]');await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'),{timeout:90000});await wait('R044 browser replacement evidence');
+ await check('replacement keeps original and cancellation evidence',(await text()).includes('R044 browser original opening')&&(await text()).includes('Cancelled by'));await snap('after-replacement');
+ await click('main button::-p-text(Record overtime payout)');await wait('Record overtime paid as wages');await field('hours','999');await field('reason','R044 browser refused payout');await click('[role="dialog"] button[type="submit"]');await page.waitForSelector('[role="dialog"] [role="alert"]',{timeout:90000});await check('refused payout retains draft',await page.$eval('[role="dialog"] textarea',n=>n.value),'R044 browser refused payout');await snap('after-payout-refused');
+ await field('hours','1');await field('reason','R044 browser valid payout');await click('[role="dialog"] button[type="submit"]');await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'),{timeout:90000});await wait('R044 browser valid payout');await check('valid payout record settles',(await text()).includes('R044 browser valid payout'));await snap('after-payout-readback');
+ await click("::-p-xpath(//main//li[contains(., 'R044 browser valid payout')]//button)");await wait('Why is it cancelled');await field('reason','R044 browser cancellation evidence');await click('[role="dialog"] button[type="submit"]');await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'),{timeout:90000});await wait('R044 browser cancellation evidence');await check('cancellation retains actual payout evidence',(await text()).includes('R044 browser valid payout'));await snap('after-cancel-readback');
+ await page.reload({waitUntil:'networkidle2'});await wait('R044 browser cancellation evidence');await check('ledger survives real reload',(await text()).includes('R044 browser replacement evidence'));
+ for(const [label,id]of [['uncovered',scope.uncovered],['foreign',scope.foreign],['malformed','not-a-uuid']]){await go(id);await check(label+' arrival not-found',!(await text()).includes('R044 browser replacement evidence'));await snap('after-'+label);}
+ await go();await wait('Balance adjustments');await page.setViewport({width:390,height:844});
+ await (await waitVisible(page,'button[data-sidebar="trigger"]')).focus();await page.keyboard.press('Enter');await (await waitVisible(page,'[role="dialog"] a[aria-current="page"]')).focus();await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));await check('first Escape from current-route drawer restores trigger focus',await page.evaluate(()=>document.activeElement?.matches('button[data-sidebar="trigger"]')));await snap('after-drawer-first-escape');
+ await page.emulateMediaFeatures([{name:'prefers-reduced-motion',value:'reduce'}]);await click('main button::-p-text(Record overtime payout)');await wait('Record overtime paid as wages');await snap('after-phone-payout-panel');await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'));await check('panel Escape restores payout trigger focus',await page.evaluate(()=>document.activeElement?.textContent?.includes('Record overtime payout')));
+}catch(e){evidence.failures.push(e.message);if(page)await snap('runtime-failed-attempt').catch(()=>{});throw e;}finally{await save();await browser.close();await pool.end();}
+console.log(`R044 runtime: ${evidence.checks.length} assertions`);

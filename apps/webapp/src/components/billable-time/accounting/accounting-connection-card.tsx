@@ -12,16 +12,8 @@ import {
 	removeAccountingTool,
 	updateAccountingDefaults,
 } from "@/app/[locale]/(app)/settings/billable-time/accounting/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -96,23 +88,22 @@ export function AccountingConnectionCard({
 	const { locale, timezone } = useDisplayContext();
 	const summary = useTaxTreatmentSummary();
 	const [mode, setMode] = useState<"view" | "connect" | "editTax">("view");
-	const [confirmRemove, setConfirmRemove] = useState(false);
-	const [removing, setRemoving] = useState(false);
+	const removal = useConfirmedAction<AccountingConnectionView>();
 	const connection = settings.connection;
 
-	const remove = async () => {
-		if (!connection) return;
-		setRemoving(true);
-		const result = await removeAccountingTool({ connectionId: connection.id }).catch(() => null);
-		setRemoving(false);
-		setConfirmRemove(false);
+	// Resolves once the connection is gone and throws the worded reason otherwise, so
+	// the confirmation stays open with the failure inline and can be retried.
+	const remove = async (target: AccountingConnectionView) => {
+		const result = await removeAccountingTool({ connectionId: target.id }).catch(() => null);
 		if (!result?.success) {
-			toast.error(result?.error ?? t("common.unexpectedError", "An unexpected error occurred"));
-			return;
+			throw new Error(
+				result?.error ?? t("common.unexpectedError", "An unexpected error occurred"),
+			);
 		}
 		toast.success(t("settings.billableTime.accounting.removed", "Accounting connection removed"));
 		onChanged();
 	};
+	const removalTarget = removal.target;
 
 	return (
 		<Card>
@@ -174,7 +165,12 @@ export function AccountingConnectionCard({
 						<Button size="sm" variant="outline" onClick={() => setMode("connect")}>
 							{t("settings.billableTime.accounting.replace", "Replace connection")}
 						</Button>
-						<Button size="sm" variant="ghost" onClick={() => setConfirmRemove(true)}>
+						<Button
+							size="sm"
+							variant="ghost"
+							disabled={removal.isPending}
+							onClick={() => removal.request(connection)}
+						>
 							<IconTrash aria-hidden="true" className="mr-2 size-4 text-destructive" />
 							{t("settings.billableTime.accounting.remove", "Remove connection")}
 						</Button>
@@ -182,36 +178,39 @@ export function AccountingConnectionCard({
 				)}
 			</CardContent>
 
-			<AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"settings.billableTime.accounting.removeTitle",
-								"Remove the accounting connection?",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.billableTime.accounting.removeDescription",
-								"Z8 deletes the API key and can no longer create invoice drafts. Drafts already in the tool stay there. Contact links come back if you reconnect the same account.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={removing}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							disabled={removing}
-							onClick={() => void remove()}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("settings.billableTime.accounting.removeConfirm", "Remove connection")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmActionDialog
+				open={removal.open}
+				onOpenChange={removal.onOpenChange}
+				title={t(
+					"settings.billableTime.accounting.removeTitle",
+					"Remove the accounting connection?",
+				)}
+				description={
+					<>
+						{removalTarget ? (
+							<span className="mb-2 block font-medium text-foreground break-words">
+								{accountingProviderName(removalTarget.providerKind)}
+								{removalTarget.accountLabel ? ` · ${removalTarget.accountLabel}` : null}
+							</span>
+						) : null}
+						{t(
+							"settings.billableTime.accounting.removeDescription",
+							"Z8 deletes the API key and can no longer create invoice drafts. Drafts already in the tool stay there. Contact links come back if you reconnect the same account.",
+						)}
+					</>
+				}
+				confirmLabel={t("settings.billableTime.accounting.removeConfirm", "Remove connection")}
+				isPending={removal.isPending}
+				error={removal.error}
+				onConfirm={() =>
+					void removal.confirm(remove, (failure) =>
+						describeFailure(
+							failure,
+							t("common.unexpectedError", "An unexpected error occurred"),
+						),
+					)
+				}
+			/>
 		</Card>
 	);
 }

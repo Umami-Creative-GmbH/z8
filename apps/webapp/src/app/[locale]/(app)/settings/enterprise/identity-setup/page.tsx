@@ -50,6 +50,7 @@ async function IdentitySettingsContent() {
 						"mfa.policy.tabDescription",
 						"Require verified local authentication with controlled enrollment deadlines",
 					),
+					measure: true,
 					panel: <OrganizationMfaPolicyPanel organizationId={organizationId} />,
 				},
 				{
@@ -59,6 +60,7 @@ async function IdentitySettingsContent() {
 						"settings.enterpriseIdentitySetup.description",
 						"Guide SSO, SCIM provisioning, domain restrictions, invite policy, and default roles for this organization.",
 					),
+					measure: true,
 					panel: (
 						<IdentitySetupWizard
 							callbackBaseUrl={callbackBaseUrl}
@@ -74,6 +76,7 @@ async function IdentitySettingsContent() {
 						"settings.navigation.identityAccess.ssoDescription",
 						"Manage single sign-on providers for your organization",
 					),
+					measure: true,
 					panel: (
 						<SSOProviderManagement initialProviders={providers} callbackBaseUrl={callbackBaseUrl} />
 					),
@@ -85,6 +88,7 @@ async function IdentitySettingsContent() {
 						"settings.navigation.identityAccess.socialDescription",
 						"Configure the social login providers available to your organization",
 					),
+					measure: true,
 					panel: (
 						<SocialOAuthManagement
 							initialConfigs={socialOAuthConfigs}

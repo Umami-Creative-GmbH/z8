@@ -1,0 +1,284 @@
+{
+  "candidate": "9afe127e43f686675da1ed025b87eaf8dfd9ca63",
+  "files": 7,
+  "cases": 45,
+  "passed": 45,
+  "failed": 0,
+  "canonicalDisposableGate": "repository owner + run-postgres-integration-suites + migration verifier + integration-setup/integration-database",
+  "copies": "only absolute own app cwd and pnpm verification flags changed; canonical bootstrap/gate unchanged",
+  "caseOccurrences": [
+    {
+      "file": "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+      "fullName": "upcoming shifts lists the employee's published Europe/Berlin shifts from the organization's today on",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+      "fullName": "upcoming shifts lists the employee's published America/New_York shifts from the organization's today on",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+      "fullName": "upcoming shifts lists the employee's published UTC shifts from the organization's today on",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+      "fullName": "upcoming shifts leaves out another organization's shifts",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+      "fullName": "upcoming shifts drops today's shifts that already ended and keeps the one still running",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/scheduling/upcoming-shifts.integration.test.ts",
+      "fullName": "upcoming shifts returns at most the limit, earliest first",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+      "fullName": "shift request route parity (PostgreSQL) routes to a manager on the roster, whom the decision check admits",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+      "fullName": "shift request route parity (PostgreSQL) routes to an admin on the roster, whom the decision check admits",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+      "fullName": "shift request route parity (PostgreSQL) leaves out a departed manager, whom the decision check refuses",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+      "fullName": "shift request route parity (PostgreSQL) names a requesting manager among the deciders, as the decision check admits them",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+      "fullName": "shift request route parity (PostgreSQL) is unroutable on an employee-only roster, where the decision check admits nobody",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/approvals/route-preview/shift-request-parity.integration.test.ts",
+      "fullName": "shift request route parity (PostgreSQL) is not checked with shifts disabled",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/coverage.service.integration.test.ts",
+      "fullName": "coverage service snapshots only the Europe/Berlin organization's shifts of the requested day",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/coverage.service.integration.test.ts",
+      "fullName": "coverage service snapshots only the America/New_York organization's shifts of the requested day",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/coverage.service.integration.test.ts",
+      "fullName": "coverage service snapshots only the UTC organization's shifts of the requested day",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/coverage.service.integration.test.ts",
+      "fullName": "coverage service reports the Europe/Berlin organization's gaps by its calendar day",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/coverage.service.integration.test.ts",
+      "fullName": "coverage service reports the America/New_York organization's gaps by its calendar day",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/coverage.service.integration.test.ts",
+      "fullName": "coverage service reports the UTC organization's gaps by its calendar day",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/coverage.service.integration.test.ts",
+      "fullName": "coverage service reports no gaps for a range that ends before it starts",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/open-shifts.service.integration.test.ts",
+      "fullName": "open shifts counts counts the Europe/Berlin organization's open shifts of its today and tomorrow",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/open-shifts.service.integration.test.ts",
+      "fullName": "open shifts counts counts the America/New_York organization's open shifts of its today and tomorrow",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/open-shifts.service.integration.test.ts",
+      "fullName": "open shifts counts counts the UTC organization's open shifts of its today and tomorrow",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/shift-roster-guard.integration.test.ts",
+      "fullName": "shift assignment and the current roster (#1438) refuses a former employee and assigns a current one",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/shift-roster-guard.integration.test.ts",
+      "fullName": "shift assignment and the current roster (#1438) refuses an employee of another organization",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/shift-roster-guard.integration.test.ts",
+      "fullName": "shift assignment and the current roster (#1438) keeps editing a shift whose assignee has left, and refuses reassigning it to them",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (Europe/Berlin) judges a shift on the last day and ignores one dated the day after the window",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (Europe/Berlin) keeps the window's org-local days across a daylight saving change",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (Europe/Berlin) ignores a work period on the day after the window",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (Europe/Berlin) gives lookback days no daily findings but counts them toward the window's week",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (Europe/Berlin) reports a short rest gap between a lookback work period and the first shift",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (UTC) judges a shift on the last day and ignores one dated the day after the window",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (UTC) keeps the window's org-local days across a daylight saving change",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (UTC) ignores a work period on the day after the window",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (UTC) gives lookback days no daily findings but counts them toward the window's week",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/schedule-compliance.service.integration.test.ts",
+      "fullName": "schedule compliance window (UTC) reports a short rest gap between a lookback work period and the first shift",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions leaves out each blocked employee and anyone outside the organization",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions leaves the saved shift itself out of the overlap check",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions warns about a pending absence without leaving the employee out",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions judges skills as of the shift date and ranks qualified employees first",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions covers a shift on the skill expiry date and not the day after (#1142)",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions tells that a skill certificate is on file for an expired required skill (#1144)",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions judges compliance by each candidate's own regulation and reports only added findings",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions counts planned shifts from the start of the month toward monthly overtime",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions marks pickup requesters and ranks them before remaining contracted hours",
+      "occurrence": 1,
+      "status": "passed"
+    },
+    {
+      "file": "src/lib/effect/services/__tests__/staffing-suggestion.service.integration.test.ts",
+      "fullName": "staffing suggestions refuses a subarea of another organization",
+      "occurrence": 1,
+      "status": "passed"
+    }
+  ],
+  "runtimeAuthorityQualification": "These existing suites cover reader/roster/staffing/date/compliance boundaries; they are not a fresh real server publish/acknowledgment acceptance. Live Publish requests remained zero at STOP.",
+  "runnerAttempt01": "Wrong Git bash location; no resource or case executed",
+  "repeatsAdditive": false
+}

@@ -131,6 +131,7 @@
   },
   "billing": {
     "suspended": {
+      "accessConsequence": "Åtkomsten till denna organisation är pausad tills faktureringsuppgifterna har uppdaterats.",
       "adminDescription": "Din provperiod har upphört eller så är din prenumeration inte längre giltig. Uppdatera faktureringsuppgifterna för att fortsätta använda Z8.",
       "goToBilling": "Gå till fakturering",
       "memberDescription": "Denna organisation är avstängd. Kontakta en organisationsadministratör för att uppdatera faktureringen.",
@@ -165,6 +166,13 @@
     "teal": "Blågrön"
   },
   "common": {
+    "actionErrors": {
+      "failed": "Något gick fel. Försök igen.",
+      "formerEmployee": "Tidigare anställda kan inte väljas. Välj någon i den aktuella personalstyrkan.",
+      "invalidInput": "Kontrollera dina uppgifter och försök igen.",
+      "notAllowed": "Du har inte behörighet till denna inställning.",
+      "signInRequired": "Logga in för att fortsätta."
+    },
     "actions": "Åtgärder",
     "active": "Aktiv",
     "add": "Lägg till",
@@ -174,6 +182,7 @@
     "approve": "Godkänn",
     "assign": "Tilldela",
     "back": "Tillbaka",
+    "backToDashboard": "Tillbaka till översikten",
     "brandLogo": "{brand}-logotyp",
     "breadcrumb": {
       "breadcrumb": "länkstig",
@@ -195,6 +204,7 @@
     "copy": "Kopiera",
     "create": "Skapa",
     "current": "Aktuell",
+    "date": "Datum",
     "datePicker": {
       "clearDate": "Rensa datum",
       "placeholder": "Välj ett datum"
@@ -228,13 +238,13 @@
     "durationMinutes": "{count} min",
     "edit": "Redigera",
     "employees": "Anställda",
-    "enabled": "Aktiverad",
     "error": "Fel",
     "error-occurred": "Ett fel uppstod",
     "errors": {
       "monthClosed": "{month} är stängd. Den måste öppnas igen innan dess arbete eller frånvaro kan ändras."
     },
     "fieldPresets": "{label}-förinställningar",
+    "filters": "Filter",
     "focusInput": "Fokusera inmatningsfält",
     "gender": {
       "female": "Kvinna",
@@ -253,6 +263,7 @@
       "application": "Läser in applikationen",
       "auditExportSettings": "Läser in inställningar för revisionsexport",
       "authentication": "Läser in autentisering",
+      "billableTimeSettings": "Läser in inställningar för debiterbar tid",
       "changePolicySettings": "Läser in inställningar för ändringspolicy",
       "coverageRuleSettings": "Läser in inställningar för täckningsregler",
       "customerSettings": "Läser in kundinställningar",
@@ -262,6 +273,8 @@
       "demoDataSettings": "Läser in inställningar för demodata",
       "deploymentDiagnostics": "Läser in driftsättningsdiagnostik",
       "employeeReports": "Läser in medarbetarrapporter",
+      "employees": "Läser in anställda",
+      "employeeVacationAllowance": "Läser in semesterkvot för anställd",
       "employeeVacationAllowances": "Läser in medarbetarnas semesterkvoter",
       "exportOperations": "Läser in exportoperationer",
       "holidaySettings": "Läser in helgdagsinställningar",
@@ -283,6 +296,7 @@
       "shiftSchedule": "Läser in skiftschema",
       "shiftTemplateSettings": "Läser in inställningar för skiftmallar",
       "skillSettings": "Läser in kompetensinställningar",
+      "statistics": "Läser in statistik",
       "surchargeSettings": "Läser in tilläggsinställningar",
       "team": "Läser in team",
       "todaySManagerBriefing": "Läser in dagens chefsgenomgång",
@@ -315,8 +329,6 @@
     },
     "more": "mer",
     "moreActions": "Fler åtgärder",
-    "moveDown": "Flytta ned",
-    "moveUp": "Flytta upp",
     "name": "Namn",
     "navigation": {
       "retry": "Försök ladda navigering igen",
@@ -330,6 +342,7 @@
     "notifications": {
       "bellLabel": "{count, plural, =0 {Aviseringar} other {Aviseringar (# olästa)}}"
     },
+    "offline": "Offline",
     "open": "Öppna",
     "openEnded": "Utan slutdatum",
     "openMenu": "Öppna menyn",
@@ -389,6 +402,7 @@
     "removing": "Tar bort...",
     "reset": "Återställ",
     "retry": "Försök igen",
+    "retrying": "Försöker igen…",
     "revoke": "Återkalla",
     "save": "Spara",
     "saveChanges": "Spara ändringar",
@@ -403,7 +417,9 @@
       "sidebar": "Sidofält",
       "toggleSidebar": "Växla sidofält"
     },
+    "signIn": "Logga in",
     "skip": "Hoppa över",
+    "skipToContent": "Hoppa till innehåll",
     "start": "Start",
     "status": "Status",
     "submitting": "Skickar…",
@@ -422,6 +438,9 @@
     },
     "to": "till",
     "today": "Idag",
+    "tryAgain": "Försök igen",
+    "unavailable": "Ej tillgänglig",
+    "undo": "Ångra",
     "unexpectedError": "Ett oväntat fel inträffade",
     "unknown": "Okänd",
     "unknownEmployee": "Okänd anställd",
@@ -575,6 +594,7 @@
       "submit": "Registrera originalkontroll",
       "suspensionNotice": "En godkänd omkontroll återupprättar inte automatiskt ett suspenderat tillstånd. Det krävs en ny kontroll och ett uttryckligt beslut om återupprättande.",
       "title": "Kontrollera {name}s originalkörkort",
+      "transportError": "Kontrollen kunde inte registreras. Dina uppgifter har sparats; försök igen efter att du kontrollerat din anslutning och ditt ansvarsområde.",
       "verifier": "Jag bekräftar att de registrerade uppgifterna och de enskilda behörighetsresultaten återspeglar min kontroll."
     },
     "checkPage": {
@@ -583,6 +603,7 @@
       "loadError": "Körkortsposten kunde inte läsas in. Kontrollera ditt nuvarande kontrollantansvar.",
       "loading": "Läser in körkortsposten…",
       "notIntended": "{name} är inte en avsedd förare. En kontroll behövs endast för avsedda förare.",
+      "retained": "Sparat underlag är tillgängligt för granskning. Nya kontroller är inte tillgängliga för tidigare anställda.",
       "title": "Körkortskontroll för {name}"
     },
     "checks": {
@@ -593,8 +614,10 @@
         "status": "Status",
         "team": "Team"
       },
+      "customOrder": "Sorterat efter vald kolumn och riktning.",
       "deadline": "{date} ({timezone})",
       "dueNow": "Kontroll ska göras nu",
+      "dueOrder": "Kontroller som förfaller nu först, därefter nästa tidsfrist.",
       "empty": {
         "description": "Avsedda förare inom ditt kontrollantansvar visas här. Kontakta en administratör om någon saknas.",
         "title": "Ingen att kontrollera än"
@@ -607,6 +630,8 @@
       "loadError": "Listan kunde inte läsas in. Kontrollera ditt nuvarande kontrollantansvar.",
       "loading": "Läser in avsedda förare…",
       "noMatches": "Inga avsedda förare matchar sökningen eller filtret.",
+      "refresh": "Uppdatera arbetslista för kontroller",
+      "refreshing": "Uppdaterar arbetslista för kontroller…",
       "search": "Sök efter namn",
       "status": {
         "active": "Aktiv",
@@ -682,6 +707,7 @@
       "failed": "Inspekterad behörighet ej godkänd",
       "field": "Korrigerat fält",
       "from": "Från-datum (UTC)",
+      "fromHelp": "Perioden börjar kl. 00:00 UTC.",
       "globalSuspension": "Alla körtillstånd tillfälligt återkallade",
       "help": "Ursprungliga bekräftelser, daterade kompletteringar och gällande beslut om körtillstånd förblir separata. Tidigare underlag som behövs för att förstå den valda perioden markeras som kontext. Alla händelsetider och periodgränser nedan använder UTC.",
       "impedimentReported": "Körhinder rapporterat",
@@ -716,6 +742,7 @@
       "suspended": "Behörighet upphävd",
       "title": "Kontroll- och behörighetshistorik",
       "to": "Före datum (UTC)",
+      "toHelp": "Perioden slutar före kl. 00:00 UTC detta datum.",
       "unavailable": "Historiken är inte tillgänglig. Kontrollera tidsperioden och din nuvarande åtkomst.",
       "value": "Korrigerat värde",
       "verifierConfirmation": "Verifierarens bekräftelse registrerades vid tidpunkten för den ursprungliga kontrollen"
@@ -751,7 +778,6 @@
         "teamNotFound": "Det teamet finns inte längre."
       },
       "notRequired": "Krävs inte (undantagen)",
-      "removed": "Tilldelning av avsedd förare togs bort",
       "required": "Krävs",
       "saved": "Avsedda förare har sparats",
       "targetOrganization": "Hela organisationen",
@@ -788,15 +814,20 @@
     "operational": {
       "advisory": "Körtillstånd",
       "loading": "Läser in körtillstånd…",
+      "loadingEmployees": "Läser in anställda för planering…",
       "noEmployees": "Inga matchande medarbetare.",
       "recordingHelp": "Du kan alltid registrera arbetstid och faktisk fordonsanvändning. Att välja ett fordon ger inget körtillstånd; kontrollerade behörigheter fastställer inte lämplighet för varje fordon.",
       "refresh": "Uppdatera körstatus",
+      "refreshEmployees": "Uppdatera planeringsanställda",
+      "rosterUnavailable": "Planeringsanställda är inte tillgängliga. Kontrollera din organisationsbehörighet och försök igen.",
       "search": "Hitta medarbetare",
       "searchHelp": "Upp till 50 medarbetare visas. Förfina sökningen för att hitta en annan medarbetare. Denna vy innehåller inga kontrollposter.",
       "title": "Körstatus för planering",
       "unavailable": "Status för körtillstånd är inte tillgänglig."
     },
     "page": {
+      "reconciling": "Läser in körkortsbehörighet för den aktuella organisationen…",
+      "scope": "Körtillstånd, ursprungliga kontroller och planering i din aktiva organisation. Varje vy följer din aktuella åtkomst.",
       "title": "Körkort"
     },
     "policyTitle": "Organisationspolicy",
@@ -960,6 +991,13 @@
       "description": "Du behöver en medarbetarprofil för att {feature}. Skapa en organisation eller kontakta din administratör.",
       "emailBody": "Hej,nnjag behöver få en medarbetarprofil konfigurerad för att få tillgång till plattformens funktioner. Skulle du kunna hjälpa mig med detta?nnTack!",
       "emailSubject": "Konfiguration av medarbetarprofil krävs",
+      "formerEmployee": {
+        "description": "Du är medlem i den här organisationen igen, men din tidigare anställning har avslutats. En administratör måste återanställa dig innan du kan {feature}.",
+        "emailBody": "Hej,nnJag är medlem i organisationen igen, men min tidigare anställning avslutades. Kan du vänligen återanställa mig så att jag får tillgång till plattformsfunktionerna?nnTack!",
+        "emailSubject": "Begäran om återanställning",
+        "helpText": "Be din administratör att återanställa dig. Fram till dess kan du inte använda den här organisationen.",
+        "title": "Din anställning här har avslutats"
+      },
       "helpText": "Om du bjöds in till en organisation ber du din administratör att konfigurera din medarbetarprofil.",
       "title": "Medarbetarprofil krävs"
     },
@@ -1025,12 +1063,16 @@
     "workerQueue": "Läser in arbetskön"
   },
   "mfa": {
+    "alternatives": {
+      "title": "Verifiera en befintlig inloggning"
+    },
     "banner": {
       "action": "Granska krav och verifiera",
       "requirement": "Denna organisation kräver verifierad autentisering från {deadline}."
     },
     "code": {
       "label": "Autentiseringskod",
+      "required": "Ange en autentiseringskod",
       "verify": "Verifiera autentiserare"
     },
     "continue": "Fortsätt efter verifiering",
@@ -1056,6 +1098,8 @@
       "title": "Registrera eller ersätt en autentiserare",
       "warning": "Att lägga till eller ersätta en faktor kräver verifiering inom fem minuter. Verifiera ersättningen innan du tar bort den gamla faktorn. Att återkalla din sista faktor är tillåtet och kan blockera åtkomst till organisationerna ovan; det ger inte ett nytt registreringsfönster."
     },
+    "loading": "Läser in säkerhetsverifiering",
+    "navigation": "Organisation och konto",
     "organization": {
       "select": "Välj en annan organisation"
     },
@@ -1070,6 +1114,7 @@
     "password": {
       "failed": "Lösenordsverifiering misslyckades",
       "label": "Nuvarande lösenord",
+      "required": "Ange ditt nuvarande lösenord",
       "verified": "Lösenord verifierat. Du kan registrera din första autentiserare, eller verifiera en befintlig autentiserare eller reservkod nedan.",
       "verify": "Verifiera lösenord"
     },
@@ -1097,7 +1142,16 @@
       "description": "För återställning, verifiera ditt lösenord ovan och ange sedan en oanvänd reservkod. Detta rensar tidigare lokal verifiering i alla dina organisationer.",
       "label": "Reservkod",
       "lockout": "Om en ensam administratör förlorar alla autentiserings- och återställningsvägar förblir organisationen låst. Det finns inget sätt för administratör eller support att kringgå detta.",
-      "success": "Återställning tillåter endast registrering av ersättning. Verifiera en autentiserare innan du återgår till din organisation."
+      "nextSteps": "Verifiera ditt lösenord igen innan du verifierar en autentiserare.",
+      "open": "Återställ med en reservkod",
+      "required": "Ange en oanvänd reservkod",
+      "success": "Återställning tillåter endast registrering av ersättning. Verifiera en autentiserare innan du återgår till din organisation.",
+      "title": "Kontoåterställning"
+    },
+    "requirements": {
+      "empty": "Inga organisationskrav finns listade för detta konto.",
+      "selected": "Vald organisation",
+      "title": "Organisationskrav"
     },
     "security": {
       "factorWarning": "Att ta bort en faktor kan blockera åtkomst till organisationer som kräver den. Verifiera en ersättning först; borttagning av den sista faktorn ger ingen ny respit.",
@@ -1105,6 +1159,7 @@
       "policyLink": "Organisationspolicy för autentisering (ägare/administratörer)"
     },
     "signout": "Logga ut",
+    "signout.failed": "Utloggningen misslyckades. Försök igen.",
     "social": {
       "verify": "Verifiera befintlig inloggning med {provider}"
     },
@@ -1143,16 +1198,18 @@
     "platform-admin": "Plattformsadministratör",
     "reports": "Rapporter",
     "scheduling": "Schemaläggning",
+    "secondary-label": "Inställningar och hjälp",
     "settings": "Inställningar",
     "team": "Team",
     "teamAbsences": "Teamfrånvaro",
     "teamDriving": "Kördetaljer",
-    "team-label": "Team",
+    "team-organization-label": "Team och organisation",
     "teamPeriodSubmissions": "Periodinlämningar",
     "teamPresence": "Vilka är på plats",
     "time-tracking": "Tidrapportering",
     "today": "Idag",
     "travel-expenses": "Reseutlägg",
+    "workplace-label": "Arbetsplats",
     "worksCouncil": "Företagsråd"
   },
   "notifications": {
@@ -1368,6 +1425,10 @@
       "forgottenClockOutReminder": {
         "message": "Ditt arbetspass slutade kl. {endTime} ({timezone}). Stämpla ut om du har slutat arbeta.",
         "title": "Du är fortfarande instämplad"
+      },
+      "formerEmployeeNeedsRehire": {
+        "message": "{name} är medlem igen, men dennes tidigare anställning avslutades. Personen har ingen åtkomst förrän du återanställer denne.",
+        "title": "En tidigare anställd behöver återanställas"
       },
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# anställd är fortfarande endast kopplad till en tidigare chef: {names}. Tilldela en nuvarande chef.} other {# anställda är fortfarande endast kopplade till en tidigare chef: {names}. Tilldela en nuvarande chef.}}",
@@ -1735,6 +1796,7 @@
         "title": "Dags att dricka vatten!"
       }
     },
+    "countFailed": "Antal olästa är inte tillgängligt",
     "description": "Granska uppdateringar, godkännanden och systemvarningar i en och samma tidslinje.",
     "empty": {
       "description": "Du är helt ikapp! Nya aviseringar visas här.",
@@ -1754,6 +1816,8 @@
       "read": "Lästa",
       "unread": "Olästa"
     },
+    "loading": "Läser in aviseringar…",
+    "loadingCount": "Läser in antal olästa…",
     "nativePush": {
       "attention": {
         "title": "Något kräver din uppmärksamhet"
@@ -1844,6 +1908,7 @@
         "employee_deactivation_shifts_opened": "Arbetspass som öppnats på grund av en inaktivering",
         "equipment_return_reminder": "Påminnelser om återlämning av utrustning",
         "forgotten_clock_out_reminder": "Glömd utstämpling",
+        "former_employee_needs_rehire": "Tidigare anställda som behöver återanställas",
         "former_employee_reports_without_manager": "Anställda utan en nuvarande chef",
         "kiosk_command_refused": "Kioskstämpling registrerades inte",
         "kiosk_fob_registered": "Kiosktagg registrerad",
@@ -1871,6 +1936,7 @@
       "placeholder": "Sök aviseringar..."
     },
     "selection": {
+      "actions": "Markerade aviseringar",
       "selectAll": "Markera alla synliga",
       "selectAllAria": "Markera alla synliga aviseringar",
       "selectNamedAria": "Markera {title}",
@@ -1888,11 +1954,14 @@
     "toasts": {
       "deleted": "Tog bort {count} aviseringar",
       "deleteFailed": "Kunde inte ta bort aviseringar",
+      "deletePartial": "{count} borttagna; {failed} misslyckades. Försök igen med återstående markering.",
       "markedRead": "Markerade {count} aviseringar som lästa",
-      "markReadFailed": "Kunde inte markera aviseringar som lästa"
+      "markReadFailed": "Kunde inte markera aviseringar som lästa",
+      "readPartial": "{count} markerade som lästa; {failed} misslyckades. Försök igen med återstående markering."
     },
     "unreadBadge": "{count} olästa",
-    "unreadCountOverflow": "99+"
+    "unreadCountOverflow": "99+",
+    "visibleWindow": "{count} synliga · senaste {limit} aviseringarna"
   },
   "offline": {
     "banner": {
@@ -3342,12 +3411,11 @@
     "hoursOnly": "{hours}h",
     "pm": "EM"
   },
-  "userAvatar": {
-    "alt": "Användaravatar"
-  },
   "user": {
+    "account": "Konto",
     "font-size": "Teckenstorlek",
     "language": "Språk",
+    "loadingAccount": "Läser in konto",
     "logging-out": "Loggar ut...",
     "log-out": "Logga ut",
     "log-out-failed": "Kunde inte logga ut. Försök igen.",
@@ -3361,6 +3429,9 @@
     "theme-time": "Tidsbaserat",
     "theme-time-info": "Tidsbaserat använder läget {currentMode}. Växlar till {nextMode} kl. {time}.",
     "theme-toggle": "Växla tema"
+  },
+  "userAvatar": {
+    "alt": "Användaravatar"
   },
   "vacationBalance": {
     "conflictingPolicies": "Motstridiga semesterpolicyer",

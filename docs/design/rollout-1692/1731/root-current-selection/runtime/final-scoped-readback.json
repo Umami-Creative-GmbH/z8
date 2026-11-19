@@ -1,0 +1,35 @@
+{
+  "documents": [
+    {
+      "employee_id": "4a69398e-e825-4d8e-9265-1f1de4b9c2bf",
+      "category": "certificate",
+      "count": 499
+    },
+    {
+      "employee_id": "4a69398e-e825-4d8e-9265-1f1de4b9c2bf",
+      "category": "other",
+      "count": 1
+    },
+    {
+      "employee_id": "6638d247-d21e-4f82-9b5b-0091af9ac9ac",
+      "category": "certificate",
+      "count": 21
+    }
+  ],
+  "policy": [
+    {
+      "category": "certificate",
+      "retention_years": 6
+    },
+    {
+      "category": "other",
+      "retention_years": 6
+    }
+  ],
+  "purgedIds": [
+    "000ad44e-948e-4671-bc0d-a56756554ab1",
+    "1996e03c-4574-4fbb-be33-b15bde15a016"
+  ],
+  "purgedStillPresent": [],
+  "activeOfficerGrants": 0
+}

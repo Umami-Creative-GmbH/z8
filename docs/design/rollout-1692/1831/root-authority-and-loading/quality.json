@@ -1,0 +1,78 @@
+{
+  "sourceCommit": "0e73859dd1f78ea5f89f139dca34fae9489b6971",
+  "initialCorrection": "026f9e6df16d0964795582e0a6766f1c113c208b",
+  "base": "699a1a782ca8f0ab2def50b31e4921fd6d17a073",
+  "sourcePins": {
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.integration.test.ts": "c15e6a86f92464b994c8ea5a310664b9d61b4f0701f77d965b3c28346f1fbb34",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.test.ts": "0fbf352f5f38a267a38fbff432404edd1e5a953ba0d5efbc8656f08631547f7e",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/actions.ts": "ca0f12a857890a649449ec7f36a3ec0a1580cb3e0b0e5c77aa8770606fa12bca",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page-client.tsx": "1f89982636c3666ac0d19020104db084e12529c6b8fe1a0547cbec86dca6418d",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.test.tsx": "fdb59cef11cced9d61218dac766f9bb6edd98ce4bcfe1cb8fbc58ca076e7643e",
+    "apps/webapp/src/app/[locale]/onboarding/vacation-policy/use-policy-arrival.ts": "800c92b056c2a8eae8c6cc6636c3c92a6f69642b1acb65ba41caa71eb64ea41e",
+    "apps/webapp/src/lib/effect/services/onboarding.service.ts": "2aecce1cd8788e3d96b592de21c80a8c5e7a5ec0c0b985c05f851c03ab1aae98",
+    "apps/webapp/src/lib/validations/onboarding.ts": "94656a41622221f5737469b86979b2a0fb0f2a9b84d718ee065ef64395c82ec3"
+  },
+  "runs": [
+    {
+      "name": "compatibility",
+      "physicalFiles": 175,
+      "tests": 1787
+    },
+    {
+      "name": "scope-independent",
+      "physicalFiles": 2,
+      "tests": 31
+    },
+    {
+      "name": "scope-focused",
+      "physicalFiles": 4,
+      "tests": 66
+    }
+  ],
+  "uniqueFiles": 178,
+  "uniqueTests": 1822,
+  "postgres": {
+    "files": 3,
+    "passed": 99,
+    "pending": 0
+  },
+  "doctor": {
+    "scannedRevision": "026f9e6df16d0964795582e0a6766f1c113c208b",
+    "dirtyCheckoutCanonicallyCommittedAs": "0e73859dd1f78ea5f89f139dca34fae9489b6971",
+    "errors": 0,
+    "warnings": 0,
+    "existingExceptions": 2
+  },
+  "runtime": {
+    "before": {
+      "checks": 5,
+      "captures": 2
+    },
+    "after": {
+      "checks": 9,
+      "captures": 2
+    },
+    "restrictedContinuation": {
+      "checks": 4
+    },
+    "qualification": "Final current-source Save/retry/readback passed nine checks, then waitForNetworkIdle timed out only after member redirect. Separate four-check continuation observes the settled destination, real typed member refusals, no writes and clean connected Next probes. The failed harness log and partial nine-check result are retained. Native pending owner is independently inspected at the same committed source. Before restores only the exact old client over the corrected server/current infrastructure, not a complete historical application. Intermediate026 runs remain separately labeled."
+  },
+  "authority": {
+    "canonicalSettingsAccess": true,
+    "expectedScopeIsComparisonHint": true,
+    "clientChoosesOrganization": false,
+    "atomicConcurrentRevocationClaim": false,
+    "legacyOptionalHintCallersRemainServerScoped": true
+  },
+  "rawQualifications": [
+    "Native merger reproduced ten cases: eight authority/admission failures and two missing pending headings; its 1,792 passes are a historical selection, not final root counts.",
+    "Old-service real PostgreSQL member probe fails on actual writes; another old026 both-admin-organizations probe fails expected-scope refusal. Integration tests use the sanctioned fake request/auth boundary with real PostgreSQL, not live browser role-revocation exploit proof.",
+    "compatibility-command.json records exitCode1 from the earlier Payroll focus failure. compatibility.json/log are the later final 1,787-pass run. The historical command metadata is preserved, not relabeled exit0. Isolated unchanged Payroll focus and unchanged broad rerun passed before the final expected-scope extension.",
+    "scope-doctor.json records026f9e6 while final expected-scope bytes were dirty and subsequently committed as0e73859. Two existing page-local Doctor exceptions remain; zero diagnostics is not absence of exceptions.",
+    "The initial service formatter churn was removed only from our own patch. Canonical Biome-formatted semantic output was compared equal before narrowing; unrelated service formatting is preserved.",
+    "After temporarily stopping only root-owned services under Windows resource pressure, Docker restart changed ephemeral ports. One first old-source PG attempt failed connection setup with all twelve tests pending. Corrected private port mapping then reproduced the intended member authority failure. No failed setup is treated as product red evidence.",
+    "Original page-before/config-overlay snapshots have LF physical bytes whose declared hashes match reconstructed CRLF, not stored raw bytes. Those two original source-hash claims remain qualified and raw files unchanged.",
+    "Original formatter-profile failures, non-null assertion and archive whitespace remain retained; no blanket whitespace pass. Original worker browser/native/26PG evidence remains inherited with its original state-transfer/config limitations.",
+    "Policy/default/history validation and transactional constraints remain existing owners. No default replacement, durable idempotency, cancelled accepted server write, or new vacation/date calculation is claimed. Remote catalogs, full production generation, providers, physical devices, true zoom and broad transitions remain unpassed."
+  ]
+}

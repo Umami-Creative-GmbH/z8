@@ -1,0 +1,29 @@
+{
+  "kind": "safe deterministic clone",
+  "rawSha256": "55c31a122bc8ed55c147cf25e93ff6ca3a0bce04b45d864241e56c47e78f11e0",
+  "passed": 2,
+  "failed": 0,
+  "skipped": 0,
+  "physicalFiles": 2,
+  "files": [
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/pdf-exporter.compiled.test.ts",
+      "cases": [
+        {
+          "name": "exports employee report content as a real PDF after React Compiler optimization",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "path": "apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+      "cases": [
+        {
+          "name": "renders report facts, table rows, unknown values and notes after React Compiler optimization",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "scope": "Actual compiler, real renderer and parser; projection content rather than authorization"
+}

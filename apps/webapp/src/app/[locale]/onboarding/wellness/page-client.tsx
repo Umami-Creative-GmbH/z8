@@ -2,18 +2,19 @@
 
 import { IconDroplet, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+import {
+	type RefObject,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { toast } from "sonner";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -24,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { useSession } from "@/lib/auth-client";
+import type { OnboardingWellnessFormValues } from "@/lib/validations/wellness";
 import {
 	CUSTOM_INTERVAL_RANGE,
 	DAILY_GOAL_RANGE,
@@ -35,6 +38,7 @@ import { runOnboardingAction } from "../run-onboarding-action";
 import { configureWellnessOnboarding, skipWellnessSetup } from "./actions";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+const defaultSubmitMeta: { arrival: object | null } = { arrival: null };
 
 // The /onboarding route only loads the common and onboarding namespaces, so the
 // settings.wellness.presets.* keys on WATER_PRESETS would render in English here.
@@ -75,11 +79,11 @@ const WATER_PRESET_COPY: Record<
 
 function WellnessHeader({ t }: { t: Translate }) {
 	return (
-		<div className="onboarding-heading-panel mb-8 rounded-xl border border-white/30 bg-white/20 p-6 text-center shadow-xl shadow-black/5 backdrop-blur-[40px] sm:p-8 dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75">
-			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
-				<IconDroplet className="size-8 text-blue-600 dark:text-blue-400" />
+		<header className="space-y-3 border-b px-5 py-6 sm:px-8">
+			<div className="inline-flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+				<IconDroplet aria-hidden="true" className="size-5" />
 			</div>
-			<h1 className="mb-4 text-3xl font-bold tracking-tight">
+			<h1 className="text-balance text-2xl font-semibold tracking-tight">
 				{t("onboarding.wellness.title", "Stay Hydrated")}
 			</h1>
 			<p className="text-muted-foreground">
@@ -88,53 +92,55 @@ function WellnessHeader({ t }: { t: Translate }) {
 					"Set up water reminders to stay healthy during your workday. You'll receive gentle notifications to drink water while clocked in.",
 				)}
 			</p>
-		</div>
+		</header>
 	);
 }
 
 function useWellnessForm({
 	push,
-	setLoading,
 	t,
+	draft,
+	arrival,
+	defaultValues,
+	setError,
 }: {
 	push: ReturnType<typeof useRouter>["push"];
-	setLoading: Dispatch<SetStateAction<boolean>>;
 	t: Translate;
+	draft: PersonalDraft;
+	arrival: RefObject<object | null>;
+	defaultValues: OnboardingWellnessFormValues;
+	setError: (error: string | null) => void;
 }) {
 	return useForm({
-		defaultValues: {
-			enableWaterReminder: true,
-			waterReminderPreset: "moderate" as WaterReminderPreset,
-			waterReminderIntervalMinutes: 45,
-			waterReminderDailyGoal: 8,
-		},
-		onSubmit: async ({ value }) => {
+		defaultValues,
+		onSubmitMeta: defaultSubmitMeta,
+		onSubmit: async ({ value, meta }) => {
+			if (!meta.arrival || arrival.current !== meta.arrival || !draft.tryStart()) return;
+			setError(null);
+			const submittedArrival = meta.arrival;
 			await runOnboardingAction({
 				action: () => configureWellnessOnboarding(value),
 				onResult: (result) => {
+					if (arrival.current !== submittedArrival) return;
 					if (result.success) {
 						if (value.enableWaterReminder) {
-							toast.success(
-								t("onboarding.wellness.success", "Water reminder enabled!"),
-							);
+							toast.success(t("onboarding.wellness.success", "Water reminder enabled!"));
 						}
+						draft.continueNavigation();
 						push("/onboarding/notifications");
 						return true;
 					}
-					toast.error(
-						result.error ||
-							t(
-								"onboarding.wellness.error",
-								"Failed to save wellness settings",
-							),
-					);
+					const message =
+						result.error || t("onboarding.wellness.error", "Failed to save wellness settings");
+					setError(message);
+					toast.error(message);
 				},
 				onRejected: () => {
-					toast.error(
-						t("onboarding.wellness.error", "Failed to save wellness settings"),
-					);
+					if (arrival.current !== submittedArrival) return;
+					setError(t("onboarding.wellness.error", "Failed to save wellness settings"));
+					toast.error(t("onboarding.wellness.error", "Failed to save wellness settings"));
 				},
-				setLoading,
+				setLoading: draft.setPending,
 			});
 		},
 	});
@@ -158,12 +164,12 @@ function WellnessSettings({
 	t: Translate;
 }) {
 	return (
-		<div className="space-y-4 rounded-lg bg-muted/50 p-4">
+		<div className="space-y-6 border-t pt-6">
 			<div className="space-y-2">
 				<Label htmlFor="wellness-reminder-frequency">
 					{t("onboarding.wellness.reminderFrequency", "Reminder Frequency")}
 				</Label>
-				<Select value={selectedPreset} onValueChange={onPresetChange}>
+				<Select value={selectedPreset} onValueChange={onPresetChange} disabled={loading}>
 					<SelectTrigger
 						id="wellness-reminder-frequency"
 						aria-describedby="wellness-reminder-frequency-description"
@@ -189,10 +195,7 @@ function WellnessSettings({
 						))}
 					</SelectContent>
 				</Select>
-				<p
-					id="wellness-reminder-frequency-description"
-					className="text-xs text-muted-foreground"
-				>
+				<p id="wellness-reminder-frequency-description" className="text-sm text-muted-foreground">
 					{t(
 						WATER_PRESET_COPY[selectedPreset].descriptionKey,
 						WATER_PRESET_COPY[selectedPreset].descriptionDefault,
@@ -208,7 +211,7 @@ function WellnessSettings({
 								<Label id="wellness-custom-interval-label">
 									{t("onboarding.wellness.customInterval", "Custom Interval")}
 								</Label>
-								<span className="text-sm font-medium">
+								<span className="shrink-0 text-sm font-semibold tabular-nums">
 									{t("common.durationMinutes", "{count} min", {
 										count: field.state.value,
 									})}
@@ -216,6 +219,7 @@ function WellnessSettings({
 							</div>
 							<Slider
 								aria-labelledby="wellness-custom-interval-label"
+								format={{ style: "unit", unit: "minute", unitDisplay: "long" }}
 								value={[field.state.value]}
 								onValueChange={(value) => field.handleChange(value[0])}
 								min={CUSTOM_INTERVAL_RANGE.min}
@@ -247,9 +251,8 @@ function WellnessSettings({
 							<Label id="wellness-daily-goal-label">
 								{t("onboarding.wellness.dailyGoal", "Daily Goal")}
 							</Label>
-							<span className="text-sm font-medium">
-								{field.state.value}{" "}
-								{t("onboarding.wellness.glasses", "glasses")}
+							<span className="shrink-0 text-sm font-semibold tabular-nums">
+								{field.state.value} {t("onboarding.wellness.glasses", "glasses")}
 							</span>
 						</div>
 						<Slider
@@ -266,105 +269,207 @@ function WellnessSettings({
 								{DAILY_GOAL_RANGE.min} {t("onboarding.wellness.glass", "glass")}
 							</span>
 							<span>
-								{DAILY_GOAL_RANGE.max}{" "}
-								{t("onboarding.wellness.glasses", "glasses")}
+								{DAILY_GOAL_RANGE.max} {t("onboarding.wellness.glasses", "glasses")}
 							</span>
 						</div>
 					</div>
 				)}
 			</form.Field>
 
-			<div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-				<h4 className="mb-1 text-sm font-medium text-blue-900 dark:text-blue-100">
+			<form.Subscribe selector={(state) => state.values.waterReminderIntervalMinutes}>
+				{(minutes) => (
+					<p
+						id="wellness-cadence"
+						className="rounded-lg bg-primary/5 px-4 py-3 text-sm text-foreground"
+					>
+						{t(
+							"onboarding.wellness.cadence",
+							"A reminder every {minutes} minutes while clocked in.",
+							{ minutes },
+						)}
+					</p>
+				)}
+			</form.Subscribe>
+			<div className="border-t pt-4">
+				<h3 className="mb-2 text-sm font-medium">
 					{t("onboarding.wellness.features", "What you'll get")}
-				</h4>
-				<ul className="space-y-1 text-xs text-blue-800 dark:text-blue-200">
-					<li>
-						{t(
-							"onboarding.wellness.feature1",
-							"Gentle reminders while clocked in",
-						)}
-					</li>
-					<li>
-						{t("onboarding.wellness.feature2", "Track your daily water intake")}
-					</li>
-					<li>
-						{t(
-							"onboarding.wellness.feature3",
-							"Build healthy streaks with gamification",
-						)}
-					</li>
-					<li>
-						{t(
-							"onboarding.wellness.feature4",
-							"Dashboard widget to track progress",
-						)}
-					</li>
+				</h3>
+				<ul className="list-disc space-y-1 pl-4 text-sm text-muted-foreground">
+					<li>{t("onboarding.wellness.feature1", "Gentle reminders while clocked in")}</li>
+					<li>{t("onboarding.wellness.feature2", "Track your daily water intake")}</li>
+					<li>{t("onboarding.wellness.feature3", "Build healthy streaks with gamification")}</li>
+					<li>{t("onboarding.wellness.feature4", "Dashboard widget to track progress")}</li>
 				</ul>
 			</div>
 		</div>
 	);
 }
 
+const DEFAULT_VALUES: OnboardingWellnessFormValues = {
+	enableWaterReminder: true,
+	waterReminderPreset: "moderate",
+	waterReminderIntervalMinutes: 45,
+	waterReminderDailyGoal: 8,
+};
+
+// A page-lifetime external store: personal writes may outlive the mounted
+// account/organization arrival. It never persists or authorizes workspace access.
+function createPersonalDraft() {
+	let values = { ...DEFAULT_VALUES };
+	let pending = false;
+	let continuing = false;
+	const listeners = new Set<() => void>();
+	const setPending = (next: boolean) => {
+		pending = next;
+		for (const notify of listeners) notify();
+	};
+	return {
+		getValues: () => values,
+		remember: (next: OnboardingWellnessFormValues) => {
+			values = { ...next };
+		},
+		isPending: () => pending,
+		setPending,
+		continueNavigation: () => {
+			continuing = true;
+		},
+		leave: () => {
+			if (continuing) {
+				continuing = false;
+				setPending(false);
+			}
+		},
+		tryStart: () => {
+			if (pending) return false;
+			setPending(true);
+			return true;
+		},
+		subscribe: (notify: () => void) => {
+			listeners.add(notify);
+			return () => {
+				listeners.delete(notify);
+			};
+		},
+	};
+}
+type PersonalDraft = ReturnType<typeof createPersonalDraft>;
+const idleSnapshot = () => false;
+
 export default function WellnessPage() {
+	const { data: session, isPending } = useSession();
+	// Drafts belong to an account, while continuation belongs to one arrival.
+	// Keep these owners separate across organization and account round trips.
+	const [drafts] = useState(() => new Map<string, PersonalDraft>());
+	const { t } = useTranslate();
+	if (!session?.user.id || isPending) {
+		return (
+			<>
+				<ProgressIndicator currentStep="wellness" />
+				<section className="mx-auto max-w-2xl overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
+					<WellnessHeader t={t} />
+					<p role="status" aria-busy="true" className="p-5 text-sm text-muted-foreground sm:p-8">
+						{t("common.loading", "Loading...")}
+					</p>
+				</section>
+			</>
+		);
+	}
+	return (
+		<WellnessStep
+			key={JSON.stringify([session.user.id, session.session.activeOrganizationId])}
+			userId={session.user.id}
+			organizationId={session.session.activeOrganizationId ?? null}
+			drafts={drafts}
+		/>
+	);
+}
+
+function WellnessStep({
+	userId,
+	organizationId,
+	drafts,
+}: {
+	userId: string;
+	organizationId: string | null;
+	drafts: Map<string, PersonalDraft>;
+}) {
 	const { t } = useTranslate();
 	const { push } = useRouter();
-	const [loading, setLoading] = useState(false);
+	const [draft] = useState(() => {
+		const retained = drafts.get(userId);
+		if (retained) return retained;
+		const created = createPersonalDraft();
+		drafts.set(userId, created);
+		return created;
+	});
+	const loading = useSyncExternalStore(draft.subscribe, draft.isPending, idleSnapshot);
+	const [error, setError] = useState<string | null>(null);
+	const arrival = useRef<object | null>(null);
+	useLayoutEffect(() => {
+		arrival.current = { organizationId };
+		return () => {
+			arrival.current = null;
+			draft.leave();
+		};
+	}, [draft, organizationId]);
 
-	const form = useWellnessForm({ push, setLoading, t });
+	const form = useWellnessForm({
+		push,
+		t,
+		draft,
+		arrival,
+		setError,
+		defaultValues: draft.getValues(),
+	});
+	useEffect(() => {
+		const remember = () => {
+			draft.remember(form.store.state.values);
+		};
+		const subscription = form.store.subscribe(remember);
+		return () => {
+			remember();
+			subscription.unsubscribe();
+		};
+	}, [draft, form.store]);
 
 	async function handleSkip() {
+		if (!arrival.current || !draft.tryStart()) return;
+		setError(null);
+		const submittedArrival = arrival.current;
 		await runOnboardingAction({
 			action: skipWellnessSetup,
 			onResult: (result) => {
+				if (arrival.current !== submittedArrival) return;
 				if (result.success) {
+					draft.continueNavigation();
 					push("/onboarding/notifications");
 					return true;
 				} else {
+					setError(
+						result.error || t("onboarding.wellness.skipError", "Failed to skip wellness setup"),
+					);
 					toast.error(
-						result.error ||
-							t(
-								"onboarding.wellness.skipError",
-								"Failed to skip wellness setup",
-							),
+						result.error || t("onboarding.wellness.skipError", "Failed to skip wellness setup"),
 					);
 				}
 			},
 			onRejected: () => {
-				toast.error(
-					t("onboarding.wellness.skipError", "Failed to skip wellness setup"),
-				);
+				if (arrival.current !== submittedArrival) return;
+				setError(t("onboarding.wellness.skipError", "Failed to skip wellness setup"));
+				toast.error(t("onboarding.wellness.skipError", "Failed to skip wellness setup"));
 			},
-			setLoading,
+			setLoading: draft.setPending,
 		});
 	}
 
-	// Track form values for conditional rendering
-	const [isEnabled, setIsEnabled] = useState(true);
-	const [selectedPreset, setSelectedPreset] =
-		useState<WaterReminderPreset>("moderate");
+	const isEnabled = useStore(form.store, (state) => state.values.enableWaterReminder);
+	const selectedPreset = useStore(form.store, (state) => state.values.waterReminderPreset);
 	const isCustom = selectedPreset === "custom";
-
-	// Sync form state to component state for conditional rendering
-	useEffect(() => {
-		const subscription = form.store.subscribe(() => {
-			const values = form.store.state.values;
-			setIsEnabled(values.enableWaterReminder);
-			setSelectedPreset(values.waterReminderPreset);
-		});
-
-		return () => {
-			subscription.unsubscribe();
-		};
-	}, [form.store]);
 
 	function handlePresetChange(preset: WaterReminderPreset) {
 		form.setFieldValue("waterReminderPreset", preset);
 		if (preset !== "custom") {
-			form.setFieldValue(
-				"waterReminderIntervalMinutes",
-				WATER_PRESETS[preset].intervalMinutes,
-			);
+			form.setFieldValue("waterReminderIntervalMinutes", WATER_PRESETS[preset].intervalMinutes);
 		}
 	}
 
@@ -372,97 +477,95 @@ export default function WellnessPage() {
 		<>
 			<ProgressIndicator currentStep="wellness" />
 
-			<div className="mx-auto max-w-2xl">
+			<section className="mx-auto max-w-2xl overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
 				<WellnessHeader t={t} />
 
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<IconDroplet className="size-5" />
-							{t("onboarding.wellness.cardTitle", "Water Reminders")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"onboarding.wellness.cardDesc",
-								"Enable optional hydration reminders while you work. You can always adjust these settings later.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<form
-							action={() => {
-								void form.handleSubmit();
-							}}
-							className="space-y-6"
-						>
-							{/* Enable Toggle */}
-							<form.Field name="enableWaterReminder">
-								{(field) => (
-									<div className="flex flex-row items-center justify-between gap-4 rounded-lg border bg-white dark:bg-background p-4">
-										<div className="min-w-0 space-y-0.5">
-											<Label
-												htmlFor="wellness-enable-reminder"
-												className="text-base"
-											>
-												{t(
-													"onboarding.wellness.enableReminder",
-													"Enable Water Reminders",
-												)}
-											</Label>
-											<p
-												id="wellness-enable-reminder-description"
-												className="text-sm text-muted-foreground"
-											>
-												{t(
-													"onboarding.wellness.enableReminderDesc",
-													"Receive gentle reminders to drink water during work hours.",
-												)}
-											</p>
-										</div>
-										<Switch
-											id="wellness-enable-reminder"
-											aria-describedby="wellness-enable-reminder-description"
-											checked={field.state.value}
-											onCheckedChange={field.handleChange}
-											disabled={loading}
-										/>
+				<div className="px-5 pt-6 sm:px-8">
+					<h2 className="font-semibold">{t("onboarding.wellness.cardTitle", "Water Reminders")}</h2>
+					<p className="mt-1 text-sm text-muted-foreground">
+						{t(
+							"onboarding.wellness.cardDesc",
+							"Enable optional hydration reminders while you work. You can always adjust these settings later.",
+						)}
+					</p>
+				</div>
+				<div className="p-5 sm:px-8 sm:pb-8">
+					<form
+						action={() => {
+							if (!draft.isPending()) void form.handleSubmit({ arrival: arrival.current });
+						}}
+						aria-busy={loading}
+						className="space-y-6"
+					>
+						{/* Enable Toggle */}
+						<form.Field name="enableWaterReminder">
+							{(field) => (
+								<div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+									<div className="min-w-0 space-y-0.5">
+										<Label htmlFor="wellness-enable-reminder" className="text-base">
+											{t("onboarding.wellness.enableReminder", "Enable Water Reminders")}
+										</Label>
+										<p
+											id="wellness-enable-reminder-description"
+											className="text-sm text-muted-foreground"
+										>
+											{t(
+												"onboarding.wellness.enableReminderDesc",
+												"Receive gentle reminders to drink water during work hours.",
+											)}
+										</p>
 									</div>
-								)}
-							</form.Field>
-
-							{isEnabled && (
-								<WellnessSettings
-									form={form}
-									isCustom={isCustom}
-									loading={loading}
-									onPresetChange={handlePresetChange}
-									selectedPreset={selectedPreset}
-									t={t}
-								/>
+									<Switch
+										id="wellness-enable-reminder"
+										aria-describedby="wellness-enable-reminder-description"
+										checked={field.state.value}
+										onCheckedChange={field.handleChange}
+										disabled={loading}
+									/>
+								</div>
 							)}
+						</form.Field>
 
-							{/* Action Buttons */}
-							<div className="flex gap-3 pt-4">
-								<Button
-									type="button"
-									variant="outline"
-									onClick={handleSkip}
-									disabled={loading}
-									className="flex-1"
-								>
-									{t("onboarding.wellness.skip", "Skip for now")}
-								</Button>
-								<Button type="submit" disabled={loading} className="flex-1">
-									{loading && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" />
-									)}
-									{t("onboarding.wellness.continue", "Continue")}
-								</Button>
-							</div>
-						</form>
-					</CardContent>
-				</Card>
-			</div>
+						{isEnabled && (
+							<WellnessSettings
+								form={form}
+								isCustom={isCustom}
+								loading={loading}
+								onPresetChange={handlePresetChange}
+								selectedPreset={selectedPreset}
+								t={t}
+							/>
+						)}
+
+						{error && (
+							<p
+								role="alert"
+								className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+							>
+								{error}
+							</p>
+						)}
+						<div role="status" className="sr-only">
+							{loading ? t("common.saving", "Saving...") : null}
+						</div>
+						<div className="flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={handleSkip}
+								disabled={loading}
+								className="flex-1"
+							>
+								{t("onboarding.wellness.skip", "Skip for now")}
+							</Button>
+							<Button type="submit" disabled={loading} className="flex-1">
+								{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+								{t("onboarding.wellness.continue", "Continue")}
+							</Button>
+						</div>
+					</form>
+				</div>
+			</section>
 		</>
 	);
 }

@@ -4,8 +4,10 @@ import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import type { TravelExpenseReportStatus } from "@/db/schema/travel-expense";
 
-/** Review status of an expense report (#602). */
-export function ReportStatusBadge({ status }: { status: TravelExpenseReportStatus }) {
+export type ReportBadgeStatus = TravelExpenseReportStatus | "withdrawn" | "reopened";
+
+/** Review status of an expense report or a frozen submission. */
+export function ReportStatusBadge({ status }: { status: ReportBadgeStatus }) {
 	const { t } = useTranslate();
 	switch (status) {
 		case "draft":
@@ -22,6 +24,18 @@ export function ReportStatusBadge({ status }: { status: TravelExpenseReportStatu
 			return (
 				<Badge variant="destructive">
 					{t("travelExpenses.report.status.rejected", "Rejected")}
+				</Badge>
+			);
+		case "withdrawn":
+			return (
+				<Badge variant="secondary">
+					{t("travelExpenses.report.history.step.withdrawn", "Withdrawn")}
+				</Badge>
+			);
+		case "reopened":
+			return (
+				<Badge variant="outline">
+					{t("travelExpenses.report.history.step.reopened", "Reopened for correction")}
 				</Badge>
 			);
 		case "returned":

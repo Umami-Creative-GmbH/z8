@@ -51,4 +51,23 @@ describe("settings layout sidebar", () => {
 		);
 		expect(source.match(/\{children\}/g)).toHaveLength(1);
 	});
+
+	it("reads the navigation props once per request for the sidebar and the mobile drawer", () => {
+		const source = readFileSync(
+			"src/app/[locale]/(app)/settings/layout.tsx",
+			"utf8",
+		);
+
+		expect(source).toContain("const loadSettingsNavProps = cache(async () => {");
+		expect(source.match(/getCurrentSettingsRouteContext\(\)/g)).toHaveLength(1);
+		expect(source.match(/managesProjectBelowManagerTier\(/g)).toHaveLength(1);
+		expect(source.match(/loadDrivingLicenceSettingsVisible\(/g)).toHaveLength(1);
+		expect(source.match(/await loadSettingsNavProps\(\)/g)).toHaveLength(2);
+		expect(source).toMatch(
+			/<SettingsMobileNav>\s*<SettingsNav \{\.\.\.navProps\} \/>\s*<\/SettingsMobileNav>/,
+		);
+		expect(source).toContain(
+			"<Suspense fallback={<SettingsMobileNavigationLoading />}>",
+		);
+	});
 });

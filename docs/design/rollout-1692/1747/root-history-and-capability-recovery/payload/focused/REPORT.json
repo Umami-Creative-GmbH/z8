@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "head": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+    "appTree": "52a1d43790178ca6794fd5b682e3cad4bb0cb19c",
+    "branch": "ai/1692-app-wide-ui-refresh",
+    "verifiedCommit": null
+  },
+  "result": "No confirmed scoped P1. Focused F1-F7 predicates pass with explicit scope and controls. F8 remains unpassed.",
+  "focusedPredicates": {
+    "PASS": 7,
+    "FAIL": 0,
+    "UNPASSED": 1
+  },
+  "allLedgerPredicates": {
+    "PASS": 7,
+    "FAIL": 0,
+    "UNPASSED": 7
+  },
+  "attempts": 21,
+  "inheritedSuiteCountsAdded": 0,
+  "priorEvidence": "v1 and v2 indexed payloads and index hashes unchanged; v2 producer15PASS/0FAIL/7UNPASSED preserved separately, not retroactively edited/summed.",
+  "qualification": "No new unit/PG reruns. Native intake/transport chronology untouched. Direct rendered revocation denial has streamed HTTP200, not HTTP404. Partial PNG remains pixel-UNPASSED. Full production/catalog/provider/device/zoom/exhaustive matrices remain unpassed.",
+  "ownership": "Root retains all fixes/publication/readiness; no source/Git/PR/push/dev/deploy changes",
+  "cleanup": "Exact owned services/processes/listeners/contexts/profiles absent; operational resources zero",
+  "releaseLease": ".tmp/1747-focused-runtime-coordination-20261118/LEASE.json"
+}

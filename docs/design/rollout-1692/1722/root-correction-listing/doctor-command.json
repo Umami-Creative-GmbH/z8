@@ -1,0 +1,21 @@
+{
+  "command": [
+    "pnpm",
+    "exec",
+    "react-doctor",
+    "--project",
+    "webapp",
+    "--scope",
+    "changed",
+    "--base",
+    "71e1315007ad220d5351d4690fc5095a207fff4a",
+    "--verbose",
+    "--no-score",
+    "--no-supply-chain",
+    "--no-telemetry",
+    "--json",
+    "--json-out",
+    ".tmp/1722-root-checks/doctor.json"
+  ],
+  "exitCode": 0
+}

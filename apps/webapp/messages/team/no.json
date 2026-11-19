@@ -4,6 +4,7 @@
       "actions": {
         "recordForEmployee": "Registrer fravær for {name}"
       },
+      "allowances": "Årlige kvoter",
       "calendar": {
         "approved": "Godkjent",
         "changeDeputy": "Endre stedfortreder",
@@ -12,7 +13,6 @@
         "deputyMissing": "Stedfortreder mangler",
         "description": "Godkjent og ventende fravær for det valgte teamet og året.",
         "error": {
-          "description": "Vennligst prøv igjen om et øyeblikk.",
           "title": "Kunne ikke laste inn kalender"
         },
         "legend": {
@@ -86,6 +86,12 @@
         "title": "Registrer fravær",
         "titleForEmployee": "Registrer fravær for {name}"
       },
+      "recordingUnavailable": "Kunne ikke laste inn alternativer for fraværsregistrering",
+      "retained": "Tidligere innlastede data vises. Prøv på nytt for å hente gjeldende oppføringer.",
+      "scopeChanged": "Teamomfanget er endret. Last inn på nytt for å fortsette.",
+      "scopeLoading": "Laster inn gjeldende teamomfang …",
+      "scopeUnavailable": "Kunne ikke laste inn gjeldende teamomfang",
+      "sections": "Sideseksjoner",
       "sort": {
         "ascending": "stigende",
         "by": "Sorter etter {label}",
@@ -107,8 +113,17 @@
     "balance": {
       "noBalance": "Ingen saldo"
     },
-    "description": "Se og administrer ansatte du leder direkte",
+    "directory": {
+      "count": "{count, plural, one {# medlem i dette omfanget} other {# medlemmer i dette omfanget}}",
+      "loading": "Laster inn teammedlemmer",
+      "retained": "Viser de sist innlastede medlemmene. Prøv på nytt for å oppdatere dem.",
+      "retry": "Prøv på nytt",
+      "retrying": "Prøver på nytt …",
+      "scope": "Deg og de ansatte du leder direkte i den aktive organisasjonen.",
+      "scopeChanged": "Organisasjonen eller tilgangen din ble endret. Last inn på nytt for å hente teamet ditt."
+    },
     "driving": {
+      "clearFilters": "Nullstill filtre",
       "columns": {
         "calendar": "Kalender",
         "date": "Dato",
@@ -126,6 +141,8 @@
         "employee": "Ansatt",
         "team": "Team"
       },
+      "guidance": "Åpne en ansatts kalender for å fullføre tilordning av arbeidsperiode. Manglende detaljer blokkerer ikke stempling og gir ikke kjøretillatelse.",
+      "loadFailed": "Kunne ikke laste inn kjøredetaljer.",
       "loading": "Laster inn kjøredetaljer",
       "missing": {
         "endReading": "Ingen sluttstand",
@@ -133,10 +150,18 @@
         "startReading": "Ingen startstand",
         "vehicle": "Ingen kjøretøy"
       },
+      "noMatch": "Ingen manglende kjøredetaljer samsvarer med disse filtrene.",
       "openCalendar": "Kalender",
       "openCalendarOf": "Åpne kalenderen til {name}",
+      "refreshFailed": "Kjøredetaljer kunne ikke oppdateres. Tidligere innlastede oppføringer vises.",
+      "restricted": "Kjøredetaljer er ikke tilgjengelige i det gjeldende omfanget ditt.",
+      "scopeAll": "Alle ansatte i denne organisasjonen",
+      "scopeFailed": "Kunne ikke laste inn gjeldende kjøreomfang.",
+      "scopeLoading": "Laster inn gjeldende kjøreomfang …",
+      "scopeManaged": "Ansatte du leder",
       "title": "Kjøredetaljer mangler",
-      "truncated": "Viser de nyeste {count} arbeidsperiodene. Filtrer etter team eller ansatt for å se resten."
+      "truncated": "Viser de nyeste {count} arbeidsperiodene. Filtrer etter team eller ansatt for å se resten.",
+      "updating": "Oppdaterer kjøredetaljer …"
     },
     "empty": {
       "action": "Gå til ansattinnstillinger",
@@ -148,9 +173,9 @@
       "title": "Noe gikk galt"
     },
     "feature": "se teamet ditt",
-    "member": "medlem",
-    "members": "medlemmer",
-    "member.you": "Du",
+    "member": {
+      "you": "Du"
+    },
     "noResults": {
       "action": "Tøm søk",
       "description": "Ingen teammedlemmer samsvarer med «{query}»",
@@ -169,8 +194,8 @@
         "period": "Periode",
         "status": "Status"
       },
-      "descriptionAll": "Hvem som har sendt inn for den valgte perioden. Godkjenn eller avvis innsendinger i godkjenningsinnboksen.",
-      "descriptionManaged": "Hvem av de ansatte du leder som har sendt inn for den valgte perioden. Godkjenn eller avvis innsendinger i godkjenningsinnboksen.",
+      "confirmationContext": "Innsendinger bekrefter oppføringer uten å låse dem. Endrede oppføringer må sendes inn på nytt. Se gjennom beslutninger i godkjenningsinnboksen.",
+      "contextFailed": "Kunne ikke sjekke din gjeldende tilgang.",
       "empty": "Ingen du har tilgang til å se, forventes å sende inn for denne perioden.",
       "loading": "Laster inn periodeinnsendinger",
       "notSubmitted": "Ikke sendt inn",
@@ -180,7 +205,12 @@
       "openInbox": "Åpne godkjenningsinnboksen",
       "owing": "{count, plural, one {# ansatt har ikke sendt inn for denne perioden ennå.} other {# ansatte har ikke sendt inn for denne perioden ennå.}}",
       "period": "Innsendingsperiode",
+      "readFailed": "Kunne ikke laste inn periodeinnsendinger. Tidligere innlastede oppføringer kan være utdaterte.",
+      "records": "Innsendinger fra ansatte",
+      "refresh": "Oppdater innsendinger",
       "running": "Denne perioden pågår fortsatt. Ansatte kan sende den inn fra og med den siste dagen.",
+      "scopeAll": "Alle omfattede ansatte",
+      "scopeManaged": "Ansatte du leder",
       "status": {
         "approved": "Godkjent",
         "awaiting": "Venter på innsending",
@@ -189,10 +219,13 @@
         "submitted": "Sendt inn"
       },
       "summary": "Statuser",
-      "title": "Periodeinnsendinger"
+      "title": "Periodeinnsendinger",
+      "unavailable": "Periodiske innsendinger er utilgjengelige med din nåværende tilgang. Oppdater for å sjekke tilgangen på nytt."
     },
     "presence": {
       "allLocations": "Alle lokasjoner",
+      "assignmentContext": "Lokasjonstildeling er ikke et bevis på enhetens posisjon. Tidspunkter bruker sonen som ble registrert da arbeidet eller pausen startet. Tilstedeværelse oppdateres hvert minutt.",
+      "chooseLocation": "Velg en lokasjon",
       "columns": {
         "name": "Navn",
         "since": "Siden",
@@ -202,9 +235,19 @@
       "descriptionAll": "Ansatte tilknyttet denne lokasjonen som er stemplet inn eller har pause.",
       "descriptionManaged": "Ansatte du leder som er tilknyttet denne lokasjonen og stemplet inn eller har pause.",
       "empty": "Ingen du har tilgang til å se er stemplet inn på denne lokasjonen akkurat nå.",
+      "loadFailed": "Vi kunne ikke laste inn tilstedeværelse for denne lokasjonen. Prøv igjen eller velg en lokasjon på nytt.",
+      "loading": "Laster inn tilstedeværelse for lokasjon…",
+      "loadingLocations": "Laster inn lokasjoner for gjeldende organisasjon…",
       "locationTitle": "Hvem er på jobb: {location}",
+      "locationUnavailable": "Lokasjon utilgjengelig",
+      "locationUnavailableDescription": "Denne lokasjonen er ikke tilgjengelig i din nåværende organisasjon. Velg en aktiv lokasjon for å se tilstedeværelse.",
       "noLocations": "Organisasjonen din har ingen aktive lokasjoner ennå.",
-      "title": "Hvem er på jobb"
+      "refreshFailed": "Kunne ikke oppdatere lokasjoner. Viser de sist innlastede lokasjonene.",
+      "refreshingLocations": "Oppdaterer lokasjoner…",
+      "scopeChanged": "Tilstedeværelse må leses inn på nytt for gjeldende konto eller organisasjon.",
+      "title": "Hvem er på jobb",
+      "unavailable": "Tilstedeværelse utilgjengelig",
+      "viewPresence": "Se tilstedeværelse"
     },
     "primaryManager": "Du er primærleder",
     "search": {
@@ -214,6 +257,7 @@
     "table": {
       "employee": "Ansatt",
       "position": "Stilling",
+      "region": "Tabell over teammedlemmer",
       "role": "Rolle",
       "sort": {
         "ascending": "stigende",

@@ -1,0 +1,16 @@
+{
+  "head": "1513a20116706380dd65a93b35104ca4eeea6066",
+  "tree": "8b725570a8bb238489ff446bc2128ce52c337a09",
+  "parents": [
+    "5715cc1f8dabd78a79a8c256b137c430ebfe98d5",
+    "7fc82645ae809bf4ee28d3c5edc32766703fc0cc"
+  ],
+  "clean": true,
+  "handoffSHA256": "e08ff5c5fa30713349cb02404e1698b5c154f74e7226eafa24e2f0e71aac7e0a",
+  "markdownSHA256": "ba2c06debfc74f20ee0a856b0e28283aec49d692fde1380a903fe409224f90a3",
+  "rawHashesSHA256": "f051ff8245024749cbd333f244aba4f6910fa289d3282e67dedad8d1e515a339",
+  "allowlistSHA256": "95a66f3c022c2346f069397c8826e19866624300f3079001488b87f870845ad0",
+  "cleanupSHA256": "7817bd6d282ba0081a7fd9d63d0ba22915ff5eb54c7c79a3d6f89c25cb22eb63",
+  "remainingOwnedServicesProcesses": 0,
+  "ownershipReleased": true
+}

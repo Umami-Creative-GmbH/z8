@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { Children, isValidElement, type ReactNode, Suspense } from "react";
 import { Temporal } from "temporal-polyfill";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -47,7 +47,13 @@ vi.mock("drizzle-orm", async (original) => ({
 }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
-vi.mock("@/tolgee/server", () => ({ getTranslate: vi.fn() }));
+vi.mock("@/tolgee/server", () => ({
+	getTranslate: async () => (_key: string, fallback: string) => fallback,
+}));
+vi.mock("./actions", () => ({ getPresenceStatus: vi.fn() }));
+vi.mock("@/components/time-tracking/time-tracking-page-actions", () => ({
+	TimeTrackingPageActions: () => null,
+}));
 vi.mock("./read-queries", () => ({ readActiveWorkPeriod: vi.fn() }));
 vi.mock("./region-data", () => ({
 	readDrivingRegion: vi.fn(),
@@ -164,16 +170,18 @@ describe("getTimeTrackingRenderContext", () => {
 			employee: { id: "employee-1", organizationId: "org-1" },
 			membershipRole: "owner",
 		});
-		const content = (await TimeTrackingPageContent({
+		const content = await TimeTrackingPageContent({
 			searchParams: Promise.resolve({}),
-		})) as ReactElement<{
-			children: ReactElement<{
-				children: ReactElement<{ context: unknown }>;
-			}>[];
-		}>;
-		const clock = content.props.children
-			.map((region) => region.props.children)
-			.find((child) => child.type === ClockRegion);
+		});
+		if (!isValidElement<{ children: ReactNode }>(content)) throw new Error("Expected page content");
+		const clock = Children.toArray(content.props.children)
+			.flatMap((region) =>
+				isValidElement<{ children: ReactNode }>(region) && region.type === Suspense
+					? Children.toArray(region.props.children)
+					: [],
+			)
+			.find((child) => isValidElement<{ context: unknown }>(child) && child.type === ClockRegion);
+		if (!isValidElement<{ context: unknown }>(clock)) throw new Error("Expected clock region");
 		expect(clock?.type).toBe(ClockRegion);
 		expect(clock?.props.context).toMatchObject({
 			employee: { id: "employee-1", organizationId: "org-1" },

@@ -1,0 +1,72 @@
+{
+  "generatedSafeDirect": [
+    {
+      "safe": "priority-04.json",
+      "source": "priority-04.mjs",
+      "policy": "Explicit fixture counts, visible list dates/status/counts, disabled/computed CSS/elementFromPoint geometry/trusted pointer flags/request count; no action response bodies"
+    },
+    {
+      "safe": "publication-readback-verdict-01.json",
+      "source": "verify-readback-01.mjs",
+      "policy": "Canonical scoped DB allowlisted status/date/times/note/own-assignee/audit boolean+time/full-row digests; no row IDs or raw credentials"
+    },
+    {
+      "safe": "employee-visibility-01.json",
+      "source": "employee-visibility-01.mjs",
+      "policy": "Visible own published shift details and planner/draft exclusion; IDs omitted"
+    },
+    {
+      "safe": "employee-retry-02.json",
+      "source": "employee-retry-02.mjs",
+      "policy": "Visible error/loading/read retry attempt counts only"
+    },
+    {
+      "safe": "roles-navigation-01.json",
+      "source": "roles-navigation-01.mjs",
+      "policy": "Partial case outcomes; manager init timeout retained and superseded by uncontested manager-route receipt"
+    },
+    {
+      "safe": "manager-route-01.json",
+      "source": "manager-route-01.mjs",
+      "policy": "Exact current compiled action names/statuses/redirect-path metadata and visible headings only; no body values"
+    },
+    {
+      "safe": "next-observe-01.json",
+      "source": "next-observe-01.mjs",
+      "policy": "Own Next MCP metadata; actual fixture values and absolute checkout redacted; raw MCP bytes hashed and retained private; session /en/ so no scheduling clean claim"
+    }
+  ],
+  "images": [
+    {
+      "safe": "priority-before-1600-01.png",
+      "source": "own current Chromium capture via controller.capture",
+      "policy": "Visible actor email/IDs temporarily replaced for privacy then restored; no styles/range/records changed; decoded/pixels inspected",
+      "currentOperationalOnly": true
+    },
+    {
+      "safe": "priority-pending-1600-01.png",
+      "source": "own current Chromium capture via controller.capture",
+      "policy": "Visible actor email/IDs temporarily replaced for privacy then restored; no styles/range/records changed; decoded/pixels inspected",
+      "currentOperationalOnly": true
+    },
+    {
+      "safe": "priority-success-1600-01.png",
+      "source": "own current Chromium capture via controller.capture",
+      "policy": "Visible actor email/IDs temporarily replaced for privacy then restored; no styles/range/records changed; decoded/pixels inspected",
+      "currentOperationalOnly": true
+    },
+    {
+      "safe": "employee-published-details-390-01.png",
+      "source": "own current Chromium capture via controller.capture",
+      "policy": "Visible actor email/IDs temporarily replaced for privacy then restored; no styles/range/records changed; decoded/pixels inspected",
+      "currentOperationalOnly": true
+    }
+  ],
+  "excluded": [
+    "All *.private.*, all *.raw-private.json, fixture-private/runtime-private/services inputs, private logs and failed images",
+    "roles-progress-01.json: dashboard contains synthetic roster emails beyond controller actor redaction; never admitted",
+    "Prior pending private image and all original immutable archive non-allowlisted files; never opened or repackaged",
+    "No raw action response file exists; rejected helper not retried"
+  ],
+  "failedAttempts": "Retained in namespace privately; only safe attempt qualifications exported in counts/limits/STOP"
+}

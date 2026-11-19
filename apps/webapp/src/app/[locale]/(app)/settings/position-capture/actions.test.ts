@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 function emptySelect(): unknown {
 	const chain: Record<string, unknown> = {
 		getSQL: () => sql`select 1`,
-		// biome-ignore lint/suspicious/noThenProperty: a thenable query builder stand-in
+		// oxlint-disable-next-line unicorn/no-thenable -- a thenable query builder stand-in
 		then: (resolve: (rows: unknown[]) => unknown) => resolve([]),
 	};
 	for (const method of ["from", "innerJoin", "where", "orderBy"]) chain[method] = () => chain;

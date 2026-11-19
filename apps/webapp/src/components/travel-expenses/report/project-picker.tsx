@@ -24,6 +24,7 @@ import { queryKeys } from "@/lib/query/keys";
 import type { DraftSaver, ExclusiveWriteOutcome } from "@/lib/travel-expenses/draft-saver";
 import type { ItemProjectChoice } from "@/lib/travel-expenses/project-attribution";
 import type { ProjectChoiceRefusal } from "@/lib/travel-expenses/project-attribution-store";
+import { useReportQueryKey } from "./report-read-scope";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 type VersionedSaver = Pick<DraftSaver<unknown, unknown>, "runExclusive">;
@@ -43,11 +44,8 @@ function useProjectChoices(input: {
 }) {
 	const { reportId, from, to, selectedProjectId } = input;
 	return useQuery({
-		queryKey: queryKeys.travelExpenses.projectChoices(
-			reportId,
-			from ?? "",
-			to ?? "",
-			selectedProjectId,
+		queryKey: useReportQueryKey(
+			queryKeys.travelExpenses.projectChoices(reportId, from ?? "", to ?? "", selectedProjectId),
 		),
 		queryFn: async (): Promise<ProjectChoicesView> => {
 			const result = await getReportProjectChoicesAction({

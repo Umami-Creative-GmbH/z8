@@ -1,16 +1,16 @@
 {
   "webhooks": {
+    "actions-named": "Ações para {endpoint}",
+    "command-unknown": "Não foi possível confirmar o comando. Atualize este endpoint antes de tentar novamente.",
     "copy-failed": "Falha ao copiar para a área de transferência",
     "create": "Adicionar Webhook",
     "create-failed": "Falha ao criar webhook",
     "delete-confirm": {
       "description": "Isso excluirá permanentemente o endpoint do webhook e todo o histórico de entrega. Esta ação não pode ser desfeita.",
-      "title": "Excluir webhook?"
+      "title-named": "Excluir o webhook {name}?"
     },
     "deleted": "Webhook excluído",
-    "delete-failed": "Falha ao excluir webhook",
     "deliveries": "Entregas",
-    "description": "Configure endpoints de webhook para receber notificações em tempo real quando eventos ocorrerem em sua organização.",
     "disabled": "Webhook desativado",
     "empty": {
       "description": "Crie seu primeiro webhook para começar a receber notificações de eventos.",
@@ -57,10 +57,11 @@
       "status": "Status",
       "success": "Sucesso",
       "time": "Hora",
-      "title": "Registros de Entrega"
+      "title": "Registros de Entrega",
+      "toggle-details": "Detalhes de {event} em {time}"
     },
-    "regenerate-failed": "Falha ao regenerar segredo",
     "regenerate-secret": "Regenerar Segredo",
+    "retry-help": "Atualize esta lista para confirmar os endpoints atuais. Os registros carregados anteriormente são mantidos.",
     "secret-copied": "Segredo copiado para a área de transferência",
     "secret-dialog": {
       "copy-secret": "Copiar segredo para a área de transferência",
@@ -78,14 +79,15 @@
       "degraded": "Degradado",
       "failing": "Com falha",
       "healthy": "Saudável",
-      "inactive": "Inativo"
+      "inactive": "Inativo",
+      "untried": "Nenhuma entrega ainda"
     },
     "success-rate": "Sucesso",
     "test": "Enviar teste",
-    "test-failed": "Falha ao enviar webhook de teste",
-    "test-sent": "Webhook de teste enviado",
+    "test-queued": "Webhook de teste enfileirado",
     "title": "Webhooks",
-    "toggle-active": "Alternar status do webhook",
+    "toggle-active-named": "Ativo: {endpoint}",
+    "unavailable": "Webhooks indisponíveis",
     "updated": "Webhook atualizado",
     "update-failed": "Falha ao atualizar webhook",
     "view-logs": "Ver logs"

@@ -75,8 +75,10 @@
         "title": "Trendet e analizave",
         "viewFull": "Shiko analizat e plota"
       },
+      "scope": "Raportimi në të gjithë platformën",
       "sectionDescription": "Përditësuar nga të dhënat aktuale të platformës për periudhën dhe grupin e zgjedhur.",
       "sectionTitle": "Tendencat e analizave",
+      "seriesValues": "Shikoni vlerat e serive",
       "title": "Analitika e platformës",
       "values": {
         "notAvailable": "E padisponueshme"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Qasja në platformë nuk mund të konfirmohej.",
       "analytics": {
         "title": "Tendencat e analizave"
       },
-      "description": "Metrikat e platformës dhe veprime të shpejta",
+      "analyticsUnavailable": "Analitikat e platformës nuk janë të disponueshme. Provoni përsëri.",
+      "confirmingAccess": "Po konfirmohet qasja në platformë",
+      "groups": {
+        "access": "Menaxhimi i qasjes",
+        "billing": "Faturimi dhe abonimet",
+        "operations": "Operacionet e platformës"
+      },
+      "loadingAnalytics": "Po ngarkohen analitikat e platformës",
+      "loadingMetrics": "Po ngarkohen metrikat e platformës",
       "metrics": {
         "bannedUsers": "Përdoruesit e bllokuar",
         "bannedUsersDescription": "Me qasje të kufizuar",
@@ -295,6 +306,9 @@
         "totalUsers": "Përdoruesit gjithsej",
         "totalUsersDescription": "Llogaritë e regjistruara në platformë"
       },
+      "metricsUnavailable": "Metrikat e platformës nuk janë të disponueshme. Provoni përsëri.",
+      "platformDescription": "Shqyrtoni llogaritë, hapësirat e punës dhe aktivitetin në të gjithë platformën, pastaj hapni një hapësirë pune administrimi.",
+      "platformTitle": "Përmbledhja e platformës",
       "quickActions": {
         "billing": {
           "description": "Metrikat e të ardhurave dhe statusi i abonimit",
@@ -318,7 +332,7 @@
           "title": "Menaxhimi i përdoruesve"
         }
       },
-      "title": "Përmbledhje"
+      "refreshAccess": "Rifreskoni përmbledhjen për të konfirmuar qasjen në platformë përpara se të vazhdoni."
     },
     "settings": {
       "actions": {

@@ -13,9 +13,11 @@
       "yes": "Po"
     },
     "description": "Gjeneroni raporte gjithëpërfshirëse të orëve të punës dhe mungesave me të dhëna për punën nga shtëpia relevante për taksat",
+    "employeeNumber": "Numri i punonjësit",
     "employeeSelector": {
       "error": "Nuk mund të ngarkohen anëtarët e ekipit",
       "label": "Punonjësi",
+      "loading": "Duke ngarkuar anëtarët e ekipit",
       "placeholder": "Zgjidh punonjësin..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Po ngarkohen cilësimet e organizatës para aktivizimit të opsioneve të paracaktuara.",
       "period": "Periudha",
-      "selectPeriod": "Zgjidhni periudhën"
+      "selectPeriod": "Zgjidhni periudhën",
+      "settingsError": "Cilësimet e organizatës nuk janë të disponueshme",
+      "settingsRequired": "Cilësimet e organizatës kërkohen për të përdorur konfigurimet e paracaktuara.",
+      "title": "Gjenero një raport punonjësi"
     },
     "generate": "Gjenero Raportin",
     "generating": "Duke gjeneruar raportin…",
@@ -62,6 +67,7 @@
       "month": "Muaji",
       "noHomeOfficeDays": "Nuk u regjistrua asnjë ditë pune nga shtëpia në këtë periudhë.",
       "overtime": "Orë shtesë",
+      "title": "Parapamja e raportit",
       "total": "Totali",
       "totalHomeOfficeDays": "Ditë totale pune nga shtëpia",
       "totalHomeOfficeHours": "Orë totale të punuara nga shtëpia",
@@ -266,6 +272,9 @@
         "noPermission": "Nuk keni leje për të parë raportet e projektit.",
         "title": "Raportet e projektit"
       },
+      "refreshFailed": "Raportet e projektit nuk mund të rifreskoheshin",
+      "scopeLoading": "Duke ngarkuar fushëveprimin aktual të raportit…",
+      "scopeUnavailable": "Fushëveprimi aktual i raportit nuk mund të ngarkohej.",
       "status": {
         "active": "Aktiv",
         "archived": "Arkivuar",
@@ -324,7 +333,6 @@
         "failedGenerate": "Dështoi gjenerimi i raportit",
         "failedPortfolio": "Dështoi gjenerimi i raportit të portofolit",
         "failedProject": "Dështoi gjenerimi i raportit të projektit",
-        "failedProjectReport": "Dështoi gjenerimi i raportit të projektit",
         "portfolioGenerated": "Raporti i portofolit u gjenerua",
         "projectGenerated": "Raporti u krijua për {name}",
         "unexpectedError": "Ndodhi një gabim i papritur"
@@ -376,6 +384,8 @@
         "loading": "Po ngarkohen lidhjet e ndarjes…",
         "revokedAutomatically": "U revokua automatikisht më {date}: krijuesi nuk sheh më çdo projekt në të",
         "revokedBy": "Revokuar nga {name} më {date}",
+        "scopeLoading": "Duke ngarkuar fushëveprimin aktual të lidhjes së shpërndarjes…",
+        "scopeUnavailable": "Fushëveprimi aktual i lidhjes së shpërndarjes nuk mund të ngarkohej.",
         "someone": "dikush",
         "title": "Lidhjet drejt këtij raporti",
         "views": "{count, plural, one {# shikim} other {# shikime}}",
@@ -398,7 +408,8 @@
         "description": "Lidhja pushon menjëherë së funksionuari dhe pamja e saj e çastit fshihet. Regjistrimi dhe ditari i shikimeve të saj ruhen.",
         "done": "Lidhja u revokua",
         "failed": "Lidhja nuk mund të revokohej",
-        "title": "Të revokohet kjo lidhje?"
+        "titleDeletedReport": "Të revokohet lidhja e shpërndarjes për një raport të fshirë, {period}?",
+        "titleNamed": "Të revokohet lidhja e shpërndarjes për {report}, {period}?"
       },
       "status": {
         "active": "Aktive",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "arkivuar",
       "archivedBadge": "Arkivuar",
+      "comparison": "Distanca mujore sipas automjetit dhe punonjësit",
       "empty": {
         "description": "Nuk u regjistrua asnjë punë e përfunduar me distancë të përshkuar me automjet gjatë kësaj periudhe.",
         "title": "Nuk ka drejtim automjeti në këtë periudhë"
@@ -457,6 +469,7 @@
         "period": "Periudha"
       },
       "generate": "Gjenero raportin",
+      "generated": "Gjeneruar më {time}",
       "generating": "Duke gjeneruar raportin…",
       "kilometres": "{distance} km",
       "noReportYet": "Ende nuk është gjeneruar asnjë raport",
@@ -465,7 +478,11 @@
         "description": "Kilometra të përshkuar për punë për automjet dhe punonjës, sipas muajit",
         "feature": "shikoni raportin e distancës për automjet"
       },
+      "scope": "Punonjësit e disponueshëm për ju në këtë organizatë",
+      "scopeLoading": "Duke konfirmuar organizatën dhe punonjësin aktual…",
+      "scopeUnavailable": "Fushëveprimi aktual i raportit të automjetit nuk mund të ngarkohej.",
       "selectPeriod": "Zgjidhni një periudhë dhe gjeneroni raportin.",
+      "staged": "Periudha ndryshoi. Gjeneroni raportin për të përditësuar rezultatet dhe shkarkimet.",
       "table": {
         "employee": "Punonjësi",
         "licencePlate": "Targa",
@@ -473,8 +490,7 @@
         "vehicle": "Automjeti",
         "vehicleAndEmployee": "Automjeti / punonjësi"
       },
-      "title": "Distanca për automjet",
-      "totalDriven": "{distance} të përshkuara"
+      "title": "Distanca për automjet"
     }
   }
 }

@@ -96,21 +96,27 @@
       "rejectTitle": "Odrzuć wniosek"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Potwierdzanie bieżącej organizacji i pracownika…",
       "created": "Utworzono",
       "decisionRecorded": "Zarejestrowano decyzję",
       "destination": "Miejsce docelowe",
       "history": "Historia decyzji",
       "historyDescription": "Wszystkie etapy tego wniosku, od najstarszych. Godziny podano w strefie UTC.",
       "intermediateApproval": "Zarejestrowano zatwierdzenie — oczekiwanie na dalsze zatwierdzenie",
+      "legacyClaim": "Poprzedni wniosek",
       "legacyReceiptIdentity": "Archiwalny rachunek: suma kontrolna zawartości nie została zarejestrowana.",
       "loading": "Wczytywanie wniosku…",
       "noReceipts": "Brak zarejestrowanych rachunków",
       "notRecorded": "Nie zarejestrowano",
       "originalAmount": "Kwota pierwotna",
       "receipts": "Rachunki",
+      "receiptVersion": "Zarejestrowana wersja",
       "refreshing": "Odświeżanie wniosku…",
+      "scopeUnavailable": "Odśwież ten wniosek, aby potwierdzić swój bieżący dostęp.",
       "submitted": "Złożono",
       "title": "Wniosek o zwrot kosztów podróży",
+      "unavailable": "Nie znaleziono wniosku lub dostęp nie jest już możliwy.",
       "unknownDates": "Kontekst daty podróży nie został zarejestrowany (archiwalny wniosek)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Zaznacz {name}",
         "selectAll": "Zaznacz wszystkie wydatki oczekujące na zwrot na tej stronie",
         "selected": "Zaznaczono: {count}",
+        "selectionChanged": "Co najmniej jeden wybrany wydatek uległ zmianie. Zamknij to okno dialogowe i przejrzyj bieżące wydatki przed rozpoczęciem kolejnej płatności.",
         "skipped": "Nieuwzględnione ({count})",
         "submit": "Oznacz {count} jako zwrócone",
         "title": "Oznacz jako zwrócone"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Żaden aktywny koordynator ds. wydatków, który może rejestrować zwroty, nie ma ich w swoim zakresie. Właściciele i administratorzy nadal mogą je rejestrować lub rozszerzyć zakres uprawnień koordynatora.",
         "empty": "Koordynator ds. wydatków obejmuje każdy zatwierdzony wydatek oczekujący na zwrot.",
+        "failed": "Nie udało się sprawdzić pokrycia. Spróbuj ponownie.",
         "queueFilter": "Zatwierdzone wydatki oczekujące na zwrot, których nie obejmuje żaden koordynator ds. wydatków.",
         "show": "Pokaż te wydatki",
         "showAll": "Pokaż wszystkie zatwierdzone wydatki",
@@ -237,6 +245,7 @@
           "none": "Nie znaleziono pracownika.",
           "search": "Szukaj pracowników…"
         },
+        "failed": "Nie udało się załadować opcji filtrów. Spróbuj ponownie.",
         "label": "Pokaż wydatki",
         "notExported": "Jeszcze nie wyeksportowano",
         "open": "Otwarte",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Te cykle płacowe zawierają raporty z wydatków oczekujące na zwrot. Gdy cykl zostanie opłacony przez dział płac, potwierdź go, aby zarejestrować zwroty.",
+        "failed": "Nie udało się załadować potwierdzeń listy płac. Spróbuj ponownie.",
         "reports": "{count, plural, one {# raport z wydatków do potwierdzenia, {amount}} few {# raporty z wydatków do potwierdzenia, {amount}} many {# raportów z wydatków do potwierdzenia, {amount}} other {# raportu z wydatków do potwierdzenia, {amount}}}",
         "title": "Cykle płacowe oczekujące na potwierdzenie"
       },
       "queue": {
         "description": "Otwórz wydatek, aby zobaczyć jego rozliczenie i zarejestrować zwrot kosztów.",
+        "failed": "Nie można załadować kolejki finansowej. Spróbuj ponownie.",
         "title": "Zatwierdzone wydatki"
+      },
+      "scope": {
+        "failed": "Nie udało się potwierdzić Twojego bieżącego dostępu do finansów. Spróbuj ponownie.",
+        "loading": "Potwierdzanie dostępu do finansów…"
       },
       "title": "Finanse wydatków"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Przebieg bez nazwy"
     },
     "legacyDraft": {
+      "checking": "Sprawdzanie kontynuacji wersji roboczej…",
       "continue": "Kontynuuj jako raport",
       "converted": "Kontynuowano tę wersję roboczą jako raport wydatków. To zgłoszenie pozostaje tutaj bez zmian do wglądu.",
       "description": "Wersje robocze z wcześniejszego formularza zgłoszenia są teraz finalizowane jako raporty wydatków. Kwota, daty, notatki i rachunki zostały przeniesione; wszelkie informacje wymagane przez nowy formularz, których ta wersja robocza nie zawierała, należy uzupełnić samodzielnie. Samo zgłoszenie pozostaje bez zmian.",
@@ -367,6 +383,7 @@
         "title": "Kontynuacja z wcześniejszej wersji roboczej zgłoszenia"
       },
       "openReport": "Otwórz raport",
+      "readRefused": "Kontynuacja wersji roboczej jest niedostępna dla bieżącego czytelnika.",
       "receipt": {
         "mismatch": "zapisany plik nie jest już zgodny z przesłanym",
         "unreadable": "zapisany plik nie może być teraz odczytany",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Brak kwot do uregulowania dla tego wydatku.",
         "ownExpense": "Nie możesz rejestrować płatności za własne wydatki.",
         "referenceRequired": "Wprowadź numer referencyjny płatności, np. tytuł przelewu bankowego.",
+        "refresh": "Nie udało się odświeżyć salda. Wyświetlane są wcześniej załadowane rekordy; ponów próbę przed zarejestrowaniem płatności.",
         "refused": "Tej płatności nie można zarejestrować dla tego wydatku.",
         "staleBalance": "Saldo uległo zmianie podczas wprowadzania tej płatności. Sprawdź zaktualizowane saldo i zarejestruj ją ponownie.",
         "tooLong": "Ten tekst jest zbyt długi."
@@ -1149,7 +1167,13 @@
     },
     "title": "Wydatki podróży",
     "workspace": {
-      "description": "Gromadź wydatki z podróży i pojedyncze koszty, przesyłaj je do weryfikacji i śledź ich zwrot."
+      "create": "Utwórz raport wydatków",
+      "description": "Gromadź wydatki z podróży i pojedyncze koszty, przesyłaj je do weryfikacji i śledź ich zwrot.",
+      "mileageDescription": "Zarejestruj przejazd służbowy poza podróżą.",
+      "otherWork": "Przegląd i finanse",
+      "receiptDescription": "Zarejestruj jeden wydatek wraz z rachunkiem.",
+      "reconciling": "Wczytywanie Twoich wydatków dla bieżącej organizacji…",
+      "tripDescription": "Zbieraj wydatki ze wspólnymi szczegółami podróży."
     }
   }
 }

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, or } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import { db } from "@/db";
@@ -6,15 +6,18 @@ import {
 	absenceEntry,
 	approvalRequest,
 	approvalWorkflow,
-	timeEntry,
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
 	workPeriod,
 } from "@/db/schema";
 import { readApprovalAuthoritySnapshot } from "@/lib/approvals/authority";
 import { parseRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
-import { normalizeTimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
-import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
+import {
+	normalizeTimeCorrectionOriginalWorkMetadata,
+	normalizeTimeCorrectionWorkflowPayload,
+} from "@/lib/approvals/domain-adapters/time-correction-contract";
+import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
+import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import { compareInstants, parseInstant } from "@/lib/datetime/temporal-core";
 
@@ -170,17 +173,9 @@ async function loadTimeCorrections(
 			offset,
 		})) as TimeCorrectionRow[];
 		if (rows.length === 0) break;
-		const verifiedCorrectionEvidenceByPeriod = await loadVerifiedCorrectionEvidenceByPeriod(
-			db,
-			input,
-			rows,
-		);
+		const listings = await loadLegacyTimeCorrectionListings(db, input, rows);
 
-		for (const row of rows) {
-			const listing = listLegacyTimeCorrection(
-				row,
-				verifiedCorrectionEvidenceByPeriod.get(row.entityId),
-			);
+		for (const { row, listing } of listings) {
 			if (!listing) continue;
 			if (listing.workflowId) legacyWorkflowIds.add(listing.workflowId);
 			const { status, availableActions } = listing;
@@ -206,9 +201,9 @@ async function loadTimeCorrections(
 		if (rows.length < SOURCE_QUERY_LIMIT) break;
 	}
 
-	// Legacy requests hold every correction until canonical authority stops
-	// compatibility writing (`complete`).
-	if (rollout.authority === "legacy" || rollout.compatibilityWriting) {
+	// Compatibility rows represent current requests. Cancellation removes those
+	// rows, so its retained canonical workflow supplies the view-only history.
+	if (rollout.authority === "legacy") {
 		return legacyItems;
 	}
 
@@ -218,6 +213,7 @@ async function loadTimeCorrections(
 			eq(approvalWorkflow.requesterEmployeeId, input.employeeId),
 			eq(approvalWorkflow.workflowType, "time_correction"),
 			eq(approvalWorkflow.sourceType, "time_entry"),
+			rollout.compatibilityWriting ? eq(approvalWorkflow.status, "cancelled") : undefined,
 		),
 		orderBy: [desc(approvalWorkflow.createdAt)],
 		limit: SOURCE_QUERY_LIMIT,
@@ -260,10 +256,9 @@ export async function findTimeCorrectionsListedInMyRequests(
 			inArray(approvalRequest.entityId, workPeriodIds),
 		),
 	})) as TimeCorrectionRow[];
-	const evidenceByPeriod = await loadVerifiedCorrectionEvidenceByPeriod(database, input, rows);
+	const listings = await loadLegacyTimeCorrectionListings(database, input, rows);
 	const legacyWorkflowIds = new Set<string>();
-	for (const row of rows) {
-		const listing = listLegacyTimeCorrection(row, evidenceByPeriod.get(row.entityId));
+	for (const { row, listing } of listings) {
 		if (!listing) continue;
 		if (listing.workflowId) legacyWorkflowIds.add(listing.workflowId);
 		if (listing.status === "pending") listed.add(row.entityId);
@@ -290,36 +285,37 @@ export async function findTimeCorrectionsListedInMyRequests(
 }
 
 type SelfServiceDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+type LegacyTimeCorrectionPeriod = Pick<
+	typeof workPeriod.$inferSelect,
+	"clockInId" | "clockOutId" | "pendingChanges"
+>;
 
 /**
  * How My Requests lists one legacy correction request: its status and actions, and the canonical
  * workflow it mirrors. Null when My Requests drops it (not a correction, or malformed).
  */
-function listLegacyTimeCorrection(
+async function listLegacyTimeCorrection(
+	database: SelfServiceDatabase,
 	row: TimeCorrectionRow,
-	evidence: VerifiedCorrectionEvidence | undefined,
-): {
+	period: LegacyTimeCorrectionPeriod | undefined,
+): Promise<{
 	workflowId: string | null;
 	status: SelfServiceRequestStatus;
 	availableActions: SelfServiceRequestAction[];
-} | null {
-	if (
-		classifyTimeApprovalRequest({
-			metadata: row.metadata,
-			reason: row.reason,
-			verifiedRelationalCorrectionIds: evidence?.ids ?? [],
-			verifiedRelationalCorrectionIdsByEndpoint: {
-				clockIn: evidence?.clockInIds ?? [],
-				clockOut: evidence?.clockOutIds ?? [],
-			},
-		}) !== "time_correction"
-	) {
-		return null;
-	}
+} | null> {
 	let metadata: ReturnType<typeof parseLegacyTimeCorrectionMetadata>;
 	try {
 		metadata = parseLegacyTimeCorrectionMetadata(row);
 	} catch {
+		return null;
+	}
+	if (
+		(await classifyPersistedTimeApprovalRequest(database, {
+			organizationId: row.organizationId,
+			request: row,
+			period,
+		})) !== "time_correction"
+	) {
 		return null;
 	}
 	const status: SelfServiceRequestStatus =
@@ -333,18 +329,12 @@ function listLegacyTimeCorrection(
 	return { workflowId: metadata.workflowId, status, availableActions };
 }
 
-interface VerifiedCorrectionEvidence {
-	ids: string[];
-	clockInIds: string[];
-	clockOutIds: string[];
-}
-
-async function loadVerifiedCorrectionEvidenceByPeriod(
+async function loadLegacyTimeCorrectionListings(
 	database: SelfServiceDatabase,
 	input: { organizationId: string; employeeId: string },
 	rows: TimeCorrectionRow[],
-): Promise<Map<string, VerifiedCorrectionEvidence>> {
-	if (rows.length === 0) return new Map();
+) {
+	if (rows.length === 0) return [];
 	const periods = await database.query.workPeriod.findMany({
 		where: and(
 			eq(workPeriod.organizationId, input.organizationId),
@@ -354,61 +344,14 @@ async function loadVerifiedCorrectionEvidenceByPeriod(
 				rows.map((row) => row.entityId),
 			),
 		),
-		columns: { id: true, clockInId: true, clockOutId: true },
+		columns: { id: true, clockInId: true, clockOutId: true, pendingChanges: true },
 	});
-	const endpointToPeriod = new Map<
-		string,
-		{ periodId: string; endpoint: "clockIn" | "clockOut" }
-	>();
-	for (const period of periods) {
-		endpointToPeriod.set(period.clockInId, {
-			periodId: period.id,
-			endpoint: "clockIn",
-		});
-		if (period.clockOutId) {
-			endpointToPeriod.set(period.clockOutId, {
-				periodId: period.id,
-				endpoint: "clockOut",
-			});
-		}
-	}
-	const endpointIds = [...endpointToPeriod.keys()];
-	if (endpointIds.length === 0) return new Map();
-	const corrections = await database.query.timeEntry.findMany({
-		where: and(
-			eq(timeEntry.organizationId, input.organizationId),
-			eq(timeEntry.employeeId, input.employeeId),
-			eq(timeEntry.type, "correction"),
-			eq(timeEntry.isSuperseded, false),
-			or(
-				inArray(timeEntry.id, endpointIds),
-				inArray(timeEntry.replacesEntryId, endpointIds),
-			),
-		),
-		columns: { id: true, replacesEntryId: true },
-	});
-	const result = new Map<string, VerifiedCorrectionEvidence>();
-	for (const correction of corrections) {
-		const endpoint =
-			endpointToPeriod.get(correction.id) ??
-			(correction.replacesEntryId
-				? endpointToPeriod.get(correction.replacesEntryId)
-				: undefined);
-		if (!endpoint) continue;
-		const evidence = result.get(endpoint.periodId) ?? {
-			ids: [],
-			clockInIds: [],
-			clockOutIds: [],
-		};
-		evidence.ids.push(correction.id);
-		if (endpoint.endpoint === "clockIn") {
-			evidence.clockInIds.push(correction.id);
-		} else {
-			evidence.clockOutIds.push(correction.id);
-		}
-		result.set(endpoint.periodId, evidence);
-	}
-	return result;
+	const periodsById = new Map(periods.map((period) => [period.id, period]));
+	// Limit evidence reads on the pool. A transaction shares one PostgreSQL connection.
+	return mapConcurrently(rows, database === db ? 4 : 1, async (row) => ({
+		row,
+		listing: await listLegacyTimeCorrection(database, row, periodsById.get(row.entityId)),
+	}));
 }
 
 function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {
@@ -510,11 +453,26 @@ function mapCanonicalTimeCorrection(
 	}
 
 	try {
+		const context = row.contextSnapshot;
+		if (
+			!record(context) ||
+			(Object.hasOwn(context, "organizationId") && context.organizationId !== row.organizationId) ||
+			(Object.hasOwn(context, "requesterEmployeeId") &&
+				context.requesterEmployeeId !== row.requesterEmployeeId) ||
+			(Object.hasOwn(context, "workflowType") && context.workflowType !== row.workflowType) ||
+			(Object.hasOwn(context, "source") &&
+				(!record(context.source) ||
+					context.source.id !== row.sourceId ||
+					context.source.type !== row.sourceType))
+		) {
+			throw new Error();
+		}
 		const correction = parseCanonicalTimeCorrectionContext(row.contextSnapshot);
 		const display = parseCanonicalTimeCorrectionDisplay(
 			row.displaySnapshot,
 			correction,
 			row.requesterEmployeeId,
+			context.timeCorrectionOriginalWorkMetadata,
 		);
 		const status = row.status as SelfServiceRequestStatus;
 		return [
@@ -586,16 +544,47 @@ function parseCanonicalTimeCorrectionDisplay(
 		typeof normalizeTimeCorrectionWorkflowPayload
 	>["timeCorrection"],
 	requesterEmployeeId: string,
+	originalWorkMetadata: unknown,
 ): { title: string; subtitle: string } {
 	const envelope = strictOwnDataRecord(value, ["displayPayload", "searchText"]);
-	const payload = strictOwnDataRecord(envelope.displayPayload, [
-		"requesterEmployeeId",
-		"requesterName",
-		"title",
-		"action",
-		"endpoints",
-	]);
-	const requesterName = safeDisplayString(payload.requesterName, 200, false);
+	if (!record(envelope.displayPayload)) throw new Error();
+	const namedProjection =
+		Object.hasOwn(envelope.displayPayload, "requesterEmployeeId") ||
+		Object.hasOwn(envelope.displayPayload, "requesterName");
+	const hasWorkMetadata = Object.hasOwn(correction, "workLocationType");
+	// Observed legacy workflows use the adapter's named projection; production
+	// canonical submissions use the submission owner's endpoint/work projection.
+	const payload = strictOwnDataRecord(
+		envelope.displayPayload,
+		namedProjection
+			? ["requesterEmployeeId", "requesterName", "title", "action", "endpoints"]
+			: ["title", "action", "endpoints", ...(hasWorkMetadata ? ["workMetadata"] : [])],
+	);
+	if (namedProjection) {
+		if (
+			payload.requesterEmployeeId !== requesterEmployeeId ||
+			safeDisplayString(payload.requesterName, 200, false).length === 0
+		) {
+			throw new Error();
+		}
+	} else if ("workLocationType" in correction) {
+		const work = strictOwnDataRecord(payload.workMetadata, ["original", "requested"]);
+		const original = normalizeTimeCorrectionOriginalWorkMetadata(
+			strictOwnDataRecord(work.original, ["workLocationType", "workCategoryId"]),
+		);
+		const requested = normalizeTimeCorrectionOriginalWorkMetadata(
+			strictOwnDataRecord(work.requested, ["workLocationType", "workCategoryId"]),
+		);
+		const recorded = normalizeTimeCorrectionOriginalWorkMetadata(originalWorkMetadata);
+		if (
+			original.workLocationType !== recorded.workLocationType ||
+			original.workCategoryId !== recorded.workCategoryId ||
+			requested.workLocationType !== correction.workLocationType ||
+			requested.workCategoryId !== correction.workCategoryId
+		) {
+			throw new Error();
+		}
+	}
 	const title = safeDisplayString(payload.title, 100, false);
 	safeDisplayString(envelope.searchText, 1000, true);
 	const expectedEndpoints = [
@@ -603,8 +592,6 @@ function parseCanonicalTimeCorrectionDisplay(
 		...(correction.clockOutCorrectionId ? ["Clock out"] : []),
 	];
 	if (
-		payload.requesterEmployeeId !== requesterEmployeeId ||
-		requesterName.length === 0 ||
 		title !== "Time correction" ||
 		payload.action !== correction.action ||
 		!strictStringArrayEquals(payload.endpoints, expectedEndpoints)

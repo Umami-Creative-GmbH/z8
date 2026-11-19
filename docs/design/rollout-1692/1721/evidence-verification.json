@@ -1,0 +1,345 @@
+{
+  "head": "b89c9e9c01effc7333fed98a4345cbdef0390c3b",
+  "json": [
+    "after-first-run.json",
+    "after.json",
+    "before-initial-timeout.json",
+    "before.json",
+    "cleanup.json",
+    "evidence-verification.json",
+    "native-before-contrast-fix.json",
+    "native.json",
+    "next-runtime.json",
+    "persisted-readback.json",
+    "quality.json",
+    "runtime-fifth-failure.json",
+    "runtime-first-failure.json",
+    "runtime-fourth-failure.json",
+    "runtime-second-failure.json",
+    "runtime-seventh-failure.json",
+    "runtime-sixth-failure.json",
+    "runtime-third-failure.json",
+    "runtime.json"
+  ],
+  "png": [
+    {
+      "name": "after-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "ceb2bd4aa06df05c31ad1eab618eba8b9cb8fc34faa6bd1b7135fac8be27e6b4"
+    },
+    {
+      "name": "after-first-escape.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "fa6c711930f11de73a90fdac4e7b7d31a859110d268ad14f03a58e995148fcf4"
+    },
+    {
+      "name": "after-foreign-feature-off.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "5b03d0454f9cb35276429c76b4492863479dc3d62d30ebdfad451e2d6f765b50"
+    },
+    {
+      "name": "after-former-denied.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "f9da903131e754c77efc686870866499d6b63771bbd91c0ac537e38eb6c3cc71"
+    },
+    {
+      "name": "after-held-read.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "478b76991202d33519ec8ac2f0cdc9f29842cd5c5b0a80b8ad5c70502d661bc4"
+    },
+    {
+      "name": "after-last-record.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "e5b6eb9ab7a85599c397be3ba1eb8fc9f4b57ab97b961d7fdef3e528b9b523b1"
+    },
+    {
+      "name": "after-lost-kit.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "0229268a81463d3b297be7a123366e32cd0cb23c7d1905ca198943e00f60131e"
+    },
+    {
+      "name": "after-org-switch.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "df6c5d8dab307fe534e7bb6fbced40f61ef8fb0ba79328211755d7091c8de879"
+    },
+    {
+      "name": "after-partial-evidence.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "3d5016ba54ab06090476f6b513d34586d83020f7319f0c6f08749493396db723"
+    },
+    {
+      "name": "after-personal-gloves.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "89453ec473bcba5cafb70cb43300a221ee204d1c95c772c135d28edd51429f61"
+    },
+    {
+      "name": "after-phone-evidence-reduced.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "1974a8aed2e05bdd009c1bdcf2c38a5ab0b66f680f80cb955c92603a127dfbb4"
+    },
+    {
+      "name": "after-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "0d2254765167ae6e99235a68b0d78f9379bd2ccdaa31ed025f288a6fa74ef0da"
+    },
+    {
+      "name": "after-read-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "fdf0a2a17173774683f4cc22890fedc2b35996d9e52a882aeeea99d01a72e26f"
+    },
+    {
+      "name": "after-received-kit.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "a613d0d0a14cddc8b8e17799e41edb2aa947c74f35fe82bed6b0680e57731a4d"
+    },
+    {
+      "name": "after-recovered-kit.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "4748982ce3593941d7d5c79c6c724657a8fc2cdc3c0e838c7c6d0edc64c79c54"
+    },
+    {
+      "name": "after-retry.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "3a1cb563a0f8801c0907bfaf7db4982e36e160625e8e395a973b644b3889e497"
+    },
+    {
+      "name": "after-saved-large-dark.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "107e54fdb05f5fc138a296744288aef6c52cf7d3bf21391f7296951fe8684f0f"
+    },
+    {
+      "name": "after-small-admin-empty.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "98cff03c4ed55328aac1eca57ecc2d86a57591dbf4d7327b10aeeff34c3d6f2d"
+    },
+    {
+      "name": "after-small-manager-empty.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "9504ceba632537ff8c8579c5811c5126006cb123f21043526eabbda9767d37ea"
+    },
+    {
+      "name": "after-small-restricted-empty.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "73de350b21dcc2d2ac00c8f5df786b1576402928150bf9a05848dd9b6d23fae5"
+    },
+    {
+      "name": "after-unassigned.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "360c8822b816de628b9493df5e10fb633d517b58df6742c370ee1a3714a8b7b3"
+    },
+    {
+      "name": "after-waived-kit.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "8a2a3b74d7b9afb166b6b5943e032753abaae5bb5c4ee0ea95406a72787fe0de"
+    },
+    {
+      "name": "after-wide-dark.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "a9889479581b03e2db4637e3b0d48f15477f54e5a80f4e5f5e5d1792a6c52c6f"
+    },
+    {
+      "name": "before-desktop-light.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "cdf97785cc892c7a3797c9b868913b7ced4f1fd142bb2a469116e0ffaac06163"
+    },
+    {
+      "name": "before-phone-light.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "f92d91f48d2be82d6aed79c1901f2dda40a21762e321c76eabb8dee24f871215"
+    },
+    {
+      "name": "before-wide-dark.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "e5de78f8ebbb5802c77b9c8dd20a0be7f3a4fcb854051196e72b0a9e74078b7b"
+    },
+    {
+      "name": "runtime-fifth-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "2cfabf0eb83757fbffd4a9b8762f48140c50ad073f942ed72e10fcbc31c45be9"
+    },
+    {
+      "name": "runtime-first-failure.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d1d09b25ffd3875538c454feba040f25ad235370e88e8154776098946f5f1bc5"
+    },
+    {
+      "name": "runtime-fourth-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "320cc081380c809dfd59db168a6b1144bdafb0a7c5667d0d08328f1e1343448e"
+    },
+    {
+      "name": "runtime-harness-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "147ba10c38f702738f3fb1371df3fc4a40f0aee9b4083e62c8603000e8a6dc5f"
+    },
+    {
+      "name": "runtime-second-failure.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "b0024c84cc0b400e58613ff79af8682a36ace7ff3ec4600084c12d5e89966fa3"
+    },
+    {
+      "name": "runtime-seventh-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "147ba10c38f702738f3fb1371df3fc4a40f0aee9b4083e62c8603000e8a6dc5f"
+    },
+    {
+      "name": "runtime-sixth-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "2cfabf0eb83757fbffd4a9b8762f48140c50ad073f942ed72e10fcbc31c45be9"
+    },
+    {
+      "name": "runtime-third-failure.png",
+      "width": 1600,
+      "height": 1000,
+      "sha256": "84682b8c8da3b17953b093faae2dbadd402c3301b74039c17cf8e95ffc1d5abc"
+    }
+  ],
+  "finalSourcePins": [
+    {
+      "capture": "desktop-light",
+      "file": "apps/webapp/src/components/equipment/equipment-personal.tsx",
+      "hash": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af"
+    },
+    {
+      "capture": "desktop-light",
+      "file": "apps/webapp/src/components/equipment/equipment-personal-header.tsx",
+      "hash": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1"
+    },
+    {
+      "capture": "desktop-light",
+      "file": "apps/webapp/src/components/equipment/equipment-personal-loading.tsx",
+      "hash": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db"
+    },
+    {
+      "capture": "desktop-light",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx",
+      "hash": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3"
+    },
+    {
+      "capture": "desktop-light",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "hash": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+    },
+    {
+      "capture": "phone-light",
+      "file": "apps/webapp/src/components/equipment/equipment-personal.tsx",
+      "hash": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af"
+    },
+    {
+      "capture": "phone-light",
+      "file": "apps/webapp/src/components/equipment/equipment-personal-header.tsx",
+      "hash": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1"
+    },
+    {
+      "capture": "phone-light",
+      "file": "apps/webapp/src/components/equipment/equipment-personal-loading.tsx",
+      "hash": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db"
+    },
+    {
+      "capture": "phone-light",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx",
+      "hash": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3"
+    },
+    {
+      "capture": "phone-light",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "hash": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+    },
+    {
+      "capture": "wide-dark",
+      "file": "apps/webapp/src/components/equipment/equipment-personal.tsx",
+      "hash": "2ab814b0cf0d27bb3748cc054871f5cbfbc1571fdf144ce002f2899b39ec00af"
+    },
+    {
+      "capture": "wide-dark",
+      "file": "apps/webapp/src/components/equipment/equipment-personal-header.tsx",
+      "hash": "8a8d01bfa15f69268f6d51debd62d4c36737bcef67630d24d558f006aa00b1e1"
+    },
+    {
+      "capture": "wide-dark",
+      "file": "apps/webapp/src/components/equipment/equipment-personal-loading.tsx",
+      "hash": "4330a5d1f4d35ed903d8311442c917a850f47b2ffe4d9ec484fb0471ad10b6db"
+    },
+    {
+      "capture": "wide-dark",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx",
+      "hash": "77832869fb96b87e6bb309e14a429451bf72ebdf9dc49912ac915bc3da24bef3"
+    },
+    {
+      "capture": "wide-dark",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "hash": "0d9f70cc4c941233eab42dbed7a3e9fb92f2414ec8a9342e062c83c17bdebfe7"
+    }
+  ],
+  "baselineSourcePins": [
+    {
+      "capture": "desktop-light",
+      "file": "apps/webapp/src/components/equipment/equipment-personal.tsx"
+    },
+    {
+      "capture": "desktop-light",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx"
+    },
+    {
+      "capture": "desktop-light",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts"
+    },
+    {
+      "capture": "phone-light",
+      "file": "apps/webapp/src/components/equipment/equipment-personal.tsx"
+    },
+    {
+      "capture": "phone-light",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx"
+    },
+    {
+      "capture": "phone-light",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts"
+    },
+    {
+      "capture": "wide-dark",
+      "file": "apps/webapp/src/components/equipment/equipment-personal.tsx"
+    },
+    {
+      "capture": "wide-dark",
+      "file": "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx"
+    },
+    {
+      "capture": "wide-dark",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.ts"
+    }
+  ]
+}

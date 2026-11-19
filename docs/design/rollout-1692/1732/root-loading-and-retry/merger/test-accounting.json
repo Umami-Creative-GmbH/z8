@@ -1,0 +1,4543 @@
+{
+  "identity": "Normalized physical file + full case name + repeated-name occurrence, never summed runner suite counts. Latest complete result per current tracked physical file selects the final current-source case set.",
+  "currentTrackedUnits": {
+    "physicalFiles": 61,
+    "cases": 434,
+    "passed": 434,
+    "failed": 0,
+    "skipped": 0
+  },
+  "currentProbes": {
+    "physicalFiles": 2,
+    "cases": 5,
+    "passed": 3,
+    "failed": 2,
+    "skipped": 0
+  },
+  "historicalControl": {
+    "physicalFiles": 1,
+    "cases": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "postgres": {
+    "physicalFiles": 1,
+    "cases": 20,
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0
+  },
+  "combinedCurrent": {
+    "physicalFiles": 64,
+    "cases": 459,
+    "passed": 457,
+    "failed": 2,
+    "skipped": 0
+  },
+  "allDistinctPhysicalAndNameHistory": {
+    "physicalFiles": 65,
+    "cases": 461,
+    "passed": 458,
+    "failed": 3,
+    "skipped": 0
+  },
+  "supersededFailures": [
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "name": "extracted translation keys all have a default English value",
+      "occurrence": 0,
+      "status": "failed",
+      "messages": [
+        "Error: Test timed out in 30000ms.\nIf this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".\n    at task (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2700:43)\n    at Object.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2717:16)\n    at Object.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2486:28)\n    at chain (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1870:14)\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/tolgee/extracted-key-defaults.test.ts:41:2\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2781:52\n    at runWithSuite (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3267:8)\n    at Object.collect (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2781:22)\n    at Object.collect (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2786:51)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+      ],
+      "disposition": "Original 30s translation extraction timeout retained; isolated explicit 120s retry passes in under 2s."
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the personnel file directory, preserving all descendant owners",
+      "occurrence": 0,
+      "status": "failed",
+      "messages": [
+        "AssertionError: expected true to be false // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts:75:37\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3276:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3922:64"
+      ],
+      "disposition": "Legitimate staged-list assertion reconciled; latest complete heading file passes. Old full case name changed with corrected stage wording and remains in raw identity history."
+    }
+  ],
+  "rows": [
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "name": "extracted translation keys all have a default English value",
+      "occurrence": 0,
+      "status": "failed",
+      "messages": [
+        "Error: Test timed out in 30000ms.\nIf this is a long-running test, pass a timeout value as the last argument or configure it globally with \"testTimeout\".\n    at task (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2700:43)\n    at Object.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2717:16)\n    at Object.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2486:28)\n    at chain (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1870:14)\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/tolgee/extracted-key-defaults.test.ts:41:2\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2781:52\n    at runWithSuite (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3267:8)\n    at Object.collect (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2781:22)\n    at Object.collect (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2786:51)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+      ]
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles takes selected PDF files as they are",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles refuses files that are not PDF or ZIP",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles refuses more than 500 files counting those already staged",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles unpacks the PDFs of one ZIP and skips other entries and system files",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles takes one ZIP only, never mixed with other files",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles refuses a ZIP larger than 500 MB without reading it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles reports a ZIP without PDFs and one that cannot be read",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "drops validation-queued work across an account switch and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "drops validation-queued work across an organization switch and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "hides stale arrivals and ignores a pending result across organization scope changes and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "hides stale arrivals and ignores a pending result across account scope changes and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "hides stale arrivals and ignores a pending result across loading scope changes and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "hides stale arrivals and ignores a pending result across error scope changes and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "keeps invalid input, focuses its error, and never submits it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "keeps the draft through a same-scope refresh of calendar defaults",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "does not start a queued submission after Activity hides it during validation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "ignores late success effects after an Activity hide/show lifetime",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "ignores late failure effects after an Activity hide/show lifetime",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "retains the pay period after a transport failure and allows an explicit retry",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the due-for-deletion review without adopting deeper or invalid personnel routes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the request queue without adopting its independent descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the report share-link settings heading without other settings or descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only selected employee files, leaving other personnel workflows independently staged",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the payslip batch start heading without adopting batch detail",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts payroll, the work-balance directory and selected balance without deeper descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the personal requests page heading",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the personal documents heading without officer descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the personnel file directory, preserving all descendant owners",
+      "occurrence": 0,
+      "status": "failed",
+      "messages": [
+        "AssertionError: expected true to be false // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/navigation/route-metadata.test.ts:75:37\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20\n    at new Promise (<anonymous>)\n    at runWithTimeout (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3276:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3922:64"
+      ]
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the employee equipment record heading without adopting its collection",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata retains independent approvals page headings",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the deputy history record, preserving other approval headings",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the complete review arrival route",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the exact vacation route while retaining staged descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts refreshed analytics without adopting unconverted descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts exact report titles and preserves descendant shell headings",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /de/my-requests",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/organization",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/payroll",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/scheduling",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/approvals/inbox",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/compliance",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/works-council",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/team/absences",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/team/driving",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/driving-licence",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/driving-licence/checks/employee-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/reports/projects",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/reports/vehicles",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/employees/employee-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/locations/location-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment/employees/employee-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment/assignments/assignment-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /de/my-equipment",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/equipment",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata matches route prefixes only at path-segment boundaries",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata normalizes locale and trailing slash segments",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/validations/onboarding.test.ts",
+      "name": "onboarding steps goes from the vacation policy straight to work templates for admins",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/validations/onboarding.test.ts",
+      "name": "onboarding steps resumes a stored retired holiday step at work templates",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/validations/onboarding.test.ts",
+      "name": "onboarding steps falls back to welcome for unknown steps",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access lets an owner or admin manage every category of every employee",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access lets an employee view only their own shared documents and manage none",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access grants nothing to someone without a grant or own profile, such as a manager",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access limits a scoped grant to its named employees, live teams and categories",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access lets an employee upload only certificates and other documents into their own file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access treats an owner, admin or officer as an employee for their own file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access tells an employee's own documents apart, so their views go unaudited",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) lets an employee attach a sick note to their own pending or approved sick leave",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) refuses while the organization does not allow employee sick notes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) refuses someone else's absence, even for an owner or admin",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) refuses an absence that is no sick leave",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) refuses a rejected absence",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) whether an absence can take a sick note at all (the recorder's only rule, #984) takes pending and approved sick leave",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) whether an absence can take a sick note at all (the recorder's only rule, #984) refuses an absence that is no sick leave, or a rejected one",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) lets an officer covering sick notes, an owner or an admin attach to pending or approved sick leave",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) refuses an employee outside the grant, or a grant without sick notes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) refuses an officer or admin acting on their own personnel file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) refuses an absence that is no sick leave, or a rejected one",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) refuses when the employee is not the absence's employee",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) deleting an own sick note lets the uploader delete it within 24 hours of uploading it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) deleting an own sick note refuses after 24 hours",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) deleting an own sick note refuses a sick note someone else uploaded or another category",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/organization-day.test.ts",
+      "name": "todayInOrganization is the calendar day in the organization's timezone, not UTC",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/organization-day.test.ts",
+      "name": "todayInOrganization falls back to UTC for an unknown timezone",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile matches the employee whose personnel number is a whole token of the file name",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile does not match a number that is only part of a longer token",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile accepts the start, the end and any non-alphanumeric character as a delimiter",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile keeps leading zeros significant",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile ignores the file extension and folders of the name",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile is ambiguous when two employees share the number",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile is ambiguous when tokens match different employees",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile matches one employee whose number appears twice",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile never matches employees without a personnel number",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile trims personnel numbers and matches letters case-insensitively",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+      "name": "updateProfileOnboarding applies preference defaults before updating the profile",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+      "name": "updateProfileOnboarding rejects invalid week start values before updating the profile",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+      "name": "updateProfileOnboarding rejects invalid time format values before updating the profile",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+      "name": "updateProfileOnboarding refuses an out-of-range or non-calendar birthday 1899-12-31",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+      "name": "updateProfileOnboarding refuses an out-of-range or non-calendar birthday 2999-01-01",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+      "name": "updateProfileOnboarding refuses an out-of-range or non-calendar birthday 2025-02-29",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/actions.test.ts",
+      "name": "updateProfileOnboarding refuses an out-of-range or non-calendar birthday 2025-01-01T00:00:00Z",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage discards Save queued before organization and permits a fresh submission",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage discards Save queued before organization-return and permits a fresh submission",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage discards Save queued before session-reconnect and permits a fresh submission",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage discards Save queued before Activity-return and permits a fresh submission",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage captures a fresh UTC calendar limit for each mounted page",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage renders the profile preferences and submits the default values",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage associates profile fields with their visible labels",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage focuses and links the required-name error without sending an invalid save",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage sends the selected civil birthday and permits clearing optional gender",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage locks skip synchronously against repeated activation and save",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage ignores save completion after unmount",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage ignores skip completion after unmount",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage ignores a held skip across an account A to B to A round trip",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage ignores a held skip across an organization A to B to A round trip",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage discards held save responses after Activity hides and resumes the page",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage discards held skip responses after Activity hides and resumes the page",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage retains the draft and offers inline recovery after an authoritative refusal",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage exposes the gender choices as a labelled group of toggle buttons",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage keeps skip disabled after successful skip navigation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage resets submit loading and shows a safe error when updating rejects",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-worker-compat",
+      "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.test.tsx",
+      "name": "ProfilePage resets skip loading and shows a safe error when skipping rejects",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader hands the personal equipment title to its page without adopting other destinations",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader hands the suspended recovery title to the page without opting descendants into heading ownership",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader hands the main title to converted pages while retaining unknown descendant titles",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader hands the exact vehicle report its heading and retains descendant shell titles",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader shows header actions in the requested order on the dashboard route",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader keeps secondary dashboard controls available as labeled actions in the mobile overflow",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader keeps mobile overflow actions available outside the dashboard without customization",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader does not show the dashboard customize trigger outside the dashboard route",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader shows the most specific route title instead of falling back to Dashboard",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader truncates a long title so the header actions stay on a phone screen (#846)",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/site-header.test.tsx",
+      "name": "SiteHeader clears the status bar when the app is drawn edge to edge (#846)",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-migrated.test.tsx",
+      "name": "migrated view refresh owners refreshes server groups once and only activated client regions while retaining employee drafts through a partial failure",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "name": "View refresh starts server refresh while independent custom data is still pending",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "name": "View refresh shares an active client read instead of cancelling it and starting the same dataset again",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "name": "View refresh accepts newer server props after a local retry and cancels the older pending GET without losing drafts",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "name": "View refresh refreshes server, active query, SWR and manual data without resetting view state or drafts",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "name": "View refresh stays busy until manual data finishes and prevents duplicate refresh clicks",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "name": "View refresh reports failures while keeping existing content and permitting a retry",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "name": "View refresh does not refresh a different route opened while data is pending",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/providers/view-refresh-provider.test.tsx",
+      "name": "View refresh accepts fresh saved data without replacing an open draft",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "name": "retires queued bulk validation on Activity return and accepts a fresh confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "name": "requesting a document from several employees at once retains an uncertain transport outcome and can retry without inventing success",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "name": "requesting a document from several employees at once keeps the draft and offers an inline retry after a refused request",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "name": "requesting a document from several employees at once keeps cancellation disabled and suppresses duplicate submissions while pending",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "name": "requesting a document from several employees at once sends the chosen teams and employees with one request and shows how many were skipped",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "name": "requesting a document from several employees at once asks for at least one team or employee before sending anything",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "name": "requesting a document from several employees at once words a refusal in the app language",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/bulk-document-requests-dialog.test.tsx",
+      "name": "requesting a document from several employees at once offers the employees and teams of the category the officer covers",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/certificate-skill-dialog.test.tsx",
+      "name": "naming the skill of a certificate the server refuses words the undated_requires_expiry refusal in the app language",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/certificate-skill-dialog.test.tsx",
+      "name": "naming the skill of a certificate the server refuses words the not_certificate refusal in the app language",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/certificate-skill-dialog.test.tsx",
+      "name": "naming the skill of a certificate the server refuses words the not_employee_skill refusal in the app language",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/certificate-skill-dialog.test.tsx",
+      "name": "naming the skill of a certificate the server refuses shows its own failure message, never the server's wording, for anything else",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx",
+      "name": "retains the audit reason through rejected transport, guards pending dismissal/duplicates, and retries",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx",
+      "name": "does not close a resumed task or announce late completion after Activity suspension",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx",
+      "name": "does not dispatch a confirmation removed before form validation completes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx",
+      "name": "retires queued validation across Activity return and permits a new confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/delete-document-dialog.test.tsx",
+      "name": "blocks Cancel and another activation while validation is queued",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-form-values.test.ts",
+      "name": "personnel document form values starts an upload as a shared contract dated today",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-form-values.test.ts",
+      "name": "personnel document form values starts an upload for a request in its category, titled like it, shared (#1402)",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-form-values.test.ts",
+      "name": "personnel document form values prefills a payslip's pay period with the month of the document date",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-form-values.test.ts",
+      "name": "personnel document form values follows the category's default visibility until the uploader picks one",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-form-values.test.ts",
+      "name": "personnel document form values drops a pay period and an expiry date the new category does not allow",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-form-values.test.ts",
+      "name": "personnel document form values builds the metadata a server action receives",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-form-values.test.ts",
+      "name": "personnel document form values starts an employee's own upload as a shared certificate that stays shared as other",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-form-values.test.ts",
+      "name": "personnel document form values edits an existing document's metadata as it is",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "keeps return pending through button and completes its current decision once",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "keeps return pending through Escape and completes its current decision once",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "keeps cancel pending through button and completes its current decision once",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "keeps cancel pending through Escape and completes its current decision once",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "retires queued return validation on Activity before a fresh confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "retires queued cancel validation on Activity before a fresh confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "retires queued return validation on revision before a fresh confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "retires queued cancel validation on revision before a fresh confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "suppresses a retired return decision's late feedback",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "suppresses a retired cancel decision's late feedback",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "keeps the return reason retryable after invalid input, transport failure and conflict",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-confirmation-lifetime.test.tsx",
+      "name": "keeps the cancel reason retryable after invalid input, transport failure and conflict",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-review.test.tsx",
+      "name": "an officer's decision on a submitted request (#1402) offers no decision before the employee submitted",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-review.test.tsx",
+      "name": "an officer's decision on a submitted request (#1402) accepts the version the officer saw",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-review.test.tsx",
+      "name": "an officer's decision on a submitted request (#1402) returns only with a reason",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-review.test.tsx",
+      "name": "an officer's decision on a submitted request (#1402) explains a decision someone else made first and reloads",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-review.test.tsx",
+      "name": "the employee's requested documents (#1402) uploads for an open request in its category, and submits only once something is uploaded",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-review.test.tsx",
+      "name": "the employee's requested documents (#1402) submits the uploaded documents with a note",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-request-review.test.tsx",
+      "name": "the employee's requested documents (#1402) offers nothing to do on a submitted request, and no way to decline",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-overview.test.tsx",
+      "name": "DocumentRequestsOverview lists each request with its employee's file, overdue and former employees marked",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-overview.test.tsx",
+      "name": "DocumentRequestsOverview filters to overdue requests through the URL, keeping the status",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-overview.test.tsx",
+      "name": "DocumentRequestsOverview drops the overdue filter when it is switched off",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-overview.test.tsx",
+      "name": "DocumentRequestsOverview says when nothing matches the filters",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "leads with scope and bulk creation and keeps employee/status/former context",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "retains usable rows after a failed same-filter refresh, disables decisions, and retries the RSC owner",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "never presents a prior filter's retained records as a failed new page",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "removes old records and tools after a userId change and requires a fresh arrival on ABA",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "removes old records and tools after a organizationId change and requires a fresh arrival on ABA",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "removes old records and tools after a employeeId change and requires a fresh arrival on ABA",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "keeps one heading and no sensitive records while checking the session",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "refreshes cached Activity arrivals before exposing old targets",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/document-requests-workspace.test.tsx",
+      "name": "keeps a failed Activity arrival retryable until a successful read arrives",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/download-personnel-file.test.tsx",
+      "name": "DownloadPersonnelFile downloads shared documents only by default, and everything once switched off",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "retains confirmation and selection with an inline failed-command retry",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "starts unselected, keeps unknown records separate and excludes them from due select-all",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "prevents duplicate commands and dismissal while pending, then retries the same selection",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "reports partial outcomes and refreshes records without selecting untouched documents",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "recovers from rejected reads without presenting unknown data as zero",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "retires old evidence, selection and late command feedback after activeOrganizationId changes away and back",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "retires old evidence, selection and late command feedback after userId changes away and back",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "retires old evidence, selection and late command feedback after employeeId changes away and back",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "discards a late read across an organization roundtrip",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "retires pending work while Activity is hidden and rereads before showing retained selection",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "retains selected IDs across pages and opens only those records for confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "keeps selection during a shared query refresh and retries with fresh evidence",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/due-for-deletion-list.test.tsx",
+      "name": "releases capacity when selected documents leave the refreshed result",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/edit-document-request-dialog.test.tsx",
+      "name": "changing a request's deadline and note starts from the request and saves the new deadline and note against its version",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/edit-document-request-dialog.test.tsx",
+      "name": "changing a request's deadline and note words the deadline_in_past refusal in the app language",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/edit-document-request-dialog.test.tsx",
+      "name": "changing a request's deadline and note words the not_editable refusal in the app language",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/edit-document-request-dialog.test.tsx",
+      "name": "changing a request's deadline and note words the conflict refusal in the app language",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "name": "keeps a safe heading while the selected employee's display scope differs",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "name": "does not revive the completed organization read or its task after identity returns",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "name": "does not revive the completed account read or its task after identity returns",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "name": "retires previously displayed identity and tasks across pending session proof",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "name": "refreshes locally and accepts a new admitted server read after retirement",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "name": "allows initial session hydration before the read has ever been displayed",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "name": "observes an account round trip emitted within one React turn",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.arrival.test.tsx",
+      "name": "permits a passive same-scope Activity return without claiming a fresh read",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.test.tsx",
+      "name": "leads with the selected employee, former status and personnel number before the records",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.test.tsx",
+      "name": "removes prior employee identity and open tasks on display-scope change",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/employee-file-workspace.test.tsx",
+      "name": "removes prior employee identity and open tasks on display-scope change",
+      "occurrence": 1,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+      "name": "names the attention section and opens the authorized document category",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+      "name": "requesting a renewal from Expiring documents links each row to the employee's file and offers a renewal only where none is requested",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+      "name": "requesting a renewal from Expiring documents creates a request naming the renewed document, for its employee and category",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+      "name": "requesting a renewal from Expiring documents warns that the employee never sees an HR-only renewed document",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/expiring-documents.test.tsx",
+      "name": "requesting a renewal from Expiring documents words a second request for the same document in the app language",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+      "name": "keeps upload reachable in the original empty shared-document state",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+      "name": "retries the real route data owner after a failed read",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+      "name": "filters shared records without losing metadata or the access-checked destinations",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+      "name": "leads with employee work in deadline order and keeps completed requests accessible",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+      "name": "retains the submission note and shows a retryable failure inside the confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+      "name": "removes stale records and open tasks when the displayed account or organization changes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/my-documents.test.tsx",
+      "name": "prevents native duplicate submissions and dismissal while the real command is pending",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles takes selected PDF files as they are",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles refuses files that are not PDF or ZIP",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles refuses more than 500 files counting those already staged",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles unpacks the PDFs of one ZIP and skips other entries and system files",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles takes one ZIP only, never mixed with other files",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles refuses a ZIP larger than 500 MB without reading it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-files.test.ts",
+      "name": "collectPayslipFiles reports a ZIP without PDFs and one that cannot be read",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "drops validation-queued work across an account switch and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "drops validation-queued work across an organization switch and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "hides stale arrivals and ignores a pending result across organization scope changes and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "hides stale arrivals and ignores a pending result across account scope changes and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "hides stale arrivals and ignores a pending result across loading scope changes and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "hides stale arrivals and ignores a pending result across error scope changes and return",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "keeps invalid input, focuses its error, and never submits it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "keeps the draft through a same-scope refresh of calendar defaults",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "does not start a queued submission after Activity hides it during validation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "ignores late success effects after an Activity hide/show lifetime",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "ignores late failure effects after an Activity hide/show lifetime",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/payslip-batch-start.test.tsx",
+      "name": "retains the pay period after a transport failure and allows an explicit retry",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-file-panel.test.tsx",
+      "name": "keeps a sick-note link after rejected transport and offers its action again",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-file-panel.test.tsx",
+      "name": "blocks concurrent unlink actions and ignores late completion across Activity suspension",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-file-panel.test.tsx",
+      "name": "retries a failed real reader boundary without presenting unavailable data as an empty file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-file-panel.test.tsx",
+      "name": "keeps the last successful records through a transient refetch failure and hides them after authority refusal",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "name": "retains a safe task heading while an old organization snapshot is refused",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "name": "does not revive a retired organization snapshot when the original identity returns",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "name": "does not revive a retired account snapshot when the original identity returns",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "name": "does not present a retained snapshot as current while session proof is pending",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "name": "exercises actual Activity hide/show without substituting another component",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "name": "requires a new server read after retirement, then shows fresh admitted data",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "name": "permits first session hydration without reviving a previously displayed snapshot",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.arrival.test.tsx",
+      "name": "observes an account round trip that the session atom emits within one React turn",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+      "name": "leads with attention then employee records and retains scoped destinations and former identity",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+      "name": "distinguishes unknown directory from an empty scope and retries the server owner",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+      "name": "keeps empty scope guidance and only capability-admitted workflow links",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/personnel-files-workspace.test.tsx",
+      "name": "hides previous and late-arriving records and open attention panels after scope changes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/retention-form-values.test.ts",
+      "name": "retention form values shows a missing period as an empty field",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/retention-form-values.test.ts",
+      "name": "retention form values reads whole years between 1 and 100; empty means no period",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/retention-form-values.test.ts",
+      "name": "retention form values turns the fields into periods, or null when one is invalid",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/sick-leave-overview.test.tsx",
+      "name": "SickLeaveOverview lists each absence with its employee's sick note file, its notes to open and former employees marked",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/sick-leave-overview.test.tsx",
+      "name": "SickLeaveOverview pages through the URL, keeping the filters",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/sick-note-links.test.tsx",
+      "name": "LinkSickNoteToAbsenceDialog links the sick note to the chosen sick leave of the employee",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/sick-note-links.test.tsx",
+      "name": "LinkSickNoteToAbsenceDialog asks for an absence and shows the server's refusal",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/personnel-file/sick-note-links.test.tsx",
+      "name": "LinkExistingSickNoteDialog offers only the employee's unlinked sick notes and links the chosen one",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/ui/loading-region.test.tsx",
+      "name": "announces a pending region instead of presenting it as an empty result",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/ui/loading-region.test.tsx",
+      "name": "keeps a main landmark when the loading region is the page shell",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/components/ui/page-header.test.tsx",
+      "name": "keeps task, scope and a working action together without owning the page draft",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/enterprise-identity/organization-activation.test.ts",
+      "name": "organization activation reauthentication does not automatically restart a completed SSO attempt that still lacks access",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/enterprise-identity/organization-activation.test.ts",
+      "name": "organization activation reauthentication starts SSO on SSO_REQUIRED instead of redirecting to the app",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/enterprise-identity/organization-activation.test.ts",
+      "name": "organization activation reauthentication preserves successful non-SSO switching and surfaces failures without navigation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/enterprise-identity/organization-activation.test.ts",
+      "name": "routes a local MFA challenge to verification without starting an IdP flow",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the due-for-deletion review without adopting deeper or invalid personnel routes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the request queue without adopting its independent descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the report share-link settings heading without other settings or descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only selected employee files, leaving other personnel workflows independently staged",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the payslip batch start heading without adopting batch detail",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts payroll, the work-balance directory and selected balance without deeper descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the notification timeline heading, retaining settings and descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the personal requests page heading",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the personal documents heading without officer descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the personnel file directory while preserving independently staged descendant owners",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts equipment overview and exact assignment headings, keeping other descendants independent",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the employee equipment record heading without adopting its collection",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the licence workspace and employee check while retaining other descendants and settings headings",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata retains independent approvals page headings",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the deputy history record, preserving other approval headings",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the exact inbox heading, retaining independent review route ownership",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only the complete review arrival route",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts the exact vacation route while retaining staged descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts only refreshed analytics routes while retaining staged descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts refreshed analytics without adopting unconverted descendants",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata adopts exact report titles and preserves descendant shell headings",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /de/my-requests",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/organization",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/payroll",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/scheduling",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/approvals/inbox",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/compliance",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/works-council",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/team/absences",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/team/driving",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/driving-licence",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/driving-licence/checks/employee-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/reports/projects",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/reports/vehicles",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/employees/employee-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/locations/location-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment/employees/employee-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/equipment/assignments/assignment-1",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /de/my-equipment",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata resolves /en/settings/equipment",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata matches route prefixes only at path-segment boundaries",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "name": "route metadata normalizes locale and trailing slash segments",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access lets an owner or admin manage every category of every employee",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access lets an employee view only their own shared documents and manage none",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access grants nothing to someone without a grant or own profile, such as a manager",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access limits a scoped grant to its named employees, live teams and categories",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access lets an employee upload only certificates and other documents into their own file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access treats an owner, admin or officer as an employee for their own file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "personnel file access tells an employee's own documents apart, so their views go unaudited",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) lets an employee attach a sick note to their own pending or approved sick leave",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) refuses while the organization does not allow employee sick notes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) refuses someone else's absence, even for an owner or admin",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) refuses an absence that is no sick leave",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) refuses a rejected absence",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) whether an absence can take a sick note at all (the recorder's only rule, #984) takes pending and approved sick leave",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) whether an absence can take a sick note at all (the recorder's only rule, #984) refuses an absence that is no sick leave, or a rejected one",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) lets an officer covering sick notes, an owner or an admin attach to pending or approved sick leave",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) refuses an employee outside the grant, or a grant without sick notes",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) refuses an officer or admin acting on their own personnel file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) refuses an absence that is no sick leave, or a rejected one",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) officers attaching to an employee's absence (#984) refuses when the employee is not the absence's employee",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) deleting an own sick note lets the uploader delete it within 24 hours of uploading it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) deleting an own sick note refuses after 24 hours",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/access.test.ts",
+      "name": "sick notes on absences (#982) deleting an own sick note refuses a sick note someone else uploaded or another category",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation-backfill-cli.test.ts",
+      "name": "minimise purged document audits CLI (#923 backfill) runs for every organization, or only the one named",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation-backfill-cli.test.ts",
+      "name": "minimise purged document audits CLI (#923 backfill) shows help without a connection and requires the database environment",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation-backfill-cli.test.ts",
+      "name": "minimise purged document audits CLI (#923 backfill) reports each organization and succeeds when nothing needs attention",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation-backfill-cli.test.ts",
+      "name": "minimise purged document audits CLI (#923 backfill) lists every record it could not process and fails, so completion is never claimed for them",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation-backfill-cli.test.ts",
+      "name": "minimise purged document audits CLI (#923 backfill) prints JSON for recorded evidence and closes the pool when the run fails",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.document-request.test.ts",
+      "name": "minimiseDocumentRequestAudit removes the note of the created record and keeps the request's structured facts",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.document-request.test.ts",
+      "name": "minimiseDocumentRequestAudit removes a typed reason and a submission note but keeps a system reason code",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.document-request.test.ts",
+      "name": "minimiseDocumentRequestAudit leaves a minimised record unchanged and reports unreadable JSON",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.test.ts",
+      "name": "minimiseDocumentAudit removes the title, file name and reason and keeps the structured evidence",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.test.ts",
+      "name": "minimiseDocumentAudit removes both title values of a metadata edit but records that the title changed",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.test.ts",
+      "name": "minimiseDocumentAudit leaves a record without descriptions unchanged, so a second run changes nothing",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.test.ts",
+      "name": "minimiseDocumentAudit keeps a null reason as it is",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.test.ts",
+      "name": "minimiseDocumentAudit reports a record whose JSON cannot be read",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.test.ts",
+      "name": "minimiseZipAudit removes only the purged document's title, file name and entry name from a download record",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.test.ts",
+      "name": "minimiseZipAudit removes the failed document's entry name from an abort record and keeps the delivered ids",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/audit-minimisation.test.ts",
+      "name": "minimiseZipAudit reports an unreadable record only when it may name a purged document",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "buildDocumentRequestedNotification tells the employee what to upload and by when, once per request event",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "buildDocumentRequestReminderNotification reminds the employee 3 days before and on the deadline day, once per claimed reminder",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "buildDocumentRequestReminderNotification tells the employee and the officers that a request is overdue",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "buildDocumentRequestDecidedNotification tells the employee a request was cancelled, with the reason",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "buildDocumentRequestDecidedNotification words returns and acceptances",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "buildDocumentRequestSubmittedNotification tells an officer who submitted for which request, leading to the employee's file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "redactDocumentRequestNotification removes the typed reason from a return's message and params, once",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "redactDocumentRequestNotification removes a cancel's reason and leaves an accept as it is",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-notifications.test.ts",
+      "name": "redactDocumentRequestNotification keeps only the title when the metadata cannot be read",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-overview.test.ts",
+      "name": "parseDocumentRequestOverviewParams defaults to the active requests, all of them, first page",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-overview.test.ts",
+      "name": "parseDocumentRequestOverviewParams reads a status, the overdue flag and paging",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-overview.test.ts",
+      "name": "parseDocumentRequestOverviewParams falls back to the defaults for values it does not know",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-retention.test.ts",
+      "name": "runDocumentRequestRetention counts an organization whose run fails in its result and still runs the others",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.edit.test.ts",
+      "name": "validateDocumentRequestEdit returns only what changes: a new deadline and a trimmed note",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.edit.test.ts",
+      "name": "validateDocumentRequestEdit leaves out what stays the same, even an overdue deadline",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.edit.test.ts",
+      "name": "validateDocumentRequestEdit accepts today, refuses a new deadline before it and anything that is not a day",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.edit.test.ts",
+      "name": "validateDocumentRequestEdit refuses a note that is too long or not text",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "validateDocumentRequestInput accepts a certificate or other request and trims its text",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "validateDocumentRequestInput refuses contract, payslip and sick note requests",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "validateDocumentRequestInput requires a title of at most 200 characters",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "validateDocumentRequestInput limits the note to 2000 characters",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "validateDocumentRequestInput requires a real calendar day as the deadline, today or later",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "nextDocumentRequestStatus follows open → submitted → accepted, with returns and cancels",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "nextDocumentRequestStatus refuses every other step, so a stale decision conflicts",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "isDocumentRequestOverdue is overdue only while open and after the deadline day",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "dueDocumentRequestReminder reminds 3 days before the deadline and on the deadline day, nothing in between",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "dueDocumentRequestReminder is overdue from the first day after the deadline",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "dueDocumentRequestReminder never reminds a submitted, accepted or cancelled request",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "dueDocumentRequestReminder sends no day reminder on the day the request was created or returned",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-request-rules.test.ts",
+      "name": "validateDocumentRequestReason requires a trimmed reason of at most 2000 characters",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata accepts a contract without pay period or expiry date",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata accepts a payslip with a pay period",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata refuses a payslip without a pay period",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata refuses a pay period on every other category",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata refuses a pay period month outside 1-12",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata allows an expiry date only on certificates and other documents",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata trims the title and refuses an empty one",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata refuses an impossible or malformed document date",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document-rules.test.ts",
+      "name": "validateDocumentMetadata refuses an unknown category or visibility",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document.types.test.ts",
+      "name": "personnelDocumentFileProblem accepts PDF, JPEG, PNG and WebP files up to 20 MB",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/document.types.test.ts",
+      "name": "personnelDocumentFileProblem refuses HEIC by type or name, other types and larger files",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/expiry-notifications.test.ts",
+      "name": "buildExpiryReminderNotification tells an officer which employee's document expires soon and links to the personnel file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/expiry-notifications.test.ts",
+      "name": "buildExpiryReminderNotification tells the employee about their own document on its expiry date and links to My documents",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/notifications.test.ts",
+      "name": "buildEmployeeUploadNotification tells the officer who uploaded a certificate, linking to the employee's file",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/notifications.test.ts",
+      "name": "buildEmployeeUploadNotification calls an other-category upload a document",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/notifications.test.ts",
+      "name": "buildEmployeeUploadNotification names the absence of a sick note and leads to the employee's sick notes (#982)",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/notifications.test.ts",
+      "name": "buildEmployeeUploadNotification names the recorder of a sick note uploaded on the employee's behalf (#984)",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/notifications.test.ts",
+      "name": "buildDocumentSharedNotification tells the employee a document is now in their documents, linking there",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/notifications.test.ts",
+      "name": "buildDocumentSharedNotification keys idempotency by the share event, so a later re-share notifies again",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/notifications.test.ts",
+      "name": "buildPayslipBatchSharedNotification tells the employee once per batch about their payslip for the pay period",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules accepts a team-scoped grant for payslips only",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules covers all five document categories when none are given",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules refuses an empty or unknown category set",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules keeps categories in their fixed order without duplicates",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules lets a grant name a departed employee but not make them the officer",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules refuses teams and employees of other organizations and an empty specific scope",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules refuses an unknown scope as a personnel file officer scope",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules drops named teams and employees from an all-employees grant",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules sees a category change as a change and a reordering as none",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules records old and new scope and categories for the audit",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/officer-grant.test.ts",
+      "name": "personnel file officer grant rules turns a grant into a manage grant the access resolver understands",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/organization-day.test.ts",
+      "name": "todayInOrganization is the calendar day in the organization's timezone, not UTC",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/organization-day.test.ts",
+      "name": "todayInOrganization falls back to UTC for an unknown timezone",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile matches the employee whose personnel number is a whole token of the file name",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile does not match a number that is only part of a longer token",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile accepts the start, the end and any non-alphanumeric character as a delimiter",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile keeps leading zeros significant",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile ignores the file extension and folders of the name",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile is ambiguous when two employees share the number",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile is ambiguous when tokens match different employees",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile matches one employee whose number appears twice",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile never matches employees without a personnel number",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-matching.test.ts",
+      "name": "matchPayslipFile trims personnel numbers and matches letters case-insensitively",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention-reminders.test.ts",
+      "name": "due-for-deletion notification is one reminder per recipient and organization day, linking to the due list",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention-reminders.test.ts",
+      "name": "due-for-deletion notification names no document and no employee",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "retention start is the end of the departure year when the document is older",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "retention start is the end of the document year when the document is newer than the departure",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "retention start takes the year of the last day, not of the cutoff on the next morning",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "retention start evaluates the last day in the organization's timezone",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "retention start uses the last of several ended employment periods",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "retention start does not exist while the employee has an open employment period, also after a rehire",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "retention start does not exist without a known employment end",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "due for deletion Anna's 2026 and 2027 payslips are due on 2034-01-01 with a 6-year period",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "due for deletion is never due in a category without a retention period",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "due for deletion is never due after a rehire",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/retention.test.ts",
+      "name": "due for deletion a shorter period makes documents due earlier",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/sick-leave-overview.test.ts",
+      "name": "parseSickLeaveOverviewParams defaults to the last 3 months up to the organization's today, all sick leave, first page",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/sick-leave-overview.test.ts",
+      "name": "parseSickLeaveOverviewParams takes the filters from the URL",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/sick-leave-overview.test.ts",
+      "name": "parseSickLeaveOverviewParams ignores values it does not know",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/sick-leave-overview.test.ts",
+      "name": "parseSickLeaveOverviewParams swaps a range given backwards",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/sick-leave-overview.test.ts",
+      "name": "parseSickLeaveOverviewParams keeps an open end of the range at its default",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/sick-note-labels.test.ts",
+      "name": "formatAbsenceDateRange formats a range in the locale",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/sick-note-labels.test.ts",
+      "name": "formatAbsenceDateRange formats a single day once",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/sick-note-labels.test.ts",
+      "name": "formatAbsenceDateRange keeps the plain days whatever the host timezone",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/skill-certificate-rules.test.ts",
+      "name": "certificateSkillExpiryDate (#1145, Scheduling ADR 0001) is the latest expiry date among the dated skill certificates",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/skill-certificate-rules.test.ts",
+      "name": "certificateSkillExpiryDate (#1145, Scheduling ADR 0001) ignores undated skill certificates",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/skill-certificate-rules.test.ts",
+      "name": "certificateSkillExpiryDate (#1145, Scheduling ADR 0001) is null without a dated skill certificate, so the skill keeps its date",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/skill-certificate-rules.test.ts",
+      "name": "skillCertificateRefusal (#1144, Scheduling ADR 0001) lets a dated certificate name a skill that requires an expiry date",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/skill-certificate-rules.test.ts",
+      "name": "skillCertificateRefusal (#1144, Scheduling ADR 0001) lets an undated certificate name a skill that never expires",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/skill-certificate-rules.test.ts",
+      "name": "skillCertificateRefusal (#1144, Scheduling ADR 0001) refuses an undated certificate for a skill that requires an expiry date",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/skill-certificate-rules.test.ts",
+      "name": "skillCertificateRefusal (#1144, Scheduling ADR 0001) refuses every other document category",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/zip-entries.test.ts",
+      "name": "personnelFileZipEntryNames arranges files as <category>/<document date>_<title>.<ext>",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/zip-entries.test.ts",
+      "name": "personnelFileZipEntryNames makes name collisions unique, ignoring letter case",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/zip-entries.test.ts",
+      "name": "personnelFileZipEntryNames keeps titles from escaping their folder or breaking file systems",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/zip-entries.test.ts",
+      "name": "personnelFileZipEntryNames names the archive after the employee",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/personnel-file/zip-entries.test.ts",
+      "name": "personnelFileZipEntryNames falls back to the original file extension for unknown file types",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/query/keys.test.ts",
+      "name": "queryKeys.notifications separates notification list keys by every fetch option",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/query/keys.test.ts",
+      "name": "queryKeys.notifications separates notification list and count keys by organization",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/query/keys.test.ts",
+      "name": "queryKeys.periodSubmissions separates readiness by organization and employee under one invalidation prefix",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/query/keys.test.ts",
+      "name": "queryKeys.employees provides an organization prefix for employee queries",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/query/keys.test.ts",
+      "name": "queryKeys.members provides an organization prefix without changing the list key shape",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/query/provider.test.tsx",
+      "name": "QueryProvider server action version skew asks the user to reload once when queries and mutations hit an old deployment",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/query/provider.test.tsx",
+      "name": "QueryProvider server action version skew asks the user to reload when a direct server action call rejects unhandled",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/query/provider.test.tsx",
+      "name": "QueryProvider server action version skew does not retry mutations that failed because of version skew",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences retains all defaults for absent or partial settings undefined",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences retains all defaults for absent or partial settings {}",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences retains all defaults for absent or partial settings {\"locale\":null,\"weekStartDay\":null,\"timeFormat\":null,\"timezone\":null,\"helpImproveProduct\":null}",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences selects shared presentation, onboarding and hydration eligibility for the authorized user",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale en",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale de",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale fr",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale es",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale pt",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale el",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale pl",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale tr",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale gsw",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale no",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale sv",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale ro",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale hr",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale bs",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale sq",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale uk",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves supported saved locale ru",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences leaves invalid locale \"\" unset",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences leaves invalid locale \"unsupported\" unset",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences leaves invalid locale \"EN\" unset",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences normalizes invalid presentation settings and empty timezone",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences preserves nondefault settings and explicit false analytics consent",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/lib/user-preferences/render-snapshot.test.ts",
+      "name": "readUserPreferences reads again after a preference write and keeps another user's settings separate",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/actions.prerender.test.ts",
+      "name": "getMyDocumentsAction hands the prerender rejection back to Next.js instead of logging a failure",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/actions.prerender.test.ts",
+      "name": "getMyDocumentsAction still logs and reports an ordinary error",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/actions.prerender.test.ts",
+      "name": "getMyDocumentRequestsAction hands the prerender rejection back to Next.js instead of logging a failure",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/actions.prerender.test.ts",
+      "name": "getMyDocumentRequestsAction still logs and reports an ordinary error",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "name": "owns exactly one safe heading during the real route admission fallback",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "name": "retains the explanation and personnel files destination before the review",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "name": "preserves independent not-found admission for unavailable",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "name": "preserves independent not-found admission for unauthenticated",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "name": "preserves independent not-found admission for resolved",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "unit-expanded",
+      "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.test.tsx",
+      "name": "adopts only this route and preserves prior opt-ins and staged relatives",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "translation-retry",
+      "file": "apps/webapp/src/tolgee/extracted-key-defaults.test.ts",
+      "name": "extracted translation keys all have a default English value",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "lifetime-probes",
+      "file": "apps/webapp/src/components/personnel-file/.tmp/merge1732/lifetime-current.test.tsx",
+      "name": "MERGE1732 retires validation-queued work when loading hides current scope",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "lifetime-probes",
+      "file": "apps/webapp/src/components/personnel-file/.tmp/merge1732/lifetime-current.test.tsx",
+      "name": "MERGE1732 retires validation-queued work when error hides current scope",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "lifetime-probes",
+      "file": "apps/webapp/src/components/personnel-file/.tmp/merge1732/lifetime-current.test.tsx",
+      "name": "MERGE1732 suppresses rejected late scope response and allows the remounted form",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "lifetime-probes",
+      "file": "apps/webapp/src/components/personnel-file/.tmp/merge1732/lifetime-current.test.tsx",
+      "name": "MERGE1732 retires a pending Activity session before a fresh start while retaining draft",
+      "occurrence": 0,
+      "status": "failed",
+      "messages": [
+        "AssertionError: expected true to be false // Object.is equality\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/personnel-file/.tmp/merge1732/lifetime-current.test.tsx:92:36\n    at async file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:20"
+      ]
+    },
+    {
+      "report": "heading-probes",
+      "file": "apps/webapp/src/components/personnel-file/.tmp/merge1732/heading-baseline.test.tsx",
+      "name": "MERGE1732 preserves exactly one safe heading while the actual route admission fallback is pending",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "heading-probes",
+      "file": "apps/webapp/src/components/personnel-file/.tmp/merge1732/heading-current.test.tsx",
+      "name": "MERGE1732 preserves exactly one safe heading while the actual route admission fallback is pending",
+      "occurrence": 0,
+      "status": "failed",
+      "messages": [
+        "AssertionError: expected [] to have a length of 1 but got +0\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1861:20)\n    at Proxy.<anonymous> (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/index.CZzC1gGg.js:1656:14)\n    at Proxy.methodWrapper (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/chai@6.3.0/node_modules/chai/index.js:1737:25)\n    at X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/personnel-file/.tmp/merge1732/heading-current.test.tsx:69:19\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20\n    at new Promise (<anonymous>)\n    at runWithCancel (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10)\n    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20"
+      ]
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) starting a batch refuses displayed scope drift even when the actor administers both organizations",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) starting a batch refuses an officer whose grant does not include payslips",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) starting a batch shows a batch only to whoever started it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) starting a batch holds at most 500 files, counting staged files whose objects expired",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) starting a batch takes PDF files only",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) matching matches the whole personnel number token, never part of a longer number",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) matching makes a number two employees share ambiguous, to be assigned by hand",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) matching leaves a file of an out-of-scope employee unmatched for the officer",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) matching never matches or assigns the officer's own payslip, even with their team in scope",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) matching lets the officer assign a file of an employee without a personnel number, or drop it",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) confirmation stores nothing as an employee document before confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) confirmation creates a payslip per included file with the batch's pay period and visibility",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) confirmation stores a confirmed payslip under the employee's key and cleans up the staged object",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) confirmation keeps the staged file when storing the payslip fails, and confirms it on retry",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) confirmation flags an employee who already has a payslip for the pay period and keeps both",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) confirmation creates no duplicates when a confirmation is retried after a partial failure",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) confirmation notifies each employee once per shared batch, however many files are theirs",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) confirmation audits every created document and one batch summary per confirmation",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) cleanup cleans up staged files that are never confirmed, after a day",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    },
+    {
+      "report": "postgres",
+      "file": "apps/webapp/src/lib/personnel-file/payslip-batch.integration.test.ts",
+      "name": "payslip batches matched by personnel number (#868) cleanup releases dropped files once every included file is a document",
+      "occurrence": 0,
+      "status": "passed",
+      "messages": []
+    }
+  ]
+}

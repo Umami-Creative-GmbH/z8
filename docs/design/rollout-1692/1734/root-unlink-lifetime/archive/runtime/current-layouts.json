@@ -1,0 +1,183 @@
+{
+  "phase": "current",
+  "head": "3d64886be72c8935eb9dffff51d042bb426ff8dd",
+  "sources": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx",
+      "rawSha256": "c0892fb16b400539574b5033a47bc3bdee5d33c6eb82f3b62df5fab405bce2d9",
+      "lfSha256": "2b1fd0d522d4a9986a941eb8edfc4177c5cb9364e672fd6ef95b1638e4a501cb"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/sick-leave-overview.tsx",
+      "rawSha256": "06e69cbf71b9958c70dcee378e67815d2a67f8c895b546da28e10689200f7b5d",
+      "lfSha256": "7e03b0e9b9194bf88a9ce987da8a2e73d89fc25f9d0dfc9f60290bcbe19cc3f8"
+    }
+  ],
+  "sourceBoundary": "Exact candidate current application",
+  "fixture": "Own generated small admin,12 synthetic absences, first10 of12, range2026-11-01..15, one shared linked68byte note; unchanged same fixture throughout matched captures",
+  "rows": [
+    {
+      "name": "desktop-expanded-light-18px",
+      "image": "current-desktop-expanded-light-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 1600,
+      "documentWidth": 1600,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "sidebar": "expanded",
+      "sidebarWidth": 288,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": 1256,
+      "recordScroll": 1256,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0,
+      "savedReload": true
+    },
+    {
+      "name": "desktop-collapsed-light-18px",
+      "image": "current-desktop-collapsed-light-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 1600,
+      "documentWidth": 1600,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "sidebar": "collapsed",
+      "sidebarWidth": 63,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": 1481,
+      "recordScroll": 1481,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0,
+      "savedReload": true
+    },
+    {
+      "name": "phone-light-18px",
+      "image": "current-phone-light-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 390,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": 352,
+      "recordScroll": 1080,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0
+    },
+    {
+      "name": "phone-nav-open-light-18px",
+      "image": "current-phone-nav-open-light-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 390,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": 352,
+      "recordScroll": 1080,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0
+    },
+    {
+      "name": "phone-navigation-escape",
+      "firstEscapeClosed": true,
+      "focus": "Toggle Sidebar"
+    },
+    {
+      "name": "phone-record-keyboard",
+      "scrollLeft": 2,
+      "focusedRegion": "Sick leave"
+    },
+    {
+      "name": "phone-record-right-18px",
+      "image": "current-phone-record-right-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 390,
+      "documentWidth": 390,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": false,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": 352,
+      "recordScroll": 1080,
+      "recordLeft": 728,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0,
+      "localHorizontalScroll": true
+    },
+    {
+      "name": "wide-expanded-dark-18px",
+      "image": "current-wide-expanded-dark-18px.png",
+      "crop": {
+        "bottom": 96,
+        "captureBeyondViewport": false,
+        "purpose": "Exclude synthetic account footer; full raw viewport retained privately"
+      },
+      "viewport": 2400,
+      "documentWidth": 2400,
+      "rootFont": "18px",
+      "fontPreference": "large",
+      "dark": true,
+      "sidebar": "expanded",
+      "sidebarWidth": 288,
+      "headings": [
+        "Sick leave"
+      ],
+      "rows": 10,
+      "recordViewport": 2056,
+      "recordScroll": 2056,
+      "recordLeft": 0,
+      "notificationPermission": "denied",
+      "notificationOverlays": 0
+    }
+  ],
+  "limits": [
+    "96px bottom crop in public images; full raw private viewports retained",
+    "Default shared Pets and development/Rendering overlays may remain outside or at crop boundary",
+    "18px saved application preference, not true browser zoom",
+    "Long translations, physical device/wrapper and exhaustive navigation variants not certified"
+  ]
+}

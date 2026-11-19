@@ -62,6 +62,7 @@ import {
 } from "@/lib/approvals/workflow/identity";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import {
 	compareInstants,
@@ -1006,7 +1007,7 @@ export async function lockTimeCorrectionSubmissionActorAndPeriodInTransaction(in
 			conflictType: "time_correction_work_period_stale",
 		});
 	}
-	return { lockedEmployee, lockedTeamId, lockedPeriod };
+	return { lockedEmployee, lockedTeamId, lockedPeriod, actorMemberRole: lockedMember.role };
 }
 
 type SubmitCorrectionInput = Parameters<typeof submitCorrection>[0];
@@ -1336,7 +1337,7 @@ function submitCorrectionInTransaction(
 		const authority = await timeCorrectionAuthority(scope, input.organizationId);
 		const adopted = scope.admission === "append" ? scope : null;
 		const tx = context.dbService.db as unknown as typeof db;
-		const { lockedEmployee, lockedTeamId, lockedPeriod } =
+		const { lockedEmployee, lockedTeamId, lockedPeriod, actorMemberRole } =
 			await lockTimeCorrectionSubmissionActorAndPeriodInTransaction({
 				tx,
 				organizationId: input.organizationId,
@@ -1419,6 +1420,14 @@ function submitCorrectionInTransaction(
 			requesterEmployeeId: input.employeeId,
 			organizationId: input.organizationId,
 		});
+		// A configured policy still decides first. Without a manager, an admin's
+		// own deletion can complete through the audited requester-as-approver path.
+		const selfDeletionApprover =
+			input.action === "delete" &&
+			input.actorEmployeeId === input.employeeId &&
+			(hasOrganizationRole(actorMemberRole, "owner") || hasOrganizationRole(actorMemberRole, "admin"))
+				? input.employeeId
+				: null;
 		const identity = Object.fromEntries(
 			input.endpoints.map((endpoint) => [
 				endpoint.endpointType === "clock_in" ? "clockIn" : "clockOut",
@@ -1594,7 +1603,7 @@ function submitCorrectionInTransaction(
 			requesterEmployeeId: input.employeeId,
 			teamId: lockedTeamId,
 			workPeriodId: input.workPeriodId,
-			defaultApproverId: managerDecision.ok ? managerDecision.managerId : null,
+			defaultApproverId: managerDecision.ok ? managerDecision.managerId : selfDeletionApprover,
 			reason: input.reason,
 			overtimeRisk: null,
 			submissionKey,

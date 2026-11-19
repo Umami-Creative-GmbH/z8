@@ -39,11 +39,13 @@
       "byCostCenter": "Maliyet Merkezine Göre",
       "byManager": "Yöneticiye Göre",
       "byTeam": "Ekibe Göre",
+      "chartValues": "Haftalık değerleri görüntüle",
       "costCenter": "Maliyet Merkezi",
       "currentOvertime": "Mevcut Fazla Mesai",
       "description": "Ekipler genelinde haftalık fazla mesai azalmasını takip edin.",
       "errors": {
-        "loadData": "Fazla mesai eritme verileri yüklenemedi"
+        "loadData": "Fazla mesai eritme verileri yüklenemedi",
+        "retryDescription": "Fazla mesai verileri yüklenemedi. Seçilen dönemi ve filtreleri tekrar deneyin."
       },
       "filters": {
         "allCostCenters": "Tüm maliyet merkezleri",
@@ -56,9 +58,11 @@
       },
       "improvingGroups": "İyileşen Gruplar",
       "improvingGroupsDescription": "Fazla mesaisi azalan gruplar",
+      "loading": "Fazla mesai verileri yükleniyor",
       "manager": "Yönetici",
       "previousOvertime": "Önceki Fazla Mesai",
       "previousPeriodDescription": "Önceki dönemle karşılaştırıldığında",
+      "refreshing": "Fazla mesai verileri yenileniyor",
       "selectedRangeDescription": "Seçilen tarih aralığı ve filtreler için",
       "title": "Fazla Mesai Eritme",
       "trendDirection": "Eğilim Yönü",
@@ -92,6 +96,10 @@
         "title": "Onay Darboğazları",
         "unavailable": "Onay darboğazları yüklenemedi"
       },
+      "chartValues": "Grafik değerlerini görüntüle",
+      "errors": {
+        "retryDescription": "Bazı analizler yüklenemedi. Gösteriliyorsa daha önce yüklenen değerler güncel olmayabilir."
+      },
       "kpis": {
         "approvalRate": {
           "description": "Karar verilen taleplerin onaylanan kısmı",
@@ -112,6 +120,7 @@
         }
       },
       "loadingLabel": "Analitik verileri yükleniyor",
+      "refreshing": "Analizler yenileniyor…",
       "workHoursByTeam": {
         "description": "Ekip başına kaydedilen toplam çalışma saati",
         "title": "Ekibe Göre Çalışma Saatleri"
@@ -131,7 +140,10 @@
       "errors": {
         "loadData": "Ekip performans verileri yüklenemedi"
       },
+      "loading": "Ekip performans verileri yükleniyor",
       "onTrack": "Beklendiği Gibi",
+      "refreshFailed": "Yenileme başarısız oldu. Bu dönem için daha önce yüklenen veriler gösteriliyor. Yeniden deneme başarılı olana kadar dışa aktarma kullanılamaz.",
+      "refreshing": "Ekip performans verileri yenileniyor",
       "variance": {
         "description": "Beklenen çalışma saatlerinden sapma",
         "empty": "Sapma verisi mevcut değil",
@@ -140,25 +152,31 @@
     },
     "vacationTrends": {
       "allocated": "Tahsis Edilen",
+      "allowanceMissing": "İzin hakkı yapılandırılmadı",
+      "allowanceSource": "Bazı çalışanların kayıtlı izin hakkı bulunmuyor. Toplamlar yalnızca mevcut kayıtlı izin haklarını kullanır.",
       "balance": {
         "description": "Çalışan bazında tahsis edilen, kullanılan ve kalan günler",
         "title": "İzin Bakiyesi"
       },
-      "daysRemaining": "{count} gün kaldı",
-      "daysTaken": "{count} gün kullanıldı",
+      "dayValue": "{count} gün",
+      "description": "Seçilen kuruluş dönemi için izin kullanımını ve çalışan bakiyelerini karşılaştırın.",
       "errors": {
-        "loadData": "İzin eğilim verileri yüklenemedi"
+        "loadData": "İzin eğilim verileri yüklenemedi",
+        "retryDescription": "İzin verileri yüklenemedi. Seçilen dönemi tekrar deneyin."
       },
+      "loading": "İzin verileri yükleniyor",
       "monthlyUsage": {
         "description": "Aylık kullanılan izin günleri",
         "empty": "Aylık kullanım verisi mevcut değil",
         "title": "Aylık İzin Kullanımı"
       },
+      "monthlyValues": "Aylık değerleri görüntüle",
       "peakMonths": {
         "description": "İzin hareketliliğinin en yüksek olduğu aylar",
         "empty": "Yoğun dönem verisi mevcut değil",
         "title": "En Yoğun İzin Ayları"
       },
+      "refreshing": "İzin verileri yenileniyor",
       "remaining": "Kalan",
       "taken": "Kullanılan",
       "utilization": {
@@ -178,6 +196,8 @@
         "empty": "Günlük saat verisi bulunamadı",
         "title": "Günlük Çalışma Saatleri"
       },
+      "dailyStatus": "Günlük durumu görüntüle",
+      "dailyValues": "Günlük saatleri görüntüle",
       "distribution": {
         "description": "Çalışan çalışma saatleri karşılaştırması (yatay çubuk)",
         "empty": "Dağılım verisi bulunamadı",
@@ -192,11 +212,15 @@
       },
       "expectedHours": "Beklenen Saatler",
       "hoursPerWeekAbbreviation": "sa/hf",
+      "loading": "Çalışma saatleri analiz verileri yükleniyor",
+      "refreshFailed": "Yenileme başarısız oldu. Bu dönem için daha önce yüklenen veriler gösteriliyor. Yeniden deneme başarılı olana kadar dışa aktarma kullanılamaz.",
+      "refreshing": "Çalışma saatleri analiz verileri yenileniyor",
       "variance": "Sapma",
       "varianceTrend": {
         "description": "Zaman içinde beklenen çalışma saatlerinden sapma",
         "empty": "Trend verisi bulunamadı",
-        "title": "Fazla Mesai ve Eksik Mesai Eğilimi"
+        "title": "Fazla Mesai ve Eksik Mesai Eğilimi",
+        "unavailable": "Günlük fazla ve eksik çalışma saati değerleri bu raporda mevcut değildir. Kaydedilen günlük durum aşağıda gösterilmektedir."
       }
     }
   }

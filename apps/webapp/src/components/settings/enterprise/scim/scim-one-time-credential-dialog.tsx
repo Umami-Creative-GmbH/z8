@@ -72,7 +72,7 @@ export function ScimOneTimeCredentialDialog({
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 				<ActionPanelBody className="space-y-4">
-					<div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+					<div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
 						{t(
 							"settings.enterprise.identity.scim.credential.warning",
 							"This credential is shown once. Store it in your identity provider securely.",

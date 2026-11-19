@@ -1,0 +1,155 @@
+{
+  "scope": "Git blob preservation and inherited metadata only; no post-blocker artifact acceptance",
+  "files": [
+    {
+      "path": "docs/design/rollout-1692/1742.md",
+      "blob": "c5b186b367fcab8857d34b6f2e94d026f717ab47",
+      "bytes": 17388,
+      "sha256": "7beca7f81abe70511670a5ae4eb0d2575377dcf5603cf7c286f1f2be5e33255f"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after-collapsed.png",
+      "blob": "6b7833e0e0e58388564f4d287d22e4949c6d2498",
+      "bytes": 110751,
+      "sha256": "07e6a82ccbb651e214fd016403ac8dc3ba83a9f941d0370d0d05a5ea95538a09"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after-desktop-light.png",
+      "blob": "bd126fa8f3458bd5c1bd8cd38ab00090160eb07b",
+      "bytes": 136689,
+      "sha256": "e3194a7f74f5f63ca521572d61e387ef965665af2dfccf1347f0eaceb6686e0c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after-phone-dark-large.png",
+      "blob": "14c8adf95aff7603d35f376221ab42eb4b43ba78",
+      "bytes": 46179,
+      "sha256": "ed112b4e1c6657069e75f3b1df06ca19868153722ba36ec304ef8cec8d4b0f92"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after-phone-light.png",
+      "blob": "0a20202b3a92977b0a9895151e18427c3d0fd9bc",
+      "bytes": 47124,
+      "sha256": "8a5c4daa1f29c61685ff4171126c0a0650b826173ea46978dda0036e07ab08c9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after-phone-records.png",
+      "blob": "ef95c0cbe4bacf99f975fe5fd9894244e5f5abfe",
+      "bytes": 45950,
+      "sha256": "f6b57321032e9dee24e25f638c99abe2c9894322bd7c9e543e3a04ade6d63f13"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after-read-failure.png",
+      "blob": "4ebaf8263dd374e2b137cded94a8753aac674f8b",
+      "bytes": 142361,
+      "sha256": "e496869cd985fc2ff9810c302a79c5bca4291339829188768302697d5693eb2e"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after-read-pending.png",
+      "blob": "b106b944162b66c721dddfcbf9a6939d9c5b69a4",
+      "bytes": 139999,
+      "sha256": "a9d66892c2c22078870777ef6ebad533b5d412129e90b01bc13263a803a69450"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after-wide-dark.png",
+      "blob": "4e7ec328c35516ac31f5172866c9ddaf52292431",
+      "bytes": 142434,
+      "sha256": "e68fef6d54759d5952bf4a6dc0a0514f701f316ed05e29c05697b5158f47ad77"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/after.json",
+      "blob": "8aef22c62875b026402315ff9a2b4d930d6a9779",
+      "bytes": 6828,
+      "sha256": "e390626de342862f2a34f83bd2404614692eb17d0f83459a46fd821fadae6298"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/before-desktop-light.png",
+      "blob": "642f29034c98c3c49d75433da77ad0cd7386db3f",
+      "bytes": 125210,
+      "sha256": "2be24e90a743ed15d643f9cbac6bd100780d5ef714ad360c38f4af076141380c"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/before-phone-light.png",
+      "blob": "523dc444d8190f4b72fb1b6f3d4c88b6a164fa05",
+      "bytes": 62905,
+      "sha256": "f3a9f2b9dd64c9b84ac888264bf94823aa751acff54f06492f72e7ff3644c1f1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/before-phone-records.png",
+      "blob": "523dc444d8190f4b72fb1b6f3d4c88b6a164fa05",
+      "bytes": 62905,
+      "sha256": "f3a9f2b9dd64c9b84ac888264bf94823aa751acff54f06492f72e7ff3644c1f1"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/before-wide-dark.png",
+      "blob": "3682b8f10339ba335abd5bfe37180b13f2370766",
+      "bytes": 130391,
+      "sha256": "0b2051189522ab8a122dc2d7427fa5b26db95e0bac1da9cca9a363904ce61d66"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/before.json",
+      "blob": "8fe433065a80aae00ccaf2cbf1194ae1e853cb4d",
+      "bytes": 6296,
+      "sha256": "e6d3e566f5dbc85ec9c1d1ce16bcd8b72ec3a7a1e2d393a799b1cc7a5f8ac2c9"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/destinations.json",
+      "blob": "2fe20ca2c40c21a7867053b086ab870dfc5e6fb3",
+      "bytes": 403,
+      "sha256": "e8dd020baea8d93da9c74f7b28a6fb1d1a45efb63ebaa91d61159df355a36cac"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/native.json",
+      "blob": "149e1d84903bfd647c871106308d627c0f94e75e",
+      "bytes": 882,
+      "sha256": "5e014378b01c0e929102633a08132b33aa0b597eeffee43f4d96d24b0a1b97b0"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/next-final.json",
+      "blob": "f4ea07bafcb7bbf627c06be8962f11e366b257c8",
+      "bytes": 21287,
+      "sha256": "33ecbfea18292acb4a625c02f63913bb4296bf4ae659a05c33e91b9a58ad3a67"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/overlay.json",
+      "blob": "e57fa28110665af37c7a0c380ab4a0a5502d0c89",
+      "bytes": 1390,
+      "sha256": "d162d3c3a65558732f05df3d6fb09f3354f86d08bb25ea933e069fda1c8e00c4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/runtime-failed-attempt.png",
+      "blob": "c9a34a63297922e9ca8af6ae854aceba55e10ca1",
+      "bytes": 147711,
+      "sha256": "b4c8692024625fc94fe5dce1ecfe8f09dd2d9dc9b543c5fee0124c36baebb6b4"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/runtime.json",
+      "blob": "19276506444d508bea04fceaca0245d923261047",
+      "bytes": 1502,
+      "sha256": "bf40af4331649ad25484cfbb9662ce9a8edb176351f934362537e2a640c326cd"
+    },
+    {
+      "path": "docs/design/rollout-1692/1742/verification.json",
+      "blob": "f0149e4296145e5e57ebe9c03d19435b7f39b34f",
+      "bytes": 13540,
+      "sha256": "7d495dc55b3b5030c85e4c4cc9e27eee1f79c67e08d1ae995ce2dd567f8badf2"
+    }
+  ],
+  "selectedJsonRead": [
+    "1742.md",
+    "after.json",
+    "verification.json",
+    "overlay.json",
+    "runtime.json",
+    "native.json",
+    "next-final.json"
+  ],
+  "allIncomingPublicBlobsExact": true,
+  "pngDecodedFresh": false,
+  "limits": [
+    "Fresh full JSON/link/source-pin validation and PNG decode skipped at first-critical stop.",
+    "runtime-failed-attempt.png preserved byte-for-byte but never decoded/viewed.",
+    "No private drivers, profiles, raw action/RSC bodies or sessions followed.",
+    "Presentation/live/native source f5d3b34e2e388c87c278633e7bf8f2be71da5185 predates final bd426bd055c576f25098e152745c6580ff5f946d authority fence.",
+    "Historical comparison is partial four-consumer overlay, not full-checkout baseline. Preliminary mislabeled capture correction retained."
+  ]
+}

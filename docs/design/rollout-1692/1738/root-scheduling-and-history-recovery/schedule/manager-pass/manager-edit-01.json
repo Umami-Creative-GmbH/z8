@@ -1,0 +1,9 @@
+{
+  "actor": "standard manager",
+  "normalUi": true,
+  "steps": [],
+  "failure": {
+    "name": "TimeoutError",
+    "message": "Waiting failed: 20000ms exceeded"
+  }
+}

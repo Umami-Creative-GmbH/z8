@@ -91,7 +91,7 @@ describe("StorageSettingsForm", () => {
 		});
 	});
 
-	it("recovers from rejected save and delete operations with error toasts", async () => {
+	it("recovers from rejected save and delete operations with visible errors", async () => {
 		saveMock.mockRejectedValue(new Error("save rejected"));
 		deleteMock.mockRejectedValue(new Error("delete rejected"));
 		render(
@@ -108,12 +108,16 @@ describe("StorageSettingsForm", () => {
 			).toHaveProperty("disabled", false),
 		);
 
+		fireEvent.click(screen.getByRole("button", { name: "Delete Configuration" }));
+		expect(
+			screen.getByText('Delete the storage configuration for bucket "{bucket}"?'),
+		).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-		await waitFor(() =>
-			expect(toast.error).toHaveBeenCalledWith(
-				"Failed to delete configuration",
-			),
+		// The confirmation stays open and names the failure inline.
+		expect((await screen.findByRole("alert")).textContent).toBe(
+			"Failed to delete configuration",
 		);
+		expect(deleteMock).toHaveBeenCalledOnce();
 		expect(screen.getByDisplayValue("existing-bucket")).toBeTruthy();
 	});
 	it("accepts fresh untouched config after mount loading and preserves credential drafts", async () => {

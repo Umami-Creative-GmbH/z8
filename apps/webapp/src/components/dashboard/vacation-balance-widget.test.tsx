@@ -15,11 +15,22 @@ vi.mock("@/hooks/use-organization", () => ({
 	}),
 }));
 vi.mock("./dashboard-widget", () => ({
-	DashboardWidget: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	DashboardWidget: ({ children }: { children: ReactNode }) => (
+		<div>{children}</div>
+	),
+}));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href }: { children: ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+		t: (
+			_key: string,
+			fallback: string,
+			params?: Record<string, string | number>,
+		) =>
 			Object.entries(params ?? {}).reduce(
 				(text, [key, value]) => text.replace(`{${key}}`, String(value)),
 				fallback,
@@ -74,6 +85,8 @@ describe("VacationBalanceWidget organization year", () => {
 		expect(await screen.findByText("2027 vacation days")).toBeTruthy();
 		expect(screen.queryByText("2026 vacation days")).toBeNull();
 		expect(screen.getAllByText("25.0").length).toBeGreaterThan(0);
+		const heading = screen.getByRole("heading", { name: "Vacation Balance" });
+		expect(heading.querySelector('[aria-hidden="true"] svg.text-amber-500')).not.toBeNull();
 	});
 	it.each(["missing", "conflict"] as const)(
 		"retains the selected year alongside %s policy status",
@@ -97,7 +110,9 @@ describe("VacationBalanceWidget organization year", () => {
 			expect(await screen.findByText("2027 vacation days")).toBeTruthy();
 			expect(
 				screen.getByText(
-					status === "missing" ? "Missing vacation policy" : "Conflicting vacation policies",
+					status === "missing"
+						? "Missing vacation policy"
+						: "Conflicting vacation policies",
 				),
 			).toBeTruthy();
 		},

@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
+import { IconCoin, IconReceipt2 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { type ReactNode, use } from "react";
@@ -30,6 +30,7 @@ import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/e
 import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import {
@@ -227,39 +228,42 @@ export function EmployeeDetailPageClient({
 	);
 
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			{drivingLicenceWarning}
-			<EmployeeDetailHeader
-				t={t}
-				actions={
-					<EmployeeDetailLifecycleActions
-						employee={employee}
-						currentUserId={currentUserId}
-						settingsAccess={settingsAccess}
-					/>
-				}
-			/>
+		<div className="page-frame">
+			<div className="page-measure flex flex-col gap-6">
+				{drivingLicenceWarning}
+				<EmployeeDetailHeader
+					t={t}
+					employeeName={buildAuthUserDisplayName(employee.user)}
+					actions={
+						<EmployeeDetailLifecycleActions
+							employee={employee}
+							currentUserId={currentUserId}
+							settingsAccess={settingsAccess}
+						/>
+					}
+				/>
 
-			{personnelFile && canShowRealEmployeeSections ? (
-				<Tabs defaultValue="overview" className="gap-4">
-					<TabsList>
-						<TabsTrigger value="overview">
-							{t("settings.employees.detailView.tabs.overview", "Overview")}
-						</TabsTrigger>
-						<TabsTrigger value="personnel-file">
-							{t("settings.personnelFiles.panel.tab", "Personnel file")}
-						</TabsTrigger>
-					</TabsList>
-					<TabsContent value="overview" className="flex flex-col gap-4">
-						{overview}
-					</TabsContent>
-					<TabsContent value="personnel-file">
-						<PersonnelFilePanel capability={personnelFile} />
-					</TabsContent>
-				</Tabs>
-			) : (
-				overview
-			)}
+				{personnelFile && canShowRealEmployeeSections ? (
+					<Tabs defaultValue="overview" className="gap-4">
+						<TabsList>
+							<TabsTrigger value="overview">
+								{t("settings.employees.detailView.tabs.overview", "Overview")}
+							</TabsTrigger>
+							<TabsTrigger value="personnel-file">
+								{t("settings.personnelFiles.panel.tab", "Personnel file")}
+							</TabsTrigger>
+						</TabsList>
+						<TabsContent value="overview" className="flex flex-col gap-4">
+							{overview}
+						</TabsContent>
+						<TabsContent value="personnel-file">
+							<PersonnelFilePanel capability={personnelFile} />
+						</TabsContent>
+					</Tabs>
+				) : (
+					<div className="flex flex-col gap-4">{overview}</div>
+				)}
+			</div>
 		</div>
 	);
 }
@@ -267,13 +271,17 @@ export function EmployeeDetailPageClient({
 function EmployeeDetailMissing() {
 	const { t } = useTranslate();
 	return (
-		<div className="flex flex-1 items-center justify-center p-6">
-			<NoEmployeeError
-				feature={t(
-					"settings.employees.detailView.manageEmployees",
-					"manage employees",
-				)}
-			/>
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+				<EmployeeDetailHeader t={t} />
+				<NoEmployeeError
+					className="w-full max-w-xl"
+					feature={t(
+						"settings.employees.detailView.manageEmployees",
+						"manage employees",
+					)}
+				/>
+			</div>
 		</div>
 	);
 }
@@ -285,36 +293,54 @@ function EmployeeDetailLoadError({
 }) {
 	const { t } = useTranslate();
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4" role="alert">
-			<p>
-				{data.error?.message ||
-					t(
-						"settings.employees.detailView.loadFailed",
-						"Employee data could not be loaded",
-					)}
-			</p>
-			<Button onClick={() => void data.refetch()} disabled={data.isFetching}>
-				{t("common.retry", "Try again")}
-			</Button>
+		<div className="page-frame">
+			<div className="page-measure space-y-6">
+				<EmployeeDetailHeader t={t} />
+				<div
+					role="alert"
+					className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
+				>
+					<p className="text-sm">
+						{data.error?.message ||
+							t(
+								"settings.employees.detailView.loadFailed",
+								"Employee data could not be loaded",
+							)}
+					</p>
+					<Button
+						variant="outline"
+						onClick={() => void data.refetch()}
+						disabled={data.isFetching}
+					>
+						{t("common.retry", "Try again")}
+					</Button>
+				</div>
+			</div>
 		</div>
 	);
 }
 
+/** Same frame and geometry as the loaded page: heading, then overview and edit form. */
 function EmployeeDetailLoading() {
 	const { t } = useTranslate();
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div className="page-frame">
 			<output
-				className="flex items-center justify-center p-8"
+				className="page-measure block space-y-6"
 				aria-label={t(
 					"settings.employees.detailView.loadingEmployeeData",
 					"Loading employee data",
 				)}
 			>
-				<IconLoader2
-					className="size-8 animate-spin text-muted-foreground"
-					aria-hidden="true"
-				/>
+				<div className="space-y-2" aria-hidden="true">
+					<Skeleton className="h-4 w-36" />
+					<Skeleton className="h-8 w-56" />
+					<Skeleton className="h-5 w-72 max-w-full" />
+				</div>
+				<div className="grid gap-4 lg:grid-cols-3" aria-hidden="true">
+					<Skeleton className="h-72 w-full" />
+					<Skeleton className="h-72 w-full lg:col-span-2" />
+				</div>
 			</output>
 		</div>
 	);

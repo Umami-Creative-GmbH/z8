@@ -18,6 +18,7 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useTusFileUpload } from "@/hooks/use-tus-file-upload";
 import {
@@ -78,7 +80,11 @@ type DocumentDialogProps = {
 			 * With "employee": the upload is for this open document request of theirs
 			 * (#1402), in the request's category, titled like it by default.
 			 */
-			documentRequest?: { id: string; category: DocumentCategory; title: string };
+			documentRequest?: {
+				id: string;
+				category: DocumentCategory;
+				title: string;
+			};
 	  }
 	| { mode: "edit"; document: EmployeeDocumentView }
 );
@@ -97,7 +103,9 @@ async function finalizeUpload(input: {
 		body: JSON.stringify(input),
 	});
 	if (!response.ok) {
-		const body = (await response.json().catch(() => null)) as { error?: string } | null;
+		const body = (await response.json().catch(() => null)) as {
+			error?: string;
+		} | null;
 		throw new Error(body?.error || "Upload failed");
 	}
 }
@@ -109,6 +117,10 @@ function useDocumentDialog(props: DocumentDialogProps) {
 	const labels = usePersonnelFileLabels();
 	const [file, setFile] = useState<File | null>(null);
 	const [fileError, setFileError] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const [working, setWorking] = useState(false);
+	const pending = useRef(false);
+	const submitting = useRef(false);
 	const pendingMetadata = useRef<DocumentMetadataPayload | null>(null);
 	const asEmployee = props.mode === "upload" && props.uploadAs === "employee";
 	const documentRequest = (asEmployee && props.mode === "upload" && props.documentRequest) || null;
@@ -139,18 +151,24 @@ function useDocumentDialog(props: DocumentDialogProps) {
 			});
 		},
 		onSuccess: () => {
+			pending.current = false;
+			setWorking(false);
 			toast.success(t("settings.personnelFiles.upload.success", "Document uploaded"));
 			close();
 			onSaved();
 		},
 		onError: (error) => {
-			toast.error(error.message || t("settings.personnelFiles.upload.failed", "Upload failed"));
+			pending.current = false;
+			setWorking(false);
+			setError(error.message || t("settings.personnelFiles.upload.failed", "Upload failed"));
 		},
 	});
 
 	const form = useForm({
 		defaultValues: initialValues,
 		onSubmit: async ({ value }) => {
+			if (pending.current) return;
+			setError(null);
 			const metadata = toDocumentMetadata(value);
 			if (props.mode === "upload") {
 				if (!file) {
@@ -158,28 +176,47 @@ function useDocumentDialog(props: DocumentDialogProps) {
 					return;
 				}
 				pendingMetadata.current = metadata;
+				pending.current = true;
+				setWorking(true);
 				upload.addFile(file);
 				return;
 			}
+			pending.current = true;
+			setWorking(true);
 			const result = await updateEmployeeDocumentAction({
 				documentId: props.document.id,
 				metadata,
-			});
+			}).catch(() => null);
+			pending.current = false;
+			setWorking(false);
+			if (!result) {
+				setError(
+					t(
+						"settings.personnelFiles.edit.failed",
+						"Could not save the document. Your changes are kept. Try again.",
+					),
+				);
+				return;
+			}
 			if (!result.success) {
-				toast.error(result.error);
+				setError(result.error);
 				return;
 			}
 			toast.success(t("settings.personnelFiles.edit.success", "Document updated"));
+			pending.current = false;
 			close();
 			onSaved();
 		},
 	});
 
 	function close() {
+		if (pending.current) return;
 		form.reset(initialValues);
 		setFile(null);
 		setFileError(null);
+		setError(null);
 		pendingMetadata.current = null;
+		upload.reset();
 		onOpenChange(false);
 	}
 
@@ -207,9 +244,18 @@ function useDocumentDialog(props: DocumentDialogProps) {
 		form.setFieldValue("visibility", next.visibility);
 	}
 
-	const busy = upload.isUploading;
+	const busy = upload.isUploading || working;
+	function submit() {
+		if (pending.current || submitting.current) return;
+		submitting.current = true;
+		void form.handleSubmit().finally(() => {
+			submitting.current = false;
+		});
+	}
 	const required = (label: string) =>
-		t("settings.personnelFiles.form.required", "{label} is required", { label });
+		t("settings.personnelFiles.form.required", "{label} is required", {
+			label,
+		});
 
 	return {
 		open,
@@ -221,6 +267,8 @@ function useDocumentDialog(props: DocumentDialogProps) {
 		asEmployee,
 		busy,
 		fileError,
+		error,
+		submit,
 		handleFileChange,
 		changeCategory,
 		// An upload for a request is of the request's category only.
@@ -242,6 +290,8 @@ export function DocumentDialog(props: DocumentDialogProps) {
 		asEmployee,
 		busy,
 		fileError,
+		error,
+		submit,
 		handleFileChange,
 		changeCategory,
 		categories,
@@ -253,13 +303,11 @@ export function DocumentDialog(props: DocumentDialogProps) {
 	return (
 		<ActionPanel open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
 			<ActionPanelContent>
-				<form
+				<ClientForm
 					className="flex min-h-0 flex-1 flex-col"
-					action={() => {
-						void form.handleSubmit();
-					}}
-					onSubmit={(event) => {
-						event.stopPropagation();
+					stopPropagation
+					onSubmit={() => {
+						submit();
 					}}
 				>
 					<ActionPanelHeader>
@@ -311,6 +359,11 @@ export function DocumentDialog(props: DocumentDialogProps) {
 					/>
 
 					<ActionPanelFooter>
+						{error ? (
+							<Alert variant="destructive">
+								<AlertDescription>{error}</AlertDescription>
+							</Alert>
+						) : null}
 						<Button type="button" variant="outline" onClick={close} disabled={busy}>
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -327,7 +380,7 @@ export function DocumentDialog(props: DocumentDialogProps) {
 							)}
 						</form.Subscribe>
 					</ActionPanelFooter>
-				</form>
+				</ClientForm>
 			</ActionPanelContent>
 		</ActionPanel>
 	);
@@ -375,10 +428,11 @@ function DocumentMetadataFields({
 						accept={PERSONNEL_DOCUMENT_MIME_TYPES.join(",")}
 						disabled={busy}
 						aria-invalid={fileError ? true : undefined}
+						aria-describedby={fileError ? "personnel-document-file-error" : undefined}
 						onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
 					/>
 					{fileError ? (
-						<p role="alert" className="text-sm text-destructive">
+						<p id="personnel-document-file-error" role="alert" className="text-sm text-destructive">
 							{fileError}
 						</p>
 					) : null}

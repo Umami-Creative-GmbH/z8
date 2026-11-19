@@ -4,7 +4,7 @@ import { IconAlertTriangle, IconCircleCheck, IconLoader2 } from "@tabler/icons-r
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useRef, useState } from "react";
+import { type ComponentProps, useRef, useState } from "react";
 import { markTravelExpensesReimbursedAction } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -26,8 +26,9 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
+import { TFormTextareaField } from "@/components/ui/tanstack-form-textarea";
 import { comparePlainDates, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type {
@@ -47,6 +48,7 @@ import {
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
 import { formatMoney } from "../report/format";
 import { settlementFieldMessage } from "./record-reimbursement-form";
+import { type FinanceSubmission, useFinanceCommand } from "./use-finance-command";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -158,6 +160,8 @@ export function BulkReimbursementDialog({
 	onFinished,
 	submit = markTravelExpensesReimbursedAction,
 	description,
+	finalFocus,
+	retired = false,
 }: {
 	items: readonly BulkReimbursementItem[];
 	skipped?: readonly BulkReimbursementSkippedItem[];
@@ -167,12 +171,19 @@ export function BulkReimbursementDialog({
 	onFinished: () => void;
 	submit?: BulkReimbursementSubmit;
 	description?: string;
+	finalFocus?: ComponentProps<typeof DialogContent>["finalFocus"];
+	/** A fresh read invalidated this captured payment; it must be composed again. */
+	retired?: boolean;
 }) {
 	const { t } = useTranslate();
 	const [rows, setRows] = useState<BulkReimbursementRow[] | null>(null);
+	const command = useFinanceCommand(
+		JSON.stringify(items.map(({ account }) => [account.source, account.summary])),
+		open && !retired,
+	);
 
 	function close(next: boolean) {
-		if (next) return;
+		if (next || command.isPending()) return;
 		onOpenChange(false);
 		if (rows) {
 			setRows(null);
@@ -181,8 +192,18 @@ export function BulkReimbursementDialog({
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={close}>
-			<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+		<Dialog
+			open={open}
+			onOpenChange={(next, details) => {
+				if (command.isPending()) details.cancel();
+				else close(next);
+			}}
+		>
+			<DialogContent
+				finalFocus={finalFocus}
+				showCloseButton={!command.busy}
+				className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+			>
 				{rows ? (
 					<BulkReimbursementResults
 						items={items}
@@ -204,9 +225,21 @@ export function BulkReimbursementDialog({
 									)}
 							</DialogDescription>
 						</DialogHeader>
+						{retired && (
+							<Alert role="alert">
+								<AlertDescription>
+									{t(
+										"travelExpenses.finance.bulk.selectionChanged",
+										"One or more selected expenses changed. Close this dialog and review the current expenses before starting another payment.",
+									)}
+								</AlertDescription>
+							</Alert>
+						)}
 						{open &&
 							(items.length > 0 ? (
 								<BulkReimbursementForm
+									command={command}
+									retired={retired}
 									items={items}
 									skipped={skipped}
 									submit={submit}
@@ -276,7 +309,7 @@ function SkippedList({ skipped }: { skipped: readonly BulkReimbursementSkippedIt
 }
 
 /** One expense's result line; payroll run confirmation (#853) reports the same way. */
-export function ResultRow({ label, done, text }: { label: string; done: boolean; text: string }) {
+export function ResultRow({ label, done, text }: { label?: string; done: boolean; text: string }) {
 	return (
 		<li className="flex items-start gap-3 px-3 py-2 text-sm">
 			{done ? (
@@ -291,7 +324,7 @@ export function ResultRow({ label, done, text }: { label: string; done: boolean;
 				/>
 			)}
 			<div className="min-w-0 flex-1">
-				<p className="truncate font-medium">{label}</p>
+				{label && <p className="truncate font-medium">{label}</p>}
 				<p className={done ? "tabular-nums" : "text-muted-foreground"}>{text}</p>
 			</div>
 		</li>
@@ -299,12 +332,16 @@ export function ResultRow({ label, done, text }: { label: string; done: boolean;
 }
 
 function BulkReimbursementForm({
+	command,
+	retired,
 	items,
 	skipped,
 	submit,
 	onCancel,
 	onProcessed,
 }: {
+	command: ReturnType<typeof useFinanceCommand>;
+	retired: boolean;
 	items: readonly BulkReimbursementItem[];
 	skipped: readonly BulkReimbursementSkippedItem[];
 	submit: BulkReimbursementSubmit;
@@ -333,6 +370,7 @@ function BulkReimbursementForm({
 	);
 
 	const form = useForm({
+		onSubmitMeta: { submission: null as FinanceSubmission | null },
 		defaultValues: {
 			occurredOn: defaultPaymentDate(timeZone),
 			reference: "",
@@ -340,7 +378,8 @@ function BulkReimbursementForm({
 		} satisfies FormValues,
 		// A field that was never touched has no error yet: submitting shows them all.
 		canSubmitWhenInvalid: true,
-		onSubmit: async ({ value, formApi }) => {
+		onSubmit: async ({ value, formApi, meta }) => {
+			if (!meta.submission || !command.isCurrent(meta.submission)) return;
 			setProblem(null);
 			const showFieldErrors = (errors: SettlementCommandFieldError[]) => {
 				for (const error of errors) {
@@ -376,6 +415,7 @@ function BulkReimbursementForm({
 				accounts,
 				...parsed.payment,
 			});
+			if (!command.isCurrent(meta.submission)) return;
 			if (!result.success) {
 				// Keep the key: resubmitting the same payment is a safe retry.
 				setProblem(failed);
@@ -391,11 +431,18 @@ function BulkReimbursementForm({
 	});
 
 	return (
-		<form
+		<ClientForm
 			noValidate
-			onSubmit={(event) => {
-				event.preventDefault();
-				void form.handleSubmit();
+			stopPropagation
+			onSubmit={() => {
+				const submission = command.reserve();
+				if (!submission) return;
+				void form
+					.handleSubmit({ submission })
+					.catch(() => {
+						if (command.isCurrent(submission)) setProblem(failed);
+					})
+					.finally(() => command.release(submission));
 			}}
 			className="grid gap-4"
 		>
@@ -446,22 +493,13 @@ function BulkReimbursementForm({
 			</form.Field>
 			<form.Field name="note" validators={validators("note")}>
 				{(field) => (
-					<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)}>
-							{t("travelExpenses.settlement.form.note", "Note (optional)")}
-						</TFormLabel>
-						<TFormControl hasError={fieldHasError(field)}>
-							<Textarea
-								name="note"
-								rows={2}
-								maxLength={SETTLEMENT_NOTE_MAX_LENGTH}
-								value={field.state.value}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-							/>
-						</TFormControl>
-						<TFormMessage field={field} />
-					</TFormItem>
+					<TFormTextareaField
+						field={field}
+						label={t("travelExpenses.settlement.form.note", "Note (optional)")}
+						name="note"
+						rows={2}
+						maxLength={SETTLEMENT_NOTE_MAX_LENGTH}
+					/>
 				)}
 			</form.Field>
 			<SkippedList skipped={skipped} />
@@ -474,10 +512,15 @@ function BulkReimbursementForm({
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(isSubmitting) => (
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onCancel}
+							disabled={isSubmitting || command.busy}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting}>
+						<Button type="submit" disabled={isSubmitting || command.busy || retired}>
 							{isSubmitting && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
 							{t("travelExpenses.finance.bulk.submit", "Mark {count} as reimbursed", {
 								count: items.length,
@@ -486,7 +529,7 @@ function BulkReimbursementForm({
 					</DialogFooter>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }
 
@@ -503,14 +546,23 @@ function BulkReimbursementResults({
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const labels = new Map([
-		...items.map((item) => [settlementSourceKey(item.account.source), item.label] as const),
-		...skipped.map((item) => [settlementSourceKey(item.source), item.label] as const),
-	]);
+	const labels = new Map(
+		items.map(({ account, label }) => [settlementSourceKey(account.source), label]),
+	);
 	// What was skipped before submitting is reported with the rest.
-	const rows: Pick<BulkReimbursementRow, "source" | "outcome" | "amount" | "currency">[] = [
-		...recorded,
-		...skipped.map(({ source, outcome }) => ({ source, outcome, amount: null, currency: null })),
+	const rows = [
+		...recorded.map((row) => ({
+			...row,
+			label:
+				row.outcome === "out_of_scope" ? undefined : labels.get(settlementSourceKey(row.source)),
+		})),
+		...skipped.map(({ source, outcome, label }) => ({
+			source,
+			outcome,
+			label,
+			amount: null,
+			currency: null,
+		})),
 	];
 	const reimbursed = rows.filter((row) => row.outcome === "reimbursed").length;
 	return (
@@ -532,7 +584,7 @@ function BulkReimbursementResults({
 					return (
 						<ResultRow
 							key={key}
-							label={labels.get(key) ?? "—"}
+							label={row.label}
 							done={row.outcome === "reimbursed"}
 							text={outcomeText(t, locale, row)}
 						/>

@@ -1,0 +1,20 @@
+{
+  "head": "6a00e43a249f104525bb4b2a518e676923037181",
+  "session": "next-dev-loop-1728-t3-2f159aee-10fac1c1d358d617",
+  "source": [
+    {
+      "path": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx",
+      "canonicalSha256": "af57bb41afd0ba2b452d63a69eccc29cf1e23e45c08d6c52c832a5d2b8792fea"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/personnel-files-workspace.tsx",
+      "canonicalSha256": "6beb8b0f054063a179f048329e8ca3929debb875e689706e1ed0df2c9f34cea4"
+    },
+    {
+      "path": "apps/webapp/src/components/personnel-file/expiring-documents.tsx",
+      "canonicalSha256": "e04ef8a44cc58b57c4d06413bf52d27955e73755c02a75f8be817b9e3be9c5ec"
+    }
+  ],
+  "targetWorkspacePresent": true,
+  "qualification": "Loaded employee workspace tree; not a native probe of the pending/scope-mismatch heading."
+}

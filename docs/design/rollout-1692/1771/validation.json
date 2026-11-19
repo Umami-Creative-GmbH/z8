@@ -1,0 +1,11 @@
+{
+  "publicFiles": 22,
+  "parsedJson": 9,
+  "checkedLocalLinks": 10,
+  "missingLocalLinks": 0,
+  "privateValueMatches": 0,
+  "sourcePinMismatches": 0,
+  "pngCount": 0,
+  "pngValidation": "not applicable: no accepted imagery",
+  "reproSyntax": "actual Vitest/Vite parse passed; actual assertion fails with real translations"
+}

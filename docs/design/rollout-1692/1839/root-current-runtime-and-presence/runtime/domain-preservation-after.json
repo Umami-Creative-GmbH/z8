@@ -1,0 +1,24 @@
+{
+  "historicalWorkPeriods": 261,
+  "historicalUnchanged": true,
+  "newWorkPeriods": 1,
+  "newPeriodClosed": true,
+  "eventCount": 2,
+  "eventCaptures": [
+    {
+      "timestamp": "2026-11-17T16:01:50.693Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    },
+    {
+      "timestamp": "2026-11-17T16:07:40.200Z",
+      "timezone": "Europe/Berlin",
+      "utc_offset_minutes": 60,
+      "timezone_source": "browser"
+    }
+  ],
+  "baselineSha256": "dd3dc10f9aafce226d6163b8f52ab1811bf867549d6345b0d40f9603fc06e3f6",
+  "calendarAttributionWrites": 0,
+  "sqlWrites": 0
+}

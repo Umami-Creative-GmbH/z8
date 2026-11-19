@@ -1,0 +1,29 @@
+{
+  "origin": "Actual phone readback from phone-large.js tool output; repeated geometry not inferred from PNG",
+  "h1": {
+    "x": 18,
+    "y": 136,
+    "width": 354,
+    "height": 35.984375
+  },
+  "main": {
+    "x": 0,
+    "y": 0,
+    "width": 390,
+    "height": 844
+  },
+  "sidebar": {
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  },
+  "fontSize": "18px",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "scrollWidth": 390,
+  "h1Count": 1,
+  "firstEscapeClosesAndRestoresFocus": true
+}

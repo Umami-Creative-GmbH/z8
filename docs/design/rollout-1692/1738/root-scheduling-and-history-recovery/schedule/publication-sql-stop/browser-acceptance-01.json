@@ -1,0 +1,91 @@
+{
+  "candidate": "08c266493f3a3cba07de3fe81e8d054a7377fd4d",
+  "fixture": "Fresh canonical disposable small/large organizations and standard actors, separate own domain seed. Initial sanctioned auth/member prerequisites only; no later SQL authority changes.",
+  "authentication": "Normal public widget/form development login with public dummy Turnstile; private stdin; notifications denied; no auth/session/cookie/storage copying, reading, saving, restoring or minting.",
+  "layering": {
+    "expanded1600": true,
+    "collapsed1600": true,
+    "reexpanded1600": true,
+    "phone390": true,
+    "wide2400Dark": true,
+    "realCreatePanelCancelHit": true,
+    "publishLayer": 30,
+    "dialogLayer": 50,
+    "trustedPublishPointer": true,
+    "wrongEditPanelOpened": false
+  },
+  "publication": {
+    "status": "CONFIRMED_CRITICAL_BLOCKER",
+    "publicFailure": "Failed to publish shifts\nDatabase query failed: publishShifts",
+    "userActivations": 2,
+    "serverRequestAttempts": 4,
+    "automaticRetrySource": "lib/query/provider.tsx:65-67 retries a failed mutation once",
+    "firstActivationDirectlyCountedRequests": 2,
+    "secondActivationSafeLogTotalCount": 4,
+    "successfulPublications": 0,
+    "scopedFinalReadbackEqualToInitial": true,
+    "small": {
+      "shifts": 4,
+      "drafts": 2,
+      "published": 2,
+      "timeEntries": 4176,
+      "workPeriods": 2088
+    },
+    "large": {
+      "shifts": 4,
+      "drafts": 2,
+      "published": 2,
+      "timeEntries": 104400,
+      "workPeriods": 52200
+    },
+    "sqlState": "42809",
+    "safeDatabaseMessage": "op ANY/ALL (array) requires array on right side",
+    "sourceObservation": "ShiftService publishShifts uses sql`${shift.id} = ANY(${shiftIds})` at shift.service.ts:883. Service/action/provider bytes are unchanged from pre-layer9afe. Array interpolation as the cause is an inference supported by the runtime SQLSTATE and current source; no product fix or new PG test performed."
+  },
+  "screenshots": {
+    "count": 5,
+    "reviewed": true,
+    "qualification": "Current operational controls only; no historical overlay, matched before/after, true-device, true-zoom or whole-page visual acceptance.",
+    "images": [
+      {
+        "path": "current-publish-expanded-1600-03.png",
+        "bytes": 86953,
+        "sha256": "55a41620bb7084c78b52381d58f648136d8104e7e51bcbd1696e3d72fa00faee",
+        "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+      },
+      {
+        "path": "current-publish-collapsed-1600-03.png",
+        "bytes": 87439,
+        "sha256": "64172d8efab058b1ce29ed0877a6407496cd64477886cc791c0353a0999ce30f",
+        "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+      },
+      {
+        "path": "current-publish-expanded-390-03.png",
+        "bytes": 44526,
+        "sha256": "2edf409fc2d939b888408393c0eccd06c2792a1d32fcf0236482f0eaefda0cd1",
+        "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+      },
+      {
+        "path": "current-publish-expanded-2400-03.png",
+        "bytes": 90879,
+        "sha256": "73623f46ab47d39850fbf9d9a3d73fd37e2e258170fedd70a8a7013136d40abd",
+        "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+      },
+      {
+        "path": "current-dialog-above-publish-1600-03.png",
+        "bytes": 126572,
+        "sha256": "57c55d34d7f7063ddc4b153ebb40e1ae7f7b314d2fe06a7d1325ceb747ea885f",
+        "provenance": "Actual admitted current scheduling screenshot; actor strings removed before pixel capture; no private image inspected"
+      }
+    ]
+  },
+  "stopped": [
+    "roles/employee publication visibility",
+    "coverage policy/compliance acknowledgment/current and stale fingerprint",
+    "mutation refusal/draft recovery/delete matrix",
+    "saved18/sidebar/preferences/keyboard/navigation",
+    "native admitted React target and connected Next metadata/errors/compilation arrays",
+    "original R065 matched historical consumer comparison",
+    "full generation/Tolgee/providers/devices/true zoom/global transitions/roster matrices"
+  ]
+}

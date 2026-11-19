@@ -1,0 +1,33 @@
+[
+  {
+    "name": "desktop-light",
+    "pageWidth": 1600,
+    "viewport": 1600,
+    "headingCount": 1,
+    "choices": 61
+  },
+  {
+    "name": "phone-light",
+    "pageWidth": 390,
+    "viewport": 390,
+    "headingCount": 1,
+    "choices": 61
+  },
+  {
+    "name": "wide-dark",
+    "pageWidth": 2400,
+    "viewport": 2400,
+    "headingCount": 1,
+    "choices": 61
+  },
+  {
+    "name": "phone-dark-large-text",
+    "pageWidth": 390,
+    "viewport": 390,
+    "headingCount": 1,
+    "choices": 61
+  },
+  {
+    "browserErrors": []
+  }
+]

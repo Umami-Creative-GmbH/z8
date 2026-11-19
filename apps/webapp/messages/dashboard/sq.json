@@ -110,8 +110,6 @@
     },
     "recently-approved": {
       "absence": "Mungesë",
-      "all-caught-up": "Gjithçka në rregull!",
-      "approved-recently": "{count} {request} të miratuara së fundmi",
       "by": "nga {name}",
       "description": "Kërkesat më të fundit të miratuara",
       "description-count": "{count} {request} e fundit të miratuara",
@@ -123,11 +121,27 @@
       "title": "Miratuar së fundmi",
       "view-all": "Shiko të gjitha miratimet"
     },
+    "refresh": {
+      "activity": "Aktiviteti më i fundit",
+      "attention": "Sot me një shikim",
+      "balanceRetry": "Rifreskoni për të provuar përsëri ngarkimin e bilancit.",
+      "balanceUnavailable": "Bilanci nuk është i disponueshëm",
+      "currentSession": "Sesioni aktual",
+      "dayUnavailable": "Totali i ditës së sotme nuk është i disponueshëm. Rifreskoni për të provuar përsëri.",
+      "employee": "Punonjësi",
+      "greeting": "Ditë të mbarë, {name}.",
+      "noAbsences": "Nuk ka mungesa të regjistruara për sot.",
+      "openTimeTracking": "Shko te regjistrimi i kohës",
+      "overview": "Puna juaj me një shikim",
+      "personalDay": "Dita juaj e punës",
+      "status": "Statusi",
+      "summary": "Përmbledhje",
+      "team": "Ekipi",
+      "todayTarget": "Sot · kërkohen {target}"
+    },
     "team-overview": {
       "avg-hours": "Orë mesatare",
       "current-employees": "Punonjësit aktualë",
-      "current-employees-description": "Të gjithë ata që punojnë këtu tani",
-      "description": "Statistikat e ekipit me një shikim",
       "employees-button": "Punonjësit",
       "per-week": "/javë",
       "teams": "Ekipet",
@@ -175,9 +189,6 @@
       "used": "{days} të përdorura"
     },
     "whos-out": {
-      "everyone-in": "Të gjithë janë në zyrë sot",
-      "everyones-in": "Të gjithë janë të pranishëm!",
-      "full-team": "Ekipi i plotë është i disponueshëm!",
       "member": "anëtar",
       "members": "anëtarë",
       "members-out": "{count} {member} ekipi mungojnë",

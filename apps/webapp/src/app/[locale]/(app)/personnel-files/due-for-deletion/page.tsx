@@ -1,9 +1,11 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { DueForDeletionHeading } from "@/components/personnel-file/due-for-deletion-heading";
 import { DueForDeletionList } from "@/components/personnel-file/due-for-deletion-list";
 import { Button } from "@/components/ui/button";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
@@ -20,7 +22,7 @@ async function DueForDeletionContent() {
 	if (current.status !== "resolved" || !managesAnyDocuments(current.access)) notFound();
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div className="@container/main page-frame flex flex-1 flex-col gap-6">
 			<header className="space-y-2">
 				<Button asChild variant="ghost" size="sm" className="-ml-2">
 					<Link href="/personnel-files">
@@ -28,15 +30,13 @@ async function DueForDeletionContent() {
 						{t("settings.personnelFiles.area.title", "Personnel Files")}
 					</Link>
 				</Button>
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.personnelFiles.due.title", "Due for deletion")}
-				</h1>
-				<p className="max-w-prose text-muted-foreground">
-					{t(
+				<PageHeader
+					title={t("settings.personnelFiles.due.title", "Due for deletion")}
+					description={t(
 						"settings.personnelFiles.due.description",
 						"Documents of former employees whose retention period has passed. They stay until you confirm their purge; leave a document here to keep it.",
 					)}
-				</p>
+				/>
 			</header>
 			<DueForDeletionList />
 		</div>
@@ -50,10 +50,10 @@ function DueForDeletionLoading() {
 				labelKey: "settings.personnelFiles.due.loading",
 				labelDefault: "Loading documents due for deletion",
 			}}
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main page-frame flex flex-1 flex-col gap-6"
 			role="status"
 		>
-			<Skeleton aria-hidden="true" className="h-8 w-48" />
+			<DueForDeletionHeading />
 			<Skeleton aria-hidden="true" className="h-32 w-full" />
 		</LoadingRegion>
 	);

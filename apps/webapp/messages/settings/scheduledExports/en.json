@@ -35,7 +35,6 @@
         "previousWeekDesc": "Export data from the previous week (Mon-Sun)"
       },
       "deleteDialog": {
-        "cancel": "Cancel",
         "confirm": "Delete",
         "description": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
         "title": "Delete Scheduled Export"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Delete failed",
         "loadFailed": "Failed to load scheduled exports",
-        "toggleFailed": "Toggle failed"
+        "retry": "Try again"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "The schedule owner, {owner}, is no longer an org admin. Make yourself or another org admin its owner first."
       },
       "filters": {
         "allEmployees": "All Employees",
@@ -284,8 +286,9 @@
         "paused": "Paused",
         "schedule": "Schedule",
         "status": "Status",
-        "title": "Active Schedules",
-        "type": "Type"
+        "titleAll": "Schedules",
+        "type": "Type",
+        "unknownOwner": "Unknown owner"
       },
       "title": "Scheduled Exports",
       "toast": {

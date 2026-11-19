@@ -1,0 +1,9 @@
+{
+  "nextIdentityVerified": true,
+  "nextStopped": true,
+  "ownedContainersRemoved": 3,
+  "previewOwnedTabClosed": true,
+  "nativeScopedBrowserClosed": true,
+  "puppeteerDriversCloseInFinally": true,
+  "privateManifests": "kept outside Git"
+}

@@ -1,0 +1,61 @@
+{
+  "scope": "synthetic small-employee, own absence records, organization Europe/Berlin, 2026",
+  "h1": [
+    "Absences"
+  ],
+  "rows": [
+    "9. Dez. 2026R002 VacationDeputy Person 11 dayPendingR002 live failure recovery request 9Change deputyCancel absence",
+    "7. Dez. 2026R002 VacationDeputy Person 11 dayPendingR002 live failure recovery requestChange deputyCancel absence",
+    "5. Dez. 2026R002 Vacation0 daysPendingR002 history 12Change deputyCancel absence",
+    "5. Nov. 2026R002 Vacation1 dayRejectedR002 history 11",
+    "12. Okt. 2026R002 Sick leaveWithout certificate1 dayApprovedR002 sick recordRequest changeRequest cancellation",
+    "5. Okt. 2026R002 Vacation1 dayApprovedR002 history 10Request changeRequest cancellation",
+    "5. Sept. 2026R002 Vacation0 daysApprovedR002 history 9Request changeRequest cancellation",
+    "5. Aug. 2026R002 Vacation1 dayApprovedR002 history 8Request changeRequest cancellation",
+    "5. Juli 2026R002 Vacation0 daysApprovedR002 history 7Request changeRequest cancellation",
+    "5. Juni 2026R002 Vacation1 dayApprovedR002 history 6Request changeRequest cancellation"
+  ],
+  "buttons": [
+    "Performance smallMember",
+    "SearchCtrl+K",
+    "Person 2perf-small-2-431fe052aa2d@example.test",
+    "Toggle Sidebar",
+    "01:17UTC+01:00",
+    "Clock In",
+    "Refresh data",
+    "Toggle theme",
+    "5",
+    "Calendar",
+    "Table",
+    "Add absence",
+    "Change deputy",
+    "Cancel absence",
+    "Change deputy",
+    "Cancel absence",
+    "Change deputy",
+    "Cancel absence",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "Request change",
+    "Request cancellation",
+    "10",
+    "Go to first page",
+    "Go to previous page",
+    "Go to next page",
+    "Go to last page",
+    "Open Tanstack query devtools"
+  ],
+  "errors": [],
+  "phone": {
+    "width": 390,
+    "document": 390
+  }
+}

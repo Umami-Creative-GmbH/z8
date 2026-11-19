@@ -1,0 +1,25 @@
+{
+  "route": "/en/scheduling?date=2026-11-16",
+  "role": "canonical small-manager",
+  "initial": "no templates data; canonical optional settings refusal",
+  "oneUserRetry": true,
+  "requests": [
+    "getShiftTemplates",
+    "getScheduleComplianceSummary"
+  ],
+  "heldFirst": {
+    "visible": true,
+    "native": true,
+    "disabled": true
+  },
+  "heldSecond": {
+    "visible": true,
+    "native": true,
+    "disabled": true
+  },
+  "continuousSamples": 94,
+  "allSamplesNativeVisibleDisabled": true,
+  "secondPointersAddedRequests": 0,
+  "final": "manager admission retained, continuing refusal local, Retry enabled",
+  "noResponseBodiesRead": true
+}

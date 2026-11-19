@@ -1,0 +1,93 @@
+{
+  "before": {
+    "files": [
+      {
+        "file_name": "1733-drop.pdf",
+        "included": true,
+        "assigned_employee_id": null,
+        "document_id": null,
+        "failure": null
+      },
+      {
+        "file_name": "1733-first.pdf",
+        "included": true,
+        "assigned_employee_id": null,
+        "document_id": null,
+        "failure": null
+      },
+      {
+        "file_name": "1733-second.pdf",
+        "included": true,
+        "assigned_employee_id": null,
+        "document_id": null,
+        "failure": null
+      }
+    ],
+    "notifications": 0
+  },
+  "unconfirmed": {
+    "files": [
+      {
+        "file_name": "1733-drop.pdf",
+        "included": false,
+        "assigned_employee_id": null,
+        "document_id": null,
+        "failure": null
+      },
+      {
+        "file_name": "1733-first.pdf",
+        "included": true,
+        "assigned_employee_id": "6fec7a39-5028-43e8-ae74-c3d200147c33",
+        "document_id": null,
+        "failure": null
+      },
+      {
+        "file_name": "1733-second.pdf",
+        "included": true,
+        "assigned_employee_id": "6fec7a39-5028-43e8-ae74-c3d200147c33",
+        "document_id": null,
+        "failure": null
+      }
+    ],
+    "notifications": 0
+  },
+  "pending": {
+    "dialog": true,
+    "disabled": true
+  },
+  "posts": 1,
+  "saved": {
+    "files": [
+      {
+        "file_name": "1733-drop.pdf",
+        "included": false,
+        "assigned_employee_id": null,
+        "document_id": null,
+        "failure": null
+      },
+      {
+        "file_name": "1733-first.pdf",
+        "included": true,
+        "assigned_employee_id": "6fec7a39-5028-43e8-ae74-c3d200147c33",
+        "document_id": "088d39d3-c2cc-44d6-b8dd-45902e9a86e1",
+        "failure": null
+      },
+      {
+        "file_name": "1733-second.pdf",
+        "included": true,
+        "assigned_employee_id": "6fec7a39-5028-43e8-ae74-c3d200147c33",
+        "document_id": "14f49bdd-ab5a-4e00-aa1a-52840cd41409",
+        "failure": null
+      }
+    ],
+    "notifications": 1
+  },
+  "checks": [
+    "manual same-employee matches",
+    "drop persisted",
+    "no documents or notifications before confirmation",
+    "Escape and Cancel save nothing",
+    "pending controls disabled",
+    "two documents / one batch notification"
+  ]
+}

@@ -1,0 +1,12 @@
+Passed: new distinct synthetic account through real Better Auth signup
+Passed: real new-account sign-in
+Passed: no membership was invented
+Passed: actual no-org summary offers Get Started
+Passed: keyboard font preference saves actual Large
+Passed: font preference survives reload
+Passed: real sign-out revokes the pending actor session
+Passed: actual unauthenticated step update is refused
+Passed: refusal never reaches workspace
+Passed: real new-account sign-in
+Passed: real no-org continuation preserves organization routing
+Passed: PG confirms durable organization step

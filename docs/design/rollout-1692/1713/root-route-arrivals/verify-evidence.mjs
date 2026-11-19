@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import {readFile,readdir} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+const repo=fileURLToPath(new URL('../../../../../',import.meta.url));
+const json=async name=>JSON.parse(await readFile(new URL(name,import.meta.url),'utf8'));
+const before=await json('before.json'),after=await json('after.json');
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+for(const run of [before,after]) {
+ const source=execFileSync('git',['show',`${run.sourceCommit}:apps/webapp/src/components/calendar/calendar-view.tsx`],{cwd:repo}).toString('utf8').replace(/\r\n/g,'\n');
+ assert.ok([hash(Buffer.from(source)),hash(Buffer.from(source.replace(/\n/g,'\r\n')))].includes(run.sourceHash),'Retained raw source hash matches exact captured blob, LF/CRLF only');
+ assert.deepEqual(run.errors,[]);
+ assert.equal(run.desktopInitial.heading,'Fixture Person 3');
+ assert.deepEqual(run.desktopInitial.h1,['Calendar']);
+ assert.equal(run.desktopInitial.font,'16px');assert.equal(run.desktopInitial.dark,false);
+}
+assert.equal(before.sourceCommit,'d4f4859527122f39dfda456671d48de131bab51c');
+assert.equal(after.sourceCommit,'7fed18b191760826b1076de827ff9de27f026ea9');
+assert.equal(before.checkoutCommit,after.checkoutCommit);
+assert.ok(before.sourceStatus.includes('calendar-view.tsx'));assert.equal(after.sourceStatus,'');
+assert.ok(before.failure);assert.equal(before.failureObservation.path,before.desktopInitial.path);
+assert.equal(before.failureObservation.heading,'Fixture Person 5');
+assert.equal(before.failureObservation.employeeId,before.desktopChosen.employeeId);
+assert.equal(before.failureObservation.scopeInstance,before.desktopInitial.scopeInstance);
+assert.equal(before.failureObservation.timeOrigin,before.desktopInitial.timeOrigin);
+assert.equal(after.failure,undefined);assert.equal(after.checks.length,12);assert.ok(after.checks.every(check=>check.passed));
+assert.equal(after.desktopBack.heading,'Fixture Person 3');
+assert.equal(after.desktopBack.employeeId,after.desktopInitial.employeeId);
+assert.equal(after.desktopBack.scopeInstance,after.desktopInitial.scopeInstance);
+assert.equal(after.desktopBack.timeOrigin,after.desktopInitial.timeOrigin);
+assert.equal(after.desktopForward.employeeId,after.desktopChosen.employeeId);
+assert.equal(after.phoneBack.employeeId,after.phoneInitial.employeeId);
+assert.equal(after.phoneBack.font,'18px');assert.equal(after.phoneBack.dark,true);
+assert.equal(after.phoneBack.width,390);assert.equal(after.phoneBack.documentWidth,390);
+assert.ok(after.reads.length>0&&after.reads.every(read=>read.status===200));
+const unit=await json('unit-results.json');assert.equal(unit.red.failed,3);assert.equal(unit.red.skipped,43);
+assert.equal(unit.green.files,45);assert.equal(unit.green.cases,489);assert.equal(unit.green.suites.reduce((n,suite)=>n+suite.passed,0),489);
+const next=await json('next-final.json');assert.deepEqual(next.get_compilation_issues,{issues:[]});assert.deepEqual(next.get_errors,{configErrors:[],sessionErrors:[]});assert.equal(next.routes.succeeded,true);
+const cleanup=await json('cleanup.json');assert.equal(cleanup.ownedContainers,3);assert.equal(cleanup.remainingOwnedContainers,0);assert.equal(cleanup.portClosed,true);
+const sharp=createRequire(new URL('../../../../../apps/webapp/package.json',import.meta.url))('sharp');
+const pngs=(await readdir(new URL('.',import.meta.url))).filter(name=>name.endsWith('.png'));assert.equal(pngs.length,5);
+for(const name of pngs){const {info}=await sharp(await readFile(new URL(name,import.meta.url))).raw().toBuffer({resolveWithObject:true});assert.ok(info.width>0&&info.height>0);}
+console.log('Verified exact source pins, actual stale cached Back versus corrected same-instance Back/Forward and saved phone preferences,12 assertions,45/489 tests and five fully decoded captures. This archive check is not a fresh runtime run.');

@@ -1,0 +1,10 @@
+{
+  "stopped": true,
+  "reason": "confirmed P1",
+  "finding": "finding.json",
+  "noProductFixes": true,
+  "broadChecksAfterStop": 0,
+  "verifiedCommit": null,
+  "whole157BranchReviewDeferred": true,
+  "rootOwnsReconciliationAndReadiness": true
+}

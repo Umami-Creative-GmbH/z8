@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "pnpm",
+    "--config.verify-deps-before-run=false",
+    "--filter",
+    "webapp",
+    "exec",
+    "vitest",
+    "run",
+    "--project",
+    "integration",
+    "--maxWorkers",
+    "1",
+    "src/app/[locale]/(app)/settings/profile/user-configuration-access.integration.test.ts",
+    "src/lib/organization-action/organization-action.integration.test.ts",
+    "--reporter=json",
+    "--outputFile=X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\.tmp\\1833-root-checks\\postgres.json"
+  ],
+  "exitCode": 0,
+  "qualification": "Owned generated loopback PostgreSQL with the standard sanctioned integration request/auth fixture, not live provider or role-revocation evidence."
+}

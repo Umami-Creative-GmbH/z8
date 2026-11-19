@@ -32,10 +32,18 @@ const OWN_KIOSK_PIN_REFUSALS: RefusalOverrides = {
 	AuthorizationError: KIOSK_PIN_REFUSALS.not_allowed,
 };
 
-function FieldErrors({ errors }: { errors: unknown[] }) {
-	const messages = errors.filter((error): error is string => typeof error === "string");
-	if (messages.length === 0) return null;
-	return <p className="text-sm text-destructive">{messages[0]}</p>;
+function firstFieldError(errors: unknown[]): string | undefined {
+	return errors.find((error): error is string => typeof error === "string");
+}
+
+function FieldErrors({ errors, id }: { errors: unknown[]; id: string }) {
+	const message = firstFieldError(errors);
+	if (!message) return null;
+	return (
+		<p id={id} className="text-sm text-destructive">
+			{message}
+		</p>
+	);
 }
 
 /**
@@ -79,7 +87,7 @@ export function OwnKioskPinCard() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
+				<CardTitle as="h2" className="flex items-center gap-2">
 					<IconDeviceTablet className="size-5" aria-hidden="true" />
 					{t("settings.security.kioskPin.title", "Kiosk PIN")}
 				</CardTitle>
@@ -126,8 +134,12 @@ export function OwnKioskPinCard() {
 									maxLength={KIOSK_PIN_MAX_LENGTH}
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
+									aria-invalid={firstFieldError(field.state.meta.errors) ? true : undefined}
+									aria-describedby={
+										firstFieldError(field.state.meta.errors) ? "own-kiosk-pin-error" : undefined
+									}
 								/>
-								<FieldErrors errors={field.state.meta.errors} />
+								<FieldErrors id="own-kiosk-pin-error" errors={field.state.meta.errors} />
 							</div>
 						)}
 					</form.Field>
@@ -153,13 +165,24 @@ export function OwnKioskPinCard() {
 									maxLength={KIOSK_PIN_MAX_LENGTH}
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
+									aria-invalid={firstFieldError(field.state.meta.errors) ? true : undefined}
+									aria-describedby={
+										firstFieldError(field.state.meta.errors)
+											? "own-kiosk-pin-confirmation-error"
+											: undefined
+									}
 								/>
-								<FieldErrors errors={field.state.meta.errors} />
+								<FieldErrors
+									id="own-kiosk-pin-confirmation-error"
+									errors={field.state.meta.errors}
+								/>
 							</div>
 						)}
 					</form.Field>
 					<Button type="submit" disabled={saveMutation.isPending}>
-						{saveMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+						{saveMutation.isPending && (
+							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+						)}
 						{t("settings.security.kioskPin.save", "Save PIN")}
 					</Button>
 				</form>

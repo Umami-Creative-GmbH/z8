@@ -20,6 +20,7 @@ vi.mock("drizzle-orm", () => ({
 	eq: vi.fn((left: unknown, right: unknown) => ({ op: "eq", left, right })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ op: "gte", left, right })),
 	ne: vi.fn((left: unknown, right: unknown) => ({ op: "ne", left, right })),
+	isNull: vi.fn((column: unknown) => ({ op: "isNull", column })),
 	or: vi.fn((...conditions: unknown[]) => ({ type: "or", conditions })),
 	inArray: vi.fn((left: unknown, right: unknown) => ({
 		op: "inArray",
@@ -85,6 +86,7 @@ vi.mock("@/db/schema", () => ({
 	timeEntry: {
 		employeeId: "timeEntry.employeeId",
 		isSuperseded: "timeEntry.isSuperseded",
+		supersededById: "timeEntry.supersededById",
 		organizationId: "timeEntry.organizationId",
 		replacesEntryId: "timeEntry.replacesEntryId",
 		type: "timeEntry.type",
@@ -1245,6 +1247,25 @@ describe("getSelfServiceRequests", () => {
 		expect(
 			result.items.filter((item) => item.sourceType === "time_correction"),
 		).toEqual([expect.objectContaining({ id: "approval-time-1" })]);
+	});
+
+	it("does not list a correction that names a clock-out entry for an open period", async () => {
+		const clockInId = "10000000-0000-4000-8000-000000000001";
+		dbMocks.approvalRequests.mockResolvedValue([
+			timeCorrection({
+				metadata: { timeCorrection: { action: "edit", clockOutCorrectionId: clockInId } },
+			}),
+		]);
+		dbMocks.workPeriods.mockResolvedValue([{ id: "period-1", clockInId, clockOutId: null }]);
+		dbMocks.timeEntries.mockResolvedValue([{ id: clockInId, replacesEntryId: null }]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			filters: { sourceType: "time_correction" },
+		});
+
+		expect(result.items).toEqual([]);
 	});
 
 	it("does not expose cancellation for corrections bound to the wrong endpoint", async () => {

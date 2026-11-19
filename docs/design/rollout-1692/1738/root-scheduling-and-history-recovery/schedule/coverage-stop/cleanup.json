@@ -1,0 +1,31 @@
+{
+    "head":  "11abc6c16bfb770ee6a9bff6053ee4cc9c501178",
+    "tree":  "9f3d38d04ba25f08a43c3a9d20303788958a6273",
+    "branch":  "ai/1692-app-wide-ui-refresh",
+    "checkoutStatus":  [
+
+                       ],
+    "removedOwnPaths":  [
+                            {
+                                "path":  "apps/webapp/src/test/merge1738-public-probe.test.tsx",
+                                "archive":  "public-probe.test.tsx",
+                                "hash":  "7CDE4332F15F7113BBD3505E87705C203996B0461BE6738268B4EBC39924E6E9"
+                            },
+                            {
+                                "path":  "apps/webapp/src/components/scheduling/scheduler/merge1738-premerge-control.tsx",
+                                "archive":  "premerge-shift-scheduler.tsx",
+                                "hash":  "950C021F3965E8758C7180400D9BCDBEADD844F5341596D7054AAD6D83E7464D"
+                            }
+                        ],
+    "removal":  "cleanup.ps1 checked exact live file hashes before Remove-Item; subsequent CIM denial did not reverse removal; final absence and archived bytes verified",
+    "ownedProbeProcessScan":  "separate narrowly filtered Get-CimInstance query: zero matching Node processes",
+    "createdNextServers":  0,
+    "createdBrowsers":  0,
+    "createdContainers":  0,
+    "allocatedRuntimePorts":  [
+
+                              ],
+    "listenerBoundary":  "No runtime port allocated; no global listener absence claim",
+    "dependenciesUnmodified":  true,
+    "retainedPrivateLogs":  true
+}

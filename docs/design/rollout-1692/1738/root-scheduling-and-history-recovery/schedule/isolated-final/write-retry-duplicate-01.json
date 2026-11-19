@@ -1,0 +1,53 @@
+{
+  "pending": {
+    "text": "Saving...",
+    "disabled": true
+  },
+  "afterSecondPointer": [
+    {
+      "sequence": 30,
+      "name": "upsertShift",
+      "method": "POST",
+      "mode": "abort"
+    },
+    {
+      "sequence": 31,
+      "name": "upsertShift",
+      "method": "POST",
+      "mode": "abort"
+    },
+    {
+      "sequence": 32,
+      "name": "upsertShift",
+      "method": "POST",
+      "mode": "hold"
+    }
+  ],
+  "final": {
+    "dialog": false,
+    "summary": [
+      "Shift list (5)"
+    ],
+    "created": true
+  },
+  "actions": [
+    {
+      "sequence": 30,
+      "name": "upsertShift",
+      "method": "POST",
+      "mode": "abort"
+    },
+    {
+      "sequence": 31,
+      "name": "upsertShift",
+      "method": "POST",
+      "mode": "abort"
+    },
+    {
+      "sequence": 32,
+      "name": "upsertShift",
+      "method": "POST",
+      "mode": "hold"
+    }
+  ]
+}

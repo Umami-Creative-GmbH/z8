@@ -11,15 +11,16 @@ import {
 	IconPencil,
 	IconPlayerPlay,
 	IconPlus,
+	IconRefresh,
 	IconTrash,
 	IconUserCog,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { toast } from "sonner";
-import useSWR from "swr";
 import {
 	deleteScheduledExportAction,
 	type FilterOptions,
@@ -31,16 +32,9 @@ import {
 	type ScheduledExportSummary,
 	toggleScheduledExportAction,
 } from "@/app/[locale]/(app)/settings/scheduled-exports/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,6 +51,15 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
+import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
 import {
 	Table,
@@ -93,6 +96,7 @@ const ChangeOwnerDialog = dynamic(
 
 interface ScheduledExportsTableProps {
 	organizationId: string;
+	currentUserId: string;
 	initialSchedules: ScheduledExportSummary[];
 	initialFilterOptions: FilterOptions | null;
 	initialPayrollConfigs: PayrollConfigSummary[];
@@ -100,11 +104,14 @@ interface ScheduledExportsTableProps {
 
 export function ScheduledExportsTable({
 	organizationId,
+	currentUserId,
 	initialSchedules,
 	initialFilterOptions,
 	initialPayrollConfigs,
 }: ScheduledExportsTableProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
+	const schedulesKey = ["scheduled-exports", currentUserId, organizationId] as const;
 
 	// Dialog states
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -113,8 +120,7 @@ export function ScheduledExportsTable({
 		useState<ScheduledExportSummary | null>(null);
 	const [runNowSchedule, setRunNowSchedule] =
 		useState<ScheduledExportSummary | null>(null);
-	const [deleteSchedule, setDeleteSchedule] =
-		useState<ScheduledExportSummary | null>(null);
+	const deletion = useConfirmedAction<ScheduledExportSummary>();
 	const [ownerSchedule, setOwnerSchedule] =
 		useState<ScheduledExportSummary | null>(null);
 
@@ -130,15 +136,16 @@ export function ScheduledExportsTable({
 		unknown
 	> | null>(null);
 
-	// Fetch schedules with SWR for automatic deduplication and caching
+	// Share one actor/org-scoped cache with the application's refresh owner.
 	const {
 		data: schedules,
 		error,
+		isFetching,
 		isLoading: loading,
-		mutate,
-	} = useSWR(
-		["scheduled-exports", organizationId],
-		async () => {
+		refetch,
+	} = useQuery({
+		queryKey: schedulesKey,
+		queryFn: async () => {
 			const result = await getScheduledExportsAction();
 			if (result.success) {
 				return result.data;
@@ -150,11 +157,58 @@ export function ScheduledExportsTable({
 				]),
 			);
 		},
-		{
-			fallbackData: initialSchedules,
-			revalidateOnFocus: false,
+		initialData: initialSchedules,
+		staleTime: 0,
+		refetchOnWindowFocus: false,
+	});
+	const mutate = () => refetch({ cancelRefetch: false });
+	const changeSchedule = useMutation({
+		mutationFn: async (change: {
+			scheduleId: string;
+			kind: "toggle" | "delete";
+			isActive?: boolean;
+		}) => {
+			const result =
+				change.kind === "delete"
+					? await deleteScheduledExportAction({ scheduleId: change.scheduleId })
+					: await toggleScheduledExportAction({
+							scheduleId: change.scheduleId,
+							isActive: Boolean(change.isActive),
+						});
+			if (!result.success) {
+				throw new Error(
+					actionErrorMessage(t, result, SCHEDULED_EXPORT_REFUSALS, [
+						change.kind === "delete"
+							? "settings.scheduledExports.error.deleteFailed"
+							: "settings.scheduledExports.error.toggleFailed",
+						change.kind === "delete" ? "Delete failed" : "Toggle failed",
+					]),
+				);
+			}
 		},
-	);
+		onMutate: async (change) => {
+			await queryClient.cancelQueries({ queryKey: schedulesKey, exact: true });
+			const previous = queryClient.getQueryData<ScheduledExportSummary[]>(schedulesKey);
+			queryClient.setQueryData<ScheduledExportSummary[]>(schedulesKey, (current) =>
+				change.kind === "delete"
+					? current?.filter((schedule) => schedule.id !== change.scheduleId)
+					: current?.map((schedule) =>
+							schedule.id === change.scheduleId
+								? { ...schedule, isActive: Boolean(change.isActive) }
+								: schedule,
+						),
+			);
+			return { previous };
+		},
+		onError: (cause, change, context) => {
+			if (context?.previous) queryClient.setQueryData(schedulesKey, context.previous);
+			// A failed deletion is shown inside its confirmation dialog instead.
+			if (change.kind !== "delete") toast.error(cause.message);
+		},
+		onSettled: () => queryClient.invalidateQueries({ queryKey: schedulesKey, exact: true }),
+		// Retrying a mutation can duplicate a successful server operation after transport loss.
+		retry: false,
+	});
 
 	// Load filter options and payroll configs when dialog opens
 	const loadDialogData = async () => {
@@ -214,111 +268,24 @@ export function ScheduledExportsTable({
 
 	// Toggle schedule active status with optimistic update
 	const handleToggle = async (scheduleId: string, isActive: boolean) => {
-		if (!schedules) return;
-
-		// Optimistic update
-		const optimisticData = schedules.map((s) =>
-			s.id === scheduleId ? { ...s, isActive } : s,
-		);
-
-		try {
-			await mutate(
-				async () => {
-					const result = await toggleScheduledExportAction({ scheduleId, isActive });
-					if (result.success) {
-						return optimisticData;
-					}
-					// Resuming is refused while the owner is no longer an org admin (#988).
-					throw new Error(
-						actionErrorMessage(t, result, SCHEDULED_EXPORT_REFUSALS, [
-							"settings.scheduledExports.error.toggleFailed",
-							"Toggle failed",
-						]),
-					);
-				},
-				{
-					optimisticData,
-					rollbackOnError: true,
-					revalidate: false,
-				},
-			);
-		} catch (toggleError) {
-			toast.error(
-				toggleError instanceof Error
-					? toggleError.message
-					: t("settings.scheduledExports.error.toggleFailed", "Toggle failed"),
-			);
-		}
+		changeSchedule.mutate({ scheduleId, kind: "toggle", isActive });
 	};
 
-	// Delete schedule with optimistic update
-	const handleConfirmDelete = async () => {
-		if (!schedules || !deleteSchedule) return;
-
-		const scheduleId = deleteSchedule.id;
-		setDeleteSchedule(null);
-
-		// Optimistic update
-		const optimisticData = schedules.filter((s) => s.id !== scheduleId);
-
-		await mutate(
-			async () => {
-				const result = await deleteScheduledExportAction({ scheduleId });
-				if (result.success) {
-					return optimisticData;
-				}
-				throw new Error(
+	// Delete schedule with optimistic update; the confirmation stays open until the
+	// deletion settles and shows a failure inline (the row is restored on failure).
+	const handleConfirmDelete = () =>
+		void deletion.confirm(
+			async (schedule) => {
+				await changeSchedule.mutateAsync({ scheduleId: schedule.id, kind: "delete" });
+			},
+			(failure) =>
+				describeFailure(
+					failure,
 					t("settings.scheduledExports.error.deleteFailed", "Delete failed"),
-				);
-			},
-			{
-				optimisticData,
-				rollbackOnError: true,
-				revalidate: false,
-			},
+				),
 		);
-	};
 
-	// Format schedule description
-	const getScheduleLabel = (schedule: ScheduledExportSummary): string => {
-		switch (schedule.scheduleType) {
-			case "daily":
-				return t("settings.scheduledExports.scheduleType.daily", "Daily");
-			case "weekly":
-				return t("settings.scheduledExports.scheduleType.weekly", "Weekly");
-			case "monthly":
-				return t("settings.scheduledExports.scheduleType.monthly", "Monthly");
-			case "quarterly":
-				return t(
-					"settings.scheduledExports.scheduleType.quarterly",
-					"Quarterly",
-				);
-			case "cron":
-				return (
-					schedule.cronExpression ||
-					t("settings.scheduledExports.scheduleType.custom", "Custom")
-				);
-			default:
-				return t("settings.scheduledExports.scheduleType.unknown", "Unknown");
-		}
-	};
-
-	// Format report type
-	const getReportTypeLabel = (type: string): string => {
-		switch (type) {
-			case "payroll_export":
-				return t(
-					"settings.scheduledExports.reportType.payrollShort",
-					"Payroll",
-				);
-			case "data_export":
-				return t("settings.scheduledExports.reportType.dataShort", "Data");
-			case "audit_report":
-				return t("settings.scheduledExports.reportType.auditShort", "Audit");
-			default:
-				return type;
-		}
-	};
+	const { getScheduleLabel, getReportTypeLabel } = useScheduledExportLabels();
 
 	// Format date
 	const formatDate = (date: Date | null): string => {
@@ -343,7 +310,9 @@ export function ScheduledExportsTable({
 
 			<ScheduledExportsStatus
 				error={error}
+				isRetrying={isFetching}
 				onCreate={handleOpenCreate}
+				onRetry={() => void mutate()}
 				schedules={schedules}
 			/>
 
@@ -352,7 +321,7 @@ export function ScheduledExportsTable({
 					formatDate={formatDate}
 					getReportTypeLabel={getReportTypeLabel}
 					getScheduleLabel={getScheduleLabel}
-					onDelete={setDeleteSchedule}
+					onDelete={deletion.request}
 					onEdit={handleOpenEdit}
 					onHistory={setHistorySchedule}
 					onChangeOwner={setOwnerSchedule}
@@ -364,13 +333,16 @@ export function ScheduledExportsTable({
 
 			<ScheduledExportsHelp />
 			<ScheduledExportDialogs
-				deleteSchedule={deleteSchedule}
+				deleteSchedule={deletion.target}
+				deleteOpen={deletion.open}
+				isDeleting={deletion.isPending}
+				deleteError={deletion.error}
 				editInitialValues={editInitialValues}
 				editScheduleId={editScheduleId}
 				filterOptions={filterOptions}
 				historySchedule={historySchedule}
 				isCreateDialogOpen={isCreateDialogOpen}
-				onCloseDelete={() => setDeleteSchedule(null)}
+				onDeleteOpenChange={deletion.onOpenChange}
 				onCloseHistory={() => setHistorySchedule(null)}
 				onCloseRunNow={() => setRunNowSchedule(null)}
 				onConfirmDelete={handleConfirmDelete}
@@ -391,6 +363,7 @@ export function ScheduledExportsTable({
 					open={Boolean(ownerSchedule)}
 					onOpenChange={(open: boolean) => !open && setOwnerSchedule(null)}
 					organizationId={organizationId}
+					currentUserId={currentUserId}
 					schedule={ownerSchedule}
 					onSuccess={() => mutate()}
 				/>
@@ -403,33 +376,33 @@ function ScheduledExportsHeader({ onCreate }: { onCreate: () => void }) {
 	const { t } = useTranslate();
 
 	return (
-		<div className="flex items-center justify-between">
-			<div>
-				<h1 className="text-2xl font-semibold">
-					{t("settings.scheduledExports.title", "Scheduled Exports")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"settings.scheduledExports.description",
-						"Configure recurring exports for payroll, data, and audit reports.",
-					)}
-				</p>
-			</div>
-			<Button onClick={onCreate}>
-				<IconPlus className="size-4 mr-2" aria-hidden="true" />
-				{t("settings.scheduledExports.newSchedule", "New Schedule")}
-			</Button>
-		</div>
+		<PageHeader
+			title={t("settings.scheduledExports.title", "Scheduled Exports")}
+			description={t(
+				"settings.scheduledExports.description",
+				"Configure recurring exports for payroll, data, and audit reports.",
+			)}
+			actions={
+				<Button onClick={onCreate}>
+					<IconPlus className="size-4 mr-2" aria-hidden="true" />
+					{t("settings.scheduledExports.newSchedule", "New Schedule")}
+				</Button>
+			}
+		/>
 	);
 }
 
 function ScheduledExportsStatus({
 	error,
+	isRetrying,
 	onCreate,
+	onRetry,
 	schedules,
 }: {
 	error: unknown;
+	isRetrying: boolean;
 	onCreate: () => void;
+	onRetry: () => void;
 	schedules: ScheduledExportSummary[] | undefined;
 }) {
 	const { t } = useTranslate();
@@ -437,12 +410,12 @@ function ScheduledExportsStatus({
 	if (error) {
 		return (
 			<Card className="border-destructive">
-				<CardContent className="pt-6">
+				<CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
 					<div
-						className="flex items-center gap-2 text-destructive"
+						className="flex min-w-0 items-center gap-2 text-destructive"
 						role="alert"
 					>
-						<IconAlertCircle className="size-5" aria-hidden="true" />
+						<IconAlertCircle className="size-5 shrink-0" aria-hidden="true" />
 						<p>
 							{error instanceof Error
 								? error.message
@@ -452,6 +425,21 @@ function ScheduledExportsStatus({
 									)}
 						</p>
 					</div>
+					<Button
+						variant="outline"
+						onClick={onRetry}
+						disabled={isRetrying}
+					>
+						{isRetrying ? (
+							<IconLoader2
+								className="size-4 mr-2 animate-spin"
+								aria-hidden="true"
+							/>
+						) : (
+							<IconRefresh className="size-4 mr-2" aria-hidden="true" />
+						)}
+						{t("settings.scheduledExports.error.retry", "Try again")}
+					</Button>
 				</CardContent>
 			</Card>
 		);
@@ -461,29 +449,32 @@ function ScheduledExportsStatus({
 
 	return (
 		<Card>
-			<CardContent className="py-12">
-				<div className="text-center">
-					<IconCalendar
-						className="size-12 mx-auto text-muted-foreground mb-4"
-						aria-hidden="true"
-					/>
-					<h3 className="text-lg font-medium mb-2">
-						{t("settings.scheduledExports.empty.title", "No scheduled exports")}
-					</h3>
-					<p className="text-muted-foreground mb-6">
-						{t(
-							"settings.scheduledExports.empty.description",
-							"Create your first scheduled export to automate recurring reports.",
-						)}
-					</p>
-					<Button onClick={onCreate}>
-						<IconPlus className="size-4 mr-2" aria-hidden="true" />
-						{t(
-							"settings.scheduledExports.empty.createButton",
-							"Create Schedule",
-						)}
-					</Button>
-				</div>
+			<CardContent>
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<IconCalendar aria-hidden="true" />
+						</EmptyMedia>
+						<EmptyTitle role="heading" aria-level={2}>
+							{t("settings.scheduledExports.empty.title", "No scheduled exports")}
+						</EmptyTitle>
+						<EmptyDescription>
+							{t(
+								"settings.scheduledExports.empty.description",
+								"Create your first scheduled export to automate recurring reports.",
+							)}
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<Button onClick={onCreate}>
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
+							{t(
+								"settings.scheduledExports.empty.createButton",
+								"Create Schedule",
+							)}
+						</Button>
+					</EmptyContent>
+				</Empty>
 			</CardContent>
 		</Card>
 	);
@@ -520,7 +511,8 @@ function SchedulesCard({
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("settings.scheduledExports.table.title", "Active Schedules")}
+					{/* The table lists paused schedules too, so it is not titled "Active". */}
+					{t("settings.scheduledExports.table.titleAll", "Schedules")}
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -533,27 +525,13 @@ function SchedulesCard({
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>
-								{t("settings.scheduledExports.table.name", "Name")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.type", "Type")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.schedule", "Schedule")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.owner", "Owner")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.lastRun", "Last Run")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.nextRun", "Next Run")}
-							</TableHead>
-							<TableHead>
-								{t("settings.scheduledExports.table.status", "Status")}
-							</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.name", "Name")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.type", "Type")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.schedule", "Schedule")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.owner", "Owner")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.lastRun", "Last Run")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.nextRun", "Next Run")}</TableHead>
+							<TableHead>{t("settings.scheduledExports.table.status", "Status")}</TableHead>
 							<TableHead className="w-[80px]">
 								<span className="sr-only">
 									{t("settings.scheduledExports.table.actions", "Actions")}
@@ -605,15 +583,11 @@ function ScheduledExportRow({
 			<TableCell>
 				<div className="font-medium">{schedule.name}</div>
 				{schedule.description && (
-					<div className="text-sm text-muted-foreground">
-						{schedule.description}
-					</div>
+					<div className="text-sm text-muted-foreground">{schedule.description}</div>
 				)}
 			</TableCell>
 			<TableCell>
-				<Badge variant="secondary">
-					{getReportTypeLabel(schedule.reportType)}
-				</Badge>
+				<Badge variant="secondary">{getReportTypeLabel(schedule.reportType)}</Badge>
 			</TableCell>
 			<TableCell>
 				<div className="flex items-center gap-2">
@@ -626,9 +600,12 @@ function ScheduledExportRow({
 				<div className="text-xs text-muted-foreground">{schedule.timezone}</div>
 			</TableCell>
 			<TableCell>
-				<div>{schedule.ownerName ?? schedule.ownerId}</div>
+				<div>
+					{schedule.ownerName ??
+						t("settings.scheduledExports.table.unknownOwner", "Unknown owner")}
+				</div>
 				{!schedule.ownerEligible && (
-					<div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+					<div className="flex items-center gap-1 text-xs text-warning">
 						<IconAlertCircle className="size-3.5" aria-hidden="true" />
 						{t(
 							"settings.scheduledExports.table.ownerNotAdmin",
@@ -668,7 +645,7 @@ function ScheduledExportRow({
 					/>
 					{schedule.isActive ? (
 						<IconCircleCheck
-							className="size-4 text-green-500"
+							className="size-4 text-primary"
 							aria-label={t("settings.scheduledExports.table.active", "Active")}
 						/>
 					) : (
@@ -739,39 +716,28 @@ function ScheduledExportsHelp() {
 			<CardContent className="pt-6">
 				<div className="text-sm text-muted-foreground space-y-2">
 					<p>
-						<strong>
-							{t(
-								"settings.scheduledExports.help.scheduleTypes",
-								"Schedule Types:",
-							)}
-						</strong>{" "}
+						<strong>{t("settings.scheduledExports.help.scheduleTypes", "Schedule Types:")}</strong>{" "}
 						{t(
 							"settings.scheduledExports.help.scheduleTypesDesc",
 							"Daily, Weekly (Monday), Monthly (1st), Quarterly (Jan/Apr/Jul/Oct 1st), or custom cron expressions.",
 						)}
 					</p>
 					<p>
-						<strong>
-							{t("settings.scheduledExports.help.delivery", "Delivery:")}
-						</strong>{" "}
+						<strong>{t("settings.scheduledExports.help.delivery", "Delivery:")}</strong>{" "}
 						{t(
 							"settings.scheduledExports.help.deliveryDesc",
 							"Exports are uploaded to S3 and email notifications with download links are sent to configured recipients.",
 						)}
 					</p>
 					<p>
-						<strong>
-							{t("settings.scheduledExports.help.owner", "Owner:")}
-						</strong>{" "}
+						<strong>{t("settings.scheduledExports.help.owner", "Owner:")}</strong>{" "}
 						{t(
 							"settings.scheduledExports.help.ownerDesc",
 							"Each schedule runs on behalf of an org admin. If its owner stops being an org admin or leaves, the schedule pauses and every org admin is notified so one can take it over.",
 						)}
 					</p>
 					<p>
-						<strong>
-							{t("settings.scheduledExports.help.dateRanges", "Date Ranges:")}
-						</strong>{" "}
+						<strong>{t("settings.scheduledExports.help.dateRanges", "Date Ranges:")}</strong>{" "}
 						{t(
 							"settings.scheduledExports.help.dateRangesDesc",
 							"Automatically calculated based on the schedule frequency (e.g., previous month for monthly exports).",
@@ -785,12 +751,15 @@ function ScheduledExportsHelp() {
 
 interface ScheduledExportDialogsProps {
 	deleteSchedule: ScheduledExportSummary | null;
+	deleteOpen: boolean;
+	isDeleting: boolean;
+	deleteError: string | null;
 	editInitialValues: Record<string, unknown> | null;
 	editScheduleId: string | null;
 	filterOptions: FilterOptions | null;
 	historySchedule: ScheduledExportSummary | null;
 	isCreateDialogOpen: boolean;
-	onCloseDelete: () => void;
+	onDeleteOpenChange: (open: boolean) => void;
 	onCloseHistory: () => void;
 	onCloseRunNow: () => void;
 	onConfirmDelete: () => void;
@@ -803,12 +772,15 @@ interface ScheduledExportDialogsProps {
 
 function ScheduledExportDialogs({
 	deleteSchedule,
+	deleteOpen,
+	isDeleting,
+	deleteError,
 	editInitialValues,
 	editScheduleId,
 	filterOptions,
 	historySchedule,
 	isCreateDialogOpen,
-	onCloseDelete,
+	onDeleteOpenChange,
 	onCloseHistory,
 	onCloseRunNow,
 	onConfirmDelete,
@@ -850,39 +822,66 @@ function ScheduledExportDialogs({
 					onSuccess={onSuccess}
 				/>
 			)}
-			<AlertDialog
-				open={Boolean(deleteSchedule)}
-				onOpenChange={(open: boolean) => !open && onCloseDelete()}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"settings.scheduledExports.deleteDialog.title",
-								"Delete Scheduled Export",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.scheduledExports.deleteDialog.description",
-								'Are you sure you want to delete "{name}"? This action cannot be undone.',
-								{ name: deleteSchedule?.name ?? "" },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>
-							{t("settings.scheduledExports.deleteDialog.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={onConfirmDelete}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{t("settings.scheduledExports.deleteDialog.confirm", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				open={deleteOpen}
+				onOpenChange={onDeleteOpenChange}
+				title={t("settings.scheduledExports.deleteDialog.title", "Delete Scheduled Export")}
+				description={t(
+					"settings.scheduledExports.deleteDialog.description",
+					'Are you sure you want to delete "{name}"? This action cannot be undone.',
+					{ name: deleteSchedule?.name ?? "" },
+				)}
+				confirmLabel={t("settings.scheduledExports.deleteDialog.confirm", "Delete")}
+				isDeleting={isDeleting}
+				error={deleteError}
+				onConfirm={onConfirmDelete}
+			/>
 		</>
 	);
+}
+
+function useScheduledExportLabels() {
+	const { t } = useTranslate();
+	// Format schedule description
+	const getScheduleLabel = (schedule: ScheduledExportSummary): string => {
+		switch (schedule.scheduleType) {
+			case "daily":
+				return t("settings.scheduledExports.scheduleType.daily", "Daily");
+			case "weekly":
+				return t("settings.scheduledExports.scheduleType.weekly", "Weekly");
+			case "monthly":
+				return t("settings.scheduledExports.scheduleType.monthly", "Monthly");
+			case "quarterly":
+				return t(
+					"settings.scheduledExports.scheduleType.quarterly",
+					"Quarterly",
+				);
+			case "cron":
+				return (
+					schedule.cronExpression ||
+					t("settings.scheduledExports.scheduleType.custom", "Custom")
+				);
+			default:
+				return t("settings.scheduledExports.scheduleType.unknown", "Unknown");
+		}
+	};
+
+	// Format report type
+	const getReportTypeLabel = (type: string): string => {
+		switch (type) {
+			case "payroll_export":
+				return t(
+					"settings.scheduledExports.reportType.payrollShort",
+					"Payroll",
+				);
+			case "data_export":
+				return t("settings.scheduledExports.reportType.dataShort", "Data");
+			case "audit_report":
+				return t("settings.scheduledExports.reportType.auditShort", "Audit");
+			default:
+				return type;
+		}
+	};
+
+	return { getScheduleLabel, getReportTypeLabel };
 }

@@ -1,0 +1,16 @@
+{
+  "matches": [
+    "109 235 234 Forget(DomainAuthProvider)",
+    "149 334 333 Forget(ForgotPasswordForm)",
+    "150 335 334 Forget(AuthFormWrapper)",
+    "159 362 361 Forget(TurnstileWidget)",
+    "160 363 362 Turnstile"
+  ],
+  "sourceHead": "670a6b1a762517393579651c96c0dc7098554b19",
+  "componentCount": 344,
+  "success": true,
+  "sourceDirty": [
+    " M docs/design/rollout-1692/1821/next-runtime.json",
+    " M docs/design/rollout-1692/1821/quality.json"
+  ]
+}

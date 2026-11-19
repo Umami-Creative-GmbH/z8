@@ -1,0 +1,13 @@
+{
+  "at": "2026-11-18T03:50:38.596Z",
+  "method": "CDP Fetch Response stage, exact non-auth listing POST, no response/request headers or bodies read or captured",
+  "requests": 1,
+  "heldResponses": 1,
+  "finished": 0,
+  "failed": 0,
+  "cancelled": 0,
+  "responseStage": true,
+  "successStatus": true,
+  "busyDisabled": true,
+  "createdReportDelta": 1
+}

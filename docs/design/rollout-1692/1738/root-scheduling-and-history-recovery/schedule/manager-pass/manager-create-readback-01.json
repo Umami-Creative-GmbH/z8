@@ -1,0 +1,40 @@
+{
+  "comparisons": [
+    {
+      "scope": "small",
+      "seededShifts": 6,
+      "currentShifts": 7,
+      "unchangedOriginalRows": true,
+      "recordedCounts": {
+        "time_entries": 4176,
+        "work_periods": 2088
+      },
+      "recordedDigestsUnchanged": true,
+      "added": [
+        {
+          "status": "draft",
+          "date": "2026-11-15T23:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "notes": "Independent manager created draft",
+          "own_employee": null,
+          "published_at": null,
+          "published_by_admin": null
+        }
+      ]
+    },
+    {
+      "scope": "large",
+      "seededShifts": 6,
+      "currentShifts": 6,
+      "unchangedOriginalRows": true,
+      "recordedCounts": {
+        "time_entries": 104400,
+        "work_periods": 52200
+      },
+      "recordedDigestsUnchanged": true,
+      "added": []
+    }
+  ],
+  "authMemberGrantPolicyChanges": false
+}

@@ -1,0 +1,15 @@
+{
+  "filteredProcessInventory": true,
+  "port": 53808,
+  "cacheMoved": false,
+  "stoppedPids": [
+    99124,
+    37596,
+    51268,
+    23496,
+    7480
+  ],
+  "ownedNextIdentityVerified": true,
+  "portClosed": true,
+  "ownedNextStopped": true
+}

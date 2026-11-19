@@ -1,0 +1,21 @@
+{
+  "label": "healthy-empty",
+  "consumer": "before",
+  "coverageCalls": 2,
+  "coverageOutcome": {
+    "success": true,
+    "data": []
+  },
+  "publishEnabled": true,
+  "tooltip": "Publish 1 draft shift and notify employees",
+  "alerts": [],
+  "coverageErrorCount": 0,
+  "retryButtons": 0,
+  "visibleBodyText": "CoverageShift requestsShift TemplatesNo templates available. Create templates in Settings to quickly add shifts.TodayPrevious periodNext periodNovember 2026ViewDayDateMon1612 AM1 AM2 AM3 AM4 AM5 AM6 AM7 AM8 AM9 AM10 AM11 AM12 PM1 PM2 PM3 PM4 PM5 PM6 PM7 PM8 PM9 PM10 PM11 PM[Draft] Open Shift9:00 AMPublish (1)Publish 1 draft shift and notify employees",
+  "writes": {
+    "publish": 0,
+    "upsert": 0,
+    "remove": 0
+  },
+  "boundary": "real ShiftScheduler/QueryClient/provider/hooks/overlay/PublishFab; mocked action transport and admitted caller props; jsdom, no browser or server-authorization claim"
+}

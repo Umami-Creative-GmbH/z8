@@ -8,12 +8,12 @@ import {
 } from "@/components/settings/approval-settings/approval-settings-tabs";
 import { ApprovalTriageSettingsForm } from "@/components/settings/approval-settings/triage-settings-form";
 import { EmployeeGroupManagement } from "@/components/settings/employee-group-management";
-import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { loadApprovalSettings } from "@/lib/approvals/approval-settings";
 import { getEffectiveApprovalTriagePolicy } from "@/lib/approvals/triage-policy";
 import { getAbility, getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { ApprovalSettingsLoading } from "./approval-settings-loading";
 
 async function ApprovalPoliciesSettingsContent() {
 	const [context, ability] = await Promise.all([
@@ -77,15 +77,7 @@ async function ApprovalPoliciesSettingsContent() {
 }
 
 function ApprovalPoliciesSettingsLoading() {
-	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-4xl space-y-4">
-				<Skeleton className="h-8 w-64" />
-				<Skeleton className="h-5 w-96" />
-				<Skeleton className="h-[420px] w-full" />
-			</div>
-		</div>
-	);
+	return <ApprovalSettingsLoading />;
 }
 
 export default function ApprovalPoliciesSettingsPage() {

@@ -1,0 +1,274 @@
+{
+  "issue": 1749,
+  "id": "R167",
+  "status": "provisional-awaiting-independent-recheck",
+  "verifiedCommit": null,
+  "previousVerifiedProduct": "378e269bc6f70d905c39ff50d5513ab9469aeca0",
+  "previousPublishedCheckpoint": "5119aac9484bbc38bbf9885eb906c3201c1fac0a",
+  "implementationCommit": "ab959b57495678eb42fb4987c2eb8a2d1fc1733f",
+  "integrationCommit": "f02276195d0a2ca9b67a64395c930cc2b932e30b",
+  "correctionCommit": "de1b2749080796cc9aac00e287d37c972264584e",
+  "correctionIntegrationCommit": "e224fdc88f3d0b5d865c4f3e1b4c6d6e393db8c6",
+  "appTree": "59eab79c4b83940a535859efdffe2a2ee083ed1e",
+  "sourcePins": [
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/settlement-panel.tsx",
+      "gitBlob": "4339b2167d0df221413c1cd0f27affe568ab0ddb"
+    },
+    {
+      "path": "apps/webapp/src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx",
+      "gitBlob": "dea8782a182979eccd66d90f18a134562965380b"
+    }
+  ],
+  "adoptionAudit": {
+    "candidate": "f02276195d0a2ca9b67a64395c930cc2b932e30b",
+    "tree": "9a9f839e5da614b99119696dbd8601df5df469f1",
+    "app": "6aac4e2b4b9504c88bb289eb576acc7b8acd6a67",
+    "orderedParents": [
+      "5119aac9484bbc38bbf9885eb906c3201c1fac0a",
+      "ab959b57495678eb42fb4987c2eb8a2d1fc1733f"
+    ],
+    "entries": 19237,
+    "expectedMapMatches": true,
+    "rootNonoverlapPreserved": 19182,
+    "incomingNonoverlapPreserved": 51,
+    "declaredResolutionPaths": [
+      "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "apps/webapp/src/components/site-header.test.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "apps/webapp/src/components/travel-expenses/travel-expenses-heading.test.ts"
+    ],
+    "metadataExactFinanceLineOnly": true,
+    "anchorOccurrences": 66,
+    "missingAnchors": 0,
+    "indexSha256": "3910854b4eff646d86cd6916f22d643395866e2d468e70d29f8bbc5d3e2067c5",
+    "safeFiles": 22,
+    "safeBytes": 4172135
+  },
+  "independentIntake": {
+    "sha256": "474322d3e9a2d905777fedeca7093deca1f8f80ada9a8ed949bb589a1e13beee",
+    "indexSha256": "bfd5bde36403e3758bdadf2ee9bdee69a83dffd95b5c8b08b6d6af1eb2ce8fc4",
+    "payloadFiles": 22,
+    "payloadBytes": 4172135,
+    "classification": "Inherited durable-withdrawal defect partially addressed by incoming; real assembled public transport seam,zero mutation/no live authorization bypass."
+  },
+  "rootCorrection": {
+    "trigger": "Loaded settlement -> canonical Not found -> transient failure revived old payment note and Reimbursement region.",
+    "behavior": "The existing nullable query result now records withdrawal. Later failures show local no-data Retry; only fresh success can restore evidence. Ordinary authorized outages retain exact payment draft with disabled fieldset. Settlement callbacks update only an available current cache value.",
+    "consumers": [
+      "TravelExpenseClaimDetail",
+      "SubmittedTravelExpenseReport"
+    ],
+    "boundary": "No canonical action/service/auth/settlement math,expected-balance,idempotency,payroll,export,date or tenant contract changes."
+  },
+  "coverage": {
+    "compatibility": {
+      "uniqueCases": 313,
+      "physicalFiles": 27,
+      "passed": 313,
+      "failed": 0
+    },
+    "permanentWithdrawal": {
+      "cases": 12,
+      "consumers": 2,
+      "includedIn313": true
+    },
+    "finalReaderRerun": {
+      "cases": 23,
+      "physicalFiles": 2,
+      "includedIn313": true
+    },
+    "pgFresh": 0,
+    "runtimeFresh": 0,
+    "workerClaims": {
+      "unitCases": 210,
+      "pgCases": 84,
+      "qualification": "Historical producer results,not rerun or added. Public PG identities absent; two payment/readback PNGs are blank and do not prove displayed payment values. Historical direct-API-login capture drivers are excluded from fresh reuse."
+    }
+  },
+  "doctor": {
+    "version": "0.9.22",
+    "summary": {
+      "errorCount": 0,
+      "warningCount": 10,
+      "affectedFileCount": 7,
+      "totalDiagnosticCount": 10,
+      "score": null,
+      "scoreLabel": null
+    },
+    "diagnostics": [
+      {
+        "path": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+        "line": 86,
+        "rule": "only-export-components",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+        "line": 91,
+        "rule": "only-export-components",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/bulk-reimbursement-dialog.tsx",
+        "line": 416,
+        "rule": "tanstack-form-on-submit-requires-prevent-default",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/confirm-payroll-run-dialog.tsx",
+        "line": 262,
+        "rule": "tanstack-form-on-submit-requires-prevent-default",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/finance-exports.tsx",
+        "line": 238,
+        "rule": "tanstack-form-on-submit-requires-prevent-default",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/finance-queue.tsx",
+        "line": 363,
+        "rule": "no-high-complexity-react-function",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/payroll-run-notice.tsx",
+        "line": 25,
+        "rule": "only-export-components",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/record-reimbursement-form.tsx",
+        "line": 56,
+        "rule": "only-export-components",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/record-reimbursement-form.tsx",
+        "line": 287,
+        "rule": "tanstack-form-on-submit-requires-prevent-default",
+        "severity": "warning"
+      },
+      {
+        "path": "src/components/travel-expenses/finance/use-finance-command.ts",
+        "line": 43,
+        "rule": "set-state-in-effect",
+        "severity": "warning"
+      }
+    ],
+    "review": "Four TanStack warnings have actual preventDefault/stopPropagation before handleSubmit; four non-component-export Fast Refresh warnings,one queue complexity and one lifetime effect-state warning retained. No suppression/config/version changes. Lifecycle acceptance remains for independent public recheck."
+  },
+  "commands": [
+    {
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/review1749-priority-public.test.tsx --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-settlement-withdrawal-root-checks/red.json",
+      "exit": 1,
+      "result": "Engine-store operation-lock access denied before test execution; red-escalated is the actual reproduction."
+    },
+    {
+      "command": "Same exact priority command with approved engine-lock access and distinct red-escalated.json/log outputs",
+      "exit": 1,
+      "result": "6 cases:5 passing controls,1 inherited withdrawal failure."
+    },
+    {
+      "command": "Same priority command after reader correction, only after-withdrawal error-copy expectation adapted to existing no-data Retry copy; green-adapted.json/log",
+      "exit": 0,
+      "result": "6/6, including unchanged pinned premerge positive classification control; nonadditive."
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit <27 paths in unit-selection.json> --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-settlement-withdrawal-root-checks/unit-compatibility.json",
+      "exit": 0,
+      "result": "313 distinct cases/27 physical files pass; includes 12 permanent both-consumer withdrawal cases. Vite config and TimeoutOverflow warnings retained."
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec vitest run --project unit src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx src/components/travel-expenses/finance/settlement-panel.test.tsx --maxWorkers=1 --reporter=json --outputFile=../../.tmp/1749-settlement-withdrawal-root-checks/final-reader-unit.json",
+      "exit": 0,
+      "result": "23/23 final extracted-loader cases/2 files; subset of313,not additional."
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false --filter webapp run typecheck",
+      "exit": 0,
+      "result": "Final Next typegen plus full app/workflow-contracts/smoke tsc projects pass; existing genuine125-entry ignored artifact unchanged."
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome lint --config-path=biome.jsonc <23 paths in changed-ts-selection.json>",
+      "exit": 0,
+      "result": "23 changed incoming/root TS/TSX paths pass."
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc --line-width=100 --line-ending=crlf <2 owned correction paths>",
+      "exit": 0,
+      "result": "Two owned correction files pass. First formatter write retained a forEach-return error; cleanup loop corrected, final clean."
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false --dir apps/webapp exec biome check --config-path=biome.jsonc <2 owned correction paths>",
+      "exit": 1,
+      "result": "2 ordinary-profile formatting findings retained; no blanket formatter pass."
+    },
+    {
+      "command": "pnpm --config.verify-deps-before-run=false exec react-doctor apps/webapp --scope files --base 5119aac9484bbc38bbf9885eb906c3201c1fac0a --include-untracked --no-score --no-supply-chain --no-parallel --max-duration 90 --verbose --json --json-out .tmp/1749-settlement-withdrawal-root-checks/doctor-final.json",
+      "exit": 0,
+      "result": "Installed0.9.22,23 changed files,0errors/10warnings. Initial inline try/catch Compiler ThrowStatement diagnostic corrected by module-local loader; initial exit1 preserved."
+    },
+    {
+      "command": "git diff --check (owned working correction before commit)",
+      "exit": 0,
+      "result": "Owned correction whitespace passes; not a blanket raw/archive profile claim."
+    }
+  ],
+  "unitSelection": [
+    "src/components/site-header.test.tsx",
+    "src/tolgee/extracted-key-defaults.test.ts",
+    "src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+    "src/components/travel-expenses/travel-expenses-i18n.test.ts",
+    "src/lib/navigation/route-metadata.test.ts",
+    "src/lib/travel-expenses/finance-queue-paging.test.ts",
+    "src/lib/travel-expenses/finance-queue-params.test.ts",
+    "src/lib/travel-expenses/officer-scope.test.ts",
+    "src/components/travel-expenses/finance/finance-command-lifetime.test.tsx",
+    "src/components/travel-expenses/finance/finance-exports.test.tsx",
+    "src/components/travel-expenses/finance/finance-nav-badge.test.tsx",
+    "src/components/travel-expenses/finance/finance-queue.test.tsx",
+    "src/components/travel-expenses/finance/officer-coverage-gap.test.tsx",
+    "src/components/travel-expenses/finance/settlement-panel.test.tsx",
+    "src/components/travel-expenses/finance/settlement-status.test.tsx",
+    "src/components/travel-expenses/report/submitted-report-receipts.test.tsx",
+    "src/components/travel-expenses/report/travel-expense-report-editor.test.tsx",
+    "src/lib/travel-expenses/__tests__/finance-permissions.test.ts",
+    "src/lib/travel-expenses/__tests__/settlement.test.ts",
+    "src/app/[locale]/(app)/travel-expenses/finance/page.test.tsx",
+    "src/components/travel-expenses/expense-history-withdrawal.test.tsx",
+    "src/components/travel-expenses/travel-expense-management.test.tsx",
+    "src/components/travel-expenses/travel-expenses-heading.test.ts",
+    "src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+    "src/components/travel-expenses/legacy-draft-conversion-withdrawal.test.tsx",
+    "src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+    "src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx"
+  ],
+  "knownLimits": [
+    "Fresh independent correction review,canonical PostgreSQL and live finance acceptance remain unpassed.",
+    "Activity/unsettled-command lifetime,actual provider/pending session/cached actor/org/employee authority replacement,export/payroll/dialog boundaries remain proposed independent objections,not established findings here.",
+    "No completed fresh downloads,live grant/revoke,positive recovery/payroll confirmation/removal or full provider/currency/theme/locale/device/zoom matrices proved.",
+    "Full production generation,Tolgee sync and global157-node final review remain unpassed."
+  ],
+  "preservation": {
+    "anchors": 66,
+    "missingAnchors": 0,
+    "correctionOnlyPaths": [
+      "apps/webapp/src/components/travel-expenses/finance/settlement-panel.tsx",
+      "apps/webapp/src/components/travel-expenses/finance/settlement-panel-withdrawal.test.tsx"
+    ],
+    "lockSha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "genuineLicenseSha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "dependencyMutations": 0,
+    "proofArchives": "327-path R165 and202-path R166 immutable Git blobs preserved; no archive rewriting."
+  },
+  "cleanup": {
+    "temporaryBridgesRemoved": 2,
+    "runtimeStarted": false,
+    "fixturesStarted": false,
+    "liveResourcesOwned": 0
+  },
+  "attemptQualification": "A bare PowerShell HEAD^{tree} readback failed after successful normal merge; quoted execFile argv independently verified exact parents and tree without repeating mutation."
+}

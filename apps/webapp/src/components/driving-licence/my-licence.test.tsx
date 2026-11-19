@@ -86,6 +86,18 @@ function renderMyLicence(intendedDriver: boolean) {
 afterEach(cleanup);
 
 describe("My licence", () => {
+	it("keeps the urgent impediment action beside authorization before inspection evidence and history", () => {
+		renderMyLicence(true);
+		const headings = screen
+			.getAllByRole("heading", { level: 2 })
+			.map((h) => h.textContent);
+		expect(headings.slice(0, 3)).toEqual([
+			"Some driving classes are suspended",
+			"Unable to drive?",
+			"Original check evidence",
+		]);
+	});
+
 	it("starts with each class's status, valid-through date and restrictions", async () => {
 		renderMyLicence(true);
 		const summary = screen.getByRole("region", { name: "Some driving classes are suspended" });

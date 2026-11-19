@@ -23,6 +23,7 @@
       },
       "deleteDescription": "Are you sure you want to delete \"{name}\"? Categories used by existing absences cannot be deleted and should be deactivated instead.",
       "deleteFailed": "Could not delete category",
+      "deleteInUse": "This category is still in use. Deactivate it instead, or remove what depends on it first.",
       "deleteTitle": "Delete Absence Category",
       "drawsOnWorkBalance": "Draws on work balance",
       "editCategory": "Edit \"{name}\"",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "No deduction",
       "reactivate": "Reactivate",
       "saveFailed": "Could not save the absence category",
+      "saveInUse": "This category is used by existing absences. Create a new category for different rules, or deactivate this one.",
       "searchPlaceholder": "Search categories…",
       "statusUpdateFailed": "Could not update category status",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Update Category"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Absence",
+        "absenceChange": "Absence change",
+        "complianceException": "Compliance exception",
+        "manualTimeSubmission": "Manual time submission",
+        "periodSubmission": "Period submission",
+        "policyClockOut": "Policy clock-out",
+        "shiftRequest": "Shift request",
+        "timeCorrection": "Time correction",
+        "travelExpense": "Travel expense"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Delivery",
+          "retirement": "Message update",
+          "transfer": "Transfer"
+        },
+        "outcome": {
+          "ambiguous": "Result unknown",
+          "delivered": "Delivered",
+          "deliveredAfterPurge": "Delivered after cleanup",
+          "destinationInvalid": "Destination invalid",
+          "gone": "Message no longer available",
+          "notCovering": "Message no longer current",
+          "permanent": "Permanent failure",
+          "retryable": "Temporary failure",
+          "unavailable": "Channel unavailable"
+        }
+      },
       "attention": {
         "alertedAt": "Admins alerted {date}",
         "approvalType": "Approval",
@@ -116,6 +147,18 @@
         "recheck": "Recheck",
         "resolved": "Resolved",
         "retryDelivery": "Retry delivery",
+        "technical": {
+          "approvalRequestId": "Approval request ID",
+          "approvalType": "Approval type code",
+          "assignmentId": "Assignment ID",
+          "attemptReference": "Attempt reference",
+          "attentionId": "Attention item ID",
+          "copied": "{label} copied",
+          "copy": "Copy {label}",
+          "copyFailed": "The value could not be copied. Select it and copy it manually.",
+          "title": "Technical details",
+          "workflowId": "Workflow ID"
+        },
         "title": "Needs attention",
         "transfer": "Transfer…",
         "unknownApprover": "Not recorded"
@@ -155,6 +198,22 @@
         "disposed": "Disposed",
         "raised": "Raised",
         "resolved": "Resolved"
+      },
+      "evidence": {
+        "actionableAt": "Actionable since",
+        "actionableEvidence": "Actionable since (source)",
+        "attemptCount": "Attempts made",
+        "cause": "Cause",
+        "code": "Error code",
+        "deadline": "Deadline",
+        "effect": "Message action",
+        "error": "Error",
+        "outcome": "Outcome",
+        "policyRevision": "Policy revision",
+        "reason": "Reason code",
+        "recovered": "Recovered by",
+        "route": "Decision path",
+        "workId": "Delivery job"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Escalation settings could not be loaded.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Changed by",
+        "empty": "No policy changes have been recorded yet.",
         "migration": "Settings migration",
         "policy": "Policy",
         "revision": "Revision",
@@ -217,8 +277,10 @@
       },
       "title": "Approval Escalation",
       "toast": {
+        "conflict": "This changed meanwhile. Reload to see the current state.",
         "deliveryRetried": "Delivery retry scheduled",
         "disposed": "Attention item closed",
+        "notFound": "This item no longer exists. Reload to see the current state.",
         "rechecked": "Checked {checked} items, {resolved} resolved",
         "requestFailed": "The request failed. Try again.",
         "reviewed": "Conflicts marked as reviewed",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Approval types",
       "approver": "Approver",
-      "approverEmployeeId": "Approver Employee ID",
-      "approverEmployeeIdPlaceholder": "Example: employee_123…",
+      "approverEmployee": "Approving employee",
       "approverType": {
         "directManager": "Direct manager",
         "managerManager": "Manager's manager",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Conditions count",
       "createPolicy": "Create Approval Policy",
+      "createPolicySubmit": "Create policy",
+      "deactivateConfirm": {
+        "confirm": "Deactivate",
+        "description": "New requests stop matching this policy and are routed by the next matching active policy or the default approval route. You can activate it again by editing it.",
+        "title": "Deactivate “{name}”?"
+      },
+      "deactivatePolicyNamed": "Deactivate {name}",
       "defaultStageLabel": "Manager review",
       "description": "Configure sequential approval chains for operational workflows",
       "descriptionPlaceholder": "Example: Escalates sensitive workflows to operations…",
       "dialogDescription": "Define when an approval chain applies and which approvers handle each sequential stage.",
-      "editPolicy": "Edit policy",
+      "editPolicyNamed": "Edit {name}",
+      "editPolicyTitle": "Edit approval policy",
       "empty": "No approval policies configured yet. Create a policy to define your first approval chain.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Organization admin"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, one {This policy also matches # older approval type that can't be selected here. Saving keeps {count, plural, one {it} other {them}} unchanged.} other {This policy also matches # older approval types that can't be selected here. Saving keeps {count, plural, one {it} other {them}} unchanged.}}",
       "loadFailed": "Approval policies could not be loaded.",
       "loading": "Loading policies…",
       "namePlaceholder": "Example: Absence escalation…",
       "noStages": "No approval stages configured yet.",
+      "preservedConditions": "{count, plural, one {This policy has # further condition that can't be changed here. Saving keeps {count, plural, one {it} other {them}} unchanged.} other {This policy has # further conditions that can't be changed here. Saving keeps {count, plural, one {it} other {them}} unchanged.}}",
       "preview": {
         "ariaLabel": "Approval chain preview",
-        "badge": "Preview shell",
-        "description": "See how matching requests will move through each approval stage before you activate a policy.",
-        "footer": "Full request-context preview will resolve live approvers once policy conditions and employee groups are wired into the editor.",
+        "chainDescription": "How a matching request moves through the stages as configured above.",
+        "chainTitle": "Approval chain preview",
+        "fallback": "If no approver is found: {fallback}",
+        "loadingEmployee": "Loading employee…",
+        "noEmployeeSelected": "No employee selected yet",
+        "noStages": "Add a stage to see the approval chain.",
         "stage": {
           "approved": "Approved",
-          "directManager": "Direct manager",
-          "operationsAdmin": "Operations admin",
           "requester": "Requester"
-        },
-        "title": "Preview chain summary"
+        }
       },
       "priority": "Priority",
-      "removeStage": "Remove stage",
+      "removeStageNumber": "Remove stage {number}",
+      "savePolicySubmit": "Save policy",
+      "selectApproverEmployee": "Select employee",
       "stageNumber": "Stage {number}",
       "stages": "Approval stages",
       "stagesCount": "Stages count",
@@ -322,14 +395,19 @@
       "title": "Approval Policies",
       "toast": {
         "created": "Approval policy created",
-        "saveFailed": "Approval policy could not be saved."
+        "deactivated": "“{name}” deactivated",
+        "reactivated": "“{name}” is active again",
+        "saveFailed": "Approval policy could not be saved.",
+        "updated": "Approval policy saved"
       },
+      "unknownEmployee": "Unknown employee ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Active policies require at least one approval stage.",
-        "specificEmployeeRequiresId": "Specific employee stages require an approver employee ID."
+        "specificEmployeeRequired": "Choose the approving employee for each specific employee stage."
       }
     },
     "changePolicies": {
+      "actionsFor": "Actions for {name}",
       "allManagers": "All managers",
       "approvalDaysDescription": "Beyond self-service, employees can request changes within this window (requires approval). 0 = no additional window.",
       "approvalDaysLabel": "Approval Window (days)",
@@ -363,6 +441,7 @@
       "deleted": "Policy deleted",
       "deleteDescription": "Are you sure you want to delete this policy? Any assignments using this policy will also be removed. Employees previously using this policy will have no restrictions until a new policy is assigned.",
       "deleteFailed": "Failed to delete policy",
+      "deleteNamedDescription": "Delete the change policy \"{name}\"? Any assignments using this policy will also be removed. Employees previously using this policy will have no restrictions until a new policy is assigned.",
       "deleteTitle": "Delete Change Policy",
       "description": "Control when employees can edit time entries and require manager approval",
       "descriptionLabel": "Description",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "The default policy applied to all employees who don't have a team or individual override.",
       "policySummary": "Policy Summary:",
       "primaryOnly": "Primary only",
+      "removeAssignmentFor": "Remove assignment for {name}",
       "removeAssignmentTitle": "Remove Policy Assignment?",
       "removeEmployeeDescription": "This will remove the override for \"{name}\". They will use their team or organization default.",
       "removeOrgDescription": "This will remove the organization default policy. Employees will have no restrictions unless they have a team or individual override.",
+      "removeOrgNamedDescription": "This will remove \"{policy}\" as the organization default policy. Employees will have no restrictions unless they have a team or individual override.",
       "removeTeamDescription": "This will remove the policy from team \"{team}\". They will use the organization default.",
       "sameDay": "Same day only",
       "sameDayFree": "Same-day edits are free",
@@ -438,6 +519,13 @@
       "description": "Set minimum staffing requirements per location and time",
       "editRule": "Edit Coverage Rule",
       "endTime": "End Time",
+      "errors": {
+        "endNotAfterStart": "End time must be after the start time on the same day.",
+        "invalidTime": "Enter a time in 24-hour HH:mm format.",
+        "staffCountRange": "Enter a whole number from 1 to 100.",
+        "subareaRequired": "Select a subarea."
+      },
+      "loadFailed": "Coverage rules could not be loaded.",
       "loading": "Loading coverage rules...",
       "minimumStaffCount": "Minimum Staff Count",
       "minimumStaffHint": "The minimum number of staff required during this time block.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Coverage rule updated",
       "selectSubarea": "Select a subarea",
       "settingsFailed": "Failed to save settings",
+      "settingsLoadFailed": "Publishing settings could not be loaded.",
       "settingsSaved": "Settings saved",
       "startTime": "Start Time",
       "subarea": "Location / Subarea",
@@ -493,6 +582,10 @@
         "colorSelection": "Color selection",
         "defaultSubarea": "Default Subarea",
         "endTime": "End Time",
+        "errors": {
+          "invalidTime": "Enter a time in 24-hour HH:mm format.",
+          "subareaRequired": "Select one of your subareas."
+        },
         "name": "Name",
         "namePlaceholder": "e.g., Morning Shift…",
         "noSubarea": "No default subarea",
@@ -508,6 +601,7 @@
         "description": "Manage your shift templates",
         "title": "Templates"
       },
+      "loadError": "Shift templates could not be loaded.",
       "table": {
         "duration": "Duration",
         "name": "Name",
@@ -544,7 +638,7 @@
       "deleteModel": "Delete surcharge model",
       "deleteModelDescription": "This will deactivate the model and all its assignments. This action cannot be undone.",
       "deleteModelTitle": "Delete Surcharge Model?",
-      "deleteOrgAssignmentDescription": "This will remove the organization default. Teams and employees without specific assignments will have no surcharge model applied.",
+      "deleteOrgAssignmentNamedDescription": "This will remove \"{model}\" as the organization default. Teams and employees without specific assignments will have no surcharge model applied.",
       "deleteTeamAssignmentDescription": "This will remove the surcharge model from team \"{team}\". They will use the organization default.",
       "description": "Configure time surcharges for overtime, night work, weekends, and holidays.",
       "descriptionLabel": "Description",
@@ -605,9 +699,11 @@
           "loadTitle": "Unable to load calculations"
         },
         "filters": {
+          "allEmployees": "All employees",
           "apply": "Apply filters",
-          "employeeId": "Employee ID",
+          "employee": "Employee",
           "endDate": "End date",
+          "showAllEmployees": "Show all employees",
           "startDate": "Start date"
         },
         "loading": "Loading calculations…",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Showing the first 500 matching calculations. Narrow the date or employee filters to refine totals.",
         "summary": {
           "baseHours": "Base hours",
+          "calculationCount": "{count, plural, one {# calculation} other {# calculations}}",
           "calculations": "Calculations",
           "creditedHours": "Credited surcharge hours",
           "qualifyingHours": "Qualifying surcharge hours"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Remove from sets first",
       "categories": "Categories",
       "categoriesDescription": "Create and manage work categories that can be shared across multiple sets",
+      "categoriesLoadError": "Work categories could not be loaded",
       "categoriesTitle": "Work Categories",
       "categoryCreated": "Category created",
       "categoryCreateFailed": "Failed to create category",
@@ -709,6 +807,7 @@
       "categoryInUse": "Cannot delete a category that is used in {count} set(s). Remove it from all sets first.",
       "categoryName": "Name",
       "categoryNamePlaceholder": "e.g., Passive Travel",
+      "categoryNameTaken": "A category with this name already exists.",
       "categoryUpdated": "Category updated",
       "categoryUpdateFailed": "Failed to update category",
       "chooseColor": "Choose color",
@@ -722,22 +821,30 @@
       "createSetDescription": "Create a new category set and select which categories to include",
       "defaultSet": "Default Category Set",
       "deleteAssignmentTitle": "Remove Assignment?",
+      "deleteCategoryDescription": "The category \"{name}\" will be permanently deleted.",
+      "deleteCategoryNamed": "Delete category {name}",
+      "deleteCategoryTitle": "Delete category?",
       "deleteEmployeeAssignment": "This will remove the override for \"{name}\". They will use their team or organization default.",
-      "deleteOrgAssignment": "This will remove the organization default. Employees will not have work categories available unless assigned individually.",
+      "deleteOrgAssignmentNamed": "This will remove \"{set}\" as the organization default. Employees will not have work categories available unless assigned individually.",
       "deleteSetDescription": "This will permanently delete the category set \"{name}\" and all its categories. Any assignments using this set will also be removed.",
+      "deleteSetNamed": "Delete category set {name}",
       "deleteSetTitle": "Delete Category Set?",
       "deleteTeamAssignment": "This will remove the category set from team \"{team}\". They will use the organization default.",
       "description": "Define work categories with time factors for effective time calculation",
       "descriptionPlaceholder": "Optional description",
       "editCategory": "Edit Category",
       "editCategoryDescription": "Update the category details",
+      "editCategoryNamed": "Edit category {name}",
       "editSet": "Edit Category Set",
       "editSetDescription": "Update the category set details and manage its categories",
+      "editSetNamed": "Edit category set {name}",
       "employeeLevel": "Employee Overrides",
       "employeeLevelDescription": "Override team or organization defaults for specific employees",
       "factor": "Factor",
       "factorExplanation": "Factor determines effective time: 0.5 = 50% (e.g., passive travel), 1.0 = 100% (normal work), 1.5 = 150% (overtime)",
       "loadError": "Failed to load category sets",
+      "moveCategoryDown": "Move {name} down",
+      "moveCategoryUp": "Move {name} up",
       "noCategories": "No categories yet",
       "noCategoriesAvailable": "No categories available",
       "noCategoriesHint": "Create categories to assign them to sets",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "No teams available.",
       "orgLevel": "Organization Default",
       "orgLevelDescription": "Default category set applied to all employees unless overridden",
+      "removeAssignmentFor": "Remove assignment for {name}",
+      "removeCategoryFromSet": "Remove {name} from set",
       "selectCategories": "Select Categories",
-      "selectedCategories": "Selected categories (drag to reorder)",
+      "selectedCategoriesOrder": "Selected categories (use the arrows to reorder)",
       "selectEmployee": "Employee",
       "selectEmployeePlaceholder": "Select an employee",
       "selectSet": "Category Set",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Optional description for this category set",
       "setName": "Name",
       "setNamePlaceholder": "e.g., Travel Categories",
+      "setNameTaken": "A category set with this name already exists.",
       "setUpdated": "Category set updated",
       "setUpdateFailed": "Failed to update category set",
       "tab": {

@@ -1,0 +1,49 @@
+{
+  "uniqueTransientSession": true,
+  "restore": false,
+  "restoreSave": "never",
+  "authTransferred": false,
+  "sourceUnchanged": true,
+  "openExit": 0,
+  "waitExit": 0,
+  "treeExit": 0,
+  "treeHash": "78d4f52a9120927d54227a78c974bd97239282b5cbd18dda160cba8155a62144",
+  "componentPresence": [
+    {
+      "name": "ShiftScheduler",
+      "present": true
+    },
+    {
+      "name": "PlannerShiftScheduler",
+      "present": true
+    },
+    {
+      "name": "CoverageHeatmapOverlay",
+      "present": true
+    },
+    {
+      "name": "ScheduleShiftList",
+      "present": true
+    }
+  ],
+  "inspectedExactTarget": true,
+  "inspectHash": "5a4b6f592ebb5f77bcec62f9ce7c9fe32d62b1219beca79a5cc06c2479c1090d",
+  "finalUrl": {
+    "lifecycle": {
+      "effectiveLaunch": {
+        "browserLaunched": true,
+        "engine": "chrome",
+        "launchHash": 8351810350156021000
+      },
+      "launched": false,
+      "relaunchedBrowser": false,
+      "restartedBackground": false,
+      "restoreStatus": "not_configured",
+      "reused": true,
+      "saveStatus": "not_configured"
+    },
+    "url": "http://localhost:61081/en/scheduling?date=2026-11-16"
+  },
+  "admitted": true,
+  "closeExit": 0
+}

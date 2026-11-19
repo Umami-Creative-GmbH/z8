@@ -1,0 +1,10 @@
+import {spawn} from 'node:child_process';
+import {writeFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {repo,pool,runtime} from './fixture.mjs';
+await pool.end();
+const suites=['document-request-officer','document-request-bulk','document-request-review','document-request-skill-link','document-requests','officer-grants'].map(name=>`src/lib/personnel-file/${name}.integration.test.ts`);
+const env={...Object.fromEntries(Object.entries(process.env).filter(([key])=>/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA|PNPM_HOME)$/i.test(key))),...runtime.env,pnpm_config_verify_deps_before_run:'false'};
+let log='';const child=spawn(process.execPath,[join(repo,'apps/webapp/node_modules/vitest/vitest.mjs'),'run','--project','integration',...suites,'--reporter=json','--outputFile='+join(repo,'docs/design/rollout-1692/1730/postgres.json')],{cwd:join(repo,'apps/webapp'),env,windowsHide:true,stdio:['ignore','pipe','pipe']});
+child.stdout.on('data',bytes=>log+=bytes);child.stderr.on('data',bytes=>log+=bytes);
+const code=await new Promise(done=>child.on('exit',done));await writeFile(join(repo,'docs/design/rollout-1692/1730/postgres-log.txt'),log);console.log('PostgreSQL suites exit '+code);process.exitCode=code??1;

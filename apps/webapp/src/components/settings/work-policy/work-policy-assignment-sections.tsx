@@ -1,3 +1,4 @@
+import { workPolicyAssignmentTargetLabel } from "./work-policy-assignment-target";
 import {
 	IconBuilding,
 	IconFileText,
@@ -7,12 +8,13 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import type { ReactNode } from "react";
 import type { WorkPolicyAssignmentWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { AssignmentLevelCardHeader } from "@/components/settings/assignment-level-card-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { cn } from "@/lib/utils";
 
 type AssignmentType = "organization" | "team" | "employee";
 
@@ -35,11 +37,62 @@ interface WorkPolicyAssignmentSectionsProps {
 	onDeleteClick: (assignment: WorkPolicyAssignmentWithDetails) => void;
 }
 
-function formatAssignmentEmployeeName(
-	employeeRecord: { firstName?: string | null; lastName?: string | null } | null | undefined,
-	fallback: string,
-) {
-	return employeeRecord ? buildAuthUserDisplayName(employeeRecord) || fallback : fallback;
+function RemoveAssignmentButton({
+	assignment,
+	kind,
+	onDeleteClick,
+}: {
+	assignment: WorkPolicyAssignmentWithDetails;
+	kind: AssignmentType;
+	onDeleteClick: (assignment: WorkPolicyAssignmentWithDetails) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Button
+			variant="ghost"
+			size="icon"
+			aria-label={t("settings.workPolicies.removeAssignmentFor", "Remove assignment for {name}", {
+				name: workPolicyAssignmentTargetLabel(assignment, t, kind),
+			})}
+			className="shrink-0 text-destructive hover:text-destructive"
+			onClick={() => onDeleteClick(assignment)}
+		>
+			<IconTrash className="size-4" aria-hidden="true" />
+		</Button>
+	);
+}
+
+function AssignmentRow({
+	icon: Icon,
+	title,
+	subtitle,
+	action,
+	className,
+}: {
+	icon: typeof IconUser;
+	title: string;
+	subtitle?: string;
+	action: ReactNode;
+	className?: string;
+}) {
+	return (
+		<div className={cn("flex items-center justify-between gap-3 rounded-lg border p-3", className)}>
+			<div className="flex min-w-0 items-center gap-3">
+				<Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+				<div className="min-w-0">
+					<p className="truncate font-medium" title={title}>
+						{title}
+					</p>
+					{subtitle ? (
+						<p className="truncate text-xs text-muted-foreground" title={subtitle}>
+							{subtitle}
+						</p>
+					) : null}
+				</div>
+			</div>
+			{action}
+		</div>
+	);
 }
 
 interface OrganizationAssignmentSectionProps {
@@ -69,33 +122,28 @@ export function OrganizationAssignmentSection({
 			/>
 			<CardContent>
 				{assignment ? (
-					<div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
-						<div className="flex items-center gap-3">
-							<IconFileText className="size-5 text-muted-foreground" />
-							<p className="font-medium">
-								{assignment.policy?.name || t("common.unknown", "Unknown")}
-							</p>
-						</div>
-						{canManageAssignments ? (
-							<Button
-								variant="ghost"
-								size="icon"
-								aria-label={t("settings.workPolicies.removeAssignment", "Remove Assignment")}
-								className="text-destructive hover:text-destructive"
-								onClick={() => onDeleteClick(assignment)}
-							>
-								<IconTrash className="size-4" />
-							</Button>
-						) : null}
-					</div>
+					<AssignmentRow
+						icon={IconFileText}
+						className="bg-muted/30"
+						title={assignment.policy?.name || t("common.unknown", "Unknown")}
+						action={
+							canManageAssignments ? (
+								<RemoveAssignmentButton
+									assignment={assignment}
+									kind="organization"
+									onDeleteClick={onDeleteClick}
+								/>
+							) : null
+						}
+					/>
 				) : (
-					<div className="flex items-center justify-between rounded-lg border border-dashed p-3">
+					<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed p-3">
 						<p className="text-sm text-muted-foreground">
 							{t("settings.workPolicies.noOrgAssignment", "No organization default set")}
 						</p>
 						{canManageAssignments ? (
 							<Button onClick={onAssignClick} size="sm" variant="outline">
-								<IconPlus className="mr-2 size-4" />
+								<IconPlus className="mr-2 size-4" aria-hidden="true" />
 								{t("settings.workPolicies.assignPolicy", "Assign Policy")}
 							</Button>
 						) : null}
@@ -124,14 +172,14 @@ export function TeamAssignmentSection({
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<IconUsers className="size-5 text-muted-foreground" />
-						<div>
+				<div className="flex flex-wrap items-start justify-between gap-3">
+					<div className="flex min-w-0 items-center gap-2">
+						<IconUsers className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+						<div className="min-w-0">
 							<CardTitle className="text-base">
 								{t("settings.workPolicies.teamLevel", "Team Overrides")}
 								{assignments.length > 0 ? (
-									<Badge variant="secondary" className="ml-2">
+									<Badge variant="secondary" className="ml-2 tabular-nums">
 										{assignments.length}
 									</Badge>
 								) : null}
@@ -146,7 +194,7 @@ export function TeamAssignmentSection({
 					</div>
 					{canManageAssignments ? (
 						<Button onClick={onAssignClick} size="sm" variant="outline">
-							<IconPlus className="mr-2 size-4" />
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
 							{t("settings.workPolicies.addTeam", "Add Team")}
 						</Button>
 					) : null}
@@ -160,33 +208,21 @@ export function TeamAssignmentSection({
 				) : (
 					<div className="space-y-2">
 						{assignments.map((assignment) => (
-							<div
+							<AssignmentRow
 								key={assignment.id}
-								className="flex items-center justify-between rounded-lg border p-3"
-							>
-								<div className="flex items-center gap-3">
-									<IconUsers className="size-4 text-muted-foreground" />
-									<div>
-										<p className="font-medium">
-											{assignment.team?.name || t("common.unknownTeam", "Unknown Team")}
-										</p>
-										<p className="text-xs text-muted-foreground">
-											{assignment.policy?.name || t("common.unknown", "Unknown")}
-										</p>
-									</div>
-								</div>
-								{canManageAssignments ? (
-									<Button
-										variant="ghost"
-										size="icon"
-										aria-label={t("settings.workPolicies.removeAssignment", "Remove Assignment")}
-										className="text-destructive hover:text-destructive"
-										onClick={() => onDeleteClick(assignment)}
-									>
-										<IconTrash className="size-4" />
-									</Button>
-								) : null}
-							</div>
+								icon={IconUsers}
+								title={workPolicyAssignmentTargetLabel(assignment, t, "team")}
+								subtitle={assignment.policy?.name || t("common.unknown", "Unknown")}
+								action={
+									canManageAssignments ? (
+										<RemoveAssignmentButton
+											assignment={assignment}
+											kind="team"
+											onDeleteClick={onDeleteClick}
+										/>
+									) : null
+								}
+							/>
 						))}
 					</div>
 				)}
@@ -213,14 +249,14 @@ export function EmployeeAssignmentSection({
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<IconUser className="size-5 text-muted-foreground" />
-						<div>
+				<div className="flex flex-wrap items-start justify-between gap-3">
+					<div className="flex min-w-0 items-center gap-2">
+						<IconUser className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+						<div className="min-w-0">
 							<CardTitle className="text-base">
 								{t("settings.workPolicies.employeeLevel", "Employee Overrides")}
 								{assignments.length > 0 ? (
-									<Badge variant="secondary" className="ml-2">
+									<Badge variant="secondary" className="ml-2 tabular-nums">
 										{assignments.length}
 									</Badge>
 								) : null}
@@ -235,7 +271,7 @@ export function EmployeeAssignmentSection({
 					</div>
 					{canManageAssignments ? (
 						<Button onClick={onAssignClick} size="sm" variant="outline">
-							<IconPlus className="mr-2 size-4" />
+							<IconPlus className="mr-2 size-4" aria-hidden="true" />
 							{t("settings.workPolicies.addEmployee", "Add Employee")}
 						</Button>
 					) : null}
@@ -249,36 +285,21 @@ export function EmployeeAssignmentSection({
 				) : (
 					<div className="space-y-2">
 						{assignments.map((assignment) => (
-							<div
+							<AssignmentRow
 								key={assignment.id}
-								className="flex items-center justify-between rounded-lg border p-3"
-							>
-								<div className="flex items-center gap-3">
-									<IconUser className="size-4 text-muted-foreground" />
-									<div>
-										<p className="font-medium">
-											{formatAssignmentEmployeeName(
-												assignment.employee,
-												t("common.unknownEmployee", "Unknown Employee"),
-											)}
-										</p>
-										<p className="text-xs text-muted-foreground">
-											{assignment.policy?.name || t("common.unknown", "Unknown")}
-										</p>
-									</div>
-								</div>
-								{canManageAssignments ? (
-									<Button
-										variant="ghost"
-										size="icon"
-										aria-label={t("settings.workPolicies.removeAssignment", "Remove Assignment")}
-										className="text-destructive hover:text-destructive"
-										onClick={() => onDeleteClick(assignment)}
-									>
-										<IconTrash className="size-4" />
-									</Button>
-								) : null}
-							</div>
+								icon={IconUser}
+								title={workPolicyAssignmentTargetLabel(assignment, t, "employee")}
+								subtitle={assignment.policy?.name || t("common.unknown", "Unknown")}
+								action={
+									canManageAssignments ? (
+										<RemoveAssignmentButton
+											assignment={assignment}
+											kind="employee"
+											onDeleteClick={onDeleteClick}
+										/>
+									) : null
+								}
+							/>
 						))}
 					</div>
 				)}

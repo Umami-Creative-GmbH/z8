@@ -1,0 +1,818 @@
+{
+  "results": [
+    {
+      "name": "public-01",
+      "physicalFiles": 4,
+      "passed": 20,
+      "failed": 2,
+      "deselectedOrPending": 0,
+      "cases": [
+        {
+          "name": "Calendar supporting controls exposes real switches in the phone sheet and keeps their selection on reopen",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls opens one adjustment history for the returned balance employee",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls owns exactly one named page title before asynchronous records arrive",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the week's progress toward its required time, ahead or behind so far",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards compares with the previous period as a duration and percentage",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows only the duration when the previous period had no work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards has no bar when there is no required time today",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards headlines worked time and adds surcharge as a footnote only when there is some",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards marks the card's status from required time and the work policy's limits",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards advances the KPIs, bar and status on each elapsed minute of live work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the all-time work balance as the fourth card",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards says when the work balance is not calculated yet",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "healthy real provider admits the public team directory and its employee link",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "serializes visible context Retry through a held canonical reread before RSC refresh",
+          "status": "failed",
+          "failure": "TestingLibraryElementError: Unable to find an accessible element with the role \"button\" and name \"Retrying…\""
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on actor arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on organization arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on pending arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory removes history after a successful relationship-narrowed server arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "real provider checks raw pending session on Activity hide and reveal with retained history",
+          "status": "failed",
+          "failure": "AssertionError: expected <div data-open id=\"_r_22_\" …(8)>…(3)</div> to be null"
+        },
+        {
+          "name": "actual history hook serializes duplicate activation through failed read, held local Retry and nonempty recovery",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "successful empty and canonical refusal stay distinct without leaked refusal details",
+          "status": "passed",
+          "failure": null
+        }
+      ]
+    },
+    {
+      "name": "public-02",
+      "physicalFiles": 4,
+      "passed": 20,
+      "failed": 2,
+      "deselectedOrPending": 0,
+      "cases": [
+        {
+          "name": "Calendar supporting controls exposes real switches in the phone sheet and keeps their selection on reopen",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls opens one adjustment history for the returned balance employee",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls owns exactly one named page title before asynchronous records arrive",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the week's progress toward its required time, ahead or behind so far",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards compares with the previous period as a duration and percentage",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows only the duration when the previous period had no work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards has no bar when there is no required time today",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards headlines worked time and adds surcharge as a footnote only when there is some",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards marks the card's status from required time and the work policy's limits",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards advances the KPIs, bar and status on each elapsed minute of live work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the all-time work balance as the fourth card",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards says when the work balance is not calculated yet",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "healthy real provider admits the public team directory and its employee link",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "serializes visible context Retry through a held canonical reread before RSC refresh",
+          "status": "failed",
+          "failure": "AssertionError: expected \"vi.fn()\" to be called 1 times, but got 2 times"
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on actor arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on organization arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on pending arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory removes history after a successful relationship-narrowed server arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "real provider checks raw pending session on Activity hide and reveal with retained history",
+          "status": "failed",
+          "failure": "AssertionError: expected <div data-open id=\"_r_2a_\" …(8)>…(3)</div> to be null"
+        },
+        {
+          "name": "actual history hook serializes duplicate activation through failed read, held local Retry and nonempty recovery",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "successful empty and canonical refusal stay distinct without leaked refusal details",
+          "status": "passed",
+          "failure": null
+        }
+      ]
+    },
+    {
+      "name": "public-03",
+      "physicalFiles": 4,
+      "passed": 21,
+      "failed": 1,
+      "deselectedOrPending": 0,
+      "cases": [
+        {
+          "name": "Calendar supporting controls exposes real switches in the phone sheet and keeps their selection on reopen",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls opens one adjustment history for the returned balance employee",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls owns exactly one named page title before asynchronous records arrive",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the week's progress toward its required time, ahead or behind so far",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards compares with the previous period as a duration and percentage",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows only the duration when the previous period had no work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards has no bar when there is no required time today",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards headlines worked time and adds surcharge as a footnote only when there is some",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards marks the card's status from required time and the work policy's limits",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards advances the KPIs, bar and status on each elapsed minute of live work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the all-time work balance as the fourth card",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards says when the work balance is not calculated yet",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "healthy real provider admits the public team directory and its employee link",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "serializes visible context Retry through a held canonical reread before RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on actor arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on organization arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on pending arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory removes history after a successful relationship-narrowed server arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "real provider checks raw pending session on Activity hide and reveal with retained history",
+          "status": "failed",
+          "failure": "AssertionError: expected <div data-open id=\"_r_2a_\" …(8)>…(3)</div> to be null"
+        },
+        {
+          "name": "actual history hook serializes duplicate activation through failed read, held local Retry and nonempty recovery",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "successful empty and canonical refusal stay distinct without leaked refusal details",
+          "status": "passed",
+          "failure": null
+        }
+      ]
+    },
+    {
+      "name": "public-04",
+      "physicalFiles": 4,
+      "passed": 22,
+      "failed": 0,
+      "deselectedOrPending": 0,
+      "cases": [
+        {
+          "name": "Calendar supporting controls exposes real switches in the phone sheet and keeps their selection on reopen",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls opens one adjustment history for the returned balance employee",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls owns exactly one named page title before asynchronous records arrive",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the week's progress toward its required time, ahead or behind so far",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards compares with the previous period as a duration and percentage",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows only the duration when the previous period had no work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards has no bar when there is no required time today",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards headlines worked time and adds surcharge as a footnote only when there is some",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards marks the card's status from required time and the work policy's limits",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards advances the KPIs, bar and status on each elapsed minute of live work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the all-time work balance as the fourth card",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards says when the work balance is not calculated yet",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "healthy real provider admits the public team directory and its employee link",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "serializes visible context Retry through a held canonical reread before RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on actor arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on organization arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on pending arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory removes history after a successful relationship-narrowed server arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "real provider checks raw pending session on Activity hide and reveal with retained history",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "actual history hook serializes duplicate activation through failed read, held local Retry and nonempty recovery",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "successful empty and canonical refusal stay distinct without leaked refusal details",
+          "status": "passed",
+          "failure": null
+        }
+      ]
+    },
+    {
+      "name": "public-cache-01",
+      "physicalFiles": 4,
+      "passed": 22,
+      "failed": 1,
+      "deselectedOrPending": 0,
+      "cases": [
+        {
+          "name": "Calendar supporting controls exposes real switches in the phone sheet and keeps their selection on reopen",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls opens one adjustment history for the returned balance employee",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls owns exactly one named page title before asynchronous records arrive",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the week's progress toward its required time, ahead or behind so far",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards compares with the previous period as a duration and percentage",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows only the duration when the previous period had no work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards has no bar when there is no required time today",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards headlines worked time and adds surcharge as a footnote only when there is some",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards marks the card's status from required time and the work policy's limits",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards advances the KPIs, bar and status on each elapsed minute of live work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the all-time work balance as the fourth card",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards says when the work balance is not calculated yet",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "healthy real provider admits the public team directory and its employee link",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "serializes visible context Retry through a held canonical reread before RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on actor arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on organization arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on pending arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory removes history after a successful relationship-narrowed server arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "real provider checks raw pending session on Activity hide and reveal with retained history",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "reauthorizes history when a relationship is narrowed and directory recovery retains the last loaded employee",
+          "status": "failed",
+          "failure": "TestingLibraryElementError: Unable to find an accessible element with the role \"alert\""
+        },
+        {
+          "name": "actual history hook serializes duplicate activation through failed read, held local Retry and nonempty recovery",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "successful empty and canonical refusal stay distinct without leaked refusal details",
+          "status": "passed",
+          "failure": null
+        }
+      ]
+    },
+    {
+      "name": "public-cache-02",
+      "physicalFiles": 4,
+      "passed": 22,
+      "failed": 1,
+      "deselectedOrPending": 0,
+      "cases": [
+        {
+          "name": "Calendar supporting controls exposes real switches in the phone sheet and keeps their selection on reopen",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls opens one adjustment history for the returned balance employee",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "Calendar supporting controls owns exactly one named page title before asynchronous records arrive",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the week's progress toward its required time, ahead or behind so far",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards compares with the previous period as a duration and percentage",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows only the duration when the previous period had no work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards has no bar when there is no required time today",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards headlines worked time and adds surcharge as a footnote only when there is some",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards marks the card's status from required time and the work policy's limits",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards advances the KPIs, bar and status on each elapsed minute of live work",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards shows the all-time work balance as the fourth card",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "time tracking KPI cards says when the work balance is not calculated yet",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "healthy real provider admits the public team directory and its employee link",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "serializes visible context Retry through a held canonical reread before RSC refresh",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on actor arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on organization arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on pending arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "canonical directory removes history after a successful relationship-narrowed server arrival",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "real provider checks raw pending session on Activity hide and reveal with retained history",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "reauthorizes history when a relationship is narrowed and directory recovery retains the last loaded employee",
+          "status": "failed",
+          "failure": "AssertionError: expected true to be false // Object.is equality"
+        },
+        {
+          "name": "actual history hook serializes duplicate activation through failed read, held local Retry and nonempty recovery",
+          "status": "passed",
+          "failure": null
+        },
+        {
+          "name": "successful empty and canonical refusal stay distinct without leaked refusal details",
+          "status": "passed",
+          "failure": null
+        }
+      ]
+    },
+    {
+      "name": "cache-repro-01",
+      "physicalFiles": 1,
+      "passed": 0,
+      "failed": 1,
+      "deselectedOrPending": 8,
+      "cases": [
+        {
+          "name": "healthy real provider admits the public team directory and its employee link",
+          "status": "skipped",
+          "failure": null
+        },
+        {
+          "name": "local Retry refetches failed canonical context and admits records after successful RSC refresh",
+          "status": "skipped",
+          "failure": null
+        },
+        {
+          "name": "serializes visible context Retry through a held canonical reread before RSC refresh",
+          "status": "skipped",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on actor arrival",
+          "status": "skipped",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on organization arrival",
+          "status": "skipped",
+          "failure": null
+        },
+        {
+          "name": "canonical directory withholds a warmed open history on pending arrival",
+          "status": "skipped",
+          "failure": null
+        },
+        {
+          "name": "canonical directory removes history after a successful relationship-narrowed server arrival",
+          "status": "skipped",
+          "failure": null
+        },
+        {
+          "name": "real provider checks raw pending session on Activity hide and reveal with retained history",
+          "status": "skipped",
+          "failure": null
+        },
+        {
+          "name": "reauthorizes history when a relationship is narrowed and directory recovery retains the last loaded employee",
+          "status": "failed",
+          "failure": "AssertionError: expected true to be false // Object.is equality"
+        }
+      ]
+    }
+  ],
+  "acceptedRecoveryRun": "public-04",
+  "finalWholeSelection": "public-cache-02",
+  "freshDistinctFinalSelection": {
+    "cases": 23,
+    "physicalFiles": 4,
+    "passed": 22,
+    "failed": 1
+  },
+  "focusedConfirmation": {
+    "executed": 1,
+    "failed": 1,
+    "deselected": 8,
+    "additive": false
+  },
+  "inherited": {
+    "units-final-02": {
+      "path": ".tmp/1739-context-retry-checks/units-final-02.json",
+      "sha256": "d0164c99662147ecee76600ff89567d050db8ac292918d4bbe493c31c65483e0",
+      "files": 13,
+      "assertions": 114,
+      "passed": 114,
+      "failed": 0,
+      "pending": 0
+    },
+    "postgres-final-01": {
+      "path": ".tmp/1739-context-retry-checks/postgres-final-01.json",
+      "sha256": "5e1f96ef0175691dd05cc5b8b58c85cfa2a751141281577d2c35ed01bd0b17c8",
+      "files": 1,
+      "assertions": 6,
+      "passed": 6,
+      "failed": 0,
+      "pending": 0
+    }
+  },
+  "overlap": "The 3 Calendar and 9 weekly-summary cases overlap the inherited 114. Canonical context healthy/retry cases are adapted independent reruns of two permanent tests. Other public cases cover related contracts. No fresh counts are added to inherited 120 or summed across attempts.",
+  "status": "STOP_CRITICAL_ACCEPTANCE_BLOCKER"
+}

@@ -2,14 +2,27 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
+import { useAppLocale } from "@/components/providers/app-locale-provider";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { TimezonePicker } from "./timezone-picker";
+
+/** The wall-clock time now in `context.timezone`, or null when the zone cannot be formatted. */
+function formatCurrentTime(context: DisplayContext): string | null {
+	try {
+		return formatInstant(systemClock.nowInstant(), context, "dateTimeMedium");
+	} catch {
+		return null;
+	}
+}
 
 interface TimezoneSettingsProps {
 	currentTimezone?: string;
@@ -20,9 +33,11 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 	const { t } = useTranslate();
 	const [timezone, setTimezone] = useState(currentTimezone);
 	const [isLoading, setIsLoading] = useState(false);
+	const locale = useAppLocale();
+	const timeFormat = useTimeFormat();
 	const currentTime = useSyncExternalStore(
 		() => () => undefined,
-		() => DateTime.now().setZone(timezone).setLocale("en-US").toLocaleString(DateTime.DATETIME_MED),
+		() => formatCurrentTime({ locale, timezone, timeFormat }),
 		() => null,
 	);
 
@@ -68,7 +83,15 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="space-y-2">
-					<TimezonePicker value={timezone} onChange={setTimezone} disabled={isLoading} />
+					<Label htmlFor="profile-timezone" className="sr-only">
+						{t("settings.timezone.title", "Timezone")}
+					</Label>
+					<TimezonePicker
+						id="profile-timezone"
+						value={timezone}
+						onChange={setTimezone}
+						disabled={isLoading}
+					/>
 					<p className="text-sm text-muted-foreground">
 						{t("settings.timezone.currentTimePrefix", "Current time in {timezone}:", {
 							timezone,
@@ -79,7 +102,7 @@ export function TimezoneSettings({ currentTimezone = "UTC", onUpdate }: Timezone
 
 				{hasChanged && (
 					<Button onClick={handleSave} disabled={isLoading} className="w-full">
-						{isLoading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+						{isLoading && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
 						{t("settings.timezone.save", "Save Timezone")}
 					</Button>
 				)}

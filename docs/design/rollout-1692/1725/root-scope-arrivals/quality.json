@@ -1,0 +1,104 @@
+{
+  "status": "CORRECTION_CHECKS_COMPLETE; ROOT_INTEGRATION_RECORD_PENDING",
+  "sourceCommit": "6bded15a8d0221b670d4957275aa738eae06202c",
+  "sourcePins": {
+    "apps/webapp/src/components/payroll/payroll-workspace.test.tsx": "d3c956fb771b6c303dff2b212136a66feab65f936648914065f04c3fd7e86d7b",
+    "apps/webapp/src/components/payroll/payroll-workspace.tsx": "9e5a398ba8c68637a0e26c0635cd70293020c18bae4af37f200f61fc7338f4f3",
+    "apps/webapp/src/lib/payroll-workspace/pdf-exporter.test.tsx": "511ed3e446412075c7c07a89e4247c1af19dac24ca6de323fe73c3de7572ad8a",
+    "apps/webapp/src/lib/payroll-workspace/summary.cutover.test.ts": "40a24afee80787d72fc27562f33e19be97a470057a4649b74fe6940eee73ffb2",
+    "apps/webapp/src/lib/payroll-workspace/summary.test.ts": "cccc66063b1833037ca7919293bde619376debf9f7a13376e568c44caf43a43f",
+    "apps/webapp/src/lib/payroll-workspace/summary.ts": "9941e8e83db14ad59bf6571b2ae2744424d2ada81a76cf903947c43eeee7ec82",
+    "apps/webapp/src/lib/payroll-workspace/types.ts": "10c367ae29c21b8c59eb0d8e34313273a0e4694357395e215889ed942ab67052"
+  },
+  "units": {
+    "uniqueFiles": 94,
+    "passed": 1027,
+    "failed": 0,
+    "rootNewCases": 11,
+    "nativeExactContained": {
+      "files": 24,
+      "testsBeforeCorrection": 269
+    },
+    "repeatedSelectionsNotAdded": true
+  },
+  "postgres": {
+    "uniqueFiles": 5,
+    "uniqueCases": 51,
+    "passedAtLeastOnce": 50,
+    "skippedOnly": 1,
+    "unresolvedFailed": 0,
+    "combined": {
+      "passed": 49,
+      "failed": 1,
+      "skipped": 1
+    },
+    "isolatedGrant": {
+      "passed": 7,
+      "failed": 0
+    },
+    "qualification": "The combined run is not green. Its one configured-format label assertion passes in an independent fresh database. comparison-service seeds global datev_lohn as DATEV, while grant-holder expects DATEV Lohn & Gehalt; both insert-on-conflict-do-nothing. Production configured-format lookup is unchanged. Passed-ever union preserves the failed run, repeated cases and skipped case separately; not a 50-pass combined run."
+  },
+  "types": {
+    "passed": true,
+    "command": "types-commands.json"
+  },
+  "doctor": {
+    "changedFiles": 11,
+    "diagnostics": 0,
+    "passed": true
+  },
+  "biome": {
+    "originalSixExplicitCRLF": true,
+    "twoDomainNormalCRLF": true,
+    "allElevenExplicitLintWithFormatterAndAssistDisabled": true,
+    "broadDefault": false,
+    "broadNormalCRLF": false,
+    "broadExplicitCRLF": false,
+    "ordinaryLintImport": false,
+    "retained": "Existing workspace region/group semantic lint findings; existing summary.test import organization and three summary-file full-format differences. No broad pass or blanket waiver."
+  },
+  "red": {
+    "firstScope": {
+      "failed": 1,
+      "skipped": 58
+    },
+    "oldBoundaryMatrix": {
+      "failed": 9,
+      "skipped": 60
+    },
+    "nativeAudit": {
+      "originalFailed": 4,
+      "currentPassed": 7,
+      "controlsPassed": 3
+    }
+  },
+  "browser": {
+    "passed": true,
+    "beforeChecks": 5,
+    "afterChecks": 7,
+    "acceptedCaptures": 5,
+    "failedAttemptCaptures": 5,
+    "pageErrors": 0,
+    "baselineSameControlRetained": true,
+    "actualServerPropsCommitted": true,
+    "scope": "Same synthetic user in two independently authorized local organizations; genuine Better Auth set-active plus synthetic call to actual Next router.refresh, without a full page navigation. B picker has one authorized employee while baseline still shows eight A records; correction shows one and real A return restores eight.",
+    "scopeReadback": "New destination organization/member/grant/file mapping are explicit fixture setup. The actual organization-switch joining owner creates its first employee. No payroll work, payout, export job, comparison or delivery result is fabricated.",
+    "sameScopeRefresh": "Actual trusted header click, observed aria-busy true and final false, with unsaved date retained.",
+    "pdf": "Trusted fresh PDF action produces %PDF- bytes; job count unchanged. This is not a held late-response browser test.",
+    "qualification": "Late produced summaries/export notices/PDF suppression across organization/actor/coverage A-B-A are assembled tests. The live same-instance stale-row defect is reproduced, but held successful browser delivery across scope change remains unverified.",
+    "nativeReact": "No new usable native React tree or axe result; worker evidence remains inherited.",
+    "credentials": "Shared preview successfully showed sign-in. Automatic review rejected returning a fixture password through tool output, so that command did not run. User explicitly chose isolated Chromium. Accepted harness reads private fixture files locally and returns no credentials.",
+    "failures": [
+      "Original large destination reaches Payroll temporarily unavailable: legacy canonical absence backfill throws RangeError: Maximum call stack size exceeded at migration/backfill.ts:356. This is retained, not large-org payroll acceptance.",
+      "Next attempt used an incorrect broad button Locator filter; both versions timed out before opening the picker.",
+      "Following baseline passed; corrected picker click raced the new keyed component commit. Screenshot already shows correct B/one employee. Final driver waits for committed one-row result before pointer activation."
+    ]
+  },
+  "limitations": [
+    "Full static generation, remote Tolgee, providers, physical devices, true zoom, exhaustive locale/domain/accessibility and global-transition acceptance remain open.",
+    "Original phone before-totals image shows period controls and comparison scroll framing differs; preserve raw images and qualify the visual comparison.",
+    "The first large fixture destination fails in unchanged legacy bulk absence backfill; no large-org payroll success claimed.",
+    "Late-response browser account/coverage/PDF continuation, physical devices, true zoom, all locales and exhaustive accessibility/domain/provider acceptance remain open.",
+    "Original 5-suite PostgreSQL run is not green: 49 pass/1 fail/1 skip. Isolated grant-holder7/7 resolves the same label assertion in a fresh DB; union is 50 distinct passing cases/1 skipped, not a combined 50-pass run."
+  ]
+}

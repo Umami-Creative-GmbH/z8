@@ -53,10 +53,7 @@ import {
 	effectiveException,
 	effectiveHandover,
 } from "./corrections";
-import {
-	effectiveEquipmentDeadline,
-	outstandingEquipmentQuantity,
-} from "./deadlines";
+import { effectiveEquipmentDeadline } from "./deadlines";
 import { equipmentCoversContext, readEquipmentEndingContexts } from "./endings";
 import { applyItemReadiness, readItemReadiness } from "./readiness";
 import {
@@ -64,6 +61,17 @@ import {
 	equipmentRetentionStatus,
 	recordEquipmentCommandAssignments,
 } from "./retention";
+import {
+	applyClosure,
+	applyReceipt,
+	assignmentSettlement,
+	exceptionRecovery,
+	isFullyReceived,
+	outstandingQuantity,
+	receivableQuantity,
+	recoverableQuantity,
+	settlementColumns,
+} from "./settlement";
 import {
 	type EquipmentTransaction,
 	prepareEquipmentTypeForIssuance,
@@ -421,10 +429,12 @@ async function closeEquipmentReturn(
 		return { ok: false, reason: "self_exception" };
 	if (assignment.revision !== change.expectedRevision)
 		return { ok: false, reason: "stale_revision" };
-	if (!assignment.returnRequired)
-		return { ok: false, reason: "return_not_required" };
-	if (change.quantity > outstandingEquipmentQuantity(assignment))
-		return { ok: false, reason: "excess_quantity" };
+	const settled = applyClosure(
+		assignmentSettlement(assignment),
+		change.outcome,
+		change.quantity,
+	);
+	if (!settled.ok) return settled;
 	await tx.insert(equipmentException).values({
 		organizationId: actor.organizationId,
 		assignmentId: assignment.id,
@@ -437,15 +447,7 @@ async function closeEquipmentReturn(
 	const revision = assignment.revision + 1;
 	await tx
 		.update(equipmentAssignment)
-		.set({
-			lostQuantity:
-				assignment.lostQuantity +
-				(change.outcome === "lost" ? change.quantity : 0),
-			waivedQuantity:
-				assignment.waivedQuantity +
-				(change.outcome === "waived" ? change.quantity : 0),
-			revision,
-		})
+		.set({ ...settlementColumns(settled.settlement), revision })
 		.where(assignmentScope(actor.organizationId, assignment.id));
 	const outcome = { ok: true, id: assignment.id, revision } as const;
 	return outcome;
@@ -877,7 +879,9 @@ async function performHandover(
 			return { ok: false, reason: "self_receipt" };
 		if (assignment.revision !== change.expectedRevision)
 			return { ok: false, reason: "stale_revision" };
-		if (assignment.received) return { ok: false, reason: "already_received" };
+		const settlement = assignmentSettlement(assignment);
+		if (isFullyReceived(settlement))
+			return { ok: false, reason: "already_received" };
 		const quantity = change.kind === "receive_individual" ? 1 : change.quantity;
 		const [originalException] =
 			change.kind === "receive_exception"
@@ -895,11 +899,16 @@ async function performHandover(
 		const exception = originalException
 			? effectiveException(originalException)
 			: undefined;
-		if (change.kind === "receive_exception") {
+		if (change.kind === "receive_exception" && !exception)
+			return { ok: false, reason: "not_found" };
+		const settled = applyReceipt(
+			settlement,
+			quantity,
+			exception && exceptionRecovery(exception),
+		);
+		if (!settled.ok) return settled;
+		if (exception) {
 			const { timezone } = await organizationCalendar(tx, actor.organizationId);
-			if (!exception) return { ok: false, reason: "not_found" };
-			if (quantity > exception.quantity - exception.receivedQuantity)
-				return { ok: false, reason: "excess_quantity" };
 			if (
 				Temporal.PlainDate.compare(
 					parsePlainDate(change.actualDate),
@@ -910,16 +919,6 @@ async function performHandover(
 			)
 				return { ok: false, reason: "conflicting_history" };
 		}
-		const receivedQuantity = assignment.receivedQuantity + quantity;
-		if (
-			!exception &&
-			receivedQuantity +
-				assignment.lostQuantity +
-				assignment.waivedQuantity -
-				assignment.exceptionReceivedQuantity >
-				assignment.quantity
-		)
-			return { ok: false, reason: "excess_quantity" };
 		const [originalIssue] = await tx
 			.select()
 			.from(equipmentHandover)
@@ -960,10 +959,10 @@ async function performHandover(
 			actorId: actor.userId,
 			recordedAt,
 		});
-		if (exception)
+		if (exception && settled.recovery)
 			await tx
 				.update(equipmentException)
-				.set({ receivedQuantity: exception.receivedQuantity + quantity })
+				.set({ receivedQuantity: settled.recovery.recovered })
 				.where(
 					and(
 						eq(equipmentException.organizationId, actor.organizationId),
@@ -973,10 +972,7 @@ async function performHandover(
 		const [updated] = await tx
 			.update(equipmentAssignment)
 			.set({
-				received: receivedQuantity === assignment.quantity,
-				receivedQuantity,
-				exceptionReceivedQuantity:
-					assignment.exceptionReceivedQuantity + (exception ? quantity : 0),
+				...settlementColumns(settled.settlement),
 				revision: assignment.revision + 1,
 			})
 			.where(assignmentScope(actor.organizationId, assignment.id))
@@ -1302,7 +1298,10 @@ export async function readEquipment(
 						asc(equipmentException.id),
 					)
 			: [];
-		const exceptionEvidence = new Map<string, EquipmentExceptionView[]>();
+		const exceptionEvidence = new Map<
+			string,
+			Omit<EquipmentExceptionView, "canReceive" | "receivableQuantity">[]
+		>();
 		for (const { record: original, actorName } of exceptionRows) {
 			const record = effectiveException(original);
 			const list = exceptionEvidence.get(record.assignmentId) ?? [];
@@ -1311,7 +1310,6 @@ export async function readEquipment(
 				receivedQuantity: record.receivedQuantity,
 				actorName,
 				recordedAt: instantFromDate(record.recordedAt).toString(),
-				canReceive: false,
 			});
 			exceptionEvidence.set(record.assignmentId, list);
 		}
@@ -1404,8 +1402,10 @@ export async function readEquipment(
 			const receipts = evidence.get(`${assignment.id}:receipt`) ?? [];
 			if (!holder || !issue) continue;
 			// Exception closure settles the obligation without pretending physical receipt.
-			const outstandingQuantity = outstandingEquipmentQuantity(assignment);
-			const outstanding = outstandingQuantity > 0;
+			const settlement = assignmentSettlement(assignment);
+			const outstandingReturn = outstandingQuantity(settlement);
+			const outstanding = outstandingReturn > 0;
+			const receivable = receivableQuantity(settlement);
 			const effectiveDeadline = effectiveEquipmentDeadline(
 				assignment.explicitDeadline,
 				assignment.departureDeadline,
@@ -1524,18 +1524,18 @@ export async function readEquipment(
 						actorName,
 						recordedAt: instantFromDate(record.recordedAt).toString(),
 					})),
-				lostQuantity: assignment.lostQuantity,
-				waivedQuantity: assignment.waivedQuantity,
-				recoveredQuantity: (exceptionEvidence.get(assignment.id) ?? [])
-					.filter((e) => e.kind === "lost")
-					.reduce((sum, e) => sum + e.receivedQuantity, 0),
-				exceptions: (exceptionEvidence.get(assignment.id) ?? []).map((e) => ({
-					...e,
-					canReceive:
-						staffView &&
-						holder.userId !== actor.userId &&
-						e.receivedQuantity < e.quantity,
-				})),
+				lostQuantity: settlement.lost,
+				waivedQuantity: settlement.waived,
+				recoveredQuantity: settlement.recovered,
+				exceptions: (exceptionEvidence.get(assignment.id) ?? []).map((e) => {
+					const recoverable = recoverableQuantity(exceptionRecovery(e));
+					return {
+						...e,
+						receivableQuantity: recoverable,
+						canReceive:
+							staffView && holder.userId !== actor.userId && recoverable > 0,
+					};
+				}),
 				canCloseException:
 					staffView &&
 					access.canAdminister &&
@@ -1545,8 +1545,9 @@ export async function readEquipment(
 				itemId: item?.id ?? null,
 				trackingMode: type.trackingMode,
 				quantity: assignment.quantity,
-				physicallyReceivedQuantity: assignment.receivedQuantity,
-				outstandingQuantity,
+				physicallyReceivedQuantity: settlement.received,
+				outstandingQuantity: outstandingReturn,
+				receivableQuantity: receivable,
 				typeId: type.id,
 				typeName: type.name,
 				identifier: item?.identifier ?? type.name,
@@ -1565,16 +1566,14 @@ export async function readEquipment(
 				deactivationId: assignment.deactivationId,
 				outstanding,
 				overdue,
-				held: !assignment.received,
+				held: !isFullyReceived(settlement),
 				revision: assignment.revision,
 				canReceive:
-					staffView &&
-					(!assignment.returnRequired ? !assignment.received : outstanding) &&
-					holder.userId !== actor.userId,
+					staffView && receivable > 0 && holder.userId !== actor.userId,
 				transfer:
 					staffView &&
 					policyConfigured &&
-					(!assignment.returnRequired ? !assignment.received : outstanding) &&
+					receivable > 0 &&
 					holder.userId !== actor.userId &&
 					!type.archivedAt &&
 					(!item ||

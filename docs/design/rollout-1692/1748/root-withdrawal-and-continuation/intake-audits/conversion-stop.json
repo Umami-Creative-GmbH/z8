@@ -1,0 +1,265 @@
+{
+  "kind": "Read-only SAFE intake and static consistency audit; no product rerun or release approval",
+  "scope": {
+    "manifest": "X:\\t3-code\\worktrees\\z8\\t3-f51581c5-204cc541b2d2fd45\\.tmp\\review1748-independent\\SAFE-index.json",
+    "payloadsOnly": true,
+    "payloadCount": 21,
+    "payloadBytes": 129492,
+    "repositoryGitOrIndexRead": false,
+    "repositoryIndexGitPackageRuntimeTrackerMutation": false,
+    "testsRun": false,
+    "archivedScriptsExecuted": false,
+    "excludedTargetsRead": false,
+    "privateInputsRead": false,
+    "subagentsStarted": false,
+    "writes": "New system TEMP directory only"
+  },
+  "identity": {
+    "candidate": "2404a1e0404e5079c56e51c290629455f798f9f5",
+    "appTree": "21de4ad559b7cfac4e8c168f8f7144f30e6780e5",
+    "verifiedCommit": null,
+    "basis": "Consistent manifest/producer receipts; no current Git verification"
+  },
+  "integrity": {
+    "manifestBytes": 5643,
+    "expectedManifestSha256": "864b3a5a1ab722fcc3fb63352c507c0dc6a4ed642b9df517b27178c78ff5e04a",
+    "actualManifestSha256": "864b3a5a1ab722fcc3fb63352c507c0dc6a4ed642b9df517b27178c78ff5e04a",
+    "all21PayloadBytesAndHashesMatch": true,
+    "jsonPayloadsParsed": 11,
+    "jsonDocumentsIncludingManifest": 12
+  },
+  "syntax": {
+    "python": [
+      {
+        "name": "prepare.py",
+        "status": "ast.parse pass",
+        "executed": false
+      },
+      {
+        "name": "preserve.py",
+        "status": "ast.parse pass",
+        "executed": false
+      },
+      {
+        "name": "seal.py",
+        "status": "ast.parse pass",
+        "executed": false
+      }
+    ],
+    "tsx": {
+      "files": 5,
+      "method": "Manual static source/test inspection",
+      "formalParserRun": false,
+      "obviousSyntaxErrorObserved": false,
+      "limit": "Strict evidence allowlist; no package resolution, installation or repository/runtime traversal"
+    }
+  },
+  "inventory": {
+    "distinctKeys": 42,
+    "physicalFiles": 4,
+    "passed": 41,
+    "failed": 1,
+    "fileCounts": {
+      "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx": 5,
+      "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx": 23,
+      "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx": 8,
+      "apps/webapp/src/test/review1748-independent-conversion.test.tsx": 6
+    },
+    "runs": [
+      {
+        "run": "priority",
+        "cases": 36,
+        "passed": 36,
+        "failed": 0,
+        "exit": 0
+      },
+      {
+        "run": "conversion",
+        "cases": 6,
+        "passed": 5,
+        "failed": 1,
+        "exit": 1
+      }
+    ],
+    "key": "physical file/fullname/occurrence",
+    "statusBasis": "Producer multiset/commands receipts, not fresh execution",
+    "overlap": "36 existing cases reported as overlapping root508; 6 independent cases include 2 baseline controls",
+    "root508IdentityCrosscheck": false,
+    "overlapLimit": "Root508 case inventory is outside this allowlist; no additive counts"
+  },
+  "sourceReceiptChecks": [
+    {
+      "name": "candidate-legacy-draft-conversion.tsx.txt",
+      "computedGitBlob": "d498332ae4ea7e8dc260b7d997fd4fda140faf06",
+      "matchesReceipt": true,
+      "crlfReconstructionMatchesWorktreeReceipt": true
+    },
+    {
+      "name": "candidate-travel-expense-claim-detail.tsx.txt",
+      "computedGitBlob": "0cd79ef79050a401e0c94879f98f57c24a082d79",
+      "matchesReceipt": true,
+      "crlfReconstructionMatchesWorktreeReceipt": true
+    },
+    {
+      "name": "baseline-legacy-draft-conversion.tsx.txt",
+      "computedGitBlob": "6dbf7efd3e97ee56663960eb56c7162d273debf1",
+      "matchesReceipt": true
+    },
+    {
+      "name": "baseline-travel-expense-claim-detail.tsx.txt",
+      "computedGitBlob": "edf63b75e39c3c1d19500170b6c935e75fe9fadd",
+      "matchesReceipt": true
+    }
+  ],
+  "baselineAdapter": {
+    "oneImportOccurrence": true,
+    "bytes": 11067,
+    "sha256": "788bc620fcdd4a8e86233784659570e20c183d25f6730d70efe291eb2cd64f32",
+    "matchesBridgeReceipt": true,
+    "reconstructionWritten": false
+  },
+  "beforeAfterReceiptComparisons": [
+    {
+      "group": "source",
+      "path": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "source",
+      "path": "apps/webapp/src/components/site-header.test.tsx",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "source",
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion-consumers.test.tsx",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "source",
+      "path": "apps/webapp/src/components/travel-expenses/legacy-draft-conversion.tsx",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "source",
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.test.tsx",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "source",
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-detail.tsx",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "source",
+      "path": "apps/webapp/src/components/travel-expenses/travel-expense-claim-withdrawal.test.tsx",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "source",
+      "path": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "source",
+      "path": "apps/webapp/src/lib/navigation/route-metadata.ts",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "config",
+      "path": "pnpm-lock.yaml",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "config",
+      "path": "package.json",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "config",
+      "path": "pnpm-workspace.yaml",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "config",
+      "path": "apps/webapp/package.json",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "config",
+      "path": "apps/webapp/vitest.config.ts",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "config",
+      "path": "apps/webapp/tsconfig.typecheck.json",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "config",
+      "path": "apps/webapp/tsconfig.workflow-contracts.json",
+      "receiptBytesAndHashAgree": true
+    },
+    {
+      "group": "config",
+      "path": "apps/webapp/tsconfig.smoke.json",
+      "receiptBytesAndHashAgree": true
+    }
+  ],
+  "receiptConsistency": {
+    "threeBridgeCreationCleanupRowsAgree": true,
+    "priorSAFECount": 11,
+    "priorSAFEBytes": 103566,
+    "archiveFiles": 74,
+    "archiveAndReportPaths": 75,
+    "ownNodePnpmCountReported": 0,
+    "all4PackageCommandsHaveBothRequiredSettings": true
+  },
+  "classification": {
+    "status": "Supported by preserved source/test and internally consistent reported results; no rerun",
+    "sequence": "conversion success -> canonical Unauthorized hides link -> transient read failure revives cached link without fresh success",
+    "candidateSource": "candidate-legacy-draft-conversion.tsx.txt",
+    "candidateLines": [
+      316,
+      317,
+      318,
+      324,
+      349,
+      369,
+      377,
+      378
+    ],
+    "baselineSource": "baseline-legacy-draft-conversion.tsx.txt",
+    "baselineLines": [
+      167,
+      169,
+      170,
+      171,
+      184,
+      203
+    ],
+    "baseline": "Every read error suppresses cached data; both supplied baseline controls report pass",
+    "attribution": "Inherited query cache retention with incoming presentation regression from transient-link retention; incomplete durable withdrawal guarantee",
+    "scope": "No live/backend authorization bypass established",
+    "testControls": "Separate authorized detail notes/receipt link stay; exactly 3 conversion reads; no conversion action/navigation; final settled reportLinkVisible expected false actual true"
+  },
+  "discrepancies": [],
+  "producerReceiptOnly": [
+    "Current source/index/Git cleanliness",
+    "Actual bridge absence and resource/process cleanup",
+    "74 archive files plus original report prefix preservation",
+    "Protected selections and historical root acceptance",
+    "Prior SAFE verification",
+    "Dependency installation/topology",
+    "Fresh runner outcomes; raw runner/install outputs excluded"
+  ],
+  "deferredAtStop": [
+    "Further transport/repeated-network/cache/provider/Activity/late-conversion objections",
+    "Broad management/list/history/settlement/i18n/SiteHeader/route-metadata/extracted-default/conversion-domain compatibility",
+    "Fresh disposable PostgreSQL claim-read/conversion/finance-settlement/expense-officer-access; no attempted run or timeout retry",
+    "Workflow/smoke/main TypeScript, lint, bounded installed Doctor 0.9.22 with explicit base 2404a1e04",
+    "100-column CRLF and ordinary formatting",
+    "Full artifact JSON/link/image/source/config/timing content audit",
+    "Fresh live Next/browser/login/native/runtime acceptance"
+  ],
+  "boundary": "Preservation and cleanup are producer receipts only. No excluded/private targets, source tree, process or repository was traversed to re-prove them. verifiedCommit remains null."
+}

@@ -11,7 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { DrivingAuthorizationAdvisory } from "@/components/driving-licence/operational-status";
 import {
@@ -22,6 +22,7 @@ import { useUserTimezone } from "@/components/providers/user-preferences-provide
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { useSession } from "@/lib/auth-client";
 import {
 	type BookedProjectTask,
 	projectTaskRefusalMessage,
@@ -60,6 +61,7 @@ import { QuickBreakPopover } from "./quick-break-popover";
 import { showSavedClockToast } from "./saved-clock-toast";
 import { TaskSelectorView } from "./task-selector";
 import type { WorkCategory } from "./use-available-work-categories";
+import { useHeaderClockTimezone } from "./use-header-clock-timezone";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 import { useTimeClockPopoverState } from "./use-time-clock-popover-state";
 import { WorkCategorySelectorView } from "./work-category-selector";
@@ -346,6 +348,16 @@ function ClockControlsView(props: ClockControlsViewProps) {
 	);
 }
 
+function selectedClockTask(
+	currentTask: BookedProjectTask | null,
+	projectId: string | undefined,
+	selectedTaskId: string | null | undefined,
+) {
+	if (selectedTaskId === undefined && currentTask && currentTask.projectId === projectId)
+		return currentTask.id;
+	return selectedTaskId ?? undefined;
+}
+
 function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -384,10 +396,19 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		captureMode,
 		connectionRequired,
 	} = useTimeClock();
+	const { data: session } = useSession();
+	const timezoneConfirmation = useHeaderClockTimezone({
+		scope: `${session?.user.id}:${session?.session.activeOrganizationId}:${employeeId}:${activeWorkPeriod?.id ?? "stopped"}`,
+		savedTimezone: timezone,
+		isOffline,
+	});
 	const { uiState, dispatch, assignedProjects, availableWorkCategories } = useTimeClockPopoverState(
 		{ employeeId, isClockedIn, choicesEnabled },
 	);
-	const vehicleUse = useClockVehicleUse({ enabled: hasEmployee, choicesEnabled });
+	const vehicleUse = useClockVehicleUse({
+		enabled: hasEmployee,
+		choicesEnabled,
+	});
 	const handleAddBreak = useQuickBreakHandler(addBreak, t, vehicleUse);
 	const { handleStartBreak, handleResumeBreak } = breakInProgressHandlers(
 		{ startBreak, resumeBreak },
@@ -398,11 +419,11 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 	// The running work's task shows while its project is chosen and no other choice
 	// was made; the clock-out then keeps it (#874).
 	const currentTask = isClockedIn ? (activeWorkPeriod?.currentTask ?? null) : null;
-	const followsCurrentTask =
-		uiState.selectedTaskId === undefined &&
-		currentTask !== null &&
-		currentTask.projectId === uiState.selectedProjectId;
-	const shownTaskId = followsCurrentTask ? currentTask?.id : (uiState.selectedTaskId ?? undefined);
+	const shownTaskId = selectedClockTask(
+		currentTask,
+		uiState.selectedProjectId,
+		uiState.selectedTaskId,
+	);
 	// A project with an active task requirement holds a server clock-out until a
 	// task is chosen or kept (#884); the server refusal stays the backstop. A
 	// clock-out saved on this device is accepted without one, and so is a break.
@@ -422,11 +443,12 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 	// Separate timer hook to isolate per-second re-renders to this component only
 	const elapsedSeconds = useElapsedTimer(activeWorkPeriod?.startTime ?? null);
 
-	const handleClockIn = async () => {
+	const submitClockIn = async (browserTimezone: string | null) => {
 		// Vehicle use never holds the clock-in: what cannot be sent is left out (#1122).
 		const vehicle = vehicleUse.clockIn;
 		const result = await clockIn({
 			workLocationType: uiState.workLocationType,
+			browserTimezone,
 			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 		});
 
@@ -461,7 +483,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		}
 	};
 
-	const handleClockOut = async () => {
+	const submitClockOut = async (browserTimezone: string | null) => {
 		// Untouched or left on the running work's task, the clock-out names no task and
 		// the server keeps it while the project stays; any other choice is explicit.
 		const taskId =
@@ -477,6 +499,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 					});
 		const vehicle = vehicleUse.clockOut;
 		const result = await clockOut({
+			browserTimezone,
 			projectId: uiState.selectedProjectId,
 			workCategoryId: uiState.selectedWorkCategoryId,
 			// The legacy review queue carries no task (#874), so it shows no task picker.
@@ -529,6 +552,9 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 			});
 		}
 	};
+
+	const handleClockIn = () => timezoneConfirmation.confirm(submitClockIn);
+	const handleClockOut = () => timezoneConfirmation.confirm(submitClockOut);
 
 	const handleSaveNotes = async () => {
 		if (!uiState.lastClockOutEntryId || !uiState.notesText.trim()) {
@@ -584,7 +610,8 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		activeWorkPeriod,
 		employeeId,
 		isClockingOut,
-		isMutating,
+		isMutating: isMutating || timezoneConfirmation.pending,
+		timezonePrompt: timezoneConfirmation.prompt,
 		assignedProjects,
 		shownTaskId,
 		currentTask,
@@ -753,7 +780,16 @@ function TimeClockPopoverPanel({
 	);
 }
 
+const subscribeToHydration = () => () => {};
+const getHydratedSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
+
 export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
+	const hasHydrated = useSyncExternalStore(
+		subscribeToHydration,
+		getHydratedSnapshot,
+		getServerHydrationSnapshot,
+	);
 	const controller = useTimeClockPopoverController({ timeFormat });
 	const {
 		isLoading,
@@ -778,6 +814,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		isStartingBreak,
 		isOffline,
 	} = controller;
+	if (!hasHydrated) return <TimeClockLoadingButton t={t} />;
 	if (isError) {
 		return (
 			<div role="alert" className="flex items-center gap-2" data-clock-status="unavailable">
@@ -820,9 +857,12 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 			data-clock-status="ready"
 			data-clock-choices={open ? "open" : choicesIntent ? "intent" : "deferred"}
 		>
+			{controller.timezonePrompt}
 			<Popover
 				open={open}
 				onOpenChange={(nextOpen) => {
+					// The confirmation portal must not dismiss the booking/notes disclosure.
+					if (!nextOpen && controller.timezonePrompt) return;
 					setOpen(nextOpen);
 					setChoicesIntent(false);
 				}}

@@ -1,0 +1,51 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-4f104265-9bca2e4e572a0498/apps/webapp
+
+ ❯ |unit| src/components/personnel-file/payslip-batch-start.test.tsx (2 tests | 1 failed | 1 skipped) 100ms
+   × does not start a queued submission after Activity hides it during validation 98ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/payslip-batch-start.test.tsx > does not start a queued submission after Activity hides it during validation
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "expectedScope": Object {
+          "organizationId": "org-a",
+          "userId": "actor",
+        },
+        "payPeriod": Object {
+          "month": 11,
+          "year": 2026,
+        },
+        "visibility": "shared",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/components/personnel-file/payslip-batch-start.test.tsx:26:29
+     24|  await act(async () => { await new Promise((done) => setTimeout(done, …
+     25|  view.rerender(<Activity mode="visible"><PayslipBatchStart {...props} …
+     26|  expect(boundary.start).not.toHaveBeenCalled();
+       |                             ^
+     27|  expect(boundary.push).not.toHaveBeenCalled();
+     28| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 skipped (2)
+   Start at  19:37:13
+   Duration  1.02s (environment 45%, import 35%, tests 11%, transform 5%, setup 3%, worker 1%)
+

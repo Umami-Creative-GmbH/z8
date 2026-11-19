@@ -274,6 +274,7 @@
       "formatAccessCheck": "Vérification de l'accès au format",
       "nobodyEmployedInPeriod": "Aucune personne comprise dans votre accès à la paie n'était employée au cours de cette période.",
       "noConfiguredTarget": "Aucune cible d'exportation de paie configurée",
+      "notPayment": "L'exportation prépare les données de paie. Elle n'effectue aucun paiement.",
       "queued": "Exportation de la paie mise en file d'attente",
       "selectFormat": "Sélectionner le format",
       "target": "Cible d'exportation de la paie",
@@ -374,6 +375,7 @@
       "blockers": "Bloquants",
       "employees": "Employés",
       "ready": "Prêt",
+      "title": "Récapitulatif de préparation de la paie",
       "workedHours": "Heures travaillées"
     },
     "title": "Paie",
@@ -383,6 +385,7 @@
       "title": "Paie temporairement indisponible"
     },
     "workBalances": {
+      "accessChanged": "Ce solde de travail n'est plus disponible dans votre périmètre de paie.",
       "back": "Soldes d'heures",
       "backToPayroll": "Paie",
       "description": "Enregistrez et annulez les paiements d'heures supplémentaires pour les employés inclus dans votre périmètre d'accès à la paie, y compris ceux ayant quitté l'entreprise.",
@@ -391,6 +394,13 @@
       "loading": "Chargement des soldes d'heures",
       "loadingEmployee": "Chargement du solde d'heures",
       "open": "Soldes d'heures",
+      "openEmployee": "Ouvrir le solde de l'employé",
+      "projectionUnavailable": "La projection du solde est indisponible. Les enregistrements d'ajustement restent ci-dessous.",
+      "refresh": "Actualiser le solde de travail",
+      "refreshing": "Actualisation du solde de travail…",
+      "retry": "Réessayer le solde de travail",
+      "scopeChanged": "Chargement du périmètre de paie actuel…",
+      "stale": "Impossible d'actualiser. Les enregistrements chargés précédemment sont affichés ; actualisez avant d'apporter des modifications.",
       "title": "Soldes d'heures"
     }
   }

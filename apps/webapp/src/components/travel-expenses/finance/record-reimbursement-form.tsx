@@ -21,8 +21,9 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { ClientForm } from "@/components/ui/client-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { Textarea } from "@/components/ui/textarea";
+import { TFormTextareaField } from "@/components/ui/tanstack-form-textarea";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
 import {
@@ -35,6 +36,7 @@ import {
 	type SettlementPlanRefusal,
 } from "@/lib/travel-expenses/settlement";
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
+import { type FinanceSubmission, useFinanceCommand } from "./use-finance-command";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 const FORM_FIELDS = ["amount", "occurredOn", "reference", "note"] as const;
@@ -158,6 +160,7 @@ export function RecordReimbursementForm({
 	line,
 	onSettled,
 	kind = "reimbursement",
+	available = true,
 }: {
 	source: SettlementSource;
 	/** The outstanding (or, for a recovery, overpaid) currency line the entry settles. */
@@ -166,14 +169,21 @@ export function RecordReimbursementForm({
 	onSettled: (account: SettlementAccount | null) => void;
 	/** `recovery` (#615): money the employee returned against an overpayment. */
 	kind?: SettlementEntryKind;
+	available?: boolean;
 }) {
 	const { t } = useTranslate();
 	const recovery = kind === "recovery";
-	const record = recovery ? recordTravelExpenseRecoveryAction : recordTravelExpenseReimbursementAction;
+	const record = recovery
+		? recordTravelExpenseRecoveryAction
+		: recordTravelExpenseReimbursementAction;
 	// The overpayment is the negative balance; a recovery is entered as a positive amount.
 	const suggested = recovery ? line.balance.replace(/^-/, "") : line.balance;
 	const attempt = useRef<{ values: string; key: string } | null>(null);
 	const [problem, setProblem] = useState<string | null>(null);
+	const command = useFinanceCommand(
+		`${source.type}:${source.id}:${kind}:${line.currency}:${line.balance}`,
+		available,
+	);
 	const parse = (value: FormValues) =>
 		parseSettlementCommand(
 			{ kind, currency: line.currency, ...value },
@@ -189,13 +199,15 @@ export function RecordReimbursementForm({
 	});
 
 	const form = useForm({
+		onSubmitMeta: { submission: null as FinanceSubmission | null },
 		defaultValues: {
 			amount: suggested,
 			occurredOn: "",
 			reference: "",
 			note: "",
 		} satisfies FormValues,
-		onSubmit: async ({ value, formApi }) => {
+		onSubmit: async ({ value, formApi, meta }) => {
+			if (!meta.submission || !command.isCurrent(meta.submission)) return;
 			setProblem(null);
 			// A refusal stays on its field until that field changes.
 			const showFieldErrors = (errors: SettlementCommandFieldError[]) => {
@@ -236,6 +248,7 @@ export function RecordReimbursementForm({
 				note: parsed.command.note,
 				expectedBalance: { currency: line.currency, amount: line.balance },
 			});
+			if (!command.isCurrent(meta.submission)) return;
 			if (!result.success) {
 				// Keep the key: resubmitting the same values is a safe retry.
 				setProblem(
@@ -270,11 +283,24 @@ export function RecordReimbursementForm({
 	});
 
 	return (
-		<form
+		<ClientForm
 			noValidate
-			onSubmit={(event) => {
-				event.preventDefault();
-				void form.handleSubmit();
+			stopPropagation
+			onSubmit={() => {
+				const submission = command.reserve();
+				if (!submission) return;
+				void form
+					.handleSubmit({ submission })
+					.catch(() => {
+						if (command.isCurrent(submission))
+							setProblem(
+								t(
+									"travelExpenses.settlement.errors.failed",
+									"The payment could not be recorded. Please retry.",
+								),
+							);
+					})
+					.finally(() => command.release(submission));
 			}}
 			className="grid gap-4"
 			aria-label={
@@ -300,9 +326,13 @@ export function RecordReimbursementForm({
 						<TFormItem>
 							<TFormLabel hasError={fieldHasError(field)}>
 								{recovery
-									? t("travelExpenses.settlement.recoveryForm.amount", "Amount recovered ({currency})", {
-											currency: line.currency,
-										})
+									? t(
+											"travelExpenses.settlement.recoveryForm.amount",
+											"Amount recovered ({currency})",
+											{
+												currency: line.currency,
+											},
+										)
 									: t("travelExpenses.settlement.form.amount", "Amount paid ({currency})", {
 											currency: line.currency,
 										})}
@@ -370,22 +400,13 @@ export function RecordReimbursementForm({
 			</form.Field>
 			<form.Field name="note" validators={validators("note")}>
 				{(field) => (
-					<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)}>
-							{t("travelExpenses.settlement.form.note", "Note (optional)")}
-						</TFormLabel>
-						<TFormControl hasError={fieldHasError(field)}>
-							<Textarea
-								name="note"
-								rows={2}
-								maxLength={SETTLEMENT_NOTE_MAX_LENGTH}
-								value={field.state.value}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-							/>
-						</TFormControl>
-						<TFormMessage field={field} />
-					</TFormItem>
+					<TFormTextareaField
+						field={field}
+						label={t("travelExpenses.settlement.form.note", "Note (optional)")}
+						name="note"
+						rows={2}
+						maxLength={SETTLEMENT_NOTE_MAX_LENGTH}
+					/>
 				)}
 			</form.Field>
 			{problem && (
@@ -395,7 +416,11 @@ export function RecordReimbursementForm({
 			)}
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(isSubmitting) => (
-					<Button type="submit" disabled={isSubmitting} className="justify-self-start">
+					<Button
+						type="submit"
+						disabled={isSubmitting || command.busy}
+						className="justify-self-start"
+					>
 						{isSubmitting && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
 						{recovery
 							? t("travelExpenses.settlement.recoveryForm.submit", "Record recovery")
@@ -403,6 +428,6 @@ export function RecordReimbursementForm({
 					</Button>
 				)}
 			</form.Subscribe>
-		</form>
+		</ClientForm>
 	);
 }

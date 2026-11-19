@@ -1,0 +1,23 @@
+{
+  "source": "verbatim structured results observed in this session; raw controller errors remain private",
+  "failureReceipts": [
+    {
+      "operation": "mcp-initialize attempt1",
+      "ok": false,
+      "error": "SyntaxError",
+      "code": "PRIVATE_HARNESS_FAILURE"
+    },
+    {
+      "operation": "react-draft strict-network-idle attempt",
+      "ok": false,
+      "error": "TimeoutError",
+      "code": "PRIVATE_HARNESS_FAILURE"
+    },
+    {
+      "operation": "convert-first strict-network-idle attempt",
+      "ok": false,
+      "error": "TimeoutError",
+      "code": "PRIVATE_HARNESS_FAILURE"
+    }
+  ]
+}

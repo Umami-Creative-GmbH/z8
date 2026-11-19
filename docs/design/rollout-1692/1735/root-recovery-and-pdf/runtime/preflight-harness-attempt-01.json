@@ -1,0 +1,1 @@
+{"exit":1,"stage":"before test or fixture","diagnosis":"Raw directory has106 including its seal; seal covers105. Verify sealed hashes and separately seal hash; no product change.","firstPnpmAttempt":"engine lock access refused; identical command approved escalation"}

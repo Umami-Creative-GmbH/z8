@@ -274,6 +274,7 @@
       "formatAccessCheck": "Format erişim kontrolü",
       "nobodyEmployedInPeriod": "Bordro erişiminiz kapsamındaki hiç kimse bu dönemde istihdam edilmedi.",
       "noConfiguredTarget": "Yapılandırılmış maaş bordrosu dışa aktarma hedefi yok",
+      "notPayment": "Dışa aktarma bordro verilerini hazırlar. Herhangi bir ödeme yapmaz.",
       "queued": "Maaş bordrosu dışa aktarma sıraya alındı",
       "selectFormat": "Format seçin",
       "target": "Maaş bordrosu dışa aktarma hedefi",
@@ -374,6 +375,7 @@
       "blockers": "Engelleyiciler",
       "employees": "Çalışanlar",
       "ready": "Hazır",
+      "title": "Bordro hazırlık özeti",
       "workedHours": "Çalışılan saatler"
     },
     "title": "Bordro",
@@ -383,6 +385,7 @@
       "title": "Bordro geçici olarak kullanılamıyor"
     },
     "workBalances": {
+      "accessChanged": "Bu çalışma bakiyesi artık bordro kapsamınızda mevcut değil.",
       "back": "Çalışma bakiyeleri",
       "backToPayroll": "Bordro",
       "description": "İşten ayrılan çalışanlar da dahil olmak üzere bordro erişiminizin kapsadığı çalışanlar için fazla mesai ödemelerini kaydedin ve iptal edin.",
@@ -391,6 +394,13 @@
       "loading": "Çalışma bakiyeleri yükleniyor",
       "loadingEmployee": "Çalışma bakiyesi yükleniyor",
       "open": "Çalışma bakiyeleri",
+      "openEmployee": "Çalışan bakiyesini aç",
+      "projectionUnavailable": "Bakiye projeksiyonu kullanılamıyor. Düzeltme kayıtları aşağıda yer almaktadır.",
+      "refresh": "Çalışma bakiyesini yenile",
+      "refreshing": "Çalışma bakiyesi yenileniyor…",
+      "retry": "Çalışma bakiyesini yeniden dene",
+      "scopeChanged": "Geçerli bordro kapsamı yükleniyor…",
+      "stale": "Yenilenemedi. Daha önce yüklenen kayıtlar gösteriliyor; değişiklik yapmadan önce yenileyin.",
       "title": "Çalışma bakiyeleri"
     }
   }

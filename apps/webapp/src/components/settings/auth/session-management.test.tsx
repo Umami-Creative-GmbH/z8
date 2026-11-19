@@ -1,17 +1,22 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getSessionMock, listSessionsMock } = vi.hoisted(() => ({
+const { getSessionMock, listSessionsMock, revokeSessionMock } = vi.hoisted(() => ({
 	getSessionMock: vi.fn(),
 	listSessionsMock: vi.fn(),
+	revokeSessionMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
+		t: (_key: string, defaultValue?: string, params?: Record<string, unknown>) =>
+			Object.entries(params ?? {}).reduce(
+				(text, [name, value]) => text.replace(`{${name}}`, String(value)),
+				defaultValue ?? _key,
+			),
 	}),
 }));
 
@@ -26,7 +31,7 @@ vi.mock("@/lib/auth-client", () => ({
 	authClient: {
 		getSession: getSessionMock,
 		listSessions: listSessionsMock,
-		revokeSession: vi.fn(),
+		revokeSession: revokeSessionMock,
 		revokeOtherSessions: vi.fn(),
 	},
 }));
@@ -78,5 +83,53 @@ describe("SessionManagement", () => {
 
 		expect(ip.className).toContain("truncate");
 		expect(ip.parentElement?.getAttribute("title")).toBe(ipAddress);
+	});
+
+	it("revokes another session only after confirming it by name", async () => {
+		revokeSessionMock.mockResolvedValue({ data: { status: true } });
+		listSessionsMock.mockResolvedValue({
+			data: [
+				{
+					id: "session-1",
+					token: "current-token",
+					userId: "user-1",
+					expiresAt: new Date("2026-01-01T00:00:00.000Z"),
+					userAgent: "Mozilla/5.0 (Windows NT 10.0) Chrome/120.0",
+					createdAt: new Date("2025-01-01T00:00:00.000Z"),
+				},
+				{
+					id: "session-2",
+					token: "other-token",
+					userId: "user-1",
+					expiresAt: new Date("2026-01-01T00:00:00.000Z"),
+					userAgent: "Mozilla/5.0 (Macintosh; Mac OS X) Firefox/120.0",
+					createdAt: new Date("2025-01-01T00:00:00.000Z"),
+				},
+			],
+		});
+
+		renderSessionManagement();
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Revoke session: Firefox on macOS" }),
+		);
+		expect(revokeSessionMock).not.toHaveBeenCalled();
+		expect(await screen.findByText("Revoke this session?")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Revoke" }));
+
+		await waitFor(() => expect(revokeSessionMock).toHaveBeenCalledWith({ token: "other-token" }));
+	});
+
+	it("explains a failed session load and offers a retry", async () => {
+		listSessionsMock.mockResolvedValue({ data: null, error: { message: "Unauthorized" } });
+
+		renderSessionManagement();
+
+		expect(
+			await screen.findByText("Your active sessions could not be loaded. Try again."),
+		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+		expect(screen.queryByText("No active sessions")).toBeNull();
 	});
 });

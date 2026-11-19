@@ -1,0 +1,23 @@
+Passed: desktop-light fits width and saved font
+Passed: phone-light fits width and saved font
+Passed: wide-dark-large fits width and saved font
+Passed: phone-dark-large fits width and saved font
+Passed: single semantic task heading
+Passed: real summary names current organization
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error [TypeError]: els.find is not a function
+    at $eval ($eval at file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/docs/design/rollout-1692/1827/verify-runtime.mjs:44:92, <anonymous>:0:10)
+    at #evaluate (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:402:19)
+    at async ExecutionContext.evaluate (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:288:16)
+    at async IsolatedWorld.evaluate (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/cdp/IsolatedWorld.js:104:16)
+    at async CdpJSHandle.evaluate (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/JSHandle.js:154:20)
+    at async CdpElementHandle.evaluate (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:344:20)
+    at async CdpElementHandle.$eval (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/ElementHandle.js:498:24)
+    at async CdpFrame.$eval (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:469:20)
+    at async CdpPage.$eval (file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:467:20)
+    at async file:///X:/t3-code/worktrees/z8/t3-80078e87-0f3316408af2ec4b/docs/design/rollout-1692/1827/verify-runtime.mjs:44:81
+
+Node.js v26.9.0

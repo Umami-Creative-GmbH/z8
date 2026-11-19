@@ -61,6 +61,7 @@
           "allowance": "Alocare",
           "allowanceForYear": "Alocare de concediu pentru {year}",
           "assignedPolicy": "Politică atribuită",
+          "backToAllowances": "Înapoi la alocările angajaților",
           "cancel": "Anulează",
           "carryover": "Reportare",
           "carryoverDaysOptional": "Zile reportate (Opțional)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Implicit: {days} zile",
           "employeeInformation": "Informații angajat",
           "errors": {
+            "adjustmentReasonRequired": "Introduceți un motiv pentru a înregistra această ajustare.",
             "createAdjustmentFailed": "Crearea ajustării a eșuat",
-            "unexpected": "A apărut o eroare neașteptată",
+            "loadFailed": "Alocarea de concediu a angajatului nu a putut fi încărcată.",
             "updateAllowanceFailed": "Actualizarea alocării a eșuat",
             "updatePolicyAssignmentFailed": "Actualizarea atribuirii politicii a eșuat"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "gestionați alocările de concediu ale angajaților",
           "managers": "Manageri",
           "overrideEffectivePolicy": "Suprascrie alocarea prevăzută de politică ({days} zile) pentru acest angajat",
+          "partialSave": {
+            "description": "Datele introduse sunt păstrate. Reîncercarea salvează doar ceea ce lipsește încă.",
+            "failed": {
+              "adjustment": "Ajustarea manuală nu a putut fi salvată: {reason}",
+              "allowance": "Alocarea personalizată nu a putut fi salvată: {reason}",
+              "policy": "Alocarea politicii nu a putut fi salvată: {reason}"
+            },
+            "pending": {
+              "adjustment": "Ajustarea manuală nu a fost încă salvată.",
+              "allowance": "Alocarea personalizată nu a fost încă salvată.",
+              "policy": "Alocarea politicii nu a fost încă salvată."
+            },
+            "retry": "Reîncearcă salvarea modificărilor nesalvate",
+            "saved": {
+              "adjustment": "Ajustarea manuală a fost salvată.",
+              "allowance": "Alocarea personalizată a fost salvată.",
+              "policy": "Alocarea politicii a fost salvată."
+            },
+            "title": "Unele modificări nu au fost salvate",
+            "titleNothingSaved": "Modificările nu au fost salvate"
+          },
           "policyOptionDays": "{name} ({days} zile)",
           "position": "Funcție",
           "postingsSkipped": "Înregistrările automate ale concediilor sunt suspendate până la soluționarea configurării politicii.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Avertisment: „{name}” este politica implicită a companiei. Trebuie să setați o altă politică ca implicită înainte de a o șterge pe aceasta.",
       "delete-description-v2": "Sigur doriți să ștergeți „{name}”? Acest lucru va elimina, de asemenea, toate atribuirile pentru această politică.",
       "deleteFailed": "Ștergerea politicii a eșuat",
+      "deleteLastDefault": "Aceasta este singura politică implicită a companiei. Setați mai întâi o altă politică ca fiind implicită.",
       "delete-title": "Șterge politica de concediu",
       "header": {
         "accrual": "Acumulare",
@@ -334,6 +358,7 @@
       },
       "loadError": "Încărcarea politicilor a eșuat",
       "max-days": "Maxim {days} zile",
+      "no-end-date": "Fără dată de încheiere",
       "none": "Niciunul",
       "no-policies-created": "Nu a fost creată încă nicio politică de concediu. Creați o politică pentru a defini alocările de concediu pentru echipa dvs.",
       "noSearchResults": "Nicio politică nu corespunde căutării dvs.",

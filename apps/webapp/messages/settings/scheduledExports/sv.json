@@ -35,7 +35,6 @@
         "previousWeekDesc": "Exportera data från föregående vecka (mån–sön)"
       },
       "deleteDialog": {
-        "cancel": "Avbryt",
         "confirm": "Ta bort",
         "description": "Är du säker på att du vill ta bort \"{name}\"? Denna åtgärd kan inte ångras.",
         "title": "Ta bort schemalagd export"
@@ -97,7 +96,10 @@
       "error": {
         "deleteFailed": "Borttagning misslyckades",
         "loadFailed": "Kunde inte läsa in schemalagda exporter",
-        "toggleFailed": "Växling misslyckades"
+        "retry": "Försök igen"
+      },
+      "errors": {
+        "ownerNotOrgAdmin": "Schemaägaren, {owner}, är inte längre organisationsadministratör. Gör dig själv eller en annan organisationsadministratör till ägare först."
       },
       "filters": {
         "allEmployees": "Alla medarbetare",
@@ -284,8 +286,9 @@
         "paused": "Pausad",
         "schedule": "Schema",
         "status": "Status",
-        "title": "Aktiva scheman",
-        "type": "Typ"
+        "titleAll": "Scheman",
+        "type": "Typ",
+        "unknownOwner": "Okänd ägare"
       },
       "title": "Schemalagda exporter",
       "toast": {

@@ -1,0 +1,252 @@
+{
+  "base": "5646e7b320376d2605b80e231b6b828f4b35f670",
+  "checkpoint": "cabc162b5afa374ab8f4bbaeaf76b9e368faa04e",
+  "dirtySourcePins": [
+    {
+      "file": "apps/webapp/src/components/reports/projects/customer-billable-view.tsx",
+      "sha256": "f94daee16fd43e43ed616b389df821c400e13d295f3ffb03628d4733627a4f2e",
+      "gitBlob": "917abdf7c7c3dd34ee71d4dd5f6829632182b9e1"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/project-filters.tsx",
+      "sha256": "8dc376f2c3dcfd305c7b6f33a8b41ff7bceafb945178f256faf698fb2e4116d6",
+      "gitBlob": "2f885e613341ec875692667e8b67aaa59f1483b5"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+      "sha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+      "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/project-summary-cards.tsx",
+      "sha256": "eec943c9e53f624bea0fee7eb960bb475bee6648488353aecdb8d95623ed7e2c",
+      "gitBlob": "1643a0886f64f58cf443eced36d8558f7b5d6d3d"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/report-share-dialog.tsx",
+      "sha256": "2aa71226f8eb897d920897f11c12fe9d9649363ec1d1647165072783ced75b6c",
+      "gitBlob": "665022288a9bfaf6595486bd35f1424ab2a1390c"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+      "sha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+      "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/shared-report-view.tsx",
+      "sha256": "6f4405c8cc6c0990deb309e6efeef37250a40a09b40009a3e95c453a851dcd57",
+      "gitBlob": "34c747490faa1e32ab38744f717df46e4d4ca715"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/report-document-export-buttons.tsx",
+      "sha256": "4b346547903306ca89b860a84bfa4195c57b45132f3a0d518fa62bcee7d064d7",
+      "gitBlob": "d92cf1c1357e9bef2c01f02b566210db75e94be6"
+    },
+    {
+      "file": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+      "sha256": "16f6ba0781b664f69afb31f7ae2bf151d436fdb873c7b8df491692abdf23640b",
+      "gitBlob": "35251a12958abfc7297a45b3e37e67fcb9c42c22"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/project-reports-workflow.test.tsx",
+      "sha256": "77583cec5d789069688b1864f2298c053424a76798841c9877e7e96d5f6d4f1b",
+      "gitBlob": "a6b0f379f97f3241b25216c3169bc8cb9a96dac8"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/report-share-dialog.test.tsx",
+      "sha256": "d3c1c16b9e3bd9f3f1e7b760c2c04fc9c5243782fc1fae78f0e9435a56d038b0",
+      "gitBlob": "7d0fb4fd998ff8607f39ed729082e7378c0f7cfc"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/projects/report-share-link-list.test.tsx",
+      "sha256": "55ad105dbf3e0c846539b12f9035a445afd94ed48e1d4b8d0b4639e0e70d9ab1",
+      "gitBlob": "80a0e1ccc98afc1aedb30bedb4fdb9f94e349164"
+    },
+    {
+      "file": "apps/webapp/src/components/reports/report-document-export-buttons.test.tsx",
+      "sha256": "af6c7e270516025248b9269479a03d492b3cc6066e3f6c82b3e8d506a183f475",
+      "gitBlob": "4e626238134f4c4c5341a2d3a53db0c7dd5bd893"
+    },
+    {
+      "file": "apps/webapp/src/lib/reports/exporters/report-document-pdf.compiled.test.ts",
+      "sha256": "26c51c9b3963642a3093a7b368347ec6b06421172b530a3c7ee97f4bb23c8356",
+      "gitBlob": "a01852ffed82f1dba70c9bbc450f2dd3d64d6611"
+    }
+  ],
+  "downloadSources": {
+    "project": {
+      "instant": "2026-11-15T23:33:19.382Z",
+      "sources": [
+        {
+          "file": "apps/webapp/src/components/reports/projects/customer-billable-view.tsx",
+          "sha256": "f94daee16fd43e43ed616b389df821c400e13d295f3ffb03628d4733627a4f2e",
+          "gitBlob": "917abdf7c7c3dd34ee71d4dd5f6829632182b9e1"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-filters.tsx",
+          "sha256": "8dc376f2c3dcfd305c7b6f33a8b41ff7bceafb945178f256faf698fb2e4116d6",
+          "gitBlob": "2f885e613341ec875692667e8b67aaa59f1483b5"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+          "sha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+          "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-summary-cards.tsx",
+          "sha256": "eec943c9e53f624bea0fee7eb960bb475bee6648488353aecdb8d95623ed7e2c",
+          "gitBlob": "1643a0886f64f58cf443eced36d8558f7b5d6d3d"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/report-share-dialog.tsx",
+          "sha256": "2aa71226f8eb897d920897f11c12fe9d9649363ec1d1647165072783ced75b6c",
+          "gitBlob": "665022288a9bfaf6595486bd35f1424ab2a1390c"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+          "sha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+          "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/shared-report-view.tsx",
+          "sha256": "6f4405c8cc6c0990deb309e6efeef37250a40a09b40009a3e95c453a851dcd57",
+          "gitBlob": "34c747490faa1e32ab38744f717df46e4d4ca715"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/report-document-export-buttons.tsx",
+          "sha256": "4b346547903306ca89b860a84bfa4195c57b45132f3a0d518fa62bcee7d064d7",
+          "gitBlob": "d92cf1c1357e9bef2c01f02b566210db75e94be6"
+        },
+        {
+          "file": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+          "sha256": "16f6ba0781b664f69afb31f7ae2bf151d436fdb873c7b8df491692abdf23640b",
+          "gitBlob": "35251a12958abfc7297a45b3e37e67fcb9c42c22"
+        }
+      ]
+    },
+    "customer": {
+      "instant": "2026-11-15T23:33:24.696Z",
+      "sources": [
+        {
+          "file": "apps/webapp/src/components/reports/projects/customer-billable-view.tsx",
+          "sha256": "f94daee16fd43e43ed616b389df821c400e13d295f3ffb03628d4733627a4f2e",
+          "gitBlob": "917abdf7c7c3dd34ee71d4dd5f6829632182b9e1"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-filters.tsx",
+          "sha256": "8dc376f2c3dcfd305c7b6f33a8b41ff7bceafb945178f256faf698fb2e4116d6",
+          "gitBlob": "2f885e613341ec875692667e8b67aaa59f1483b5"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+          "sha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+          "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-summary-cards.tsx",
+          "sha256": "eec943c9e53f624bea0fee7eb960bb475bee6648488353aecdb8d95623ed7e2c",
+          "gitBlob": "1643a0886f64f58cf443eced36d8558f7b5d6d3d"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/report-share-dialog.tsx",
+          "sha256": "2aa71226f8eb897d920897f11c12fe9d9649363ec1d1647165072783ced75b6c",
+          "gitBlob": "665022288a9bfaf6595486bd35f1424ab2a1390c"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+          "sha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+          "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/shared-report-view.tsx",
+          "sha256": "6f4405c8cc6c0990deb309e6efeef37250a40a09b40009a3e95c453a851dcd57",
+          "gitBlob": "34c747490faa1e32ab38744f717df46e4d4ca715"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/report-document-export-buttons.tsx",
+          "sha256": "4b346547903306ca89b860a84bfa4195c57b45132f3a0d518fa62bcee7d064d7",
+          "gitBlob": "d92cf1c1357e9bef2c01f02b566210db75e94be6"
+        },
+        {
+          "file": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+          "sha256": "16f6ba0781b664f69afb31f7ae2bf151d436fdb873c7b8df491692abdf23640b",
+          "gitBlob": "35251a12958abfc7297a45b3e37e67fcb9c42c22"
+        }
+      ]
+    },
+    "shared": {
+      "instant": "2026-11-15T23:33:31.528Z",
+      "sources": [
+        {
+          "file": "apps/webapp/src/components/reports/projects/customer-billable-view.tsx",
+          "sha256": "f94daee16fd43e43ed616b389df821c400e13d295f3ffb03628d4733627a4f2e",
+          "gitBlob": "917abdf7c7c3dd34ee71d4dd5f6829632182b9e1"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-filters.tsx",
+          "sha256": "8dc376f2c3dcfd305c7b6f33a8b41ff7bceafb945178f256faf698fb2e4116d6",
+          "gitBlob": "2f885e613341ec875692667e8b67aaa59f1483b5"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-reports-container.tsx",
+          "sha256": "8e8b8e0fbaed6b627794a167d70d44712f39c39b9b123f8355d66b42265d8108",
+          "gitBlob": "49546b7a09acbcefb1cf405332b21589b25551d8"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/project-summary-cards.tsx",
+          "sha256": "eec943c9e53f624bea0fee7eb960bb475bee6648488353aecdb8d95623ed7e2c",
+          "gitBlob": "1643a0886f64f58cf443eced36d8558f7b5d6d3d"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/report-share-dialog.tsx",
+          "sha256": "2aa71226f8eb897d920897f11c12fe9d9649363ec1d1647165072783ced75b6c",
+          "gitBlob": "665022288a9bfaf6595486bd35f1424ab2a1390c"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/report-share-link-list.tsx",
+          "sha256": "5cabfad0a4aa90dbe9ae155b720074e60eabc689d021aaec4874504c9140dbc1",
+          "gitBlob": "af9cc303d5faafcd24e811949a5cc201705fce75"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/projects/shared-report-view.tsx",
+          "sha256": "6f4405c8cc6c0990deb309e6efeef37250a40a09b40009a3e95c453a851dcd57",
+          "gitBlob": "34c747490faa1e32ab38744f717df46e4d4ca715"
+        },
+        {
+          "file": "apps/webapp/src/components/reports/report-document-export-buttons.tsx",
+          "sha256": "4b346547903306ca89b860a84bfa4195c57b45132f3a0d518fa62bcee7d064d7",
+          "gitBlob": "d92cf1c1357e9bef2c01f02b566210db75e94be6"
+        },
+        {
+          "file": "apps/webapp/src/lib/reports/exporters/report-document-pdf.tsx",
+          "sha256": "16f6ba0781b664f69afb31f7ae2bf151d436fdb873c7b8df491692abdf23640b",
+          "gitBlob": "35251a12958abfc7297a45b3e37e67fcb9c42c22"
+        }
+      ]
+    }
+  },
+  "native": {
+    "version": "0.39.1",
+    "actualLoadedComponents": [
+      "ProjectReportsContainer",
+      "ProjectReportWorkspace",
+      "ProjectReportResults"
+    ],
+    "restore": "not_configured",
+    "normalGeneratedLogin": true,
+    "noCookieOrStateTransfer": true
+  },
+  "dependencies": {
+    "lockSHA256": "2A254A9E5731E431B5032D1B918688F5663CE837B08207E147E1808A71BB3799",
+    "ownedPhysicalModules": true,
+    "install": "one successful frozen/offline/integrity=true/ignore-scripts/copy install after Windows engine-store-lock escalation"
+  },
+  "secretScan": {
+    "generatedShareTokenAndFixturePasswordsAbsent": true
+  },
+  "captureCheckpoint": "87f0d1ae0fd7eb1d23f394b5bddb1b740e186dc1",
+  "latestVerifiedProduct": "0e5c9c3189e841e5fa7f84038f24d4579c801f36",
+  "integrationMerge": "ad24fd4729d2a6ea36693c98756c0c35f2567129",
+  "reportSourcesUnchangedAfterLatestMerge": true,
+  "latestCombinedBrowserRerun": false
+}

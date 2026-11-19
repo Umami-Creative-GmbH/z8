@@ -1,0 +1,33 @@
+{
+  "label": "healthy-gap",
+  "coverageCalls": 1,
+  "coverageOutcome": {
+    "success": true,
+    "data": [
+      {
+        "date": "2026-11-16T00:00:00.000Z",
+        "subareaId": "synthetic-reception",
+        "subareaName": "Reception",
+        "locationName": "Office",
+        "status": "under",
+        "gapCount": 1,
+        "utilizationPercent": 0,
+        "totalRequired": 1,
+        "totalActual": 0,
+        "totalShortfall": 1
+      }
+    ]
+  },
+  "publishEnabled": true,
+  "tooltip": "Warnings detected before publishSome time blocks don't meet minimum staffing requirements.",
+  "alerts": [],
+  "coverageErrorCount": 0,
+  "retryButtons": 0,
+  "visibleBodyText": "Nov 16, 2026 – Nov 22, 2026 (Europe/Berlin)Create ShiftCoverageCoverage Summary:1 understaffed (1 gaps)Shift requestsShift TemplatesNo templates available. Create templates in Settings to quickly add shifts.TodayPrevious periodNext periodNovember 2026ViewWeekDateMon16Tue17Wed18Thu19Fri20Sat21Sun2212 AM1 AM2 AM3 AM4 AM5 AM6 AM7 AM8 AM9 AM10 AM11 AM12 PM1 PM2 PM3 PM4 PM5 PM6 PM7 PM8 PM9 PM10 PM11 PM[Draft] Open Shift9:00 AMPublish (1)Shift list (1)Open ShiftOffice · ReceptionMon, Nov 16 · 09:00 – 17:00DraftWarnings detected before publishSome time blocks don't meet minimum staffing requirements.",
+  "writes": {
+    "publish": 0,
+    "upsert": 0,
+    "remove": 0
+  },
+  "boundary": "real ShiftScheduler/QueryClient/provider/hooks/overlay/PublishFab; mocked action transport and admitted caller props; jsdom, no browser or server-authorization claim"
+}

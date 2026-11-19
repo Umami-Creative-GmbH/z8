@@ -1,0 +1,113 @@
+{
+  "runs": [
+    {
+      "name": "exact",
+      "file": "exact-unit.json",
+      "files": 13,
+      "cases": 134,
+      "passed": 133,
+      "failed": 1,
+      "skipped": 0,
+      "overlapWithPriorRuns": 0,
+      "failures": [
+        {
+          "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "fullName": "route metadata adopts payroll without adopting work-balance descendants",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected true to be false // Object.is equality"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "compatibility",
+      "file": "compatibility-unit.json",
+      "files": 106,
+      "cases": 1129,
+      "passed": 1128,
+      "failed": 1,
+      "skipped": 0,
+      "overlapWithPriorRuns": 134,
+      "failures": [
+        {
+          "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+          "fullName": "route metadata adopts payroll without adopting work-balance descendants",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected true to be false // Object.is equality"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "adversarial",
+      "file": "adversarial-unit.json",
+      "files": 1,
+      "cases": 7,
+      "passed": 5,
+      "failed": 2,
+      "skipped": 0,
+      "overlapWithPriorRuns": 0,
+      "failures": [
+        {
+          "file": ".tmp/merge1726-audit/adversarial.test.tsx",
+          "fullName": "recovers a pending preview after its cached Activity becomes hidden then visible",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected true to be false // Object.is equality"
+          ]
+        },
+        {
+          "file": ".tmp/merge1726-audit/adversarial.test.tsx",
+          "fullName": "recovers after a pending commit settles while its cached Activity is hidden",
+          "occurrence": 1,
+          "status": "failed",
+          "failure": [
+            "AssertionError: expected true to be false // Object.is equality"
+          ]
+        }
+      ]
+    }
+  ],
+  "unique": {
+    "files": 107,
+    "cases": 1136,
+    "passed": 1133,
+    "failed": 3,
+    "skipped": 0
+  },
+  "deduplication": "Normalized absolute test file + fullName + occurrence multiplicity within that file. Exact and expanded selections overlap; repeated setup and reruns add no cases.",
+  "failures": [
+    {
+      "file": "apps/webapp/src/lib/navigation/route-metadata.test.ts",
+      "fullName": "route metadata adopts payroll without adopting work-balance descendants",
+      "occurrence": 1,
+      "status": "failed",
+      "failure": [
+        "AssertionError: expected true to be false // Object.is equality"
+      ]
+    },
+    {
+      "file": ".tmp/merge1726-audit/adversarial.test.tsx",
+      "fullName": "recovers a pending preview after its cached Activity becomes hidden then visible",
+      "occurrence": 1,
+      "status": "failed",
+      "failure": [
+        "AssertionError: expected true to be false // Object.is equality"
+      ]
+    },
+    {
+      "file": ".tmp/merge1726-audit/adversarial.test.tsx",
+      "fullName": "recovers after a pending commit settles while its cached Activity is hidden",
+      "occurrence": 1,
+      "status": "failed",
+      "failure": [
+        "AssertionError: expected true to be false // Object.is equality"
+      ]
+    }
+  ]
+}

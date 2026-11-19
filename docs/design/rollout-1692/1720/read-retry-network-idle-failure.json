@@ -1,0 +1,12 @@
+{
+  "checks": [],
+  "source": {
+    "head": "e8eebd1077dc1743e78e30885965a7eea05a4b9c",
+    "hashes": {
+      "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx": "40d8059022121e182dbf9f81f351162a5944c098943166cd59efadbc44607d8a",
+      "apps/webapp/src/components/personnel-file/my-documents-retry.tsx": "fa6a62abf72edc68db5c1620eb5976b5923a7df19485cffa994b92fc2e52f090"
+    }
+  },
+  "captures": [],
+  "failure": "Navigation timeout of 60000 ms exceeded"
+}

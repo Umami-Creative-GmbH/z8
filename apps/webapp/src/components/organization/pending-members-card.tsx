@@ -20,16 +20,8 @@ import {
 	rejectPendingMember,
 } from "@/app/[locale]/(app)/settings/organization/invite-code-actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog, type ConfirmedAction, useConfirmedAction } from "@/components/settings/confirm-action-dialog";
+import { describeFailure } from "@/components/settings/confirm-action-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -150,9 +142,9 @@ function RehireNeededNotice({
 	return (
 		<div
 			role="status"
-			className="flex flex-col gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 sm:flex-row sm:items-center dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+			className="flex flex-col gap-3 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm sm:flex-row sm:items-center"
 		>
-			<IconUserExclamation aria-hidden className="size-5 shrink-0" />
+			<IconUserExclamation aria-hidden className="size-5 shrink-0 text-warning" />
 			<p className="flex-1">
 				{t(
 					"settings.pendingMembers.rehireNeeded",
@@ -322,7 +314,7 @@ function PendingMembersTable({
 										<Button
 											variant="ghost"
 											size="sm"
-											className="text-green-600 hover:text-green-700 hover:bg-green-50"
+											className="text-success hover:bg-success/10 hover:text-success"
 											onClick={() =>
 												onApprove(member.id, getApproveTeamId(member))
 											}
@@ -378,110 +370,75 @@ function PendingMembersTable({
 }
 
 function PendingMemberDialogStack({
-	rejectDialogMember,
-	bulkRejectDialogOpen,
+	rejection,
+	bulkRejection,
 	selectedCount,
-	rejectPending,
-	bulkRejectPending,
-	onRejectDialogChange,
-	onBulkRejectDialogChange,
-	onReject,
-	onBulkReject,
+	rejectMember,
+	rejectMembers,
 	t,
 }: {
-	rejectDialogMember: PendingMember | null;
-	bulkRejectDialogOpen: boolean;
+	rejection: ConfirmedAction<PendingMember>;
+	bulkRejection: ConfirmedAction<string[]>;
 	selectedCount: number;
-	rejectPending: boolean;
-	bulkRejectPending: boolean;
-	onRejectDialogChange: (open: boolean) => void;
-	onBulkRejectDialogChange: (open: boolean) => void;
-	onReject: (memberId: string) => void;
-	onBulkReject: () => void;
+	rejectMember: (memberId: string) => Promise<unknown>;
+	rejectMembers: (memberIds: string[]) => Promise<unknown>;
 	t: ReturnType<typeof useTranslate>["t"];
 }) {
+	const member = rejection.target;
+	const onReject = () =>
+		void rejection.confirm(
+			async (target) => {
+				await rejectMember(target.id);
+			},
+			(failure) =>
+				describeFailure(
+					failure,
+					t("settings.pendingMembers.rejectFailed", "Failed to reject member"),
+				),
+		);
+	const onBulkReject = () =>
+		void bulkRejection.confirm(
+			async (memberIds) => {
+				await rejectMembers(memberIds);
+			},
+			(failure) =>
+				describeFailure(
+					failure,
+					t("settings.pendingMembers.bulkRejectFailed", "Failed to reject members"),
+				),
+		);
 	return (
 		<>
-			<AlertDialog
-				open={!!rejectDialogMember}
-				onOpenChange={onRejectDialogChange}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.pendingMembers.rejectTitle", "Reject Member")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.pendingMembers.rejectDescription",
-								"Are you sure you want to reject {name}? They will be removed from the pending list and will need to request access again.",
-								{
-									name:
-										rejectDialogMember?.user?.name ||
-										rejectDialogMember?.user?.email ||
-										"this user",
-								},
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() =>
-								rejectDialogMember && onReject(rejectDialogMember.id)
-							}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{rejectPending ? (
-								<IconLoader2 className="size-4 animate-spin mr-2" />
-							) : (
-								<IconUserX className="size-4 mr-2" />
-							)}
-							{t("settings.pendingMembers.reject", "Reject")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-			<AlertDialog
-				open={bulkRejectDialogOpen}
-				onOpenChange={onBulkRejectDialogChange}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t(
-								"settings.pendingMembers.bulkRejectTitle",
-								"Reject Selected Members",
-							)}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.pendingMembers.bulkRejectDescription",
-								"Are you sure you want to reject {count} selected members? They will be removed from the pending list.",
-								{ count: selectedCount },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={onBulkReject}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{bulkRejectPending ? (
-								<IconLoader2 className="size-4 animate-spin mr-2" />
-							) : (
-								<IconUserX className="size-4 mr-2" />
-							)}
-							{t("settings.pendingMembers.rejectSelected", "Reject Selected")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<ConfirmActionDialog
+				open={rejection.open}
+				onOpenChange={rejection.onOpenChange}
+				title={t("settings.pendingMembers.rejectTitle", "Reject Member")}
+				description={t(
+					"settings.pendingMembers.rejectDescription",
+					"Are you sure you want to reject {name}? They will be removed from the pending list and will need to request access again.",
+					{
+						name: member?.user?.name || member?.user?.email || "this user",
+					},
+				)}
+				confirmLabel={t("settings.pendingMembers.reject", "Reject")}
+				isPending={rejection.isPending}
+				error={rejection.error}
+				onConfirm={onReject}
+			/>
+			<ConfirmActionDialog
+				open={bulkRejection.open}
+				onOpenChange={bulkRejection.onOpenChange}
+				title={t("settings.pendingMembers.bulkRejectTitle", "Reject Selected Members")}
+				description={t(
+					"settings.pendingMembers.bulkRejectDescription",
+					"Are you sure you want to reject {count} selected members? They will be removed from the pending list.",
+					{ count: bulkRejection.target?.length ?? selectedCount },
+				)}
+				confirmLabel={t("settings.pendingMembers.rejectSelected", "Reject Selected")}
+				isPending={bulkRejection.isPending}
+				error={bulkRejection.error}
+				onConfirm={onBulkReject}
+			/>
 		</>
 	);
 }
@@ -497,9 +454,9 @@ export function PendingMembersCard({
 	const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
 		new Set(),
 	);
-	const [rejectDialogMember, setRejectDialogMember] =
-		useState<PendingMember | null>(null);
-	const [bulkRejectDialogOpen, setBulkRejectDialogOpen] = useState(false);
+	// Rejections stay open until they settle and keep a failure visible inline.
+	const rejection = useConfirmedAction<PendingMember>();
+	const bulkRejection = useConfirmedAction<string[]>();
 	const [teamAssignments, setTeamAssignments] = useState<
 		Record<string, string | null>
 	>({});
@@ -573,11 +530,8 @@ export function PendingMembersCard({
 				queryKey: queryKeys.pendingMembers.list(organizationId),
 			});
 			toast.success(t("settings.pendingMembers.rejected", "Member rejected"));
-			setRejectDialogMember(null);
 		},
-		onError: (error) => {
-			toast.error(error.message);
-		},
+		// A failure is shown inside the confirmation dialog, which stays open for a retry.
 	});
 
 	// Bulk approve mutation
@@ -627,8 +581,7 @@ export function PendingMembersCard({
 
 	// Bulk reject mutation
 	const bulkRejectMutation = useMutation({
-		mutationFn: async () => {
-			const memberIds = Array.from(selectedMembers);
+		mutationFn: async (memberIds: string[]) => {
 			const result = await bulkRejectPendingMembers({ memberIds });
 			if (!result.success) throw new Error(result.error || "Failed to reject");
 			return result.data;
@@ -643,11 +596,8 @@ export function PendingMembersCard({
 				}),
 			);
 			setSelectedMembers(new Set());
-			setBulkRejectDialogOpen(false);
 		},
-		onError: (error) => {
-			toast.error(error.message);
-		},
+		// A failure is shown inside the confirmation dialog, which stays open for a retry.
 	});
 
 	const handleSelectAll = (checked: boolean) => {
@@ -719,8 +669,8 @@ export function PendingMembersCard({
 							<Button
 								variant="outline"
 								size="sm"
-								onClick={() => setBulkRejectDialogOpen(true)}
-								disabled={bulkRejectMutation.isPending}
+								onClick={() => bulkRejection.request(Array.from(selectedMembers))}
+								disabled={bulkRejection.isPending}
 							>
 								<IconUserX className="mr-2 size-4" />
 								{t("settings.pendingMembers.rejectSelected", "Reject Selected")}{" "}
@@ -768,21 +718,17 @@ export function PendingMembersCard({
 						onApprove={(memberId, teamId) =>
 							approveMutation.mutate({ memberId, teamId })
 						}
-						onReject={setRejectDialogMember}
+						onReject={rejection.request}
 						t={t}
 					/>
 				)}
 			</CardContent>
 			<PendingMemberDialogStack
-				rejectDialogMember={rejectDialogMember}
-				bulkRejectDialogOpen={bulkRejectDialogOpen}
+				rejection={rejection}
+				bulkRejection={bulkRejection}
 				selectedCount={selectedMembers.size}
-				rejectPending={rejectMutation.isPending}
-				bulkRejectPending={bulkRejectMutation.isPending}
-				onRejectDialogChange={(open) => !open && setRejectDialogMember(null)}
-				onBulkRejectDialogChange={setBulkRejectDialogOpen}
-				onReject={(memberId) => rejectMutation.mutate(memberId)}
-				onBulkReject={() => bulkRejectMutation.mutate()}
+				rejectMember={rejectMutation.mutateAsync}
+				rejectMembers={bulkRejectMutation.mutateAsync}
 				t={t}
 			/>
 		</Card>

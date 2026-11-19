@@ -4,6 +4,7 @@
       "coverage": {
         "accessControls": "Kontrole pristupa sažimaju samo osjetljive događaje iz dnevnika revizije koji su već danas zabilježeni.",
         "auditEvidence": "Revizijski dokazi koriste aktivnu konfiguraciju izvoza revizije, zahtjeve za revizijske pakete i nedavne rezultate verifikacije.",
+        "title": "Pokrivenost",
         "workforceCompliance": "Usklađenost radne snage koristi kršenja pravila o radu i zahtjeve za izuzeće na čekanju iz posljednjih 7 dana."
       },
       "events": {
@@ -56,7 +57,8 @@
         }
       },
       "footer": {
-        "lastRefreshed": "Zadnje osvježeno: {time}"
+        "lastRefreshed": "Zadnje osvježeno: {time}",
+        "refreshMeaning": "Osvježavanje ponovo učitava zabilježene signale; ne vrši ponovnu procjenu nalaza prema novoj politici."
       },
       "links": {
         "inspectCompliance": "Pregledaj usklađenost",
@@ -66,26 +68,33 @@
         "openComplianceSettings": "Otvori postavke usklađenosti",
         "reviewAuditExport": "Pregledaj izvoz revizije"
       },
+      "loading": "Učitavanje signala usklađenosti",
       "overview": "Pregled usklađenosti",
       "recentEvents": {
         "empty": "Nisu otkriveni nedavni kritični događaji.",
-        "title": "Nedavni kritični događaji"
+        "partial": "Nedavni događaji su ograničeni na dostupne izvore. Neki signali nisu mogli biti učitani.",
+        "title": "Nedavni kritični događaji",
+        "unavailable": "Nedavni događaji nisu mogli biti potvrđeni jer izvori signala nisu dostupni."
       },
+      "scope": "Aktivna organizacija",
       "sections": {
         "accessControls": {
           "headline": {
             "critical": "Osjetljive promjene kontrola zahtijevaju pregled",
             "healthy": "Nema nedavno zabilježenih osjetljivih promjena kontrola",
             "warning": "Otkrivene su nedavne promjene kontrola"
-          }
+          },
+          "title": "Kontrole pristupa"
         },
         "auditEvidence": {
           "headline": {
             "critical": "Revizijski dokazi zahtijevaju pažnju",
             "healthy": "Signali revizijskih dokaza izgledaju uredno",
             "warning": "Revizijski dokazi su samo djelomično spremni"
-          }
+          },
+          "title": "Revizijski dokazi"
         },
+        "title": "Odjeljci usklađenosti",
         "unavailable": {
           "headline": "Signal je privremeno nedostupan"
         },
@@ -94,7 +103,8 @@
             "critical": "Kršenja pravila o radnoj snazi zahtijevaju pregled",
             "healthy": "Nisu otkriveni nedavni problemi s pravilima o radnoj snazi",
             "warning": "Usklađenost radne snage opada"
-          }
+          },
+          "title": "Usklađenost radne snage"
         }
       },
       "status": {
@@ -114,6 +124,8 @@
       "approved": "Izuzetak odobren",
       "approvedDescription": "Izuzetak usklađenosti je odobren.",
       "approveFailed": "Odobravanje nije uspjelo",
+      "approveFor": "Odobri izuzetak ({type}) za {name}",
+      "loadError": "Zahtjevi za izuzetak na čekanju nisu mogli biti učitani.",
       "plannedDuration": "Planirano",
       "plannedDurationHelp": "Procijenite koliko vam je dodatnog vremena potrebno preko ograničenja.",
       "reason": "Razlog za izuzetak",
@@ -124,6 +136,7 @@
       "rejected": "Izuzetak odbijen",
       "rejectedDescription": "Izuzetak usklađenosti je odbijen.",
       "rejectFailed": "Odbijanje nije uspjelo",
+      "rejectFor": "Odbij izuzetak ({type}) za {name}",
       "rejectionPlaceholder": "Unesite razlog za odbijanje ovog izuzetka...",
       "rejectionReason": "Razlog za odbijanje",
       "rejectTitle": "Odbij zahtjev za izuzetak",
@@ -134,7 +147,13 @@
       "requestSubmittedDescription": "Vaš menadžer će biti obaviješten i moći će odobriti ili odbiti vaš zahtjev.",
       "requestTitle": "Zatraži izuzetak usklađenosti",
       "submit": "Podnesi zahtjev",
-      "type": "Vrsta izuzetka"
+      "type": "Vrsta izuzetka",
+      "types": {
+        "overtimeDaily": "Dnevni prekovremeni rad",
+        "overtimeMonthly": "Mjesečni prekovremeni rad",
+        "overtimeWeekly": "Sedmični prekovremeni rad",
+        "restPeriod": "Period odmora"
+      }
     },
     "hasApprovedException": "Imate odobren izuzetak. Možete nastaviti.",
     "moreAlerts": "više",

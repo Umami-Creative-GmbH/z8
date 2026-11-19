@@ -1,0 +1,86 @@
+{
+  "root": "X:\\t3-code\\worktrees\\z8\\t3-4999db72-6c906cbd55870c06\\.tmp\\1740-upload-independent-checks",
+  "scope": "SAFE synthetic source/results/source-config pins and ownership metadata only. Private raw logs/JSON/auth/profile/controller/bodies/inventories/failure images excluded.",
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "bytes": 10525,
+      "sha256": "84f35c57ff8631f5c9c205f83a3f224ec1f66048ae196da9dc4b0dbe705f80df"
+    },
+    {
+      "path": "audit.cjs",
+      "bytes": 3356,
+      "sha256": "629becf06c25ac3bf068cd3b7d68f3178c217a2658efd7ee3e3babd397488743"
+    },
+    {
+      "path": "bridge.cjs",
+      "bytes": 975,
+      "sha256": "020826539255ebf84652f7ce85468afc80e193614a1a44092fabf859d213a3c5"
+    },
+    {
+      "path": "browser-upload.config.mts",
+      "bytes": 604,
+      "sha256": "c407d808ec61ac1ad75059d6699e957c5fb05532a53bec6a01925da6f6266bd0"
+    },
+    {
+      "path": "cold-cache.cjs",
+      "bytes": 540,
+      "sha256": "efdc48bb6f93f6a1601965cac01bd01fb2171e0e48548e4107d6b7119e17ae59"
+    },
+    {
+      "path": "minimize.cjs",
+      "bytes": 4583,
+      "sha256": "271fe166a75c44cad3f8423b61c4784387cd2c58b58d399e1a7f735dc9d67e07"
+    },
+    {
+      "path": "results.cjs",
+      "bytes": 4750,
+      "sha256": "9e24b80c5f71fa7e32c5868a6f61c9cf1a85ca183e44771e29cf41ca772fc286"
+    },
+    {
+      "path": "summarize.cjs",
+      "bytes": 587,
+      "sha256": "9764d67625158633124dc691fe3078f92f5a5b1bdee18c39b1f0e4a417ecee5a"
+    },
+    {
+      "path": "seal.cjs",
+      "bytes": 1384,
+      "sha256": "c1fffc37c193e12ca233814328bec4065c2e56b83722cebe1156143e91a887ca"
+    },
+    {
+      "path": "public-surrounding.test.tsx",
+      "bytes": 16413,
+      "sha256": "5b08a75071556e15b57f75ec7b1e71dbfeff3992ef9e88f086287c49c91bbc7b"
+    },
+    {
+      "path": "upload-review.test.tsx",
+      "bytes": 11719,
+      "sha256": "72dcb4bbd84bced60dee521bba77b33fdbe4d948357a6455563e27727ef7f8c4"
+    },
+    {
+      "path": "workspace-recovery-v1.test.tsx",
+      "bytes": 9207,
+      "sha256": "96438f2716937931c581c87f0ff242482637d32ce0c18e13ea563f705b10eaae"
+    },
+    {
+      "path": "workspace-recovery.test.tsx",
+      "bytes": 9336,
+      "sha256": "ad3ec517e09036508f362e27124eb205e3e61cb131e5fb1f858fab3855b0900b"
+    },
+    {
+      "path": "candidate-audit.json",
+      "bytes": 34111,
+      "sha256": "499a48716b134eb348557f7246996cfcc6012c3438d359da714234a62f25e834"
+    },
+    {
+      "path": "results.json",
+      "bytes": 12220,
+      "sha256": "f784b47f48a8c4f75873599adbc3565a9c691606a7d8b071b59c593c61e5a51a"
+    },
+    {
+      "path": "resource-seal.json",
+      "bytes": 429,
+      "sha256": "ab676f178800f8963dad691c37c459ed53f5a4921b6bd9e591bf3d688e4412b2"
+    }
+  ]
+}

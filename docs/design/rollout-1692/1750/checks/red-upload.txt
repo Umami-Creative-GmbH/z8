@@ -1,0 +1,29 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+ ❯ |unit| src/components/travel-expenses/report/submitted-report-receipts.test.tsx (13 tests | 1 failed | 12 skipped) 22ms
+   ❯ adding a missing receipt during review (#1255) (13)
+     × suppresses a retired receipt completion 21ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| src/components/travel-expenses/report/submitted-report-receipts.test.tsx > adding a missing receipt during review (#1255) > suppresses a retired receipt completion
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+Received:
+  1st vi.fn() call:
+    Array [
+      undefined,
+    ]
+Number of calls: 1
+ ❯ src/components/travel-expenses/report/submitted-report-receipts.test.tsx:75:25
+     73|   cleanup();
+     74|   await act(async () => { complete({ok:true}); });
+     75|   expect(onChanged).not.toHaveBeenCalled();
+       |                         ^
+     76|  });
+     77|  it("attaches the selected file to the viewed submission and reloads i…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 skipped (13)
+   Start at  12:41:51
+   Duration  891ms (environment 56%, import 27%, transform 8%, setup 4%, tests 4%, worker 1%)

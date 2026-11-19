@@ -1,0 +1,58 @@
+{
+  "at": "2026-11-18T03:49:33.802Z",
+  "filters": [
+    {
+      "label": "All6",
+      "expected": 6,
+      "actual": 6,
+      "pass": true
+    },
+    {
+      "label": "To finish4",
+      "expected": 4,
+      "actual": 4,
+      "pass": true
+    },
+    {
+      "label": "In review1",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "label": "Approved1",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "label": "Awaiting reimbursement1",
+      "expected": 1,
+      "actual": 1,
+      "pass": true
+    },
+    {
+      "label": "Rejected0",
+      "expected": 0,
+      "actual": 0,
+      "pass": true,
+      "noMatch": false
+    }
+  ],
+  "showAllVisible": true,
+  "showAllRestored": true,
+  "realReportRows": 3,
+  "personalOnlyDestinations": true,
+  "legacyRows": [
+    "Receipt claim · Hamburg legacy-approved\nEarlier claim\n\nMar 29, 2026\n\nClaimed:\n€120.50\n\n€120.50 outstanding\n\nApproved",
+    "Receipt claim · Hamburg legacy-review\nEarlier claim\n\nMar 29, 2026\n\nClaimed:\n€120.50\n\nAwaiting review",
+    "Receipt claim · Hamburg legacy-draft\nEarlier claim\n\nMar 29, 2026\n\nContinue as report\n\nClaimed:\n€120.50\n\nDraft"
+  ],
+  "currentRows": [
+    "Untitled trip\n\nNo travel dates yet\n0 expenses\n\nReimbursable to you:\n€0.00\n\nDraft",
+    "Untitled mileage\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft",
+    "Untitled receipt\n\nNo date yet\n\nReimbursable to you:\n€0.00\n\n1 expense not counted yet\n\nDraft"
+  ],
+  "orderMatchesThreeNewestDrafts": true,
+  "qualification": "Six observed states only: no populated rejected/settled/current-approved report, no complete accounting matrix."
+}

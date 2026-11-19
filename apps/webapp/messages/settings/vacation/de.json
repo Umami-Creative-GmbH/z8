@@ -61,6 +61,7 @@
           "allowance": "Anspruch",
           "allowanceForYear": "Urlaubsanspruch für {year}",
           "assignedPolicy": "Zugewiesene Richtlinie",
+          "backToAllowances": "Zurück zu den Mitarbeiteransprüchen",
           "cancel": "Abbrechen",
           "carryover": "Übertrag",
           "carryoverDaysOptional": "Übertragbare Tage (optional)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Standard: {days} Tage",
           "employeeInformation": "Mitarbeiterinformationen",
           "errors": {
+            "adjustmentReasonRequired": "Geben Sie einen Grund ein, um diese Anpassung zu erfassen.",
             "createAdjustmentFailed": "Anpassung konnte nicht erstellt werden",
-            "unexpected": "Ein unerwarteter Fehler ist aufgetreten",
+            "loadFailed": "Der Urlaubsanspruch des Mitarbeiters konnte nicht geladen werden.",
             "updateAllowanceFailed": "Anspruch konnte nicht aktualisiert werden",
             "updatePolicyAssignmentFailed": "Richtlinienzuweisung konnte nicht aktualisiert werden"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "Urlaubsansprüche der Mitarbeiter verwalten",
           "managers": "Manager",
           "overrideEffectivePolicy": "Den zugewiesenen Richtlinienanspruch ({days} Tage) für diesen Mitarbeiter überschreiben",
+          "partialSave": {
+            "description": "Ihre Eingaben bleiben erhalten. Ein erneuter Versuch speichert nur das, was noch fehlt.",
+            "failed": {
+              "adjustment": "Manuelle Anpassung konnte nicht gespeichert werden: {reason}",
+              "allowance": "Benutzerdefinierter Anspruch konnte nicht gespeichert werden: {reason}",
+              "policy": "Richtlinienzuweisung konnte nicht gespeichert werden: {reason}"
+            },
+            "pending": {
+              "adjustment": "Manuelle Anpassung noch nicht gespeichert.",
+              "allowance": "Benutzerdefinierter Anspruch noch nicht gespeichert.",
+              "policy": "Richtlinienzuweisung noch nicht gespeichert."
+            },
+            "retry": "Nicht gespeicherte Änderungen erneut versuchen",
+            "saved": {
+              "adjustment": "Manuelle Anpassung gespeichert.",
+              "allowance": "Benutzerdefinierter Anspruch gespeichert.",
+              "policy": "Richtlinienzuweisung gespeichert."
+            },
+            "title": "Einige Änderungen wurden nicht gespeichert",
+            "titleNothingSaved": "Änderungen wurden nicht gespeichert"
+          },
           "policyOptionDays": "{name} ({days} Tage)",
           "position": "Position",
           "postingsSkipped": "Automatische Urlaubsbuchungen werden übersprungen, bis die Richtlinienkonfiguration korrigiert wurde.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Warnung: \"{name}\" ist die Standardrichtlinie des Unternehmens. Sie müssen eine andere Richtlinie als Standard festlegen, bevor Sie diese löschen können.",
       "delete-description-v2": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Dadurch werden auch alle Zuweisungen für diese Richtlinie entfernt.",
       "deleteFailed": "Löschen der Richtlinie fehlgeschlagen",
+      "deleteLastDefault": "Dies ist die einzige Unternehmens-Standardrichtlinie. Legen Sie zuerst eine andere Richtlinie als Standard fest.",
       "delete-title": "Urlaubsrichtlinie löschen",
       "header": {
         "accrual": "Anspruch",
@@ -334,6 +358,7 @@
       },
       "loadError": "Laden der Richtlinien fehlgeschlagen",
       "max-days": "Max. {days} Tage",
+      "no-end-date": "Kein Enddatum",
       "none": "Keine",
       "no-policies-created": "Es wurden noch keine Urlaubsrichtlinien erstellt. Erstellen Sie eine Richtlinie, um Urlaubsansprüche für Ihr Team zu definieren.",
       "noSearchResults": "Keine Richtlinien entsprechen Ihrer Suche.",

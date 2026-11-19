@@ -2,8 +2,9 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { createApiKey } from "@/app/[locale]/(app)/settings/enterprise/api-keys/actions";
 import {
@@ -34,6 +35,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import {
 	API_KEY_SCOPES,
 	type ApiKeyScope,
@@ -101,15 +103,13 @@ function validateRateLimitMax(value: string, message: string) {
 
 function useApiKeyCreateController({
 	organizationId,
+	open,
 	onOpenChange,
 	onKeyCreated,
 }: ApiKeyCreateDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const invalidFormMessage = t(
-		"settings.apiKeys.form.invalid",
-		"Review the invalid form fields",
-	);
+	const invalidFormMessage = t("settings.apiKeys.form.invalid", "Review the invalid form fields");
 	const nameMinLengthMessage = t(
 		"settings.apiKeys.form.nameMinLength",
 		"Name must be at least 3 characters",
@@ -119,66 +119,87 @@ function useApiKeyCreateController({
 		"Enter a whole number from 10 to 10,000",
 	);
 
-	const createMutation = useMutation({
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["apiKeys", organizationId],
-			});
-		},
-		mutationFn: async (value: ApiKeyCreateFormValues) => {
-			const result = await createApiKey({
-				name: value.name.trim(),
-				expiresInDays:
-					value.expiresIn === "never" ? null : parseInt(value.expiresIn, 10),
-				scopes: value.selectedScopes,
-				rateLimitEnabled: value.rateLimitEnabled,
-				rateLimitMax: Number(
-					value.rateLimitEnabled
-						? value.rateLimitMax
-						: DEFAULT_FORM_VALUES.rateLimitMax,
-				),
-				rateLimitTimeWindow: Number(
-					value.rateLimitEnabled
-						? value.rateLimitTimeWindow
-						: DEFAULT_FORM_VALUES.rateLimitTimeWindow,
-				),
-			});
-			if (!result.success)
-				throw new Error(result.error || "Failed to create API key");
-			return result.data;
-		},
-	});
+	const lifetime = useRef<object | null>(null);
+	const operation = useRef<object | null>(null);
+	const [pending, setPending] = useState(false);
+	useLayoutEffect(() => {
+		lifetime.current = open ? {} : null;
+		return () => {
+			setPending(false);
+			lifetime.current = null;
+			operation.current = null;
+		};
+	}, [open]);
+	const createMutation = { isPending: pending };
 
 	const form = useForm({
 		defaultValues: DEFAULT_FORM_VALUES,
+		onSubmitMeta: null as { lifetime: object; command: object } | null,
 		validators: {
 			onMount: ({ value }) => validateForm(value, invalidFormMessage),
 			onChange: ({ value }) => validateForm(value, invalidFormMessage),
 			onSubmit: ({ value }) => validateForm(value, invalidFormMessage),
 		},
-		onSubmit: async ({ value }) => {
+		onSubmit: async ({ value, meta }) => {
+			const current = () =>
+				!!meta && meta.lifetime === lifetime.current && meta.command === operation.current;
+			if (!current()) return;
 			try {
-				const data = await createMutation.mutateAsync(value);
+				const result = await createApiKey({
+					name: value.name.trim(),
+					expiresInDays: value.expiresIn === "never" ? null : parseInt(value.expiresIn, 10),
+					scopes: value.selectedScopes,
+					rateLimitEnabled: value.rateLimitEnabled,
+					rateLimitMax: Number(
+						value.rateLimitEnabled ? value.rateLimitMax : DEFAULT_FORM_VALUES.rateLimitMax,
+					),
+					rateLimitTimeWindow: Number(
+						value.rateLimitEnabled
+							? value.rateLimitTimeWindow
+							: DEFAULT_FORM_VALUES.rateLimitTimeWindow,
+					),
+				});
+				if (!current()) return;
+				if (!result.success) {
+					toast.error(actionErrorMessage(t, result));
+					return;
+				}
 				form.reset(DEFAULT_FORM_VALUES);
-				toast.success(
-					t("settings.apiKeys.created", "API key created successfully"),
-				);
-				onKeyCreated(data);
-			} catch (error) {
-				toast.error(
-					error instanceof Error ? error.message : "Failed to create API key",
-				);
+				void queryClient.invalidateQueries({ queryKey: ["apiKeys", organizationId] });
+				toast.success(t("settings.apiKeys.created", "API key created successfully"));
+				onKeyCreated(result.data);
+			} catch {
+				if (current())
+					toast.error(
+						t(
+							"settings.apiKeys.createFailed",
+							"Could not confirm key creation. Refresh the list before trying again.",
+						),
+					);
 			}
 		},
 	});
 
 	const handleOpenChange = (isOpen: boolean) => {
-		if (createMutation.isPending || form.state.isSubmitting) return;
+		if (!lifetime.current || operation.current) return;
 		form.reset(DEFAULT_FORM_VALUES);
 		onOpenChange(isOpen);
 	};
 
+	const submit = () => {
+		if (operation.current || !lifetime.current) return;
+		const command = {};
+		operation.current = command;
+		setPending(true);
+		void form.handleSubmit({ lifetime: lifetime.current, command }).finally(() => {
+			if (operation.current === command) {
+				operation.current = null;
+				setPending(false);
+			}
+		});
+	};
 	return {
+		submit,
 		createMutation,
 		form,
 		handleOpenChange,
@@ -192,6 +213,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 	const { open } = props;
 	const {
 		createMutation,
+		submit,
 		form,
 		handleOpenChange,
 		nameMinLengthMessage,
@@ -205,12 +227,12 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
 			<ActionPanelContent showCloseButton={!createMutation.isPending}>
 				<form
-					className="contents"
+					className="flex min-h-0 flex-1 flex-col"
 					noValidate
 					onSubmit={(event) => {
 						event.preventDefault();
 						event.stopPropagation();
-						void form.handleSubmit();
+						submit();
 					}}
 				>
 					<ActionPanelHeader>
@@ -229,8 +251,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 						<form.Field
 							name="name"
 							validators={{
-								onChange: ({ value }) =>
-									isNameValid(value) ? undefined : nameMinLengthMessage,
+								onChange: ({ value }) => (isNameValid(value) ? undefined : nameMinLengthMessage),
 							}}
 						>
 							{(field) => (
@@ -244,9 +265,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 											name="apiKeyName"
 											autoComplete="off"
 											value={field.state.value}
-											onChange={(event) =>
-												field.handleChange(event.target.value)
-											}
+											onChange={(event) => field.handleChange(event.target.value)}
 											onBlur={field.handleBlur}
 											placeholder={t(
 												"settings.apiKeys.form.namePlaceholder",
@@ -256,10 +275,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 										/>
 									</TFormControl>
 									<TFormDescription className="text-xs">
-										{t(
-											"settings.apiKeys.form.nameHelp",
-											"A descriptive name to identify this key",
-										)}
+										{t("settings.apiKeys.form.nameHelp", "A descriptive name to identify this key")}
 									</TFormDescription>
 									<TFormMessage field={field} />
 								</TFormItem>
@@ -286,10 +302,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 										<SelectContent>
 											{EXPIRATION_OPTIONS.map((option) => (
 												<SelectItem key={option.value} value={option.value}>
-													{t(
-														`settings.apiKeys.expiration.${option.value}`,
-														option.label,
-													)}
+													{t(`settings.apiKeys.expiration.${option.value}`, option.label)}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -304,23 +317,18 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 								onChange: ({ value }) =>
 									value.length > 0
 										? undefined
-										: t(
-												"settings.apiKeys.form.scopesRequired",
-												"Select at least one permission",
-											),
+										: t("settings.apiKeys.form.scopesRequired", "Select at least one permission"),
 							}}
 						>
 							{(field) => (
 								<fieldset
 									className="space-y-2"
-									aria-describedby={
-										fieldHasError(field) ? "api-key-scopes-error" : undefined
-									}
+									aria-describedby={fieldHasError(field) ? "api-key-scopes-error" : undefined}
 								>
 									<legend className="font-medium text-sm leading-none">
 										{t("settings.apiKeys.form.scopes", "Permissions")} *
 									</legend>
-									<div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-muted/30">
+									<div className="grid grid-cols-1 gap-2 p-3 border rounded-md bg-muted/30 sm:grid-cols-2">
 										{API_KEY_SCOPES.map((scope) => (
 											<ApiKeyScopeOption
 												key={scope}
@@ -331,9 +339,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 												onCheckedChange={() =>
 													field.handleChange(
 														field.state.value.includes(scope)
-															? field.state.value.filter(
-																	(selectedScope) => selectedScope !== scope,
-																)
+															? field.state.value.filter((selectedScope) => selectedScope !== scope)
 															: [...field.state.value, scope],
 													)
 												}
@@ -341,11 +347,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 										))}
 									</div>
 									{fieldHasError(field) && (
-										<p
-											id="api-key-scopes-error"
-											className="text-xs text-destructive"
-											role="alert"
-										>
+										<p id="api-key-scopes-error" className="text-xs text-destructive" role="alert">
 											{field.state.meta.errors.join(", ")}
 										</p>
 									)}
@@ -360,18 +362,10 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 										<Checkbox
 											id="rateLimitEnabled"
 											checked={field.state.value}
-											onCheckedChange={(checked) =>
-												field.handleChange(checked === true)
-											}
+											onCheckedChange={(checked) => field.handleChange(checked === true)}
 										/>
-										<Label
-											htmlFor="rateLimitEnabled"
-											className="font-normal cursor-pointer"
-										>
-											{t(
-												"settings.apiKeys.form.rateLimit",
-												"Enable rate limiting",
-											)}
+										<Label htmlFor="rateLimitEnabled" className="font-normal cursor-pointer">
+											{t("settings.apiKeys.form.rateLimit", "Enable rate limiting")}
 										</Label>
 									</div>
 									{field.state.value && (
@@ -380,10 +374,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 												name="rateLimitMax"
 												validators={{
 													onChange: ({ value }) =>
-														validateRateLimitMax(
-															value,
-															rateLimitMaxInvalidMessage,
-														),
+														validateRateLimitMax(value, rateLimitMaxInvalidMessage),
 												}}
 											>
 												{(rateLimitField) => (
@@ -392,23 +383,16 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 															htmlFor="rateLimitMax"
 															hasError={fieldHasError(rateLimitField)}
 														>
-															{t(
-																"settings.apiKeys.form.rateLimitMaxRequests",
-																"Max requests",
-															)}
+															{t("settings.apiKeys.form.rateLimitMaxRequests", "Max requests")}
 														</TFormLabel>
-														<TFormControl
-															hasError={fieldHasError(rateLimitField)}
-														>
+														<TFormControl hasError={fieldHasError(rateLimitField)}>
 															<Input
 																id="rateLimitMax"
 																name="rateLimitMax"
 																type="number"
 																value={rateLimitField.state.value}
 																onChange={(event) =>
-																	rateLimitField.handleChange(
-																		event.target.value,
-																	)
+																	rateLimitField.handleChange(event.target.value)
 																}
 																onBlur={rateLimitField.handleBlur}
 																min={10}
@@ -451,9 +435,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 						>
 							{([canSubmit, isSubmitting]) => (
 								<Button type="submit" disabled={!canSubmit || isSubmitting}>
-									{isSubmitting && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" />
-									)}
+									{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 									{t("settings.apiKeys.form.create", "Create Key")}
 								</Button>
 							)}

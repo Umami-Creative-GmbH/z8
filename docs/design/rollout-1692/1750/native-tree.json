@@ -1,0 +1,6 @@
+{
+  "source": "7e466fae2668148a856b6dfb2fdaf605d7366029",
+  "passed": false,
+  "targetNodes": [],
+  "reason": "Final native tree command produced zero bytes after the owned runtime disappeared. No final-source target-tree acceptance established."
+}

@@ -22,6 +22,8 @@ The right reference feel is closer to Stripe's crisp, technical polish than to e
 
 Preserve support for both light and dark themes. Keep the overall visual language practical, legible, and operationally trustworthy rather than ornamental.
 
+For UI refreshes and refactoring, read the [UI and UX language](ux-language.md): page organization, navigation, visual grammar, interactions and feature-preservation requirements, including sidebar collapse. For dashboard or time-tracking work, also read the [approved screen direction](../design/2026-11-14-dashboard-time-tracking-redesign.md), with its module organization, prototype and production conversion requirements.
+
 ## Design Principles
 
 1. Prioritize operational clarity: layouts, copy, and interaction patterns should make time tracking, approvals, and reporting feel immediately understandable.

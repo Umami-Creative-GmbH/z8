@@ -1,0 +1,364 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-2a184f7c-c55e0704d64f87a8/apps/webapp
+
+ ❯ |unit| src/components/travel-expenses/travel-expense-claim-detail.test.tsx (23 tests | 1 failed) 2192ms
+   ❯ legacy draft continuation (#616) (9)
+     × withdraws a converted report link when the conversion owner refuses the read 1056ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/travel-expenses/travel-expense-claim-detail.test.tsx > legacy draft continuation (#616) > withdraws a converted report link when the conversion owner refuses the read
+TestingLibraryElementError: Unable to find an element with the text: Draft continuation is not available for the current reader.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div>
+      <div
+        class="min-w-0 space-y-6"
+      >
+        <div
+          class="flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground min-w-0 shadow-none"
+          data-slot="card"
+        >
+          <div
+            class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+            data-slot="card-header"
+          >
+            <p
+              class="text-sm text-muted-foreground"
+            >
+              Legacy claim
+              <span
+                class="mt-1 block break-all font-mono text-xs"
+              >
+                old-claim
+              </span>
+            </p>
+            <h2
+              class="font-semibold leading-none"
+            >
+              Receipt
+               · 
+              Draft
+            </h2>
+          </div>
+          <div
+            class="min-w-0 px-6 space-y-4"
+            data-slot="card-content"
+          >
+            <dl
+              class="grid min-w-0 gap-6 sm:grid-cols-2"
+            >
+              <div
+                class="min-w-0"
+              >
+                <dt
+                  class="text-sm text-muted-foreground"
+                >
+                  Amount
+                </dt>
+                <dd
+                  class="break-words text-2xl font-semibold tabular-nums tracking-tight"
+                >
+                  120,50 €
+                </dd>
+              </div>
+              <div
+                class="min-w-0"
+              >
+                <dt
+                  class="text-sm text-muted-foreground"
+                >
+                  Original amount
+                </dt>
+                <dd
+                  class="break-words text-lg font-medium tabular-nums"
+                >
+                  120,50 €
+                </dd>
+              </div>
+              <div
+                class="min-w-0"
+              >
+                <dt
+                  class="text-sm text-muted-foreground"
+                >
+                  Date Range
+                </dt>
+                <dd>
+                  <span>
+                    Trip date context not recorded (legacy claim)
+                  </span>
+                </dd>
+              </div>
+              <div
+                class="min-w-0"
+              >
+                <dt
+                  class="text-sm text-muted-foreground"
+                >
+                  Destination
+                </dt>
+                <dd
+                  class="break-words"
+                >
+                  Hamburg, DE
+                </dd>
+              </div>
+            </dl>
+            <div
+              class="border-t pt-4"
+            >
+              <h3
+                class="text-sm text-muted-foreground"
+              >
+                Notes
+              </h3>
+              <p
+                class="whitespace-pre-wrap break-words"
+              >
+                Original context
+              </p>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground min-w-0 shadow-none"
+          data-slot="card"
+        >
+          <div
+            class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+            data-slot="card-header"
+          >
+            <h2
+              class="font-semibold leading-none"
+            >
+              Receipts
+            </h2>
+          </div>
+          <div
+            class="min-w-0 px-6 space-y-3"
+            data-slot="card-content"
+          >
+            <ul
+              class="divide-y"
+            >
+              <li
+                class="min-w-0 space-y-3 py-4 first:pt-0 last:pb-0"
+              >
+                <p
+                  class="break-all font-medium"
+                >
+                  hotel.pdf
+                </p>
+                <dl
+                  class="space-y-1 break-all text-sm text-muted-foreground"
+                />
+                <p
+                  class="text-sm text-muted-foreground"
+                >
+                  Legacy receipt: content checksum was not recorded.
+                </p>
+                <div
+                  class="flex flex-wrap gap-4 text-sm"
+                >
+                  <a
+                    aria-label="Preview hotel.pdf"
+                    class="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+                    href="/api/travel-expenses/old-claim/receipts/receipt"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Preview
+                  </a>
+                  <a
+                    aria-label="Download hotel.pdf"
+                    class=[3...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div>
+      <div
+        class="min-w-0 space-y-6"
+      >
+        <div
+          class="flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground min-w-0 shadow-none"
+          data-slot="card"
+        >
+          <div
+            class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+            data-slot="card-header"
+          >
+            <p
+              class="text-sm text-muted-foreground"
+            >
+              Legacy claim
+              <span
+                class="mt-1 block break-all font-mono text-xs"
+              >
+                old-claim
+              </span>
+            </p>
+            <h2
+              class="font-semibold leading-none"
+            >
+              Receipt
+               · 
+              Draft
+            </h2>
+          </div>
+          <div
+            class="min-w-0 px-6 space-y-4"
+            data-slot="card-content"
+          >
+            <dl
+              class="grid min-w-0 gap-6 sm:grid-cols-2"
+            >
+              <div
+                class="min-w-0"
+              >
+                <dt
+                  class="text-sm text-muted-foreground"
+                >
+                  Amount
+                </dt>
+                <dd
+                  class="break-words text-2xl font-semibold tabular-nums tracking-tight"
+                >
+                  120,50 €
+                </dd>
+              </div>
+              <div
+                class="min-w-0"
+              >
+                <dt
+                  class="text-sm text-muted-foreground"
+                >
+                  Original amount
+                </dt>
+                <dd
+                  class="break-words text-lg font-medium tabular-nums"
+                >
+                  120,50 €
+                </dd>
+              </div>
+              <div
+                class="min-w-0"
+              >
+                <dt
+                  class="text-sm text-muted-foreground"
+                >
+                  Date Range
+                </dt>
+                <dd>
+                  <span>
+                    Trip date context not recorded (legacy claim)
+                  </span>
+                </dd>
+              </div>
+              <div
+                class="min-w-0"
+              >
+                <dt
+                  class="text-sm text-muted-foreground"
+                >
+                  Destination
+                </dt>
+                <dd
+                  class="break-words"
+                >
+                  Hamburg, DE
+                </dd>
+              </div>
+            </dl>
+            <div
+              class="border-t pt-4"
+            >
+              <h3
+                class="text-sm text-muted-foreground"
+              >
+                Notes
+              </h3>
+              <p
+                class="whitespace-pre-wrap break-words"
+              >
+                Original context
+              </p>
+            </div>
+          </div>
+        </div>
+        <div
+          class="flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground min-w-0 shadow-none"
+          data-slot="card"
+        >
+          <div
+            class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[minmax(0,1fr)_auto] [.border-b]:pb-6"
+            data-slot="card-header"
+          >
+            <h2
+              class="font-semibold leading-none"
+            >
+              Receipts
+            </h2>
+          </div>
+          <div
+            class="min-w-0 px-6 space-y-3"
+            data-slot="card-content"
+          >
+            <ul
+              class="divide-y"
+            >
+              <li
+                class="min-w-0 space-y-3 py-4 first:pt-0 last:pb-0"
+              >
+                <p
+                  class="break-all font-medium"
+                >
+                  hotel.pdf
+                </p>
+                <dl
+                  class="space-y-1 break-all text-sm text-muted-foreground"
+                />
+                <p
+                  class="text-sm text-muted-foreground"
+                >
+                  Legacy receipt: content checksum was not recorded.
+                </p>
+                <div
+                  class="flex flex-wrap gap-4 text-sm"
+                >
+                  <a
+                    aria-label="Preview hotel.pdf"
+                    class="rounded-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
+                    href="/api/travel-expenses/old-claim/receipts/receipt"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Preview
+                  </a>
+                  <a
+                    aria-label="Download hotel.pdf"
+                    class=[3...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/travel-expenses/travel-expense-claim-detail.test.tsx:415:23
+    413|   await screen.findByRole("link",{name:/Open the report/});
+    414|   await act(()=>client.invalidateQueries({queryKey:["travel-expenses"]…
+    415|   expect(await screen.findByText("Draft continuation is not available …
+       |                       ^
+    416|   expect(screen.queryByRole("link",{name:/Open the report/})).toBeNull…
+    417|   expect(screen.queryByRole("button",{name:"Continue as report"})).toB…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  08:34:25
+   Duration  3.01s (tests 79%, environment 12%, import 6%, transform 2%, setup 1%)
+

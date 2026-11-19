@@ -23,15 +23,9 @@ vi.mock("@/navigation", () => ({
 }));
 
 vi.mock("@/components/ui/select", () => ({
-	Select: ({ children }: { children: React.ReactNode }) => (
-		<div>{children}</div>
-	),
-	SelectContent: ({ children }: { children: React.ReactNode }) => (
-		<div>{children}</div>
-	),
-	SelectItem: ({ children }: { children: React.ReactNode }) => (
-		<div>{children}</div>
-	),
+	Select: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 	SelectTrigger: ({
 		children,
 		id,
@@ -63,18 +57,9 @@ describe("PlatformAnalyticsControls", () => {
 		expect(screen.getByText("Bucket")).toBeTruthy();
 		expect(screen.getByLabelText("Range")).toBeTruthy();
 		expect(screen.getByLabelText("Bucket")).toBeTruthy();
-		expect(tMock).toHaveBeenCalledWith(
-			"admin:admin.analytics.controls.range.label",
-			"Range",
-		);
-		expect(tMock).toHaveBeenCalledWith(
-			"admin:admin.analytics.controls.range.30d",
-			"Last 30 days",
-		);
-		expect(tMock).toHaveBeenCalledWith(
-			"admin:admin.analytics.controls.bucket.day",
-			"Daily",
-		);
+		expect(tMock).toHaveBeenCalledWith("admin:admin.analytics.controls.range.label", "Range");
+		expect(tMock).toHaveBeenCalledWith("admin:admin.analytics.controls.range.30d", "Last 30 days");
+		expect(tMock).toHaveBeenCalledWith("admin:admin.analytics.controls.bucket.day", "Daily");
 	});
 
 	it("lets the parent boundary show a meaningful fallback when URL state suspends", () => {

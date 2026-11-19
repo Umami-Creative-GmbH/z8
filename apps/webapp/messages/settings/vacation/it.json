@@ -61,6 +61,7 @@
           "allowance": "Spettanza",
           "allowanceForYear": "Permesso ferie per il {year}",
           "assignedPolicy": "Policy assegnata",
+          "backToAllowances": "Torna ai monte ferie dei dipendenti",
           "cancel": "Annulla",
           "carryover": "Riporto",
           "carryoverDaysOptional": "Giorni di riporto (opzionale)",
@@ -73,8 +74,9 @@
           "defaultDaysPlaceholder": "Predefinito: {days} giorni",
           "employeeInformation": "Informazioni dipendente",
           "errors": {
+            "adjustmentReasonRequired": "Inserisci un motivo per registrare questa rettifica.",
             "createAdjustmentFailed": "Impossibile creare la rettifica",
-            "unexpected": "Si è verificato un errore imprevisto",
+            "loadFailed": "Impossibile caricare il monte ferie del dipendente.",
             "updateAllowanceFailed": "Impossibile aggiornare il permesso",
             "updatePolicyAssignmentFailed": "Impossibile aggiornare l'assegnazione della policy"
           },
@@ -82,6 +84,27 @@
           "manageAllowances": "gestisci i permessi ferie dei dipendenti",
           "managers": "Manager",
           "overrideEffectivePolicy": "Sostituisci la quota prevista dalla politica ({days} giorni) per questo dipendente",
+          "partialSave": {
+            "description": "I dati inseriti sono stati mantenuti. Riprova per salvare solo ciò che manca ancora.",
+            "failed": {
+              "adjustment": "Impossibile salvare la rettifica manuale: {reason}",
+              "allowance": "Impossibile salvare il monte ferie personalizzato: {reason}",
+              "policy": "Impossibile salvare l'assegnazione della policy: {reason}"
+            },
+            "pending": {
+              "adjustment": "Rettifica manuale non ancora salvata.",
+              "allowance": "Monte ferie personalizzato non ancora salvato.",
+              "policy": "Assegnazione della policy non ancora salvata."
+            },
+            "retry": "Riprova a salvare le modifiche non salvate",
+            "saved": {
+              "adjustment": "Rettifica manuale salvata.",
+              "allowance": "Monte ferie personalizzato salvato.",
+              "policy": "Assegnazione della policy salvata."
+            },
+            "title": "Alcune modifiche non sono state salvate",
+            "titleNothingSaved": "Le modifiche non sono state salvate"
+          },
           "policyOptionDays": "{name} ({days} giorni)",
           "position": "Posizione",
           "postingsSkipped": "Le registrazioni automatiche delle ferie vengono ignorate finché la configurazione della politica non viene risolta.",
@@ -322,6 +345,7 @@
       "delete-default-warning": "Attenzione: \"{name}\" è la policy predefinita aziendale. È necessario impostare un'altra policy come predefinita prima di eliminare questa.",
       "delete-description-v2": "Sei sicuro di voler eliminare \"{name}\"? Questo rimuoverà anche tutte le assegnazioni per questa policy.",
       "deleteFailed": "Impossibile eliminare la policy",
+      "deleteLastDefault": "Questa è l'unica policy predefinita dell'azienda. Imposta prima un'altra policy come predefinita.",
       "delete-title": "Elimina policy ferie",
       "header": {
         "accrual": "Maturazione",
@@ -334,6 +358,7 @@
       },
       "loadError": "Impossibile caricare le policy",
       "max-days": "Massimo {days} giorni",
+      "no-end-date": "Nessuna data di fine",
       "none": "Nessuno",
       "no-policies-created": "Nessuna politica di ferie creata. Crea una politica per definire le indennità di ferie per il tuo team.",
       "noSearchResults": "Nessuna politica corrisponde alla tua ricerca.",

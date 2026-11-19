@@ -1,0 +1,13 @@
+{
+  "at": "2026-11-18T04:23:07.653Z",
+  "canonicalGrantReadback": [
+    {
+      "scope": "all",
+      "can_export": false,
+      "can_record_reimbursements": false,
+      "is_active": true
+    }
+  ],
+  "pass": true,
+  "writeMethod": "Actual canonical settings UI save"
+}

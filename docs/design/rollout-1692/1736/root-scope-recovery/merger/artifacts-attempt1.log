@@ -1,0 +1,227 @@
+node:internal/child_process:1144
+    result.error = new ErrnoException(result.error, 'spawnSync ' + options.file);
+                   ^
+
+<ref *1> Error: spawnSync git ENOBUFS
+    at Object.spawnSync (node:internal/child_process:1144:20)
+    at spawnSync (node:child_process:928:24)
+    at execFileSync (node:child_process:971:15)
+    at git (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1736-merger/verify-artifacts.mjs:13:21)
+    at tree (file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1736-merger/verify-artifacts.mjs:19:29)
+    at file:///X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/1736-merger/verify-artifacts.mjs:20:16
+    at ModuleJob.run (node:internal/modules/esm/module_job:569:25)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  errno: -4060,
+  code: 'ENOBUFS',
+  syscall: 'spawnSync git',
+  path: 'git',
+  spawnargs: [ 'ls-tree', '-r', '58ea18603a936d102f0625e3303f4c05689a9961' ],
+  error: [Circular *1],
+  status: null,
+  signal: 'SIGTERM',
+  output: [
+    null,
+    '100644 blob adf68c517f2d7d2781587d619de07f4de286da57\t.agents/skills/apple-design/SKILL.md\n' +
+      '100644 blob fb58ef9febcfd558cdb4517e370f19034869ba26\t.agents/skills/ask-matt/PHASE-BOUNDARIES.md\n' +
+      '100644 blob 4bfeeb61dae548b8b7754c4fba7bd40ab3926099\t.agents/skills/ask-matt/SKILL.md\n' +
+      '100644 blob 5c60d51b5b1248d7210bff8c6b42a5a06524b8a4\t.agents/skills/ask-matt/agents/openai.yaml\n' +
+      '100644 blob 74195ce314348e2f2eb3fa992d51eaaf29a9281c\t.agents/skills/better-auth-best-practices/SKILL.md\n' +
+      '100644 blob 77f82fc59c89c3a83ed5a92521dc2869f0533724\t.agents/skills/claude-handoff/SKILL.md\n' +
+      '100644 blob 0a7aa5da50d0e73248fc17fb8fe82409ec071eaf\t.agents/skills/claude-handoff/agents/openai.yaml\n' +
+      '100644 blob 83183e0ad36fd0eef25d37c7e483284b7e34c1f0\t.agents/skills/code-review/SKILL.md\n' +
+      '100644 blob 9076774ba327f49068db9273feceda03bfe940fa\t.agents/skills/code-review/agents/openai.yaml\n' +
+      '100644 blob cd94075cfd754d147555c5d747a16431ed4c7dd8\t.agents/skills/codebase-design/DEEPENING.md\n' +
+      '100644 blob aebdc9f8c05b40d7832de38e2fd8380e1e5507ac\t.agents/skills/codebase-design/DESIGN-IT-TWICE.md\n' +
+      '100644 blob 3f63c8146dd2604b419c929e9876b90c30d410e9\t.agents/skills/codebase-design/SKILL.md\n' +
+      '100644 blob 3180715edb37f6e96bec42f92f00169faa8886ef\t.agents/skills/codebase-design/agents/openai.yaml\n' +
+      '100644 blob 515e6dd09effbdc46e6ccd5f46267b90e728f674\t.agents/skills/create-auth-skill/SKILL.md\n' +
+      '100644 blob d039541ddd1c46e6ddbd662fe99d49b686fc5e12\t.agents/skills/diagnosing-bugs/SKILL.md\n' +
+      '100644 blob a13a755a77634ce61a649a3a0d905a66d3865b35\t.agents/skills/diagnosing-bugs/agents/openai.yaml\n' +
+      '100644 blob 243198464a8401a7ba1d63b3708fa43c3d067665\t.agents/skills/diagnosing-bugs/scripts/hitl-loop.template.sh\n' +
+      '100644 blob d7e61f30a9fd8ca70d9ee68f019c2a9ebf2d13f7\t.agents/skills/domain-modeling/ADR-FORMAT.md\n' +
+      '100644 blob 9c0b4c7a2e8507c23cbb5e0baa66d81699321cc6\t.agents/skills/domain-modeling/GLOSSARY-FORMAT.md\n' +
+      '100644 blob a4438c6879c517d1a08e2b5fbca049b632688dfe\t.agents/skills/domain-modeling/SKILL.md\n' +
+      '100644 blob 7f1522d2f11506ee205275ab7c282aa52366ecf6\t.agents/skills/domain-modeling/agents/openai.yaml\n' +
+      '100644 blob 3b7b7f166b5fde6c38decd6ef663258eb30465b0\t.agents/skills/email-and-password-best-practices/SKILL.md\n' +
+      '100644 blob f433b1a53f5b830a205fd2df78e2b34974656c7b\t.agents/skills/frontend-design/LICENSE.txt\n' +
+      '100644 blob 4efede84388f50f8baea6a060ec5ab906a1abe6b\t.agents/skills/frontend-design/SKILL.md\n' +
+      '100644 blob 58bcdd875b164093b95f436fa32a65c6cb5eb572\t.agents/skills/git-guardrails-claude-code/SKILL.md\n' +
+      '100644 blob 3f5d756f1b9b97d94cef1473fb480ccda5fdfbc1\t.agents/skills/git-guardrails-claude-code/agents/openai.yaml\n' +
+      '100644 blob c40b59cb47880fc9da8fe4179bd742f51f09d17d\t.agents/skills/git-guardrails-claude-code/scripts/block-dangerous-git.sh\n' +
+      '100644 blob 3947ff9c4ad980d14fc07fccbf659d47c114e81d\t.agents/skills/grill-me/SKILL.md\n' +
+      '100644 blob 4d6fb0c746c5d21364dce5d0cf8c51eab9712e7b\t.agents/skills/grill-me/agents/openai.yaml\n' +
+      '100644 blob 62b9efb6f991d1b229adee7506962f13ced0c499\t.agents/skills/grill-with-docs/SKILL.md\n' +
+      '100644 blob 5dbe2780a51be3e9b118bd7758a73e54a9384e11\t.agents/skills/grill-with-docs/agents/openai.yaml\n' +
+      '100644 blob d2f09a18e6a6c65c55f1271ba08dfeaf06f0bed3\t.agents/skills/grilling/SKILL.md\n' +
+      '100644 blob ddbdb96139c0c1dfe6bca698f39d0465674b8a39\t.agents/skills/grilling/agents/openai.yaml\n' +
+      '100644 blob a224edc643a20ddb989f9bca1547440169159810\t.agents/skills/handoff/SKILL.md\n' +
+      '100644 blob 6e1d8da121beceddc2f9ec7fa8714c1d914dd11a\t.agents/skills/handoff/agents/openai.yaml\n' +
+      '100644 blob a5f70c30ea8d9ac36c35582ac4023b7478f5bbf5\t.agents/skills/hetzner-server/SKILL.md\n' +
+      '100644 blob 73d36c23958bd04423ba3ded1c90ff0d0b858b72\t.agents/skills/implement-spec/SKILL.md\n' +
+      '100644 blob f5e91af21e38eb1a167ea5aa93dfc7da3c4637b4\t.agents/skills/implement-spec/agents/openai.yaml\n' +
+      '100644 blob bd49e472984c7b99aac40286fdae749bb955a842\t.agents/skills/implement/SKILL.md\n' +
+      '100644 blob f8794dc153b409052a9167baf10858cf01b36175\t.agents/skills/implement/agents/openai.yaml\n' +
+      '100644 blob e39e8255b8797cf8257d014fb6658fb533f3a399\t.agents/skills/improve-codebase-architecture/HTML-REPORT.md\n' +
+      '100644 blob f1eabb568464f03ae79a3346fc1918fdde6d8285\t.agents/skills/improve-codebase-architecture/SKILL.md\n' +
+      '100644 blob 706fdca096da5937fe57875a9154017d50668c42\t.agents/skills/improve-codebase-architecture/agents/openai.yaml\n' +
+      '100644 blob 9fe89c25f739eaee07d8a1aebe25e4ead8fabd7c\t.agents/skills/interface-design/SKILL.md\n' +
+      '100644 blob 7db545e48795990f23bdc2118984ae961d03f161\t.agents/skills/interface-design/references/critique.md\n' +
+      '100644 blob 665490653dd8d60a9606a1b1fa1d2e170ae4b456\t.agents/skills/interface-design/references/example.md\n' +
+      '100644 blob 6c4a50273e9023f9d4836c3261701f09a3f33d17\t.agents/skills/interface-design/references/principles.md\n' +
+      '100644 blob 7aa4a696b7ad712816c6a01342646b2c6b0c61ea\t.agents/skills/interface-design/references/validation.md\n' +
+      '100644 blob e58a474ca80feffdeb28842bc3bdee37da6510e7\t.agents/skills/loop-me/SKILL.md\n' +
+      '100644 blob 1a4f4111192ff75b4771e8a248c603994d5eafdc\t.agents/skills/loop-me/agents/openai.yaml\n' +
+      '100644 blob ae4f965e204fc93cedbc4e2c306e92829d93f800\t.agents/skills/migrate-to-shoehorn/SKILL.md\n' +
+      '100644 blob 3bd79ee2b502075c6d1fe40e6fe98f4fe3f3c5f5\t.agents/skills/migrate-to-shoehorn/agents/openai.yaml\n' +
+      '100644 blob 861896380767120ea800d44c8b4ee475f307ccf5\t.agents/skills/migrate-to-temporal-api/SKILL.md\n' +
+      '100644 blob d8fc80eb80a764002f2c80dbb284445e2ec3e4cc\t.agents/skills/migrate-to-temporal-api/refs/postgresql-temporal-persistence.md\n' +
+      '100644 blob a03551523fbcb3be1890438e2b25312ca8959a33\t.agents/skills/next-cache-components-adoption/SKILL.md\n' +
+      '100644 blob 7c83fab2306005d4d890cb1be3270a75927c6687\t.agents/skills/next-cache-components-adoption/references/dev-only-validations.md\n' +
+      '100644 blob 4e57a733406c80965515afadc9beced0ed06cbc8\t.agents/skills/next-cache-components-adoption/references/per-page-decisions.md\n' +
+      '100644 blob 4dea7ca4826ebd83a73f9a31f348f6d793755afb\t.agents/skills/next-cache-components-optimizer/SKILL.md\n' +
+      '100644 blob 9ec0cc04555a10b60e318c29c6d012caa19e04fd\t.agents/skills/next-cache-components-optimizer/reference/patterns.md\n' +
+      '100644 blob 31fa2e04189de41260521fcd8cf8be2965fb5b01\t.agents/skills/next-cache-components-optimizer/reference/real-app-patterns.md\n' +
+      '100644 blob bf106faaed9bf1780b77917fd460724ca95bebc3\t.agents/skills/next-cache-components-optimizer/reference/red-test-robustness.md\n' +
+      '100644 blob c19c0ba520cfbe20d0fde6c702cb5028c67f0c0e\t.agents/skills/next-cache-components-optimizer/rig-template.md\n' +
+      '100644 blob efd44447dd32645fa635403cc249704154b6b13f\t.agents/skills/next-cache-components-optimizer/test-template.md\n' +
+      '100644 blob d6973dff972214b73336cd7075dd0cb7a50647b5\t.agents/skills/next-dev-loop/SKILL.md\n' +
+      '100644 blob aa11cd07d3a571ea2efa227364b802dcfc1d2970\t.agents/skills/next-partial-prefetching-adoption/SKILL.md\n' +
+      '100644 blob bbfa4c7e84c8ae846083e7e510b63ad61b2c52e8\t.agents/skills/next-partial-prefetching-adoption/rig-template.md\n' +
+      '100644 blob 38633d0839929732e2ba37ef853e31f21e16699f\t.agents/skills/organization-best-practices/SKILL.md\n' +
+      '100644 blob 5314bda2fa6005e264c9b5c1de7c425e719dc91f\t.agents/skills/pr/CREDITS.md\n' +
+      '100644 blob 84dd4fb2f068e9f6282690235d20dd505b418119\t.agents/skills/pr/SKILL.md\n' +
+      '100644 blob 48286f48f53b937cc19c0e39899b5f956271a98d\t.agents/skills/pr/agents/openai.yaml\n' +
+      '100644 blob 32be86a0a5d9928db84b3988e55f9debe476ab40\t.agents/skills/prototype/LOGIC.md\n' +
+      '100644 blob a0044501fe0d385b4d8575b610188ede9b236ccf\t.agents/skills/prototype/SKILL.md\n' +
+      '100644 blob 3977951663490882c2632b40695d9f59a2fe2408\t.agents/skills/prototype/UI.md\n' +
+      '100644 blob 1618b147965bc729b7bf3e8da5f130132067aadc\t.agents/skills/prototype/agents/openai.yaml\n' +
+      '100644 blob 332a47f8b7b7c70900cc1f77f74b189a597cbec3\t.agents/skills/react-doctor/SKILL.md\n' +
+      '100644 blob 8e4defe4a33f27059152276ee65eb5f46346ff84\t.agents/skills/react-doctor/references/explain.md\n' +
+      '100644 blob ffc9eb89849cc4cf74962ce93d786ffd17c6a5dc\t.agents/skills/research/SKILL.md\n' +
+      '100644 blob e18b96ca0ccc1003889d5d6991386207c2454bc2\t.agents/skills/research/agents/openai.yaml\n' +
+      '100644 blob 12149acf2dd23b4514dec57b04a6293eaa1352fa\t.agents/skills/retro/SKILL.md\n' +
+      '100644 blob a2f0bac3f9cebf29beee2e79960cb876e0adc65d\t.agents/skills/retro/agents/openai.yaml\n' +
+      '100644 blob d87df28e7d8abb4e57ecc6e47d71c274d16054c7\t.agents/skills/scaffold-exercises/SKILL.md\n' +
+      '100644 blob 963723a58973effa256cbfe0f23a7bcc03a374b8\t.agents/skills/scaffold-exercises/agents/openai.yaml\n' +
+      '100644 blob d74c12a3057aa217d19fb038743a6862b53cc550\t.agents/skills/security-review-default/SKILL.md\n' +
+      '100644 blob 45d290bd539a284149f9a6efc8da050d763881e2\t.agents/skills/security-review-sentry/LICENSE\n' +
+      '100644 blob 5101393b1da45609399c709b3d2d6205bc51878c\t.agents/skills/security-review-sentry/SKILL.md\n' +
+      '100644 blob b66d79aec631de32c138515c17c4a23c5beae6b5\t.agents/skills/security-review-sentry/infrastructure/docker.md\n' +
+      '100644 blob 3a2f241f11daef9f86c39e476ccc073e6a1fe2ab\t.agents/skills/security-review-sentry/languages/javascript.md\n' +
+      '100644 blob f0a2e6bd64f7f01fa96fc947ac2a08b582e1c519\t.agents/skills/security-review-sentry/languages/python.md\n' +
+      '100644 blob 8ae657407cdb16b5b5ba0481927f9bf2920ea640\t.agents/skills/security-review-sentry/references/api-security.md\n' +
+      '100644 blob ddd41dffff9f469a4f73cb38b50c30d3eda56e96\t.agents/skills/security-review-sentry/references/authentication.md\n' +
+      '100644 blob cd0f94a614bbaa7d217d524de1191064084b6466\t.agents/skills/security-review-sentry/references/authorization.md\n' +
+      '100644 blob ae87ad885d7298a0cce60262955eea0f236fa5da\t.agents/skills/security-review-sentry/references/business-logic.md\n' +
+      '100644 blob c4cc4260d81b1a5fb9a748f93959859f51e7c966\t.agents/skills/security-review-sentry/references/cryptography.md\n' +
+      '100644 blob 7b712ba45c644db40ebfda00138264f2ba785855\t.agents/skills/security-review-sentry/references/csrf.md\n' +
+      '100644 blob 77c73235b2f7fd0996885ff18f5f32483e13bc99\t.agents/skills/security-review-sentry/references/data-protection.md\n' +
+      '100644 blob 038bc0fdd716f1f60197a0b90e756d0f1e725fd7\t.agents/skills/security-review-sentry/references/deserialization.md\n' +
+      '100644 blob 54f2763eb70980fc3dbc3f340ebaefcd27be5a89\t.agents/skills/security-review-sentry/references/error-handling.md\n' +
+      '100644 blob be'... 1042672 more characters,
+    ''
+  ],
+  pid: 100472,
+  stdout: '100644 blob adf68c517f2d7d2781587d619de07f4de286da57\t.agents/skills/apple-design/SKILL.md\n' +
+    '100644 blob fb58ef9febcfd558cdb4517e370f19034869ba26\t.agents/skills/ask-matt/PHASE-BOUNDARIES.md\n' +
+    '100644 blob 4bfeeb61dae548b8b7754c4fba7bd40ab3926099\t.agents/skills/ask-matt/SKILL.md\n' +
+    '100644 blob 5c60d51b5b1248d7210bff8c6b42a5a06524b8a4\t.agents/skills/ask-matt/agents/openai.yaml\n' +
+    '100644 blob 74195ce314348e2f2eb3fa992d51eaaf29a9281c\t.agents/skills/better-auth-best-practices/SKILL.md\n' +
+    '100644 blob 77f82fc59c89c3a83ed5a92521dc2869f0533724\t.agents/skills/claude-handoff/SKILL.md\n' +
+    '100644 blob 0a7aa5da50d0e73248fc17fb8fe82409ec071eaf\t.agents/skills/claude-handoff/agents/openai.yaml\n' +
+    '100644 blob 83183e0ad36fd0eef25d37c7e483284b7e34c1f0\t.agents/skills/code-review/SKILL.md\n' +
+    '100644 blob 9076774ba327f49068db9273feceda03bfe940fa\t.agents/skills/code-review/agents/openai.yaml\n' +
+    '100644 blob cd94075cfd754d147555c5d747a16431ed4c7dd8\t.agents/skills/codebase-design/DEEPENING.md\n' +
+    '100644 blob aebdc9f8c05b40d7832de38e2fd8380e1e5507ac\t.agents/skills/codebase-design/DESIGN-IT-TWICE.md\n' +
+    '100644 blob 3f63c8146dd2604b419c929e9876b90c30d410e9\t.agents/skills/codebase-design/SKILL.md\n' +
+    '100644 blob 3180715edb37f6e96bec42f92f00169faa8886ef\t.agents/skills/codebase-design/agents/openai.yaml\n' +
+    '100644 blob 515e6dd09effbdc46e6ccd5f46267b90e728f674\t.agents/skills/create-auth-skill/SKILL.md\n' +
+    '100644 blob d039541ddd1c46e6ddbd662fe99d49b686fc5e12\t.agents/skills/diagnosing-bugs/SKILL.md\n' +
+    '100644 blob a13a755a77634ce61a649a3a0d905a66d3865b35\t.agents/skills/diagnosing-bugs/agents/openai.yaml\n' +
+    '100644 blob 243198464a8401a7ba1d63b3708fa43c3d067665\t.agents/skills/diagnosing-bugs/scripts/hitl-loop.template.sh\n' +
+    '100644 blob d7e61f30a9fd8ca70d9ee68f019c2a9ebf2d13f7\t.agents/skills/domain-modeling/ADR-FORMAT.md\n' +
+    '100644 blob 9c0b4c7a2e8507c23cbb5e0baa66d81699321cc6\t.agents/skills/domain-modeling/GLOSSARY-FORMAT.md\n' +
+    '100644 blob a4438c6879c517d1a08e2b5fbca049b632688dfe\t.agents/skills/domain-modeling/SKILL.md\n' +
+    '100644 blob 7f1522d2f11506ee205275ab7c282aa52366ecf6\t.agents/skills/domain-modeling/agents/openai.yaml\n' +
+    '100644 blob 3b7b7f166b5fde6c38decd6ef663258eb30465b0\t.agents/skills/email-and-password-best-practices/SKILL.md\n' +
+    '100644 blob f433b1a53f5b830a205fd2df78e2b34974656c7b\t.agents/skills/frontend-design/LICENSE.txt\n' +
+    '100644 blob 4efede84388f50f8baea6a060ec5ab906a1abe6b\t.agents/skills/frontend-design/SKILL.md\n' +
+    '100644 blob 58bcdd875b164093b95f436fa32a65c6cb5eb572\t.agents/skills/git-guardrails-claude-code/SKILL.md\n' +
+    '100644 blob 3f5d756f1b9b97d94cef1473fb480ccda5fdfbc1\t.agents/skills/git-guardrails-claude-code/agents/openai.yaml\n' +
+    '100644 blob c40b59cb47880fc9da8fe4179bd742f51f09d17d\t.agents/skills/git-guardrails-claude-code/scripts/block-dangerous-git.sh\n' +
+    '100644 blob 3947ff9c4ad980d14fc07fccbf659d47c114e81d\t.agents/skills/grill-me/SKILL.md\n' +
+    '100644 blob 4d6fb0c746c5d21364dce5d0cf8c51eab9712e7b\t.agents/skills/grill-me/agents/openai.yaml\n' +
+    '100644 blob 62b9efb6f991d1b229adee7506962f13ced0c499\t.agents/skills/grill-with-docs/SKILL.md\n' +
+    '100644 blob 5dbe2780a51be3e9b118bd7758a73e54a9384e11\t.agents/skills/grill-with-docs/agents/openai.yaml\n' +
+    '100644 blob d2f09a18e6a6c65c55f1271ba08dfeaf06f0bed3\t.agents/skills/grilling/SKILL.md\n' +
+    '100644 blob ddbdb96139c0c1dfe6bca698f39d0465674b8a39\t.agents/skills/grilling/agents/openai.yaml\n' +
+    '100644 blob a224edc643a20ddb989f9bca1547440169159810\t.agents/skills/handoff/SKILL.md\n' +
+    '100644 blob 6e1d8da121beceddc2f9ec7fa8714c1d914dd11a\t.agents/skills/handoff/agents/openai.yaml\n' +
+    '100644 blob a5f70c30ea8d9ac36c35582ac4023b7478f5bbf5\t.agents/skills/hetzner-server/SKILL.md\n' +
+    '100644 blob 73d36c23958bd04423ba3ded1c90ff0d0b858b72\t.agents/skills/implement-spec/SKILL.md\n' +
+    '100644 blob f5e91af21e38eb1a167ea5aa93dfc7da3c4637b4\t.agents/skills/implement-spec/agents/openai.yaml\n' +
+    '100644 blob bd49e472984c7b99aac40286fdae749bb955a842\t.agents/skills/implement/SKILL.md\n' +
+    '100644 blob f8794dc153b409052a9167baf10858cf01b36175\t.agents/skills/implement/agents/openai.yaml\n' +
+    '100644 blob e39e8255b8797cf8257d014fb6658fb533f3a399\t.agents/skills/improve-codebase-architecture/HTML-REPORT.md\n' +
+    '100644 blob f1eabb568464f03ae79a3346fc1918fdde6d8285\t.agents/skills/improve-codebase-architecture/SKILL.md\n' +
+    '100644 blob 706fdca096da5937fe57875a9154017d50668c42\t.agents/skills/improve-codebase-architecture/agents/openai.yaml\n' +
+    '100644 blob 9fe89c25f739eaee07d8a1aebe25e4ead8fabd7c\t.agents/skills/interface-design/SKILL.md\n' +
+    '100644 blob 7db545e48795990f23bdc2118984ae961d03f161\t.agents/skills/interface-design/references/critique.md\n' +
+    '100644 blob 665490653dd8d60a9606a1b1fa1d2e170ae4b456\t.agents/skills/interface-design/references/example.md\n' +
+    '100644 blob 6c4a50273e9023f9d4836c3261701f09a3f33d17\t.agents/skills/interface-design/references/principles.md\n' +
+    '100644 blob 7aa4a696b7ad712816c6a01342646b2c6b0c61ea\t.agents/skills/interface-design/references/validation.md\n' +
+    '100644 blob e58a474ca80feffdeb28842bc3bdee37da6510e7\t.agents/skills/loop-me/SKILL.md\n' +
+    '100644 blob 1a4f4111192ff75b4771e8a248c603994d5eafdc\t.agents/skills/loop-me/agents/openai.yaml\n' +
+    '100644 blob ae4f965e204fc93cedbc4e2c306e92829d93f800\t.agents/skills/migrate-to-shoehorn/SKILL.md\n' +
+    '100644 blob 3bd79ee2b502075c6d1fe40e6fe98f4fe3f3c5f5\t.agents/skills/migrate-to-shoehorn/agents/openai.yaml\n' +
+    '100644 blob 861896380767120ea800d44c8b4ee475f307ccf5\t.agents/skills/migrate-to-temporal-api/SKILL.md\n' +
+    '100644 blob d8fc80eb80a764002f2c80dbb284445e2ec3e4cc\t.agents/skills/migrate-to-temporal-api/refs/postgresql-temporal-persistence.md\n' +
+    '100644 blob a03551523fbcb3be1890438e2b25312ca8959a33\t.agents/skills/next-cache-components-adoption/SKILL.md\n' +
+    '100644 blob 7c83fab2306005d4d890cb1be3270a75927c6687\t.agents/skills/next-cache-components-adoption/references/dev-only-validations.md\n' +
+    '100644 blob 4e57a733406c80965515afadc9beced0ed06cbc8\t.agents/skills/next-cache-components-adoption/references/per-page-decisions.md\n' +
+    '100644 blob 4dea7ca4826ebd83a73f9a31f348f6d793755afb\t.agents/skills/next-cache-components-optimizer/SKILL.md\n' +
+    '100644 blob 9ec0cc04555a10b60e318c29c6d012caa19e04fd\t.agents/skills/next-cache-components-optimizer/reference/patterns.md\n' +
+    '100644 blob 31fa2e04189de41260521fcd8cf8be2965fb5b01\t.agents/skills/next-cache-components-optimizer/reference/real-app-patterns.md\n' +
+    '100644 blob bf106faaed9bf1780b77917fd460724ca95bebc3\t.agents/skills/next-cache-components-optimizer/reference/red-test-robustness.md\n' +
+    '100644 blob c19c0ba520cfbe20d0fde6c702cb5028c67f0c0e\t.agents/skills/next-cache-components-optimizer/rig-template.md\n' +
+    '100644 blob efd44447dd32645fa635403cc249704154b6b13f\t.agents/skills/next-cache-components-optimizer/test-template.md\n' +
+    '100644 blob d6973dff972214b73336cd7075dd0cb7a50647b5\t.agents/skills/next-dev-loop/SKILL.md\n' +
+    '100644 blob aa11cd07d3a571ea2efa227364b802dcfc1d2970\t.agents/skills/next-partial-prefetching-adoption/SKILL.md\n' +
+    '100644 blob bbfa4c7e84c8ae846083e7e510b63ad61b2c52e8\t.agents/skills/next-partial-prefetching-adoption/rig-template.md\n' +
+    '100644 blob 38633d0839929732e2ba37ef853e31f21e16699f\t.agents/skills/organization-best-practices/SKILL.md\n' +
+    '100644 blob 5314bda2fa6005e264c9b5c1de7c425e719dc91f\t.agents/skills/pr/CREDITS.md\n' +
+    '100644 blob 84dd4fb2f068e9f6282690235d20dd505b418119\t.agents/skills/pr/SKILL.md\n' +
+    '100644 blob 48286f48f53b937cc19c0e39899b5f956271a98d\t.agents/skills/pr/agents/openai.yaml\n' +
+    '100644 blob 32be86a0a5d9928db84b3988e55f9debe476ab40\t.agents/skills/prototype/LOGIC.md\n' +
+    '100644 blob a0044501fe0d385b4d8575b610188ede9b236ccf\t.agents/skills/prototype/SKILL.md\n' +
+    '100644 blob 3977951663490882c2632b40695d9f59a2fe2408\t.agents/skills/prototype/UI.md\n' +
+    '100644 blob 1618b147965bc729b7bf3e8da5f130132067aadc\t.agents/skills/prototype/agents/openai.yaml\n' +
+    '100644 blob 332a47f8b7b7c70900cc1f77f74b189a597cbec3\t.agents/skills/react-doctor/SKILL.md\n' +
+    '100644 blob 8e4defe4a33f27059152276ee65eb5f46346ff84\t.agents/skills/react-doctor/references/explain.md\n' +
+    '100644 blob ffc9eb89849cc4cf74962ce93d786ffd17c6a5dc\t.agents/skills/research/SKILL.md\n' +
+    '100644 blob e18b96ca0ccc1003889d5d6991386207c2454bc2\t.agents/skills/research/agents/openai.yaml\n' +
+    '100644 blob 12149acf2dd23b4514dec57b04a6293eaa1352fa\t.agents/skills/retro/SKILL.md\n' +
+    '100644 blob a2f0bac3f9cebf29beee2e79960cb876e0adc65d\t.agents/skills/retro/agents/openai.yaml\n' +
+    '100644 blob d87df28e7d8abb4e57ecc6e47d71c274d16054c7\t.agents/skills/scaffold-exercises/SKILL.md\n' +
+    '100644 blob 963723a58973effa256cbfe0f23a7bcc03a374b8\t.agents/skills/scaffold-exercises/agents/openai.yaml\n' +
+    '100644 blob d74c12a3057aa217d19fb038743a6862b53cc550\t.agents/skills/security-review-default/SKILL.md\n' +
+    '100644 blob 45d290bd539a284149f9a6efc8da050d763881e2\t.agents/skills/security-review-sentry/LICENSE\n' +
+    '100644 blob 5101393b1da45609399c709b3d2d6205bc51878c\t.agents/skills/security-review-sentry/SKILL.md\n' +
+    '100644 blob b66d79aec631de32c138515c17c4a23c5beae6b5\t.agents/skills/security-review-sentry/infrastructure/docker.md\n' +
+    '100644 blob 3a2f241f11daef9f86c39e476ccc073e6a1fe2ab\t.agents/skills/security-review-sentry/languages/javascript.md\n' +
+    '100644 blob f0a2e6bd64f7f01fa96fc947ac2a08b582e1c519\t.agents/skills/security-review-sentry/languages/python.md\n' +
+    '100644 blob 8ae657407cdb16b5b5ba0481927f9bf2920ea640\t.agents/skills/security-review-sentry/references/api-security.md\n' +
+    '100644 blob ddd41dffff9f469a4f73cb38b50c30d3eda56e96\t.agents/skills/security-review-sentry/references/authentication.md\n' +
+    '100644 blob cd0f94a614bbaa7d217d524de1191064084b6466\t.agents/skills/security-review-sentry/references/authorization.md\n' +
+    '100644 blob ae87ad885d7298a0cce60262955eea0f236fa5da\t.agents/skills/security-review-sentry/references/business-logic.md\n' +
+    '100644 blob c4cc4260d81b1a5fb9a748f93959859f51e7c966\t.agents/skills/security-review-sentry/references/cryptography.md\n' +
+    '100644 blob 7b712ba45c644db40ebfda00138264f2ba785855\t.agents/skills/security-review-sentry/references/csrf.md\n' +
+    '100644 blob 77c73235b2f7fd0996885ff18f5f32483e13bc99\t.agents/skills/security-review-sentry/references/data-protection.md\n' +
+    '100644 blob 038bc0fdd716f1f60197a0b90e756d0f1e725fd7\t.agents/skills/security-review-sentry/references/deserialization.md\n' +
+    '100644 blob 54f2763eb70980fc3dbc3f340ebaefcd27be5a89\t.agents/skills/security-review-sentry/references/error-handling.md\n' +
+    '100644 blob be'... 1042672 more characters,
+  stderr: ''
+}
+
+Node.js v26.9.0

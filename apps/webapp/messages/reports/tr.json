@@ -13,9 +13,11 @@
       "yes": "Evet"
     },
     "description": "Vergiyle ilgili evden çalışma verileriyle kapsamlı çalışma saati ve devamsızlık raporları oluşturun",
+    "employeeNumber": "Çalışan numarası",
     "employeeSelector": {
       "error": "Ekip üyeleri yüklenemedi",
       "label": "Çalışan",
+      "loading": "Ekip üyeleri yükleniyor",
       "placeholder": "Çalışan seçin..."
     },
     "export": {
@@ -34,7 +36,10 @@
     "filter": {
       "loadingSettings": "Hazır ayarları etkinleştirmeden önce organizasyon ayarları yükleniyor.",
       "period": "Dönem",
-      "selectPeriod": "Dönem seçin"
+      "selectPeriod": "Dönem seçin",
+      "settingsError": "Kuruluş ayarları kullanılamıyor",
+      "settingsRequired": "Ön ayarları kullanmak için kuruluş ayarları gereklidir.",
+      "title": "Çalışan raporu oluştur"
     },
     "generate": "Rapor Oluştur",
     "generating": "Rapor Oluşturuluyor…",
@@ -62,6 +67,7 @@
       "month": "Ay",
       "noHomeOfficeDays": "Bu dönemde kayıtlı evden çalışma günü bulunmamaktadır.",
       "overtime": "Fazla Mesai",
+      "title": "Rapor önizlemesi",
       "total": "Toplam",
       "totalHomeOfficeDays": "Toplam Evden Çalışma Günü",
       "totalHomeOfficeHours": "Evden Toplam Çalışılan Saat",
@@ -266,6 +272,9 @@
         "noPermission": "Proje raporlarını görüntüleme izniniz yok.",
         "title": "Proje Raporları"
       },
+      "refreshFailed": "Proje raporları yenilenemedi",
+      "scopeLoading": "Geçerli rapor kapsamı yükleniyor…",
+      "scopeUnavailable": "Geçerli rapor kapsamı yüklenemedi.",
       "status": {
         "active": "Aktif",
         "archived": "Arşivlenmiş",
@@ -324,7 +333,6 @@
         "failedGenerate": "Rapor oluşturulamadı",
         "failedPortfolio": "Portföy raporu oluşturulamadı",
         "failedProject": "Proje raporu oluşturulamadı",
-        "failedProjectReport": "Proje raporu oluşturulamadı",
         "portfolioGenerated": "Portföy raporu oluşturuldu",
         "projectGenerated": "{name} için rapor oluşturuldu",
         "unexpectedError": "Beklenmedik bir hata oluştu"
@@ -376,6 +384,8 @@
         "loading": "Paylaşım bağlantıları yükleniyor…",
         "revokedAutomatically": "{date} tarihinde otomatik olarak iptal edildi: oluşturan kişi artık rapordaki tüm projeleri göremiyor",
         "revokedBy": "{date} tarihinde {name} tarafından iptal edildi",
+        "scopeLoading": "Geçerli paylaşım bağlantısı kapsamı yükleniyor…",
+        "scopeUnavailable": "Geçerli paylaşım bağlantısı kapsamı yüklenemedi.",
         "someone": "biri",
         "title": "Bu rapora giden bağlantılar",
         "views": "{count, plural, other {# görüntüleme} }",
@@ -398,7 +408,8 @@
         "description": "Bağlantı anında çalışmayı durdurur ve anlık görüntüsü silinir. Kaydı ve görüntüleme günlüğü saklanır.",
         "done": "Bağlantı iptal edildi",
         "failed": "Bağlantı iptal edilemedi",
-        "title": "Bu bağlantı iptal edilsin mi?"
+        "titleDeletedReport": "Silinen bir rapor ({period}) için paylaşım bağlantısı iptal edilsin mi?",
+        "titleNamed": "{report}, {period} için paylaşım bağlantısı iptal edilsin mi?"
       },
       "status": {
         "active": "Aktif",
@@ -440,6 +451,7 @@
     "vehicles": {
       "archived": "arşivlendi",
       "archivedBadge": "Arşivlendi",
+      "comparison": "Araç ve çalışana göre aylık mesafe",
       "empty": {
         "description": "Bu dönemde sürüş mesafesi kaydedilen tamamlanmış bir çalışma bulunmuyor.",
         "title": "Bu dönemde sürüş yok"
@@ -457,6 +469,7 @@
         "period": "Dönem"
       },
       "generate": "Rapor oluştur",
+      "generated": "{time} tarihinde oluşturuldu",
       "generating": "Rapor oluşturuluyor…",
       "kilometres": "{distance} km",
       "noReportYet": "Henüz rapor oluşturulmadı",
@@ -465,7 +478,11 @@
         "description": "Aylık bazda araç ve çalışan başına iş için katedilen kilometre",
         "feature": "araç başına mesafe raporunu görüntüleyin"
       },
+      "scope": "Bu kuruluşta erişebildiğiniz çalışanlar",
+      "scopeLoading": "Geçerli kuruluş ve çalışan doğrulanıyor…",
+      "scopeUnavailable": "Geçerli araç raporu kapsamı yüklenemedi.",
       "selectPeriod": "Bir dönem seçin ve raporu oluşturun.",
+      "staged": "Dönem değişti. Sonuçları ve indirmeleri güncellemek için rapor oluşturun.",
       "table": {
         "employee": "Çalışan",
         "licencePlate": "Plaka",
@@ -473,8 +490,7 @@
         "vehicle": "Araç",
         "vehicleAndEmployee": "Araç / çalışan"
       },
-      "title": "Araç Başına Mesafe",
-      "totalDriven": "{distance} katedildi"
+      "title": "Araç Başına Mesafe"
     }
   }
 }

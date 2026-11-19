@@ -96,21 +96,27 @@
       "rejectTitle": "Odbij zahtjev"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Potvrđivanje trenutačne organizacije i zaposlenika…",
       "created": "Stvoreno",
       "decisionRecorded": "Odluka zabilježena",
       "destination": "Odredište",
       "history": "Povijest odluka",
       "historyDescription": "Svaki korak ovog zahtjeva, od najstarijeg. Vremena su prikazana u UTC-u.",
       "intermediateApproval": "Odobrenje zabilježeno — čeka se daljnje odobrenje",
+      "legacyClaim": "Naslijeđeni zahtjev",
       "legacyReceiptIdentity": "Naslijeđeni račun: kontrolni zbroj sadržaja nije zabilježen.",
       "loading": "Učitavanje zahtjeva…",
       "noReceipts": "Nema zabilježenih računa",
       "notRecorded": "Nije zabilježeno",
       "originalAmount": "Izvorni iznos",
       "receipts": "Računi",
+      "receiptVersion": "Evidentirana verzija",
       "refreshing": "Osvježavanje zahtjeva…",
+      "scopeUnavailable": "Osvježite ovaj zahtjev kako biste potvrdili svoj trenutačni pristup.",
       "submitted": "Podneseno",
       "title": "Zahtjev za putne troškove",
+      "unavailable": "Zahtjev nije pronađen ili pristup više nije dostupan.",
       "unknownDates": "Kontekst datuma putovanja nije zabilježen (naslijeđeni zahtjev)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Odaberite {name}",
         "selectAll": "Odaberite sve troškove koji čekaju povrat na ovoj stranici",
         "selected": "{count} odabrano",
+        "selectionChanged": "Jedan ili više odabranih troškova se promijenio. Zatvorite ovaj dijaloški okvir i pregledajte trenutačne troškove prije pokretanja novog plaćanja.",
         "skipped": "Nije uključeno ({count})",
         "submit": "Označi {count} kao nadoknađeno",
         "title": "Označi kao nadoknađeno"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Nijedan aktivni službenik za troškove koji može evidentirati povrate nema ih u svom djelokrugu. Vlasnici i administratori ih i dalje mogu evidentirati ili proširiti djelokrug službenika.",
         "empty": "Službenik za troškove pokriva svaki odobreni trošak koji čeka povrat.",
+        "failed": "Pokriće nije bilo moguće provjeriti. Pokušajte ponovno.",
         "queueFilter": "Odobreni troškovi koji čekaju povrat koje nijedan službenik za troškove ne pokriva.",
         "show": "Prikaži ove troškove",
         "showAll": "Prikaži sve odobrene troškove",
@@ -237,6 +245,7 @@
           "none": "Nije pronađen nijedan zaposlenik.",
           "search": "Pretraži zaposlenike…"
         },
+        "failed": "Opcije filtriranja nisu se mogle učitati. Pokušajte ponovno.",
         "label": "Prikaži troškove",
         "notExported": "Još nije izvezeno",
         "open": "Otvoreno",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Ovi obračunski ciklusi sadrže izvješća o troškovima koja čekaju nadoknadu. Kada obračun isplati ciklus, potvrdite ga kako biste zabilježili nadoknade.",
+        "failed": "Potvrde obračuna plaća nisu se mogle učitati. Pokušajte ponovno.",
         "reports": "{count, plural, one {# izvješće o troškovima koje trebate potvrditi, {amount}} other {# izvješća o troškovima koja trebate potvrditi, {amount}} }",
         "title": "Obračunski ciklusi koji čekaju potvrdu"
       },
       "queue": {
         "description": "Otvorite trošak da biste vidjeli njegovo poravnanje i evidentirali povrat.",
+        "failed": "Nije moguće učitati financijski red čekanja. Pokušajte ponovno.",
         "title": "Odobreni troškovi"
+      },
+      "scope": {
+        "failed": "Vaš trenutačni pristup financijama nije se mogao potvrditi. Pokušajte ponovno.",
+        "loading": "Potvrđivanje pristupa financijama…"
       },
       "title": "Financije troškova"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Kilometraža bez naziva"
     },
     "legacyDraft": {
+      "checking": "Provjera nastavka skice…",
       "continue": "Nastavi kao izvješće",
       "converted": "Nastavili ste ovu skicu kao izvješće o troškovima. Ovaj zahtjev ostaje ovdje nepromijenjen radi evidencije.",
       "description": "Skice iz prethodnog obrasca za zahtjeve sada se dovršavaju kao izvješća o troškovima. Vaš iznos, datumi, bilješke i računi su preneseni; sve što novi obrazac zahtijeva, a ova skica nije zabilježila, ostavljeno vam je da ispunite. Sam zahtjev ostaje nepromijenjen.",
@@ -367,6 +383,7 @@
         "title": "Nastavljeno iz ranijeg nacrta zahtjeva"
       },
       "openReport": "Otvori izvješće",
+      "readRefused": "Nastavak skice nije dostupan za trenutačnog čitatelja.",
       "receipt": {
         "mismatch": "pohranjena datoteka više ne odgovara onome što je preneseno",
         "unreadable": "pohranjenu datoteku trenutačno nije moguće pročitati",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Za ovaj trošak nema nepodmirenog iznosa.",
         "ownExpense": "Ne možete evidentirati plaćanja za vlastite troškove.",
         "referenceRequired": "Unesite referencu plaćanja, npr. referencu bankovnog prijenosa.",
+        "refresh": "Saldo nije bilo moguće osvježiti. Prikazani su prethodno učitani zapisi; pokušajte ponovno prije evidentiranja plaćanja.",
         "refused": "Ovo se plaćanje ne može evidentirati za ovaj trošak.",
         "staleBalance": "Stanje se promijenilo dok ste unosili ovo plaćanje. Provjerite ažurirano stanje i ponovno ga evidentirajte.",
         "tooLong": "Ovaj je tekst predugačak."
@@ -1149,7 +1167,13 @@
     },
     "title": "Putni troškovi",
     "workspace": {
-      "description": "Prikupite putne i pojedinačne troškove, pošaljite ih na pregled i pratite njihov povrat."
+      "create": "Izradi izvješće o troškovima",
+      "description": "Prikupite putne i pojedinačne troškove, pošaljite ih na pregled i pratite njihov povrat.",
+      "mileageDescription": "Evidentiraj službenu vožnju izvan putovanja.",
+      "otherWork": "Pregled i financiranje",
+      "receiptDescription": "Evidentirajte jedan trošak s pripadajućim računom.",
+      "reconciling": "Učitavanje vaših troškova za trenutnu organizaciju…",
+      "tripDescription": "Prikupite troškove sa zajedničkim podacima o putovanju."
     }
   }
 }

@@ -1,0 +1,65 @@
+{
+  "manifests": [
+    {
+      "file": "package.json",
+      "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+    },
+    {
+      "file": "apps/webapp/package.json",
+      "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+    },
+    {
+      "file": "pnpm-lock.yaml",
+      "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+    }
+  ],
+  "directories": [
+    {
+      "path": "WORKTREE_ROOT\\node_modules",
+      "realPath": "WORKTREE_ROOT\\node_modules",
+      "physical": true,
+      "isDirectory": true
+    },
+    {
+      "path": "WORKTREE_ROOT\\apps\\webapp\\node_modules",
+      "realPath": "WORKTREE_ROOT\\apps\\webapp\\node_modules",
+      "physical": true,
+      "isDirectory": true
+    },
+    {
+      "path": "WORKTREE_ROOT\\node_modules\\.pnpm",
+      "realPath": "WORKTREE_ROOT\\node_modules\\.pnpm",
+      "physical": true,
+      "isDirectory": true
+    }
+  ],
+  "resolution": [
+    {
+      "name": "next",
+      "path": "WORKTREE_ROOT\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\next.js",
+      "inOwnCheckout": true
+    },
+    {
+      "name": "react",
+      "path": "WORKTREE_ROOT\\node_modules\\.pnpm\\react@19.3.1\\node_modules\\react\\index.js",
+      "inOwnCheckout": true
+    },
+    {
+      "name": "vitest",
+      "path": "WORKTREE_ROOT\\node_modules\\.pnpm\\vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1\\node_modules\\vitest\\index.cjs",
+      "inOwnCheckout": true
+    },
+    {
+      "name": "babel-plugin-react-compiler",
+      "path": "WORKTREE_ROOT\\node_modules\\.pnpm\\babel-plugin-react-compiler@1.0.0\\node_modules\\babel-plugin-react-compiler\\dist\\index.js",
+      "inOwnCheckout": true
+    }
+  ],
+  "licenses": {
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "count": 125,
+    "provenance": "Inherited approved root artifact after root/app manifest and lock exact match; not a fresh license sync"
+  },
+  "frozenOfflineCopyInstall": true,
+  "lockChanged": false
+}

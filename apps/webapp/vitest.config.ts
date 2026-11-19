@@ -14,10 +14,7 @@ export default defineConfig({
 			SKIP_ENV_VALIDATION: "true",
 		},
 		alias: {
-			"@/data/licenses.json": path.resolve(
-				__dirname,
-				"./src/test/licenses.ts",
-			),
+			"@/data/licenses.json": path.resolve(__dirname, "./src/test/licenses.ts"),
 			"@": path.resolve(__dirname, "./src"),
 			"@/db": path.resolve(__dirname, "./src/db"),
 			"@/lib": path.resolve(__dirname, "./src/lib"),
@@ -30,6 +27,8 @@ export default defineConfig({
 				extends: true,
 				test: {
 					name: "unit",
+					// Resolve Next subpath imports in next-intl through Vite on Windows.
+					server: { deps: { inline: ["next-intl"] } },
 					include: ["src/**/*.test.{ts,tsx}"],
 					exclude: [...configDefaults.exclude, "**/*.integration.test.ts"],
 					env: { Z8_TEST_PROJECT: "unit" },

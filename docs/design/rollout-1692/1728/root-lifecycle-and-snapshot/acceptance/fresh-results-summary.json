@@ -1,0 +1,183 @@
+{
+  "unit": {
+    "passed": 327,
+    "failed": 1,
+    "skipped": 0,
+    "physicalFiles": 26,
+    "cases": 328,
+    "unique": 328,
+    "failedCases": [
+      {
+        "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/lib/employee-lifecycle/current-roster-surfaces.test.ts",
+        "fullName": "current-roster surface guard adds no hand-written employee active checks beyond the baseline"
+      }
+    ],
+    "workspace": [
+      {
+        "name": "retains a safe task heading while an old organization snapshot is refused",
+        "status": "passed"
+      },
+      {
+        "name": "does not revive a retired organization snapshot when the original identity returns",
+        "status": "passed"
+      },
+      {
+        "name": "does not revive a retired account snapshot when the original identity returns",
+        "status": "passed"
+      },
+      {
+        "name": "does not present a retained snapshot as current while session proof is pending",
+        "status": "passed"
+      },
+      {
+        "name": "exercises actual Activity hide/show without substituting another component",
+        "status": "passed"
+      },
+      {
+        "name": "requires a new server read after retirement, then shows fresh admitted data",
+        "status": "passed"
+      },
+      {
+        "name": "permits first session hydration without reviving a previously displayed snapshot",
+        "status": "passed"
+      },
+      {
+        "name": "observes an account round trip that the session atom emits within one React turn",
+        "status": "passed"
+      },
+      {
+        "name": "leads with attention then employee records and retains scoped destinations and former identity",
+        "status": "passed"
+      },
+      {
+        "name": "distinguishes unknown directory from an empty scope and retries the server owner",
+        "status": "passed"
+      },
+      {
+        "name": "keeps empty scope guidance and only capability-admitted workflow links",
+        "status": "passed"
+      },
+      {
+        "name": "hides previous and late-arriving records and open attention panels after scope changes",
+        "status": "passed"
+      }
+    ]
+  },
+  "postgres": {
+    "passed": 149,
+    "failed": 0,
+    "skipped": 0,
+    "physicalFiles": 11,
+    "cases": 149,
+    "unique": 149,
+    "failedCases": [],
+    "workspace": []
+  },
+  "freshCombined": {
+    "tests": 477,
+    "files": 37,
+    "passed": 476,
+    "failed": 1,
+    "skipped": 0,
+    "qualification": "Final unit+PG selections counted once, not added to overlapping inherited/red/payslip-only runs."
+  },
+  "commands": {
+    "unit": {
+      "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+      "pins": 12,
+      "exit": 1
+    },
+    "types": {
+      "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+      "pins": 12,
+      "exit": 0
+    },
+    "lint": {
+      "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+      "pins": 12,
+      "exit": 0
+    },
+    "format": {
+      "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+      "pins": 12,
+      "exit": 1
+    },
+    "doctor": {
+      "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+      "pins": 12,
+      "exit": 0
+    },
+    "pg-all": {
+      "head": "abe51cc17fb89f20af185ea0ce12431e4e450cdb",
+      "pins": 3,
+      "exit": 0
+    }
+  },
+  "formattingPaths": [
+    "src\\components\\personnel-file\\expiring-documents.test.tsx",
+    "src\\components\\personnel-file\\expiring-documents.tsx",
+    "src\\lib\\navigation\\route-metadata.test.ts",
+    "src\\lib\\navigation\\route-metadata.ts",
+    "src\\lib\\personnel-file\\access-store.ts"
+  ],
+  "doctor": {
+    "ok": true,
+    "version": "0.9.22",
+    "baseline": {
+      "baseRef": "16443982de929de4f885a6cfb6de5b377374cb3e",
+      "source": "base",
+      "matchedCount": 0,
+      "newCount": 0,
+      "fixedCount": 0,
+      "baseTotalCount": 0
+    },
+    "changedFileCount": 12
+  },
+  "runtime08": {
+    "stage": "completed",
+    "checks": [
+      "Organization-scoped feature readback; public toggle proof retained in earlier runtime attempts",
+      "Actual public certificate-only specific-target grant matches scoped database rows",
+      "Officer sees exact target certificate link and zero other category/self/unsupported workflow links",
+      "Officer own file is actual not-found without upload",
+      "Separate administrator publicly revokes exact officer and scoped is_active readback confirms",
+      "Settled actual Request refuses revoked authority, retains full correct draft, and persists zero exact request rows",
+      "Officer directory reload refuses after grant revocation",
+      "Fresh normal nonofficer context denied actual directory",
+      "Public account Large font survives reload at 390px without width overflow"
+    ],
+    "before": {
+      "title": "Root1728 retained a2f8c966-61e",
+      "note": "Retain this exact certificate renewal note after public access revocation.",
+      "deadline": "Nov 20, 2026",
+      "category": "Certificate",
+      "categoryDisabled": true,
+      "renewal": "Renews Root1728 certificate 2",
+      "heading": "Request a renewal"
+    },
+    "after": {
+      "title": "Root1728 retained a2f8c966-61e",
+      "note": "Retain this exact certificate renewal note after public access revocation.",
+      "deadline": "Nov 20, 2026",
+      "category": "Certificate",
+      "categoryDisabled": true,
+      "renewal": "Renews Root1728 certificate 2",
+      "heading": "Request a renewal"
+    },
+    "initialRequestRows": 0,
+    "finalRequestRows": 0,
+    "errors": [],
+    "refusal": [
+      "Document request not found"
+    ]
+  },
+  "native": {
+    "status": "actual-target-tree-observed",
+    "closed": true,
+    "auth": {
+      "code": 0,
+      "signIn": 200,
+      "active": 200
+    }
+  }
+}

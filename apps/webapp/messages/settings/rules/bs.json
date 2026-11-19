@@ -23,6 +23,7 @@
       },
       "deleteDescription": "Jeste li sigurni da želite izbrisati \"{name}\"? Kategorije koje se koriste za postojeća odsustva ne mogu se izbrisati i umjesto toga ih treba deaktivirati.",
       "deleteFailed": "Nije uspjelo brisanje kategorije",
+      "deleteInUse": "Ova kategorija se još uvijek koristi. Umjesto toga je deaktivirajte ili prvo uklonite ono što ovisi o njoj.",
       "deleteTitle": "Izbriši kategoriju odsustva",
       "drawsOnWorkBalance": "Oduzima se od radnog salda",
       "editCategory": "Uredi \"{name}\"",
@@ -77,6 +78,7 @@
       "noVacationDeduction": "Bez umanjenja",
       "reactivate": "Ponovo aktiviraj",
       "saveFailed": "Nije uspjelo spremanje kategorije odsustva",
+      "saveInUse": "Ovu kategoriju koriste postojeća odsustva. Kreirajte novu kategoriju za drugačija pravila ili deaktivirajte ovu.",
       "searchPlaceholder": "Pretraži kategorije…",
       "statusUpdateFailed": "Nije moguće ažurirati status kategorije",
       "type": {
@@ -93,6 +95,35 @@
       "updateCategory": "Ažuriraj kategoriju"
     },
     "approvalEscalation": {
+      "approvalType": {
+        "absence": "Odsustvo",
+        "absenceChange": "Izmjena odsustva",
+        "complianceException": "Izuzetak usklađenosti",
+        "manualTimeSubmission": "Ručno slanje vremena",
+        "periodSubmission": "Slanje perioda",
+        "policyClockOut": "Odjava prema pravilu",
+        "shiftRequest": "Zahtjev za smjenu",
+        "timeCorrection": "Ispravka vremena",
+        "travelExpense": "Putni trošak"
+      },
+      "attempt": {
+        "kind": {
+          "delivery": "Isporuka",
+          "retirement": "Ažuriranje poruke",
+          "transfer": "Prijenos"
+        },
+        "outcome": {
+          "ambiguous": "Rezultat nepoznat",
+          "delivered": "Isporučeno",
+          "deliveredAfterPurge": "Isporučeno nakon čišćenja",
+          "destinationInvalid": "Odredište nevažeće",
+          "gone": "Poruka više nije dostupna",
+          "notCovering": "Poruka više nije aktuelna",
+          "permanent": "Trajni neuspjeh",
+          "retryable": "Privremeni neuspjeh",
+          "unavailable": "Kanal nedostupan"
+        }
+      },
       "attention": {
         "alertedAt": "Administratori obaviješteni {date}",
         "approvalType": "Odobrenje",
@@ -116,6 +147,18 @@
         "recheck": "Ponovo provjeri",
         "resolved": "Riješeno",
         "retryDelivery": "Ponovi isporuku",
+        "technical": {
+          "approvalRequestId": "ID zahtjeva za odobrenje",
+          "approvalType": "Kod vrste odobrenja",
+          "assignmentId": "ID dodjele",
+          "attemptReference": "Referenca pokušaja",
+          "attentionId": "ID stavke za pažnju",
+          "copied": "{label} kopirano",
+          "copy": "Kopiraj {label}",
+          "copyFailed": "Vrijednost nije mogla biti kopirana. Označite je i kopirajte ručno.",
+          "title": "Tehnički detalji",
+          "workflowId": "ID toka rada"
+        },
         "title": "Zahtijeva pažnju",
         "transfer": "Prenesi…",
         "unknownApprover": "Nije zabilježeno"
@@ -155,6 +198,22 @@
         "disposed": "Odbačeno",
         "raised": "Pokrenuto",
         "resolved": "Riješeno"
+      },
+      "evidence": {
+        "actionableAt": "Zahtijeva radnju od",
+        "actionableEvidence": "Zahtijeva radnju od (izvor)",
+        "attemptCount": "Izvršeni pokušaji",
+        "cause": "Uzrok",
+        "code": "Kod greške",
+        "deadline": "Rok",
+        "effect": "Radnja poruke",
+        "error": "Greška",
+        "outcome": "Ishod",
+        "policyRevision": "Revizija politike",
+        "reason": "Kod razloga",
+        "recovered": "Oporavio/la",
+        "route": "Putanja odluke",
+        "workId": "Zadatak isporuke"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Nije moguće učitati postavke eskalacije.",
@@ -209,6 +268,7 @@
       },
       "revisions": {
         "changedBy": "Izmijenio/la",
+        "empty": "Još nisu zabilježene nikakve izmjene politike.",
         "migration": "Migracija postavki",
         "policy": "Pravilo",
         "revision": "Revizija",
@@ -217,8 +277,10 @@
       },
       "title": "Eskalacija odobrenja",
       "toast": {
+        "conflict": "Ovo se u međuvremenu promijenilo. Ponovo učitajte da biste vidjeli trenutno stanje.",
         "deliveryRetried": "Zakazan ponovni pokušaj isporuke",
         "disposed": "Stavka koja zahtijeva pažnju je zatvorena",
+        "notFound": "Ova stavka više ne postoji. Ponovo učitajte da biste vidjeli trenutno stanje.",
         "rechecked": "Provjereno stavki: {checked}, riješeno: {resolved}",
         "requestFailed": "Zahtjev nije uspio. Pokušajte ponovo.",
         "reviewed": "Konflikti označeni kao pregledani",
@@ -261,8 +323,7 @@
       },
       "approvalTypes": "Vrste odobrenja",
       "approver": "Odobravatelj",
-      "approverEmployeeId": "ID zaposlenika odobravatelja",
-      "approverEmployeeIdPlaceholder": "Primjer: employee_123…",
+      "approverEmployee": "Zaposlenik koji odobrava",
       "approverType": {
         "directManager": "Direktni menadžer",
         "managerManager": "Menadžerov menadžer",
@@ -271,11 +332,19 @@
       },
       "conditionsCount": "Broj uslova",
       "createPolicy": "Kreiraj politiku odobravanja",
+      "createPolicySubmit": "Kreiraj politiku",
+      "deactivateConfirm": {
+        "confirm": "Deaktiviraj",
+        "description": "Novi zahtjevi prestaju odgovarati ovoj politici i usmjeravaju se putem sljedeće odgovarajuće aktivne politike ili zadane putanje odobravanja. Možete je ponovo aktivirati uređivanjem.",
+        "title": "Deaktivirati “{name}”?"
+      },
+      "deactivatePolicyNamed": "Deaktiviraj {name}",
       "defaultStageLabel": "Pregled menadžera",
       "description": "Konfigurišite sekvencijalne lance odobravanja za operativne radne tokove",
       "descriptionPlaceholder": "Primjer: Eskalira osjetljive radne tokove prema operacijama…",
       "dialogDescription": "Definišite kada se lanac odobravanja primjenjuje i koji odobravatelji obrađuju svaku uzastopnu fazu.",
-      "editPolicy": "Uredi politiku",
+      "editPolicyNamed": "Uredi {name}",
+      "editPolicyTitle": "Uredi politiku odobravanja",
       "empty": "Još uvijek nema konfigurisanih politika odobravanja. Kreirajte politiku da biste definisali svoj prvi lanac odobravanja.",
       "fallbackBehavior": {
         "defaultManager": {
@@ -292,25 +361,29 @@
           "label": "Administrator organizacije"
         }
       },
+      "legacyApprovalTypesNotice": "{count, plural, one {Ova politika također obuhvata # stariji tip odobrenja koji se ovdje ne može odabrati. Čuvanje {count, plural, one {ga} few {ih} other {ih}} ostavlja nepromijenjenim.} few {Ova politika također obuhvata # starija tipa odobrenja koja se ovdje ne mogu odabrati. Čuvanje {count, plural, one {ga} few {ih} other {ih}} ostavlja nepromijenjenim.} other {Ova politika također obuhvata # starijih tipova odobrenja koji se ovdje ne mogu odabrati. Čuvanje {count, plural, one {ga} few {ih} other {ih}} ostavlja nepromijenjenim.}}",
       "loadFailed": "Nije moguće učitati politike odobravanja.",
       "loading": "Učitavanje politika…",
       "namePlaceholder": "Primjer: Eskalacija odsustva…",
       "noStages": "Još nema konfigurisanih faza odobravanja.",
+      "preservedConditions": "{count, plural, one {Ova politika ima # dodatni uslov koji se ovdje ne može promijeniti. Čuvanje {count, plural, one {ga} few {ih} other {ih}} ostavlja nepromijenjenim.} few {Ova politika ima # dodatna uslova koja se ovdje ne mogu promijeniti. Čuvanje {count, plural, one {ga} few {ih} other {ih}} ostavlja nepromijenjenim.} other {Ova politika ima # dodatnih uslova koji se ovdje ne mogu promijeniti. Čuvanje {count, plural, one {ga} few {ih} other {ih}} ostavlja nepromijenjenim.}}",
       "preview": {
         "ariaLabel": "Pregled lanca odobravanja",
-        "badge": "Okvir pregleda",
-        "description": "Pogledajte kako će se odgovarajući zahtjevi kretati kroz svaku fazu odobravanja prije nego što aktivirate politiku.",
-        "footer": "Potpuni pregled u kontekstu zahtjeva prikazat će stvarne odobravatelje nakon što se uslovi politike i grupe zaposlenika povežu u uređivaču.",
+        "chainDescription": "Kako odgovarajući zahtjev prolazi kroz gore konfigurisane faze.",
+        "chainTitle": "Pregled lanca odobravanja",
+        "fallback": "Ako nije pronađen nijedan odobravatelj: {fallback}",
+        "loadingEmployee": "Učitavanje zaposlenika…",
+        "noEmployeeSelected": "Još nije odabran nijedan zaposlenik",
+        "noStages": "Dodajte fazu da biste vidjeli lanac odobravanja.",
         "stage": {
           "approved": "Odobreno",
-          "directManager": "Direktni menadžer",
-          "operationsAdmin": "Administrator operacija",
           "requester": "Podnosilac zahtjeva"
-        },
-        "title": "Sažetak pregleda lanca"
+        }
       },
       "priority": "Prioritet",
-      "removeStage": "Ukloni fazu",
+      "removeStageNumber": "Ukloni fazu {number}",
+      "savePolicySubmit": "Sačuvaj politiku",
+      "selectApproverEmployee": "Odaberi zaposlenika",
       "stageNumber": "Faza {number}",
       "stages": "Faze odobravanja",
       "stagesCount": "Broj faza",
@@ -322,14 +395,19 @@
       "title": "Politike odobravanja",
       "toast": {
         "created": "Politika odobravanja je kreirana",
-        "saveFailed": "Nije moguće sačuvati politiku odobravanja."
+        "deactivated": "“{name}” je deaktivirano",
+        "reactivated": "“{name}” je ponovo aktivno",
+        "saveFailed": "Nije moguće sačuvati politiku odobravanja.",
+        "updated": "Politika odobravanja je sačuvana"
       },
+      "unknownEmployee": "Nepoznat zaposlenik ({shortId})",
       "validation": {
         "activePolicyRequiresStage": "Aktivne politike zahtijevaju najmanje jednu fazu odobravanja.",
-        "specificEmployeeRequiresId": "Faze s određenim zaposlenikom zahtijevaju ID zaposlenika koji odobrava."
+        "specificEmployeeRequired": "Odaberite zaposlenika koji odobrava za svaku fazu određenog zaposlenika."
       }
     },
     "changePolicies": {
+      "actionsFor": "Radnje za {name}",
       "allManagers": "Svi menadžeri",
       "approvalDaysDescription": "Pored samoposluživanja, zaposlenici mogu zatražiti izmjene unutar ovog perioda (zahtijeva odobrenje). 0 = bez dodatnog perioda.",
       "approvalDaysLabel": "Period odobravanja (u danima)",
@@ -363,6 +441,7 @@
       "deleted": "Pravilo je obrisano",
       "deleteDescription": "Jeste li sigurni da želite obrisati ovo pravilo? Sve dodjele koje koriste ovo pravilo također će biti uklonjene. Zaposlenici koji su prethodno koristili ovo pravilo neće imati ograničenja dok se ne dodijeli novo pravilo.",
       "deleteFailed": "Brisanje pravila nije uspjelo",
+      "deleteNamedDescription": "Izbrisati politiku izmjena \"{name}\"? Sve dodjele koje koriste ovu politiku također će biti uklonjene. Zaposlenici koji su ranije koristili ovu politiku neće imati ograničenja dok se ne dodijeli nova politika.",
       "deleteTitle": "Obriši pravilo za izmjene",
       "description": "Kontrolišite kada zaposlenici mogu uređivati unose radnog vremena i kada je potrebno odobrenje menadžera",
       "descriptionLabel": "Opis",
@@ -391,9 +470,11 @@
       "organizationDefaultDescription": "Zadano pravilo koje se primjenjuje na sve zaposlenike koji nemaju timsko ili pojedinačno premošćavanje.",
       "policySummary": "Sažetak pravila:",
       "primaryOnly": "Samo primarni",
+      "removeAssignmentFor": "Ukloni dodjelu za {name}",
       "removeAssignmentTitle": "Ukloniti dodjelu pravila?",
       "removeEmployeeDescription": "Ovim će se ukloniti premošćavanje za \"{name}\". Koristit će zadano pravilo svog tima ili organizacije.",
       "removeOrgDescription": "Ovim će se ukloniti zadano pravilo organizacije. Zaposlenici neće imati ograničenja osim ako nemaju timsko ili pojedinačno premošćavanje.",
+      "removeOrgNamedDescription": "Ovim će se \"{policy}\" ukloniti kao zadana politika organizacije. Zaposlenici neće imati ograničenja osim ako nemaju timski ili pojedinačni izuzetak.",
       "removeTeamDescription": "Ovim će se ukloniti pravilo za tim \"{team}\". Koristit će zadano pravilo organizacije.",
       "sameDay": "Samo isti dan",
       "sameDayFree": "Uređivanja istog dana su slobodna",
@@ -438,6 +519,13 @@
       "description": "Postavite minimalne zahtjeve za osobljem po lokaciji i vremenu",
       "editRule": "Uredi pravilo pokrivenosti",
       "endTime": "Vrijeme završetka",
+      "errors": {
+        "endNotAfterStart": "Vrijeme završetka mora biti nakon vremena početka istog dana.",
+        "invalidTime": "Unesite vrijeme u 24-satnom formatu HH:mm.",
+        "staffCountRange": "Unesite cijeli broj od 1 do 100.",
+        "subareaRequired": "Odaberite podoblast."
+      },
+      "loadFailed": "Pravila pokrivenosti nisu mogla biti učitana.",
       "loading": "Učitavanje pravila pokrivenosti...",
       "minimumStaffCount": "Minimalan broj osoblja",
       "minimumStaffHint": "Minimalan broj osoblja potreban tokom ovog vremenskog bloka.",
@@ -452,6 +540,7 @@
       "ruleUpdated": "Pravilo pokrivenosti je ažurirano",
       "selectSubarea": "Odaberite podoblast",
       "settingsFailed": "Spremanje postavki nije uspjelo",
+      "settingsLoadFailed": "Postavke objavljivanja nisu mogle biti učitane.",
       "settingsSaved": "Postavke su spremljene",
       "startTime": "Vrijeme početka",
       "subarea": "Lokacija / Podoblast",
@@ -493,6 +582,10 @@
         "colorSelection": "Odabir boje",
         "defaultSubarea": "Zadana podoblast",
         "endTime": "Vrijeme završetka",
+        "errors": {
+          "invalidTime": "Unesite vrijeme u 24-satnom formatu HH:mm.",
+          "subareaRequired": "Odaberite jednu od vaših podoblasti."
+        },
         "name": "Naziv",
         "namePlaceholder": "npr., Jutarnja smjena…",
         "noSubarea": "Nema zadane podoblasti",
@@ -508,6 +601,7 @@
         "description": "Upravljajte svojim šablonima smjena",
         "title": "Šabloni"
       },
+      "loadError": "Nije bilo moguće učitati šablone smjena.",
       "table": {
         "duration": "Trajanje",
         "name": "Naziv",
@@ -544,7 +638,7 @@
       "deleteModel": "Izbriši model doplate",
       "deleteModelDescription": "Ovo će deaktivirati model i sve njegove dodjele. Ova radnja se ne može poništiti.",
       "deleteModelTitle": "Obrisati model dodataka?",
-      "deleteOrgAssignmentDescription": "Ovo će ukloniti zadane postavke organizacije. Timovi i zaposlenici bez specifičnih dodjela neće imati primijenjen model dodataka.",
+      "deleteOrgAssignmentNamedDescription": "Ovim će se ukloniti \"{model}\" kao zadana postavka organizacije. Timovi i zaposlenici bez posebnih dodjela neće imati primijenjen model dodataka.",
       "deleteTeamAssignmentDescription": "Ovo će ukloniti model dodataka iz tima \"{team}\". Koristit će zadane postavke organizacije.",
       "description": "Konfigurišite vremenske dodatke za prekovremeni rad, noćni rad, vikende i praznike.",
       "descriptionLabel": "Opis",
@@ -605,9 +699,11 @@
           "loadTitle": "Nije moguće učitati izračune"
         },
         "filters": {
+          "allEmployees": "Svi zaposlenici",
           "apply": "Primijeni filtere",
-          "employeeId": "ID zaposlenika",
+          "employee": "Zaposlenik",
           "endDate": "Krajnji datum",
+          "showAllEmployees": "Prikaži sve zaposlenike",
           "startDate": "Početni datum"
         },
         "loading": "Učitavanje izračuna…",
@@ -618,6 +714,7 @@
         "rowLimitNotice": "Prikazuje se prvih 500 odgovarajućih izračuna. Suzite filtere po datumu ili zaposleniku da biste precizirali ukupne iznose.",
         "summary": {
           "baseHours": "Osnovni sati",
+          "calculationCount": "{count, plural, one {# obračun} other {# obračuna} }",
           "calculations": "Izračuni",
           "creditedHours": "Priznati sati dodatka",
           "qualifyingHours": "Kvalificirani sati dodatka"
@@ -701,6 +798,7 @@
       "cannotDeleteInUse": "Prvo uklonite iz setova",
       "categories": "Kategorije",
       "categoriesDescription": "Kreirajte i upravljajte radnim kategorijama koje se mogu dijeliti u više setova",
+      "categoriesLoadError": "Nije bilo moguće učitati kategorije rada",
       "categoriesTitle": "Radne kategorije",
       "categoryCreated": "Kategorija je kreirana",
       "categoryCreateFailed": "Kreiranje kategorije nije uspjelo",
@@ -709,6 +807,7 @@
       "categoryInUse": "Nije moguće obrisati kategoriju koja se koristi u {count} set(ova). Prvo je uklonite iz svih setova.",
       "categoryName": "Naziv",
       "categoryNamePlaceholder": "npr. Pasivno putovanje",
+      "categoryNameTaken": "Kategorija s ovim nazivom već postoji.",
       "categoryUpdated": "Kategorija je ažurirana",
       "categoryUpdateFailed": "Ažuriranje kategorije nije uspjelo",
       "chooseColor": "Odaberite boju",
@@ -722,22 +821,30 @@
       "createSetDescription": "Kreirajte novi set kategorija i odaberite koje kategorije želite uključiti",
       "defaultSet": "Zadani set kategorija",
       "deleteAssignmentTitle": "Ukloniti dodjelu?",
+      "deleteCategoryDescription": "Kategorija \"{name}\" će biti trajno izbrisana.",
+      "deleteCategoryNamed": "Izbriši kategoriju {name}",
+      "deleteCategoryTitle": "Izbrisati kategoriju?",
       "deleteEmployeeAssignment": "Ovim ćete ukloniti nadjačavanje za \"{name}\". Koristit će se zadane postavke tima ili organizacije.",
-      "deleteOrgAssignment": "Ovim ćete ukloniti zadane postavke organizacije. Zaposlenici neće imati dostupne radne kategorije osim ako im nisu dodijeljene pojedinačno.",
+      "deleteOrgAssignmentNamed": "Ovim će se ukloniti \"{set}\" kao zadana postavka organizacije. Zaposlenici neće imati dostupne kategorije rada osim ako nisu pojedinačno dodijeljene.",
       "deleteSetDescription": "Ovim ćete trajno izbrisati skup kategorija \"{name}\" i sve njegove kategorije. Sve dodjele koje koriste ovaj skup također će biti uklonjene.",
+      "deleteSetNamed": "Izbriši skup kategorija {name}",
       "deleteSetTitle": "Izbrisati skup kategorija?",
       "deleteTeamAssignment": "Ovim ćete ukloniti skup kategorija za tim \"{team}\". Tim će koristiti zadane postavke organizacije.",
       "description": "Definišite radne kategorije s faktorima vremena za izračun efektivnog vremena",
       "descriptionPlaceholder": "Opcionalni opis",
       "editCategory": "Uredi kategoriju",
       "editCategoryDescription": "Ažurirajte detalje kategorije",
+      "editCategoryNamed": "Uredi kategoriju {name}",
       "editSet": "Uredi skup kategorija",
       "editSetDescription": "Ažurirajte detalje skupa kategorija i upravljajte njegovim kategorijama",
+      "editSetNamed": "Uredi skup kategorija {name}",
       "employeeLevel": "Izuzeci za zaposlenike",
       "employeeLevelDescription": "Predefinišite zadane postavke tima ili organizacije za određene zaposlenike",
       "factor": "Faktor",
       "factorExplanation": "Faktor određuje efektivno vrijeme: 0.5 = 50% (npr. pasivno putovanje), 1.0 = 100% (normalan rad), 1.5 = 150% (prekovremeni rad)",
       "loadError": "Učitavanje skupova kategorija nije uspjelo",
+      "moveCategoryDown": "Pomjeri {name} dolje",
+      "moveCategoryUp": "Pomjeri {name} gore",
       "noCategories": "Još nema kategorija",
       "noCategoriesAvailable": "Nema dostupnih kategorija",
       "noCategoriesHint": "Kreirajte kategorije da biste ih dodijelili skupovima",
@@ -752,8 +859,10 @@
       "noTeamsAvailable": "Nema dostupnih timova.",
       "orgLevel": "Zadano za organizaciju",
       "orgLevelDescription": "Zadani skup kategorija koji se primjenjuje na sve zaposlenike osim ako nije definisan izuzetak",
+      "removeAssignmentFor": "Ukloni dodjelu za {name}",
+      "removeCategoryFromSet": "Ukloni {name} iz skupa",
       "selectCategories": "Odaberite kategorije",
-      "selectedCategories": "Odabrane kategorije (prevucite za promjenu redoslijeda)",
+      "selectedCategoriesOrder": "Odabrane kategorije (koristite strelice za promjenu redoslijeda)",
       "selectEmployee": "Zaposlenik",
       "selectEmployeePlaceholder": "Odaberite zaposlenika",
       "selectSet": "Skup kategorija",
@@ -769,6 +878,7 @@
       "setDescriptionPlaceholder": "Opcionalni opis za ovaj skup kategorija",
       "setName": "Naziv",
       "setNamePlaceholder": "npr. Kategorije putovanja",
+      "setNameTaken": "Skup kategorija s ovim nazivom već postoji.",
       "setUpdated": "Skup kategorija je ažuriran",
       "setUpdateFailed": "Ažuriranje skupa kategorija nije uspjelo",
       "tab": {

@@ -1,0 +1,322 @@
+Privacy-limited diagnostic clone; source encoding decoded, assertion failures/outcomes retained, structured contact/host/audit payloads omitted; display-only trailing whitespace normalized.
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+ RUN  v5.1.0 WORKTREE_ROOT/apps/webapp
+ ❯ |unit| src/components/travel-expenses/report/report-reopen.test.tsx (5 tests | 1 failed) 1196ms
+   ❯ reopening an approved report (#614) (5)
+     × keeps the exact reason and dialog after a rejected transport, then retries 1095ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  |unit| src/components/travel-expenses/report/report-reopen.test.tsx > reopening an approved report (#614) > keeps the exact reason and dialog after a rejected transport, then retries
+TestingLibraryElementError: Unable to find an element with the text: /The report could not be reopened/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+Ignored nodes: comments, script, style
+<div
+  aria-describedby="base-ui-_r_3_"
+  aria-labelledby="base-ui-_r_2_"
+  class="bg-background motion-safe:data-[starting-style]:animate-in motion-safe:data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[starting-style]:fade-in-0 data-[ending-style]:zoom-out-95 data-[starting-style]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 outline-none max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+  data-base-ui-focusable=""
+  data-open=""
+  data-slot="dialog-content"
+  id="_r_0_"
+  role="dialog"
+  style="--nested-dialogs: 0;"
+  tabindex="-1"
+>
+  <div
+    class="flex flex-col gap-2 text-center sm:text-left"
+    data-slot="dialog-header"
+  >
+    <h2
+      class="text-lg leading-none font-semibold"
+      data-slot="dialog-title"
+      id="base-ui-_r_2_"
+    >
+      Reopen this approved report?
+    </h2>
+    <p
+      class="text-muted-foreground text-sm"
+      data-slot="dialog-description"
+      id="base-ui-_r_3_"
+    >
+      The employee can correct the report and must submit it again for a fresh approval. Until then it is not payable or exportable. The approved submission stays in its history.
+    </p>
+  </div>
+  <form
+    class="space-y-4"
+    novalidate=""
+  >
+    <div
+      class="grid content-start gap-2"
+      data-slot="form-item"
+    >
+      <label
+        class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 data-[error=true]:text-destructive"
+        data-error="false"
+        data-slot="form-label"
+        for="_r_5_-form-item"
+      >
+        Reason for the employee
+        <span
+          class="text-destructive ml-1"
+        >
+          *
+        </span>
+      </label>
+      <textarea
+        aria-describedby="_r_5_-form-item-description"
+        aria-invalid="false"
+        class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-card px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+        data-slot="form-control"
+        id="_r_5_-form-item"
+        rows="3"
+      >
+        Keep invoice note exactly
+      </textarea>
+    </div>
+    <div
+      class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+      data-slot="dialog-footer"
+    >
+      <button
+        class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+        data-slot="button"
+        type="button"
+      >
+        Cancel
+      </button>
+      <button
+        class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+        data-slot="button"
+        type="submit"
+      >
+        <svg
+          aria-hidden="true"
+          class="tabler-icon tabler-icon-arrow-back-up mr-2 size-4"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M9 14l-4 -4l4 -4"
+          />
+          <path
+            d="M5 10h11a4 4 0 1 1 0 8h-1"
+          />
+        </svg>
+        Reopen report
+      </button>
+    </div>
+  </form>
+  <button
+    class="pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] ring-offset-background focus:ring-ring data-[open]:bg-accent data-[open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+    data-slot="dialog-close"
+    tabindex="0"
+    type="button"
+  >
+    <svg
+      class="tabler-icon tabler-icon-x"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 6l-12 12"
+      />
+      <path
+        d="M6 6l12 12"
+      />
+    </svg>
+    <span
+      class="sr-only"
+    >
+      Close
+    </span>
+  </button>
+</div>
+Ignored nodes: comments, script, style
+<div
+  aria-describedby="base-ui-_r_3_"
+  aria-labelledby="base-ui-_r_2_"
+  class="bg-background motion-safe:data-[starting-style]:animate-in motion-safe:data-[ending-style]:animate-out data-[ending-style]:fade-out-0 data-[starting-style]:fade-in-0 data-[ending-style]:zoom-out-95 data-[starting-style]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 outline-none max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+  data-base-ui-focusable=""
+  data-open=""
+  data-slot="dialog-content"
+  id="_r_0_"
+  role="dialog"
+  style="--nested-dialogs: 0;"
+  tabindex="-1"
+>
+  <div
+    class="flex flex-col gap-2 text-center sm:text-left"
+    data-slot="dialog-header"
+  >
+    <h2
+      class="text-lg leading-none font-semibold"
+      data-slot="dialog-title"
+      id="base-ui-_r_2_"
+    >
+      Reopen this approved report?
+    </h2>
+    <p
+      class="text-muted-foreground text-sm"
+      data-slot="dialog-description"
+      id="base-ui-_r_3_"
+    >
+      The employee can correct the report and must submit it again for a fresh approval. Until then it is not payable or exportable. The approved submission stays in its history.
+    </p>
+  </div>
+  <form
+    class="space-y-4"
+    novalidate=""
+  >
+    <div
+      class="grid content-start gap-2"
+      data-slot="form-item"
+    >
+      <label
+        class="flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 data-[error=true]:text-destructive"
+        data-error="false"
+        data-slot="form-label"
+        for="_r_5_-form-item"
+      >
+        Reason for the employee
+        <span
+          class="text-destructive ml-1"
+        >
+          *
+        </span>
+      </label>
+      <textarea
+        aria-describedby="_r_5_-form-item-description"
+        aria-invalid="false"
+        class="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-card px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+        data-slot="form-control"
+        id="_r_5_-form-item"
+        rows="3"
+      >
+        Keep invoice note exactly
+      </textarea>
+    </div>
+    <div
+      class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+      data-slot="dialog-footer"
+    >
+      <button
+        class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3"
+        data-slot="button"
+        type="button"
+      >
+        Cancel
+      </button>
+      <button
+        class="relative pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+        data-slot="button"
+        type="submit"
+      >
+        <svg
+          aria-hidden="true"
+          class="tabler-icon tabler-icon-arrow-back-up mr-2 size-4"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M9 14l-4 -4l4 -4"
+          />
+          <path
+            d="M5 10h11a4 4 0 1 1 0 8h-1"
+          />
+        </svg>
+        Reopen report
+      </button>
+    </div>
+  </form>
+  <button
+    class="pointer-coarse:after:absolute pointer-coarse:after:inset-[min(0px,calc((100%_-_2.75rem)/2))] ring-offset-background focus:ring-ring data-[open]:bg-accent data-[open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+    data-slot="dialog-close"
+    tabindex="0"
+    type="button"
+  >
+    <svg
+      class="tabler-icon tabler-icon-x"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 6l-12 12"
+      />
+      <path
+        d="M6 6l12 12"
+      />
+    </svg>
+    <span
+      class="sr-only"
+    >
+      Close
+    </span>
+  </button>
+</div>
+ ❯ waitForWrapper ../../node_modules/.pnpm/@[contact removed]@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@[contact removed]@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/travel-expenses/report/report-reopen.test.tsx:56:31
+     54|   fireEvent.change(within(dialog).getByLabelText(/Reason/), { target: …
+     55|   fireEvent.click(within(dialog).getByRole("button", { name: "Reopen r…
+     56|   expect(await within(dialog).findByText(/The report could not be reop…
+       |                               ^
+     57|   expect(within(dialog).getByLabelText(/Reason/)).toHaveProperty("valu…
+     58|   fireEvent.click(within(dialog).getByRole("button", { name: "Reopen r…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: offline
+ ❯ src/components/travel-expenses/report/report-reopen.test.tsx:49:71
+     47|   reopenActions.getTravelExpenseReportReopenState.mockResolvedValue({ …
+     48|    data: { status: "available", submissionCycle: 2 } });
+     49|   reopenActions.reopenTravelExpenseReportAction.mockRejectedValueOnce(…
+       |                                                                       ^
+     50|    .mockResolvedValueOnce({ success: true, data: { status: "reopened" …
+     51|   mount();
+ ❯ [contact removed]@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:1632:35
+ ❯ [contact removed]@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:2801:26
+ ❯ [contact removed]@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3338:20
+ ❯ runWithCancel [contact removed]@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3333:10
+ ❯ [contact removed]@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3318:20
+ ❯ runWithTimeout [contact removed]@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3276:10
+ ❯ [contact removed]@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest/dist/chunks/run.CjdgFZiW.js:3922:64
+This error originated in "src/components/travel-expenses/report/report-reopen.test.tsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "keeps the exact reason and dialog after a rejected transport, then retries". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+     Errors  1 error
+   Start at  12:20:52
+   Duration  2.13s (tests 64%, environment 17%, import 14%, transform 3%, setup 1%)

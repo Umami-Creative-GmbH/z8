@@ -1,0 +1,64 @@
+{
+  "head": "591da6b1f9d8f6b58f82bf11dd6221fce70a0c9d",
+  "toolsInspected": [
+    "get_compilation_issues",
+    "get_errors",
+    "get_project_metadata",
+    "get_routes",
+    "get_page_metadata"
+  ],
+  "project": {
+    "projectPath": "X:\\t3-code\\worktrees\\z8\\t3-bf595089-18159257d050b486\\apps\\webapp",
+    "devServerUrl": "http://localhost:63784"
+  },
+  "compilation": {
+    "issues": []
+  },
+  "errors": {
+    "configErrors": [],
+    "sessionErrors": []
+  },
+  "route": "/[locale]/mfa",
+  "page": {
+    "url": "/en/mfa",
+    "routerType": "app",
+    "segments": [
+      {
+        "path": "app/[locale]/layout.tsx",
+        "type": "layout",
+        "isBoundary": false,
+        "isBuiltin": false
+      },
+      {
+        "path": "global-error.js",
+        "type": "boundary:global-error",
+        "isBoundary": true,
+        "isBuiltin": true
+      },
+      {
+        "path": "not-found.js",
+        "type": "boundary:not-found",
+        "isBoundary": true,
+        "isBuiltin": true
+      },
+      {
+        "path": "app/[locale]/error.tsx",
+        "type": "boundary:error",
+        "isBoundary": true,
+        "isBuiltin": false
+      },
+      {
+        "path": "app/[locale]/not-found.tsx",
+        "type": "boundary:not-found",
+        "isBoundary": true,
+        "isBuiltin": false
+      },
+      {
+        "path": "app/[locale]/mfa/page.tsx",
+        "type": "page",
+        "isBoundary": false,
+        "isBuiltin": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,209 @@
+{
+  "red": {
+    "sourceCommit": "d4f4859527122f39dfda456671d48de131bab51c",
+    "failed": 3,
+    "passed": 0,
+    "skipped": 43,
+    "selected": [
+      {
+        "name": "CalendarView follows a same-date route back after acknowledging a picker choice and closes its record",
+        "status": "failed"
+      },
+      {
+        "name": "CalendarView restores the cached route after its navigation completes without a prop acknowledgement",
+        "status": "failed"
+      },
+      {
+        "name": "CalendarView keeps a returned picker choice through an older arrival, then follows a new route after acknowledgement",
+        "status": "failed"
+      }
+    ]
+  },
+  "green": {
+    "sourceCommit": "7fed18b191760826b1076de827ff9de27f026ea9",
+    "files": 45,
+    "cases": 489,
+    "suites": [
+      {
+        "file": "src/hooks/use-calendar-data.test.tsx",
+        "passed": 4
+      },
+      {
+        "file": "src/hooks/use-calendar-employees.test.ts",
+        "passed": 1
+      },
+      {
+        "file": "src/components/calendar/calendar-controls.test.tsx",
+        "passed": 3
+      },
+      {
+        "file": "src/components/calendar/calendar-employee-selector.test.tsx",
+        "passed": 2
+      },
+      {
+        "file": "src/components/calendar/calendar-filters.test.tsx",
+        "passed": 1
+      },
+      {
+        "file": "src/components/calendar/calendar-view.test.tsx",
+        "passed": 46
+      },
+      {
+        "file": "src/components/calendar/calendar-work-event.test.tsx",
+        "passed": 11
+      },
+      {
+        "file": "src/components/calendar/clock-out-on-behalf-dialog.test.tsx",
+        "passed": 9
+      },
+      {
+        "file": "src/components/calendar/daily-requirement-strip.test.tsx",
+        "passed": 5
+      },
+      {
+        "file": "src/components/calendar/delete-work-period-dialog.test.tsx",
+        "passed": 9
+      },
+      {
+        "file": "src/components/calendar/event-details-panel.test.tsx",
+        "passed": 10
+      },
+      {
+        "file": "src/components/calendar/month-work-summary-view.test.tsx",
+        "passed": 7
+      },
+      {
+        "file": "src/components/calendar/schedule-x-calendar.test.tsx",
+        "passed": 36
+      },
+      {
+        "file": "src/components/calendar/split-work-period-dialog.test.tsx",
+        "passed": 9
+      },
+      {
+        "file": "src/components/calendar/work-period-context-menu.test.tsx",
+        "passed": 4
+      },
+      {
+        "file": "src/components/calendar/work-period-edit-dialog.test.tsx",
+        "passed": 12
+      },
+      {
+        "file": "src/components/calendar/work-period-mileage-action.test.tsx",
+        "passed": 5
+      },
+      {
+        "file": "src/components/calendar/work-period-time-edit-section.test.tsx",
+        "passed": 16
+      },
+      {
+        "file": "src/components/calendar/year-calendar-view.test.tsx",
+        "passed": 5
+      },
+      {
+        "file": "src/components/time-tracking/manual-time-entry-dialog.test.tsx",
+        "passed": 65
+      },
+      {
+        "file": "src/lib/calendar-sync/ics-feed-secret.test.ts",
+        "passed": 4
+      },
+      {
+        "file": "src/lib/calendar/absence-adjusted-requirements.test.ts",
+        "passed": 11
+      },
+      {
+        "file": "src/lib/calendar/assigned-holidays.test.ts",
+        "passed": 15
+      },
+      {
+        "file": "src/lib/calendar/calendar-employee-context.test.ts",
+        "passed": 6
+      },
+      {
+        "file": "src/lib/calendar/date-keys.test.ts",
+        "passed": 5
+      },
+      {
+        "file": "src/lib/calendar/initial-date.test.ts",
+        "passed": 5
+      },
+      {
+        "file": "src/lib/calendar/month-work-summary.test.ts",
+        "passed": 12
+      },
+      {
+        "file": "src/lib/calendar/schedule-x-adapter.test.ts",
+        "passed": 17
+      },
+      {
+        "file": "src/lib/calendar/schedule-x-locale.test.ts",
+        "passed": 19
+      },
+      {
+        "file": "src/lib/calendar/schedule-x-runtime.test.ts",
+        "passed": 1
+      },
+      {
+        "file": "src/lib/calendar/time-entry-service.test.ts",
+        "passed": 2
+      },
+      {
+        "file": "src/lib/calendar/work-hours-summary.test.ts",
+        "passed": 14
+      },
+      {
+        "file": "src/lib/calendar/work-period-edited-by.test.ts",
+        "passed": 5
+      },
+      {
+        "file": "src/lib/calendar/work-period-service.test.ts",
+        "passed": 20
+      },
+      {
+        "file": "src/lib/calendar/work-policy-requirements.test.ts",
+        "passed": 17
+      },
+      {
+        "file": "src/lib/navigation/route-metadata.test.ts",
+        "passed": 33
+      },
+      {
+        "file": "src/lib/calendar-sync/domain/event-mapper.test.ts",
+        "passed": 1
+      },
+      {
+        "file": "src/lib/calendar-sync/jobs/sync-processor.test.ts",
+        "passed": 6
+      },
+      {
+        "file": "src/lib/calendar-sync/providers/base.test.ts",
+        "passed": 5
+      },
+      {
+        "file": "src/lib/calendar-sync/providers/google.test.ts",
+        "passed": 2
+      },
+      {
+        "file": "src/lib/calendar-sync/providers/index.test.ts",
+        "passed": 4
+      },
+      {
+        "file": "src/lib/calendar-sync/providers/microsoft365.test.ts",
+        "passed": 1
+      },
+      {
+        "file": "src/app/api/calendar/events/route.test.ts",
+        "passed": 19
+      },
+      {
+        "file": "src/app/[locale]/(app)/calendar/page.test.tsx",
+        "passed": 3
+      },
+      {
+        "file": "src/app/[locale]/(app)/calendar/[employeeId]/page.test.tsx",
+        "passed": 2
+      }
+    ]
+  }
+}

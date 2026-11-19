@@ -1,0 +1,788 @@
+{
+  "status": "Merged locally; root owns readiness/qualification decision",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "base": "81cf0067808e16c6ed04b783e8ce8f85aa5d8ce2",
+  "incoming": "d0e4dff2695da22af8ff7cbd93acee3e01213ba1",
+  "merge": "fb6a2c1890f5efda579b48f6af1f7af5444bd47e",
+  "parents": [
+    "81cf0067808e16c6ed04b783e8ce8f85aa5d8ce2",
+    "d0e4dff2695da22af8ff7cbd93acee3e01213ba1"
+  ],
+  "tree": "8a4a8f0c46be6f6450850af0e7a770e31556df46",
+  "independentTreeMatches": true,
+  "clean": true,
+  "tests": {
+    "selections": [
+      {
+        "name": "exact",
+        "files": 25,
+        "cases": 198,
+        "passed": 198,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 0,
+        "overlapCases": 0
+      },
+      {
+        "name": "compatibility",
+        "files": 50,
+        "cases": 386,
+        "passed": 386,
+        "failed": 0,
+        "skipped": 0,
+        "overlapFiles": 16,
+        "overlapCases": 166
+      }
+    ],
+    "uniqueFiles": 59,
+    "uniqueCases": 418,
+    "workerSelectionSubset": {
+      "files": 24,
+      "cases": 191
+    },
+    "rootCorrectionAddition": {
+      "file": "X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp/src/components/organization-mfa/verification-lifetime.test.tsx",
+      "cases": 6
+    },
+    "documentsHeadingAddition": {
+      "fullName": "route metadata adopts the personal documents heading without officer descendants",
+      "cases": 1
+    },
+    "method": "File path plus fullName multisets; parameterized test multiplicity retained. Every repeated file fullName multiset must match exactly. Repeated tests do not add coverage.",
+    "inheritedComparison": "Worker24/191 passing subset retained; same exact filters now25/198 include root MFA lifetime6 cases plus documents heading1. Commit diff confirms these are the only changed unit files vs worker baseline. PostgreSQL10/118 and all runtime/native/Next are inherited and not added to fresh unit counts."
+  },
+  "types": {
+    "passed": true,
+    "scope": "Full next typegen, application tsconfig.typecheck, workflow-contracts and smoke, fresh merged source"
+  },
+  "biome": {
+    "changedFiles": 8,
+    "rawDefault": {
+      "passed": false,
+      "formattingFiles": 8
+    },
+    "crlfDefault": {
+      "passed": true
+    },
+    "explicitWebapp100column": {
+      "passed": false,
+      "formattingFiles": 6
+    },
+    "explicitLintImport": {
+      "passed": true
+    },
+    "noFixesApplied": true
+  },
+  "doctor": {
+    "files": 8,
+    "errors": 0,
+    "warnings": 0,
+    "score": null,
+    "complete": true,
+    "noSuppressionOrConfigEdits": true
+  },
+  "preservation": {
+    "priorVerifiedAncestors": 33,
+    "priorRolloutPathsUnchanged": 1532,
+    "unaffectedPriorPathsUnchanged": 11757,
+    "incomingChangedPathsMatch": 70,
+    "noDeletion": true,
+    "sourcePaths": [
+      "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx",
+      "apps/webapp/src/components/equipment/equipment-personal-header.tsx",
+      "apps/webapp/src/components/equipment/equipment-personal-loading.tsx",
+      "apps/webapp/src/components/equipment/equipment-personal.test.tsx",
+      "apps/webapp/src/components/equipment/equipment-personal.tsx",
+      "apps/webapp/src/components/equipment/equipment-routes.test.tsx",
+      "apps/webapp/src/components/site-header.test.tsx",
+      "apps/webapp/src/lib/navigation/route-metadata.ts"
+    ],
+    "combinedMetadata": {
+      "baseAddsOnlyMyEquipment": true,
+      "incomingAddsOnlyMyDocuments": true
+    },
+    "allOtherSourcesUnchanged": true,
+    "allRootMfaCalendarPanelEquipmentAndDocumentsBytesPreserved": true,
+    "verifiedAncestors": [
+      {
+        "issue": 1693,
+        "verifiedCommit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5"
+      },
+      {
+        "issue": 1694,
+        "verifiedCommit": "382b8f5be837dad724d3a54274d3050b0104881f"
+      },
+      {
+        "issue": 1695,
+        "verifiedCommit": "bfacad421ffe77f50729ea5895c546698ef28383"
+      },
+      {
+        "issue": 1853,
+        "verifiedCommit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211"
+      },
+      {
+        "issue": 1700,
+        "verifiedCommit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde"
+      },
+      {
+        "issue": 1701,
+        "verifiedCommit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc"
+      },
+      {
+        "issue": 1820,
+        "verifiedCommit": "996074d9fcbbaeb956a1b7316f914052d8c24733"
+      },
+      {
+        "issue": 1702,
+        "verifiedCommit": "416c04fc1b65f798422ddeecb8413249b064f715"
+      },
+      {
+        "issue": 1703,
+        "verifiedCommit": "2bc30e88f63d9db3d547353f49077db0c0ee7805"
+      },
+      {
+        "issue": 1704,
+        "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+      },
+      {
+        "issue": 1705,
+        "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+      },
+      {
+        "issue": 1706,
+        "verifiedCommit": "62f92f0447a35b30b9806bca0a480f03a8f3c896"
+      },
+      {
+        "issue": 1707,
+        "verifiedCommit": "6fa8147fae492939056a76e83e327e520d921ae1"
+      },
+      {
+        "issue": 1708,
+        "verifiedCommit": "3f86b1d7e17025e89f314638a042aa1eed378ed1"
+      },
+      {
+        "issue": 1709,
+        "verifiedCommit": "97ecd83ca05ad1bab75fee84beed57f23e74c007"
+      },
+      {
+        "issue": 1710,
+        "verifiedCommit": "273320a9376b4deb60b57ba3882fc17b37ae308a"
+      },
+      {
+        "issue": 1711,
+        "verifiedCommit": "3a0274c800d218689dbe3f235184e40ab15ebbeb"
+      },
+      {
+        "issue": 1712,
+        "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+      },
+      {
+        "issue": 1713,
+        "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+      },
+      {
+        "issue": 1714,
+        "verifiedCommit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10"
+      },
+      {
+        "issue": 1715,
+        "verifiedCommit": "ad51efc8e2d39e062c8486b4ead15732c67acb30"
+      },
+      {
+        "issue": 1716,
+        "verifiedCommit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741"
+      },
+      {
+        "issue": 1717,
+        "verifiedCommit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784"
+      },
+      {
+        "issue": 1718,
+        "verifiedCommit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd"
+      },
+      {
+        "issue": 1719,
+        "verifiedCommit": "a9b472e5864f386d881604605d593cffc189d61a"
+      },
+      {
+        "issue": 1821,
+        "verifiedCommit": "f53de8d531fa49b70afe72a722ce3588a477d0d8"
+      },
+      {
+        "issue": 1822,
+        "verifiedCommit": "984436c44a2c44bbe99e22fb23c4dbb108534e83"
+      },
+      {
+        "issue": 1823,
+        "verifiedCommit": "65b74963b69e9536af5e862199fa43a8583473cc"
+      },
+      {
+        "issue": 1824,
+        "verifiedCommit": "fe2bed7cdcd268b59727f04fd8496730cdd21179"
+      },
+      {
+        "issue": 1825,
+        "verifiedCommit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c"
+      },
+      {
+        "issue": 1826,
+        "verifiedCommit": "40492f6233feecfac214813f28e2f1f26b3175b2"
+      },
+      {
+        "issue": 1720,
+        "verifiedCommit": "ced095089163e69b232c2bce96a40cba800186d8"
+      },
+      {
+        "issue": 1745,
+        "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+      }
+    ],
+    "criticalAncestors": [
+      "81cf0067808e16c6ed04b783e8ce8f85aa5d8ce2",
+      "d0e4dff2695da22af8ff7cbd93acee3e01213ba1",
+      "4255ef7d6565d103a4b0887812b751db5bd08ad9",
+      "40492f6233feecfac214813f28e2f1f26b3175b2",
+      "ced095089163e69b232c2bce96a40cba800186d8",
+      "0a8247f6517714f2f51a74aa60f81914fa61771d",
+      "183cb120d",
+      "7fed18b191760826b1076de827ff9de27f026ea9",
+      "6a9189f867c6349961511cd9bc4f4db77f51e9e1",
+      "ccccad7a3512924e01941054f01283057dd62f00"
+    ],
+    "staticInventory": {
+      "persistentPages": 153,
+      "aliases": 19,
+      "sourceTemplates": 172,
+      "aliasesUnchangedFromInitialDev": 19
+    },
+    "archiveChecks": [
+      {
+        "name": "r019-historical",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1717/verify-evidence.mjs"
+        ],
+        "output": "Verified matched scope/viewport/row/title evidence, retained raw hashes against captured source f043d581e481a984a54da81b967bf5e6cfdfcd5e, 24 core + 11 final variant assertions, retained historical messages, native tree and Next diagnostics. This does not constitute a fresh browser run."
+      },
+      {
+        "name": "r020-historical",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1718/verify-evidence.mjs"
+        ],
+        "output": "Verified 30 source-pinned observations, three matched pairs, action/readback/role/scope/pending/focus/preferences evidence and fully decoded 30 PNGs. This validates the archive, not a fresh runtime run."
+      },
+      {
+        "name": "r021-current",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1719/verify-evidence.mjs",
+          "--current-source"
+        ],
+        "output": "{\"matchedPairs\":3,\"retainedRows\":3,\"runtimeAssertions\":28,\"preferenceAssertions\":6,\"pinnedSource\":\"412b1fcd97b5eae4b5e1ae84b71f9d9ce980d150\",\"currentSource\":true}"
+      },
+      {
+        "name": "equipment-recovery",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs"
+        ],
+        "output": "Verified six source-pinned observations, actual pointer/transport/readback, retained framework limit, contrast/bounds and clean final probes; fully decoded six PNGs. Artifact validation is not a fresh runtime run."
+      },
+      {
+        "name": "calendar-route-arrivals",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1713/root-route-arrivals/verify-evidence.mjs"
+        ],
+        "output": "Verified exact source pins, actual stale cached Back versus corrected same-instance Back/Forward and saved phone preferences,12 assertions,45/489 tests and five fully decoded captures. This archive check is not a fresh runtime run."
+      },
+      {
+        "name": "mfa-continuations-preservation",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/1826/root-continuations/verify-evidence.mjs",
+          "--current-source"
+        ],
+        "output": "Verified MFA lifetime/social red cases,41/257 final tests,actual held-success/current-action/invalid-code observations,source pins,three fully decoded captures and cleanup. Cached Activity is assembled-only; this archive check is not a new runtime run."
+      },
+      {
+        "name": "route-inventory",
+        "exitCode": 0,
+        "command": [
+          "pnpm",
+          "node",
+          "docs/design/rollout-1692/verify-route-inventory.mjs",
+          ".",
+          "HEAD",
+          ".tmp/merge1721-audit/route-inventory.json"
+        ],
+        "output": "{\"commit\":\"fb6a2c1890f5efda579b48f6af1f7af5444bd47e\",\"persistentPages\":153,\"redirectAliases\":19,\"sourcePageTemplates\":172,\"aliasTemplatesUnchangedFromInitialDev\":19,\"classification\":\"static source-template inventory only\"}"
+      }
+    ],
+    "allPriorDocumentsRawWhitespaceAndSupplementalRepeatQualificationsUnchanged": true
+  },
+  "artifacts": {
+    "jsons": 19,
+    "scripts": 8,
+    "pngs": 34,
+    "links": 11,
+    "sourcePinChecks": 148,
+    "pairs": [
+      {
+        "before": "before-desktop-light.png",
+        "after": "after-desktop-light.png"
+      },
+      {
+        "before": "before-phone-light.png",
+        "after": "after-phone-light.png"
+      },
+      {
+        "before": "before-wide-dark.png",
+        "after": "after-wide-dark.png"
+      }
+    ],
+    "workerFinalPins": 15,
+    "workerBaselinePins": 9
+  },
+  "sourceReview": {
+    "admission": "getMyEquipment takes no target/org parameter; server equipmentActor uses current session activeOrganizationId and current user. equipmentAccess rechecks enabled/MFA/approved membership/current employment. Personal employeeId derives access; organization-scoped assignments, handovers, corrections, exceptions and types remain unchanged.",
+    "authority": "staffView=false on personal scope; no issuance availability/staff actions, no self receipt or loss/waiver/correction/recovery controls even for a privileged personal reader. No domain/action/schema/auth/provider changes.",
+    "evidence": "Complete existing PersonalGroup/PersonalRow disclosure, issued/physicallyreceived/outstanding totals, lost/waived/recovered exception totals, every handover and correction values/reasons/actors remain with original owners. Runtime own seven records match persisted fixture readback; real table outage and actual router Retry restore seven records.",
+    "time": "As-of date parses server organizationCalendar today with Temporal and explicit timezone label. Domain deadline grouping/outstanding/overdue/ordering unchanged; locale-aware quantity/date presentation.",
+    "composition": "Parallel getTranslate/getMyEquipment; stable assignment keys; same group/list/history owners; one exact page-owned heading through shared metadata union; named streaming/error heading; no new fetch/effect/provider/persistence owner/dependency/form.",
+    "qualitySkills": [
+      "vercel-react-best-practices",
+      "vercel-composition-patterns",
+      "web-design-guidelines fresh official source",
+      "security-review",
+      "react-doctor"
+    ],
+    "guidelinesSource": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md"
+  },
+  "findings": [
+    {
+      "kind": "source-review",
+      "severity": "none",
+      "finding": "No new blocking code defect found in the eight-file delta. Personal scope derives active organization/user/employee on server; staffView=false fences commands/read models; all history, correction, exception quantity and organization-calendar owners remain unchanged."
+    },
+    {
+      "kind": "runtime-provenance",
+      "severity": "qualification",
+      "finding": "The complete24assertion/20capture sequence ran pre-worker-local-AI merge on006aff6 with final route source hashes. Final matched captures/native/Next reran atb89c9e9c. Root merged HEAD has only the independent documents metadata opt-in beyond those pins; runtime was not replayed on root merge."
+    },
+    {
+      "kind": "organization-switch",
+      "severity": "acceptance-limit",
+      "file": "docs/design/rollout-1692/1721/after-org-switch.png",
+      "finding": "Actual PostgreSQL lock wait and organization-switch HTTP200 are recorded; old holdings are absent. Final capture is the full app skeleton with fontsStatus=loading, while JSON text still contains My equipment. This proves old records disappeared during the switch, not settled destination admission, completed switching or transition/font acceptance."
+    },
+    {
+      "kind": "visual-provenance",
+      "severity": "qualification",
+      "finding": "Before desktop/wide route-overlay captures visibly clip leading heading letters beneath expanded sidebar; after desktop/wide align correctly. Comparison is three owned baseline files overlaid in current fixture/shell, with added header/loading modules unused, not a complete historical checkout."
+    },
+    {
+      "kind": "phone-captures",
+      "severity": "qualification",
+      "finding": "Matched before/after phone images are at the returned/closed tail despite capture.mjs scrollTo(0,0), so they do not show full-page phone lead composition. Separate saved-dark/Large18px and reduced-motion operational captures show own partial obligations and expanded quantities."
+    },
+    {
+      "kind": "developer-overlays",
+      "severity": "acceptance-limit",
+      "finding": "Rendering/developer/Pets controls remain visible and overlap lower-right portions in phone/history images. Zero document overflow and complete PNG decode do not establish settled rendering or physical-device pointer/transition acceptance."
+    },
+    {
+      "kind": "scope-evidence",
+      "severity": "qualification",
+      "finding": "Former/unassigned archived variants end on login; feature-off ends on Page not found. They show no own holdings but do not independently certify every direct reader denial. Production scope guards and inherited real PG10/118 provide separate domain evidence. Named no-operational-buttons runtime assertion occurs before disclosures; reviewed source and component tests establish no operation controls inside history."
+    },
+    {
+      "kind": "native-accessibility",
+      "severity": "qualification",
+      "finding": "Actual component tree, separate DOM snapshot, and axe4.12.1 evaluated counts38passes/51inapplicable/0incomplete/0violations support the primary closed-disclosure page observation. Raw local a11y output counts verified; no generic CLI Done or exhaustive accessibility certification claimed. Initial4.36/4.4contrast finding remains archived; final plain card surface resolved the measured case."
+    },
+    {
+      "kind": "formatting",
+      "severity": "qualification",
+      "finding": "Eight-file raw default Biome fails8formatting files. Actual-checkout CRLF-aware default passes. Explicit webapp100column CRLF fails6formatting files; explicit formatter-disabled lint/import passes8files. No files normalized, config changed or rules suppressed."
+    },
+    {
+      "kind": "whitespace",
+      "severity": "qualification",
+      "finding": "Whole delta versus current integration parent and application-source delta pass diff --check. Delta versus incoming parent retains158preexisting documents archived whitespace/EOF diagnostics, all under1720. Raw evidence bytes preserved."
+    }
+  ],
+  "blockers": [],
+  "limitations": [
+    "No fresh live browser/Next/nativeReact/PostgreSQL/services/provider by merger; all worker runtime/PG counts inherited.",
+    "Full24step runtime was not rerun at worker merged or root merged HEAD; post-worker-merge matched captures/native/Next only.",
+    "Organization-switch final skeleton does not certify settled final route, completed switching, font or transition acceptance.",
+    "Matched phone tail/canonical before sidebar clipping/developer overlay limits retained; not unqualified historical/full-page/physical pointer acceptance.",
+    "Saved Large is18px; true browser zoom/24px,physical/store-wrapper devices,exhaustive screen-reader/highcontrast and full performance/transition acceptance unpassed.",
+    "Full production build/static generation, remote Tolgee sync/new-key translated acceptance,provider acceptance and exhaustive domain suites unpassed.",
+    "Documents canonical clipping,supplemental repeat failure and158raw whitespace diagnostics remain unchanged; root MFA cached Activity remains assembled-only."
+  ],
+  "commands": {
+    "exact": [
+      {
+        "name": "exact",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/equipment",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/components/site-header.test.tsx",
+          "src/components/ui/sidebar.test.tsx",
+          "src/components/navigation",
+          "src/components/ui/page-header.test.tsx",
+          "src/tolgee/extracted-key-defaults.test.ts",
+          "src/components/organization-mfa",
+          "src/lib/organization-mfa",
+          "src/app/[locale]/mfa",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1721-audit/exact.json"
+        ],
+        "startedAt": "2026-11-15T10:50:40.441Z",
+        "finishedAt": "2026-11-15T10:51:02.677Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1721-audit/exact.log"
+      }
+    ],
+    "compatibility": [
+      {
+        "name": "compatibility",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "vitest",
+          "run",
+          "--project",
+          "unit",
+          "src/components/equipment",
+          "src/lib/navigation/route-metadata.test.ts",
+          "src/components/site-header.test.tsx",
+          "src/components/ui/page-header.test.tsx",
+          "src/components/ui/action-panel.test.tsx",
+          "src/components/ui/alert-dialog.test.tsx",
+          "src/components/ui/dialog.test.tsx",
+          "src/components/ui/sheet.test.tsx",
+          "src/components/ui/tanstack-form.test.tsx",
+          "src/components/ui/form-control-wrappers.test.tsx",
+          "src/components/ui/loading-region.test.tsx",
+          "src/components/data-table-server",
+          "src/components/ui/sidebar.test.tsx",
+          "src/components/ui/sidebar-hydration.test.tsx",
+          "src/components/ui/tooltip.test.tsx",
+          "src/components/app-sidebar.test.tsx",
+          "src/components/nav-main.test.tsx",
+          "src/components/sidebar-feedback.test.tsx",
+          "src/app/[locale]/(app)/app-layout-content.test.tsx",
+          "src/app/[locale]/(app)/app-layout-composition.test.tsx",
+          "src/app/[locale]/(app)/app-layout-shell.test.tsx",
+          "src/components/errors",
+          "src/components/providers/view-refresh-provider.test.tsx",
+          "src/components/providers/view-refresh-migrated.test.tsx",
+          "src/components/font-size-preference.test.tsx",
+          "src/components/font-size-toggle.test.tsx",
+          "src/components/theme-provider.test.tsx",
+          "src/tolgee/extracted-key-defaults.test.ts",
+          "src/tolgee/route-boundary.test.tsx",
+          "src/tolgee/route-boundary.ssr.test.tsx",
+          "src/tolgee/route-boundary.hydration.test.tsx",
+          "src/components/shared-pathname-boundaries-source.test.ts",
+          "src/components/organization-mfa/verification-lifetime.test.tsx",
+          "src/components/personnel-file/my-documents.test.tsx",
+          "src/app/api/tenant-mutation-scope.test.ts",
+          "--maxWorkers=2",
+          "--reporter=json",
+          "--outputFile=../../.tmp/merge1721-audit/compatibility.json"
+        ],
+        "startedAt": "2026-11-15T10:51:19.451Z",
+        "finishedAt": "2026-11-15T10:51:57.455Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1721-audit/compatibility.log"
+      }
+    ],
+    "types": [
+      {
+        "name": "types",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "typecheck"
+        ],
+        "startedAt": "2026-11-15T10:53:45.941Z",
+        "finishedAt": "2026-11-15T10:54:27.530Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1721-audit/types.log"
+      }
+    ],
+    "biome": [
+      {
+        "name": "biome-default",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "src/app/[locale]/(app)/my-equipment/page.tsx",
+          "src/components/equipment/equipment-personal-header.tsx",
+          "src/components/equipment/equipment-personal-loading.tsx",
+          "src/components/equipment/equipment-personal.test.tsx",
+          "src/components/equipment/equipment-personal.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T10:55:18.022Z",
+        "finishedAt": "2026-11-15T10:55:18.203Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1721-audit/biome-default.log"
+      },
+      {
+        "name": "biome-current-crlf",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/my-equipment/page.tsx",
+          "src/components/equipment/equipment-personal-header.tsx",
+          "src/components/equipment/equipment-personal-loading.tsx",
+          "src/components/equipment/equipment-personal.test.tsx",
+          "src/components/equipment/equipment-personal.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T10:55:18.204Z",
+        "finishedAt": "2026-11-15T10:55:18.412Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1721-audit/biome-current-crlf.log"
+      },
+      {
+        "name": "biome-explicit-webapp",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "src/app/[locale]/(app)/my-equipment/page.tsx",
+          "src/components/equipment/equipment-personal-header.tsx",
+          "src/components/equipment/equipment-personal-loading.tsx",
+          "src/components/equipment/equipment-personal.test.tsx",
+          "src/components/equipment/equipment-personal.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T10:55:18.412Z",
+        "finishedAt": "2026-11-15T10:55:18.561Z",
+        "exitCode": 1,
+        "log": ".tmp/merge1721-audit/biome-explicit-webapp.log"
+      },
+      {
+        "name": "biome-explicit-lint-import",
+        "command": [
+          "pnpm",
+          "--filter",
+          "webapp",
+          "exec",
+          "biome",
+          "check",
+          "--config-path=biome.jsonc",
+          "--line-ending=crlf",
+          "--formatter-enabled=false",
+          "src/app/[locale]/(app)/my-equipment/page.tsx",
+          "src/components/equipment/equipment-personal-header.tsx",
+          "src/components/equipment/equipment-personal-loading.tsx",
+          "src/components/equipment/equipment-personal.test.tsx",
+          "src/components/equipment/equipment-personal.tsx",
+          "src/components/equipment/equipment-routes.test.tsx",
+          "src/components/site-header.test.tsx",
+          "src/lib/navigation/route-metadata.ts"
+        ],
+        "startedAt": "2026-11-15T10:55:18.562Z",
+        "finishedAt": "2026-11-15T10:55:18.681Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1721-audit/biome-explicit-lint-import.log"
+      }
+    ],
+    "doctor": [
+      {
+        "name": "doctor",
+        "command": [
+          "pnpm",
+          "exec",
+          "react-doctor",
+          "--project",
+          "webapp",
+          "--scope",
+          "changed",
+          "--base",
+          "81cf0067808e16c6ed04b783e8ce8f85aa5d8ce2",
+          "--verbose",
+          "--no-score",
+          "--no-supply-chain",
+          "--no-telemetry",
+          "--json",
+          "--json-out",
+          ".tmp/merge1721-audit/doctor.json"
+        ],
+        "startedAt": "2026-11-15T10:55:47.749Z",
+        "finishedAt": "2026-11-15T10:56:00.764Z",
+        "exitCode": 0,
+        "log": ".tmp/merge1721-audit/doctor.log"
+      }
+    ]
+  },
+  "archiveCommands": [
+    {
+      "name": "r019-historical",
+      "command": [
+        "pnpm",
+        "node",
+        "docs/design/rollout-1692/1717/verify-evidence.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "r020-historical",
+      "command": [
+        "pnpm",
+        "node",
+        "docs/design/rollout-1692/1718/verify-evidence.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "r021-current",
+      "command": [
+        "pnpm",
+        "node",
+        "docs/design/rollout-1692/1719/verify-evidence.mjs",
+        "--current-source"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "equipment-recovery",
+      "command": [
+        "pnpm",
+        "node",
+        "docs/design/rollout-1692/1695/root-equipment-recovery/verify-evidence.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "calendar-route-arrivals",
+      "command": [
+        "pnpm",
+        "node",
+        "docs/design/rollout-1692/1713/root-route-arrivals/verify-evidence.mjs"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "mfa-continuations-preservation",
+      "command": [
+        "pnpm",
+        "node",
+        "docs/design/rollout-1692/1826/root-continuations/verify-evidence.mjs",
+        "--current-source"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "route-inventory",
+      "command": [
+        "pnpm",
+        "node",
+        "docs/design/rollout-1692/verify-route-inventory.mjs",
+        ".",
+        "HEAD",
+        ".tmp/merge1721-audit/route-inventory.json"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "auditCommands": [
+    {
+      "command": [
+        "git",
+        "merge-tree",
+        "--write-tree",
+        "81cf0067808e16c6ed04b783e8ce8f85aa5d8ce2",
+        "d0e4dff2695da22af8ff7cbd93acee3e01213ba1"
+      ],
+      "result": "8a4a8f0c46be6f6450850af0e7a770e31556df46"
+    },
+    {
+      "command": [
+        "git",
+        "merge",
+        "--no-ff",
+        "--no-edit",
+        "d0e4dff2695da22af8ff7cbd93acee3e01213ba1"
+      ],
+      "result": "fb6a2c1890f5efda579b48f6af1f7af5444bd47e"
+    },
+    {
+      "command": [
+        "pnpm",
+        "node",
+        ".tmp/merge1721-audit/audit.mjs"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "pnpm",
+        "node",
+        ".tmp/merge1721-audit/test-summary.mjs"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "pnpm",
+        "node",
+        ".tmp/merge1721-audit/check-archives.mjs"
+      ],
+      "passed": true
+    }
+  ],
+  "scope": "No source/report/ledger/README/raw evidence/tracker/remote/PR/dev/deploy edits authored. Only native merge and ignored.tmp audit files."
+}

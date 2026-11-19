@@ -1,0 +1,61 @@
+{
+  "issue": 1750,
+  "verifiedCommit": null,
+  "source": "c592ac234b69d3a5e9b612f8f151919fa4184d38",
+  "sourceTree": "932739a68b43c185c951b0be5cdfe8d758c10ef0",
+  "appTree": "f363d2b2868dfcfa00ceab636182e9ec2ae9301c",
+  "parent": "5407122440691c3d76114b9941459bb36777ecac",
+  "priorIndependent": {
+    "source": "ef7fccc4ecc73d6caca24f917dbb32003f0cdf96",
+    "committed": { "passed": 47, "failed": 0 },
+    "independent": { "passed": 9, "failed": 2 },
+    "finding": "Successful reopen and late receipt attachment produced no read after Activity reconnect. The former left the confirmation open. The latter left Add receipt visible with no attached evidence and an unreleased attachment reservation.",
+    "historicalControls": "Both failures passed in the same harness with pinned historical components. No additional scoped standards findings were reported."
+  },
+  "rootReproduction": {
+    "originalSafeProbeSha256": "31f9fb4aa300160d0c0ef320074cce0b8eac12802e2dee1cbd71993e603f4a15",
+    "currentSourceProbeSha256": "996266bf24a3b9e6f07fe66b4e76137f5b128fecd3d76b591086934567e3a880",
+    "probeQualification": "Removed only historical component import adapters for the current-source rerun. The independent assertions remained intact. The temporary file was hash-verified and removed.",
+    "red": { "files": 3, "passed": 20, "failed": 4, "exit": 1 },
+    "redAccounting": "Three behavioral gaps. Two cases reproduced reopen. One reproduced late receipt attachment. One proved a newly linked adjustment remained absent after acknowledged creation and Activity reconnect.",
+    "firstGreen": { "files": 4, "passed": 39, "failed": 0, "exit": 0 },
+    "formattedFocused": { "files": 4, "passed": 40, "failed": 0, "exit": 0 }
+  },
+  "correction": {
+    "reopen": "Successful completion retires only its report and submission-cycle confirmation and revalidates scoped reads. Old feedback remains suppressed.",
+    "lateReceipt": "The application attachment POST reconciles the precise submission read and releases its reservation even when Activity disconnects upload-widget callbacks. Accepted evidence retires the file picker. A refused attachment releases the lock for another selection. The shared uploader and server routes remain intact.",
+    "adjustment": "Successful creation invalidates only the originating adjustment list and closes the completed form. A still-current activation can navigate. After Activity reconnect the linked record appears without an old redirect. A failed list read offers Retry and blocks creation until recovery."
+  },
+  "finalUnit": {
+    "committedSelection": { "files": 50, "distinctPassed": 522, "failed": 0, "skipped": 0 },
+    "temporaryIndependentProbeRerun": { "files": 1, "passed": 11, "failed": 0 },
+    "combinedExecution": { "files": 51, "passed": 533, "failed": 0, "exit": 0 },
+    "nonadditive": "The focused reruns and worker and historical results remain separate. The 11 cases use the prior independent fixture rather than newly authored independent coverage."
+  },
+  "quality": {
+    "typegenAndThreeProjectsExit": 0,
+    "scopedPaths": 7,
+    "lintExit": 0,
+    "explicit100ColumnCrlfExit": 0,
+    "ordinaryFormatExit": 1,
+    "ordinaryFormatFindings": 7,
+    "sourceWhitespaceExit": 0,
+    "doctor": {
+      "version": "0.9.22",
+      "files": 7,
+      "errors": 0,
+      "warnings": [
+        "The adjustment form calls preventDefault before handleSubmit, despite the warning.",
+        "The reopen form calls preventDefault before handleSubmit, despite the warning.",
+        "The submitted report component exceeds the complexity heuristic."
+      ],
+      "firstAttempt": "The receipt handler's explicit throw inside try/catch caused a compiler diagnostic. Handling the response status directly removed the error."
+    }
+  },
+  "unpassed": [
+    "Fresh independent recheck of the related command corrections",
+    "Fresh canonical PostgreSQL and actual attachment, reopen and adjustment browser journeys",
+    "Connected current Next, native download and earlier-cycle receipt file readback",
+    "Previously documented broader authority, production, catalog, device and true zoom limits"
+  ]
+}

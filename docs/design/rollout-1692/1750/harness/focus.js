@@ -1,0 +1,1 @@
+JSON.stringify({path:location.pathname,dialogs:document.querySelectorAll('[role=dialog],[role=alertdialog]').length,active:{tag:document.activeElement?.tagName,label:document.activeElement?.getAttribute('aria-label'),text:document.activeElement?.tagName==='BUTTON'?document.activeElement.textContent.trim():null}})

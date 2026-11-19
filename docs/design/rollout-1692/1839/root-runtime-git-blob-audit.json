@@ -1,0 +1,330 @@
+{
+  "schema": 1,
+  "publicationCommit": "25afe90f61b4d48efea26d6d275608ea60b8f53d",
+  "applicationTree": "f3666bb7c8ff4b752eb316a78d02cfaeb895e51f",
+  "sourceCorrection": "acd6ceedd22c70bcbb43847432373dadae4265c5",
+  "actualRuntimeCommit": "bc4010825c1fd94d634b7f4774b6f895bfac26f4",
+  "verifiedCommit": null,
+  "readiness": null,
+  "stagedPublicationPaths": 37,
+  "archiveFiles": 35,
+  "archiveBytes": 1178994,
+  "archiveSeal": "f9bce809c260d081c74eb541070019db72dd984fe1efd0eb0ea3a9d7d5cf8187",
+  "exactPayloadCopies": 29,
+  "payloadBytes": 1139397,
+  "allStagedBlobsEqualPublicationFilesystem": true,
+  "allArchiveCheckoutFilterBytesMatch": true,
+  "originalRuntimePayloadBytesPreserved": true,
+  "companionGitLfPrefixesPreserved": {
+    "1839/root-method-settlement/README.md": {
+      "bytes": 3937,
+      "sha256": "4951b796ca183218b4537185ae75916d9e9280695e170e920c112d0feed6a551"
+    },
+    "1744-root-view-provenance.md": {
+      "bytes": 3125,
+      "sha256": "9e6f9969a1f53b1fdfd2b9d53a3658512b56e04d0a8bfdd43e390c93092ef164"
+    }
+  },
+  "excludedInventories": {
+    "count": 2,
+    "hashOnly": true,
+    "bytes": 11907556,
+    "readOrCopiedByPublisher": false
+  },
+  "sourcePins": {
+    "declared": 56,
+    "currentMatched": 56,
+    "configurationContentVerified": false
+  },
+  "lineEndings": {
+    "archiveLocal": "* text eol=lf; runtime/** -text",
+    "globalAttributesOrConfigChanged": false,
+    "publisherNormalizationRiskResolved": true
+  },
+  "whitespace": {
+    "exit": 2,
+    "diagnostics": 49,
+    "paths": [
+      "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/next-cleanup.json",
+      "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/resource-cleanup.json"
+    ],
+    "qualification": "Only the two byte-exact CRLF cleanup JSON payloads report trailing whitespace. They were not normalized to claim a blanket whitespace pass."
+  },
+  "verifier": {
+    "defaultExit": 0,
+    "currentSourceExit": 0,
+    "readOnly": true,
+    "doesNotRunArchivedCommands": true,
+    "doesNotRerunRuntime": true
+  },
+  "runtimeAcceptance": {
+    "signIn": 20,
+    "presence": 32,
+    "unitSuiteAdditions": 0,
+    "postgresSuiteAdditions": 0,
+    "wrongPasswordAttempt": "rejected by automatic approval before execution; refusal/reset/retry unpassed",
+    "NextIssueBadge": "visible 1 Issue remains unclassified; empty final error arrays do not prove zero development insights",
+    "syntheticEmailDiagnostic": "excluded from curated artifacts; no password/token/header/session-state exposure"
+  },
+  "checks": [
+    {
+      "path": "docs/design/rollout-1692/1744-root-view-provenance.md",
+      "gitBlob": "735a79dd39a572d5b55fb356c72ae0ab4de9d061",
+      "bytes": 4297,
+      "sha256": "2b34dcc702a751a15335d409122a715b27b3b51891f630875ce43bf6918937b9",
+      "archiveCheckoutBytesMatch": null
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/.gitattributes",
+      "gitBlob": "9980d16975eb0092a7725ed89bc2ef4a929d9b70",
+      "bytes": 31,
+      "sha256": "fbe1b63eeeaba87713f2a44c6cd48a64d9f142d546ecfc64ee0a5bf543fc1709",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/README.md",
+      "gitBlob": "75d685e96ebe64f3b84f7fcec0a4627a5ec5dea3",
+      "bytes": 6449,
+      "sha256": "aec7dbed773672cbffa4fd6b6a4e4932d1d9569f94261de6d0a4b1d3e8a78d95",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/input-receipt.json",
+      "gitBlob": "68b3927ec8377b48453f607019f9952ae6d7a96f",
+      "bytes": 1656,
+      "sha256": "6ddb38692863e49296aeb91a5f684e5c192aa3067566a4687becc2be49ffcabb",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/payload-index.json",
+      "gitBlob": "a205ad3ba395520bbf10a9a7b3a40d46336919f3",
+      "bytes": 5317,
+      "sha256": "44d2b8ad60fe5a072d6c4a7cd28e1986aea9af02252f6f765431b7c8e1f25080",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/1744-acceptance.json",
+      "gitBlob": "abe1f3eaa65332535bade49783b0885202de8210",
+      "bytes": 10335,
+      "sha256": "b5f0c868ce31bc8342caf6dc90fdbc350aa615189fbb01739287d002cff2d47a",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/1839-acceptance.json",
+      "gitBlob": "b01307a6439aaa52f1452447bf902a135a471400",
+      "bytes": 8427,
+      "sha256": "500d3f22c966a5f5fe5c335d7ef4ec1201e873d23bacd3c40beaa8839f9254c8",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/README.md",
+      "gitBlob": "f5ef3cd65a0d5a7e8f326e9b4f39bd65b364e13c",
+      "bytes": 2755,
+      "sha256": "3d2dd33d2cc6e33612e22bc023bbd2661e932bd7269a18e9e82ac5a5d298ce35",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/RELEASE.json",
+      "gitBlob": "c5e70f4fbb52befe9c90761c86bf51d99811f768",
+      "bytes": 1083,
+      "sha256": "38a65bc61db357615fc7aea48fea6d04a61cc1599d126909cc8574a1622f9050",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/anchors.json",
+      "gitBlob": "a18b31f135e84a5134080b6ba0a0f7ea74c6945f",
+      "bytes": 7802,
+      "sha256": "fb1bd5c90cf5ef512194d56125913e02dc465dd09b801b170793ec7d405e00aa",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/blocked-refusal.json",
+      "gitBlob": "d7b9c4fb7ff872fa6fc5a639eb93231fdf68331c",
+      "bytes": 180,
+      "sha256": "0f72f7ac62c19553b1a5157a650a0532d2cd2ef91095df3336447e5229ef8179",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/commands.json",
+      "gitBlob": "5b53989b9a8c41068613b143193535d2936f79b5",
+      "bytes": 3232,
+      "sha256": "d26b99a58a5ad1439d53fa9e0b2ceb26b8ca22e2cb4ce5c55c70fda1659bb443",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/domain-preservation-after.json",
+      "gitBlob": "c66be6995031083ee071424ba688db4b78ab1629",
+      "bytes": 624,
+      "sha256": "00ef0ecc9f8ee3ceafb481f10de6835157919aa4dd6a75483890cf003504d8cd",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/domain-preservation-before.json",
+      "gitBlob": "d2f3cb21b5296234aaa96f2f17b2a8174d4e4f6e",
+      "bytes": 211,
+      "sha256": "0cf926f7e7d89a1e4baf39d3727c2a0d975e14768136131adebd4eb487fbbe30",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/next-cleanup.json",
+      "gitBlob": "1b6ad47c5c9a1b8d3c46b643b204dcee0515138e",
+      "bytes": 227,
+      "sha256": "614b721ff16b93f8fa914b72ba9446337f816df94cc3536bf8fc65479379d266",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/next-final-diagnostics.json",
+      "gitBlob": "7502e3a26464dce717d8edfde9bb001e72e8f3dd",
+      "bytes": 306,
+      "sha256": "818d245560f4bb3ea1fe91f37ca6ecda6624e0295551838de9c53c01cc53558b",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-desktop-synthetic.png",
+      "gitBlob": "b712dc47092c2e9fba88f96200f15ff31b8d3928",
+      "bytes": 51446,
+      "sha256": "38162f4053c27611eb74b9491fe6d66d9aa27cd4c9130584cbc3194e1bf0959d",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-employee-navigation.json",
+      "gitBlob": "8b05f4a337f1433ff054e17b7bcf5f496c0d8956",
+      "bytes": 138,
+      "sha256": "8b2ecc7ba0471644c95af5b086e469d27ed8295053936f1e14e65931def18222",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-mobile-dark-synthetic.png",
+      "gitBlob": "e96e1112b8eb7c056d6457370bfa1bbf99c50023",
+      "bytes": 32520,
+      "sha256": "780277cff352a577b1176ab159c5fdd26a1766acd09a3924ce1a1e15eac19fcd",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-mobile-preferences.json",
+      "gitBlob": "378d2cf9087f3ceb162fbdb4a32044d3e6f3c023",
+      "bytes": 233,
+      "sha256": "4e364ad2eb88a985e6d243cb92b8ab6c42a4aaabd6c336ec45e688c425113165",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-not-found.json",
+      "gitBlob": "bfb5170506eb65161ebfe1b54531f126d1fb7489",
+      "bytes": 122,
+      "sha256": "6108260c4bf5b438cdaa0f319d6449260f33d28dbc58d75b4a1958d3a5b4b6d8",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-parity.json",
+      "gitBlob": "c99cc88854e4d7c2ebf87e0de266404ed22c62c8",
+      "bytes": 163,
+      "sha256": "d9fc543f34a6a1cb449527cb93fbb50bfee0b423ad984acb8a2533381b504c4a",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-retired-retry-synthetic.png",
+      "gitBlob": "0067b57fa531232cf8be88f7d9f0eba1816fc2cd",
+      "bytes": 29241,
+      "sha256": "c3c2d6118b84f16b1c8d1bcbbe91c63d6edd1c910626aff7bef04a35aabeb191",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-retry.json",
+      "gitBlob": "c92cad4a51c62a10eafe14cb4a4817b11aea3f3d",
+      "bytes": 96,
+      "sha256": "5ac3feb57421a85527a23c711d3bc8479abf28d932623c6a7f544963ad44bc03",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-sidebar.json",
+      "gitBlob": "0a9d8d5f9d72780817906abb97066fcb6108aed7",
+      "bytes": 52,
+      "sha256": "6ed9d57ac41cb46c9ae17602eb6bdb56fafc297e76a90f0abaa21e31b136ed59",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/presence-since-parity.json",
+      "gitBlob": "f271120c549ed136cbb9da5c7e14c8e7a6b01140",
+      "bytes": 175,
+      "sha256": "6d898bbb70365150470e1e755aea9dd3579562e4f56cd3506e975f1dde01795b",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/preservation.json",
+      "gitBlob": "b0ad6bb4b71fc893f63216aeefc6fcb5f837027c",
+      "bytes": 448,
+      "sha256": "5b1beb36260e4db163f17f886ffbe78814b9154d95b20f54203e16dbec119838",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/public-fixture-setup.json",
+      "gitBlob": "8b590c89fb32defc2c0cc0e50a55d12c03ee8479",
+      "bytes": 203,
+      "sha256": "05d4b6cc12e9be516443287021b1f3fa3063c3cf7a0a6aee4e01b724fe6d0a21",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/qualifications.json",
+      "gitBlob": "c29f92e0a363a37864aca7199c7e4a695b2b5f4c",
+      "bytes": 3158,
+      "sha256": "9e6bd52f8c5081fc7307031514d0384e98d69bc5aab915227fd0f453ada1b098",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/resource-cleanup.json",
+      "gitBlob": "24ec38595bcd8cad747f4747de443d4d9f0f997e",
+      "bytes": 841,
+      "sha256": "1809412756ee4bf4709d3ed5e0a143138ad57c5e1c941c92c86ba286171a75b6",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/sign-in-desktop-unfilled.png",
+      "gitBlob": "0a286983ab62935d1efc2945266ab7abad578e36",
+      "bytes": 910799,
+      "sha256": "7164213254c944f1d7ac4c3a9752838a6cc1216bfdbdb7cf9b5593bd7c7aebbb",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/sign-in-mobile-unfilled.png",
+      "gitBlob": "95c554d39c0d2dd102408ea06dc83cfd9a49ba74",
+      "bytes": 73590,
+      "sha256": "dffebe6b713dc51448e386fb638f124fb8ca9846de8374ff58da2c1e888bd0e7",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/signin-admission.json",
+      "gitBlob": "b2a5881eec17e82bf297c69c96511bb4acd582ff",
+      "bytes": 627,
+      "sha256": "e3932f70478b6da0042628b69ef82d6205aa849e3165478cbd3cb2ecb3ff0db7",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/runtime/signin-composition.json",
+      "gitBlob": "cca230d63d5ec4c0860b105bef481c18940372fe",
+      "bytes": 363,
+      "sha256": "d122bda6cc2556593f24b38f0c79fa68ff8a2aac7800749c2afca37a913ff9a5",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/source-pins.json",
+      "gitBlob": "00180d3e37ae4632fd117169068cf3aa6ff82528",
+      "bytes": 14062,
+      "sha256": "8a58513e80be414ac36e230a99c66289e961406e5809f0ed1cfb794cde2f25fd",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-current-runtime-and-presence/verify-evidence.mjs",
+      "gitBlob": "408d1ff30736eaad186d66a005017e69acc5d50d",
+      "bytes": 12082,
+      "sha256": "f0f2a34a284608f51e4ca048c00b11e9f6c619b0b3157184095da50492361e88",
+      "archiveCheckoutBytesMatch": true
+    },
+    {
+      "path": "docs/design/rollout-1692/1839/root-method-settlement/README.md",
+      "gitBlob": "18dd3b49507428300e0fd983f1372ee49cb83da1",
+      "bytes": 5162,
+      "sha256": "d57895d14e6b6b456ef57842165dec38bd24525453a282868e44558a37772b71",
+      "archiveCheckoutBytesMatch": null
+    }
+  ]
+}

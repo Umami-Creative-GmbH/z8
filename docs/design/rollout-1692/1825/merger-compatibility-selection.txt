@@ -1,0 +1,24 @@
+Focused unchanged F2/public-shell compatibility; no authenticated Calendar/equipment workflow rerun because their sources are unchanged. Archive/static validators run separately.
+src/components/ui/table.test.tsx
+src/components/ui/loading-region.test.tsx
+src/components/ui/page-header.test.tsx
+src/components/errors/shell-errors.test.tsx
+src/components/auth-background-image.test.tsx
+src/app/[locale]/(auth)/layout-background.test.tsx
+src/app/[locale]/(auth)/cookie-consent-script.test.ts
+src/app/[locale]/(auth)/primary-fallbacks.test.tsx
+src/components/auth-form-wrapper.test.tsx
+src/lib/auth/load-auth-page-client.test.ts
+src/lib/auth/use-auth-page-session.test.tsx
+src/lib/auth/callback-url.test.ts
+src/components/theme-toggle.test.tsx
+src/components/theme-provider.test.tsx
+src/components/font-size-toggle.test.tsx
+src/components/font-size-preference.test.tsx
+src/tolgee/shell-catalog.test.ts
+src/components/login/store-app-sign-in-form.test.tsx
+src/components/data-table.test.tsx
+src/components/data-table-server/data-table-toolbar.test.tsx
+src/components/data-table-server/data-table.test.tsx
+src/components/data-table-server/data-table-pagination.test.tsx
+src/components/auth-shell-controls.test.tsx

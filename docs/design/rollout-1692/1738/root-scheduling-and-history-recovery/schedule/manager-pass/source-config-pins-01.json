@@ -1,0 +1,82 @@
+[
+  {
+    "path": "package.json",
+    "bytes": 6018,
+    "sha256": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7"
+  },
+  {
+    "path": "apps/webapp/package.json",
+    "bytes": 8541,
+    "sha256": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9"
+  },
+  {
+    "path": "pnpm-lock.yaml",
+    "bytes": 771361,
+    "sha256": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799"
+  },
+  {
+    "path": "apps/webapp/next.config.ts",
+    "bytes": 4308,
+    "sha256": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05"
+  },
+  {
+    "path": "apps/webapp/src/components/scheduling/scheduler/use-coverage-heatmap.ts",
+    "bytes": 2417,
+    "sha256": "dd2b2510c0a9de10bf2725ee6fd5834073daf65bf700c9cc531f7ae6e848e906"
+  },
+  {
+    "path": "apps/webapp/src/components/scheduling/scheduler/use-shift-scheduler-data.ts",
+    "bytes": 5873,
+    "sha256": "c7ace85c139889e38b6eeccb694e78c04980b0384d0c5e96996392582fbbf26a"
+  },
+  {
+    "path": "apps/webapp/src/components/scheduling/shifts/use-shift-dialog-data.ts",
+    "bytes": 2153,
+    "sha256": "8bab638bb9f7f5c4461793f3ab90449e322c052028d2862419d900a6c926f1b9"
+  },
+  {
+    "path": "apps/webapp/src/components/scheduling/scheduler/shift-scheduler.tsx",
+    "bytes": 14309,
+    "sha256": "cccece0da7fb202d5591c385ef3b2850d6c13cb517d96a99b2cb2ede6b8d08ec"
+  },
+  {
+    "path": "apps/webapp/src/components/scheduling/scheduler/publish-fab.tsx",
+    "bytes": 4075,
+    "sha256": "474d2d98c9ab3aac0f7d25b93d10a9d9de5e07cf64229518f5c6d51870718b06"
+  },
+  {
+    "path": "apps/webapp/src/lib/query/provider.tsx",
+    "bytes": 3073,
+    "sha256": "c3f18cd100050998a9d82fa8a7cd61abe5f8b60265f9e505d76abef2c795894b"
+  },
+  {
+    "path": "apps/webapp/src/app/[locale]/(app)/scheduling/actions/shift-actions.ts",
+    "bytes": 13116,
+    "sha256": "05b3b4fab2ad322d83628902cbf4aa087d9b2e677c20d1c677c4022e0158f297"
+  },
+  {
+    "path": "apps/webapp/src/app/[locale]/(app)/settings/coverage-rules/actions.ts",
+    "bytes": 8015,
+    "sha256": "6fbcbcfc8c4746d7eeab14df68f1df77d33c500719435fdfa135ceb76438d242"
+  },
+  {
+    "path": "scripts/performance/fixture.mjs",
+    "bytes": 27950,
+    "sha256": "2b61e196520cbc29f6c8caec200a04364aabec813b7d46e167c38f87012eb077"
+  },
+  {
+    "path": "apps/webapp/scripts/performance-fixture.ts",
+    "bytes": 15716,
+    "sha256": "00ac1750f21ecd66f2485642a3db2377179f88d43390ee64b438514b0148588d"
+  },
+  {
+    "path": "scripts/performance/journey-steps.mjs",
+    "bytes": 22734,
+    "sha256": "101f9d3d12c76e846b68ea14467681bcb468726cdef3eb69a674df670eab1e2d"
+  },
+  {
+    "path": "apps/webapp/src/lib/turnstile/development-keys.ts",
+    "bytes": 761,
+    "sha256": "63ac9e3fe2a1c7baeb388d71009242f2193cada7b894c4bee4986b4e840d5fea"
+  }
+]

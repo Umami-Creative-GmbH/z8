@@ -1,0 +1,121 @@
+{
+  "at": "2026-11-18T03:56:43.773Z",
+  "expectedUICommands": {
+    "receiptCreations": 2,
+    "mileageCreations": 1,
+    "tripCreations": 2,
+    "ownDraftDeletion": 1
+  },
+  "expectedFinalReportCount": 4,
+  "actualFinalReportCount": 4,
+  "exactFinalReportSet": true,
+  "canonicalReports": [
+    {
+      "kind": "standalone",
+      "status": "draft"
+    },
+    {
+      "kind": "standalone",
+      "status": "draft"
+    },
+    {
+      "kind": "trip",
+      "status": "draft"
+    },
+    {
+      "kind": "trip",
+      "status": "draft"
+    }
+  ],
+  "canonicalItems": [
+    {
+      "type": "mileage",
+      "n": 1
+    },
+    {
+      "type": "receipt",
+      "n": 1
+    }
+  ],
+  "postSeedDeltas": [
+    {
+      "org": "small",
+      "table": "travel_expense_report",
+      "countDelta": 4
+    },
+    {
+      "org": "small",
+      "table": "travel_expense_report_item",
+      "countDelta": 2
+    }
+  ],
+  "expectedPostSeedDeltasOnly": true,
+  "originalsUnchanged": true,
+  "foreignOrgAllBusinessUnchanged": true,
+  "timeTables": [
+    {
+      "table": "time_record",
+      "small": {
+        "count": 2088,
+        "sha256": "0db69ec52e751a41f862fc1c84c3f06071d01cb4dd869abcc8349a5ae725d799"
+      },
+      "large": {
+        "count": 52200,
+        "sha256": "85460eca6afea73ac9314f060de6a9e32421f215badc67ae204557d11b39a4c8"
+      },
+      "unchangedBothOrgs": true
+    },
+    {
+      "table": "time_entry",
+      "small": {
+        "count": 4176,
+        "sha256": "21f4cd3f3115def9371c49a32b7c53297a2c7a3cbdd35c03512127342ca3a82d"
+      },
+      "large": {
+        "count": 104400,
+        "sha256": "10d5eeb449def0a695f557eb8f685c15ff3f774136a681e9c203fbe1421966c6"
+      },
+      "unchangedBothOrgs": true
+    },
+    {
+      "table": "work_period",
+      "small": {
+        "count": 2088,
+        "sha256": "4e9042ef495ba440fd9df9210ec2969251e59d6c4cb389c9419aaae3e800a509"
+      },
+      "large": {
+        "count": 52200,
+        "sha256": "c638ee7a75b7a2c653443a15512aef2f1abffb6676f6d2309d5b13bfd6be1e9f"
+      },
+      "unchangedBothOrgs": true
+    }
+  ],
+  "receipts": [
+    {
+      "alias": "legacy-draft",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "legacy-review",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "legacy-approved",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "other-employee",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    },
+    {
+      "alias": "foreign-org",
+      "bytes": 68,
+      "sha256": "6b1048f8a6d40bac0b2954c18fefa40c4ea7a96120fc2e54b7317c0e43c2bbec"
+    }
+  ],
+  "qualification": "Canonical synthetic business seed separately recorded. No auth/member/grant/time SQL writes. Foreign rows populated and preserved; foreign authenticated UI visibility remains unproved."
+}

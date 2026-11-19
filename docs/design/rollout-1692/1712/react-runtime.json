@@ -1,0 +1,11 @@
+{
+    "scope":  "Final merged synthetic small-admin calendar; native React DevTools component presence, not render-count/performance profiling.",
+    "nativeReactTreeSucceeded":  true,
+    "observedComponents":  [
+                               "168 2405 2404 Forget(CalendarPageHeader)",
+                               "170 2429 2428 Forget(CalendarView)",
+                               "171 2430 2429 Forget(CalendarViewContent) key=\"2026-11-15:Europe/Berlin\"",
+                               "173 2452 2431 Forget(CalendarMainContent)",
+                               "176 2469 2464 Forget(CalendarControls)"
+                           ]
+}

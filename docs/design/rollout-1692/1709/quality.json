@@ -1,0 +1,93 @@
+{
+  "branch": "feat/1709-unified-inbox",
+  "checkout": "X:\\t3-code\\worktrees\\z8\\t3-93cc9fde-f4922827369d35e3",
+  "initialIntegration": "f9769a74353ac6670c4a36401029faf805b2a899",
+  "latestMergedIntegration": "dd0bfa85a48072a07ac3a3f272251b4440d692a5",
+  "commands": {
+    "unit": "pnpm --filter webapp exec vitest run --project unit 'src/app/[locale]/(app)/approvals/inbox' src/lib/approvals/inbox src/app/api/approvals/inbox src/lib/query/use-approval-inbox.test.ts src/lib/query/use-approval-inbox-types.test.ts src/lib/navigation/route-metadata.test.ts src/components/site-header.test.tsx src/components/ui/action-panel.test.tsx src/components/ui/alert-dialog.test.tsx src/components/ui/tanstack-form.test.tsx src/tolgee/extracted-key-defaults.test.ts --maxWorkers=2",
+    "integration": "pnpm node .tmp/1709-integration.mjs (guarded generated fixture env + disposable sentinel; executes pnpm --filter webapp exec vitest run --project integration src/lib/approvals/inbox/v1-canonical-read.integration.test.ts src/lib/approvals/inbox/time-correction-evidence.integration.test.ts --maxWorkers=1)",
+    "types": "$env:pnpm_config_verify_deps_before_run='false'; $env:CI='true'; pnpm --filter webapp typecheck",
+    "biome": "pnpm --filter webapp exec biome check \"src/app/[locale]/(app)/approvals/inbox/page.tsx\" \"src/app/[locale]/(app)/approvals/inbox/components/approval-detail-panel.tsx\" \"src/app/[locale]/(app)/approvals/inbox/components/approval-reason-form.tsx\" \"src/app/[locale]/(app)/approvals/inbox/components/approval-inbox-table.tsx\" \"src/app/[locale]/(app)/approvals/inbox/components/approval-detail-panel.test.tsx\" \"src/lib/approvals/inbox/read-service.ts\" \"src/lib/approvals/inbox/types.ts\" \"src/lib/approvals/inbox/detail-service.test.ts\" \"src/lib/navigation/route-metadata.ts\" \"src/lib/navigation/route-metadata.test.ts\"",
+    "doctor": "pnpm exec react-doctor apps/webapp --scope changed --base dd0bfa85a48072a07ac3a3f272251b4440d692a5 --verbose --no-supply-chain --no-telemetry --no-score"
+  },
+  "unit": {
+    "suites": 52,
+    "tests": 661,
+    "exit": 0
+  },
+  "postgres": {
+    "suites": 2,
+    "tests": 6,
+    "exit": 0
+  },
+  "types": {
+    "application": true,
+    "workflowContracts": true,
+    "smoke": true,
+    "exit": 0
+  },
+  "biome": {
+    "files": 10,
+    "errors": 0,
+    "warnings": 0,
+    "paths": [
+      "src/app/[locale]/(app)/approvals/inbox/page.tsx",
+      "src/app/[locale]/(app)/approvals/inbox/components/approval-detail-panel.tsx",
+      "src/app/[locale]/(app)/approvals/inbox/components/approval-reason-form.tsx",
+      "src/app/[locale]/(app)/approvals/inbox/components/approval-inbox-table.tsx",
+      "src/app/[locale]/(app)/approvals/inbox/components/approval-detail-panel.test.tsx",
+      "src/lib/approvals/inbox/read-service.ts",
+      "src/lib/approvals/inbox/types.ts",
+      "src/lib/approvals/inbox/detail-service.test.ts",
+      "src/lib/navigation/route-metadata.ts",
+      "src/lib/navigation/route-metadata.test.ts"
+    ]
+  },
+  "doctor": {
+    "files": 10,
+    "errors": 0,
+    "warnings": [
+      {
+        "rule": "react-doctor/no-giant-component",
+        "component": "ApprovalInboxContent",
+        "file": "apps/webapp/src/app/[locale]/(app)/approvals/inbox/page.tsx",
+        "line": 889
+      }
+    ],
+    "score": "disabled; no numeric comparative score claim",
+    "baselineAttempt": "Explicit baseline temp-file scan skipped because the copy was outside a package. Not counted as baseline diagnostic verification."
+  },
+  "runtimeCounts": {
+    "actions-runtime.json": 4,
+    "boundaries-runtime.json": 8,
+    "material-runtime.json": 4,
+    "ui-runtime.json": 15,
+    "decision-readback.json": 4,
+    "final-smoke.json": 5
+  },
+  "pairedComposition": {
+    "sameFourActualRequests": true,
+    "viewports": [
+      1600,
+      390,
+      2400
+    ],
+    "boundary": "Before composition already retains the exact heading opt-in; this is not a complete pre-rollout source reconstruction."
+  },
+  "teardown": {
+    "nativeSessionClosed": true,
+    "previewTabClosed": true,
+    "ownedNextCommandValidatedBeforeTreeStop": true,
+    "fixtureLabelCleanupCompleted": true,
+    "privateManifestsExcludedFromGit": true
+  },
+  "limits": [
+    "remote catalog synchronization",
+    "complete production static generation",
+    "physical/store devices and OS/browser zoom",
+    "all role/grant/feature/provider lifecycles",
+    "historical and exit-transition acceptance",
+    "exhaustive six-kind decisions and covering/provider lifecycles",
+    "Final aria-invalid/describedby attribute patch was component/type/lint/Doctor verified after fixture teardown; runtime captures precede that patch."
+  ]
+}

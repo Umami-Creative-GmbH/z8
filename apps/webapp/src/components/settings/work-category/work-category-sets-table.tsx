@@ -1,6 +1,12 @@
 "use client";
 
-import { IconEdit, IconLoader2, IconPlus, IconTag, IconTrash } from "@tabler/icons-react";
+import {
+	IconEdit,
+	IconPlus,
+	IconRefresh,
+	IconTag,
+	IconTrash,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -9,16 +15,7 @@ import {
 	deleteWorkCategorySet,
 	getWorkCategorySets,
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/settings/delete-confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,12 +55,14 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedSet, setSelectedSet] = useState<WorkCategorySetData | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
 	// Fetch category sets
 	const {
 		data: categorySets,
 		isLoading,
 		error,
+		refetch,
 	} = useQuery({
 		queryKey: queryKeys.workCategorySets.list(organizationId),
 		queryFn: async () => {
@@ -85,9 +84,9 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 					queryKey: queryKeys.workCategorySets.list(organizationId),
 				});
 				setDeleteDialogOpen(false);
-				setSelectedSet(null);
 			} else {
-				toast.error(
+				// The dialog stays open with the reason so the deletion can be retried.
+				setDeleteError(
 					actionErrorMessage(t, result, {}, [
 						"settings.workCategories.setDeleteFailed",
 						"Failed to delete category set",
@@ -96,7 +95,9 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.workCategories.setDeleteFailed", "Failed to delete category set"));
+			setDeleteError(
+				t("settings.workCategories.setDeleteFailed", "Failed to delete category set"),
+			);
 		},
 	});
 
@@ -107,11 +108,13 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 
 	const handleDeleteClick = (set: WorkCategorySetData) => {
 		setSelectedSet(set);
+		setDeleteError(null);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleDeleteConfirm = () => {
-		if (selectedSet) {
+		if (selectedSet && !deleteMutation.isPending) {
+			setDeleteError(null);
 			deleteMutation.mutate(selectedSet.id);
 		}
 	};
@@ -132,57 +135,19 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 	};
 
 	if (isLoading) {
-		return (
-			<div className="space-y-4">
-				<div className="flex justify-end">
-					<Skeleton className="h-9 w-32" />
-				</div>
-				<div className="rounded-md border">
-					<Table mobileLayout="stacked">
-						<TableHeader>
-							<TableRow>
-								<TableHead>
-									<Skeleton className="h-4 w-24" />
-								</TableHead>
-								<TableHead>
-									<Skeleton className="h-4 w-32" />
-								</TableHead>
-								<TableHead>
-									<Skeleton className="h-4 w-20" />
-								</TableHead>
-								<TableHead />
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{[1, 2, 3].map((i) => (
-								<TableRow key={i}>
-									<TableCell>
-										<Skeleton className="h-4 w-32" />
-									</TableCell>
-									<TableCell>
-										<Skeleton className="h-4 w-48" />
-									</TableCell>
-									<TableCell>
-										<Skeleton className="h-6 w-12" />
-									</TableCell>
-									<TableCell>
-										<Skeleton className="h-8 w-20" />
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-			</div>
-		);
+		return <WorkCategorySetsSkeleton />;
 	}
 
 	if (error) {
 		return (
-			<div className="py-8 text-center">
-				<p className="text-destructive">
+			<div className="flex flex-col items-center gap-4 rounded-lg border py-8 text-center">
+				<p role="alert" className="text-destructive">
 					{t("settings.workCategories.loadError", "Failed to load category sets")}
 				</p>
+				<Button variant="outline" onClick={() => refetch()}>
+					<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+					{t("common.retry", "Retry")}
+				</Button>
 			</div>
 		);
 	}
@@ -218,17 +183,24 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 				</CardHeader>
 				<CardContent>
 					{sets.length === 0 ? (
-						<div className="py-12 text-center">
-							<IconTag className="mx-auto size-12 text-muted-foreground/50" />
-							<h3 className="mt-4 text-lg font-medium">
-								{t("settings.workCategories.noSets", "No category sets")}
-							</h3>
-							<p className="mt-2 text-sm text-muted-foreground">
-								{t(
-									"settings.workCategories.noSetsDescription",
-									"Create your first category set to define work types with time factors",
-								)}
-							</p>
+						<div className="flex flex-col items-center gap-3 py-8 text-center">
+							<div>
+								<h3 className="font-medium">
+									{t("settings.workCategories.noSets", "No category sets")}
+								</h3>
+								<p className="mt-1 text-sm text-muted-foreground">
+									{t(
+										"settings.workCategories.noSetsDescription",
+										"Create your first category set to define work types with time factors",
+									)}
+								</p>
+							</div>
+							{canManage ? (
+								<Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
+									<IconPlus className="mr-2 size-4" aria-hidden="true" />
+									{t("settings.workCategories.createSet", "Create Set")}
+								</Button>
+							) : null}
 						</div>
 					) : (
 						<div className="rounded-md border">
@@ -246,12 +218,18 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 								<TableBody>
 									{sets.map((set) => (
 										<TableRow key={set.id}>
-											<TableCell className="font-medium">{set.name}</TableCell>
-											<TableCell className="text-muted-foreground">
+											<TableCell className="max-w-xs font-medium">
+												<span className="block truncate" title={set.name}>
+													{set.name}
+												</span>
+											</TableCell>
+											<TableCell className="break-words text-muted-foreground">
 												{set.description || "-"}
 											</TableCell>
 											<TableCell>
-												<Badge variant="secondary">{set.categoryCount}</Badge>
+												<Badge variant="secondary" className="tabular-nums">
+													{set.categoryCount}
+												</Badge>
 											</TableCell>
 											{canManage ? (
 												<TableCell>
@@ -261,18 +239,26 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 															size="icon"
 															className="size-8"
 															onClick={() => handleEditClick(set)}
-															aria-label={t("common.edit", "Edit")}
+															aria-label={t(
+																"settings.workCategories.editSetNamed",
+																"Edit category set {name}",
+																{ name: set.name },
+															)}
 														>
-															<IconEdit className="size-4" />
+															<IconEdit className="size-4" aria-hidden="true" />
 														</Button>
 														<Button
 															variant="ghost"
 															size="icon"
 															className="size-8 text-muted-foreground hover:text-destructive"
 															onClick={() => handleDeleteClick(set)}
-															aria-label={t("common.delete", "Delete")}
+															aria-label={t(
+																"settings.workCategories.deleteSetNamed",
+																"Delete category set {name}",
+																{ name: set.name },
+															)}
 														>
-															<IconTrash className="size-4" />
+															<IconTrash className="size-4" aria-hidden="true" />
 														</Button>
 													</div>
 												</TableCell>
@@ -311,41 +297,68 @@ export function WorkCategorySetsTable({ organizationId, canManage }: WorkCategor
 			) : null}
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.workCategories.deleteSetTitle", "Delete Category Set?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.workCategories.deleteSetDescription",
-								'This will permanently delete the category set "{name}" and all its categories. Any assignments using this set will also be removed.',
-								{ name: selectedSet?.name },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							disabled={deleteMutation.isPending}
-							className="bg-destructive hover:bg-destructive/90"
-						>
-							{deleteMutation.isPending ? (
-								<>
-									<IconLoader2 className="mr-2 size-4 animate-spin" />
-									{t("common.deleting", "Deleting...")}
-								</>
-							) : (
-								t("common.delete", "Delete")
-							)}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteConfirmDialog
+				open={canManage && deleteDialogOpen}
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) setDeleteError(null);
+				}}
+				title={t("settings.workCategories.deleteSetTitle", "Delete Category Set?")}
+				description={t(
+					"settings.workCategories.deleteSetDescription",
+					'This will permanently delete the category set "{name}" and all its categories. Any assignments using this set will also be removed.',
+					{ name: selectedSet?.name },
+				)}
+				isDeleting={deleteMutation.isPending}
+				error={deleteError}
+				onConfirm={handleDeleteConfirm}
+			/>
 		</>
+	);
+}
+
+function WorkCategorySetsSkeleton() {
+	return (
+		<div className="space-y-4">
+			<div className="flex justify-end">
+				<Skeleton className="h-9 w-32" />
+			</div>
+			<div className="rounded-md border">
+				<Table mobileLayout="stacked">
+					<TableHeader>
+						<TableRow>
+							<TableHead>
+								<Skeleton className="h-4 w-24" />
+							</TableHead>
+							<TableHead>
+								<Skeleton className="h-4 w-32" />
+							</TableHead>
+							<TableHead>
+								<Skeleton className="h-4 w-20" />
+							</TableHead>
+							<TableHead />
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{[1, 2, 3].map((i) => (
+							<TableRow key={i}>
+								<TableCell>
+									<Skeleton className="h-4 w-32" />
+								</TableCell>
+								<TableCell>
+									<Skeleton className="h-4 w-48" />
+								</TableCell>
+								<TableCell>
+									<Skeleton className="h-6 w-12" />
+								</TableCell>
+								<TableCell>
+									<Skeleton className="h-8 w-20" />
+								</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</div>
+		</div>
 	);
 }

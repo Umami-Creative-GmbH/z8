@@ -28,7 +28,9 @@ export function BillableCurrencyCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.billableTime.currency.title", "Billable currency")}</CardTitle>
+				<CardTitle role="heading" aria-level={2}>
+					{t("settings.billableTime.currency.title", "Billable currency")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.billableTime.currency.description",

@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconShieldCheck } from "@tabler/icons-react";
+import { IconAlertTriangle, IconLoader2, IconShieldCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -11,7 +11,14 @@ import {
 } from "@/app/[locale]/(app)/settings/audit-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardAction,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -30,7 +37,7 @@ interface AuditConfigFormProps {
 	initialConfig: AuditExportConfigData | null;
 }
 
-export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
+function useAuditExportConfig({ initialConfig }: AuditConfigFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
@@ -85,6 +92,11 @@ export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
 		}
 		setLoading(false);
 	};
+	return { t, loading, config, handleInitialize, handleUpdate };
+}
+
+export function AuditConfigForm(props: AuditConfigFormProps) {
+	const { t, loading, config, handleInitialize, handleUpdate } = useAuditExportConfig(props);
 
 	if (!config) {
 		return (
@@ -147,25 +159,23 @@ export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div>
-						<CardTitle className="flex items-center gap-2">
-							<IconShieldCheck className="size-5" />
-							{t("settings.auditExport.config.title", "Audit Export Configuration")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.auditExport.config.description",
-								"Configure retention periods and automatic audit hardening",
-							)}
-						</CardDescription>
-					</div>
+				<CardTitle className="flex items-center gap-2">
+					<IconShieldCheck className="size-5 shrink-0" aria-hidden="true" />
+					{t("settings.auditExport.config.title", "Audit Export Configuration")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.auditExport.config.description",
+						"Configure retention periods and automatic audit hardening",
+					)}
+				</CardDescription>
+				<CardAction>
 					<Badge variant={config.isEnabled ? "default" : "secondary"}>
 						{config.isEnabled
 							? t("settings.auditExport.config.enabled", "Enabled")
 							: t("settings.auditExport.config.disabled", "Disabled")}
 					</Badge>
-				</div>
+				</CardAction>
 			</CardHeader>
 			<CardContent className="space-y-6">
 				{/* Retention Settings */}
@@ -241,19 +251,28 @@ export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
 					</div>
 
 					{!config.objectLockSupported && (
-						<div className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3 text-sm">
-							<p className="font-medium text-yellow-600 dark:text-yellow-400">
-								{t(
-									"settings.auditExport.config.objectLockNotSupported",
-									"Object Lock Not Available",
-								)}
-							</p>
-							<p className="mt-1 text-muted-foreground">
-								{t(
-									"settings.auditExport.config.objectLockNotSupportedHint",
-									"Your S3 bucket does not have Object Lock enabled. Cryptographic proofs will still be generated, but WORM protection will not be enforced at the storage level.",
-								)}
-							</p>
+						<div
+							role="note"
+							className="flex gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm"
+						>
+							<IconAlertTriangle
+								className="mt-0.5 size-4 shrink-0 text-warning"
+								aria-hidden="true"
+							/>
+							<div className="min-w-0">
+								<p className="font-medium text-warning">
+									{t(
+										"settings.auditExport.config.objectLockNotSupported",
+										"Object Lock Not Available",
+									)}
+								</p>
+								<p className="mt-1 text-muted-foreground">
+									{t(
+										"settings.auditExport.config.objectLockNotSupportedHint",
+										"Your S3 bucket does not have Object Lock enabled. Cryptographic proofs will still be generated, but WORM protection will not be enforced at the storage level.",
+									)}
+								</p>
+							</div>
 						</div>
 					)}
 				</div>
@@ -265,8 +284,8 @@ export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
 					</h3>
 
 					<div className="space-y-4">
-						<div className="flex items-center justify-between rounded-lg border p-4">
-							<div className="space-y-0.5">
+						<div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+							<div className="min-w-0 space-y-0.5">
 								<Label htmlFor="autoEnableDataExports" className="text-base">
 									{t("settings.auditExport.config.autoEnableData", "Data Exports")}
 								</Label>
@@ -285,8 +304,8 @@ export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
 							/>
 						</div>
 
-						<div className="flex items-center justify-between rounded-lg border p-4">
-							<div className="space-y-0.5">
+						<div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+							<div className="min-w-0 space-y-0.5">
 								<Label htmlFor="autoEnablePayrollExports" className="text-base">
 									{t("settings.auditExport.config.autoEnablePayroll", "Payroll Exports")}
 								</Label>
@@ -313,7 +332,7 @@ export function AuditConfigForm({ initialConfig }: AuditConfigFormProps) {
 						<h3 className="font-medium">
 							{t("settings.auditExport.config.signingKeyTitle", "Active Signing Key")}
 						</h3>
-						<div className="font-mono text-sm text-muted-foreground">
+						<div className="break-all font-mono text-sm text-muted-foreground">
 							{config.signingKeyFingerprint}
 						</div>
 						<p className="text-xs text-muted-foreground">

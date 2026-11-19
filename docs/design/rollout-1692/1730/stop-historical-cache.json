@@ -1,0 +1,43 @@
+{
+  "repo": "X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5",
+  "port": 50151,
+  "processes": [
+    {
+      "ProcessId": 100856,
+      "ParentProcessId": 11992,
+      "CreationDate": "2026-11-15T19:53:29.386013+01:00",
+      "CommandLine": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\node_modules\\next\\dist\\bin\\next dev --turbopack --hostname localhost --port 50151"
+    },
+    {
+      "ProcessId": 43708,
+      "ParentProcessId": 100856,
+      "CreationDate": "2026-11-15T19:53:29.69504+01:00",
+      "CommandLine": "C:\\Users\\KaiHentschel\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\node_modules\\.pnpm\\next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915\\node_modules\\next\\dist\\server\\lib\\start-server.js"
+    },
+    {
+      "ProcessId": 109692,
+      "ParentProcessId": 43708,
+      "CreationDate": "2026-11-15T19:54:14.439063+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 62031"
+    },
+    {
+      "ProcessId": 104832,
+      "ParentProcessId": 43708,
+      "CreationDate": "2026-11-15T19:54:14.695086+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_postcss_ts_077d6xz6291wq._.js 62032"
+    },
+    {
+      "ProcessId": 33360,
+      "ParentProcessId": 43708,
+      "CreationDate": "2026-11-15T19:54:14.705595+01:00",
+      "CommandLine": "\"node\" X:\\t3-code\\worktrees\\z8\\t3-abec2f0c-e8d469008a3d13b5\\apps\\webapp\\.next\\dev\\build\\chunks\\pool_entry-[turbopack-node]_transforms_webpack-loaders_ts_21971j8nic2qx._.js 62034"
+    }
+  ],
+  "listener": [
+    {
+      "LocalPort": 50151,
+      "OwningProcess": 43708
+    }
+  ],
+  "portClosed": true
+}

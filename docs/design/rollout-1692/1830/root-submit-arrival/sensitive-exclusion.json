@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "checkedTextFiles": 71,
+  "scope": "Exact generated fixture passwords and credential/environment secret values, including encoded forms; no global historical-secret claim."
+}

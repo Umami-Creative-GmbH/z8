@@ -1,0 +1,128 @@
+{
+  "sourceOnly": true,
+  "files": [
+    {
+      "path": "browser-controller-01.private.mjs",
+      "bytes": 9097,
+      "sha256": "6a8bd265f8ce8bbea602bf59f265afc9f0d9c4e9ff4db5655ee6647c9b151eb0"
+    },
+    {
+      "path": "cleanup-processes-01.ps1",
+      "bytes": 4465,
+      "sha256": "5126401f8e5f35e5e837e474461b09d5a64c369ccf974ec6f38816220fd61889"
+    },
+    {
+      "path": "dev-01-private.mjs",
+      "bytes": 3697,
+      "sha256": "6f154c85fc4faf0a5c26d363ef718e7f61ea9506bddf83cfe38ee5f30e6dd093"
+    },
+    {
+      "path": "employee-retry-01.mjs",
+      "bytes": 2497,
+      "sha256": "a874a91783e20553a01ed2f0312f9bf1274cf9ce20cad8be5ff5d741080dd6a1"
+    },
+    {
+      "path": "employee-retry-02.mjs",
+      "bytes": 2629,
+      "sha256": "328d33f3dd76f5db855b36a9b4f90bce89bec14a45e705c60ad83d43ec44497e"
+    },
+    {
+      "path": "employee-visibility-01.mjs",
+      "bytes": 2976,
+      "sha256": "b1defbe25b59490cf0b1a62057487ee5d31594611385cb9e8dc8a3a87c6ae923"
+    },
+    {
+      "path": "fixture-helper-01.mjs",
+      "bytes": 28300,
+      "sha256": "720c598199e5098e6f3d2c117b4edd6f9135d05775d8f0179cd8de55f60bb2b1"
+    },
+    {
+      "path": "manager-route-01.mjs",
+      "bytes": 1937,
+      "sha256": "530d9894192bc97427f03401e84c607f54bb75146e87e0a413b48054d306920b"
+    },
+    {
+      "path": "next-observe-01.mjs",
+      "bytes": 1640,
+      "sha256": "21dd5fc1978a5d10d4288f1208974930396bcd115dbddaa88837adde814b926b"
+    },
+    {
+      "path": "prepare-01.mjs",
+      "bytes": 5211,
+      "sha256": "17d1a1677dea72e5c2176a763e9234600312e3d38d30befb670fc8f016ac75e9"
+    },
+    {
+      "path": "preservation-final-01.mjs",
+      "bytes": 2856,
+      "sha256": "14ac5b765d3a1e3b226af84e2886afd28232305fa8db1b62fd5c52e7725782b3"
+    },
+    {
+      "path": "priority-01.mjs",
+      "bytes": 7783,
+      "sha256": "85b2f5febc59296b45dd6de5f1cb48e2eb3e4e493ff1c223dec1e9d91178aab9"
+    },
+    {
+      "path": "priority-02.mjs",
+      "bytes": 7832,
+      "sha256": "06aea4af21afc7cbc781f3dd5562ee97d5f7856e73131348e04dcee117ce036e"
+    },
+    {
+      "path": "priority-03.mjs",
+      "bytes": 7832,
+      "sha256": "500208a370be91960cb5c6fc7c358e33ed7dd4605a96f7cdb52fe215781616b8"
+    },
+    {
+      "path": "priority-04.mjs",
+      "bytes": 7846,
+      "sha256": "d73de0345df7838053838a7137779fcff7ec2d92d34dd77d8d451c80e7f14207"
+    },
+    {
+      "path": "roles-navigation-01.mjs",
+      "bytes": 4681,
+      "sha256": "fc06392619b70a4bea1427b6307b4ffb83adba7b6aeea941b3ff197f05d30424"
+    },
+    {
+      "path": "rpc-03.mjs",
+      "bytes": 1043,
+      "sha256": "9b18da484bce380dffdbe2200efba08be276005f7a167946cb5f55a8c9f74194"
+    },
+    {
+      "path": "run-fixture-tool-03.mjs",
+      "bytes": 2238,
+      "sha256": "9b96107eefcd8a000ee9247d39cdbddaf4615fa24aba2adbbaacf881dccfdfd9"
+    },
+    {
+      "path": "scheduling-fixture-bridge-03.ts",
+      "bytes": 4560,
+      "sha256": "af7cabe72a1b865ccb084e36ceb203298b507ed1f569874e57fa40f5440b2ea1"
+    },
+    {
+      "path": "seal-01.mjs",
+      "bytes": 5509,
+      "sha256": "7da068a96bf09e2b2c992d64fc6cc9d85b1c48bc5ddb9f6344f8e33e6900d6c7"
+    },
+    {
+      "path": "start-browser-01.mjs",
+      "bytes": 830,
+      "sha256": "2c29d9203ea771a10e0d50d3d7cb8812813f0c48c15b239e4fe999aec1aa7ca6"
+    },
+    {
+      "path": "summarize-01.mjs",
+      "bytes": 8108,
+      "sha256": "f7925c4bbc9666c27d6671aeba126db1777a090c42c61f00011299d7e1fb0acb"
+    },
+    {
+      "path": "verify-cleanup-01.ps1",
+      "bytes": 2435,
+      "sha256": "c83f5331d24057e807c4037430cf28879a7ed368463312850605ddfd45a27eb9"
+    },
+    {
+      "path": "verify-readback-01.mjs",
+      "bytes": 2244,
+      "sha256": "364a499fd6a8ed492da2474bdfadd6b227ab88d612aebcc37017f4176c0cf456"
+    }
+  ],
+  "execution": "Own canonical source copies inspected and namespace/label/bridge adapted; never replay old private manifests or auth",
+  "fixtureBootstrap": "canonical initial fixture prerequisites then domain-only12shift rows; later helpers read-only",
+  "notes": "No product source fix; all source/config/dependency initial pins verified at final cleanup"
+}

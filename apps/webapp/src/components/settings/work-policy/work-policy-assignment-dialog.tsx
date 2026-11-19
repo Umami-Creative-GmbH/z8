@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientForm } from "@/components/ui/client-form";
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,13 +48,13 @@ interface WorkPolicyAssignmentDialogProps {
 	onSuccess: () => void;
 }
 
-export function WorkPolicyAssignmentDialog({
-	open,
-	onOpenChange,
-	organizationId,
-	assignmentType,
-	onSuccess,
-}: WorkPolicyAssignmentDialogProps) {
+function useWorkPolicyAssignmentForm({
+		open,
+		onOpenChange,
+		organizationId,
+		assignmentType,
+		onSuccess,
+	}: WorkPolicyAssignmentDialogProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
@@ -64,18 +65,26 @@ export function WorkPolicyAssignmentDialog({
 			teamId: null as string | null,
 			employeeId: null as string | null,
 		},
-		validators: {
-			onChange: ({ value }) => {
-				if (!value.policyId) return "Policy is required";
-				if (assignmentType === "team" && !value.teamId) return "Team is required";
-				if (assignmentType === "employee" && !value.employeeId) return "Employee is required";
-				return undefined;
-			},
-		},
 		onSubmit: async ({ value }) => {
+			// A second submit while the first is in flight would create a duplicate assignment.
+			if (createMutation.isPending) return;
 			createMutation.mutate(value);
 		},
 	});
+
+	// Field-level checks so each message shows beside its field; they mirror the server's required ids.
+	const requirePolicy = ({ value }: { value: string }) =>
+		value
+			? undefined
+			: t("settings.workPolicies.assignmentPolicyRequired", "Select a policy to assign");
+	const requireTeam = ({ value }: { value: string | null }) =>
+		assignmentType !== "team" || value
+			? undefined
+			: t("settings.workPolicies.assignmentTeamRequired", "Select a team");
+	const requireEmployee = ({ value }: { value: string | null }) =>
+		assignmentType !== "employee" || value
+			? undefined
+			: t("settings.workPolicies.assignmentEmployeeRequired", "Select an employee");
 
 	const resetForm = () => {
 		form.reset({
@@ -94,7 +103,12 @@ export function WorkPolicyAssignmentDialog({
 	};
 
 	// Fetch policies
-	const { data: policies, isLoading: loadingPolicies } = useQuery({
+	const {
+		data: policies,
+		isLoading: loadingPolicies,
+		isError: policiesFailed,
+		refetch: refetchPolicies,
+	} = useQuery({
 		queryKey: queryKeys.workPolicies.list(organizationId),
 		queryFn: async () => {
 			const result = await getWorkPolicies();
@@ -108,7 +122,12 @@ export function WorkPolicyAssignmentDialog({
 	});
 
 	// Fetch teams (only for team assignments)
-	const { data: teams, isLoading: loadingTeams } = useQuery({
+	const {
+		data: teams,
+		isLoading: loadingTeams,
+		isError: teamsFailed,
+		refetch: refetchTeams,
+	} = useQuery({
 		queryKey: queryKeys.teams.list(organizationId),
 		queryFn: async () => {
 			const result = await getTeamsForAssignment();
@@ -186,6 +205,50 @@ export function WorkPolicyAssignmentDialog({
 	const isLoading = loadingPolicies || (assignmentType === "team" && loadingTeams);
 
 	const isPending = createMutation.isPending;
+	return {
+		t,
+		form,
+		requirePolicy,
+		requireTeam,
+		requireEmployee,
+		handleOpenChange,
+		policies,
+		loadingPolicies,
+		policiesFailed,
+		refetchPolicies,
+		teams,
+		loadingTeams,
+		teamsFailed,
+		refetchTeams,
+		getDialogTitle,
+		getDialogDescription,
+		isLoading,
+		isPending,
+	};
+}
+
+export function WorkPolicyAssignmentDialog(props: WorkPolicyAssignmentDialogProps) {
+	const { open, onOpenChange, assignmentType } = props;
+	const {
+		t,
+		form,
+		requirePolicy,
+		requireTeam,
+		requireEmployee,
+		handleOpenChange,
+		policies,
+		loadingPolicies,
+		policiesFailed,
+		refetchPolicies,
+		teams,
+		loadingTeams,
+		teamsFailed,
+		refetchTeams,
+		getDialogTitle,
+		getDialogDescription,
+		isLoading,
+		isPending,
+	} = useWorkPolicyAssignmentForm(props);
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
@@ -195,16 +258,60 @@ export function WorkPolicyAssignmentDialog({
 					<ActionPanelDescription>{getDialogDescription()}</ActionPanelDescription>
 				</ActionPanelHeader>
 
-				<form className="flex min-h-0 flex-1 flex-col">
+				<ClientForm
+					className="flex min-h-0 flex-1 flex-col"
+					noValidate
+					stopPropagation
+					onSubmit={() => {
+						if (!isPending) form.handleSubmit();
+					}}
+				>
 					<ActionPanelBody className="space-y-4">
-						<form.Field name="policyId">
+						{policiesFailed || teamsFailed ? (
+							<div
+								role="alert"
+								className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+							>
+								<span>
+									{policiesFailed
+										? t(
+												"settings.workPolicies.assignmentPoliciesLoadError",
+												"Policies could not be loaded.",
+											)
+										: t(
+												"settings.workPolicies.assignmentTeamsLoadError",
+												"Teams could not be loaded.",
+											)}
+								</span>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => {
+										if (policiesFailed) void refetchPolicies();
+										if (teamsFailed) void refetchTeams();
+									}}
+								>
+									{t("common.retry", "Retry")}
+								</Button>
+							</div>
+						) : null}
+
+						<form.Field
+							name="policyId"
+							validators={{ onChange: requirePolicy }}
+						>
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>
 										{t("settings.workPolicies.policy", "Policy")}
 									</TFormLabel>
 									<TFormControl hasError={fieldHasError(field)}>
-										<Select value={field.state.value} onValueChange={field.handleChange}>
+										<Select
+											value={field.state.value}
+											onValueChange={field.handleChange}
+											disabled={isPending}
+										>
 											<SelectTrigger>
 												<SelectValue
 													placeholder={t("settings.workPolicies.selectPolicy", "Select a policy")}
@@ -245,14 +352,21 @@ export function WorkPolicyAssignmentDialog({
 
 						{/* Team Selection */}
 						{assignmentType === "team" && (
-							<form.Field name="teamId">
+							<form.Field
+								name="teamId"
+								validators={{ onChange: requireTeam }}
+							>
 								{(field) => (
 									<TFormItem>
 										<TFormLabel hasError={fieldHasError(field)}>
 											{t("settings.workPolicies.team", "Team")}
 										</TFormLabel>
 										<TFormControl hasError={fieldHasError(field)}>
-											<Select value={field.state.value || ""} onValueChange={field.handleChange}>
+											<Select
+												value={field.state.value || ""}
+												onValueChange={field.handleChange}
+												disabled={isPending}
+											>
 												<SelectTrigger>
 													<SelectValue
 														placeholder={t("settings.workPolicies.selectTeam", "Select a team")}
@@ -285,13 +399,22 @@ export function WorkPolicyAssignmentDialog({
 
 						{/* Employee Selection */}
 						{assignmentType === "employee" && (
-							<form.Field name="employeeId">
+							<form.Field
+								name="employeeId"
+								validators={{ onChange: requireEmployee }}
+							>
 								{(field) => (
 									<EmployeeSingleSelect
 										value={field.state.value}
 										onChange={field.handleChange}
 										label={t("settings.workPolicies.employee", "Employee")}
 										placeholder={t("settings.workPolicies.selectEmployee", "Select an employee")}
+										disabled={isPending}
+										error={
+											typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: undefined
+										}
 									/>
 								)}
 							</form.Field>
@@ -305,21 +428,19 @@ export function WorkPolicyAssignmentDialog({
 						<form.Subscribe<[boolean, boolean]> selector={(state) => [state.isSubmitting, state.canSubmit]}>
 							{([isSubmitting, canSubmit]: [boolean, boolean]) => (
 								<Button
-									type="button"
-									onClick={() => {
-										form.handleSubmit();
-									}}
+									type="submit"
 									disabled={isPending || isSubmitting || isLoading || !canSubmit}
+									aria-busy={isPending || undefined}
 								>
 									{(isPending || isSubmitting) && (
-										<IconLoader2 className="mr-2 size-4 animate-spin" />
+										<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 									)}
 									{t("settings.workPolicies.assign", "Assign")}
 								</Button>
 							)}
 						</form.Subscribe>
 					</ActionPanelFooter>
-				</form>
+				</ClientForm>
 			</ActionPanelContent>
 		</ActionPanel>
 	);

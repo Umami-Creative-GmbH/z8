@@ -75,8 +75,10 @@
         "title": "Tendenze analitiche",
         "viewFull": "Visualizza analisi completa"
       },
+      "scope": "Reportistica dell'intera piattaforma",
       "sectionDescription": "Aggiornato dai dati correnti della piattaforma per l'intervallo e il bucket selezionati.",
       "sectionTitle": "Trend analitici",
+      "seriesValues": "Visualizza valori della serie",
       "title": "Analisi piattaforma",
       "values": {
         "notAvailable": "Non disponibile"
@@ -276,10 +278,19 @@
       }
     },
     "overview": {
+      "accessUnavailable": "Impossibile confermare l'accesso alla piattaforma.",
       "analytics": {
         "title": "Trend analitici"
       },
-      "description": "Metriche della piattaforma e azioni rapide",
+      "analyticsUnavailable": "I dati analitici della piattaforma non sono disponibili. Riprova.",
+      "confirmingAccess": "Conferma dell'accesso alla piattaforma",
+      "groups": {
+        "access": "Gestione degli accessi",
+        "billing": "Fatturazione e abbonamenti",
+        "operations": "Operazioni della piattaforma"
+      },
+      "loadingAnalytics": "Caricamento dei dati analitici della piattaforma",
+      "loadingMetrics": "Caricamento delle metriche della piattaforma",
       "metrics": {
         "bannedUsers": "Utenti bannati",
         "bannedUsersDescription": "Accesso limitato",
@@ -295,6 +306,9 @@
         "totalUsers": "Utenti totali",
         "totalUsersDescription": "Account registrati sulla piattaforma"
       },
+      "metricsUnavailable": "Le metriche della piattaforma non sono disponibili. Riprova.",
+      "platformDescription": "Esamina gli account, gli spazi di lavoro e le attività dell'intera piattaforma, quindi apri uno spazio di lavoro di amministrazione.",
+      "platformTitle": "Panoramica della piattaforma",
       "quickActions": {
         "billing": {
           "description": "Metriche sui ricavi e stato dell'abbonamento",
@@ -318,7 +332,7 @@
           "title": "Gestione utenti"
         }
       },
-      "title": "Panoramica"
+      "refreshAccess": "Aggiorna la panoramica per confermare l'accesso alla piattaforma prima di continuare."
     },
     "settings": {
       "actions": {

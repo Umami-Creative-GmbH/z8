@@ -1,0 +1,16 @@
+{
+  "stage": "done",
+  "checks": [
+    "Actual category deep link limits records; one main h1.",
+    "Actual Tus upload and public finalize persisted exactly one scoped binary document.",
+    "Authenticated binary document download returned 200 with uploaded byte length.",
+    "Actual metadata edit persisted scoped title and refreshed records.",
+    "Existing ZIP tool exposes shared-only default and server download URL. Binary ZIP excludes synthetic non-object rows only after cleanup; not fetched here.",
+    "Existing actual skill picker opens and cancels. No skill authority invented.",
+    "Reasoned public deletion persisted removal; Cancel previously preserved document.",
+    "Officer own-file route independently refuses admission.",
+    "Manager without personnel-file grant independently refused."
+  ],
+  "errors": [],
+  "head": "9847f784dfcdca922fd41936493ea07d4b896675"
+}

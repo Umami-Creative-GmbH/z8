@@ -1,0 +1,189 @@
+src\app\[locale]\onboarding\complete\page.test.tsx:19:8 lint/suspicious/noExplicitAny ━━━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    17 │ 			user: { id: "actor-a" },
+    18 │ 			session: { activeOrganizationId: "org-a" },
+  > 19 │ 		} as any,
+       │ 		     ^^^
+    20 │ 		isPending: false,
+    21 │ 	},
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page.test.tsx:119:31 lint/suspicious/noExplicitAny ━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    117 │ 	});
+    118 │ 	it("announces each pending phase and prevents premature continuation", async () => {
+  > 119 │ 		const completion = deferred<any>(),
+        │ 		                            ^^^
+    120 │ 			read = deferred<any>();
+    121 │ 		boundary.complete.mockReturnValue(completion.promise);
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page.test.tsx:120:20 lint/suspicious/noExplicitAny ━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    118 │ 	it("announces each pending phase and prevents premature continuation", async () => {
+    119 │ 		const completion = deferred<any>(),
+  > 120 │ 			read = deferred<any>();
+        │ 			                ^^^
+    121 │ 		boundary.complete.mockReturnValue(completion.promise);
+    122 │ 		boundary.summary.mockReturnValue(read.promise);
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page.test.tsx:188:25 lint/suspicious/noExplicitAny ━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    186 │ 	});
+    187 │ 	it("rejects late organization A results across A to B to A without refinalizing", async () => {
+  > 188 │ 		const oldA = deferred<any>(),
+        │ 		                      ^^^
+    189 │ 			b = deferred<any>(),
+    190 │ 			newA = deferred<any>();
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page.test.tsx:189:17 lint/suspicious/noExplicitAny ━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    187 │ 	it("rejects late organization A results across A to B to A without refinalizing", async () => {
+    188 │ 		const oldA = deferred<any>(),
+  > 189 │ 			b = deferred<any>(),
+        │ 			             ^^^
+    190 │ 			newA = deferred<any>();
+    191 │ 		boundary.summary
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page.test.tsx:190:20 lint/suspicious/noExplicitAny ━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    188 │ 		const oldA = deferred<any>(),
+    189 │ 			b = deferred<any>(),
+  > 190 │ 			newA = deferred<any>();
+        │ 			                ^^^
+    191 │ 		boundary.summary
+    192 │ 			.mockReturnValueOnce(oldA.promise)
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page.test.tsx:222:29 lint/suspicious/noExplicitAny ━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    220 │ 	});
+    221 │ 	it("ignores a late completion from a previous account and finalizes the current account once", async () => {
+  > 222 │ 		const previous = deferred<any>();
+        │ 		                          ^^^
+    223 │ 		boundary.complete.mockReturnValueOnce(previous.promise);
+    224 │ 		const view = render(<CompletePage />);
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page.test.tsx:246:28 lint/suspicious/noExplicitAny ━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    244 │ 			</Activity>,
+    245 │ 		);
+  > 246 │ 		const refresh = deferred<any>();
+        │ 		                         ^^^
+    247 │ 		boundary.summary.mockReturnValueOnce(refresh.promise);
+    248 │ 		view.rerender(
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page.test.tsx:268:28 lint/suspicious/noExplicitAny ━━━━━━━━━━━━
+
+  ! Unexpected any. Specify a different type.
+  
+    266 │ 	});
+    267 │ 	it("does not read a summary or expose late errors after unmount", async () => {
+  > 268 │ 		const pending = deferred<any>();
+        │ 		                         ^^^
+    269 │ 		boundary.complete.mockReturnValue(pending.promise);
+    270 │ 		const view = render(<CompletePage />);
+  
+  i any disables many type checking rules. Its use should be avoided.
+  
+  i Replace any with a specific type. If the type is not known, use unknown and narrow it before using the value.
+  
+
+src\app\[locale]\onboarding\complete\page-client.tsx:69:2 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  × This hook specifies more dependencies than necessary: attempt.
+  
+    67 │ 	const [attempt, setAttempt] = useState(0);
+    68 │ 	const busy = useRef(true);
+  > 69 │ 	useLayoutEffect(() => {
+       │ 	^^^^^^^^^^^^^^^
+    70 │ 		let current = true;
+    71 │ 		busy.current = true;
+  
+  i This dependency can be removed from the list.
+  
+    108 │ 			busy.current = true;
+    109 │ 		};
+  > 110 │ 	}, [actor, completions, attempt]);
+        │ 	                        ^^^^^^^
+    111 │ 	const retry = () => {
+    112 │ 		if (busy.current) return;
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    110 │ → },·[actor,·completions,·attempt]);␍
+        │                         ---------   
+
+Skipped 1 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 2 files in 85ms. Fixed 2 files.
+Found 1 error.
+Found 9 warnings.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in X:\t3-code\worktrees\z8\t3-80078e87-
+  │ 0f3316408af2ec4b\apps\webapp
+

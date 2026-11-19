@@ -24,6 +24,10 @@ export interface TeamPageUiState {
 	showDeleteDialog: boolean;
 	selectedMemberToRemove: string | null;
 	availableEmployees: SelectableEmployee[];
+	/** The Add Member picker's options are being fetched. */
+	isLoadingAvailableEmployees: boolean;
+	/** Why the picker's options could not be fetched, if they could not. */
+	availableEmployeesError: string | null;
 	selectedEmployee: string;
 }
 
@@ -32,7 +36,9 @@ type TeamPageUiAction =
 	| { type: "setShowAddMember"; value: boolean }
 	| { type: "setShowDeleteDialog"; value: boolean }
 	| { type: "setSelectedMemberToRemove"; employeeId: string | null }
+	| { type: "loadAvailableEmployeesStarted" }
 	| { type: "setAvailableEmployees"; employees: SelectableEmployee[] }
+	| { type: "loadAvailableEmployeesFailed"; error: string }
 	| { type: "setSelectedEmployee"; employeeId: string }
 	| { type: "resetAddMemberDialog" };
 
@@ -42,6 +48,8 @@ export const initialTeamPageUiState: TeamPageUiState = {
 	showDeleteDialog: false,
 	selectedMemberToRemove: null,
 	availableEmployees: [],
+	isLoadingAvailableEmployees: false,
+	availableEmployeesError: null,
 	selectedEmployee: "",
 };
 
@@ -58,8 +66,22 @@ export function teamPageUiReducer(
 			return { ...state, showDeleteDialog: action.value };
 		case "setSelectedMemberToRemove":
 			return { ...state, selectedMemberToRemove: action.employeeId };
+		case "loadAvailableEmployeesStarted":
+			return { ...state, isLoadingAvailableEmployees: true, availableEmployeesError: null };
 		case "setAvailableEmployees":
-			return { ...state, availableEmployees: action.employees };
+			return {
+				...state,
+				availableEmployees: action.employees,
+				isLoadingAvailableEmployees: false,
+				availableEmployeesError: null,
+			};
+		case "loadAvailableEmployeesFailed":
+			return {
+				...state,
+				availableEmployees: [],
+				isLoadingAvailableEmployees: false,
+				availableEmployeesError: action.error,
+			};
 		case "setSelectedEmployee":
 			return { ...state, selectedEmployee: action.employeeId };
 		case "resetAddMemberDialog":

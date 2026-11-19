@@ -96,21 +96,27 @@
       "rejectTitle": "Avvisa reseräkning"
     },
     "detail": {
+      "checksum": "SHA-256",
+      "confirmingScope": "Bekräftar aktuell organisation och medarbetare…",
       "created": "Skapad",
       "decisionRecorded": "Beslut registrerat",
       "destination": "Destination",
       "history": "Beslutshistorik",
       "historyDescription": "Varje steg i detta ärende, äldsta först. Tider visas i UTC.",
       "intermediateApproval": "Godkännande registrerat — inväntar ytterligare godkännande",
+      "legacyClaim": "Äldre anspråk",
       "legacyReceiptIdentity": "Äldre kvitto: innehållets kontrollsumma registrerades inte.",
       "loading": "Läser in reseräkning…",
       "noReceipts": "Inga kvitton registrerade",
       "notRecorded": "Ej registrerat",
       "originalAmount": "Ursprungligt belopp",
       "receipts": "Kvitton",
+      "receiptVersion": "Registrerad version",
       "refreshing": "Uppdaterar reseräkning…",
+      "scopeUnavailable": "Uppdatera detta anspråk för att bekräfta din nuvarande behörighet.",
       "submitted": "Inskickad",
       "title": "Reseräkning",
+      "unavailable": "Anspråket hittades inte eller så är behörigheten inte längre tillgänglig.",
       "unknownDates": "Resedatumkontext registrerades inte (äldre reseräkning)"
     },
     "errors": {
@@ -144,6 +150,7 @@
         "select": "Välj {name}",
         "selectAll": "Välj alla utlägg som väntar på ersättning på den här sidan",
         "selected": "{count} valda",
+        "selectionChanged": "Ett eller flera valda utlägg har ändrats. Stäng denna dialogruta och granska de aktuella utläggen innan du påbörjar en ny betalning.",
         "skipped": "Ingår inte ({count})",
         "submit": "Markera {count} som ersatta",
         "title": "Markera som ersatt"
@@ -152,6 +159,7 @@
       "coverageGap": {
         "description": "Ingen aktiv utläggsansvarig som kan registrera ersättningar har dem inom sitt ansvarsområde. Ägare och administratörer kan fortfarande registrera dem, eller utöka en utläggsansvarigs ansvarsområde.",
         "empty": "En utläggsansvarig täcker varje godkänt utlägg som väntar på ersättning.",
+        "failed": "Täckning kunde inte kontrolleras. Försök igen.",
         "queueFilter": "Godkända utlägg som väntar på ersättning som ingen utläggsansvarig täcker.",
         "show": "Visa dessa utlägg",
         "showAll": "Visa alla godkända utlägg",
@@ -237,6 +245,7 @@
           "none": "Ingen anställd hittades.",
           "search": "Sök anställda…"
         },
+        "failed": "Filteralternativ kunde inte läsas in. Försök igen.",
         "label": "Visa utlägg",
         "notExported": "Ännu inte exporterad",
         "open": "Öppna",
@@ -291,12 +300,18 @@
       },
       "payrollRuns": {
         "description": "Dessa lönekörningar innehåller utläggsrapporter som väntar på ersättning. När lön har betalat en körning bekräftar du den för att registrera ersättningarna.",
+        "failed": "Lönebekräftelser kunde inte läsas in. Försök igen.",
         "reports": "{count, plural, one {# utläggsrapport för dig att bekräfta, {amount}} other {# utläggsrapporter för dig att bekräfta, {amount}}}",
         "title": "Lönekörningar som väntar på bekräftelse"
       },
       "queue": {
         "description": "Öppna ett utlägg för att se dess reglering och registrera en ersättning.",
+        "failed": "Det gick inte att läsa in ekonomikön. Försök igen.",
         "title": "Godkända utlägg"
+      },
+      "scope": {
+        "failed": "Din nuvarande ekonomibehörighet kunde inte bekräftas. Försök igen.",
+        "loading": "Bekräftar ekonomibehörighet…"
       },
       "title": "Utläggsekonomi"
     },
@@ -344,6 +359,7 @@
       "untitledMileage": "Namnlös körsträcka"
     },
     "legacyDraft": {
+      "checking": "Kontrollerar fortsättning av utkast…",
       "continue": "Fortsätt som rapport",
       "converted": "Du fortsatte det här utkastet som en utläggsrapport. Denna begäran ligger kvar här oförändrad som referens.",
       "description": "Utkast från det tidigare ersättningsformuläret slutförs nu som utläggsrapporter. Belopp, datum, anteckningar och kvitton förs över. Allt som det nya formuläret kräver och som inte fanns i det här utkastet återstår för dig att fylla i. Själva begäran förblir oförändrad.",
@@ -367,6 +383,7 @@
         "title": "Fortsättning från ett tidigare utkast"
       },
       "openReport": "Öppna rapporten",
+      "readRefused": "Fortsättning av utkast är inte tillgängligt för den aktuella läsaren.",
       "receipt": {
         "mismatch": "den sparade filen matchar inte längre det som laddades upp",
         "unreadable": "den sparade filen kan inte läsas just nu",
@@ -1106,6 +1123,7 @@
         "nothingOutstanding": "Det finns inget utestående för det här utlägget.",
         "ownExpense": "Du kan inte registrera betalningar för dina egna utlägg.",
         "referenceRequired": "Ange betalningsreferensen, t.ex. referensen för banköverföringen.",
+        "refresh": "Saldot kunde inte uppdateras. Tidigare inlästa poster visas; försök igen innan du registrerar en betalning.",
         "refused": "Denna betalning kan inte registreras för detta utlägg.",
         "staleBalance": "Saldot ändrades medan du registrerade betalningen. Kontrollera det uppdaterade saldot och registrera den igen.",
         "tooLong": "Den här texten är för lång."
@@ -1149,7 +1167,13 @@
     },
     "title": "Reseutlägg",
     "workspace": {
-      "description": "Samla reseutlägg och fristående utlägg, skicka dem för granskning och följ deras återbetalning."
+      "create": "Skapa en utläggsrapport",
+      "description": "Samla reseutlägg och fristående utlägg, skicka dem för granskning och följ deras återbetalning.",
+      "mileageDescription": "Registrera en tjänstekörning utanför en resa.",
+      "otherWork": "Granskning och ekonomi",
+      "receiptDescription": "Registrera ett utlägg med dess kvitto.",
+      "reconciling": "Läser in dina utlägg för den aktuella organisationen…",
+      "tripDescription": "Samla utlägg med gemensamma reseuppgifter."
     }
   }
 }

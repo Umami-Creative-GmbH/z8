@@ -1,0 +1,21 @@
+import readline from 'node:readline';
+import {writeFile,readFile,mkdir,readdir} from 'node:fs/promises';
+import {join} from 'node:path';
+globalThis.h=await import('./common.mjs');
+globalThis.browser1733=await h.puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:false,args:['--disable-notifications','--window-size=1620,1090']});
+globalThis.ctx1733=await browser1733.createBrowserContext();
+await ctx1733.setPermission(h.r.origin,{permission:{name:'notifications'},state:'denied'});
+globalThis.p=await ctx1733.newPage();await p.setViewport({width:1600,height:1000});p.setDefaultTimeout(45000);
+await writeFile(join(h.directory,'browser-process-private.json'),JSON.stringify({pid:browser1733.process().pid}));
+globalThis.db=new(h.req('pg').Client)({connectionString:h.r.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL});await db.connect();
+globalThis.results={checks:[],captures:[],attempts:[],stage:'started',source:await h.source()};
+globalThis.assert=(await import('node:assert/strict')).default;
+globalThis.check=(name,value)=>{assert.ok(value,name);results.checks.push(name);};
+globalThis.snapshot=async()=>({batches:(await db.query('select id,organization_id,created_by,pay_period_year,pay_period_month,visibility,status,confirmed_at from payslip_batch order by id')).rows,files:(await db.query('select id,organization_id,batch_id from payslip_batch_file order by id')).rows,documents:(await db.query('select id,organization_id from employee_document order by id')).rows,notifications:(await db.query('select id,organization_id from notification order by id')).rows});
+globalThis.poll=async(fn,tries=200)=>{for(let i=0;i<tries;i++){const x=await fn();if(x)return x;await new Promise(d=>setTimeout(d,100));}throw Error('bounded poll timeout');};
+globalThis.cap=async name=>{const c=await h.capture(p,name);results.captures.push(c);return c;};
+globalThis.dom=async()=>p.evaluate(()=>({path:location.pathname,h1:[...document.querySelectorAll('h1')].filter(e=>e.checkVisibility()).map(e=>e.textContent.trim()),buttons:[...document.querySelectorAll('button')].filter(e=>e.checkVisibility()).map(e=>({text:e.textContent.trim(),label:e.getAttribute('aria-label'),role:e.getAttribute('role'),id:e.id,disabled:e.disabled})),inputs:[...document.querySelectorAll('input')].filter(e=>e.checkVisibility()).map(e=>({name:e.name,id:e.id,value:e.value,type:e.type})),alerts:[...document.querySelectorAll('[role=alert]')].filter(e=>e.checkVisibility()).map(e=>e.innerText),main:document.querySelector('main')?.innerText.slice(0,4500)}));
+globalThis.save=async()=>h.save('journey-raw-private.json',results);
+console.log('OWNED_CONTROLLER_READY');
+const queue=join(h.out,'commands');await mkdir(queue,{recursive:true});const done=new Set();
+try{mainLoop:for(;;){const files=(await readdir(queue)).filter(f=>f.endsWith('.mjs')&&!done.has(f)).sort();for(const file of files){done.add(file);results.stage=file;const code=await readFile(join(queue,file),'utf8');if(code.trim()==='CLOSE')break mainLoop;try{const response=await(new Function('return (async()=>{'+code+'})()'))();results.attempts.push({stage:file,status:'complete'});await save();const result={stage:file,status:'complete',response};await h.save(file+'.result.json',result);console.log(JSON.stringify(result));}catch(e){results.attempts.push({stage:file,status:'failed',error:{name:e.name,message:e.message}});await save();const result={stage:file,status:'failed',error:{name:e.name,message:e.message}};await h.save(file+'.result.json',result);console.log(JSON.stringify(result));}}await new Promise(d=>setTimeout(d,300));}}finally{await db.query('ROLLBACK').catch(()=>{});await db.end();await browser1733.close();await save();console.log('OWNED_CONTROLLER_CLOSED');}

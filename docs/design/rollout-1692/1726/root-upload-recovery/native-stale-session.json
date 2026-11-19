@@ -1,0 +1,7 @@
+{
+  "stoppedClientPids": [
+    83100,
+    49472
+  ],
+  "reason": "CLI wait loaded an expired restored fixture session and waited on sign-in; no target React inspection claimed"
+}

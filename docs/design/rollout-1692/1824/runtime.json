@@ -1,0 +1,112 @@
+{
+  "checks": [
+    {
+      "check": "real enrolled organization/location/device scope",
+      "detail": "No Better Auth cookies in device context"
+    },
+    {
+      "check": "search/no match/recovery",
+      "detail": "Actual assigned-location roster"
+    },
+    {
+      "check": "persisted computed large font / touch phone / dark / reduced motion",
+      "detail": {
+        "font": "18px",
+        "width": 390,
+        "viewport": 390,
+        "dark": true,
+        "reduced": true,
+        "targets": [
+          {
+            "label": "English",
+            "height": 40.5
+          },
+          {
+            "label": "Scan badge",
+            "height": 72
+          },
+          {
+            "label": "F2\nFixture Person 2",
+            "height": 90
+          },
+          {
+            "label": "F3\nFixture Person 3",
+            "height": 90
+          },
+          {
+            "label": "RW\nR025 Clock worker",
+            "height": 90
+          }
+        ]
+      }
+    },
+    {
+      "check": "keyboard PIN with reader guard active / focus",
+      "detail": {
+        "tag": "BUTTON",
+        "label": "Not you? Back",
+        "outline": "none",
+        "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0 0 0 / 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px"
+      }
+    },
+    {
+      "check": "idle reset",
+      "detail": "30 second real timeout clears employee turn"
+    }
+  ],
+  "records": [
+    {
+      "type": "clock_in",
+      "utc": "2026-11-15T08:38:09.967000Z",
+      "utc_offset_minutes": 60,
+      "timezone": "Europe/Berlin",
+      "timezone_source": "browser",
+      "deviceEvidence": "kiosk:<owned-device>"
+    },
+    {
+      "type": "clock_out",
+      "utc": "2026-11-15T08:38:13.479000Z",
+      "utc_offset_minutes": 60,
+      "timezone": "Europe/Berlin",
+      "timezone_source": "browser",
+      "deviceEvidence": "kiosk:<owned-device>"
+    },
+    {
+      "type": "clock_in",
+      "utc": "2026-11-15T08:38:20.241000Z",
+      "utc_offset_minutes": 60,
+      "timezone": "Europe/Berlin",
+      "timezone_source": "browser",
+      "deviceEvidence": "kiosk:<owned-device>"
+    },
+    {
+      "type": "clock_out",
+      "utc": "2026-11-15T08:38:23.138000Z",
+      "utc_offset_minutes": 60,
+      "timezone": "Europe/Berlin",
+      "timezone_source": "browser",
+      "deviceEvidence": "kiosk:<owned-device>"
+    },
+    {
+      "type": "clock_in",
+      "utc": "2026-11-15T08:38:30.425000Z",
+      "utc_offset_minutes": 60,
+      "timezone": "Europe/Berlin",
+      "timezone_source": "browser",
+      "deviceEvidence": "kiosk:<owned-device>:offline:server_anchor"
+    },
+    {
+      "type": "clock_out",
+      "utc": "2026-11-15T08:38:37.091000Z",
+      "utc_offset_minutes": 60,
+      "timezone": "Europe/Berlin",
+      "timezone_source": "browser",
+      "deviceEvidence": "kiosk:<owned-device>"
+    }
+  ],
+  "errors": [],
+  "limits": [
+    "Keyboard reader emulation is not NFC/scanner hardware certification.",
+    "No real camera image, physical device or browser zoom certification."
+  ]
+}

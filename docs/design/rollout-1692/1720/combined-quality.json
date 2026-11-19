@@ -1,0 +1,17 @@
+{
+  "testedHead": "e8eebd1077dc1743e78e30885965a7eea05a4b9c",
+  "implementation": "793b8344c42bca18cc2296baf3c44a58331a1b72",
+  "mergedIntegration": "d234402863343a306a87d6faed7d195a76a6eeec",
+  "latestObservedIntegrationAncestor": "877b12279ec992cf282e0ba775ac4849579aef86",
+  "environment": "PowerShell; pnpm only; pnpm_config_verify_deps_before_run=false",
+  "commands": [
+    {"command":"pnpm --filter webapp exec vitest run --project unit src/components/personnel-file src/lib/personnel-file src/lib/navigation/route-metadata.test.ts src/components/ui/action-panel.test.tsx src/components/ui/alert-dialog.test.tsx src/components/ui/page-header.test.tsx src/components/data-table-server/data-table-toolbar.test.tsx src/components/licenses src/components/organization-mfa 'src/app/[locale]/(auth)/licenses/report.test.tsx'", "exitCode":0,"suites":45,"tests":263,"log":"combined-unit.txt"},
+    {"command":"pnpm --filter webapp typecheck", "exitCode":0,"projects":"next typegen; tsconfig.typecheck.json; tsconfig.workflow-contracts.json; tsconfig.smoke.json","log":"combined-types.txt"},
+    {"command":"pnpm node docs/design/rollout-1692/1720/postgres.mjs \"$env:TEMP/z8-1720-fixture2\"", "exitCode":0,"suites":6,"tests":112,"log":"combined-postgres.txt"},
+    {"command":"pnpm node docs/design/rollout-1692/1720/actions.mjs \"$env:TEMP/z8-1720-fixture2\"", "exitCode":0,"assertions":21,"log":"actions.json"},
+    {"command":"pnpm node docs/design/rollout-1692/1720/variants.mjs \"$env:TEMP/z8-1720-fixture2\"", "exitCode":0,"assertions":17,"log":"variants.json"},
+    {"command":"pnpm node docs/design/rollout-1692/1720/capture.mjs \"$env:TEMP/z8-1720-fixture2\" final", "exitCode":0,"captures":3,"log":"final-captures.json"},
+    {"command":"git merge --no-edit ai/1692-app-wide-ui-refresh", "exitCode":0,"result":"Already up to date at final ancestry check"}
+  ],
+  "limits":"Full build/catalog synchronization/provider/device/true zoom/transition acceptance remain unpassed. Supplemental fixture3 source-pinned scope/read/locale repeat failed; earlier successful scope/read evidence remains report-attested. Doctor 92/100 has two reviewed warnings; normal and explicit CRLF formatting distinctions remain in quality.json."
+}

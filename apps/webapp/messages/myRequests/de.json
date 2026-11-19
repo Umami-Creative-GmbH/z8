@@ -1,16 +1,17 @@
 {
   "myRequests": {
     "actions": {
-      "cancel": "Abbrechen",
+      "cancelled": "Antrag storniert",
       "cancelling": "Wird abgebrochen…",
+      "cancelRequest": "Antrag stornieren",
       "cancelRequestConfirmation": "Diese Anfrage abbrechen?",
+      "cancelRequestDescription": "Er wird aus der Prüfung zurückgezogen und kann nicht wieder geöffnet werden. Reichen Sie bei Bedarf einen neuen Antrag ein.",
       "cancelRequestError": "Anfrage konnte nicht abgebrochen werden.",
       "fix": "Beheben",
-      "notAvailable": "Nicht verfügbar",
+      "keepRequest": "Antrag behalten",
       "view": "Anzeigen"
     },
     "all": {
-      "description": "Überprüfen Sie Anträge für Abwesenheiten, Zeitkorrekturen und Ausgaben.",
       "title": "Alle Anträge"
     },
     "card": {
@@ -19,25 +20,25 @@
     },
     "empty": {
       "filtered": {
-        "description": "Anträge erscheinen hier, sobald sie eingereicht oder geladen wurden.",
+        "hint": "Versuchen Sie es mit einem anderen Suchbegriff, Status oder Typ.",
         "title": "Keine Anträge entsprechen Ihren Filtern"
       },
       "none": {
         "description": "Anträge erscheinen hier, sobald sie eingereicht oder geladen wurden.",
         "title": "Noch keine Anträge"
+      },
+      "unavailable": {
+        "description": "Versuchen Sie es bei den nicht verfügbaren Quellen erneut, um Ihre Anträge zu prüfen.",
+        "title": "Keine Anträge geladen"
       }
     },
     "featureName": "Ihre Anträge anzeigen",
     "filters": {
       "allStatuses": "Alle Status",
       "allTypes": "Alle Typen",
-      "approvedRequests": "Genehmigte Anfragen",
-      "cancelledRequests": "Stornierte Anfragen",
-      "description": "Filtern Sie jeden Anfragebereich nach Text, Status oder Anfragetyp.",
-      "pendingRequests": "Ausstehende Anfragen",
-      "rejectedRequests": "Abgelehnte Anfragen",
+      "resultCount": "{visible} von {total} Anträgen werden angezeigt",
       "search": "Suche",
-      "searchPlaceholder": "Nach Titel suchen…",
+      "searchRequestsPlaceholder": "Titel, Daten, Betrag oder Grund…",
       "status": "Status",
       "title": "Anfragen finden",
       "type": "Typ"
@@ -45,8 +46,10 @@
     "focus": {
       "unavailable": "Diese Anfrage ist nicht mehr ausstehend oder kann hier nicht angezeigt werden. Die Periodenbereitschaft wird erneut überprüft."
     },
+    "history": {
+      "request": "Antrag"
+    },
     "inReview": {
-      "description": "Anfragen, die auf Genehmigung oder Bearbeitung warten.",
       "title": "In Prüfung"
     },
     "needsAttention": {
@@ -70,33 +73,32 @@
         "title": "Reisekostenabrechnung"
       }
     },
+    "scope": "Ihre Abwesenheits-, Zeitkorrektur- und bisherigen Spesenanträge in der aktiven Organisation",
     "sourceError": {
       "absence": "Abwesenheitsanträge konnten nicht geladen werden.",
       "timeCorrection": "Zeitkorrekturanträge konnten nicht geladen werden.",
       "title": "Einige Anfragen konnten nicht geladen werden.",
       "travelExpense": "Reisekostenanträge konnten nicht geladen werden."
     },
-    "sourceTypes": {
-      "absence": "Abwesenheit",
-      "timeCorrection": "Zeit",
-      "travelExpense": "Auslage"
-    },
     "status": {
       "approved": "Genehmigt",
       "cancelled": "Storniert",
       "inReview": "In Prüfung",
-      "pending": "Ausstehend",
       "rejected": "Abgelehnt"
     },
-    "subtitle": "Behalten Sie den Überblick über ausstehende Anfragen, erforderliche Korrekturen und aktuelle Entscheidungen an einem Ort.",
     "summary": {
       "ariaLabel": "Anfrageübersicht",
-      "pending": "Ausstehend",
       "recentDecisions": "Aktuelle Entscheidungen",
+      "recentWindow": "Letzte 30 Tage",
       "requiredFixes": "Erforderliche Korrekturen",
       "totalLoaded": "Gesamt geladen"
     },
     "title": "Meine Anfragen",
+    "types": {
+      "absence": "Abwesenheit",
+      "timeCorrection": "Zeitkorrektur",
+      "travelExpense": "Reisekosten"
+    },
     "unavailableTitle": "Anfragen nicht verfügbar"
   }
 }

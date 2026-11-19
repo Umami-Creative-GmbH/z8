@@ -1,0 +1,351 @@
+{
+  "source": "cab95aa79d6b0ece4de541fa60c9d99805918a57",
+  "verifiedCommit": null,
+  "product": [
+    {
+      "id": "R165-R01",
+      "predicate": "Actual ready/loading /travel-expenses heading and personal mixed history",
+      "state": "UNPASSED",
+      "reason": "Ready heading and seven personal mixed rows proved on final fresh reload. Initial-loading h1 was not established: delayed arrival sample was before route commit, with no visible h1. No product failure inferred from this timing sample.",
+      "evidence": [
+        "final-listing-SAFE.json"
+      ],
+      "attemptCount": 5,
+      "attemptFiles": [
+        "attempt-arrival-v2.js-1794974159309.json",
+        "attempt-arrival.js-1794974129086.json",
+        "attempt-final-listing.js-1794974199507.json",
+        "attempt-listing.js-1794973720474.json",
+        "attempt-status.js-1794973678557.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R02",
+      "predicate": "Visible New receipt -> correct editor, canonical graph and listing readback",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "creation-graphs-SAFE.json",
+        "database-preservation-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-create.js-1794973705856.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R03",
+      "predicate": "Visible New mileage -> correct editor, canonical graph and listing readback",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "creation-graphs-SAFE.json",
+        "database-preservation-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-create.js-1794973705856.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R04",
+      "predicate": "Visible New trip -> correct editor, canonical graph and listing readback",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "creation-graphs-SAFE.json",
+        "keyboard-SAFE.json",
+        "database-preservation-SAFE.json"
+      ],
+      "attemptCount": 2,
+      "attemptFiles": [
+        "attempt-create.js-1794973705856.json",
+        "attempt-keyboard-captures.js-1794974076705.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R05",
+      "predicate": "Six filters/counts and sort order of mixed personal records",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "filters-SAFE.json",
+        "keyboard-SAFE.json"
+      ],
+      "attemptCount": 2,
+      "attemptFiles": [
+        "attempt-filters.js-1794973773805.json",
+        "attempt-keyboard-captures.js-1794974076705.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R06",
+      "predicate": "Provenance, expense dates, amounts, approval and reimbursement distinctions",
+      "state": "UNPASSED",
+      "reason": "Observed current draft totals, legacy original identity, Mar 29 plain date, claimed EUR120.50, approved EUR120.50 outstanding without reimbursement badge. Populated settled/current-approved/company-paid/multicurrency/adjustment-original matrix not exercised.",
+      "evidence": [
+        "filters-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-filters.js-1794973773805.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R07",
+      "predicate": "Healthy empty history distinct from no-match and unknown; actual Show all",
+      "state": "UNPASSED",
+      "reason": "Healthy manager empty, employee no-match and actual keyboard Show all proved. Initial unknown/failed read empty-state distinction not reached; do not promote partial predicate.",
+      "evidence": [
+        "manager-scope-SAFE.json",
+        "keyboard-SAFE.json"
+      ],
+      "attemptCount": 3,
+      "attemptFiles": [
+        "attempt-filters.js-1794973773805.json",
+        "attempt-keyboard-captures.js-1794974076705.json",
+        "attempt-manager.js-1794974034088.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R08",
+      "predicate": "Own draft deletion through real confirmation and exact graph delta",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "deletion-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-delete.js-1794973896458.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R09",
+      "predicate": "Actual global Header Refresh with synthetic non-auth read outage retains authorized rows; local Retry recovers",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "refresh-retry-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-refresh.js-1794973801454.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R10",
+      "predicate": "Pending creation duplicate protection",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "pending-held-SAFE.json",
+        "retirement-completion-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-hold-create.js-1794973838600.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R11",
+      "predicate": "Rejected creation recovery",
+      "state": "UNPASSED",
+      "reason": "No naturally rejected create occurred; no creation/auth failure forged to claim recovery.",
+      "evidence": [],
+      "attemptCount": 0,
+      "attemptFiles": [],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R12",
+      "predicate": "Real held creation response retirement with pre-release URL/lifetime ordering",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "pending-held-SAFE.json",
+        "retirement-pre-release-SAFE.json",
+        "retirement-completion-SAFE.json"
+      ],
+      "attemptCount": 2,
+      "attemptFiles": [
+        "attempt-hold-create.js-1794973838600.json",
+        "attempt-release-create.js-1794973847120.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R13",
+      "predicate": "Employee personal-only and manager approval destination",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "manager-scope-SAFE.json",
+        "manager-destination-SAFE.json",
+        "filters-SAFE.json"
+      ],
+      "attemptCount": 3,
+      "attemptFiles": [
+        "attempt-filters.js-1794973773805.json",
+        "attempt-manager-destination.js-1794974097322.json",
+        "attempt-manager.js-1794974034088.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R14",
+      "predicate": "Finance read-only grant and fresh arrival refusal/revocation through actual UI",
+      "state": "UNPASSED",
+      "reason": "Only employee and manager contexts were opened under two total fresh-form submissions. Finance grant/setup not offered on personal workspace; owner/admin and revocation matrix not attempted.",
+      "evidence": [
+        "manager-destination-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-manager-destination.js-1794974097322.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R15",
+      "predicate": "Other employee and foreign organization cannot see creator drafts",
+      "state": "UNPASSED",
+      "reason": "Same-org manager saw none of creator drafts; seeded other-employee/foreign sentinels stayed unchanged. Actual foreign-org authenticated visibility not exercised.",
+      "evidence": [
+        "manager-scope-SAFE.json",
+        "database-preservation-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-manager.js-1794974034088.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R16",
+      "predicate": "Settled expanded 1600 desktop h1/main/sidebar geometry and hit testing",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "desktop-1600-expanded-SAFE.json",
+        "desktop-1600-expanded-corrected-SAFE.json"
+      ],
+      "attemptCount": 2,
+      "attemptFiles": [
+        "attempt-keyboard-captures.js-1794974076705.json",
+        "attempt-layout.js-1794973929899.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R17",
+      "predicate": "Settled 2400 wide dark geometry and hit testing",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "wide-2400-dark-SAFE.json",
+        "wide-2400-dark-corrected-SAFE.json"
+      ],
+      "attemptCount": 2,
+      "attemptFiles": [
+        "attempt-keyboard-captures.js-1794974076705.json",
+        "attempt-layout.js-1794973929899.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R18",
+      "predicate": "390 phone drawer first Escape/focus and keyboard creation/filter/navigation",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "phone-390-large-v2-SAFE.json",
+        "preferences-phone-v2-SAFE.json",
+        "keyboard-SAFE.json"
+      ],
+      "attemptCount": 3,
+      "attemptFiles": [
+        "attempt-keyboard-captures.js-1794974076705.json",
+        "attempt-preferences-v2.js-1794974003251.json",
+        "attempt-preferences.js-1794973945845.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R19",
+      "predicate": "Saved theme/sidebar/text size 18px across actual refresh/navigation",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "preferences-phone-v2-SAFE.json"
+      ],
+      "attemptCount": 2,
+      "attemptFiles": [
+        "attempt-preferences-v2.js-1794974003251.json",
+        "attempt-preferences.js-1794973945845.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R20",
+      "predicate": "Actual React TravelExpenseManagement and ExpenseHistory names",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "next-diagnostics-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-diagnostics-v2.js-1794974268949.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R21",
+      "predicate": "Current-only screenshots with source/hash and decoded PNG evidence",
+      "state": "PASS",
+      "reason": "Actual current-source browser receipt and canonical readback support this bounded predicate.",
+      "evidence": [
+        "captures.json"
+      ],
+      "attemptCount": 3,
+      "attemptFiles": [
+        "attempt-keyboard-captures.js-1794974076705.json",
+        "attempt-layout.js-1794973929899.json",
+        "attempt-preferences-v2.js-1794974003251.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    },
+    {
+      "id": "R165-R22",
+      "predicate": "Installed axe main audit",
+      "state": "UNPASSED",
+      "reason": "axe-core unavailable in existing dependencies; no install/copy and no audit performed.",
+      "evidence": [
+        "next-diagnostics-SAFE.json"
+      ],
+      "attemptCount": 1,
+      "attemptFiles": [
+        "attempt-diagnostics-v2.js-1794974268949.json"
+      ],
+      "attemptMeaning": "Contributing controller script invocations, including failed phases; not independent tests or complete end-to-end retries."
+    }
+  ],
+  "productUniqueFinalPredicates": {
+    "total": 22,
+    "PASS": 15,
+    "FAIL": 0,
+    "UNPASSED": 7
+  },
+  "countQualification": "Named final predicates are not commands, attempts, checks or unit/PG suites. AttemptCount describes this run protocol invocations, not assertions. Historical v1 stays 0/22. Partial predicates stay UNPASSED."
+}

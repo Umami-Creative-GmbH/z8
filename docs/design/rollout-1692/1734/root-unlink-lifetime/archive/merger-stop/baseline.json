@@ -1,0 +1,2122 @@
+{
+  "recorded": "2026-11-16T18:35:42.985Z",
+  "root": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d",
+  "parent": "a904b3d19815bd511c67514fb48078cd4aec262f",
+  "incoming": "e194f9f367ff747ecab779ebd47c2ba34c684b84",
+  "branch": "ai/1692-app-wide-ui-refresh",
+  "origin": "a904b3d19815bd511c67514fb48078cd4aec262f",
+  "parentTree": "d508abda504b26e04b6c144629f44f675640ac81",
+  "verifiedProduct": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0",
+  "mergeBase": "699a1a782ca8f0ab2def50b31e4921fd6d17a073",
+  "verified": [
+    {
+      "id": "F1",
+      "issue": 1693,
+      "verifiedCommit": "b6595389e0ebf15b4ec9afc44d6d8f92ff2017c5"
+    },
+    {
+      "id": "F2",
+      "issue": 1694,
+      "verifiedCommit": "382b8f5be837dad724d3a54274d3050b0104881f"
+    },
+    {
+      "id": "F3",
+      "issue": 1695,
+      "verifiedCommit": "bfacad421ffe77f50729ea5895c546698ef28383"
+    },
+    {
+      "id": "H1",
+      "issue": 1853,
+      "verifiedCommit": "26d1d8fd016d6daa0c9fe71e0f671571dd45c211"
+    },
+    {
+      "id": "R001",
+      "issue": 1700,
+      "verifiedCommit": "8eed0aa58bcae1dd19be7e6d7d78303208a3ddde"
+    },
+    {
+      "id": "R002",
+      "issue": 1701,
+      "verifiedCommit": "a1e0fd2aea50ff09800ee3b937a1a8075a2a88dc"
+    },
+    {
+      "id": "R003",
+      "issue": 1820,
+      "verifiedCommit": "996074d9fcbbaeb956a1b7316f914052d8c24733"
+    },
+    {
+      "id": "R004",
+      "issue": 1702,
+      "verifiedCommit": "416c04fc1b65f798422ddeecb8413249b064f715"
+    },
+    {
+      "id": "R005",
+      "issue": 1703,
+      "verifiedCommit": "2bc30e88f63d9db3d547353f49077db0c0ee7805"
+    },
+    {
+      "id": "R006",
+      "issue": 1704,
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    },
+    {
+      "id": "R007",
+      "issue": 1705,
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    },
+    {
+      "id": "R008",
+      "issue": 1706,
+      "verifiedCommit": "62f92f0447a35b30b9806bca0a480f03a8f3c896"
+    },
+    {
+      "id": "R009",
+      "issue": 1707,
+      "verifiedCommit": "6fa8147fae492939056a76e83e327e520d921ae1"
+    },
+    {
+      "id": "R010",
+      "issue": 1708,
+      "verifiedCommit": "3f86b1d7e17025e89f314638a042aa1eed378ed1"
+    },
+    {
+      "id": "R011",
+      "issue": 1709,
+      "verifiedCommit": "97ecd83ca05ad1bab75fee84beed57f23e74c007"
+    },
+    {
+      "id": "R012",
+      "issue": 1710,
+      "verifiedCommit": "273320a9376b4deb60b57ba3882fc17b37ae308a"
+    },
+    {
+      "id": "R013",
+      "issue": 1711,
+      "verifiedCommit": "3a0274c800d218689dbe3f235184e40ab15ebbeb"
+    },
+    {
+      "id": "R014",
+      "issue": 1712,
+      "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+    },
+    {
+      "id": "R015",
+      "issue": 1713,
+      "verifiedCommit": "b9abdb440e847dadf1067cea54a7279c729fb607"
+    },
+    {
+      "id": "R016",
+      "issue": 1714,
+      "verifiedCommit": "0ca17e611e6fb2ce0dc7f9f87278f561fca2fa10"
+    },
+    {
+      "id": "R017",
+      "issue": 1715,
+      "verifiedCommit": "ad51efc8e2d39e062c8486b4ead15732c67acb30"
+    },
+    {
+      "id": "R018",
+      "issue": 1716,
+      "verifiedCommit": "be4a3fd5d389c26aa2a5d4dbe300f9f20fb10741"
+    },
+    {
+      "id": "R019",
+      "issue": 1717,
+      "verifiedCommit": "ce99de60742d7fdbbaeaaefcdfa555fd7be6e784"
+    },
+    {
+      "id": "R020",
+      "issue": 1718,
+      "verifiedCommit": "e72110df71d0ffc8d7614fd45b6603f8a62eefcd"
+    },
+    {
+      "id": "R021",
+      "issue": 1719,
+      "verifiedCommit": "a9b472e5864f386d881604605d593cffc189d61a"
+    },
+    {
+      "id": "R022",
+      "issue": 1821,
+      "verifiedCommit": "f53de8d531fa49b70afe72a722ce3588a477d0d8"
+    },
+    {
+      "id": "R023",
+      "issue": 1822,
+      "verifiedCommit": "984436c44a2c44bbe99e22fb23c4dbb108534e83"
+    },
+    {
+      "id": "R024",
+      "issue": 1823,
+      "verifiedCommit": "65b74963b69e9536af5e862199fa43a8583473cc"
+    },
+    {
+      "id": "R025",
+      "issue": 1824,
+      "verifiedCommit": "fe2bed7cdcd268b59727f04fd8496730cdd21179"
+    },
+    {
+      "id": "R026",
+      "issue": 1825,
+      "verifiedCommit": "254ccef5e2ad231fc8b0fb1028478efccf7c9b6c"
+    },
+    {
+      "id": "R027",
+      "issue": 1826,
+      "verifiedCommit": "40492f6233feecfac214813f28e2f1f26b3175b2"
+    },
+    {
+      "id": "R028",
+      "issue": 1720,
+      "verifiedCommit": "ced095089163e69b232c2bce96a40cba800186d8"
+    },
+    {
+      "id": "R029",
+      "issue": 1721,
+      "verifiedCommit": "a068cdd9cb76bd3b5ff2a5d6d00498c97cda766a"
+    },
+    {
+      "id": "R030",
+      "issue": 1722,
+      "verifiedCommit": "3e6402eca006f74c4693fcdd90c31e4a914e5c27"
+    },
+    {
+      "id": "R031",
+      "issue": 1723,
+      "verifiedCommit": "f15492e4bc5bee60293b22797d42eacdd8296190"
+    },
+    {
+      "id": "R032",
+      "issue": 1827,
+      "verifiedCommit": "e873311bc1c8d33fdc7240c51b97ca54d347341a"
+    },
+    {
+      "id": "R033",
+      "issue": 1828,
+      "verifiedCommit": "752c500833e751df9988a3b2434d240124b89a51"
+    },
+    {
+      "id": "R034",
+      "issue": 1829,
+      "verifiedCommit": "9f839b78f109b1f3eea1c40b959e76ae99efba3b"
+    },
+    {
+      "id": "R035",
+      "issue": 1830,
+      "verifiedCommit": "63a5e6ff43e6541473a927da0a651686bfd33afe"
+    },
+    {
+      "id": "R036",
+      "issue": 1831,
+      "verifiedCommit": "059ddd58efe3e68c9f9c369a8ff83919e6143069"
+    },
+    {
+      "id": "R037",
+      "issue": 1832,
+      "verifiedCommit": "5646e7b320376d2605b80e231b6b828f4b35f670"
+    },
+    {
+      "id": "R038",
+      "issue": 1833,
+      "verifiedCommit": "0e5c9c3189e841e5fa7f84038f24d4579c801f36"
+    },
+    {
+      "id": "R039",
+      "issue": 1834,
+      "verifiedCommit": "ca6f607d683c69ee47e7558fae78b1dcd1b53914"
+    },
+    {
+      "id": "R040",
+      "issue": 1835,
+      "verifiedCommit": "16443982de929de4f885a6cfb6de5b377374cb3e"
+    },
+    {
+      "id": "R041",
+      "issue": 1724,
+      "verifiedCommit": "8d3006a518384c7606262d18ba316c0ed5fc5dc7"
+    },
+    {
+      "id": "R042",
+      "issue": 1725,
+      "verifiedCommit": "807fcc6311ec8f0511c9eea401c144b4da070da3"
+    },
+    {
+      "id": "R043",
+      "issue": 1726,
+      "verifiedCommit": "0012c8bbbc1d57c1d1fe5fcb28e93849b9df376a"
+    },
+    {
+      "id": "R044",
+      "issue": 1727,
+      "verifiedCommit": "c6b9cdeff6511fa5198651d06c7a6bfa3f5c6510"
+    },
+    {
+      "id": "R045",
+      "issue": 1728,
+      "verifiedCommit": "e50692c3bc5194ab1c16d2fe8d12664ab11aafd7"
+    },
+    {
+      "id": "R046",
+      "issue": 1729,
+      "verifiedCommit": "e9c9f8e4501cadc63d4377dce1e547ce7cda7bb9"
+    },
+    {
+      "id": "R047",
+      "issue": 1730,
+      "verifiedCommit": "8e3876c39725b7a8ef5218439766395401d64b80"
+    },
+    {
+      "id": "R048",
+      "issue": 1731,
+      "verifiedCommit": "b1e9a95c02374118deb9bba789f3aa8291b5e932"
+    },
+    {
+      "id": "R049",
+      "issue": 1732,
+      "verifiedCommit": "7cfbab79e202fffc17661f8eaefb8e5cce958834"
+    },
+    {
+      "id": "R050",
+      "issue": 1733,
+      "verifiedCommit": "a114c3392e2e9edb97069ddcce1c4e8d1d58c3c0"
+    },
+    {
+      "id": "R062",
+      "issue": 1736,
+      "verifiedCommit": "c9a56648c81206527d1935bfcb46e0a959a4157f"
+    },
+    {
+      "id": "R063",
+      "issue": 1737,
+      "verifiedCommit": "90a7e5bdb34099bf9452e9462109cdf86429d164"
+    },
+    {
+      "id": "R163",
+      "issue": 1745,
+      "verifiedCommit": "f9769a74353ac6670c4a36401029faf805b2a899"
+    }
+  ],
+  "statusCounts": {
+    "integrated": 57,
+    "awaiting-integration": 22,
+    "implementing": 1,
+    "pending": 77
+  },
+  "configs": {
+    "package.json": "f281c18ac5a4b789e95cc9314145e2f1bb535aff902fd2c4a20e08256f88c2b7",
+    "apps/webapp/package.json": "59bbc67934476333747162b5abcc7adac7a99db758416c9b630a09ec92ac1cc9",
+    "pnpm-lock.yaml": "2a254a9e5731e431b5032d1b918688f5663ce837b08207e147e1808a71bb3799",
+    "pnpm-workspace.yaml": "1aa995231f3055320fd3130345f21c4f6598232fe8981920f2ae6b860e376ea8",
+    "apps/webapp/next.config.ts": "d3a8ed855c1beee3174fef4a6dfc9112f39ae2ce5bfa39feb5250e55b0fc5d05",
+    "apps/webapp/vitest.config.ts": "7affc9c7be566df691aff8c9c598252f65c839034fb05a61071068ffeefb17dc",
+    "apps/webapp/tsconfig.typecheck.json": "027adbcf8e093ad1e48190168b48977f894b263ef15144ffdb035f07a7a143b7",
+    "apps/webapp/tsconfig.workflow-contracts.json": "4bab389fe4e65574b8b403be45bd885d0d82945422e91ade653a635e886e8322",
+    "apps/webapp/tsconfig.smoke.json": "5afb0d8bb078db8236bf127282565f6b3eda051b364ce642e81d76965f2f784e"
+  },
+  "topology": {
+    "parents": [
+      {
+        "path": "node_modules",
+        "physical": true,
+        "real": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules"
+      },
+      {
+        "path": "apps/webapp/node_modules",
+        "physical": true,
+        "real": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\apps\\webapp\\node_modules"
+      },
+      {
+        "path": "node_modules/.pnpm",
+        "physical": true,
+        "real": "X:\\t3-code\\worktrees\\z8\\t3-36de3f4a-69b59b59b97cbc3d\\node_modules\\.pnpm"
+      }
+    ],
+    "leafLinks": [
+      {
+        "path": "node_modules/@esbuild/win32-x64",
+        "real": "node_modules/.pnpm/@esbuild+win32-x64@0.28.2/node_modules/@esbuild/win32-x64"
+      },
+      {
+        "path": "node_modules/puppeteer-core",
+        "real": "node_modules/.pnpm/puppeteer-core@25.17.0_yauzl@2.10.0/node_modules/puppeteer-core"
+      },
+      {
+        "path": "node_modules/react-doctor",
+        "real": "node_modules/.pnpm/react-doctor@0.9.22_@opente_65fc381b16f1a2220bc2cd5e84c9c683/node_modules/react-doctor"
+      },
+      {
+        "path": "node_modules/shadcn",
+        "real": "node_modules/.pnpm/shadcn@4.23.0_supports-color@8.1.1/node_modules/shadcn"
+      },
+      {
+        "path": "node_modules/turbo",
+        "real": "node_modules/.pnpm/turbo@2.11.11/node_modules/turbo"
+      },
+      {
+        "path": "apps/webapp/node_modules/@aws-sdk/client-s3",
+        "real": "node_modules/.pnpm/@aws-sdk+client-s3@3.1167.0/node_modules/@aws-sdk/client-s3"
+      },
+      {
+        "path": "apps/webapp/node_modules/@aws-sdk/s3-request-presigner",
+        "real": "node_modules/.pnpm/@aws-sdk+s3-request-presigner@3.1167.0/node_modules/@aws-sdk/s3-request-presigner"
+      },
+      {
+        "path": "apps/webapp/node_modules/@base-ui/react",
+        "real": "node_modules/.pnpm/@base-ui+react@1.9.0_@date-_367596df1f109cf5c4332405308b84ea/node_modules/@base-ui/react"
+      },
+      {
+        "path": "apps/webapp/node_modules/@better-auth/api-key",
+        "real": "node_modules/.pnpm/@better-auth+api-key@1.7.22_316ffdaceccd02488a5359740788c523/node_modules/@better-auth/api-key"
+      },
+      {
+        "path": "apps/webapp/node_modules/@better-auth/core",
+        "real": "node_modules/.pnpm/@better-auth+core@1.7.22_@b_c85985d0786343e7bb36ef926812d766/node_modules/@better-auth/core"
+      },
+      {
+        "path": "apps/webapp/node_modules/@better-auth/drizzle-adapter",
+        "real": "node_modules/.pnpm/@better-auth+drizzle-adapte_ec2a7c021f40b5740dcf3349778bd278/node_modules/@better-auth/drizzle-adapter"
+      },
+      {
+        "path": "apps/webapp/node_modules/@better-auth/passkey",
+        "real": "node_modules/.pnpm/@better-auth+passkey@1.7.22_ccacbb775e4bae18c750242b40065d24/node_modules/@better-auth/passkey"
+      },
+      {
+        "path": "apps/webapp/node_modules/@better-auth/scim",
+        "real": "node_modules/.pnpm/@better-auth+scim@1.7.22_@b_1f689c31e2038e9a2444e8e4119f9599/node_modules/@better-auth/scim"
+      },
+      {
+        "path": "apps/webapp/node_modules/@better-auth/sso",
+        "real": "node_modules/.pnpm/@better-auth+sso@1.7.22_@be_5edda52e927e6de7823325cbdcc12d3d/node_modules/@better-auth/sso"
+      },
+      {
+        "path": "apps/webapp/node_modules/@biomejs/biome",
+        "real": "node_modules/.pnpm/@biomejs+biome@2.6.7/node_modules/@biomejs/biome"
+      },
+      {
+        "path": "apps/webapp/node_modules/@bprogress/core",
+        "real": "node_modules/.pnpm/@bprogress+core@1.3.4/node_modules/@bprogress/core"
+      },
+      {
+        "path": "apps/webapp/node_modules/@capacitor/core",
+        "real": "node_modules/.pnpm/@capacitor+core@8.6.0/node_modules/@capacitor/core"
+      },
+      {
+        "path": "apps/webapp/node_modules/@casl/ability",
+        "real": "node_modules/.pnpm/@casl+ability@7.1.2/node_modules/@casl/ability"
+      },
+      {
+        "path": "apps/webapp/node_modules/@dagrejs/dagre",
+        "real": "node_modules/.pnpm/@dagrejs+dagre@3.1.3/node_modules/@dagrejs/dagre"
+      },
+      {
+        "path": "apps/webapp/node_modules/@daypicker/react",
+        "real": "node_modules/.pnpm/@daypicker+react@10.0.2_@types+react@19.3.0_react@19.3.1/node_modules/@daypicker/react"
+      },
+      {
+        "path": "apps/webapp/node_modules/@dicebear/core",
+        "real": "node_modules/.pnpm/@dicebear+core@10.7.0/node_modules/@dicebear/core"
+      },
+      {
+        "path": "apps/webapp/node_modules/@dicebear/styles",
+        "real": "node_modules/.pnpm/@dicebear+styles@10.6.0/node_modules/@dicebear/styles"
+      },
+      {
+        "path": "apps/webapp/node_modules/@dnd-kit/core",
+        "real": "node_modules/.pnpm/@dnd-kit+core@6.3.1_react-d_168a6a798a0c4da81319d56a661242e7/node_modules/@dnd-kit/core"
+      },
+      {
+        "path": "apps/webapp/node_modules/@dnd-kit/modifiers",
+        "real": "node_modules/.pnpm/@dnd-kit+modifiers@9.0.0_@d_863ec3ee87a5a16bd51748559e7c5ba5/node_modules/@dnd-kit/modifiers"
+      },
+      {
+        "path": "apps/webapp/node_modules/@dnd-kit/sortable",
+        "real": "node_modules/.pnpm/@dnd-kit+sortable@10.0.0_@d_c41ff902779dbbfd62f36a1930b8a632/node_modules/@dnd-kit/sortable"
+      },
+      {
+        "path": "apps/webapp/node_modules/@dnd-kit/utilities",
+        "real": "node_modules/.pnpm/@dnd-kit+utilities@3.2.2_react@19.3.1/node_modules/@dnd-kit/utilities"
+      },
+      {
+        "path": "apps/webapp/node_modules/@faker-js/faker",
+        "real": "node_modules/.pnpm/@faker-js+faker@10.6.0/node_modules/@faker-js/faker"
+      },
+      {
+        "path": "apps/webapp/node_modules/@marsidev/react-turnstile",
+        "real": "node_modules/.pnpm/@marsidev+react-turnstile@1_0910f3d23e37e5a512b1458612a272ef/node_modules/@marsidev/react-turnstile"
+      },
+      {
+        "path": "apps/webapp/node_modules/@modelcontextprotocol/client",
+        "real": "node_modules/.pnpm/@modelcontextprotocol+client@2.4.0/node_modules/@modelcontextprotocol/client"
+      },
+      {
+        "path": "apps/webapp/node_modules/@modelcontextprotocol/server",
+        "real": "node_modules/.pnpm/@modelcontextprotocol+server@2.4.0/node_modules/@modelcontextprotocol/server"
+      },
+      {
+        "path": "apps/webapp/node_modules/@opentelemetry/api",
+        "real": "node_modules/.pnpm/@opentelemetry+api@1.10.0/node_modules/@opentelemetry/api"
+      },
+      {
+        "path": "apps/webapp/node_modules/@opentelemetry/auto-instrumentations-node",
+        "real": "node_modules/.pnpm/@opentelemetry+auto-instrum_4ec4e60a116ba2e2d1f0bd9ba26d1e0a/node_modules/@opentelemetry/auto-instrumentations-node"
+      },
+      {
+        "path": "apps/webapp/node_modules/@opentelemetry/exporter-metrics-otlp-http",
+        "real": "node_modules/.pnpm/@opentelemetry+exporter-met_384553707af16af336f8d4cb1046ce6c/node_modules/@opentelemetry/exporter-metrics-otlp-http"
+      },
+      {
+        "path": "apps/webapp/node_modules/@opentelemetry/exporter-trace-otlp-http",
+        "real": "node_modules/.pnpm/@opentelemetry+exporter-tra_2c35f6faac6c7ac0e135f87dab376cb3/node_modules/@opentelemetry/exporter-trace-otlp-http"
+      },
+      {
+        "path": "apps/webapp/node_modules/@opentelemetry/resources",
+        "real": "node_modules/.pnpm/@opentelemetry+resources@3.1.1_@opentelemetry+api@1.10.0/node_modules/@opentelemetry/resources"
+      },
+      {
+        "path": "apps/webapp/node_modules/@opentelemetry/sdk-node",
+        "real": "node_modules/.pnpm/@opentelemetry+sdk-node@0.3_2c14b7ba2e13ce9e74fc495794c6878f/node_modules/@opentelemetry/sdk-node"
+      },
+      {
+        "path": "apps/webapp/node_modules/@opentelemetry/sdk-trace",
+        "real": "node_modules/.pnpm/@opentelemetry+sdk-trace@3.1.1_@opentelemetry+api@1.10.0/node_modules/@opentelemetry/sdk-trace"
+      },
+      {
+        "path": "apps/webapp/node_modules/@opentelemetry/semantic-conventions",
+        "real": "node_modules/.pnpm/@opentelemetry+semantic-conventions@1.45.0/node_modules/@opentelemetry/semantic-conventions"
+      },
+      {
+        "path": "apps/webapp/node_modules/@posthog/nextjs-config",
+        "real": "node_modules/.pnpm/@posthog+nextjs-config@1.12_189ec650117cac83318239e6561b7511/node_modules/@posthog/nextjs-config"
+      },
+      {
+        "path": "apps/webapp/node_modules/@react-email/editor",
+        "real": "node_modules/.pnpm/@react-email+editor@1.8.4_@_94260adcd3ff185ce0c8efb141e5714b/node_modules/@react-email/editor"
+      },
+      {
+        "path": "apps/webapp/node_modules/@react-email/ui",
+        "real": "node_modules/.pnpm/@react-email+ui@6.11.11_@ba_24ab72d1a5a7dedede3f11af410f06fe/node_modules/@react-email/ui"
+      },
+      {
+        "path": "apps/webapp/node_modules/@react-pdf/renderer",
+        "real": "node_modules/.pnpm/@react-pdf+renderer@4.9.0_react@19.3.1/node_modules/@react-pdf/renderer"
+      },
+      {
+        "path": "apps/webapp/node_modules/@schedule-x/calendar",
+        "real": "node_modules/.pnpm/@schedule-x+calendar@4.9.1__c6b1a4f95ff30a212fb7000f85d78d00/node_modules/@schedule-x/calendar"
+      },
+      {
+        "path": "apps/webapp/node_modules/@schedule-x/calendar-controls",
+        "real": "node_modules/.pnpm/@schedule-x+calendar-controls@4.9.1/node_modules/@schedule-x/calendar-controls"
+      },
+      {
+        "path": "apps/webapp/node_modules/@schedule-x/drag-and-drop",
+        "real": "node_modules/.pnpm/@schedule-x+drag-and-drop@3.7.3/node_modules/@schedule-x/drag-and-drop"
+      },
+      {
+        "path": "apps/webapp/node_modules/@schedule-x/event-modal",
+        "real": "node_modules/.pnpm/@schedule-x+event-modal@4.9_cecd30f1661a5365e3e6a5237d964d6c/node_modules/@schedule-x/event-modal"
+      },
+      {
+        "path": "apps/webapp/node_modules/@schedule-x/react",
+        "real": "node_modules/.pnpm/@schedule-x+react@4.1.0_@sc_d5f3e61d0d4043d6e286e65c6449c168/node_modules/@schedule-x/react"
+      },
+      {
+        "path": "apps/webapp/node_modules/@schedule-x/theme-default",
+        "real": "node_modules/.pnpm/@schedule-x+theme-default@4.9.1/node_modules/@schedule-x/theme-default"
+      },
+      {
+        "path": "apps/webapp/node_modules/@slack/web-api",
+        "real": "node_modules/.pnpm/@slack+web-api@8.3.0/node_modules/@slack/web-api"
+      },
+      {
+        "path": "apps/webapp/node_modules/@t3-oss/env-nextjs",
+        "real": "node_modules/.pnpm/@t3-oss+env-nextjs@0.13.11_typescript@7.0.2_zod@4.6.7/node_modules/@t3-oss/env-nextjs"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tabler/icons-react",
+        "real": "node_modules/.pnpm/@tabler+icons-react@3.51.0_react@19.3.1/node_modules/@tabler/icons-react"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tailwindcss/postcss",
+        "real": "node_modules/.pnpm/@tailwindcss+postcss@4.3.5/node_modules/@tailwindcss/postcss"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tanstack/react-form",
+        "real": "node_modules/.pnpm/@tanstack+react-form@1.33.5_cb1c7e77e03c1bee8d6646b02a870f2c/node_modules/@tanstack/react-form"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tanstack/react-hotkeys",
+        "real": "node_modules/.pnpm/@tanstack+react-hotkeys@0.2_83ac8b07a735c133f3ec856db88facb6/node_modules/@tanstack/react-hotkeys"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tanstack/react-query",
+        "real": "node_modules/.pnpm/@tanstack+react-query@5.107_412b1c1983c52cebcb486b0896765416/node_modules/@tanstack/react-query"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tanstack/react-query-devtools",
+        "real": "node_modules/.pnpm/@tanstack+react-query-devto_a335988fa10f5f21fcce71d55d2f8402/node_modules/@tanstack/react-query-devtools"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tanstack/react-store",
+        "real": "node_modules/.pnpm/@tanstack+react-store@0.11._6def17552e8b2a0b74c5841dd97fc82c/node_modules/@tanstack/react-store"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tanstack/react-table",
+        "real": "node_modules/.pnpm/@tanstack+react-table@9.3.1_da81904ea248d4185313a0793b432bf0/node_modules/@tanstack/react-table"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tanstack/react-virtual",
+        "real": "node_modules/.pnpm/@tanstack+react-virtual@3.1_9a1a86ed0f22c2cd916a6506b873df01/node_modules/@tanstack/react-virtual"
+      },
+      {
+        "path": "apps/webapp/node_modules/@testing-library/react",
+        "real": "node_modules/.pnpm/@testing-library+react@16.3_caf0c89dcd807677af52e2a43e70eff8/node_modules/@testing-library/react"
+      },
+      {
+        "path": "apps/webapp/node_modules/@testing-library/user-event",
+        "real": "node_modules/.pnpm/@testing-library+user-event_98cc42e531c929ba4ce24d23c3da3ae6/node_modules/@testing-library/user-event"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tolgee/format-icu",
+        "real": "node_modules/.pnpm/@tolgee+format-icu@7.3.0/node_modules/@tolgee/format-icu"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tolgee/react",
+        "real": "node_modules/.pnpm/@tolgee+react@7.3.0_react@19.3.1/node_modules/@tolgee/react"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tolgee/web",
+        "real": "node_modules/.pnpm/@tolgee+web@7.3.0/node_modules/@tolgee/web"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tus/file-store",
+        "real": "node_modules/.pnpm/@tus+file-store@2.1.2_@open_c4b7846b4974bd67d72c7b9bad4045d9/node_modules/@tus/file-store"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tus/s3-store",
+        "real": "node_modules/.pnpm/@tus+s3-store@2.1.0_supports-color@8.1.1/node_modules/@tus/s3-store"
+      },
+      {
+        "path": "apps/webapp/node_modules/@tus/server",
+        "real": "node_modules/.pnpm/@tus+server@2.4.7_@opentele_e08f3697d44fee673769a55c454535d5/node_modules/@tus/server"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/canvas-confetti",
+        "real": "node_modules/.pnpm/@types+canvas-confetti@1.9.0/node_modules/@types/canvas-confetti"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/luxon",
+        "real": "node_modules/.pnpm/@types+luxon@3.7.6/node_modules/@types/luxon"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/node",
+        "real": "node_modules/.pnpm/@types+node@26.6.6/node_modules/@types/node"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/nodemailer",
+        "real": "node_modules/.pnpm/@types+nodemailer@8.0.2/node_modules/@types/nodemailer"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/papaparse",
+        "real": "node_modules/.pnpm/@types+papaparse@5.5.2/node_modules/@types/papaparse"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/pg",
+        "real": "node_modules/.pnpm/@types+pg@8.23.1/node_modules/@types/pg"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/qrcode",
+        "real": "node_modules/.pnpm/@types+qrcode@1.5.6/node_modules/@types/qrcode"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/react",
+        "real": "node_modules/.pnpm/@types+react@19.3.0/node_modules/@types/react"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/react-dom",
+        "real": "node_modules/.pnpm/@types+react-dom@19.3.0_@types+react@19.3.0/node_modules/@types/react-dom"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/sanitize-html",
+        "real": "node_modules/.pnpm/@types+sanitize-html@2.16.2/node_modules/@types/sanitize-html"
+      },
+      {
+        "path": "apps/webapp/node_modules/@types/web-push",
+        "real": "node_modules/.pnpm/@types+web-push@3.6.4/node_modules/@types/web-push"
+      },
+      {
+        "path": "apps/webapp/node_modules/@uppy/core",
+        "real": "node_modules/.pnpm/@uppy+core@6.3.1/node_modules/@uppy/core"
+      },
+      {
+        "path": "apps/webapp/node_modules/@uppy/locales",
+        "real": "node_modules/.pnpm/@uppy+locales@5.3.2/node_modules/@uppy/locales"
+      },
+      {
+        "path": "apps/webapp/node_modules/@uppy/tus",
+        "real": "node_modules/.pnpm/@uppy+tus@6.0.1_@uppy+core@6.3.1/node_modules/@uppy/tus"
+      },
+      {
+        "path": "apps/webapp/node_modules/@upstash/ratelimit",
+        "real": "node_modules/.pnpm/@upstash+ratelimit@2.2.0_@upstash+redis@1.39.0/node_modules/@upstash/ratelimit"
+      },
+      {
+        "path": "apps/webapp/node_modules/@vitest/coverage-v8",
+        "real": "node_modules/.pnpm/@vitest+coverage-v8@5.1.0_vitest@5.1.0/node_modules/@vitest/coverage-v8"
+      },
+      {
+        "path": "apps/webapp/node_modules/@xyflow/react",
+        "real": "node_modules/.pnpm/@xyflow+react@12.12.1_@type_9e9a715b87204f86f49d86da5d319f2b/node_modules/@xyflow/react"
+      },
+      {
+        "path": "apps/webapp/node_modules/babel-plugin-react-compiler",
+        "real": "node_modules/.pnpm/babel-plugin-react-compiler@1.0.0/node_modules/babel-plugin-react-compiler"
+      },
+      {
+        "path": "apps/webapp/node_modules/better-auth",
+        "real": "node_modules/.pnpm/better-auth@1.7.22_@opentel_c690c38abfd464efcfb4d648f09d68c0/node_modules/better-auth"
+      },
+      {
+        "path": "apps/webapp/node_modules/botbuilder",
+        "real": "node_modules/.pnpm/botbuilder@4.23.3_debug@4.4_439ac00be1e5c0b570ec6497eb8cd905/node_modules/botbuilder"
+      },
+      {
+        "path": "apps/webapp/node_modules/bullmq",
+        "real": "node_modules/.pnpm/bullmq@6.7.5_ioredis@6.0.0_supports-color@8.1.1__pg@8.23.1/node_modules/bullmq"
+      },
+      {
+        "path": "apps/webapp/node_modules/canvas-confetti",
+        "real": "node_modules/.pnpm/canvas-confetti@1.9.4/node_modules/canvas-confetti"
+      },
+      {
+        "path": "apps/webapp/node_modules/class-variance-authority",
+        "real": "node_modules/.pnpm/class-variance-authority@0.7.1/node_modules/class-variance-authority"
+      },
+      {
+        "path": "apps/webapp/node_modules/clsx",
+        "real": "node_modules/.pnpm/clsx@2.1.1/node_modules/clsx"
+      },
+      {
+        "path": "apps/webapp/node_modules/cmdk",
+        "real": "node_modules/.pnpm/cmdk@1.1.1_@types+react-dom_f7dee528d90d74e746bb181d01259bd0/node_modules/cmdk"
+      },
+      {
+        "path": "apps/webapp/node_modules/country-flag-icons",
+        "real": "node_modules/.pnpm/country-flag-icons@1.6.20/node_modules/country-flag-icons"
+      },
+      {
+        "path": "apps/webapp/node_modules/cron-parser",
+        "real": "node_modules/.pnpm/cron-parser@5.10.4/node_modules/cron-parser"
+      },
+      {
+        "path": "apps/webapp/node_modules/date-holidays",
+        "real": "node_modules/.pnpm/date-holidays@3.39.1/node_modules/date-holidays"
+      },
+      {
+        "path": "apps/webapp/node_modules/dotenv",
+        "real": "node_modules/.pnpm/dotenv@18.0.10/node_modules/dotenv"
+      },
+      {
+        "path": "apps/webapp/node_modules/dotenv-cli",
+        "real": "node_modules/.pnpm/dotenv-cli@11.1.0/node_modules/dotenv-cli"
+      },
+      {
+        "path": "apps/webapp/node_modules/drizzle-kit",
+        "real": "node_modules/.pnpm/drizzle-kit@0.31.11_patch_h_26ac68103728dfd9f7e46b97a24f83e5/node_modules/drizzle-kit"
+      },
+      {
+        "path": "apps/webapp/node_modules/drizzle-orm",
+        "real": "node_modules/.pnpm/drizzle-orm@0.45.4_@opentel_86fc0e0a4b9b1f5479f9bb915e0fa4e7/node_modules/drizzle-orm"
+      },
+      {
+        "path": "apps/webapp/node_modules/effect",
+        "real": "node_modules/.pnpm/effect@4.1.4/node_modules/effect"
+      },
+      {
+        "path": "apps/webapp/node_modules/embla-carousel-react",
+        "real": "node_modules/.pnpm/embla-carousel-react@8.6.0_react@19.3.1/node_modules/embla-carousel-react"
+      },
+      {
+        "path": "apps/webapp/node_modules/exceljs",
+        "real": "node_modules/.pnpm/exceljs@4.4.0/node_modules/exceljs"
+      },
+      {
+        "path": "apps/webapp/node_modules/fast-xml-parser",
+        "real": "node_modules/.pnpm/fast-xml-parser@5.12.0/node_modules/fast-xml-parser"
+      },
+      {
+        "path": "apps/webapp/node_modules/file-type",
+        "real": "node_modules/.pnpm/file-type@22.3.0_supports-color@8.1.1/node_modules/file-type"
+      },
+      {
+        "path": "apps/webapp/node_modules/input-otp",
+        "real": "node_modules/.pnpm/input-otp@1.5.0_react-dom@19.3.1_react@19.3.1__react@19.3.1/node_modules/input-otp"
+      },
+      {
+        "path": "apps/webapp/node_modules/ioredis",
+        "real": "node_modules/.pnpm/ioredis@6.0.0_supports-color@8.1.1/node_modules/ioredis"
+      },
+      {
+        "path": "apps/webapp/node_modules/jsdom",
+        "real": "node_modules/.pnpm/jsdom@31.0.0_@napi-rs+canvas@1.1.0_@noble+hashes@2.4.0/node_modules/jsdom"
+      },
+      {
+        "path": "apps/webapp/node_modules/jsqr",
+        "real": "node_modules/.pnpm/jsqr@1.4.0/node_modules/jsqr"
+      },
+      {
+        "path": "apps/webapp/node_modules/jszip",
+        "real": "node_modules/.pnpm/jszip@3.10.2/node_modules/jszip"
+      },
+      {
+        "path": "apps/webapp/node_modules/luxon",
+        "real": "node_modules/.pnpm/luxon@3.7.2/node_modules/luxon"
+      },
+      {
+        "path": "apps/webapp/node_modules/nanoid",
+        "real": "node_modules/.pnpm/nanoid@6.0.2/node_modules/nanoid"
+      },
+      {
+        "path": "apps/webapp/node_modules/next",
+        "real": "node_modules/.pnpm/next@16.4.6_@babel+core@7.2_edbc23f153c81dcb0cd26407f95d9915/node_modules/next"
+      },
+      {
+        "path": "apps/webapp/node_modules/next-intl",
+        "real": "node_modules/.pnpm/next-intl@4.15.1_@swc+helpe_dfba13ec8809a1ae8ff931366da7e2bb/node_modules/next-intl"
+      },
+      {
+        "path": "apps/webapp/node_modules/node-vault",
+        "real": "node_modules/.pnpm/node-vault@0.13.0_supports-color@8.1.1/node_modules/node-vault"
+      },
+      {
+        "path": "apps/webapp/node_modules/nodemailer",
+        "real": "node_modules/.pnpm/nodemailer@10.5.0/node_modules/nodemailer"
+      },
+      {
+        "path": "apps/webapp/node_modules/papaparse",
+        "real": "node_modules/.pnpm/papaparse@5.7.1/node_modules/papaparse"
+      },
+      {
+        "path": "apps/webapp/node_modules/pdfjs-dist",
+        "real": "node_modules/.pnpm/pdfjs-dist@6.5.438/node_modules/pdfjs-dist"
+      },
+      {
+        "path": "apps/webapp/node_modules/pg",
+        "real": "node_modules/.pnpm/pg@8.23.1/node_modules/pg"
+      },
+      {
+        "path": "apps/webapp/node_modules/pino",
+        "real": "node_modules/.pnpm/pino@10.4.0/node_modules/pino"
+      },
+      {
+        "path": "apps/webapp/node_modules/pino-opentelemetry-transport",
+        "real": "node_modules/.pnpm/pino-opentelemetry-transport@4.0.2_pino@10.4.0/node_modules/pino-opentelemetry-transport"
+      },
+      {
+        "path": "apps/webapp/node_modules/pino-pretty",
+        "real": "node_modules/.pnpm/pino-pretty@13.2.0/node_modules/pino-pretty"
+      },
+      {
+        "path": "apps/webapp/node_modules/portless",
+        "real": "node_modules/.pnpm/portless@0.17.0/node_modules/portless"
+      },
+      {
+        "path": "apps/webapp/node_modules/postcss",
+        "real": "node_modules/.pnpm/postcss@8.5.32/node_modules/postcss"
+      },
+      {
+        "path": "apps/webapp/node_modules/posthog-js",
+        "real": "node_modules/.pnpm/posthog-js@1.447.15_@types+react@19.3.0_react@19.3.1/node_modules/posthog-js"
+      },
+      {
+        "path": "apps/webapp/node_modules/posthog-node",
+        "real": "node_modules/.pnpm/posthog-node@5.70.0_@opente_5315168d3d9b20ee8aaf40c54e839883/node_modules/posthog-node"
+      },
+      {
+        "path": "apps/webapp/node_modules/preact",
+        "real": "node_modules/.pnpm/preact@11.2.0/node_modules/preact"
+      },
+      {
+        "path": "apps/webapp/node_modules/qrcode",
+        "real": "node_modules/.pnpm/qrcode@1.5.4/node_modules/qrcode"
+      },
+      {
+        "path": "apps/webapp/node_modules/qrcode.react",
+        "real": "node_modules/.pnpm/qrcode.react@4.2.0_react@19.3.1/node_modules/qrcode.react"
+      },
+      {
+        "path": "apps/webapp/node_modules/react",
+        "real": "node_modules/.pnpm/react@19.3.1/node_modules/react"
+      },
+      {
+        "path": "apps/webapp/node_modules/react-dom",
+        "real": "node_modules/.pnpm/react-dom@19.3.1_react@19.3.1/node_modules/react-dom"
+      },
+      {
+        "path": "apps/webapp/node_modules/react-email",
+        "real": "node_modules/.pnpm/react-email@6.11.11_react-d_022bde083a50cfbd0d056986100bb31d/node_modules/react-email"
+      },
+      {
+        "path": "apps/webapp/node_modules/react-resizable-panels",
+        "real": "node_modules/.pnpm/react-resizable-panels@4.21_d608f9a8b79c049dde78fa5e1e59c5dd/node_modules/react-resizable-panels"
+      },
+      {
+        "path": "apps/webapp/node_modules/recharts",
+        "real": "node_modules/.pnpm/recharts@3.10.1_@types+reac_df092349403d0944c49d93dc0ae17508/node_modules/recharts"
+      },
+      {
+        "path": "apps/webapp/node_modules/resend",
+        "real": "node_modules/.pnpm/resend@6.38.0_@react-email+_30fb074d8eeb8b860fde70740d298991/node_modules/resend"
+      },
+      {
+        "path": "apps/webapp/node_modules/sanitize-html",
+        "real": "node_modules/.pnpm/sanitize-html@2.18.2/node_modules/sanitize-html"
+      },
+      {
+        "path": "apps/webapp/node_modules/server-only",
+        "real": "node_modules/.pnpm/server-only@0.0.1/node_modules/server-only"
+      },
+      {
+        "path": "apps/webapp/node_modules/shadcn",
+        "real": "node_modules/.pnpm/shadcn@4.23.0_supports-color@8.1.1/node_modules/shadcn"
+      },
+      {
+        "path": "apps/webapp/node_modules/sharp",
+        "real": "node_modules/.pnpm/sharp@0.35.5_@types+node@26.6.6/node_modules/sharp"
+      },
+      {
+        "path": "apps/webapp/node_modules/sonner",
+        "real": "node_modules/.pnpm/sonner@2.0.8_@types+react@1_a4a83cacc98a5853740e8e3e24a10bd1/node_modules/sonner"
+      },
+      {
+        "path": "apps/webapp/node_modules/streamdown",
+        "real": "node_modules/.pnpm/streamdown@2.7.1_react-dom@_7119a3d3786711231536898516211f39/node_modules/streamdown"
+      },
+      {
+        "path": "apps/webapp/node_modules/stripe",
+        "real": "node_modules/.pnpm/stripe@23.1.0_@types+node@26.6.6/node_modules/stripe"
+      },
+      {
+        "path": "apps/webapp/node_modules/suncalc",
+        "real": "node_modules/.pnpm/suncalc@2.1.4/node_modules/suncalc"
+      },
+      {
+        "path": "apps/webapp/node_modules/superjson",
+        "real": "node_modules/.pnpm/superjson@2.2.6/node_modules/superjson"
+      },
+      {
+        "path": "apps/webapp/node_modules/swr",
+        "real": "node_modules/.pnpm/swr@2.5.1_react@19.3.1/node_modules/swr"
+      },
+      {
+        "path": "apps/webapp/node_modules/tailwind-merge",
+        "real": "node_modules/.pnpm/tailwind-merge@3.7.0/node_modules/tailwind-merge"
+      },
+      {
+        "path": "apps/webapp/node_modules/tailwindcss",
+        "real": "node_modules/.pnpm/tailwindcss@4.3.5/node_modules/tailwindcss"
+      },
+      {
+        "path": "apps/webapp/node_modules/temporal-polyfill",
+        "real": "node_modules/.pnpm/temporal-polyfill@1.0.8/node_modules/temporal-polyfill"
+      },
+      {
+        "path": "apps/webapp/node_modules/timepicker-ui",
+        "real": "node_modules/.pnpm/timepicker-ui@4.7.0/node_modules/timepicker-ui"
+      },
+      {
+        "path": "apps/webapp/node_modules/tsx",
+        "real": "node_modules/.pnpm/tsx@4.23.15/node_modules/tsx"
+      },
+      {
+        "path": "apps/webapp/node_modules/tw-animate-css",
+        "real": "node_modules/.pnpm/tw-animate-css@1.4.0/node_modules/tw-animate-css"
+      },
+      {
+        "path": "apps/webapp/node_modules/typescript",
+        "real": "node_modules/.pnpm/typescript@7.0.2/node_modules/typescript"
+      },
+      {
+        "path": "apps/webapp/node_modules/ultracite",
+        "real": "node_modules/.pnpm/ultracite@8.2.0_@biomejs+bi_79a3fdcfcad7d460feb3ea58464806eb/node_modules/ultracite"
+      },
+      {
+        "path": "apps/webapp/node_modules/undici",
+        "real": "node_modules/.pnpm/undici@8.12.4/node_modules/undici"
+      },
+      {
+        "path": "apps/webapp/node_modules/vaul",
+        "real": "node_modules/.pnpm/vaul@1.1.2_@types+react-dom_e6daed60270af77db87af90114bb2908/node_modules/vaul"
+      },
+      {
+        "path": "apps/webapp/node_modules/vitest",
+        "real": "node_modules/.pnpm/vitest@5.1.0_@opentelemetry_a7ff368c7e15c289257a0cf4103a8bb1/node_modules/vitest"
+      },
+      {
+        "path": "apps/webapp/node_modules/web-push",
+        "real": "node_modules/.pnpm/web-push@4.0.0_supports-color@8.1.1/node_modules/web-push"
+      },
+      {
+        "path": "apps/webapp/node_modules/zod",
+        "real": "node_modules/.pnpm/zod@4.6.7/node_modules/zod"
+      },
+      {
+        "path": "apps/webapp/node_modules/zustand",
+        "real": "node_modules/.pnpm/zustand@5.1.0_@types+react@_5e5050d806f3bb046bcf240769239f0f/node_modules/zustand"
+      }
+    ]
+  },
+  "licenses": {
+    "path": "apps/webapp/src/data/licenses.json",
+    "count": 125,
+    "sha256": "fd8ca4bf29b59368907ae8d52a5149b3959a901194f424ad605044f67c2f0bbf",
+    "provenance": "Inherited; not regenerated"
+  },
+  "inventory": {
+    "kind": "static source-template inventory only",
+    "commit": "ad51efc8e2d39e062c8486b4ead15732c67acb30",
+    "initialDev": "2dd336ccfe3b7fb084263eca6c2360df5e58bfa7",
+    "counts": {
+      "persistentPages": 153,
+      "redirectAliases": 19,
+      "sourcePageTemplates": 172,
+      "aliasTemplatesUnchangedFromInitialDev": 19
+    },
+    "coverage": "Every source page template maps exactly once to the approved persistent-page or redirect-alias inventory, and every alias destination/owner matches its ledger page issue.",
+    "limits": [
+      "Source coverage and blob equality do not prove locale/query/access behavior at runtime.",
+      "All19 alias contracts still require their destination-ticket acceptance and final integration verification.",
+      "No full route/role/domain/browser/build/catalog certification follows."
+    ],
+    "persistent": [
+      {
+        "id": "R001",
+        "issue": 1700,
+        "route": "/",
+        "file": "apps/webapp/src/app/[locale]/(app)/page.tsx"
+      },
+      {
+        "id": "R002",
+        "issue": 1701,
+        "route": "/absences",
+        "file": "apps/webapp/src/app/[locale]/(app)/absences/page.tsx"
+      },
+      {
+        "id": "R003",
+        "issue": 1820,
+        "route": "/accept-invitation/[invitationId]",
+        "file": "apps/webapp/src/app/[locale]/(auth)/accept-invitation/[invitationId]/page.tsx"
+      },
+      {
+        "id": "R004",
+        "issue": 1702,
+        "route": "/analytics",
+        "file": "apps/webapp/src/app/[locale]/(app)/analytics/page.tsx"
+      },
+      {
+        "id": "R005",
+        "issue": 1703,
+        "route": "/analytics/overtime-burn-down",
+        "file": "apps/webapp/src/app/[locale]/(app)/analytics/overtime-burn-down/page.tsx"
+      },
+      {
+        "id": "R006",
+        "issue": 1704,
+        "route": "/analytics/team-performance",
+        "file": "apps/webapp/src/app/[locale]/(app)/analytics/team-performance/page.tsx"
+      },
+      {
+        "id": "R007",
+        "issue": 1705,
+        "route": "/analytics/vacation-trends",
+        "file": "apps/webapp/src/app/[locale]/(app)/analytics/vacation-trends/page.tsx"
+      },
+      {
+        "id": "R008",
+        "issue": 1706,
+        "route": "/analytics/work-hours",
+        "file": "apps/webapp/src/app/[locale]/(app)/analytics/work-hours/page.tsx"
+      },
+      {
+        "id": "R009",
+        "issue": 1707,
+        "route": "/approvals",
+        "file": "apps/webapp/src/app/[locale]/(app)/approvals/page.tsx"
+      },
+      {
+        "id": "R010",
+        "issue": 1708,
+        "route": "/approvals/deputy-decisions/[absenceId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/approvals/deputy-decisions/[absenceId]/page.tsx"
+      },
+      {
+        "id": "R011",
+        "issue": 1709,
+        "route": "/approvals/inbox",
+        "file": "apps/webapp/src/app/[locale]/(app)/approvals/inbox/page.tsx"
+      },
+      {
+        "id": "R012",
+        "issue": 1710,
+        "route": "/approvals/review/[organizationId]/[kind]/[id]",
+        "file": "apps/webapp/src/app/[locale]/(app)/approvals/review/[organizationId]/[kind]/[id]/page.tsx"
+      },
+      {
+        "id": "R013",
+        "issue": 1711,
+        "route": "/billing/suspended",
+        "file": "apps/webapp/src/app/[locale]/(app)/billing/suspended/page.tsx"
+      },
+      {
+        "id": "R014",
+        "issue": 1712,
+        "route": "/calendar",
+        "file": "apps/webapp/src/app/[locale]/(app)/calendar/page.tsx"
+      },
+      {
+        "id": "R015",
+        "issue": 1713,
+        "route": "/calendar/[employeeId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/calendar/[employeeId]/page.tsx"
+      },
+      {
+        "id": "R016",
+        "issue": 1714,
+        "route": "/compliance",
+        "file": "apps/webapp/src/app/[locale]/(app)/compliance/page.tsx"
+      },
+      {
+        "id": "R017",
+        "issue": 1715,
+        "route": "/driving-licence",
+        "file": "apps/webapp/src/app/[locale]/(app)/driving-licence/page.tsx"
+      },
+      {
+        "id": "R018",
+        "issue": 1716,
+        "route": "/driving-licence/checks/[employee]",
+        "file": "apps/webapp/src/app/[locale]/(app)/driving-licence/checks/[employee]/page.tsx"
+      },
+      {
+        "id": "R019",
+        "issue": 1717,
+        "route": "/equipment",
+        "file": "apps/webapp/src/app/[locale]/(app)/equipment/page.tsx"
+      },
+      {
+        "id": "R020",
+        "issue": 1718,
+        "route": "/equipment/assignments/[assignmentId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/equipment/assignments/[assignmentId]/page.tsx"
+      },
+      {
+        "id": "R021",
+        "issue": 1719,
+        "route": "/equipment/employees/[employeeId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/equipment/employees/[employeeId]/page.tsx"
+      },
+      {
+        "id": "R022",
+        "issue": 1821,
+        "route": "/forgot-password",
+        "file": "apps/webapp/src/app/[locale]/(auth)/forgot-password/page.tsx"
+      },
+      {
+        "id": "R023",
+        "issue": 1822,
+        "route": "/init",
+        "file": "apps/webapp/src/app/[locale]/init/page.tsx"
+      },
+      {
+        "id": "R024",
+        "issue": 1823,
+        "route": "/join/[code]",
+        "file": "apps/webapp/src/app/[locale]/(auth)/join/[code]/page.tsx"
+      },
+      {
+        "id": "R025",
+        "issue": 1824,
+        "route": "/kiosk",
+        "file": "apps/webapp/src/app/[locale]/kiosk/page.tsx"
+      },
+      {
+        "id": "R026",
+        "issue": 1825,
+        "route": "/licenses",
+        "file": "apps/webapp/src/app/[locale]/(auth)/licenses/page.tsx"
+      },
+      {
+        "id": "R027",
+        "issue": 1826,
+        "route": "/mfa",
+        "file": "apps/webapp/src/app/[locale]/mfa/page.tsx"
+      },
+      {
+        "id": "R028",
+        "issue": 1720,
+        "route": "/my-documents",
+        "file": "apps/webapp/src/app/[locale]/(app)/my-documents/page.tsx"
+      },
+      {
+        "id": "R029",
+        "issue": 1721,
+        "route": "/my-equipment",
+        "file": "apps/webapp/src/app/[locale]/(app)/my-equipment/page.tsx"
+      },
+      {
+        "id": "R030",
+        "issue": 1722,
+        "route": "/my-requests",
+        "file": "apps/webapp/src/app/[locale]/(app)/my-requests/page.tsx"
+      },
+      {
+        "id": "R031",
+        "issue": 1723,
+        "route": "/notifications",
+        "file": "apps/webapp/src/app/[locale]/(app)/notifications/page.tsx"
+      },
+      {
+        "id": "R032",
+        "issue": 1827,
+        "route": "/onboarding/complete",
+        "file": "apps/webapp/src/app/[locale]/onboarding/complete/page.tsx"
+      },
+      {
+        "id": "R033",
+        "issue": 1828,
+        "route": "/onboarding/notifications",
+        "file": "apps/webapp/src/app/[locale]/onboarding/notifications/page.tsx"
+      },
+      {
+        "id": "R034",
+        "issue": 1829,
+        "route": "/onboarding/organization",
+        "file": "apps/webapp/src/app/[locale]/onboarding/organization/page.tsx"
+      },
+      {
+        "id": "R035",
+        "issue": 1830,
+        "route": "/onboarding/profile",
+        "file": "apps/webapp/src/app/[locale]/onboarding/profile/page.tsx"
+      },
+      {
+        "id": "R036",
+        "issue": 1831,
+        "route": "/onboarding/vacation-policy",
+        "file": "apps/webapp/src/app/[locale]/onboarding/vacation-policy/page.tsx"
+      },
+      {
+        "id": "R037",
+        "issue": 1832,
+        "route": "/onboarding/welcome",
+        "file": "apps/webapp/src/app/[locale]/onboarding/welcome/page.tsx"
+      },
+      {
+        "id": "R038",
+        "issue": 1833,
+        "route": "/onboarding/wellness",
+        "file": "apps/webapp/src/app/[locale]/onboarding/wellness/page.tsx"
+      },
+      {
+        "id": "R039",
+        "issue": 1834,
+        "route": "/onboarding/work-schedule",
+        "file": "apps/webapp/src/app/[locale]/onboarding/work-schedule/page.tsx"
+      },
+      {
+        "id": "R040",
+        "issue": 1835,
+        "route": "/onboarding/work-templates",
+        "file": "apps/webapp/src/app/[locale]/onboarding/work-templates/page.tsx"
+      },
+      {
+        "id": "R041",
+        "issue": 1724,
+        "route": "/organization",
+        "file": "apps/webapp/src/app/[locale]/(app)/organization/page.tsx"
+      },
+      {
+        "id": "R042",
+        "issue": 1725,
+        "route": "/payroll",
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/page.tsx"
+      },
+      {
+        "id": "R043",
+        "issue": 1726,
+        "route": "/payroll/work-balances",
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/page.tsx"
+      },
+      {
+        "id": "R044",
+        "issue": 1727,
+        "route": "/payroll/work-balances/[employeeId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/payroll/work-balances/[employeeId]/page.tsx"
+      },
+      {
+        "id": "R045",
+        "issue": 1728,
+        "route": "/personnel-files",
+        "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/page.tsx"
+      },
+      {
+        "id": "R046",
+        "issue": 1729,
+        "route": "/personnel-files/[employeeId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/[employeeId]/page.tsx"
+      },
+      {
+        "id": "R047",
+        "issue": 1730,
+        "route": "/personnel-files/document-requests",
+        "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/document-requests/page.tsx"
+      },
+      {
+        "id": "R048",
+        "issue": 1731,
+        "route": "/personnel-files/due-for-deletion",
+        "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/due-for-deletion/page.tsx"
+      },
+      {
+        "id": "R049",
+        "issue": 1732,
+        "route": "/personnel-files/payslip-batches",
+        "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/page.tsx"
+      },
+      {
+        "id": "R050",
+        "issue": 1733,
+        "route": "/personnel-files/payslip-batches/[batchId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/payslip-batches/[batchId]/page.tsx"
+      },
+      {
+        "id": "R051",
+        "issue": 1734,
+        "route": "/personnel-files/sick-leave",
+        "file": "apps/webapp/src/app/[locale]/(app)/personnel-files/sick-leave/page.tsx"
+      },
+      {
+        "id": "R052",
+        "issue": 1844,
+        "route": "/platform-admin",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/page.tsx"
+      },
+      {
+        "id": "R053",
+        "issue": 1845,
+        "route": "/platform-admin/analytics",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/analytics/page.tsx"
+      },
+      {
+        "id": "R054",
+        "issue": 1846,
+        "route": "/platform-admin/billing",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/billing/page.tsx"
+      },
+      {
+        "id": "R055",
+        "issue": 1847,
+        "route": "/platform-admin/diagnostics",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx"
+      },
+      {
+        "id": "R056",
+        "issue": 1848,
+        "route": "/platform-admin/organizations",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/organizations/page.tsx"
+      },
+      {
+        "id": "R057",
+        "issue": 1849,
+        "route": "/platform-admin/settings",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/settings/page.tsx"
+      },
+      {
+        "id": "R058",
+        "issue": 1850,
+        "route": "/platform-admin/system-email-templates",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/system-email-templates/page.tsx"
+      },
+      {
+        "id": "R059",
+        "issue": 1851,
+        "route": "/platform-admin/users",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/users/page.tsx"
+      },
+      {
+        "id": "R060",
+        "issue": 1852,
+        "route": "/platform-admin/worker-queue",
+        "file": "apps/webapp/src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx"
+      },
+      {
+        "id": "R061",
+        "issue": 1735,
+        "route": "/reports",
+        "file": "apps/webapp/src/app/[locale]/(app)/reports/page.tsx"
+      },
+      {
+        "id": "R062",
+        "issue": 1736,
+        "route": "/reports/projects",
+        "file": "apps/webapp/src/app/[locale]/(app)/reports/projects/page.tsx"
+      },
+      {
+        "id": "R063",
+        "issue": 1737,
+        "route": "/reports/vehicles",
+        "file": "apps/webapp/src/app/[locale]/(app)/reports/vehicles/page.tsx"
+      },
+      {
+        "id": "R064",
+        "issue": 1836,
+        "route": "/reset-password",
+        "file": "apps/webapp/src/app/[locale]/(auth)/reset-password/page.tsx"
+      },
+      {
+        "id": "R065",
+        "issue": 1738,
+        "route": "/scheduling",
+        "file": "apps/webapp/src/app/[locale]/(app)/scheduling/page.tsx"
+      },
+      {
+        "id": "R066",
+        "issue": 1752,
+        "route": "/settings",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/page.tsx"
+      },
+      {
+        "id": "R068",
+        "issue": 1753,
+        "route": "/settings/approval-policies",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/approval-policies/page.tsx"
+      },
+      {
+        "id": "R069",
+        "issue": 1754,
+        "route": "/settings/audit-export",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/audit-export/page.tsx"
+      },
+      {
+        "id": "R071",
+        "issue": 1755,
+        "route": "/settings/avv",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/avv/page.tsx"
+      },
+      {
+        "id": "R072",
+        "issue": 1756,
+        "route": "/settings/billable-time",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/page.tsx"
+      },
+      {
+        "id": "R073",
+        "issue": 1757,
+        "route": "/settings/billable-time/accounting",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/accounting/page.tsx"
+      },
+      {
+        "id": "R074",
+        "issue": 1758,
+        "route": "/settings/billable-time/cost-rates",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/cost-rates/page.tsx"
+      },
+      {
+        "id": "R075",
+        "issue": 1759,
+        "route": "/settings/billable-time/hand-off",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/hand-off/page.tsx"
+      },
+      {
+        "id": "R076",
+        "issue": 1760,
+        "route": "/settings/billable-time/rates",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/billable-time/rates/page.tsx"
+      },
+      {
+        "id": "R077",
+        "issue": 1761,
+        "route": "/settings/billing",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/billing/page.tsx"
+      },
+      {
+        "id": "R078",
+        "issue": 1762,
+        "route": "/settings/calendar",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/calendar/page.tsx"
+      },
+      {
+        "id": "R080",
+        "issue": 1763,
+        "route": "/settings/clocking",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/clocking/page.tsx"
+      },
+      {
+        "id": "R082",
+        "issue": 1764,
+        "route": "/settings/closed-months",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/closed-months/page.tsx"
+      },
+      {
+        "id": "R083",
+        "issue": 1765,
+        "route": "/settings/compliance",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/compliance/page.tsx"
+      },
+      {
+        "id": "R084",
+        "issue": 1766,
+        "route": "/settings/compliance/works-council",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/compliance/works-council/page.tsx"
+      },
+      {
+        "id": "R086",
+        "issue": 1767,
+        "route": "/settings/custom-fields",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/custom-fields/page.tsx"
+      },
+      {
+        "id": "R087",
+        "issue": 1768,
+        "route": "/settings/customers",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/customers/page.tsx"
+      },
+      {
+        "id": "R088",
+        "issue": 1769,
+        "route": "/settings/demo",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/demo/page.tsx"
+      },
+      {
+        "id": "R090",
+        "issue": 1770,
+        "route": "/settings/driving-licence",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/driving-licence/page.tsx"
+      },
+      {
+        "id": "R092",
+        "issue": 1771,
+        "route": "/settings/employees",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/page.tsx"
+      },
+      {
+        "id": "R093",
+        "issue": 1772,
+        "route": "/settings/employees/[employeeId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/[employeeId]/page.tsx"
+      },
+      {
+        "id": "R096",
+        "issue": 1773,
+        "route": "/settings/enterprise/api-keys",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/page.tsx"
+      },
+      {
+        "id": "R097",
+        "issue": 1774,
+        "route": "/settings/enterprise/api-keys/[keyId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/api-keys/[keyId]/page.tsx"
+      },
+      {
+        "id": "R100",
+        "issue": 1775,
+        "route": "/settings/enterprise/domains",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/domains/page.tsx"
+      },
+      {
+        "id": "R101",
+        "issue": 1776,
+        "route": "/settings/enterprise/email",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/email/page.tsx"
+      },
+      {
+        "id": "R102",
+        "issue": 1777,
+        "route": "/settings/enterprise/identity-setup",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/identity-setup/page.tsx"
+      },
+      {
+        "id": "R104",
+        "issue": 1778,
+        "route": "/settings/equipment",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/equipment/page.tsx"
+      },
+      {
+        "id": "R105",
+        "issue": 1779,
+        "route": "/settings/export",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/export/page.tsx"
+      },
+      {
+        "id": "R106",
+        "issue": 1780,
+        "route": "/settings/export-operations",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/export-operations/page.tsx"
+      },
+      {
+        "id": "R107",
+        "issue": 1781,
+        "route": "/settings/export/history/[organizationId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/export/history/[organizationId]/page.tsx"
+      },
+      {
+        "id": "R109",
+        "issue": 1782,
+        "route": "/settings/implementation-checklist",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/implementation-checklist/page.tsx"
+      },
+      {
+        "id": "R110",
+        "issue": 1783,
+        "route": "/settings/import",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/import/page.tsx"
+      },
+      {
+        "id": "R111",
+        "issue": 1784,
+        "route": "/settings/import/[batchId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/import/[batchId]/page.tsx"
+      },
+      {
+        "id": "R112",
+        "issue": 1785,
+        "route": "/settings/kiosks",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/kiosks/page.tsx"
+      },
+      {
+        "id": "R113",
+        "issue": 1786,
+        "route": "/settings/locations",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/locations/page.tsx"
+      },
+      {
+        "id": "R114",
+        "issue": 1787,
+        "route": "/settings/locations/[locationId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/locations/[locationId]/page.tsx"
+      },
+      {
+        "id": "R115",
+        "issue": 1788,
+        "route": "/settings/my-data",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/my-data/page.tsx"
+      },
+      {
+        "id": "R116",
+        "issue": 1789,
+        "route": "/settings/notification-channels",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/notification-channels/page.tsx"
+      },
+      {
+        "id": "R117",
+        "issue": 1790,
+        "route": "/settings/notifications",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/notifications/page.tsx"
+      },
+      {
+        "id": "R118",
+        "issue": 1791,
+        "route": "/settings/organization",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/organization/page.tsx"
+      },
+      {
+        "id": "R120",
+        "issue": 1792,
+        "route": "/settings/payroll-access",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/payroll-access/page.tsx"
+      },
+      {
+        "id": "R121",
+        "issue": 1793,
+        "route": "/settings/payroll-export",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/payroll-export/page.tsx"
+      },
+      {
+        "id": "R122",
+        "issue": 1794,
+        "route": "/settings/payroll-readiness",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/payroll-readiness/page.tsx"
+      },
+      {
+        "id": "R123",
+        "issue": 1795,
+        "route": "/settings/permissions",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/permissions/page.tsx"
+      },
+      {
+        "id": "R124",
+        "issue": 1796,
+        "route": "/settings/personnel-files",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/personnel-files/page.tsx"
+      },
+      {
+        "id": "R125",
+        "issue": 1797,
+        "route": "/settings/position-capture",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/position-capture/page.tsx"
+      },
+      {
+        "id": "R126",
+        "issue": 1798,
+        "route": "/settings/position-stamps",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/position-stamps/page.tsx"
+      },
+      {
+        "id": "R127",
+        "issue": 1799,
+        "route": "/settings/profile",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/profile/page.tsx"
+      },
+      {
+        "id": "R128",
+        "issue": 1800,
+        "route": "/settings/projects",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/projects/page.tsx"
+      },
+      {
+        "id": "R129",
+        "issue": 1801,
+        "route": "/settings/report-share-links",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/report-share-links/page.tsx"
+      },
+      {
+        "id": "R130",
+        "issue": 1802,
+        "route": "/settings/roles",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/roles/page.tsx"
+      },
+      {
+        "id": "R131",
+        "issue": 1803,
+        "route": "/settings/scheduled-exports",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/scheduled-exports/page.tsx"
+      },
+      {
+        "id": "R132",
+        "issue": 1804,
+        "route": "/settings/security",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/security/page.tsx"
+      },
+      {
+        "id": "R133",
+        "issue": 1805,
+        "route": "/settings/shifts",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/shifts/page.tsx"
+      },
+      {
+        "id": "R134",
+        "issue": 1806,
+        "route": "/settings/skills",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/skills/page.tsx"
+      },
+      {
+        "id": "R136",
+        "issue": 1807,
+        "route": "/settings/statistics",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/statistics/page.tsx"
+      },
+      {
+        "id": "R137",
+        "issue": 1808,
+        "route": "/settings/surcharges",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/surcharges/page.tsx"
+      },
+      {
+        "id": "R138",
+        "issue": 1809,
+        "route": "/settings/teams",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/teams/page.tsx"
+      },
+      {
+        "id": "R140",
+        "issue": 1810,
+        "route": "/settings/teams/[teamId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/teams/[teamId]/page.tsx"
+      },
+      {
+        "id": "R142",
+        "issue": 1811,
+        "route": "/settings/travel-expenses",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/travel-expenses/page.tsx"
+      },
+      {
+        "id": "R143",
+        "issue": 1812,
+        "route": "/settings/vacation",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/vacation/page.tsx"
+      },
+      {
+        "id": "R144",
+        "issue": 1813,
+        "route": "/settings/vacation/employees",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/vacation/employees/page.tsx"
+      },
+      {
+        "id": "R145",
+        "issue": 1814,
+        "route": "/settings/vacation/employees/[employeeId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/vacation/employees/[employeeId]/page.tsx"
+      },
+      {
+        "id": "R147",
+        "issue": 1815,
+        "route": "/settings/vehicles",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/vehicles/page.tsx"
+      },
+      {
+        "id": "R149",
+        "issue": 1816,
+        "route": "/settings/wellness",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/wellness/page.tsx"
+      },
+      {
+        "id": "R150",
+        "issue": 1817,
+        "route": "/settings/work-categories",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/work-categories/page.tsx"
+      },
+      {
+        "id": "R151",
+        "issue": 1818,
+        "route": "/settings/work-diagnostics",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/work-diagnostics/page.tsx"
+      },
+      {
+        "id": "R152",
+        "issue": 1819,
+        "route": "/settings/work-policies",
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/work-policies/page.tsx"
+      },
+      {
+        "id": "R153",
+        "issue": 1837,
+        "route": "/setup",
+        "file": "apps/webapp/src/app/[locale]/(setup)/setup/page.tsx"
+      },
+      {
+        "id": "R154",
+        "issue": 1838,
+        "route": "/share/[token]",
+        "file": "apps/webapp/src/app/[locale]/(share)/share/[token]/page.tsx"
+      },
+      {
+        "id": "R155",
+        "issue": 1839,
+        "route": "/sign-in",
+        "file": "apps/webapp/src/app/[locale]/(auth)/sign-in/page.tsx"
+      },
+      {
+        "id": "R156",
+        "issue": 1840,
+        "route": "/sign-up",
+        "file": "apps/webapp/src/app/[locale]/(auth)/sign-up/page.tsx"
+      },
+      {
+        "id": "R157",
+        "issue": 1739,
+        "route": "/team",
+        "file": "apps/webapp/src/app/[locale]/(app)/team/page.tsx"
+      },
+      {
+        "id": "R158",
+        "issue": 1740,
+        "route": "/team/absences",
+        "file": "apps/webapp/src/app/[locale]/(app)/team/absences/page.tsx"
+      },
+      {
+        "id": "R159",
+        "issue": 1741,
+        "route": "/team/driving",
+        "file": "apps/webapp/src/app/[locale]/(app)/team/driving/page.tsx"
+      },
+      {
+        "id": "R160",
+        "issue": 1742,
+        "route": "/team/period-submissions",
+        "file": "apps/webapp/src/app/[locale]/(app)/team/period-submissions/page.tsx"
+      },
+      {
+        "id": "R161",
+        "issue": 1743,
+        "route": "/team/presence",
+        "file": "apps/webapp/src/app/[locale]/(app)/team/presence/page.tsx"
+      },
+      {
+        "id": "R162",
+        "issue": 1744,
+        "route": "/team/presence/[locationId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/team/presence/[locationId]/page.tsx"
+      },
+      {
+        "id": "R163",
+        "issue": 1745,
+        "route": "/time-tracking",
+        "file": "apps/webapp/src/app/[locale]/(app)/time-tracking/page.tsx"
+      },
+      {
+        "id": "R164",
+        "issue": 1746,
+        "route": "/today",
+        "file": "apps/webapp/src/app/[locale]/(app)/today/page.tsx"
+      },
+      {
+        "id": "R165",
+        "issue": 1747,
+        "route": "/travel-expenses",
+        "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/page.tsx"
+      },
+      {
+        "id": "R166",
+        "issue": 1748,
+        "route": "/travel-expenses/[claimId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/[claimId]/page.tsx"
+      },
+      {
+        "id": "R167",
+        "issue": 1749,
+        "route": "/travel-expenses/finance",
+        "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/finance/page.tsx"
+      },
+      {
+        "id": "R168",
+        "issue": 1750,
+        "route": "/travel-expenses/reports/[reportId]",
+        "file": "apps/webapp/src/app/[locale]/(app)/travel-expenses/reports/[reportId]/page.tsx"
+      },
+      {
+        "id": "R169",
+        "issue": 1841,
+        "route": "/verify-2fa",
+        "file": "apps/webapp/src/app/[locale]/(auth)/verify-2fa/page.tsx"
+      },
+      {
+        "id": "R170",
+        "issue": 1842,
+        "route": "/verify-email",
+        "file": "apps/webapp/src/app/[locale]/(auth)/verify-email/page.tsx"
+      },
+      {
+        "id": "R171",
+        "issue": 1843,
+        "route": "/verify-email-pending",
+        "file": "apps/webapp/src/app/[locale]/(auth)/verify-email-pending/page.tsx"
+      },
+      {
+        "id": "R172",
+        "issue": 1751,
+        "route": "/works-council",
+        "file": "apps/webapp/src/app/[locale]/(app)/works-council/page.tsx"
+      }
+    ],
+    "aliases": [
+      {
+        "id": "R067",
+        "route": "/settings/approval-escalation",
+        "destination": "/settings/approval-policies",
+        "query": "?tab=escalation",
+        "issue": 1753,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/approval-escalation/page.tsx",
+        "currentBlob": "59eced889369825f8efa8d77639a6a4c973f0282",
+        "baseBlob": "59eced889369825f8efa8d77639a6a4c973f0282",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R070",
+        "route": "/settings/audit-log",
+        "destination": "/settings/audit-export",
+        "query": "?tab=activity",
+        "issue": 1754,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/audit-log/page.tsx",
+        "currentBlob": "5f43cabc6393b93eb9face3bc44f08395bb29c8e",
+        "baseBlob": "5f43cabc6393b93eb9face3bc44f08395bb29c8e",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R079",
+        "route": "/settings/change-policies",
+        "destination": "/settings/work-policies",
+        "query": "?tab=changes",
+        "issue": 1819,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/change-policies/page.tsx",
+        "currentBlob": "26782bd1888a64a947c27287afdf7a3861cf1b57",
+        "baseBlob": "26782bd1888a64a947c27287afdf7a3861cf1b57",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R081",
+        "route": "/settings/clockodo-import",
+        "destination": "/settings/import",
+        "query": null,
+        "issue": 1783,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/clockodo-import/page.tsx",
+        "currentBlob": "75b4f4c5d2a9e11469b40a6458a85a38ff282a25",
+        "baseBlob": "75b4f4c5d2a9e11469b40a6458a85a38ff282a25",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R085",
+        "route": "/settings/coverage-rules",
+        "destination": "/settings/shifts",
+        "query": "?tab=coverage",
+        "issue": 1805,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
+        "currentBlob": "b2085f5b9d39680bf38d5d7860e7ffc6c21dcaa5",
+        "baseBlob": "b2085f5b9d39680bf38d5d7860e7ffc6c21dcaa5",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R089",
+        "route": "/settings/discord",
+        "destination": "/settings/notification-channels",
+        "query": "?tab=discord",
+        "issue": 1789,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/discord/page.tsx",
+        "currentBlob": "78c544e529116db14a2cc2d300ac1b521873fb98",
+        "baseBlob": "78c544e529116db14a2cc2d300ac1b521873fb98",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R091",
+        "route": "/settings/email-templates",
+        "destination": "/settings/enterprise/email",
+        "query": "?tab=templates",
+        "issue": 1776,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/email-templates/page.tsx",
+        "currentBlob": "af0259d715c1abb0778ff2a2495539998dc6ce44",
+        "baseBlob": "af0259d715c1abb0778ff2a2495539998dc6ce44",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R094",
+        "route": "/settings/employees/new",
+        "destination": "/settings/organization",
+        "query": null,
+        "issue": 1791,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/employees/new/page.tsx",
+        "currentBlob": "fd67de44a23384df9b45912e0a12c542dbac08fc",
+        "baseBlob": "fd67de44a23384df9b45912e0a12c542dbac08fc",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R095",
+        "route": "/settings/enterprise",
+        "destination": "/settings/enterprise/domains",
+        "query": null,
+        "issue": 1775,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/page.tsx",
+        "currentBlob": "e945f0633319567d1a348f2f09d18f18496f171a",
+        "baseBlob": "e945f0633319567d1a348f2f09d18f18496f171a",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R098",
+        "route": "/settings/enterprise/audit-log",
+        "destination": "/settings/audit-export",
+        "query": "?tab=activity",
+        "issue": 1754,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/audit-log/page.tsx",
+        "currentBlob": "5f43cabc6393b93eb9face3bc44f08395bb29c8e",
+        "baseBlob": "5f43cabc6393b93eb9face3bc44f08395bb29c8e",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R099",
+        "route": "/settings/enterprise/branding",
+        "destination": "/settings/enterprise/domains",
+        "query": "?tab=branding",
+        "issue": 1775,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/branding/page.tsx",
+        "currentBlob": "ad9dbbce5a743a910db79eed0edc235d8f177a5a",
+        "baseBlob": "ad9dbbce5a743a910db79eed0edc235d8f177a5a",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R103",
+        "route": "/settings/enterprise/sso",
+        "destination": "/settings/enterprise/identity-setup",
+        "query": "?tab=sso",
+        "issue": 1777,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/enterprise/sso/page.tsx",
+        "currentBlob": "09b3d21ac5dbc9420903c3af32e834d61cf42195",
+        "baseBlob": "09b3d21ac5dbc9420903c3af32e834d61cf42195",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R108",
+        "route": "/settings/holidays",
+        "destination": "/settings/vacation",
+        "query": "?tab=holidays",
+        "issue": 1812,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/holidays/page.tsx",
+        "currentBlob": "5c7a952d2eb26a97853d8abe72539a84ce718cd7",
+        "baseBlob": "5c7a952d2eb26a97853d8abe72539a84ce718cd7",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R119",
+        "route": "/settings/organizations",
+        "destination": "/settings/organization",
+        "query": null,
+        "issue": 1791,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/organizations/page.tsx",
+        "currentBlob": "294d3f51642ed614fc72314caf3f648945c1668c",
+        "baseBlob": "294d3f51642ed614fc72314caf3f648945c1668c",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R135",
+        "route": "/settings/slack",
+        "destination": "/settings/notification-channels",
+        "query": "?tab=slack",
+        "issue": 1789,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/slack/page.tsx",
+        "currentBlob": "81b6f4b24634e50e0deb1a51aa49076540dfcc6c",
+        "baseBlob": "81b6f4b24634e50e0deb1a51aa49076540dfcc6c",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R139",
+        "route": "/settings/teams-notifications",
+        "destination": "/settings/notification-channels",
+        "query": "?tab=teams",
+        "issue": 1789,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/teams-notifications/page.tsx",
+        "currentBlob": "839508e379e5dd7d9a7f87a044e5e6e1ee7e75ad",
+        "baseBlob": "839508e379e5dd7d9a7f87a044e5e6e1ee7e75ad",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R141",
+        "route": "/settings/telegram",
+        "destination": "/settings/notification-channels",
+        "query": "?tab=telegram",
+        "issue": 1789,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/telegram/page.tsx",
+        "currentBlob": "df01b2359a99a47b09d84047e633a2e6bf279766",
+        "baseBlob": "df01b2359a99a47b09d84047e633a2e6bf279766",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R146",
+        "route": "/settings/vehicle-use",
+        "destination": "/settings/vehicles",
+        "query": "?tab=use",
+        "issue": 1815,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/vehicle-use/page.tsx",
+        "currentBlob": "974865e216a29794e4d5452e38f6665033949dd2",
+        "baseBlob": "974865e216a29794e4d5452e38f6665033949dd2",
+        "byteUnchangedFromInitialDev": true
+      },
+      {
+        "id": "R148",
+        "route": "/settings/webhooks",
+        "destination": "/settings/enterprise/api-keys",
+        "query": "?tab=webhooks",
+        "issue": 1773,
+        "file": "apps/webapp/src/app/[locale]/(app)/settings/webhooks/page.tsx",
+        "currentBlob": "e63ec552ad47d1e49ec4669f11196156f61e9c5d",
+        "baseBlob": "e63ec552ad47d1e49ec4669f11196156f61e9c5d",
+        "byteUnchangedFromInitialDev": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "success": true,
+  "data": {
+    "axeVersion": "4.12.1",
+    "counts": {
+      "inapplicable": 45,
+      "incomplete": 0,
+      "passes": 44,
+      "violations": 0
+    },
+    "incomplete": [],
+    "lifecycle": {
+      "effectiveLaunch": {
+        "browserLaunched": true,
+        "engine": "chrome",
+        "launchHash": 10017095098226522000
+      },
+      "launched": false,
+      "relaunchedBrowser": false,
+      "restartedBackground": false,
+      "restoreStatus": "not_configured",
+      "reused": true,
+      "saveStatus": "not_attempted"
+    },
+    "url": "http://localhost:53372/en/team/driving",
+    "violations": []
+  },
+  "error": null
+}

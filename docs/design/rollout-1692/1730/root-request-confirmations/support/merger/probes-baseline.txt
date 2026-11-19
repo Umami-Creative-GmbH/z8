@@ -1,0 +1,42 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.1.0 X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/apps/webapp
+
+stdout | src/components/personnel-file/merge1730-baseline-bulk-probe.test.tsx > MERGE1730 retires a submit queued before Activity hides and reconnects
+MERGE1730 bulk lifecycle {"beforeRetirement":0,"afterReconnect":1}
+
+ ❯ |unit| src/components/personnel-file/merge1730-baseline-bulk-probe.test.tsx (3 tests | 1 failed | 2 skipped) 84ms
+   ↓ MERGE1730 normal bulk submit reaches the public action exactly once
+   ↓ MERGE1730 same-turn queued Cancel and duplicates remain reserved
+   × MERGE1730 retires a submit queued before Activity hides and reconnects 83ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| src/components/personnel-file/merge1730-baseline-bulk-probe.test.tsx > MERGE1730 retires a submit queued before Activity hides and reconnects
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/components/personnel-file/merge1730-baseline-bulk-probe.test.tsx:165:25
+    163|  if(finish)await act(async()=>finish!(refusal));
+    164|  expect(beforeRetirement).toBe(0);
+    165|  expect(afterReconnect).toBe(0);
+       |                         ^
+    166|  expect(onCreated).not.toHaveBeenCalled();
+    167| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  09:37:32
+   Duration  1.33s (import 41%, environment 39%, tests 9%, transform 7%, setup 3%)
+
+JSON report written to X:/t3-code/worktrees/z8/t3-36de3f4a-69b59b59b97cbc3d/.tmp/merge1730-audit/probes-baseline.json

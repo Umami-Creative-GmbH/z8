@@ -77,7 +77,7 @@
       "review": {
         "noProductionRecords": "No production records have been imported yet.",
         "openReview": "Open review",
-        "scanningDescription": "Review batch {reviewBatchId} is scanning. Review and approve records before commit.",
+        "scanningDescriptionWithoutId": "The review scan is running. Review and approve records before they are imported.",
         "startedTitle": "Import review scan started",
         "starting": "Starting Clockin import review scan…",
         "startSuccess": "Import review scan started. Review is required before records are committed."
@@ -94,9 +94,9 @@
     },
     "clockodoImport": {
       "complete": {
-        "batch": "Review batch {batchId} is scanning.",
         "description": "Review is required before Clockodo records are committed to production.",
         "openReview": "Open review",
+        "scanning": "The review scan is running. No records are imported until you accept them in the review.",
         "successTitle": "Import review scan started"
       },
       "credentials": {
@@ -182,12 +182,14 @@
         "credentials": "Credentials",
         "import": "Review",
         "preview": "Preview",
+        "progressLabel": "Import steps",
         "projectMapping": "Project Mapping",
         "selection": "Selection",
         "userMapping": "User Mapping"
       },
       "userMapping": {
         "action": "Action",
+        "actionFor": "Action for {name}",
         "autoMatched": "{count} auto-matched",
         "clockodoUser": "Clockodo User",
         "continue": "Continue",
@@ -248,14 +250,21 @@
       "linkError": "Failed to generate link code",
       "linking": {
         "botLink": "Bot: @{botUsername}",
+        "codeCopied": "Link code copied",
+        "codeExpired": "Expired — generate a new code",
+        "copyCode": "Copy link code",
+        "copyFailed": "The link code could not be copied. Select it and copy it manually.",
         "description": "Link your Telegram account to receive personal notifications.",
+        "expiresIn": "{minutes, plural, one {Expires in # minute} other {Expires in # minutes}}",
         "generateCode": "Generate Link Code",
         "instructions": "Send this command to the bot on Telegram:",
         "linkedStatus": "Your Telegram account is linked",
+        "regenerateCode": "Generate new code",
         "title": "Telegram Account"
       },
       "notConfigured": "Telegram is not configured for this organization. Contact your administrator.",
       "saved": "Telegram settings saved",
+      "saveError": "Telegram settings could not be saved. Try again.",
       "status": {
         "active": "Active"
       },
