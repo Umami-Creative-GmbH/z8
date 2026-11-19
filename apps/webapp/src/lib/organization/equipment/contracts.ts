@@ -381,6 +381,8 @@ export interface EquipmentExceptionView {
 	kind: "lost" | "waived";
 	quantity: number;
 	receivedQuantity: number;
+	/** What can still be physically received against this decision. */
+	receivableQuantity: number;
 	reason: string;
 	actorId: string | null;
 	actorName: string | null;
@@ -417,6 +419,8 @@ export interface EquipmentAssignmentView {
 	quantity: number;
 	physicallyReceivedQuantity: number;
 	outstandingQuantity: number;
+	/** The most a normal receipt or transfer may receive: the outstanding return, or what is still held when issued to keep. */
+	receivableQuantity: number;
 	typeId: string;
 	typeName: string;
 	identifier: string;

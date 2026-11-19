@@ -33,7 +33,7 @@ import type {
 	EquipmentRetentionView,
 } from "./contracts";
 import { effectiveHandover } from "./corrections";
-import { outstandingEquipmentQuantity } from "./deadlines";
+import { assignmentSettlement, outstandingQuantity } from "./settlement";
 import { type EquipmentTransaction, lockEquipmentOrganization } from "./setup";
 
 /** Keep the whole anniversary day. Calendar months clamp month ends; DST follows the org zone. */
@@ -75,7 +75,7 @@ export function equipmentRetentionStatus(
 		expiresAt: end?.toString() ?? null,
 		caseHeld: assignment.caseHeld,
 		status:
-			outstandingEquipmentQuantity(assignment) > 0
+			outstandingQuantity(assignmentSettlement(assignment)) > 0
 				? "outstanding"
 				: assignment.caseHeld
 					? "case_hold"

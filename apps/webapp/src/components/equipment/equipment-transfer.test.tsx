@@ -180,6 +180,7 @@ it("validates a partial quantity and date order before submitting the new return
 		quantity: 3,
 		physicallyReceivedQuantity: 1,
 		outstandingQuantity: 2,
+		receivableQuantity: 2,
 	};
 	render(
 		<EmployeeEquipment

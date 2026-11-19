@@ -69,6 +69,7 @@ const loss = {
 	kind: "lost" as const,
 	quantity: 2,
 	receivedQuantity: 0,
+	receivableQuantity: 2,
 	reason: "Missing after move",
 	actorId: "owner",
 	actorName: "Pat Owner",
@@ -96,6 +97,7 @@ it("requires a reason for partial loss/waiver and preserves command identity on 
 						trackingMode: "quantity",
 						quantity: 3,
 						outstandingQuantity: 3,
+						receivableQuantity: 3,
 					},
 				],
 			}}
@@ -195,11 +197,19 @@ it("shows received, lost, waived and recovered quantities without calling a clos
 						waivedQuantity: 1,
 						recoveredQuantity: 1,
 						outstandingQuantity: 0,
+						receivableQuantity: 0,
 						outstanding: false,
 						overdue: false,
 						canReceive: false,
 						canCloseException: false,
-						exceptions: [{ ...loss, receivedQuantity: 1, canReceive: false }],
+						exceptions: [
+							{
+								...loss,
+								receivedQuantity: 1,
+								receivableQuantity: 1,
+								canReceive: false,
+							},
+						],
 					},
 				],
 			}}
