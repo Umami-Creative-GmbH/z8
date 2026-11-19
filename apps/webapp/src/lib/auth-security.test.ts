@@ -333,6 +333,42 @@ describe("SSO trusted origins", () => {
 		expect(origins).not.toContain("http://169.254.169.254");
 	});
 
+	const entraOrigins = [
+		"https://login.microsoftonline.com",
+		"https://graph.microsoft.com",
+	];
+	const noConfiguredOrigins = { loadConfiguredOrigins: () => [] };
+
+	it.each([
+		"/api/auth",
+		"/api/auth/sso/register",
+		"/api/auth/sso/callback/entra",
+		"/api/auth/sign-in/sso",
+	])("trusts the built-in Entra origins on SSO discovery path %s", async (pathname) => {
+		const origins = await getSSOTrustedOrigins(
+			new Request(`https://ui.z8-time.app${pathname}`),
+			pathname,
+			noConfiguredOrigins,
+		);
+
+		expect(origins).toEqual(expect.arrayContaining(entraOrigins));
+	});
+
+	it.each([
+		"/api/auth/sign-in/social",
+		"/api/auth/sign-in/email",
+		"/api/auth/sign-up/email",
+		"/api/auth/ssomething",
+	])("keeps built-in IdP origins off non-SSO path %s", async (pathname) => {
+		const origins = await getSSOTrustedOrigins(
+			new Request(`https://ui.z8-time.app${pathname}`),
+			pathname,
+			noConfiguredOrigins,
+		);
+
+		expect(origins).toEqual([]);
+	});
+
 	it("does not derive operator trust from tenant-owned provider rows", () => {
 		const source = readTestText(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 		const trustedOriginsSource = source.slice(
