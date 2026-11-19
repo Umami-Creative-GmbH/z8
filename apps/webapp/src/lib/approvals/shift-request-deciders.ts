@@ -27,9 +27,7 @@ export function shiftRequestDeciders(
 	roster: ReadonlyArray<{ id: string; role: string }>,
 	requesterId: string,
 ): string[] {
-	return roster
-		.filter((row) => mayDecideShiftRequest(row, { requesterId }))
-		.map((row) => row.id);
+	return roster.filter((row) => mayDecideShiftRequest(row, { requesterId })).map((row) => row.id);
 }
 
 /**

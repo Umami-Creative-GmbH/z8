@@ -7,14 +7,14 @@
 
 import { and, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { employee, location, locationSubarea, shift, shiftRequest } from "@/db/schema";
+import { location, locationSubarea, shift, shiftRequest } from "@/db/schema";
 import {
 	type Instant,
 	type PlainDate,
 	plainDateAt,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import type { DatabaseError } from "@/lib/effect/errors";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { DatabaseService } from "./database.service";
 
@@ -44,12 +44,6 @@ export interface OpenShiftWithDetails {
 	pendingRequestsCount: number;
 }
 
-export interface ShiftPickupRequestResult {
-	requestId: string;
-	shiftId: string;
-	status: "pending";
-}
-
 // ============================================
 // SERVICE INTERFACE
 // ============================================
@@ -77,16 +71,6 @@ export class OpenShiftsService extends Context.Service<
 			timezone: string;
 			now?: Instant;
 		}) => Effect.Effect<{ today: number; tomorrow: number }, DatabaseError>;
-
-		/**
-		 * Request to pick up an open shift
-		 */
-		readonly requestShiftPickup: (params: {
-			shiftId: string;
-			requesterId: string;
-			organizationId: string;
-			reason?: string;
-		}) => Effect.Effect<ShiftPickupRequestResult, ValidationError | NotFoundError | DatabaseError>;
 
 		/**
 		 * Check if a shift is still available for pickup
@@ -236,91 +220,6 @@ export const OpenShiftsServiceLive = Layer.effect(
 					return {
 						today: Number(todayResult[0]?.count) || 0,
 						tomorrow: Number(tomorrowResult[0]?.count) || 0,
-					};
-				}),
-
-			requestShiftPickup: (params) =>
-				Effect.gen(function* () {
-					const { shiftId, requesterId, organizationId, reason } = params;
-
-					// Verify shift exists, is open, and belongs to organization
-					const targetShift = yield* dbService.query("verifyShiftForPickup", async () => {
-						return await dbService.db.query.shift.findFirst({
-							where: and(
-								eq(shift.id, shiftId),
-								eq(shift.organizationId, organizationId),
-								eq(shift.status, "published"),
-								isNull(shift.employeeId),
-							),
-						});
-					});
-
-					if (!targetShift) {
-						return yield* Effect.fail(
-							new NotFoundError({
-								message: "Shift not found or no longer available",
-								entityType: "shift",
-								entityId: shiftId,
-							}),
-						);
-					}
-
-					// Verify requester belongs to the same organization (multi-tenant security)
-					const requesterEmployee = yield* dbService.query("verifyRequester", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: and(eq(employee.id, requesterId), eq(employee.organizationId, organizationId)),
-						});
-					});
-
-					if (!requesterEmployee) {
-						return yield* Effect.fail(
-							new ValidationError({
-								message: "You are not authorized to request shifts in this organization",
-								field: "requesterId",
-								value: requesterId,
-							}),
-						);
-					}
-
-					// Check for existing pending request from this employee
-					const existingRequest = yield* dbService.query("checkExistingPickupRequest", async () => {
-						return await dbService.db.query.shiftRequest.findFirst({
-							where: and(
-								eq(shiftRequest.shiftId, shiftId),
-								eq(shiftRequest.requesterId, requesterId),
-								eq(shiftRequest.status, "pending"),
-							),
-						});
-					});
-
-					if (existingRequest) {
-						return yield* Effect.fail(
-							new ValidationError({
-								message: "You already have a pending request for this shift",
-								field: "shiftId",
-								value: shiftId,
-							}),
-						);
-					}
-
-					// Create pickup request
-					const [newRequest] = yield* dbService.query("createPickupRequest", async () => {
-						return await dbService.db
-							.insert(shiftRequest)
-							.values({
-								shiftId,
-								requesterId,
-								type: "pickup",
-								status: "pending",
-								reason,
-							})
-							.returning({ id: shiftRequest.id });
-					});
-
-					return {
-						requestId: newRequest.id,
-						shiftId,
-						status: "pending" as const,
 					};
 				}),
 

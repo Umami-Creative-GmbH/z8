@@ -8,11 +8,14 @@ import {
 describe("shift request deciders (#1604)", () => {
 	it("are the managers and admins on the roster", () => {
 		expect(
-			shiftRequestDeciders([
-				{ id: "manager", role: "manager" },
-				{ id: "employee", role: "employee" },
-				{ id: "admin", role: "admin" },
-			], "employee"),
+			shiftRequestDeciders(
+				[
+					{ id: "manager", role: "manager" },
+					{ id: "employee", role: "employee" },
+					{ id: "admin", role: "admin" },
+				],
+				"employee",
+			),
 		).toEqual(["manager", "admin"]);
 	});
 
