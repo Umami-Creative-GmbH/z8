@@ -28,7 +28,7 @@ const EXTENSION_BY_MIME: Readonly<Record<string, string>> = {
 function safeTitle(title: string): string {
 	const cleaned = title
 		// Control characters become spaces; path separators and reserved characters underscores.
-		// biome-ignore lint/suspicious/noControlCharactersInRegex: control characters are what is removed.
+		// oxlint-disable-next-line eslint/no-control-regex -- control characters are what is removed.
 		.replace(/[\u0000-\u001f\u007f]/g, " ")
 		.replace(/[/\\:*?"<>|]/g, "_")
 		.replace(/\s+/g, " ")

@@ -35,7 +35,6 @@ export function useTripExpenseItems({
 
 	// Moves focus once the added expense is rendered, or back to the add
 	// action once the removed one is gone, so keyboard users keep their place.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: retried whenever the rendered expenses change
 	useEffect(() => {
 		if (focusTarget === "add") {
 			if (addButton.current) addButton.current.focus();
@@ -49,7 +48,7 @@ export function useTripExpenseItems({
 				setFocusTarget(null);
 			}
 		}
-	}, [focusTarget, items]);
+	}, [focusTarget, items]); // oxlint-disable-line react-hooks/exhaustive-deps -- retried whenever the rendered expenses change
 
 	async function addItem(type: "receipt" | "mileage" | "per_diem" = "receipt") {
 		setAdding(true);

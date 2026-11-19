@@ -1,4 +1,4 @@
-name: Biome
+name: Oxlint and Oxfmt
 
 on:
   # Temporarily disabled for pull requests.
@@ -7,7 +7,7 @@ on:
   #     - main
   #   paths:
   #     - "apps/webapp/src/**"
-  #     - ".github/workflows/biome.yml"
+  #     - ".github/workflows/code-quality.yml"
   workflow_dispatch:
 
 permissions:
@@ -16,12 +16,12 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: biome-${{ github.event.pull_request.number || github.ref }}
+  group: code-quality-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  biome:
-    name: Biome
+  code-quality:
+    name: Oxlint and Oxfmt
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -45,38 +45,43 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run Biome
-        id: biome
-        working-directory: apps/webapp
+      - name: Run Oxlint and Oxfmt
+        id: quality
         run: |
           set +e
-          pnpm exec biome ci --max-diagnostics=30 src > "$RUNNER_TEMP/biome-output.txt" 2>&1
-          status=$?
+          pnpm exec oxlint apps/webapp/src > "$RUNNER_TEMP/oxc-output.txt" 2>&1
+          lint_status=$?
+          pnpm exec oxfmt --check apps/webapp/src >> "$RUNNER_TEMP/oxc-output.txt" 2>&1
+          format_status=$?
           set -e
+          status=0
+          if [ "$lint_status" != "0" ] || [ "$format_status" != "0" ]; then
+            status=1
+          fi
 
           echo "status=$status" >> "$GITHUB_OUTPUT"
 
-      - name: Add Biome result to job summary
+      - name: Add Oxlint and Oxfmt result to job summary
         if: always()
         run: |
-          status="${{ steps.biome.outputs.status }}"
+          status="${{ steps.quality.outputs.status }}"
           conclusion="failed"
           if [ "$status" = "0" ]; then
             conclusion="passed"
           fi
 
           {
-            echo "### Biome src check $conclusion"
+            echo "### Oxlint and Oxfmt src check $conclusion"
             echo
-            echo "\`pnpm exec biome ci --max-diagnostics=30 src\` in \`apps/webapp\` exited with status \`${status:-unknown}\`."
+            echo "\`pnpm exec oxlint apps/webapp/src && pnpm exec oxfmt --check apps/webapp/src\` exited with status \`${status:-unknown}\`."
             echo
-            echo "<details><summary>Biome output</summary>"
+            echo "<details><summary>Oxlint and Oxfmt output</summary>"
             echo
             echo '```text'
-            if [ -f "$RUNNER_TEMP/biome-output.txt" ]; then
-              head -c 60000 "$RUNNER_TEMP/biome-output.txt"
+            if [ -f "$RUNNER_TEMP/oxc-output.txt" ]; then
+              head -c 60000 "$RUNNER_TEMP/oxc-output.txt"
             else
-              echo "Biome output was not captured."
+              echo "Oxlint and Oxfmt output was not captured."
             fi
             echo
             echo '```'
@@ -84,23 +89,23 @@ jobs:
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Comment Biome result
+      - name: Comment Oxlint and Oxfmt result
         if: always() && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require("node:fs");
 
-            const marker = "<!-- z8-biome-src-result -->";
-            const status = "${{ steps.biome.outputs.status }}";
-            const outputPath = `${process.env.RUNNER_TEMP}/biome-output.txt`;
-            const output = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "Biome output was not captured.";
+            const marker = "<!-- z8-oxc-src-result -->";
+            const status = "${{ steps.quality.outputs.status }}";
+            const outputPath = `${process.env.RUNNER_TEMP}/oxc-output.txt`;
+            const output = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "Oxlint and Oxfmt output was not captured.";
             const conclusion = status === "0" ? "passed" : "failed";
             const maxOutputLength = 60000;
             const trimmedOutput = output.length > maxOutputLength
               ? `${output.slice(0, maxOutputLength)}\n\n[Output truncated]`
               : output;
-            const body = `${marker}\n### Biome src check ${conclusion}\n\n\`pnpm exec biome ci --max-diagnostics=30 src\` in \`apps/webapp\` exited with status \`${status || "unknown"}\`.\n\n<details><summary>Biome output</summary>\n\n\`\`\`text\n${trimmedOutput}\n\`\`\`\n\n</details>`;
+            const body = `${marker}\n### Oxlint and Oxfmt src check ${conclusion}\n\n\`pnpm exec oxlint apps/webapp/src && pnpm exec oxfmt --check apps/webapp/src\` exited with status \`${status || "unknown"}\`.\n\n<details><summary>Oxlint and Oxfmt output</summary>\n\n\`\`\`text\n${trimmedOutput}\n\`\`\`\n\n</details>`;
 
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
@@ -128,6 +133,6 @@ jobs:
               });
             }
 
-      - name: Fail on Biome errors
-        if: steps.biome.outputs.status != '0'
+      - name: Fail on Oxlint and Oxfmt errors
+        if: steps.quality.outputs.status != '0'
         run: exit 1

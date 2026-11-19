@@ -66,6 +66,10 @@ apps/docs/.source/
 
 # webapp stuff
 apps/webapp/.next/
+/apps/webapp/.next-instant-nav/
+/apps/webapp/test-results/
+/apps/webapp/playwright-report/
+/apps/webapp/.auth/
 apps/webapp/public/uploads/
 
 # claude tmp files

@@ -2,9 +2,7 @@
  * Job Status API Route
  *
  * Returns the current status of a background job.
- * Used by the useJobStatus SWR hook for polling with deduplication.
- *
- * Rule: client-swr-dedup
+ * Used by actor/organization-scoped TanStack Query observers.
  */
 
 import { headers } from "next/headers";

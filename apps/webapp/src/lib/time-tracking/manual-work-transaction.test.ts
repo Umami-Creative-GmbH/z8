@@ -32,7 +32,7 @@ vi.mock("./work-transaction", () => {
 		const chain = {
 			from: () => chain,
 			where: () => chain,
-			// biome-ignore lint/suspicious/noThenProperty: a thenable query stand-in.
+			// oxlint-disable-next-line unicorn/no-thenable -- a thenable query stand-in.
 			then: (resolve: (rows: unknown[]) => unknown) => resolve([]),
 		};
 		return chain;

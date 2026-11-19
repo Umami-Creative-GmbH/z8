@@ -15,11 +15,11 @@ import {
 	IconUserCog,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { toast } from "sonner";
-import useSWR from "swr";
 import {
 	deleteScheduledExportAction,
 	type FilterOptions,
@@ -93,6 +93,7 @@ const ChangeOwnerDialog = dynamic(
 
 interface ScheduledExportsTableProps {
 	organizationId: string;
+	currentUserId: string;
 	initialSchedules: ScheduledExportSummary[];
 	initialFilterOptions: FilterOptions | null;
 	initialPayrollConfigs: PayrollConfigSummary[];
@@ -100,11 +101,14 @@ interface ScheduledExportsTableProps {
 
 export function ScheduledExportsTable({
 	organizationId,
+	currentUserId,
 	initialSchedules,
 	initialFilterOptions,
 	initialPayrollConfigs,
 }: ScheduledExportsTableProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
+	const schedulesKey = ["scheduled-exports", currentUserId, organizationId] as const;
 
 	// Dialog states
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -130,15 +134,15 @@ export function ScheduledExportsTable({
 		unknown
 	> | null>(null);
 
-	// Fetch schedules with SWR for automatic deduplication and caching
+	// Share one actor/org-scoped cache with the application's refresh owner.
 	const {
 		data: schedules,
 		error,
 		isLoading: loading,
-		mutate,
-	} = useSWR(
-		["scheduled-exports", organizationId],
-		async () => {
+		refetch,
+	} = useQuery({
+		queryKey: schedulesKey,
+		queryFn: async () => {
 			const result = await getScheduledExportsAction();
 			if (result.success) {
 				return result.data;
@@ -150,11 +154,57 @@ export function ScheduledExportsTable({
 				]),
 			);
 		},
-		{
-			fallbackData: initialSchedules,
-			revalidateOnFocus: false,
+		initialData: initialSchedules,
+		staleTime: 0,
+		refetchOnWindowFocus: false,
+	});
+	const mutate = () => refetch({ cancelRefetch: false });
+	const changeSchedule = useMutation({
+		mutationFn: async (change: {
+			scheduleId: string;
+			kind: "toggle" | "delete";
+			isActive?: boolean;
+		}) => {
+			const result =
+				change.kind === "delete"
+					? await deleteScheduledExportAction({ scheduleId: change.scheduleId })
+					: await toggleScheduledExportAction({
+							scheduleId: change.scheduleId,
+							isActive: Boolean(change.isActive),
+						});
+			if (!result.success) {
+				throw new Error(
+					actionErrorMessage(t, result, SCHEDULED_EXPORT_REFUSALS, [
+						change.kind === "delete"
+							? "settings.scheduledExports.error.deleteFailed"
+							: "settings.scheduledExports.error.toggleFailed",
+						change.kind === "delete" ? "Delete failed" : "Toggle failed",
+					]),
+				);
+			}
 		},
-	);
+		onMutate: async (change) => {
+			await queryClient.cancelQueries({ queryKey: schedulesKey, exact: true });
+			const previous = queryClient.getQueryData<ScheduledExportSummary[]>(schedulesKey);
+			queryClient.setQueryData<ScheduledExportSummary[]>(schedulesKey, (current) =>
+				change.kind === "delete"
+					? current?.filter((schedule) => schedule.id !== change.scheduleId)
+					: current?.map((schedule) =>
+							schedule.id === change.scheduleId
+								? { ...schedule, isActive: Boolean(change.isActive) }
+								: schedule,
+						),
+			);
+			return { previous };
+		},
+		onError: (cause, _change, context) => {
+			if (context?.previous) queryClient.setQueryData(schedulesKey, context.previous);
+			toast.error(cause.message);
+		},
+		onSettled: () => queryClient.invalidateQueries({ queryKey: schedulesKey, exact: true }),
+		// Retrying a mutation can duplicate a successful server operation after transport loss.
+		retry: false,
+	});
 
 	// Load filter options and payroll configs when dialog opens
 	const loadDialogData = async () => {
@@ -214,41 +264,7 @@ export function ScheduledExportsTable({
 
 	// Toggle schedule active status with optimistic update
 	const handleToggle = async (scheduleId: string, isActive: boolean) => {
-		if (!schedules) return;
-
-		// Optimistic update
-		const optimisticData = schedules.map((s) =>
-			s.id === scheduleId ? { ...s, isActive } : s,
-		);
-
-		try {
-			await mutate(
-				async () => {
-					const result = await toggleScheduledExportAction({ scheduleId, isActive });
-					if (result.success) {
-						return optimisticData;
-					}
-					// Resuming is refused while the owner is no longer an org admin (#988).
-					throw new Error(
-						actionErrorMessage(t, result, SCHEDULED_EXPORT_REFUSALS, [
-							"settings.scheduledExports.error.toggleFailed",
-							"Toggle failed",
-						]),
-					);
-				},
-				{
-					optimisticData,
-					rollbackOnError: true,
-					revalidate: false,
-				},
-			);
-		} catch (toggleError) {
-			toast.error(
-				toggleError instanceof Error
-					? toggleError.message
-					: t("settings.scheduledExports.error.toggleFailed", "Toggle failed"),
-			);
-		}
+		changeSchedule.mutate({ scheduleId, kind: "toggle", isActive });
 	};
 
 	// Delete schedule with optimistic update
@@ -258,25 +274,7 @@ export function ScheduledExportsTable({
 		const scheduleId = deleteSchedule.id;
 		setDeleteSchedule(null);
 
-		// Optimistic update
-		const optimisticData = schedules.filter((s) => s.id !== scheduleId);
-
-		await mutate(
-			async () => {
-				const result = await deleteScheduledExportAction({ scheduleId });
-				if (result.success) {
-					return optimisticData;
-				}
-				throw new Error(
-					t("settings.scheduledExports.error.deleteFailed", "Delete failed"),
-				);
-			},
-			{
-				optimisticData,
-				rollbackOnError: true,
-				revalidate: false,
-			},
-		);
+		changeSchedule.mutate({ scheduleId, kind: "delete" });
 	};
 
 	// Format schedule description
@@ -391,6 +389,7 @@ export function ScheduledExportsTable({
 					open={Boolean(ownerSchedule)}
 					onOpenChange={(open: boolean) => !open && setOwnerSchedule(null)}
 					organizationId={organizationId}
+					currentUserId={currentUserId}
 					schedule={ownerSchedule}
 					onSuccess={() => mutate()}
 				/>

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_VERSION=26
-ARG PNPM_VERSION=12.16.1
+ARG PNPM_VERSION=12.21.0
 ARG TURBO_VERSION=2.11.7
 ARG NEXT_DEPLOYMENT_ID
 ARG BUILD_HASH
@@ -47,15 +47,8 @@ FROM base AS deps
 COPY --from=pruner /app/out/json/ ./
 COPY --from=pruner /app/out/pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --lockfile-only && \
-    pnpm install --frozen-lockfile
-
-FROM base AS prod-deps
-COPY --from=pruner /app/out/json/ ./
-COPY --from=pruner /app/out/pnpm-lock.yaml ./
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --lockfile-only && \
-    pnpm install --frozen-lockfile --prod
+    pnpm install --store-dir /root/.local/share/pnpm/store --lockfile-only && \
+    pnpm install --store-dir /root/.local/share/pnpm/store --frozen-lockfile
 
 FROM base AS workspace
 ENV SKIP_ENV_VALIDATION=1
@@ -63,8 +56,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/webapp/node_modules ./apps/webapp/node_modules
 COPY --from=pruner /app/out/full/ ./
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY .oxfmtrc.json ./
 
 FROM workspace AS webapp-builder
+ENV CI=true
 ARG NEXT_DEPLOYMENT_ID
 ARG BUILD_HASH
 ARG NEXT_PUBLIC_BUILD_HASH
@@ -84,7 +79,16 @@ RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
     fi && \
     pnpm --filter webapp exec next build
 
-FROM base AS webapp
+FROM node:${NODE_VERSION}-alpine AS webapp
+
+RUN apk add --no-cache ca-certificates curl libc6-compat libstdc++ tini
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0 \
+    TZ=UTC \
+    PGOPTIONS="-c timezone=UTC"
+WORKDIR /app
 
 ARG NEXT_DEPLOYMENT_ID
 ARG BUILD_HASH
@@ -95,30 +99,23 @@ ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID} \
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app && \
-    chown -R app:nodejs /app /pnpm
+    chown app:nodejs /app
 
-COPY --from=prod-deps --chown=app:nodejs /app/node_modules ./node_modules
-COPY --from=prod-deps --chown=app:nodejs /app/apps/webapp/node_modules ./apps/webapp/node_modules
-
-COPY --from=webapp-builder --chown=app:nodejs /app/apps/webapp/.next ./apps/webapp/.next
+# The tracing root is the monorepo root, so the emitted server stays under apps/webapp.
+# public and static assets are intentionally outside Next's traced server output.
+COPY --from=webapp-builder --chown=app:nodejs /app/apps/webapp/.next/standalone ./
+COPY --from=webapp-builder --chown=app:nodejs /app/apps/webapp/.next/static ./apps/webapp/.next/static
 COPY --from=workspace --chown=app:nodejs /app/apps/webapp/public ./apps/webapp/public
-COPY --from=workspace --chown=app:nodejs /app/apps/webapp/src ./apps/webapp/src
-COPY --from=workspace --chown=app:nodejs /app/apps/webapp/scripts ./apps/webapp/scripts
-COPY --from=workspace --chown=app:nodejs /app/apps/webapp/drizzle ./apps/webapp/drizzle
-COPY --from=workspace --chown=app:nodejs /app/apps/webapp/drizzle.config.ts ./apps/webapp/
-COPY --from=workspace --chown=app:nodejs /app/apps/webapp/next.config.ts ./apps/webapp/
-COPY --from=workspace --chown=app:nodejs /app/apps/webapp/package.json ./apps/webapp/
-COPY --from=workspace --chown=app:nodejs /app/apps/webapp/tsconfig.json ./apps/webapp/
-
-COPY --from=workspace --chown=app:nodejs /app/package.json ./
-COPY --from=workspace --chown=app:nodejs /app/pnpm-workspace.yaml ./
+COPY docker/scripts/verify-standalone.mjs /tmp/verify-standalone.mjs
+# Resolve from the artifact itself; fail if tracing accidentally relies on builder files.
+RUN node /tmp/verify-standalone.mjs /app --native && rm /tmp/verify-standalone.mjs
 
 WORKDIR /app/apps/webapp
 
 USER app
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node", "node_modules/next/dist/bin/next", "start"]
+CMD ["node", "server.js"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1

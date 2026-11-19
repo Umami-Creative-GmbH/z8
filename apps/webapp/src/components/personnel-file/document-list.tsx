@@ -34,7 +34,7 @@ function DocumentThumbnail({ document }: { document: EmployeeDocumentView }) {
 		);
 	}
 	return (
-		// biome-ignore lint/performance/noImgElement: a private, access-checked preview, not an optimizable asset.
+		// oxlint-disable-next-line nextjs/no-img-element -- a private, access-checked preview, not an optimizable asset.
 		<img
 			src={personnelDocumentUrl(document.id, { thumb: true })}
 			alt=""

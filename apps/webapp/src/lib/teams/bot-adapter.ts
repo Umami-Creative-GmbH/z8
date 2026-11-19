@@ -143,7 +143,7 @@ export async function sendProactiveMessage(
  */
 export async function sendAdaptiveCard(
 	conversationReference: ConversationReference,
-	// biome-ignore lint/suspicious/noExplicitAny: Adaptive Cards are flexible JSON
+	// oxlint-disable-next-line typescript/no-explicit-any -- Adaptive Cards are flexible JSON
 	card: any,
 	text?: string,
 ): Promise<string | undefined> {

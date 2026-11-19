@@ -17,7 +17,7 @@ export const metadata = {
 };
 
 async function ScheduledExportsContent() {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
+	const { organizationId, authContext } = await requireOrgAdminSettingsAccess();
 
 	// Fetch initial data in parallel after the org access guard.
 	// eslint-disable-next-line react-doctor/server-sequential-independent-await
@@ -40,6 +40,7 @@ async function ScheduledExportsContent() {
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<ScheduledExportsTable
 				organizationId={organizationId}
+				currentUserId={authContext.user.id}
 				initialSchedules={schedules}
 				initialFilterOptions={filterOptions}
 				initialPayrollConfigs={payrollConfigs}

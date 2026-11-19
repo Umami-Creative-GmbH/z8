@@ -121,7 +121,7 @@ test("Dockerfiles pin the workspace pnpm version", async () => {
 });
 
 test("non-root runtime Dockerfiles can run without root-owned pnpm or workspace paths", async () => {
-	const dockerfiles = ["Dockerfile.docs", "Dockerfile.webapp"];
+	const dockerfiles = ["Dockerfile.docs"];
 
 	for (const dockerfile of dockerfiles) {
 		const contents = await fs.readFile(new URL(`../${dockerfile}`, import.meta.url), "utf8");
@@ -133,6 +133,29 @@ test("non-root runtime Dockerfiles can run without root-owned pnpm or workspace 
 			`${dockerfile} must make the workspace root and pnpm home writable for its runtime user`,
 		);
 	}
+});
+
+test("standalone webapp image contains only traced server dependencies plus explicit assets", async () => {
+	const contents = await fs.readFile(new URL("../Dockerfile.webapp", import.meta.url), "utf8");
+	const runtime = contents.split(" AS webapp\n")[1] ?? contents.split(" AS webapp\r\n")[1];
+	assert.ok(runtime, "webapp runtime stage exists");
+	assert.match(runtime, /\.next\/standalone \.\//);
+	assert.match(runtime, /\.next\/static \.\/apps\/webapp\/\.next\/static/);
+	assert.match(runtime, /\/public \.\/apps\/webapp\/public/);
+	assert.match(runtime, /chown app:nodejs \/app/);
+	assert.match(runtime, /verify-standalone\.mjs \/app --native/);
+	assert.match(runtime, /CMD \["node", "server.js"\]/);
+	assert.doesNotMatch(runtime, /--from=prod-deps|apps\/webapp\/src|apps\/webapp\/drizzle|next\.config\.ts|pnpm-workspace\.yaml/);
+	assert.doesNotMatch(contents, /FROM base AS prod-deps/);
+	assert.match(contents, /id=pnpm-store,target=\/root\/\.local\/share\/pnpm\/store/);
+	assert.match(contents, /pnpm install --store-dir \/root\/\.local\/share\/pnpm\/store --frozen-lockfile/);
+});
+
+test("marketing uses the supported Node runtime without package resolution at startup", async () => {
+	const contents = await fs.readFile(new URL("../Dockerfile.marketing", import.meta.url), "utf8");
+	assert.match(contents, /FROM node:\$\{NODE_VERSION\}-alpine AS marketing-base/);
+	assert.doesNotMatch(contents, /oven\/bun|CMD \["bun"/);
+	assert.match(contents, /CMD \["node", "node_modules\/next\/dist\/bin\/next", "start", "-p", "3000"\]/);
 });
 
 test("Next.js runtime Dockerfiles start without pnpm dependency status checks", async () => {
@@ -227,16 +250,25 @@ test("marketing and webapp use TypeScript 7 supported by their Next.js builds", 
 	}
 });
 
-test("app Biome configurations extend the repository project", async () => {
-	for (const app of ["marketing", "webapp"]) {
-		const source = await fs.readFile(
-			new URL(`../../apps/${app}/biome.jsonc`, import.meta.url),
-			"utf8",
-		);
-		// JSONC allows whole-line comments; drop them before parsing.
-		const config = JSON.parse(source.replace(/^\s*\/\/.*$/gm, ""));
+test("webapp build includes the formatter configuration needed by catalog generation", async () => {
+	const dockerfile = await fs.readFile(new URL("../Dockerfile.webapp", import.meta.url), "utf8");
+	const workspace = dockerfile.split("FROM base AS workspace")[1]?.split("FROM workspace AS webapp-builder")[0];
+	assert.ok(workspace, "webapp build must inherit the workspace stage");
+	assert.match(workspace, /^COPY \.oxfmtrc\.json \.\/$/m);
+});
 
-		assert.equal(config.root, false, `${app} Biome configuration must not define a nested root`);
+test("app lint and format commands use the shared repository configurations", async () => {
+	for (const app of ["marketing", "webapp"]) {
+		const manifest = JSON.parse(await fs.readFile(
+			new URL(`../../apps/${app}/package.json`, import.meta.url), "utf8",
+		));
+		for (const [script, configName] of [["lint", ".oxlintrc.json"], ["format:check", ".oxfmtrc.json"]]) {
+			const configArgument = manifest.scripts[script].match(/-c\s+(\S+)/)?.[1];
+			assert.ok(configArgument, `${app} ${script} must select the shared configuration`);
+			const configPath = new URL(`../../apps/${app}/${configArgument}`, import.meta.url);
+			assert.equal(configPath.href, new URL(`../../${configName}`, import.meta.url).href);
+			JSON.parse(await fs.readFile(configPath, "utf8"));
+		}
 	}
 });
 

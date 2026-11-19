@@ -183,7 +183,7 @@ function SharedReportTable({ table, unknownLabel }: { table: ReportTable; unknow
 					<TableBody>
 						{table.rows.map((row, rowIndex) => (
 							// Rows have no ids; their order is the document's.
-							// biome-ignore lint/suspicious/noArrayIndexKey: static document rows
+							// oxlint-disable-next-line react/no-array-index-key -- static document rows
 							<TableRow key={rowIndex}>{row.map(cell)}</TableRow>
 						))}
 					</TableBody>

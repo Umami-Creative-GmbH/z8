@@ -81,7 +81,10 @@ export function TeamDirectoryRecords({
 		);
 	}
 	return (
-		<div className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 lg:p-6">
+		<div
+			data-testid="team-content"
+			className="@container/main flex min-w-0 flex-1 flex-col gap-6 p-4 lg:p-6"
+		>
 			<PageHeader
 				title={t("team.title", "Your Team")}
 				description={t(

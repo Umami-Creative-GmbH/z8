@@ -12,7 +12,7 @@ import { useRouter } from "@/navigation";
 export function TeamDirectoryLoading() {
 	const { t } = useTranslate();
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 lg:p-6">
+		<div data-testid="team-shell" className="@container/main flex flex-1 flex-col gap-6 p-4 lg:p-6">
 			<PageHeader title={t("team.title", "Your Team")} />
 			<LoadingRegion
 				label={{ labelKey: "team.directory.loading", labelDefault: "Loading team members" }}

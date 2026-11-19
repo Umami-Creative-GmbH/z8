@@ -89,7 +89,7 @@ function CalendarWorkEvent({
 			) : null}
 			<div className="min-w-0 flex-1">
 				{html ? (
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: Internal Schedule-X adapter markup escapes all event strings before interpolation.
+					// oxlint-disable-next-line react/no-danger -- Internal Schedule-X adapter markup escapes all event strings before interpolation.
 					<div dangerouslySetInnerHTML={{ __html: html }} />
 				) : (
 					<span className="block truncate">{calendarEvent.title}</span>

@@ -19,14 +19,13 @@ export function useKioskIdleReturn(input: {
 
 	const returnHome = useEffectEvent(() => input.onIdle());
 	const busy = isKioskFlowBusy(flow);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: `activity` restarts the idle timer
 	useEffect(() => {
 		if (flow.step === "home" || busy) return;
 		const confirmation = flow.step === "done" || flow.step === "fob-registered";
 		const timeout = confirmation ? KIOSK_CONFIRMATION_MS : KIOSK_IDLE_MS;
 		const timer = window.setTimeout(() => returnHome(), timeout);
 		return () => window.clearTimeout(timer);
-	}, [flow, busy, activity]);
+	}, [flow, busy, activity]); // oxlint-disable-line react-hooks/exhaustive-deps -- `activity` restarts the idle timer
 
 	const homeNotice = flow.step === "home" ? (flow.notice ?? null) : null;
 	useEffect(() => {

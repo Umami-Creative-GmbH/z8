@@ -369,7 +369,7 @@ export async function exportPayrollSummaryToPDF(
 	);
 	const styles = StyleSheet.create(styleDefinitions);
 
-	// biome-ignore lint/correctness/noComponentHookFactories: one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
+	// one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
 	const PayrollSummaryPDF = () => (
 		<Document>
 			<Page size="A4" style={styles.page}>
@@ -509,7 +509,7 @@ export async function exportPayrollSummaryToPDF(
 					</View>
 					{absenceReportRows.map((row, rowIndex) => (
 						<View
-							// biome-ignore lint/suspicious/noArrayIndexKey: Sorted PDF rows are immutable and duplicate details must remain distinct.
+							// oxlint-disable-next-line react/no-array-index-key -- Sorted PDF rows are immutable and duplicate details must remain distinct.
 							key={`${row.employeeName}-${row.date}-${row.categoryName}-${row.periodLabel}-${rowIndex}`}
 							style={styles.absenceDetailRow}
 						>

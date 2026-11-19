@@ -290,7 +290,7 @@ export function ReceiptAttachments({
 									)}
 								>
 									{isImage ? (
-										// biome-ignore lint/performance/noImgElement: private, authenticated receipt preview
+										// oxlint-disable-next-line nextjs/no-img-element -- private, authenticated receipt preview
 										<img
 											src={receiptHref(reportId, receipt.id, "thumb")}
 											alt=""

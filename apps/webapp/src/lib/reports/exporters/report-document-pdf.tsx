@@ -34,12 +34,7 @@ const styleDefinitions = {
 		borderBottomColor: "#CCCCCC",
 		padding: 4,
 	},
-	totalsRow: {
-		flexDirection: "row",
-		backgroundColor: "#E0E0E0",
-		fontWeight: "bold",
-		padding: 4,
-	},
+	totalsRow: { flexDirection: "row", backgroundColor: "#E0E0E0", fontWeight: "bold", padding: 4 },
 	cell: { flex: 1, paddingRight: 4 },
 	firstCell: { flex: 2, paddingRight: 4 },
 	note: { marginTop: 4, color: "#444444" },
@@ -101,7 +96,7 @@ function ReportPDF({
 								))}
 							</View>
 							{table.rows.map((row, rowIndex) => (
-								// biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
+								// oxlint-disable-next-line react/no-array-index-key -- rows are positional
 								<View key={rowIndex} style={styles.row} wrap={false}>
 									{cells(row)}
 								</View>

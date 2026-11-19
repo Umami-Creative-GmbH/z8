@@ -151,7 +151,10 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 	};
 
 	return (
-		<div className="mx-auto flex w-full min-w-0 max-w-(--breakpoint-2xl) flex-1 flex-col gap-6 p-4 lg:p-6">
+		<div
+			data-testid="employees-content"
+			className="mx-auto flex w-full min-w-0 max-w-(--breakpoint-2xl) flex-1 flex-col gap-6 p-4 lg:p-6"
+		>
 			<PageHeader
 				title={t("settings.employees.title", "Employees")}
 				description={t("settings.employees.description", "Manage employees, members, and invites")}

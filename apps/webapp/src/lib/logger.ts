@@ -7,7 +7,7 @@ const hasRemoteOtel = Boolean(env.OTEL_EXPORTER_OTLP_ENDPOINT);
 
 const transport = isDev
 	? {
-			target: "pino-pretty",
+			target: require.resolve("pino-pretty"),
 			options: {
 				colorize: true,
 				translateTime: "HH:MM:ss Z",
@@ -16,7 +16,8 @@ const transport = isDev
 		}
 	: hasRemoteOtel
 		? {
-				target: "pino-opentelemetry-transport",
+				// Resolve statically so standalone tracing follows this worker's dependencies.
+				target: require.resolve("pino-opentelemetry-transport"),
 			}
 		: undefined;
 

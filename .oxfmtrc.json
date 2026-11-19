@@ -1,0 +1,26 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"printWidth": 100,
+	"semi": true,
+	"singleQuote": false,
+	"sortPackageJson": false,
+	"ignorePatterns": [
+		"**/node_modules/**",
+		"**/.next/**",
+		"**/.source/**",
+		"**/dist/**",
+		"**/build/**",
+		"**/.turbo/**",
+		"**/coverage/**",
+		"**/target/**",
+		"**/*.min.js",
+		"**/*.md",
+		"**/*.mdx",
+		"**/pnpm-lock.yaml",
+		"apps/webapp/drizzle/**",
+		"apps/webapp/src/db/auth-schema.ts",
+		"apps/webapp/src/data/licenses.json",
+		"apps/webapp/src/tolgee/catalog-source-metadata.generated.ts"
+	]
+}

@@ -54,10 +54,9 @@ export function useKioskLanguage(organizationLanguage: string) {
 		if (!readChoice()) show(organizationLanguage);
 	});
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: follow again when the organization's language changes
 	useEffect(() => {
 		followOrganization();
-	}, [organizationLanguage]);
+	}, [organizationLanguage]); // oxlint-disable-line react-hooks/exhaustive-deps -- follow again when the organization's language changes
 
 	return {
 		locale,

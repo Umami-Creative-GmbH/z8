@@ -103,10 +103,9 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 	}, [search]);
 
 	// Reset page when filters change
-	// biome-ignore lint/correctness/useExhaustiveDependencies: we intentionally want to trigger on filter changes
 	useEffect(() => {
 		startTransition(() => setPage(0));
-	}, [roleFilter, statusFilter, teamFilter]);
+	}, [roleFilter, statusFilter, teamFilter]); // oxlint-disable-line react-hooks/exhaustive-deps -- we intentionally want to trigger on filter changes
 
 	// Get current employee for org context
 	const currentEmployeeQuery = useQuery({

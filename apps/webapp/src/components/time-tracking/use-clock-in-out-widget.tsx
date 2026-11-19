@@ -145,6 +145,7 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 
 	const compliance = useComplianceStatus({
 		currentSessionMinutes: Math.floor(elapsedSeconds / 60),
+		isClockedIn: timeClock.isClockedIn,
 		enabled: true,
 		enablePolling: timeClock.isClockedIn,
 		pollingInterval: 60000,

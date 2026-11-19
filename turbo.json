@@ -1,30 +1,49 @@
 {
-  "$schema": "https://v2-9-15.turborepo.dev/schema.json",
-  "agentGuidance": false,
-  "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "env": ["SCIM_CREDENTIAL_HASH_SECRET"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
-    },
-    "dev": {
-      "cache": false,
-      "passThroughEnv": ["*"],
-      "persistent": true
-    },
-    "test": {
-      "cache": false,
-      "env": ["BETTER_AUTH_SECRET", "BETTER_AUTH_SECRETS", "SCIM_CREDENTIAL_HASH_SECRET"]
-    },
-    "test:watch": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
-    "check-types": {
-      "dependsOn": ["^check-types"]
-    }
-  }
+	"$schema": "https://v2-9-15.turborepo.dev/schema.json",
+	"agentGuidance": false,
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build"],
+			"env": [
+				"SCIM_CREDENTIAL_HASH_SECRET",
+				"NODE_ENV",
+				"SKIP_ENV_VALIDATION",
+				"NEXT_DEPLOYMENT_ID",
+				"BUILD_HASH",
+				"VERCEL_GIT_COMMIT_SHA",
+				"GITHUB_SHA",
+				"CI_COMMIT_SHA",
+				"NEXT_SERVER_ACTIONS_ENCRYPTION_KEY",
+				"POSTHOG_PROJECT_ID",
+				"Z8_INSTANT_NAV_TEST"
+			],
+			"passThroughEnv": ["POSTHOG_API_KEY"],
+			"outputs": [
+				".next/**",
+				"!.next/cache/**",
+				".next-instant-nav/**",
+				"!.next-instant-nav/cache/**",
+				"dist/**"
+			]
+		},
+		"dev": {
+			"cache": false,
+			"passThroughEnv": ["*"],
+			"persistent": true
+		},
+		"test": {
+			"cache": false,
+			"env": ["BETTER_AUTH_SECRET", "BETTER_AUTH_SECRETS", "SCIM_CREDENTIAL_HASH_SECRET"]
+		},
+		"test:watch": {
+			"cache": false,
+			"persistent": true
+		},
+		"lint": {
+			"dependsOn": ["^lint"]
+		},
+		"check-types": {
+			"dependsOn": ["^check-types"]
+		}
+	}
 }

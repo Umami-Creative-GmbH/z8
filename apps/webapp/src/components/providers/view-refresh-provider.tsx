@@ -14,7 +14,6 @@ import {
 	useTransition,
 } from "react";
 import { toast } from "sonner";
-import { useSWRConfig } from "swr";
 
 type RefreshHandler = () => unknown;
 type RegisterRefresh = (handler: RefreshHandler) => () => void;
@@ -29,7 +28,6 @@ const ViewRefreshContext = createContext<{
 export function ViewRefreshProvider({ children }: { children: ReactNode }) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { mutate } = useSWRConfig();
 	const { t } = useTranslate();
 	const [handlers] = useState(() => new Set<RefreshHandler>());
 	const [isRefreshing, startTransition] = useTransition();
@@ -92,7 +90,6 @@ export function ViewRefreshProvider({ children }: { children: ReactNode }) {
 						if (clientQueries.some((query) => query.state.status === "error"))
 							throw new Error("Client data could not be refreshed");
 					}),
-				mutate(() => true),
 				...Array.from(handlers, (handler) => Promise.resolve().then(handler)),
 			]);
 			if (
@@ -118,7 +115,7 @@ export function ViewRefreshProvider({ children }: { children: ReactNode }) {
 	);
 }
 
-/** Participate when a view loads data outside TanStack Query, SWR, or server props. */
+/** Participate when a view loads data outside TanStack Query or server props. */
 export function useViewRefresh(handler: RefreshHandler) {
 	const register = use(RefreshRegistrationContext);
 	useEffect(() => register?.(handler), [register, handler]);

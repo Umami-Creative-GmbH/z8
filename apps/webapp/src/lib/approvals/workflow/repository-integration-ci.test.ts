@@ -72,7 +72,7 @@ describe("approval workflow repository integration CI contract", () => {
 		expect(packageJson.scripts.test).toContain("vitest run --project unit");
 
 		expect(workflow).toContain(
-			// biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression
+			// oxlint-disable-next-line eslint/no-template-curly-in-string -- GitHub Actions expression
 			"pnpm --filter webapp test --shard=${{ matrix.shard }}/4",
 		);
 	});

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { workPolicyAssignment } from "@/db/schema";
 import type { StubCaller } from "@/test/organization-action";
 
-// biome-ignore lint/suspicious/noExplicitAny: loose row stand-ins for a mocked database
+// oxlint-disable-next-line typescript/no-explicit-any -- loose row stand-ins for a mocked database
 type Row = any;
 
 const state = vi.hoisted(() => ({

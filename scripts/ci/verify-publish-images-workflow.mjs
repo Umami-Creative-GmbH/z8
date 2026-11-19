@@ -106,14 +106,7 @@ function expectPushPathFilters(expectedPaths) {
 
 	includesAll(
 		pushBlock,
-		[
-			"  push:",
-			"    branches:",
-			"      - main",
-			"    tags:",
-			'      - "v*.*.*"',
-			"    paths:",
-		],
+		["  push:", "    branches:", "      - main", "    tags:", '      - "v*.*.*"', "    paths:"],
 		"push trigger path filters",
 	);
 
@@ -205,6 +198,7 @@ expectPushPathFilters([
 	"docker/Dockerfile.migration",
 	"docker/Dockerfile.migration.dockerignore",
 	"docker/scripts/**",
+	"scripts/build.mjs",
 	"docker/targets/**",
 	"packages/**",
 	"package.json",
@@ -214,6 +208,34 @@ expectPushPathFilters([
 ]);
 
 if (publishTargetsJob) {
+	includesAll(
+		publishTargetsJob,
+		[
+			"name: Restore webapp build mounts",
+			"name: Import webapp build mounts",
+			"name: Export webapp build mounts",
+			"name: Save bounded webapp build mounts",
+			"matrix.repository == 'z8-webapp' && (inputs.persist_build_cache || vars.NEXT_BUILD_CACHE_ENABLED == 'true')",
+			"webapp-mounts-v1-${{ matrix.arch }}-",
+			"if: steps.export_mounts.outputs.cacheable == 'true'",
+		],
+		"bounded opt-in build mounts",
+	);
+	const mountRestore = getStepBlock(publishTargetsJob, "Restore webapp build mounts");
+	expect(
+		mountRestore?.includes("actions/cache/restore@"),
+		"build mounts require explicit host cache restoration",
+	);
+	expect(
+		mountRestore?.includes("hashFiles('pnpm-lock.yaml'"),
+		"build mount cache must distinguish dependency inputs",
+	);
+	expect(
+		/persist_build_cache:\s+description:[^\r\n]+\r?\n\s+type: boolean\s+default: false/.test(
+			workflow,
+		),
+		"build mount persistence must remain opt-in",
+	);
 	const verifyStep = getStepBlock(publishTargetsJob, "Verify workflow contract");
 	expect(verifyStep, "publish-targets missing Verify workflow contract step");
 
@@ -371,7 +393,10 @@ expect(
 );
 expect(!workflow.includes("  build-shared:"), "Removed build-shared job still present");
 expect(!workflow.includes("file: ./Dockerfile"), "Retired root Dockerfile reference still present");
-expect(!workflow.includes("SHARED_RUNTIME_REPOSITORY"), "Shared runtime repository env still present");
+expect(
+	!workflow.includes("SHARED_RUNTIME_REPOSITORY"),
+	"Shared runtime repository env still present",
+);
 expect(
 	!workflow.includes("name: digests-${{ matrix.repository }}-${{ matrix.arch }}"),
 	"Legacy digest artifact name still present",

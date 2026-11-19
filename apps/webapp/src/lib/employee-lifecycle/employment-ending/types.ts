@@ -92,7 +92,7 @@ export type EmploymentEndingParticipant<TPlan, TApplied, TKey extends string = s
 	): ReactivationChecklistItem[];
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: a registry holds participants of different plan types.
+// oxlint-disable-next-line typescript/no-explicit-any -- a registry holds participants of different plan types.
 export type AnyEmploymentEndingParticipant = EmploymentEndingParticipant<any, any>;
 
 type PlanOf<P> = P extends { plan(...args: never[]): Promise<infer TPlan> } ? TPlan : never;

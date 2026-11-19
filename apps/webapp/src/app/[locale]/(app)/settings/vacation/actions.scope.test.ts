@@ -162,7 +162,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 
 					return {
 						for: mockState.selectFor,
-						// biome-ignore lint/suspicious/noThenProperty: Drizzle select builders are intentionally awaitable and also expose limit/for.
+						// oxlint-disable-next-line unicorn/no-thenable -- Drizzle select builders are intentionally awaitable and also expose limit/for.
 						then: (resolve: (value: unknown) => unknown) =>
 							Promise.resolve(mockState.selectQueue.shift() ?? []).then(resolve),
 						limit: vi.fn(async () =>

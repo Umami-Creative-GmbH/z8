@@ -822,7 +822,7 @@ function ProfileGenderField({
 				{options.map((option) => {
 					const Icon = option.icon;
 					return (
-						// biome-ignore lint/a11y/useSemanticElements: Preserve the existing styled radio-button interaction.
+						// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Preserve the existing styled radio-button interaction.
 						<button
 							key={option.value}
 							type="button"

@@ -280,7 +280,7 @@ function RepairProposalForm({
 						</legend>
 						{changesField.state.value.map((change, index) => (
 							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: rows have no identity until submitted
+								// oxlint-disable-next-line react/no-array-index-key -- rows have no identity until submitted
 								key={index}
 								className="grid gap-2 sm:grid-cols-[10rem_12rem_1fr_auto] sm:items-end"
 							>
@@ -593,7 +593,7 @@ function ContinuationProposalForm({
 	);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: shared by two differently shaped TanStack forms
+// oxlint-disable-next-line typescript/no-explicit-any -- shared by two differently shaped TanStack forms
 type AnyForm = any;
 
 function RequiredText({

@@ -40,10 +40,7 @@ import {
 	SummaryLoading,
 	TimelineLoading,
 } from "./region-fallbacks";
-import {
-	type EmployeeRenderContext,
-	getTimeTrackingRenderContext,
-} from "./render-context";
+import { type EmployeeRenderContext, getTimeTrackingRenderContext } from "./render-context";
 import { serializeWorkdayTimelineResult } from "./timeline-serialization";
 import { getWorkdayTimelineData } from "./workday-timeline-data";
 import { getSelectedWorkdayDate } from "./workday-timeline-date";
@@ -60,9 +57,7 @@ export async function ClockRegion({
 			employeeId: context.employee.id,
 			organizationId: context.employee.organizationId,
 		});
-		employeeName =
-			context.employeeName ||
-			(await getTranslate())("common.employee", "Employee");
+		employeeName = context.employeeName || (await getTranslate())("common.employee", "Employee");
 	} catch (error) {
 		unstable_rethrow(error);
 		const t = await getTranslate();
@@ -94,11 +89,7 @@ export async function ClockRegion({
 	);
 }
 
-async function ClockDayTotalRegion({
-	context,
-}: {
-	context: EmployeeRenderContext;
-}) {
+async function ClockDayTotalRegion({ context }: { context: EmployeeRenderContext }) {
 	let data: Awaited<ReturnType<typeof readSummaryRegion>>;
 	try {
 		data = await readSummaryRegion(context);
@@ -160,9 +151,7 @@ export async function TimelineRegion({
 		const t = await getTranslate();
 		return (
 			<div id={TIMELINE_REGION_ID} className="px-4 lg:px-6">
-				<RegionLoadError
-					label={t("timeTracking.timeline.title", "Workday timeline")}
-				/>
+				<RegionLoadError label={t("timeTracking.timeline.title", "Workday timeline")} />
 			</div>
 		);
 	}
@@ -190,9 +179,7 @@ export async function SummaryRegion({
 		const t = await getTranslate();
 		return (
 			<div className="px-4 lg:px-6">
-				<RegionLoadError
-					label={t("timeTracking.summary.thisWeek", "This Week")}
-				/>
+				<RegionLoadError label={t("timeTracking.summary.thisWeek", "This Week")} />
 			</div>
 		);
 	}
@@ -212,12 +199,7 @@ export async function PeriodsRegion({
 		const t = await getTranslate();
 		return (
 			<div className="px-4 lg:px-6">
-				<RegionLoadError
-					label={t(
-						"timeTracking.periodSubmissions.title",
-						"Period submissions",
-					)}
-				/>
+				<RegionLoadError label={t("timeTracking.periodSubmissions.title", "Period submissions")} />
 			</div>
 		);
 	}
@@ -253,9 +235,7 @@ export async function HistoryRegion({
 		const t = await getTranslate();
 		return (
 			<div className="px-4 lg:px-6">
-				<RegionLoadError
-					label={t("timeTracking.table.title", "Time Entries")}
-				/>
+				<RegionLoadError label={t("timeTracking.table.title", "Time Entries")} />
 			</div>
 		);
 	}
@@ -314,11 +294,7 @@ export async function WorkdayContextRegion({
 	);
 }
 
-export async function WorkplacePolicyRegion({
-	context,
-}: {
-	context: EmployeeRenderContext;
-}) {
+export async function WorkplacePolicyRegion({ context }: { context: EmployeeRenderContext }) {
 	let result: Awaited<ReturnType<typeof getPresenceStatus>>;
 	try {
 		result = await getPresenceStatus(context.employee.id);
@@ -326,9 +302,7 @@ export async function WorkplacePolicyRegion({
 		unstable_rethrow(error);
 		return null;
 	}
-	return result.success ? (
-		<WorkplacePolicyContext status={result.data} />
-	) : null;
+	return result.success ? <WorkplacePolicyContext status={result.data} /> : null;
 }
 
 export async function TimeTrackingPageContent({
@@ -339,8 +313,7 @@ export async function TimeTrackingPageContent({
 	const context = await getTimeTrackingRenderContext();
 	if (!context) {
 		const locale = await getLocale();
-		const pathname =
-			(await headers()).get("x-pathname") || `/${locale}/time-tracking`;
+		const pathname = (await headers()).get("x-pathname") || `/${locale}/time-tracking`;
 		redirect(
 			`/api/auth/session-expired?locale=${locale}&callbackUrl=${encodeURIComponent(pathname)}`,
 		);
@@ -354,26 +327,21 @@ export async function TimeTrackingPageContent({
 	}
 	const t = await getTranslate();
 	return (
-		<div className="@container/main mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 py-6 md:py-8">
+		<div
+			data-testid="time-tracking-content"
+			className="@container/main mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 py-6 md:py-8"
+		>
 			<div className="flex flex-wrap items-end justify-between gap-4 px-4 lg:px-6">
 				<div className="space-y-2">
-					<p className="text-sm text-muted-foreground">
-						{context.employeeName}
-					</p>
+					<p className="text-sm text-muted-foreground">{context.employeeName}</p>
 					<h1 className="text-2xl font-semibold tracking-tight">
 						{t("timeTracking.title", "Time Tracking")}
 					</h1>
 				</div>
-				<TimeTrackingPageActions
-					employeeId={context.employee.id}
-					timezone={context.timezone}
-				/>
+				<TimeTrackingPageActions employeeId={context.employee.id} timezone={context.timezone} />
 			</div>
 			<Suspense fallback={null}>
-				<PeriodBlockerFocusRegion
-					context={context}
-					searchParams={searchParams}
-				/>
+				<PeriodBlockerFocusRegion context={context} searchParams={searchParams} />
 			</Suspense>
 			<Suspense fallback={<ClockLoading />}>
 				<ClockRegion context={context} />
@@ -399,10 +367,7 @@ export async function TimeTrackingPageContent({
 				</div>
 				<aside className="min-w-0 space-y-6 px-4 lg:pr-6 @5xl/main:pl-0">
 					<Suspense fallback={null}>
-						<WorkdayContextRegion
-							context={context}
-							searchParams={searchParams}
-						/>
+						<WorkdayContextRegion context={context} searchParams={searchParams} />
 					</Suspense>
 					<Suspense fallback={null}>
 						<WorkplacePolicyRegion context={context} />

@@ -89,7 +89,7 @@ export function KioskPinPad({
 			>
 				{Array.from({ length: Math.max(PIN_MIN_LENGTH, pin.length) }, (_, index) => (
 					<span
-						// biome-ignore lint/suspicious/noArrayIndexKey: dots are positions, not items
+						// oxlint-disable-next-line react/no-array-index-key -- dots are positions, not items
 						key={index}
 						aria-hidden="true"
 						className={cn(

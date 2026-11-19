@@ -38,7 +38,7 @@ const harness = vi.hoisted(() => ({
 	requestHeaders: new Headers(),
 	failOwnerGuard: false,
 	provisioned: [] as string[],
-	// biome-ignore lint/suspicious/noExplicitAny: assigned the Better Auth instance below.
+	// oxlint-disable-next-line typescript/no-explicit-any -- assigned the Better Auth instance below.
 	auth: null as any,
 }));
 

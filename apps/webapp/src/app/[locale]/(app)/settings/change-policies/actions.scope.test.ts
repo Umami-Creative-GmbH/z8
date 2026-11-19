@@ -84,7 +84,7 @@ function chain(result: unknown) {
 	const builder: Record<string, unknown> = {};
 	for (const method of ["from", "where", "innerJoin"]) builder[method] = () => builder;
 	builder.limit = async () => result;
-	// biome-ignore lint/suspicious/noThenProperty: a thenable query builder stand-in
+	// oxlint-disable-next-line unicorn/no-thenable -- a thenable query builder stand-in
 	builder.then = (resolve: (value: unknown) => unknown) => resolve(result);
 	return builder;
 }

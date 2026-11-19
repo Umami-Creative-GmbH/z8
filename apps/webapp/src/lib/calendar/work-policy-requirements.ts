@@ -798,7 +798,8 @@ export function loadDailyWorkRequirementsForEmployee(
 			params.timezone,
 		);
 
-		// biome-ignore format: existing regression contract matches the call sequence.
+		// Existing regression contract matches the call sequence.
+		// oxfmt-ignore
 		const absenceAdjustedRequirements = applyApprovedAbsencesToDailyRequirements(
 				employedRequirements,
 				approvedAbsences,
@@ -815,7 +816,8 @@ export function loadDailyWorkRequirementsForEmployee(
 				}),
 			));
 
-		// biome-ignore format: source-level regression test asserts this call order.
+		// Source-level regression test asserts this call order.
+		// oxfmt-ignore
 		return applyAssignedHolidayAdjustmentsToRequirements(absenceAdjustedRequirements, assignedHolidays);
 	});
 }
