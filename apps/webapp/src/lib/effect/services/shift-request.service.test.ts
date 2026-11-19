@@ -355,6 +355,21 @@ function createHarness(
 
 			const tx = {
 				execute,
+				// Submission reads the roster's shift request deciders (ADR-0004).
+				select: vi.fn(() => ({
+					from: vi.fn(() => ({
+						where: vi.fn(async () =>
+							staged.employees
+								.filter(
+									(row) =>
+										row.isActive &&
+										row.organizationId === "org-1" &&
+										(row.role === "manager" || row.role === "admin"),
+								)
+								.map(({ id, role }) => ({ id, role })),
+						),
+					})),
+				})),
 				query: {
 					employee: {
 						findFirst: vi.fn(async (config: QueryConfig) => {

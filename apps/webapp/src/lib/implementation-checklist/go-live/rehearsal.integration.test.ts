@@ -257,7 +257,7 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 		});
 	});
 
-	it("says a lone shift decider's own requests wait for their approval", async () => {
+	it("says a lone shift decider's own requests are approved at once (#1597)", async () => {
 		await sql(`update organization set shifts_enabled = true where id = $1`, [organizationId]);
 		const lead = await seed({ role: "manager" });
 		await sql(`update employee set role = 'employee' where id = $1`, [owner.employeeId]);
@@ -266,7 +266,7 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 
 		expect(shifts).toMatchObject({
 			status: "skipped",
-			reason: { key: "settings.implementationChecklist.rehearsal.approvals.skip.ownDecider" },
+			reason: { key: "settings.implementationChecklist.rehearsal.approvals.skip.ownApprover" },
 		});
 	});
 

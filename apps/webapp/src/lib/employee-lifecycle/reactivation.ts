@@ -25,7 +25,9 @@ import type { LifecycleClient } from "./types";
  * reactivated (its pending handovers stop, its open reviews close and its
  * undelivered tasks become obsolete, audited into `audit`) and the admin
  * re-grants on purpose from the checklist. The history event `employee_reactivated` is recorded
- * when the employee has an employment period.
+ * when the employee has an employment period, and the `employee.reactivated`
+ * entry is recorded into `audit` in this transaction (#1640); the caller
+ * forwards `audit` after its commit.
  */
 
 export const REACTIVATE_EMPLOYEE_COMMAND = "reactivate_employee";
@@ -34,9 +36,11 @@ export type ReactivationCommand = {
 	organizationId: string;
 	actorUserId: string;
 	employeeId: string;
-	/** Identifies this reactivation in the ledger and the history event. */
+	/** Identifies this reactivation in the ledger, the history event and the audit entry. */
 	requestId: string;
 	at: Instant;
+	/** The actor's email, kept in the `employee.reactivated` entry's metadata. */
+	actorEmail?: string;
 };
 
 export async function executeReactivation(
@@ -53,7 +57,17 @@ export async function executeReactivation(
 		.returning({ id: employee.id });
 	if (!updated) return { kind: "not_found" };
 
-	return { kind: "reactivated", deactivationIds: await recordReactivation(tx, command, audit) };
+	const deactivationIds = await recordReactivation(tx, command, audit);
+	// In the transaction, like the return paths (#1640): the entry the history
+	// and the backfill read commits or rolls back with the ledger.
+	await recordReactivatedEntry(tx, audit, {
+		organizationId: command.organizationId,
+		actorUserId: command.actorUserId,
+		employeeId: command.employeeId,
+		requestId: command.requestId,
+		metadata: command.actorEmail === undefined ? {} : { actorEmail: command.actorEmail },
+	});
+	return { kind: "reactivated", deactivationIds };
 }
 
 export type ReturnOutcome = {
@@ -114,6 +128,27 @@ export async function reactivateOnReturn(
 	const requestId = randomUUID();
 	const metadata = input.metadata ?? {};
 	await recordReactivation(tx, { ...input, at, requestId, metadata }, audit);
+	await recordReactivatedEntry(tx, audit, { ...input, requestId, metadata });
+	return { current: true, reactivationRequestId: requestId };
+}
+
+/**
+ * The `employee.reactivated` entry of a reactivation, recorded into `audit` in
+ * the caller's transaction. The employment history shows the reactivation once
+ * by its `reactivationRequestId`; the deactivation backfill reads the entry as
+ * a switch-on.
+ */
+async function recordReactivatedEntry(
+	tx: LifecycleClient,
+	audit: AuditTrail,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		employeeId: string;
+		requestId: string;
+		metadata: Readonly<Record<string, unknown>>;
+	},
+): Promise<void> {
 	await audit.record(tx, {
 		organizationId: input.organizationId,
 		action: AuditAction.EMPLOYEE_REACTIVATED,
@@ -122,9 +157,8 @@ export async function reactivateOnReturn(
 		targetId: input.employeeId,
 		employeeId: input.employeeId,
 		changes: { isActive: { from: false, to: true } },
-		metadata: { ...metadata, reactivationRequestId: requestId },
+		metadata: { ...input.metadata, reactivationRequestId: input.requestId },
 	});
-	return { current: true, reactivationRequestId: requestId };
 }
 
 /**

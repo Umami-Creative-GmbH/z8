@@ -11,10 +11,7 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { employee, shift } from "@/db/schema";
 import { runtime } from "@/lib/effect/runtime";
-import {
-	OpenShiftsService,
-	OpenShiftsServiceLive,
-} from "@/lib/effect/services/open-shifts.service";
+import { ShiftRequestService } from "@/lib/effect/services/shift-request.service";
 import { createLogger } from "@/lib/logger";
 import { currentRosterManagerRecipients } from "@/lib/notifications/manager-notice-recipients";
 import { type NotificationCopy, translatedContent } from "@/lib/notifications/notification-copy";
@@ -153,69 +150,77 @@ export async function handleShiftPickupAction(
 		"Processing shift pickup request",
 	);
 
-	try {
-		// Request pickup using Effect-TS service
-		// Note: requestShiftPickup atomically checks availability and creates the request
-		// to avoid race conditions (TOCTOU vulnerability)
-		const program = Effect.gen(function* () {
-			const openShiftsService = yield* OpenShiftsService;
-
-			const result = yield* openShiftsService.requestShiftPickup({
-				shiftId,
-				requesterId,
-				organizationId: tenant.organizationId,
-			});
-
-			return { success: true, requestId: result.requestId };
+	// The shift request service locks the shift, checks the roster and approves the only
+	// decider's pickup on submission (ADR-0004).
+	const outcome = await runtime
+		.runPromise(
+			Effect.gen(function* () {
+				const shiftRequestService = yield* ShiftRequestService;
+				return yield* shiftRequestService.requestPickup(tenant.organizationId, {
+					shiftId,
+					requesterId,
+				});
+			}).pipe(Effect.result),
+		)
+		.catch((error: unknown) => {
+			logger.error({ error, shiftId, requesterId }, "Failed to process shift pickup request");
+			return null;
 		});
 
-		const result = await runtime.runPromise(program.pipe(Effect.provide(OpenShiftsServiceLive)));
-
+	if (outcome?._tag === "Success") {
+		const request = outcome.success;
 		logger.info(
-			{ shiftId, requesterId, requestId: result.requestId },
+			{ shiftId, requesterId, requestId: request.id, status: request.status },
 			"Shift pickup request created successfully",
 		);
-
+		if (request.status === "approved") {
+			await context.sendActivity({
+				type: "message",
+				text: "✅ **Shift picked up!**\n\nYou are the only manager or admin who can decide shift requests, so your pickup was approved at once and the shift is yours.",
+			});
+			return;
+		}
 		await context.sendActivity({
 			type: "message",
 			text: "✅ **Shift pickup request submitted!**\n\nYour manager will review and approve your request. You'll be notified once a decision is made.",
 		});
-
 		await notifyPrimaryManagerAboutShiftPickup({
-			requestId: result.requestId,
+			requestId: request.id,
 			shiftId,
 			requesterId,
 			organizationId: tenant.organizationId,
 		});
-	} catch (error) {
-		logger.error({ error, shiftId, requesterId }, "Failed to process shift pickup request");
+		return;
+	}
 
-		// Check for specific error types
-		const errorMessage = error instanceof Error ? error.message : String(error);
-
-		if (
-			errorMessage.includes("not found") ||
-			errorMessage.includes("unavailable") ||
-			errorMessage.includes("not open")
-		) {
-			logger.warn({ shiftId, requesterId }, "Shift no longer available for pickup");
-			await context.sendActivity({
-				type: "message",
-				text: "⚠️ **Shift no longer available**\n\nThis shift has already been assigned or is no longer open. Please check for other available shifts.",
-			});
-		} else if (
-			errorMessage.includes("pending request") ||
-			errorMessage.includes("already requested")
-		) {
-			await context.sendActivity({
-				type: "message",
-				text: "ℹ️ **Request already pending**\n\nYou already have a pending pickup request for this shift. Please wait for your manager to review it.",
-			});
-		} else {
-			await context.sendActivity({
-				type: "message",
-				text: "❌ **Request failed**\n\nSomething went wrong while processing your request. Please try again or contact support.",
-			});
-		}
+	const failure = outcome?.failure;
+	if (failure) {
+		logger.warn({ error: failure, shiftId, requesterId }, "Shift pickup request refused");
+	}
+	if (failure?._tag === "ConflictError" && failure.conflictType === "duplicate_request") {
+		await context.sendActivity({
+			type: "message",
+			text: "ℹ️ **Request already pending**\n\nYou already have a pending pickup request for this shift. Please wait for your manager to review it.",
+		});
+	} else if (failure?._tag === "ValidationError" && failure.field === "skillOverrideReason") {
+		// Only the only decider's pickup is approved on submission, and it needs a reason here.
+		await context.sendActivity({
+			type: "message",
+			text: "⚠️ **Required skill missing**\n\nYou don't have every skill this shift requires. Assign the shift in the Z8 planner, where you can give a reason for the exception.",
+		});
+	} else if (
+		(failure?._tag === "NotFoundError" && failure.entityType === "shift") ||
+		failure?._tag === "ValidationError" ||
+		(failure?._tag === "ConflictError" && failure.conflictType === "invalid_status")
+	) {
+		await context.sendActivity({
+			type: "message",
+			text: "⚠️ **Shift no longer available**\n\nThis shift has already been assigned or is no longer open. Please check for other available shifts.",
+		});
+	} else {
+		await context.sendActivity({
+			type: "message",
+			text: "❌ **Request failed**\n\nSomething went wrong while processing your request. Please try again or contact support.",
+		});
 	}
 }

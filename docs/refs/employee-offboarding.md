@@ -554,8 +554,9 @@ entry, with the `reactivationRequestId`, is recorded into the caller's
 `AuditTrail` in the same transaction, so it commits or rolls back with the
 ledger. After its commit the caller only forwards that trail to the external
 audit service, where it opens the transaction (`withAuditTrail`, or
-`queueAfterAuthTransactionCommit` for SCIM). *Reactivate* itself still writes
-its entry after the commit (#1640). These paths serialize with Deactivate
+`queueAfterAuthTransactionCommit` for SCIM). *Reactivate* records the same
+entry the same way (`executeReactivation`, #1640), with the actor's email as
+`actorEmail` in its metadata, and forwards its trail after its commit. These paths serialize with Deactivate
 through the user's exclusive configuration/access guard and do not take the
 organization row lock.
 

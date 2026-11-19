@@ -3,7 +3,7 @@ import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const runtimePackages = [
+export const runtimePackages = [
 	"next",
 	"react",
 	"pg",

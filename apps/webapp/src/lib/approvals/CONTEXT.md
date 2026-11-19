@@ -44,6 +44,10 @@ _Avoid_: route (unqualified; Time Tracking's scope routing is a different thing)
 Working out approval routes without starting a workflow or writing a request, by the same rules a submission applies. Where the outcome depends on the request itself (how far back it reaches, its amount, category or items), it shows the route for when approval is needed rather than guessing a skip.
 _Avoid_: dry run, simulation
 
+**Shift request decider**:
+A manager or admin on the current roster at the instant, who may approve or reject shift requests (swaps and pickups), except their own (ADR-0004). The pending shift request list and the decision check use this one rule.
+_Avoid_: shift approver, shift manager
+
 **Prospective requester**:
 Someone who is not an employee yet, previewed as a member of a team with no managers, groups or account of their own.
 _Avoid_: invitee (Organization's word for how they arrive), synthetic employee
