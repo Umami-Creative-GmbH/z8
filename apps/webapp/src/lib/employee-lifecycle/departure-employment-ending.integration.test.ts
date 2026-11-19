@@ -289,10 +289,9 @@ describe("a departure ends what a deactivation ends", () => {
 			},
 			{
 				clock: { nowInstant: () => CUTOFF },
-				// Sessions, the audit log, seats and exports are not what is compared here.
+				// Sessions, seats and exports are not what is compared here.
 				effects: {
 					revokeSessions: async () => {},
-					logAudit: async () => {},
 					reconcileSeats: async () => {},
 					pauseOwnedExports: async () => {},
 				},

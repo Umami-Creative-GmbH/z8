@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import type { db as appDb } from "@/db";
-import { AuditAction, type AuditLogEntry, logAudit } from "@/lib/audit-logger";
+import { AuditAction } from "@/lib/audit-logger";
 import { revokeOrganizationActiveSessions } from "@/lib/auth/organization-session-revocation";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
 import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
@@ -102,7 +102,6 @@ export type DeactivateOutcome =
  */
 export type DeactivationEffects = {
 	revokeSessions: (userId: string, organizationId: string) => Promise<void>;
-	logAudit: (entry: AuditLogEntry) => Promise<void>;
 	/** A former employee holds no paid seat (#1439). */
 	reconcileSeats: (organizationId: string) => Promise<void>;
 	/** A deactivated owner or admin can no longer own scheduled exports (#988). */
@@ -115,7 +114,6 @@ export type DeactivationEffects = {
 const defaultEffects: DeactivationEffects = {
 	revokeSessions: (userId, organizationId) =>
 		revokeOrganizationActiveSessions(userId, organizationId),
-	logAudit,
 	// Best effort, as for member removal, but recounting the local seats even
 	// while external billing is off, as a departure does: a failed delivery is
 	// logged, and the billing seat reconciliation job settles it.
@@ -150,12 +148,11 @@ type Committed =
  * deactivation's locks (`sequence.ts`), it replays a request ID it has seen,
  * checks that the actor may deactivate this employee (the owner rules), plans
  * and refuses without writing while a report still needs an eligible
- * replacement, and otherwise records the deactivation and runs the
- * deactivation sequence. After the commit it forwards the audit, runs the
- * consequences' after-commit steps (a failing step is logged and returned as a
- * warning, never undoing the commit), revokes the person's sessions, writes
- * the `employee.deactivated` audit entry, recounts the seats and pauses the
- * scheduled exports they owned. All of it runs on `database`.
+ * replacement, and otherwise records the deactivation, its consequences and
+ * the `employee.deactivated` audit entry. After the commit it forwards the
+ * audit, runs the consequences' after-commit steps (a failing step is logged
+ * and returned as a warning), revokes the person's sessions, recounts seats
+ * and pauses the scheduled exports they owned.
  *
  * Throws `DeactivationRequestConflictError` for a request ID used before with
  * other picks, and passes on the database's owner-invariant error.
@@ -242,6 +239,16 @@ export async function deactivate(
 				clock: dependencies.clock,
 				mode: { kind: "interactive" },
 			});
+			await applied.audit.record(tx, {
+				...scope,
+				action: AuditAction.EMPLOYEE_DEACTIVATED,
+				actorUserId,
+				actorEmail: command.actorEmail,
+				targetType: "employee",
+				targetId: employeeId,
+				changes: { isActive: { from: true, to: false } },
+				metadata: { reason: "employee_deactivated", deactivationId },
+			});
 			return { kind: "deactivated", applied };
 		},
 		() => ({ kind: "rejected", refusal: { type: "not_found" } }),
@@ -274,25 +281,6 @@ export async function deactivate(
 		} catch {
 			sessionCleanupPending = true;
 		}
-	}
-
-	if (committed.kind === "deactivated") {
-		await effects.logAudit({
-			action: AuditAction.EMPLOYEE_DEACTIVATED,
-			actorId: actorUserId,
-			actorEmail: command.actorEmail,
-			employeeId,
-			targetId: employeeId,
-			targetType: "employee",
-			organizationId,
-			changes: { isActive: { from: true, to: false } },
-			// The employment history shows this deactivation once (#1441).
-			metadata: {
-				reason: "employee_deactivated",
-				deactivationId: committed.applied.deactivationId,
-			},
-			timestamp: new Date(),
-		});
 	}
 
 	// Everything the deactivation committed, on the first run and again on a replay.

@@ -12,7 +12,14 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import type { AuditLogEntry } from "@/lib/audit-logger";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 
-const { createNotification } = vi.hoisted(() => ({ createNotification: vi.fn() }));
+const { createNotification, forwardAudit } = vi.hoisted(() => ({
+	createNotification: vi.fn(),
+	forwardAudit: vi.fn<(entry: AuditLogEntry) => void>(),
+}));
+vi.mock("@/lib/audit-logger", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
+	forwardAuditToExternalService: forwardAudit,
+}));
 vi.mock("@/lib/notifications/notification-service", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/notifications/notification-service")>()),
 	createNotification,
@@ -35,9 +42,8 @@ const { AuditAction } = await import("@/lib/audit-logger");
 const { deactivate } = await import("./command");
 type DeactivationEffects = import("./command").DeactivationEffects;
 const { runAfterCommitSteps } = await import("./sequence");
-const { DeactivationRequestConflictError, markDeactivationReactivated } = await import(
-	"../receipts"
-);
+const { DeactivationRequestConflictError, markDeactivationReactivated } =
+	await import("../receipts");
 const { createLifecycleDatabaseFixture } = await import("../testing/database.test.fixture");
 type LifecycleDatabaseFixture = import("../testing/database.test.fixture").LifecycleDatabaseFixture;
 type SeededEmployee = import("../testing/database.test.fixture").SeededEmployee;
@@ -56,7 +62,6 @@ describe("deactivate (#1638)", () => {
 	let subareaId: string;
 	/** What ran after the commit, in order. */
 	let events: string[];
-	let audits: AuditLogEntry[];
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
@@ -82,7 +87,7 @@ describe("deactivate (#1638)", () => {
 
 	beforeEach(() => {
 		events = [];
-		audits = [];
+		forwardAudit.mockClear();
 		createNotification.mockReset();
 		createNotification.mockImplementation(async (notification: { type: string }) => {
 			if (notification.type === "employee_deactivation_shifts_opened") {
@@ -96,10 +101,6 @@ describe("deactivate (#1638)", () => {
 		return {
 			revokeSessions: vi.fn(async () => {
 				events.push("sessions-revoked");
-			}),
-			logAudit: vi.fn(async (entry: AuditLogEntry) => {
-				events.push("audit-logged");
-				audits.push(entry);
 			}),
 			reconcileSeats: vi.fn(async () => {
 				events.push("seats-reconciled");
@@ -176,8 +177,50 @@ describe("deactivate (#1638)", () => {
 		return rows;
 	}
 
+	async function deactivationAudits(person: SeededEmployee) {
+		const { rows } = await fixture.pool.query(
+			`select performed_by, entity_type, entity_id, changes::jsonb, metadata::jsonb
+			 from audit_log where organization_id = $1 and employee_id = $2 and action = $3`,
+			[fixture.organizationId, person.employeeId, AuditAction.EMPLOYEE_DEACTIVATED],
+		);
+		return rows;
+	}
+
+	function forwardedDeactivations() {
+		return forwardAudit.mock.calls
+			.map(([entry]) => entry)
+			.filter((entry) => entry.action === AuditAction.EMPLOYEE_DEACTIVATED);
+	}
+
+	it("rolls back the employee, ledger and shift when the deactivation audit fails, allowing a retry", async () => {
+		const person = await named("Audited Employee");
+		await withLaterShift(person);
+		const request = command(person);
+		await fixture.pool.query(
+			`alter table audit_log add constraint reject_deactivation_audit
+			 check (action <> 'employee.deactivated' or employee_id <> '${person.employeeId}'::uuid) not valid`,
+		);
+		try {
+			await expect(deactivate(db, request, { clock, effects: effects() })).rejects.toMatchObject({
+				cause: { constraint: "reject_deactivation_audit" },
+			});
+		} finally {
+			await fixture.pool.query("alter table audit_log drop constraint reject_deactivation_audit");
+		}
+		expect((await employeeRow(person)).is_active).toBe(true);
+		expect(await ledger(person)).toEqual([]);
+		const shifts = await fixture.pool.query(
+			"select status from shift where organization_id = $1 and employee_id = $2",
+			[fixture.organizationId, person.employeeId],
+		);
+		expect(shifts.rows).toEqual([{ status: "published" }]);
+		expect(forwardAudit).not.toHaveBeenCalled();
+		expect(events).toEqual([]);
+		expect((await deactivate(db, request, { clock, effects: effects() })).kind).toBe("deactivated");
+	});
+
 	describe("after the commit", () => {
-		it("runs the consequences' steps, then sessions, the audit entry, seats and exports", async () => {
+		it("runs the consequences' steps, then sessions, seats and exports", async () => {
 			const person = await named("Paula Person");
 			await withLaterShift(person);
 			const request = command(person);
@@ -201,7 +244,6 @@ describe("deactivate (#1638)", () => {
 			expect(events).toEqual([
 				"planner-notice",
 				"sessions-revoked",
-				"audit-logged",
 				"seats-reconciled",
 				"exports-paused",
 			]);
@@ -209,7 +251,20 @@ describe("deactivate (#1638)", () => {
 				person.userId,
 				fixture.organizationId,
 			);
-			expect(audits).toEqual([
+			expect(await deactivationAudits(person)).toEqual([
+				{
+					performed_by: fixture.ownerUserId,
+					entity_type: "employee",
+					entity_id: person.employeeId,
+					changes: { isActive: { from: true, to: false } },
+					metadata: {
+						actorEmail: ACTOR_EMAIL,
+						reason: "employee_deactivated",
+						deactivationId: outcome.deactivationId,
+					},
+				},
+			]);
+			expect(forwardedDeactivations()).toEqual([
 				{
 					action: AuditAction.EMPLOYEE_DEACTIVATED,
 					actorId: fixture.ownerUserId,
@@ -238,7 +293,7 @@ describe("deactivate (#1638)", () => {
 			await deactivate(db, request, { clock, effects: effects() });
 			const before = await ledger(person);
 			events = [];
-			audits = [];
+			forwardAudit.mockClear();
 
 			const outcome = await deactivate(db, request, { clock, effects: effects() });
 
@@ -250,7 +305,8 @@ describe("deactivate (#1638)", () => {
 				"seats-reconciled",
 				"exports-paused",
 			]);
-			expect(audits).toEqual([]);
+			expect(forwardedDeactivations()).toEqual([]);
+			expect(await deactivationAudits(person)).toHaveLength(1);
 		});
 
 		it("repeats nothing for a replayed request whose deactivation was reactivated since", async () => {
@@ -284,6 +340,8 @@ describe("deactivate (#1638)", () => {
 
 			expect(outcome).toEqual({ kind: "unchanged", warnings: [] });
 			expect(events).toEqual(["sessions-revoked"]);
+			expect(forwardedDeactivations()).toEqual([]);
+			expect(await deactivationAudits(person)).toEqual([]);
 			expect(await ledger(person)).toEqual([]);
 		});
 
@@ -303,12 +361,7 @@ describe("deactivate (#1638)", () => {
 				deactivationId: expect.any(String),
 				warnings: ["Session cleanup is pending"],
 			});
-			expect(events).toEqual([
-				"sessions-revoked",
-				"audit-logged",
-				"seats-reconciled",
-				"exports-paused",
-			]);
+			expect(events).toEqual(["sessions-revoked", "seats-reconciled", "exports-paused"]);
 		});
 
 		it("passes on a failed export pause, with the deactivation committed", async () => {
@@ -355,6 +408,8 @@ describe("deactivate (#1638)", () => {
 
 	describe("refusals", () => {
 		async function expectNothingHappened(person: SeededEmployee, wasActive = true) {
+			expect(forwardedDeactivations()).toEqual([]);
+			expect(await deactivationAudits(person)).toEqual([]);
 			expect(events).toEqual([]);
 			expect(await ledger(person)).toEqual([]);
 			expect(await employeeRow(person)).toMatchObject({ is_active: wasActive });
