@@ -15,7 +15,7 @@ const { AuditTrail } = await import("@/lib/audit-trail");
 const { parseInstant } = await import("@/lib/datetime/temporal-core");
 const { recordFollowUpDeactivation } = await import("./deactivation/follow-up-record");
 const { loadLifecycleHistory } = await import("./lifecycle-history");
-const { reactivateOnReturn } = await import("./reactivation");
+const { executeReactivation, reactivateOnReturn } = await import("./reactivation");
 const { insertDeactivation } = await import("./receipts");
 const { createLifecycleDatabaseFixture } = await import("./testing/database.test.fixture");
 type LifecycleDatabaseFixture = import("./testing/database.test.fixture").LifecycleDatabaseFixture;
@@ -231,6 +231,107 @@ describe("reactivateOnReturn (#1643)", () => {
 
 		expect(await employeeState(person)).toMatchObject({ is_active: false });
 		expect(await ledger(person)).toMatchObject([{ reactivated_at: null }]);
+		expect(await reactivatedAuditEntries(person)).toEqual([]);
+	});
+});
+
+/**
+ * #1640: the admin's Reactivate records `employee.reactivated` in its
+ * transaction too, with the actor's email, so the entry the history and the
+ * backfill read commits or rolls back with the ledger.
+ */
+describe("executeReactivation (#1640)", () => {
+	let fixture: LifecycleDatabaseFixture;
+
+	beforeAll(async () => {
+		fixture = await createLifecycleDatabaseFixture();
+	});
+	afterAll(async () => fixture?.close());
+
+	async function deactivatedPerson() {
+		const person = await fixture.seedEmployee();
+		await fixture.pool.query("update employee set is_active = false where id = $1", [
+			person.employeeId,
+		]);
+		await insertDeactivation(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeId: person.employeeId,
+			employmentPeriodId: person.employmentPeriodId,
+			deactivatedAt: parseInstant(DEACTIVATED_AT),
+			createdBy: fixture.ownerUserId,
+			reason: "employee_deactivated",
+			requestId: randomUUID(),
+			requestFingerprint: "test",
+			replacementManagers: {},
+		});
+		return person;
+	}
+
+	function reactivate(person: SeededEmployee, options: { thenFail?: boolean } = {}) {
+		const requestId = randomUUID();
+		const run = fixture.db.transaction(async (tx) => {
+			const outcome = await executeReactivation(
+				tx,
+				{
+					organizationId: fixture.organizationId,
+					actorUserId: fixture.ownerUserId,
+					actorEmail: "admin@example.com",
+					employeeId: person.employeeId,
+					requestId,
+					at: parseInstant("2026-02-02T09:00:00Z"),
+				},
+				new AuditTrail(),
+			);
+			if (options.thenFail) throw new Error("the reactivation failed after its writes");
+			return outcome;
+		});
+		return { requestId, run };
+	}
+
+	async function reactivatedAuditEntries(person: SeededEmployee) {
+		const { rows } = await fixture.pool.query(
+			`select performed_by, employee_id, entity_type, changes, metadata from audit_log
+			 where organization_id = $1 and entity_id = $2 and action = 'employee.reactivated'`,
+			[fixture.organizationId, person.employeeId],
+		);
+		return rows.map((row) => ({
+			performedBy: row.performed_by,
+			employeeId: row.employee_id,
+			entityType: row.entity_type,
+			changes: JSON.parse(row.changes),
+			metadata: JSON.parse(row.metadata),
+		}));
+	}
+
+	it("records employee.reactivated with the actor's email and the request id in the transaction", async () => {
+		const person = await deactivatedPerson();
+
+		const { requestId, run } = reactivate(person);
+		expect(await run).toMatchObject({ kind: "reactivated" });
+
+		expect(await reactivatedAuditEntries(person)).toEqual([
+			{
+				performedBy: fixture.ownerUserId,
+				employeeId: person.employeeId,
+				entityType: "employee",
+				changes: { isActive: { from: false, to: true } },
+				metadata: { actorEmail: "admin@example.com", reactivationRequestId: requestId },
+			},
+		]);
+		const history = await loadLifecycleHistory(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeId: person.employeeId,
+		});
+		expect(history.events.map((event) => event.kind)).toEqual(["reactivated"]);
+	});
+
+	it("leaves no employee.reactivated entry when the transaction rolls back", async () => {
+		const person = await deactivatedPerson();
+
+		await expect(reactivate(person, { thenFail: true }).run).rejects.toThrow(
+			"the reactivation failed after its writes",
+		);
+
 		expect(await reactivatedAuditEntries(person)).toEqual([]);
 	});
 });
